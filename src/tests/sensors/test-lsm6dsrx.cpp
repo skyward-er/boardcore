@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <iostream>  //////////////////////////////////////////////////////////////////////////////////////////////
+#include <vector>  //////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace Boardcore;
 using namespace miosix;
@@ -56,7 +57,7 @@ int main()
     int2Pin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_256;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_64;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
@@ -65,12 +66,12 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_1_6;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_833;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_833;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // fifo
@@ -116,13 +117,67 @@ int main()
     //     Thread::sleep(5000);
     // }
 
+    // while (true)
+    // {
+    //     // LSM6DSRXData data = sens.getSensorData();
+    //     // std::cout << data.header() << "\n";
+    //     // data.print(std::cout);
+    //     // std::cout << "\n\n";
+
+    //     // wait for fifo full interrupt
+    //     int dataReady = int2Pin.value();
+    //     while (dataReady != 1)
+    //     {
+    //         Thread::sleep(20);
+    //         dataReady = int2Pin.value();
+    //     }
+
+    //     // sens.sample();
+
+    //     // const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+    //     //     sens.getLastFifo();
+    //     // for (unsigned int i = 0; i < buf.size(); ++i)
+    //     // {
+    //     //     std::cout << "sample " << i << "\n";
+    //     //     std::cout << buf[i].header() << "\n";
+    //     //     buf[i].print(std::cout);
+    //     //     std::cout << "\n\n";
+    //     // }
+    //     // TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
+
+    //     // std::cout << "Press a key to continue...\n\n";
+    //     // char ch = 0;
+    //     // std::cin >> ch;
+
+    //     TRACE(
+    //         "Interrupt ricevuto\n"
+    //         "dati non letti pre-lettura: %u\n",
+    //         sens->unreadDataInFifo());
+    //     sens->sampleImpl();
+    //     TRACE("dati non letti post-lettura: %u\n\n",
+    //     sens->unreadDataInFifo());
+
+    //     // Thread::sleep(5000);
+    // }
+
+    std::vector<uint64_t> vetTimestamps;
+    vetTimestamps.reserve(LSM6DSRXDefs::FIFO_SIZE);
     while (true)
     {
-        // LSM6DSRXData data = sens.getSensorData();
-        // std::cout << data.header() << "\n";
-        // data.print(std::cout);
-        // std::cout << "\n\n";
+        // primi sample per far andare un po' il sensore
+        for (int i = 0; i < 5; ++i)
+        {
+            // wait for fifo full interrupt
+            int dataReady = int2Pin.value();
+            while (dataReady != 1)
+            {
+                Thread::sleep(20);
+                dataReady = int2Pin.value();
+            }
+            sens->sampleImpl();
+        }
 
+        // sample effettivo
         // wait for fifo full interrupt
         int dataReady = int2Pin.value();
         while (dataReady != 1)
@@ -130,32 +185,44 @@ int main()
             Thread::sleep(20);
             dataReady = int2Pin.value();
         }
-
-        // sens.sample();
-
-        // const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-        //     sens.getLastFifo();
-        // for (unsigned int i = 0; i < buf.size(); ++i)
-        // {
-        //     std::cout << "sample " << i << "\n";
-        //     std::cout << buf[i].header() << "\n";
-        //     buf[i].print(std::cout);
-        //     std::cout << "\n\n";
-        // }
-        // TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
-
-        // std::cout << "Press a key to continue...\n\n";
-        // char ch = 0;
-        // std::cin >> ch;
-
-        TRACE(
-            "Interrupt ricevuto\n"
-            "dati non letti pre-lettura: %u\n",
-            sens->unreadDataInFifo());
         sens->sampleImpl();
-        TRACE("dati non letti post-lettura: %u\n\n", sens->unreadDataInFifo());
 
-        // Thread::sleep(5000);
+        // estrazione dati
+        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+            sens->getLastFifo();
+        vetTimestamps.clear();
+        for (int i = 0; i < sens->getLastFifoSize(); ++i)
+        {
+            vetTimestamps.push_back(buf[i].accelerationTimestamp);
+        }
+        std::sort(vetTimestamps.begin(), vetTimestamps.end());
+
+        // calcolo differenza max
+        uint64_t diffMax = 0, diff = 0;
+        for (unsigned int i = 1; i < vetTimestamps.size(); ++i)
+        {
+            if (vetTimestamps[i] == 0)
+            {
+                TRACE("C'E' UNO ZERO\n");
+            }
+            if (vetTimestamps[i - 1] > 0)
+            {
+                diff = vetTimestamps[i] - vetTimestamps[i - 1];
+                if (diff > diffMax)
+                {
+                    diffMax = diff;
+                }
+            }
+        }
+
+        // print dati
+        std::cout << "diffMax: " << diffMax << "\n";
+        std::cout << "vetTimestamps:\n";
+        for (unsigned int i = 0; i < vetTimestamps.size(); ++i)
+        {
+            std::cout << vetTimestamps[i] << ", ";
+        }
+        std::cout << "\n\n\n";
     }
 
     delete sens;

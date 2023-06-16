@@ -82,7 +82,7 @@ bool LSM6DSRX::init()
     m_sensorTimestampResolution =
         getSensorTimestampResolution() *
         1000;  // return value is in milliseconds, need microseconds.
-    m_sampleCounter = 0;
+    // m_sampleCounter = 0;
 
     m_isInit  = true;
     lastError = SensorErrors::NO_ERRORS;
@@ -635,10 +635,10 @@ float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
     return ret;
 }
 
-uint64_t LSM6DSRX::convertTimestamp(const uint32_t sensorTimestamp)
+uint64_t LSM6DSRX::convertTimestamp(const uint64_t sensorTimestamp)
 {
-    uint32_t deltaSensor = 0;  // difference between 2 sensor timestamps.
-    if (sensorTimestamp > m_sensorTimestamp0)
+    uint64_t deltaSensor = 0;  // difference between 2 sensor timestamps.
+    if (sensorTimestamp >= m_sensorTimestamp0)
     {
         deltaSensor = sensorTimestamp - m_sensorTimestamp0;
     }
@@ -646,7 +646,7 @@ uint64_t LSM6DSRX::convertTimestamp(const uint32_t sensorTimestamp)
     {
         // CHECK
         // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        deltaSensor = static_cast<uint32_t>(-1) - m_sensorTimestamp0 +
+        deltaSensor = static_cast<uint64_t>(-1) - m_sensorTimestamp0 +
                       sensorTimestamp + 1;
     }
 
@@ -695,6 +695,12 @@ void LSM6DSRX::readFromFifo()
         num = numUnreadSamples;
     }
 
+    // not all data extracted from fifo is sample data, timestamps are not
+    // saved.
+    // --> 'i' keeps count of the number of elements extracted from the sensor
+    // fifo
+    //     'idxFifo' keeps track of the samples saved inside 'lastFifo'
+    uint16_t idxFifo = 0;
     for (uint16_t i = 0; i < num; ++i)
     {
         const uint8_t sampleTag =
@@ -714,71 +720,95 @@ void LSM6DSRX::readFromFifo()
         {
             case 0x01:
                 // gyroscope data
-                lastFifo[i].angularSpeedX =
+                lastFifo[idxFifo].angularSpeedX =
                     static_cast<float>(combineHighLowBits(xl, xh)) *
                     m_sensitivityGyr;
-                lastFifo[i].angularSpeedY =
+                lastFifo[idxFifo].angularSpeedY =
                     static_cast<float>(combineHighLowBits(yl, yh)) *
                     m_sensitivityGyr;
-                lastFifo[i].angularSpeedZ =
+                lastFifo[idxFifo].angularSpeedZ =
                     static_cast<float>(combineHighLowBits(zl, zh)) *
                     m_sensitivityGyr;
 
-                lastFifo[i].angularSpeedTimestamp = timestamps[timeslotTag];
+                lastFifo[idxFifo].angularSpeedTimestamp =
+                    timestamps[timeslotTag];
 
-                // CHECK: va bene cosi'? o devo vedere quali valori hanno lo
-                // stesso timestamp e metterli insieme?
-                lastFifo[i].accelerationX = m_lastValidSample.accelerationX;
-                lastFifo[i].accelerationY = m_lastValidSample.accelerationY;
-                lastFifo[i].accelerationZ = m_lastValidSample.accelerationZ;
-                lastFifo[i].accelerationTimestamp =
+                // set old acc data
+                lastFifo[idxFifo].accelerationX =
+                    m_lastValidSample.accelerationX;
+                lastFifo[idxFifo].accelerationY =
+                    m_lastValidSample.accelerationY;
+                lastFifo[idxFifo].accelerationZ =
+                    m_lastValidSample.accelerationZ;
+                lastFifo[idxFifo].accelerationTimestamp =
                     m_lastValidSample.accelerationTimestamp;
 
                 // update last valid sample for the gyroscope
                 m_lastValidSample.angularSpeedTimestamp =
-                    lastFifo[i].angularSpeedTimestamp;
-                m_lastValidSample.angularSpeedX = lastFifo[i].angularSpeedX;
-                m_lastValidSample.angularSpeedY = lastFifo[i].angularSpeedY;
-                m_lastValidSample.angularSpeedZ = lastFifo[i].angularSpeedZ;
+                    lastFifo[idxFifo].angularSpeedTimestamp;
+                m_lastValidSample.angularSpeedX =
+                    lastFifo[idxFifo].angularSpeedX;
+                m_lastValidSample.angularSpeedY =
+                    lastFifo[idxFifo].angularSpeedY;
+                m_lastValidSample.angularSpeedZ =
+                    lastFifo[idxFifo].angularSpeedZ;
+
+                // update fifo index
+                ++idxFifo;
 
                 break;
             case 0x02:
                 // accelerometer data
-                lastFifo[i].accelerationX =
+                lastFifo[idxFifo].accelerationX =
                     static_cast<float>(combineHighLowBits(xl, xh)) *
                     m_sensitivityAcc;
-                lastFifo[i].accelerationY =
+                lastFifo[idxFifo].accelerationY =
                     static_cast<float>(combineHighLowBits(yl, yh)) *
                     m_sensitivityAcc;
-                lastFifo[i].accelerationZ =
+                lastFifo[idxFifo].accelerationZ =
                     static_cast<float>(combineHighLowBits(zl, zh)) *
                     m_sensitivityAcc;
 
-                lastFifo[i].accelerationTimestamp = timestamps[timeslotTag];
+                lastFifo[idxFifo].accelerationTimestamp =
+                    timestamps[timeslotTag];
 
-                // CHECK: va bene cosi'? o devo vedere quali valori hanno lo
-                // stesso timestamp e metterli insieme?
-                lastFifo[i].angularSpeedX = m_lastValidSample.angularSpeedX;
-                lastFifo[i].angularSpeedY = m_lastValidSample.angularSpeedY;
-                lastFifo[i].angularSpeedZ = m_lastValidSample.angularSpeedZ;
-                lastFifo[i].angularSpeedTimestamp =
+                // set old gyro data
+                lastFifo[idxFifo].angularSpeedX =
+                    m_lastValidSample.angularSpeedX;
+                lastFifo[idxFifo].angularSpeedY =
+                    m_lastValidSample.angularSpeedY;
+                lastFifo[idxFifo].angularSpeedZ =
+                    m_lastValidSample.angularSpeedZ;
+                lastFifo[idxFifo].angularSpeedTimestamp =
                     m_lastValidSample.angularSpeedTimestamp;
 
                 // update lastValidSampe for the accelerometer
                 m_lastValidSample.accelerationTimestamp =
-                    lastFifo[i].accelerationTimestamp;
-                m_lastValidSample.accelerationX = lastFifo[i].accelerationX;
-                m_lastValidSample.accelerationY = lastFifo[i].accelerationY;
-                m_lastValidSample.accelerationZ = lastFifo[i].accelerationZ;
+                    lastFifo[idxFifo].accelerationTimestamp;
+                m_lastValidSample.accelerationX =
+                    lastFifo[idxFifo].accelerationX;
+                m_lastValidSample.accelerationY =
+                    lastFifo[idxFifo].accelerationY;
+                m_lastValidSample.accelerationZ =
+                    lastFifo[idxFifo].accelerationZ;
+
+                // update fifo index
+                ++idxFifo;
 
                 break;
             case 0x04:
                 // timestamp data --> update timestamps
 
-                uint32_t t = static_cast<uint32_t>(combineHighLowBits(xl, xh));
-                t |= static_cast<uint32_t>(combineHighLowBits(yl, yh)) << 16;
+                // uint32_t t = static_cast<uint32_t>(combineHighLowBits(xl,
+                // xh)); t |= static_cast<uint32_t>(combineHighLowBits(yl, yh))
+                // << 16;
+                uint32_t t =
+                    static_cast<uint32_t>(combineHighLowBitsUnsigned(xl, xh));
+                t |= static_cast<uint32_t>(combineHighLowBitsUnsigned(yl, yh))
+                     << 16;
 
-                timestamps[timeslotTag] = convertTimestamp(t);
+                timestamps[timeslotTag] =
+                    convertTimestamp(static_cast<uint64_t>(t));
 
                 break;
                 // default:
@@ -788,14 +818,15 @@ void LSM6DSRX::readFromFifo()
     }
 
     // check if timestamp base values need to be updated
-    ++m_sampleCounter;
-    if (m_sampleCounter >= LSM6DSRXDefs::TIMESTAMP_UPDATE_VALUE)
-    {
-        m_sampleCounter = 0;
-        correlateTimestamps();
-    }
+    // ++m_sampleCounter;
+    // if (m_sampleCounter >= LSM6DSRXDefs::TIMESTAMP_UPDATE_VALUE)
+    // {
+    //     m_sampleCounter = 0;
+    //     correlateTimestamps();
+    // }
+    correlateTimestamps();
 
-    lastFifoLevel = num;
+    lastFifoLevel = idxFifo;
 }
 
 uint16_t LSM6DSRX::unreadDataInFifo()

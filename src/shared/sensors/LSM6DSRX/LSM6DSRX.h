@@ -105,7 +105,7 @@ private:
     /**
      * @brief Updated every time the fifo is sampled, so that after
      */
-    uint8_t m_sampleCounter = 0;
+    // uint8_t m_sampleCounter = 0;
 
     /**
      * @brief When extracting data from fifo i get data only from one sensor,
@@ -128,6 +128,13 @@ private:
      * @param high High bits of the 16 bit number.
      */
     int16_t combineHighLowBits(uint8_t low, uint8_t high);
+    uint16_t combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
+    {
+        uint16_t sample = high;
+        sample <<= 8;
+        sample |= low;
+        return sample;
+    }
 
     /**
      * @brief Reads 16-bits float data from the specified registers.
@@ -209,7 +216,7 @@ private:
      * @param sensorTimestamp The timestamp from the sensor to be converted into
      * a TimestampTimer one.
      */
-    uint64_t convertTimestamp(const uint32_t sensorTimestamp);
+    uint64_t convertTimestamp(const uint64_t sensorTimestamp);
 
     /**
      * @brief Utility to set timestamp values for conversion.
