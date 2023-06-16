@@ -24,6 +24,7 @@
 
 #include <assert.h>
 #include <utils/Debug.h>
+
 #include <cmath>
 
 namespace Boardcore
@@ -90,7 +91,7 @@ bool LSM6DSRX::init()
     // set BDU pag. 54
     {
         SPITransaction spiTransaction{m_spiSlave};
-        spiTransaction.writeRegister(REG_CTRL3_C,
+        spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL3_C,
                                      static_cast<uint8_t>(m_config.bdu));
     }
 
@@ -126,11 +127,11 @@ bool LSM6DSRX::initAccelerometer()
     configByte = static_cast<uint8_t>(m_config.odrAcc) << 4 |  // odr
                  static_cast<uint8_t>(m_config.fsAcc) << 2 |   // fullscale
                  0 << 1;  // high resolution selection
-    spiTransaction.writeRegister(REG_CTRL1_XL, configByte);
+    spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, configByte);
 
     // set accelerometer performance mode (pag. 57)
     configByte = static_cast<uint8_t>(m_config.opModeAcc) << 4;
-    spiTransaction.writeRegister(REG_CTRL6_C, configByte);
+    spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, configByte);
 
     return true;
 }
@@ -145,11 +146,11 @@ bool LSM6DSRX::initGyroscope()
     // set odr, fullscale pag. 53
     configByte = static_cast<uint8_t>(m_config.odrGyr) << 4 |  // odr
                  static_cast<uint8_t>(m_config.fsGyr);         // fullscale
-    spiTransaction.writeRegister(REG_CTRL2_G, configByte);
+    spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, configByte);
 
     // set performance mode pag. 58
     configByte = static_cast<uint8_t>(m_config.opModeGyr) << 7;
-    spiTransaction.writeRegister(REG_CTRL7_G, configByte);
+    spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, configByte);
 
     return true;
 }
@@ -163,7 +164,7 @@ bool LSM6DSRX::initFifo()
     // select batch data rate in FIFO_CTRL3
     configByte = static_cast<uint8_t>(m_config.odrAcc) |  // accelerometer bdr
                  (static_cast<uint8_t>(m_config.odrGyr) << 4);  // gyroscope bdr
-    spiTransaction.writeRegister(REG_FIFO_CTRL3, configByte);
+    spiTransaction.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL3, configByte);
 
     // set fifo mode, batch data rate for temperature sensor and the decimation
     // factor for timestamp batching
@@ -173,121 +174,129 @@ bool LSM6DSRX::initFifo()
             << 4 |  // batch data rate for temperature data
         static_cast<uint8_t>(m_config.fifoTimestampDecimation)
             << 6;  // timestamp decimation
-    spiTransaction.writeRegister(REG_FIFO_CTRL4, configByte);
+    spiTransaction.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL4, configByte);
 
     return true;
 }
 
 bool LSM6DSRX::selfTestAcc()
 {
-    bool returnValue = false;
-    uint8_t byteValue = 0;
-    uint8_t idx = 0;
+    bool returnValue        = false;
+    uint8_t byteValue       = 0;
+    uint8_t idx             = 0;
     const uint8_t SIZE_DATA = 5;
     SPITransaction spi{m_spiSlave};
 
-    SensorData averageSF{0.0,0.0,0.0};// average data during self test
-    SensorData averageNormal{0.0,0.0,0.0};// average normal data
+    SensorData averageSF{0.0, 0.0, 0.0};      // average data during self test
+    SensorData averageNormal{0.0, 0.0, 0.0};  // average normal data
 
     // set registers
-    spi.writeRegister(REG_CTRL1_XL, 0x38);
-    spi.writeRegister(REG_CTRL2_G, 0x00);
-    spi.writeRegister(REG_CTRL3_C, 0x44);
-    spi.writeRegister(REG_CTRL4_C, 0x00);
-    spi.writeRegister(REG_CTRL5_C, 0x00);
-    spi.writeRegister(REG_CTRL6_C, 0x00);
-    spi.writeRegister(REG_CTRL7_G, 0x00);
-    spi.writeRegister(REG_CTRL8_XL, 0x00);
-    spi.writeRegister(REG_CTRL9_XL, 0x00);
-    spi.writeRegister(REG_CTRL10_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x38);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, 0x44);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 0x00);
 
     // wait for stable output
     miosix::Thread::sleep(100);
 
     // wait for accelerometer data ready
-    byteValue = spi.readRegister(REG_STATUS);
+    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
         miosix::Thread::sleep(50);
-        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
 
     // read and discard data
-    getAxisData(REG_OUTX_L_A, REG_OUTX_H_A);
-    getAxisData(REG_OUTY_L_A, REG_OUTY_H_A);
-    getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A);
-
+    getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A);
+    getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A);
+    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A);
 
     // read normal data (self test disabled)
-    for(idx = 0; idx < SIZE_DATA; ++idx)
+    for (idx = 0; idx < SIZE_DATA; ++idx)
     {
         // wait for accelerometer data ready
-        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
             miosix::Thread::sleep(50);
-            byteValue = spi.readRegister(REG_STATUS);
+            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
 
         // read data
-        averageNormal.x += static_cast<float>(getAxisData(REG_OUTX_L_A, REG_OUTX_H_A));
-        averageNormal.y += static_cast<float>(getAxisData(REG_OUTY_L_A, REG_OUTY_H_A));
-        averageNormal.z += static_cast<float>(getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A));
+        averageNormal.x += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A));
+        averageNormal.y += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A));
+        averageNormal.z += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A));
     }
     averageNormal.x /= SIZE_DATA;
     averageNormal.y /= SIZE_DATA;
     averageNormal.z /= SIZE_DATA;
 
     // enable accelerometer self test
-    spi.writeRegister(REG_CTRL5_C, 0x01);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x01);
 
     // wait for stable output
     miosix::Thread::sleep(100);
 
     // wait for accelerometer data ready
-    byteValue = spi.readRegister(REG_STATUS);
+    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
         miosix::Thread::sleep(50);
-        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
 
     // read and discard data
-    getAxisData(REG_OUTX_L_A, REG_OUTX_H_A);
-    getAxisData(REG_OUTY_L_A, REG_OUTY_H_A);
-    getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A);
+    getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A);
+    getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A);
+    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A);
 
     // read self test data
-    for(idx = 0; idx < SIZE_DATA; ++idx)
+    for (idx = 0; idx < SIZE_DATA; ++idx)
     {
         // wait for accelerometer data ready
-        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
             miosix::Thread::sleep(50);
-            byteValue = spi.readRegister(REG_STATUS);
+            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
 
         // read data
-        averageSF.x += static_cast<float>(getAxisData(REG_OUTX_L_A, REG_OUTX_H_A));
-        averageSF.y += static_cast<float>(getAxisData(REG_OUTY_L_A, REG_OUTY_H_A));
-        averageSF.z += static_cast<float>(getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A));
+        averageSF.x += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A));
+        averageSF.y += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A));
+        averageSF.z += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A));
     }
     averageSF.x /= SIZE_DATA;
     averageSF.y /= SIZE_DATA;
     averageSF.z /= SIZE_DATA;
 
-    if(40.0 <= std::abs(averageSF.x - averageNormal.x) && std::abs(averageSF.x - averageNormal.x) <= 1700.0 &&
-        40.0 <= std::abs(averageSF.y - averageNormal.y) && std::abs(averageSF.y - averageNormal.y) <= 1700.0 &&
-        40.0 <= std::abs(averageSF.z - averageNormal.z) && std::abs(averageSF.z - averageNormal.z) <= 1700.0)
+    if (40.0 <= std::abs(averageSF.x - averageNormal.x) &&
+        std::abs(averageSF.x - averageNormal.x) <= 1700.0 &&
+        40.0 <= std::abs(averageSF.y - averageNormal.y) &&
+        std::abs(averageSF.y - averageNormal.y) <= 1700.0 &&
+        40.0 <= std::abs(averageSF.z - averageNormal.z) &&
+        std::abs(averageSF.z - averageNormal.z) <= 1700.0)
     {
         returnValue = true;
     }
@@ -297,9 +306,9 @@ bool LSM6DSRX::selfTestAcc()
     }
 
     // Disable self-test
-    spi.writeRegister(REG_CTRL5_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
     // Disable sensor
-    spi.writeRegister(REG_CTRL1_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x00);
 
     return returnValue;
 }
@@ -309,10 +318,10 @@ bool LSM6DSRX::checkWhoAmI()
     uint8_t regValue = 0;
     {
         SPITransaction transaction{m_spiSlave};
-        regValue = transaction.readRegister(Registers::REG_WHO_AM_I);
+        regValue = transaction.readRegister(LSM6DSRXDefs::REG_WHO_AM_I);
     }
 
-    return regValue == WHO_AM_I_VALUE;
+    return regValue == LSM6DSRXDefs::WHO_AM_I_VALUE;
 }
 
 int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
@@ -329,9 +338,12 @@ void LSM6DSRX::getAccelerometerData(SensorData& data)
     //     assert(isInit && "init() was not called");  // linter off
     // #endif
 
-    data.x = getAxisData(REG_OUTX_L_A, REG_OUTX_H_A, m_sensitivityAcc);
-    data.y = getAxisData(REG_OUTY_L_A, REG_OUTY_H_A, m_sensitivityAcc);
-    data.z = getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A, m_sensitivityAcc);
+    data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
+                         m_sensitivityAcc);
+    data.y = getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A,
+                         m_sensitivityAcc);
+    data.z = getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A,
+                         m_sensitivityAcc);
 }
 
 void LSM6DSRX::getGyroscopeData(SensorData& data)
@@ -340,9 +352,12 @@ void LSM6DSRX::getGyroscopeData(SensorData& data)
     //     assert(isInit && "init() was not called");  // linter off
     // #endif
 
-    data.x = getAxisData(REG_OUTX_L_G, REG_OUTX_H_G, m_sensitivityGyr);
-    data.y = getAxisData(REG_OUTY_L_G, REG_OUTY_H_G, m_sensitivityGyr);
-    data.z = getAxisData(REG_OUTZ_L_G, REG_OUTZ_H_G, m_sensitivityGyr);
+    data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
+                         m_sensitivityGyr);
+    data.y = getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G,
+                         m_sensitivityGyr);
+    data.z = getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G,
+                         m_sensitivityGyr);
 }
 
 bool LSM6DSRX::selfTest()
@@ -361,8 +376,8 @@ bool LSM6DSRX::selfTest()
     return init();
 }
 
-float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg,
-                            float sensitivity)
+float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
+                            LSM6DSRXDefs::Registers highReg, float sensitivity)
 {
     int8_t low = 0, high = 0;
     int16_t sample = 0;

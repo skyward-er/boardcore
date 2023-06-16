@@ -26,6 +26,7 @@
 #include <miosix.h>
 
 #include "LSM6DSRXConfig.h"
+#include "LSM6DSRXDefs.h"
 
 namespace Boardcore
 {
@@ -96,9 +97,9 @@ public:
         SPITransaction spiTransaction{m_spiSlave};
 
         // reads the number of unread samples in the fifo
-        numUnreadSamples =
-            static_cast<int>(spiTransaction.readRegister(REG_FIFO_STATUS1));
-        value = spiTransaction.readRegister(REG_FIFO_STATUS2);
+        numUnreadSamples = static_cast<int>(
+            spiTransaction.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1));
+        value = spiTransaction.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2);
         numUnreadSamples |= static_cast<int>(value & 3) << 8;
 
         if (numUnreadSamples < num)
@@ -111,14 +112,15 @@ public:
         {
             {
                 SPITransaction spiTransaction{m_spiSlave};
-                buf[i].tag = spiTransaction.readRegister(REG_FIFO_DATA_OUT_TAG);
+                buf[i].tag = spiTransaction.readRegister(
+                    LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
             }
-            buf[i].x =
-                getAxisData(REG_FIFO_DATA_OUT_X_L, REG_FIFO_DATA_OUT_X_H);
-            buf[i].y =
-                getAxisData(REG_FIFO_DATA_OUT_Y_L, REG_FIFO_DATA_OUT_Y_H);
-            buf[i].z =
-                getAxisData(REG_FIFO_DATA_OUT_Z_L, REG_FIFO_DATA_OUT_Z_H);
+            buf[i].x = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
+                                   LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H);
+            buf[i].y = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
+                                   LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H);
+            buf[i].z = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L,
+                                   LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H);
         }
 
         return num;
@@ -137,78 +139,6 @@ private:
 
     float m_sensitivityAcc = 0.0;  ///< Sensitivity value for the accelerator.
     float m_sensitivityGyr = 0.0;  ///< Sensitivity value for the gyroscope.
-
-    const uint8_t WHO_AM_I_VALUE = 0x6B;
-
-    /**
-     * @brief Internal registers definitions.
-     */
-    enum Registers
-    {
-        REG_WHO_AM_I = 0x0F,  ///< who_am_i register
-
-        REG_CTRL1_XL = 0x10,  ///< accelerometer control register
-        REG_CTRL2_G  = 0x11,  ///< gyroscope control register
-        REG_CTRL3_C  = 0x12,  ///< set bdu
-        REG_CTRL6_C  = 0x15,  ///< enable/disable high performance mode for the
-                              ///< accelerometer
-        REG_CTRL7_G = 0x16,   ///< enable/disable high performance mode for the
-                              ///< gyroscope
-
-        REG_FIFO_CTRL3 = 0x09,  ///< fifo control register 3 (select batch data
-                                ///< rate for gyro and acc)
-        REG_FIFO_CTRL4 =
-            0x0A,  ///< fifo control register 4 (select fifo mode, batch data
-                   ///< rate for temperature sensor and the decimation factor
-                   ///< for timestamp batching)
-
-        REG_FIFO_STATUS1 =
-            0x3A,  ///< Gives number of unread sensor data stored in FIFO.
-        REG_FIFO_STATUS2 = 0x3B,  ///< Gives number of unread sensor data and
-                                  ///< the current status (watermark, overrun,
-                                  ///< full, BDR counter) of the FIFO.
-
-        REG_STATUS   = 0x1E,  ///< data ready register.
-        REG_CTRL4_C  = 0x13,
-        REG_CTRL5_C  = 0x14,
-        REG_CTRL8_XL = 0x17,
-        REG_CTRL9_XL = 0x18,
-        REG_CTRL10_C = 0x19,
-
-        REG_FIFO_DATA_OUT_TAG = 0x78,
-        REG_FIFO_DATA_OUT_X_L = 0x79,
-        REG_FIFO_DATA_OUT_X_H = 0x7A,
-        REG_FIFO_DATA_OUT_Y_L = 0x7B,
-        REG_FIFO_DATA_OUT_Y_H = 0x7C,
-        REG_FIFO_DATA_OUT_Z_L = 0x7D,
-        REG_FIFO_DATA_OUT_Z_H = 0x7E,
-
-        REG_OUTX_L_A =
-            0x28,  ///< Low bits output register for the accelerometer (x axis)
-        REG_OUTX_H_A =
-            0x29,  ///< High bits output register for the accelerometer (x axis)
-        REG_OUTY_L_A =
-            0x2A,  ///< Low bits output register for the accelerometer (y axis)
-        REG_OUTY_H_A =
-            0x2B,  ///< High bits output register for the accelerometer (y axis)
-        REG_OUTZ_L_A =
-            0x2C,  ///< Low bits output register for the accelerometer (z axis)
-        REG_OUTZ_H_A =
-            0x2D,  ///< High bits output register for the accelerometer (z axis)
-
-        REG_OUTX_L_G =
-            0x22,  ///< Low bits output register for the gyroscope (x axis)
-        REG_OUTX_H_G =
-            0x23,  ///< High bits output register for the gyroscope (x axis)
-        REG_OUTY_L_G =
-            0x24,  ///< Low bits output register for the gyroscope (y axis)
-        REG_OUTY_H_G =
-            0x25,  ///< High bits output register for the gyroscope (y axis)
-        REG_OUTZ_L_G =
-            0x26,  ///< Low bits output register for the gyroscope (z axis)
-        REG_OUTZ_H_G =
-            0x27,  ///< High bits output register for the gyroscope (z axis)
-    };
 
     /**
      * @brief Check who_am_i register for validity.
@@ -230,14 +160,16 @@ private:
      * @param highReg Register containing the high bits of the output.
      * @param sensitivity Sensitivity value for the sample.
      */
-    float getAxisData(Registers lowReg, Registers highReg, float sensitivity);
+    float getAxisData(LSM6DSRXDefs::Registers lowReg,
+                      LSM6DSRXDefs::Registers highReg, float sensitivity);
 
     /**
      * @brief Reads 16-bits data from the specified registers.
      * @param lowReg Register containing the low bits of the output.
      * @param highReg Register containing the high bits of the output.
      */
-    int16_t getAxisData(Registers lowReg, Registers highReg)
+    int16_t getAxisData(LSM6DSRXDefs::Registers lowReg,
+                        LSM6DSRXDefs::Registers highReg)
     {
         int8_t low = 0, high = 0;
         int16_t sample = 0;
