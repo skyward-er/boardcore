@@ -30,15 +30,14 @@ namespace Boardcore
 struct LSM6DSRXConfig
 {
 
-
     /**
      * @brief Output data rate definitions for the accelerometer.
      */
     enum class ACC_ODR : uint8_t
     {
         POWER_DOWN = 0,
-        HZ_1_6     = 11,            ///< Output data rate of 1.6 Hz
-        HZ_12_5    = 1,             ///< Output data rate of 12.5 Hz
+        HZ_1_6     = 11,  ///< Output data rate of 1.6 Hz
+        HZ_12_5    = 1,   ///< Output data rate of 12.5 Hz
         HZ_26      = 2,
         HZ_52      = 3,
         HZ_104     = 4,
@@ -47,10 +46,8 @@ struct LSM6DSRXConfig
         HZ_833     = 7,
         HZ_1660    = 8,
         HZ_3330    = 9,
-        HZ_6660    = 10,            ///< Output data rate of 6.66 kHz
+        HZ_6660    = 10,  ///< Output data rate of 6.66 kHz
     };
-
-
 
     /**
      * @brief Fullscale values for the accelerometer.
@@ -58,12 +55,10 @@ struct LSM6DSRXConfig
     enum class ACC_FULLSCALE : uint8_t
     {
         G2  = 0,
-        G4  = 1,
-        G8  = 2,
-        G16 = 3,
+        G4  = 2,
+        G8  = 3,
+        G16 = 1,
     };
-
-
 
     /**
      * @brief Data update mode for the sensor.
@@ -75,14 +70,13 @@ struct LSM6DSRXConfig
                                 ///< and LSB have been read
     };
 
-
-
     /**
      * @brief Operating mode for the sensor.
-     * 
-     * The sensor operates in 4 modes: power_down, low_power, normal, high_performance.
-     * high_performance is valid for all the odr values.
-     * If NORMAL mode is selected, the sensor behaviour depends on the selected odr.
+     *
+     * The sensor operates in 4 modes: power_down, low_power, normal,
+     * high_performance. high_performance is valid for all the odr values. If
+     * NORMAL mode is selected, the sensor behaviour depends on the selected
+     * odr.
      */
     enum class OPERATING_MODE : uint8_t
     {
@@ -90,13 +84,10 @@ struct LSM6DSRXConfig
         NORMAL = 1,  ///< Works in low power or normal mode depending on the odr
     };
 
-
-    BDU bdu;                    ///< Data update mode.
-    ACC_ODR odrAcc;             ///< Accelerometer odr.
+    BDU bdu;                   ///< Data update mode.
+    ACC_ODR odrAcc;            ///< Accelerometer odr.
     OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer.
     ACC_FULLSCALE fsAcc;       ///< Fullscale selection for the accelerometer.
-
 };
 
-
-}
+}  // namespace Boardcore
