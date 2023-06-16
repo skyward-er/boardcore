@@ -33,6 +33,9 @@
 namespace Boardcore
 {
 
+/**
+ * @brief LSM6DSRX Driver.
+ */
 class LSM6DSRX : public SensorFIFO<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>
 {
 public:
@@ -104,10 +107,10 @@ private:
 
     /**
      * @brief When extracting data from fifo i get data only from one sensor,
-    but the struct LSM6DSRXData is made to have data from both sensors. The idea
-    is to copy the value from the last valid sample for the sensor that hasn't
-    received data.
-    */
+     * but the struct LSM6DSRXData is made to have data from both sensors. The
+     * idea is to copy the value from the last valid sample for the sensor that
+     * hasn't received data.
+     */
     LSM6DSRXData m_lastValidSample;
 
     /**
