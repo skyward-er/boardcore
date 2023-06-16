@@ -24,6 +24,7 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
+#include <sensors/Sensor.h>
 
 #include "LSM6DSRXConfig.h"
 #include "LSM6DSRXData.h"
@@ -33,6 +34,9 @@ namespace Boardcore
 {
 
 class LSM6DSRX
+    : SensorFIFO<
+          LSM6DSRXData,
+          550>  //////////////////////////////////////////////////////////////////////////////
 {
 public:
     /**
@@ -70,24 +74,7 @@ public:
     /**
      * @brief Initialize the sensor.
      */
-    bool init();
-
-    /**
-     * @brief Retrieves data from the accelerometer.
-     * @param data The structure where data from the sensor is to be saved.
-     */
-    void getAccelerometerData(SensorData& data);
-
-    /**
-     * @brief Retrieves data from the gyroscope.
-     * @param data The structure where data from the sensor is to be saved.
-     */
-    void getGyroscopeData(SensorData& data);
-
-    /**
-     * @brief Returns the timestamp from the sensor.
-     */
-    uint32_t getSensorTimestamp();
+    bool init() override;
 
     /**
      * @brief Returns the timestamp resolution in milliseconds.
@@ -111,11 +98,12 @@ public:
      * @return Returns number of batch red from the FIFO and stored in the
      * buffer.
      */
-    int readFromFifo(FifoData buf[], int num)
+    int readFromFifo()
     {
         uint8_t value        = 0;
         int numUnreadSamples = 0;
         SPITransaction spi{m_spiSlave};
+        int num = lastFifo.max_size();
 
         // reads the number of unread samples in the fifo
         numUnreadSamples =
@@ -131,17 +119,16 @@ public:
 
         for (int i = 0; i < num; ++i)
         {
-            {
-                // SPITransaction spiTransaction{m_spiSlave};
-                buf[i].tag =
-                    spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
-            }
-            buf[i].x = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
-                                   LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H);
-            buf[i].y = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
-                                   LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H);
-            buf[i].z = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L,
-                                   LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H);
+            uint8_t tag = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
+
+            // differenziare in base al tag
+
+            // buf[i].x = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
+            //                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H);
+            // buf[i].y = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
+            //                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H);
+            // buf[i].z = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L,
+            //                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H);
         }
 
         return num;
@@ -166,7 +153,17 @@ public:
      * @brief Performs self test for the sensor.
      * @return Return true if the test was successful.
      */
-    bool selfTest();
+    bool selfTest() override;
+
+    /**
+     * @brief Returns data from the sensors.
+     */
+    LSM6DSRXData getSensorData();
+
+    /**
+     * @brief Gather data from FIFO/data registers and temperature sensor.
+     */
+    LSM6DSRXData sampleImpl() override;
 
 private:
     bool m_isInit = false;
@@ -251,6 +248,23 @@ private:
      * @return Return true if successful.
      */
     bool selfTestGyr();
+
+    /**
+     * @brief Retrieves data from the accelerometer.
+     * @param data The structure where data from the sensor is to be saved.
+     */
+    void getAccelerometerData(LSM6DSRXData& data);
+
+    /**
+     * @brief Retrieves data from the gyroscope.
+     * @param data The structure where data from the sensor is to be saved.
+     */
+    void getGyroscopeData(LSM6DSRXData& data);
+
+    /**
+     * @brief Returns the timestamp from the sensor.
+     */
+    uint32_t getSensorTimestamp();
 };
 
 }  // namespace Boardcore
