@@ -40,6 +40,14 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
     // check that the watermark value is suitable
     D(assert(m_config.fifoWatermark < 512 &&
              "fifoWatermark should be a 9bits number."));
+
+    // check that ACC_ODR is set to HZ_1_6 only if
+    // OPERATING_MODE is equal to NORMAL
+    D(assert(((m_config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6 &&
+               m_config.opModeAcc == LSM6DSRXConfig::OPERATING_MODE::NORMAL) ||
+              m_config.odrAcc != LSM6DSRXConfig::ACC_ODR::HZ_1_6) &&
+             "Accelerometer odr of 1.6Hz is available only with "
+             "OPERATING_MODE::NORMAL."));
 }
 
 bool LSM6DSRX::init()
