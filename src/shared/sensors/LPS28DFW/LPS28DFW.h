@@ -90,9 +90,8 @@ public:
      */
     enum Mode
     {
-        ONE_SHOT_MODE,    // BYPASS, ODR = ONE_SHOT
-        CONTINUOUS_MODE,  // BYPASS, ODR = odr
-        FIFO_MODE         // FIFO, ODR = odr
+        ONE_SHOT_MODE,   // BYPASS, ODR = ONE_SHOT
+        CONTINUOUS_MODE  // BYPASS, ODR = odr
     };
 
     typedef struct
@@ -102,7 +101,6 @@ public:
         Mode mode;           ///< Mode of operation
         ODR odr;             ///< Output data rate
         bool drdy;           ///< Enable Interrupt for Data Ready
-        size_t fifoSize;     ///< If fifo, length of fifo
     } SensorConfig;
 
     /**
@@ -118,7 +116,7 @@ public:
     LPS28DFW(I2C& i2c, bool sa0,
              SensorConfig sensorConfig = {FullScaleRange::FS_1260, AVG::AVG_32,
                                           Mode::CONTINUOUS_MODE, ODR::ODR_100,
-                                          false, 0});
+                                          false});
 
     /**
      * @brief Initializes the sensor with the current settings.

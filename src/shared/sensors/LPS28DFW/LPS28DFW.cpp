@@ -176,20 +176,20 @@ bool LPS28DFW::init()
     return true;
 }
 
-bool LPS28DFW::setConfig(const SensorConfig& sensorConfig)
+bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
 {
     {
         uint8_t fifo_ctrl{0};
-        switch (sensorConfig.mode)
+        switch (newSensorConfig.mode)
         {
             case Mode::ONE_SHOT_MODE:
-                fifo_ctrl |= ONE_SHOT;
+                sensorConfig = {newSensorConfig.fsr, newSensorConfig.avg,
+                                Mode::ONE_SHOT_MODE, ODR::ONE_SHOT, false};
+                fifo_ctrl |= FIFO_CTRL::BYPASS;
                 break;
             case Mode::CONTINUOUS_MODE:
+                sensorConfig = newSensorConfig;
                 fifo_ctrl |= CONTINUOUS;
-                break;
-            case Mode::FIFO_MODE:
-                fifo_ctrl |= FIFO;
                 break;
             default:
                 LOG_ERR(logger, "Mode not supported");
@@ -203,28 +203,18 @@ bool LPS28DFW::setConfig(const SensorConfig& sensorConfig)
         }
     }
 
-    if (!(setFullScaleRange(sensorConfig.fsr) &&
-          setOutputDataRate(sensorConfig.odr) && setAverage(sensorConfig.avg)))
+    if (!(setFullScaleRange(sensorConfig.fsr) && setAverage(sensorConfig.avg) &&
+          setOutputDataRate(sensorConfig.odr)))
     {
         LOG_ERR(logger, "Sensor not configured");
         return false;
     }
 
-    if (sensorConfig.drdy)
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr,
+                           (sensorConfig.drdy ? (INT_EN | DRDY) : 0)))
     {
-        if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr, INT_EN | DRDY))
-        {
-            lastError = BUS_FAULT;
-            return false;
-        }
-    }
-    else
-    {
-        if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr, 0))
-        {
-            lastError = BUS_FAULT;
-            return false;
-        }
+        lastError = BUS_FAULT;
+        return false;
     }
 
     return true;
@@ -337,9 +327,12 @@ LPS28DFWData LPS28DFW::sampleImpl()
             return lastSample;
         }
 
+        // sign extending the 27-bit value: shifting to the right a signed type
+        // extends its sign. So positioning the bytes shifted to the left of 8
+        // bits, casting the result in a signed int8_t and then shifting the
+        // result to the right of 8 bits will make the work.
         int32_t press_temp =
-            (((val[2] & (1 << 7)) ? 0xff : 0x00) |  // sign extension
-             (val[2] << 16) | (val[1] << 8) | (val[0] << 0));
+            ((int32_t)((val[2] << 24) | (val[1] << 16) | (val[0] << 8))) >> 8;
 
         data.pressure = ((float)press_temp / pressureSensitivity);
 
