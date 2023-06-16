@@ -32,11 +32,43 @@ class LSM6DSRX
 {
 public:
     /**
+     * @brief Struct used to store the accelerometer data.
+     */
+    struct AccData
+    {
+        float x;
+        float y;
+        float z;
+    };
+
+    /**
      * @brief Output data rate definitions for the accelerometer.
      */
     enum class ACC_ODR : uint8_t
     {
-        HZ_104 = 4,
+        POWER_DOWN = 0,
+        HZ_1_6     = 11,
+        HZ_12_5    = 1,
+        HZ_26      = 2,
+        HZ_52      = 3,
+        HZ_104     = 4,
+        HZ_208     = 5,
+        HZ_416     = 6,
+        HZ_833     = 7,
+        HZ_1660    = 8,
+        HZ_3330    = 9,
+        HZ_6660    = 10,
+    };
+
+    /**
+     * @brief .
+     */
+    enum class ACC_FULLSCALE : uint8_t
+    {
+        G2  = 0,
+        G4  = 1,
+        G8  = 2,
+        G16 = 3,
     };
 
     /**
@@ -67,10 +99,11 @@ public:
      * @param blockDataUpdate Data update mode for the sensor.
      * @param odrAccelerometer Odr value for the accelerometer.
      * @param opModeAccelerometer Operating mode for the accelerometer.
+     * @param fsAccelerator Fullscale selection for the accelerometer.
      */
     LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
              BDU blockDataUpdate, ACC_ODR odrAccelerometer,
-             OPERATING_MODE opModeAccelerometer);
+             OPERATING_MODE opModeAccelerometer, ACC_FULLSCALE fsAccelerator);
 
     /**
      * @brief Initialize the sensor.
@@ -78,31 +111,19 @@ public:
     bool init();
 
     /**
-     * @brief Simple function to read acc data from z axis
+     * @brief Retrieves data from the accelerometer.
      */
-    float getZAxisAccData()
-    {
-        int8_t low = 0, high = 0;
-        int16_t sample = 0;
-
-        SPITransaction transaction{spiSlave};
-
-        high = transaction.readRegister(REG_OUTZ_H_A);
-        low  = transaction.readRegister(REG_OUTZ_L_A);
-
-        sample = combineHighLowBits(low, high);
-
-        float ret =
-            static_cast<float>(sample) * 0.061;  // fs fixed at 2g for now
-        return ret;
-    }
+    void getAccelerometerData(AccData& data);
 
 private:
     bool isInit = false;
     SPISlave spiSlave;
     BDU bdu;
-    ACC_ODR odrAcc;            ///< Accelerometer odr
-    OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer
+
+    ACC_ODR odrAcc;            ///< Accelerometer odr.
+    OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer.
+    ACC_FULLSCALE fsAcc;       ///< Fullscale selection for the accelerometer.
+    float sensitivityAcc;      ///< Sensitivity value for the accelerator.
 
     const uint8_t WHO_AM_I_VALUE = 0x6B;
 
@@ -120,11 +141,18 @@ private:
 
         REG_FIFO_CTRL4 = 0x0A,  ///< fifo control register 4 (fifo mode)
 
-        REG_FIFO_DATA_OUT_Z_L = 0x7D,
-        REG_FIFO_DATA_OUT_Z_H = 0x7E,
-
-        REG_OUTZ_L_A = 0x2C,
-        REG_OUTZ_H_A = 0x2D,
+        REG_OUTX_L_A =
+            0x28,  ///< Low bits output register for the accelerometer (x axis)
+        REG_OUTX_H_A =
+            0x29,  ///< High bits output register for the accelerometer (x axis)
+        REG_OUTY_L_A =
+            0x2A,  ///< Low bits output register for the accelerometer (y axis)
+        REG_OUTY_H_A =
+            0x2B,  ///< High bits output register for the accelerometer (y axis)
+        REG_OUTZ_L_A =
+            0x2C,  ///< Low bits output register for the accelerometer (z axis)
+        REG_OUTZ_H_A =
+            0x2D,  ///< High bits output register for the accelerometer (z axis)
     };
 
     /**
@@ -140,6 +168,13 @@ private:
      * @param high High bits of the 16 bit number.
      */
     int16_t combineHighLowBits(uint8_t low, uint8_t high);
+
+    /**
+     * @brief Reads 16-bits float data from the specified registers.
+     * @param lowReg Register containing the low bits of the output
+     * @param highReg Register containing the high bits of the output
+     */
+    float getAxisData(Registers lowReg, Registers highReg);
 };
 
 }  // namespace Boardcore
