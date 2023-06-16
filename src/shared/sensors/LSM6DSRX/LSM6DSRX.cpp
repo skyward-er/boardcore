@@ -79,10 +79,16 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
             m_sensitivityGyr = 4.375;
             break;
     }
+
+    m_isInit = false;
 }
 
 bool LSM6DSRX::init()
 {
+#ifdef DEBUG
+    assert(!m_isInit && "init() should be called once");
+#endif
+
     if (checkWhoAmI() == false)
     {
         return false;
@@ -120,6 +126,7 @@ bool LSM6DSRX::init()
     }
 
 
+    m_isInit = true;
     return true;
 }
 
@@ -188,8 +195,6 @@ bool LSM6DSRX::initFifo()
 
 bool LSM6DSRX::selfTestAcc()
 {
-    m_isInit = false;
-
     bool returnValue        = false;
     uint8_t byteValue       = 0;  // used to read and write in registers
     uint8_t idx             = 0;
@@ -330,8 +335,6 @@ bool LSM6DSRX::selfTestAcc()
 
 bool LSM6DSRX::selfTestGyr()
 {
-    m_isInit = false;
-
     bool returnValue        = true;
     uint8_t byteValue       = 0;
     uint8_t idx             = 0;
@@ -490,9 +493,9 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
 
 void LSM6DSRX::getAccelerometerData(SensorData& data)
 {
-    // #ifdef DEBUG    // NOT WORKING
-    //     assert(isInit && "init() was not called");  // linter off
-    // #endif
+#ifdef DEBUG
+    assert(m_isInit && "init() was not called");
+#endif
 
     data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
                          m_sensitivityAcc);
@@ -504,9 +507,9 @@ void LSM6DSRX::getAccelerometerData(SensorData& data)
 
 void LSM6DSRX::getGyroscopeData(SensorData& data)
 {
-    // #ifdef DEBUG    // NOT WORKING
-    //     assert(isInit && "init() was not called");  // linter off
-    // #endif
+#ifdef DEBUG
+    assert(m_isInit && "init() was not called");
+#endif
 
     data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
                          m_sensitivityGyr);
@@ -518,9 +521,9 @@ void LSM6DSRX::getGyroscopeData(SensorData& data)
 
 bool LSM6DSRX::selfTest()
 {
-    // #ifdef DEBUG
-    //     assert(isInit && "init() was not called");  // linter off
-    // #endif
+#ifdef DEBUG
+    assert(m_isInit && "init() was not called");
+#endif
 
     m_isInit = false;
 

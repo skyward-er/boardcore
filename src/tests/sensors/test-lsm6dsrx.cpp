@@ -114,7 +114,6 @@ int main()
         // TRACE("z: %f\n\n\n", data.z);
 
         const int numBatchRed = sens.readFromFifo(buf, SIZE);
-
         TRACE("Number of batch in buf: %d\n", numBatchRed);
         float sensitivity = 0.0;
         for (int i = 0; i < numBatchRed; ++i)
@@ -144,6 +143,7 @@ int main()
             TRACE("y: %f\n", static_cast<float>(buf[i].y) * sensitivity);
             TRACE("z: %f\n\n\n", static_cast<float>(buf[i].z) * sensitivity);
         }
+
 
         Thread::sleep(2000);
     }
