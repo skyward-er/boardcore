@@ -24,6 +24,7 @@
 
 #include <assert.h>
 #include <utils/Debug.h>
+// #include <miosix.h>
 
 namespace Boardcore
 {
@@ -177,6 +178,38 @@ bool LSM6DSRX::initFifo()
     return true;
 }
 
+bool LSM6DSRX::selfTestAcc()
+{
+    // p. 114 ap
+    uint8_t byteValue = 0;
+    SPITransaction spi{m_spiSlave};
+
+    spi.writeRegister(REG_CTRL1_XL, 0x38);
+    spi.writeRegister(REG_CTRL2_G, 0x00);
+    spi.writeRegister(REG_CTRL3_C, 0x44);
+    spi.writeRegister(REG_CTRL4_C, 0x00);
+    spi.writeRegister(REG_CTRL5_C, 0x00);
+    spi.writeRegister(REG_CTRL6_C, 0x00);
+    spi.writeRegister(REG_CTRL7_G, 0x00);
+    spi.writeRegister(REG_CTRL8_XL, 0x00);
+    spi.writeRegister(REG_CTRL9_XL, 0x00);
+    spi.writeRegister(REG_CTRL10_C, 0x00);
+
+    miosix::Thread::sleep(100);
+
+    // wait for accelerometer data ready
+    byteValue = spi.readRegister(REG_STATUS);
+    byteValue = byteValue & 0x01;
+    while (byteValue != 1)
+    {
+        miosix::Thread::sleep(50);
+        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = byteValue & 0x01;
+    }
+
+    return true;  //
+}
+
 bool LSM6DSRX::checkWhoAmI()
 {
     uint8_t regValue = 0;
@@ -216,6 +249,22 @@ void LSM6DSRX::getGyroscopeData(SensorData& data)
     data.x = getAxisData(REG_OUTX_L_G, REG_OUTX_H_G, m_sensitivityGyr);
     data.y = getAxisData(REG_OUTY_L_G, REG_OUTY_H_G, m_sensitivityGyr);
     data.z = getAxisData(REG_OUTZ_L_G, REG_OUTZ_H_G, m_sensitivityGyr);
+}
+
+bool LSM6DSRX::selfTest()
+{
+    // #ifdef DEBUG
+    //     assert(isInit && "init() was not called");  // linter off
+    // #endif
+
+    m_isInit = false;
+
+    if (!selfTestAcc() || !selfTestGyr())
+    {
+        return false;
+    }
+
+    return init();
 }
 
 float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg,

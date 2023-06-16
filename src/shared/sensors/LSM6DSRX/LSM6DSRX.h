@@ -124,6 +124,12 @@ public:
         return num;
     }
 
+    /**
+     * @brief Performs self test for the sensor.
+     * @return Return true if the test was successful.
+     */
+    bool selfTest();
+
 private:
     bool m_isInit = false;
     SPISlave m_spiSlave;
@@ -161,6 +167,13 @@ private:
         REG_FIFO_STATUS2 = 0x3B,  ///< Gives number of unread sensor data and
                                   ///< the current status (watermark, overrun,
                                   ///< full, BDR counter) of the FIFO.
+
+        REG_STATUS   = 0x1E,  ///< data ready register.
+        REG_CTRL4_C  = 0x13,
+        REG_CTRL5_C  = 0x14,
+        REG_CTRL8_XL = 0x17,
+        REG_CTRL9_XL = 0x18,
+        REG_CTRL10_C = 0x19,
 
         REG_FIFO_DATA_OUT_TAG = 0x78,
         REG_FIFO_DATA_OUT_X_L = 0x79,
@@ -253,6 +266,18 @@ private:
      * @brief Initialize fifo.
      */
     bool initFifo();
+
+    /**
+     * @brief Performs self test for the accelerometer.
+     * @return Return true if successful.
+     */
+    bool selfTestAcc();
+
+    /**
+     * @brief Performs self test for the gyroscope.
+     * @return Return true if successful.
+     */
+    bool selfTestGyr();
 };
 
 }  // namespace Boardcore
