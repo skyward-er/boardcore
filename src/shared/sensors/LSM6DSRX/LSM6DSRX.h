@@ -37,27 +37,6 @@ class LSM6DSRX : public SensorFIFO<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>
 {
 public:
     /**
-     * @brief Struct used to store data from the accelerometer and gyroscope.
-     */
-    struct SensorData
-    {
-        float x;
-        float y;
-        float z;
-    };
-
-    /**
-     * @brief Struct used to store data from FIFO.
-     */
-    struct FifoData
-    {
-        uint16_t x;  ///< value red from REG_FIFO_DATA_OUT_X
-        uint16_t y;
-        uint16_t z;
-        uint8_t tag;  ///< value red from REG_FIFO_DATA_OUT_TAG
-    };
-
-    /**
      * @brief LSM6DSRX constructor.
      *
      * @param bus SPI bus.
