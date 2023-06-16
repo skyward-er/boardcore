@@ -39,8 +39,6 @@ using namespace Boardcore;
 typedef Gpio<GPIOB_BASE, 8> i1scl;
 typedef Gpio<GPIOB_BASE, 9> i1sda;
 
-I2C i2c(I2C1, i1scl::getPin(), i1sda::getPin());
-LPS28DFW lps28dfw(i2c, false);
 uint8_t nSamples = 10;
 /**
  * ONE_SHOT | AVG4   : 161.6 us/samp (W1+R1+W2+W1+R5)   @1Hz: 1.7  uA [FROM DS]
@@ -82,7 +80,7 @@ void sampleOneShotMode(LPS28DFW &lps28dfw)
         Thread::sleep(100);
     }
 
-    printf("End One-Shot\n\n");
+    printf("End One-Shot\n");
 }
 
 void sampleContinuousMode(LPS28DFW &lps28dfw)
@@ -109,7 +107,7 @@ void sampleContinuousMode(LPS28DFW &lps28dfw)
         Thread::sleep(100);
     }
 
-    printf("End Continuous\n\n");
+    printf("End Continuous\n");
 }
 
 void sampleInterruptMode(LPS28DFW &lps28dfw)
@@ -141,11 +139,14 @@ void sampleInterruptMode(LPS28DFW &lps28dfw)
         }
     }
 
-    printf("End Interrupt\n\n");
+    printf("End Interrupt\n");
 }
 
 int main()
 {
+    I2C i2c(I2C1, i1scl::getPin(), i1sda::getPin());
+    LPS28DFW lps28dfw(i2c, false);
+
     waiting = Thread::getCurrentThread();
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::RISING_EDGE);
 
@@ -154,6 +155,15 @@ int main()
         printf("Error initialization of sensor\n");
         return 0;
     }
+    printf("Initialization complete\n");
+
+    if (!lps28dfw.selfTest())
+    {
+        printf("SelfTest failed\n");
+        return 0;
+    }
+    printf("SelfTest succeeded\n");
+    Thread::sleep(1000);
 
     for (;;)
     {

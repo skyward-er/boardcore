@@ -126,7 +126,7 @@ LPS28DFW::LPS28DFW(I2C& i2c, bool sa0, SensorConfig sensorConfig)
                           I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST},
       sensorConfig(sensorConfig)
 {
-    pressureSensitivity = 4096;  // hPa
+    pressureSensitivity = 4096;  // [LSB/hPa]
 }
 
 bool LPS28DFW::init()
@@ -138,6 +138,70 @@ bool LPS28DFW::init()
         return false;
     }
 
+    // Checking the whoami value to assure communication
+    if (!selfTest())
+    {
+        LOG_ERR(logger, "Self-test failed");
+        lastError = SELF_TEST_FAIL;
+        return false;
+    }
+
+    // Setting the actual sensor configurations (Mode, ODR, AVG, FSR, DRDY)
+    if (!setConfig(sensorConfig))
+    {
+        LOG_ERR(logger, "Configuration not applied correctly");
+        lastError = SensorErrors::INIT_FAIL;
+        return false;
+    }
+
+    lastError     = SensorErrors::NO_ERRORS;
+    isInitialized = true;
+    return true;
+}
+
+bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
+{
+    {
+        // Setting the mode and checking for consistency in the settings. If
+        // ONE_SHOT mode, other settings adapted to match this.
+        uint8_t fifo_ctrl{0};
+        switch (newSensorConfig.mode)
+        {
+            case Mode::ONE_SHOT_MODE:
+                sensorConfig = {newSensorConfig.fsr, newSensorConfig.avg,
+                                Mode::ONE_SHOT_MODE, ODR::ONE_SHOT, false};
+                fifo_ctrl |= FIFO_CTRL::BYPASS;
+                break;
+            case Mode::CONTINUOUS_MODE:
+                sensorConfig = newSensorConfig;
+                fifo_ctrl |= FIFO_CTRL::CONTINUOUS;
+                break;
+            default:
+                LOG_ERR(logger, "Mode not supported");
+                break;
+        }
+
+        if (!i2c.writeRegister(i2cConfig, FIFO_CTRL_addr, fifo_ctrl))
+        {
+            lastError = BUS_FAULT;
+            return false;
+        }
+    }
+
+    if (!(setFullScaleRange(sensorConfig.fsr) && setAverage(sensorConfig.avg) &&
+          setOutputDataRate(sensorConfig.odr) &&
+          setDRDYInterrupt(sensorConfig.drdy)))
+    {
+        LOG_ERR(logger, "Sensor not configured");
+        return false;
+    }
+
+    return true;
+}
+
+bool LPS28DFW::selfTest()
+{
+    // Trying to probe the sensor to check if it is connected
     if (!i2c.probe(i2cConfig))
     {
         LOG_ERR(logger,
@@ -146,6 +210,7 @@ bool LPS28DFW::init()
         return false;
     }
 
+    // Checking the whoami value to assure communication
     uint8_t whoamiValue{0};
     if (!i2c.readRegister(i2cConfig, WHO_AM_I, whoamiValue))
     {
@@ -164,63 +229,8 @@ bool LPS28DFW::init()
         return false;
     }
 
-    if (!setConfig(sensorConfig))
-    {
-        LOG_ERR(logger, "Configuration not applied correctly");
-        lastError = SensorErrors::INIT_FAIL;
-        return false;
-    }
-
-    lastError     = SensorErrors::NO_ERRORS;
-    isInitialized = true;
     return true;
 }
-
-bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
-{
-    {
-        uint8_t fifo_ctrl{0};
-        switch (newSensorConfig.mode)
-        {
-            case Mode::ONE_SHOT_MODE:
-                sensorConfig = {newSensorConfig.fsr, newSensorConfig.avg,
-                                Mode::ONE_SHOT_MODE, ODR::ONE_SHOT, false};
-                fifo_ctrl |= FIFO_CTRL::BYPASS;
-                break;
-            case Mode::CONTINUOUS_MODE:
-                sensorConfig = newSensorConfig;
-                fifo_ctrl |= CONTINUOUS;
-                break;
-            default:
-                LOG_ERR(logger, "Mode not supported");
-                break;
-        }
-
-        if (!i2c.writeRegister(i2cConfig, FIFO_CTRL_addr, fifo_ctrl))
-        {
-            lastError = BUS_FAULT;
-            return false;
-        }
-    }
-
-    if (!(setFullScaleRange(sensorConfig.fsr) && setAverage(sensorConfig.avg) &&
-          setOutputDataRate(sensorConfig.odr)))
-    {
-        LOG_ERR(logger, "Sensor not configured");
-        return false;
-    }
-
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr,
-                           (sensorConfig.drdy ? (INT_EN | DRDY) : 0)))
-    {
-        lastError = BUS_FAULT;
-        return false;
-    }
-
-    return true;
-}
-
-bool LPS28DFW::selfTest() { return true; }
 
 bool LPS28DFW::setAverage(AVG avg)
 {
@@ -276,6 +286,37 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
     return true;
 }
 
+bool LPS28DFW::setDRDYInterrupt(bool drdy)
+{
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr,
+                           (drdy ? (INT_EN | DRDY) : 0)))
+    {
+        lastError = BUS_FAULT;
+        return false;
+    }
+    sensorConfig.drdy = drdy;
+    return true;
+}
+
+float LPS28DFW::convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH)
+{
+    // Pressure conversion
+    // sign extending the 27-bit value: shifting to the right a signed type
+    // extends its sign. So positioning the bytes shifted to the left of 8
+    // bits, casting the result in a signed int8_t and then shifting the
+    // result to the right of 8 bits will make the work.
+    int32_t press_temp =
+        ((int32_t)((pressH << 24) | (pressL << 16) | (pressXL << 8))) >> 8;
+    return ((float)press_temp / pressureSensitivity);
+}
+
+float LPS28DFW::convertTemperature(uint8_t tempL, uint8_t tempH)
+{
+    // Temperature conversion
+    int16_t temp_temp = (tempH << 8) | (tempL << 0);
+    return ((float)temp_temp) / temperatureSensitivity;
+}
+
 LPS28DFWData LPS28DFW::sampleImpl()
 {
     uint8_t status = 0;
@@ -299,13 +340,10 @@ LPS28DFWData LPS28DFW::sampleImpl()
             lastError = BUS_FAULT;
             return lastSample;
         }
-        int32_t press_temp =
-            (((val[2] & (1 << 7)) ? 0xff : 0x00) |  // sign extension
-             (val[2] << 16) | (val[1] << 8) | (val[0] << 0));
-        data.pressure = ((float)press_temp / pressureSensitivity);
 
-        int16_t temp_temp = (val[4] << 8) | (val[3] << 0);
-        data.temperature  = (float)(temp_temp) / temperatureSensitivity;
+        data.pressure    = convertPressure(val[0], val[1], val[2]);
+        data.temperature = convertTemperature(val[3], val[4]);
+
         return data;
     }
 
@@ -327,20 +365,12 @@ LPS28DFWData LPS28DFW::sampleImpl()
             return lastSample;
         }
 
-        // sign extending the 27-bit value: shifting to the right a signed type
-        // extends its sign. So positioning the bytes shifted to the left of 8
-        // bits, casting the result in a signed int8_t and then shifting the
-        // result to the right of 8 bits will make the work.
-        int32_t press_temp =
-            ((int32_t)((val[2] << 24) | (val[1] << 16) | (val[0] << 8))) >> 8;
-
-        data.pressure = ((float)press_temp / pressureSensitivity);
+        data.pressure = convertPressure(val[0], val[1], val[2]);
 
         // If temperature new data present
         if (status & STATUS::T_DA)
         {
-            int16_t temp_temp = (val[4] << 8) | (val[3] << 0);
-            data.temperature  = (float)(temp_temp) / temperatureSensitivity;
+            data.temperature = convertTemperature(val[3], val[4]);
         }
         else
         {

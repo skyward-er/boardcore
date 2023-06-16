@@ -83,10 +83,8 @@ public:
 
     /**
      * @brief Working mode of the sensor. Available ones are one shot mode
-     * (samples acquired by the sensors only upon an explicit request),
-     * continuous mode (samples calculated continuously) or fifo mode (the
-     * sensor keeps more samples and a read let you read them more than once in
-     * a single read burst).
+     * (samples acquired by the sensors only upon an explicit request) and
+     * continuous mode (samples calculated continuously).
      */
     enum Mode
     {
@@ -94,6 +92,9 @@ public:
         CONTINUOUS_MODE  // BYPASS, ODR = odr
     };
 
+    /**
+     * @brief Struct that sums up all the settings of the sensor.
+     */
     typedef struct
     {
         FullScaleRange fsr;  ///< Full scale range
@@ -128,33 +129,61 @@ public:
      */
     bool setConfig(const SensorConfig& config);
 
+    /**
+     * @brief The self test method returns true if we read the right whoami
+     * value. We can't make a better self test due to the fact that the sensor
+     * doesn't support this feature.
+     * @return true if the right whoami has been written.
+     */
     bool selfTest() override;
 
     /**
      * @brief Sets and saves the oversampling on the sensor.
+     * @return True if setting succeeded, false otherwise.
      */
     bool setAverage(AVG avg);
 
     /**
      * @brief Sets and saves the output data rate.
+     * @return True if setting succeeded, false otherwise.
      */
     bool setOutputDataRate(ODR odr);
 
     /**
      * @brief Sets and saves the full scale range.
+     * @return True if setting succeeded, false otherwise.
      */
     bool setFullScaleRange(FullScaleRange fs);
+
+    /**
+     * @brief Sets and saves the full scale range.
+     * @return True if setting succeeded, false otherwise.
+     */
+    bool setDRDYInterrupt(bool drdy);
 
 private:
     LPS28DFWData sampleImpl() override;
 
-    I2C& i2c;
-    I2CDriver::I2CSlaveConfig i2cConfig;
-    SensorConfig sensorConfig;
-    bool isInitialized              = false;
-    uint16_t pressureSensitivity    = 4096;  // [hPa]
-    uint16_t temperatureSensitivity = 100;   // [LSB/°C]
-    PrintLogger logger              = Logging::getLogger("lps28dfw");
+    /**
+     * @brief Converting the bytes read from the sensor to the pressure in hPa.
+     */
+    float convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH);
+
+    /**
+     * @brief Converting the bytes read from the sensor to the temperature in
+     * °C.
+     */
+    float convertTemperature(uint8_t tempL, uint8_t tempH);
+
+    I2C& i2c;                             ///< I2C bus on which the sensor lays
+    I2CDriver::I2CSlaveConfig i2cConfig;  ///< I2C address and speed mode
+    SensorConfig sensorConfig;            ///< Sensor settings
+    bool isInitialized =
+        false;  ///< Flag to tell if the sensor has been initialized
+    uint16_t pressureSensitivity = 4096;  ///< pressure sensitivity [LSB/hPa]
+    uint16_t temperatureSensitivity =
+        100;  ///< temperature sensitivity [LSB/°C]
+    PrintLogger logger = Logging::getLogger("lps28dfw");
 };
 
 }  // namespace Boardcore
