@@ -64,6 +64,16 @@ public:
      */
     void getAccelerometerData(AccData& data);
 
+    /**
+     * @brief Perform simple reading from the gyroscope z axis.
+    */
+    float getZAxisGyroscopeData()
+    {
+        SPITransaction spiTransaction{m_spiSlave};
+
+        return getAxisData(REG_OUTZ_L_G, REG_OUTZ_H_G, 8.75);// sensitivity for fullscale=250dps
+    }
+
 private:
     bool m_isInit = false;
     SPISlave m_spiSlave;
@@ -81,9 +91,12 @@ private:
         REG_WHO_AM_I = 0x0F,  ///< who_am_i register
 
         REG_CTRL1_XL = 0x10,  ///< accelerometer control register
+        REG_CTRL2_G = 0x11,   ///< gyroscope control register
         REG_CTRL3_C  = 0x12,  ///< set bdu
         REG_CTRL6_C  = 0x15,  ///< enable/disable high performance mode for the
                               ///< accelerometer
+        REG_CTRL7_G = 0x16,    ///< enable/disable high performance mode for the
+                              ///< gyroscope
 
         REG_FIFO_CTRL4 = 0x0A,  ///< fifo control register 4 (fifo mode)
 
@@ -99,6 +112,9 @@ private:
             0x2C,  ///< Low bits output register for the accelerometer (z axis)
         REG_OUTZ_H_A =
             0x2D,  ///< High bits output register for the accelerometer (z axis)
+        
+        REG_OUTZ_L_G = 0x26,    ///< Low bits output register for the gyroscope (z axis)
+        REG_OUTZ_H_G = 0x27,    ///< High bits output register for the gyroscope (z axis)
     };
 
     /**
@@ -117,10 +133,26 @@ private:
 
     /**
      * @brief Reads 16-bits float data from the specified registers.
-     * @param lowReg Register containing the low bits of the output
-     * @param highReg Register containing the high bits of the output
+     * @param lowReg Register containing the low bits of the output.
+     * @param highReg Register containing the high bits of the output.
+     * @param sensitivity Sensitivity value for the sample.
      */
-    float getAxisData(Registers lowReg, Registers highReg);
+    float getAxisData(Registers lowReg, Registers highReg, float sensitivity);
+
+    /**
+     * @brief Initialize the accelerometer.
+     */
+    bool initAccelerometer();
+
+    /**
+     * @brief Initialize the gyroscope.
+     */
+    bool initGyroscope();
+
+    /**
+     * @brief Initialize fifo.
+     */
+    bool initFifo();
 };
 
 }  // namespace Boardcore

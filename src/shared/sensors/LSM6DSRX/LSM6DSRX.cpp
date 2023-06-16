@@ -32,7 +32,7 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, LSM6DSRXConfig& configuration)
     : m_spiSlave(bus, csPin, busConfiguration), m_config(configuration)
 {
-    switch (m_config.fsAcc)
+    switch (m_config.fsAcc)// pag. 10
     {
         case LSM6DSRXConfig::ACC_FULLSCALE::G2:
             m_sensitivityAcc = 0.061;
@@ -60,11 +60,37 @@ bool LSM6DSRX::init()
         return false;
     }
 
-    SPITransaction spiTransaction{m_spiSlave};
-
     // set BDU pag. 54
-    spiTransaction.writeRegister(REG_CTRL3_C,
+    {
+        SPITransaction spiTransaction{m_spiSlave};
+        spiTransaction.writeRegister(REG_CTRL3_C,
                                  static_cast<uint8_t>(m_config.bdu));
+    }
+
+    // Setup accelerometer (pag. 28)
+    if(!initAccelerometer())
+    {
+        return false;
+    }
+
+    // Setup gyroscope (pag. 28)
+    if(!initGyroscope())
+    {
+        return false;
+    }
+
+    // setup Fifo (pag. 33)
+    if(!initFifo())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool LSM6DSRX::initAccelerometer()
+{
+    SPITransaction spiTransaction{m_spiSlave};
 
     // Setup accelerometer (pag. 28)
 
@@ -75,11 +101,36 @@ bool LSM6DSRX::init()
     spiTransaction.writeRegister(REG_CTRL1_XL, accSetup);
 
     // set accelerometer performance mode (pag. 57)
-    // high performance disabled
     uint8_t accPerformanceMode = static_cast<uint8_t>(m_config.opModeAcc) << 4;
     spiTransaction.writeRegister(REG_CTRL6_C, accPerformanceMode);
 
+    return true;
+}
+
+bool LSM6DSRX::initGyroscope()
+{
+    SPITransaction spiTransaction{m_spiSlave};
+
+    // setup pag. 28
+
+    // set odr, fullscale pag. 53
+    uint8_t gyrSetup = 1 << 6 | 0 << 2; // odr: 104 Hz | fullscale: +250dps
+    spiTransaction.writeRegister(REG_CTRL2_G, gyrSetup);
+    // warning: lowest and highest fullscale (125 & 4000 dps) are selectable from a different bit
+
+    // set performance mode pag. 58
+    // for now: normal mode
+    uint8_t gyrPerformanceMode = 1 << 7;
+    spiTransaction.writeRegister(REG_CTRL7_G, gyrPerformanceMode);
+
+    return true;
+}
+
+bool LSM6DSRX::initFifo()
+{
     // setup Fifo (pag. 33)
+    SPITransaction spiTransaction{m_spiSlave};
+
     // set fifo mode: bypass_mode = 0 (pag. 48)
     uint8_t fifoMode = 0;
     spiTransaction.writeRegister(REG_FIFO_CTRL4, fifoMode);
@@ -112,12 +163,12 @@ void LSM6DSRX::getAccelerometerData(AccData& data)
     //     assert(isInit && "init() was not called");  // linter off
     // #endif
 
-    data.x = getAxisData(REG_OUTX_L_A, REG_OUTX_H_A);
-    data.y = getAxisData(REG_OUTY_L_A, REG_OUTY_H_A);
-    data.z = getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A);
+    data.x = getAxisData(REG_OUTX_L_A, REG_OUTX_H_A, m_sensitivityAcc);
+    data.y = getAxisData(REG_OUTY_L_A, REG_OUTY_H_A, m_sensitivityAcc);
+    data.z = getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A, m_sensitivityAcc);
 }
 
-float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg)
+float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg, float sensitivity)
 {
     int8_t low = 0, high = 0;
     int16_t sample = 0;
@@ -129,7 +180,7 @@ float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg)
 
     sample = combineHighLowBits(low, high);
 
-    float ret = static_cast<float>(sample) * m_sensitivityAcc;
+    float ret = static_cast<float>(sample) * sensitivity;
     return ret;
 }
 
