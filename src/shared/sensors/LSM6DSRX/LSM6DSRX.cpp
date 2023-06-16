@@ -85,9 +85,7 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
 
 bool LSM6DSRX::init()
 {
-#ifdef DEBUG
-    assert(!m_isInit && "init() should be called once");
-#endif
+    D(assert(!m_isInit && "init() should be called once"));
 
     if (checkWhoAmI() == false)
     {
@@ -514,9 +512,7 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
 
 void LSM6DSRX::getAccelerometerData(SensorData& data)
 {
-#ifdef DEBUG
-    assert(m_isInit && "init() was not called");
-#endif
+    D(assert(m_isInit && "init() was not called"));
 
     data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
                          m_sensitivityAcc);
@@ -528,9 +524,7 @@ void LSM6DSRX::getAccelerometerData(SensorData& data)
 
 void LSM6DSRX::getGyroscopeData(SensorData& data)
 {
-#ifdef DEBUG
-    assert(m_isInit && "init() was not called");
-#endif
+    D(assert(m_isInit && "init() was not called"));
 
     data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
                          m_sensitivityGyr);
@@ -542,9 +536,7 @@ void LSM6DSRX::getGyroscopeData(SensorData& data)
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-#ifdef DEBUG
-    assert(m_isInit && "init() was not called");
-#endif
+    D(assert(m_isInit && "init() was not called"));
 
     SPITransaction spi{m_spiSlave};
 
@@ -558,9 +550,7 @@ uint32_t LSM6DSRX::getSensorTimestamp()
 
 bool LSM6DSRX::selfTest()
 {
-#ifdef DEBUG
-    assert(m_isInit && "init() was not called");
-#endif
+    D(assert(m_isInit && "init() was not called"));
 
     m_isInit = false;
 
