@@ -181,10 +181,12 @@ bool LSM6DSRX::initFifo()
 
 bool LSM6DSRX::selfTestAcc()
 {
+    m_isInit = false;
+
     bool returnValue        = false;
-    uint8_t byteValue       = 0;
+    uint8_t byteValue       = 0;  // used to read and write in registers
     uint8_t idx             = 0;
-    const uint8_t SIZE_DATA = 5;
+    const uint8_t SIZE_DATA = 5;  // s
     SPITransaction spi{m_spiSlave};
 
     SensorData averageSF{0.0, 0.0, 0.0};      // average data during self test
@@ -291,12 +293,18 @@ bool LSM6DSRX::selfTestAcc()
     averageSF.y /= SIZE_DATA;
     averageSF.z /= SIZE_DATA;
 
-    if (40.0 <= std::abs(averageSF.x - averageNormal.x) &&
-        std::abs(averageSF.x - averageNormal.x) <= 1700.0 &&
-        40.0 <= std::abs(averageSF.y - averageNormal.y) &&
-        std::abs(averageSF.y - averageNormal.y) <= 1700.0 &&
-        40.0 <= std::abs(averageSF.z - averageNormal.z) &&
-        std::abs(averageSF.z - averageNormal.z) <= 1700.0)
+    if (LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
+            std::abs(averageSF.x - averageNormal.x) &&
+        std::abs(averageSF.x - averageNormal.x) <=
+            LSM6DSRXDefs::ACC_SELF_TEST_MAX &&
+        LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
+            std::abs(averageSF.y - averageNormal.y) &&
+        std::abs(averageSF.y - averageNormal.y) <=
+            LSM6DSRXDefs::ACC_SELF_TEST_MAX &&
+        LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
+            std::abs(averageSF.z - averageNormal.z) &&
+        std::abs(averageSF.z - averageNormal.z) <=
+            LSM6DSRXDefs::ACC_SELF_TEST_MAX)
     {
         returnValue = true;
     }
@@ -309,6 +317,147 @@ bool LSM6DSRX::selfTestAcc()
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
     // Disable sensor
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x00);
+
+    return returnValue;
+}
+
+bool LSM6DSRX::selfTestGyr()
+{
+    m_isInit = false;
+
+    bool returnValue        = true;
+    uint8_t byteValue       = 0;
+    uint8_t idx             = 0;
+    const uint8_t SIZE_DATA = 5;
+    SPITransaction spi{m_spiSlave};
+
+    SensorData averageSF{0.0, 0.0, 0.0};      // average data during self test
+    SensorData averageNormal{0.0, 0.0, 0.0};  // average normal data
+
+    // Initialize and turn on sensor
+    // Set BDU = 1, ODR = 208 Hz, FS = +-2000 dps
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x5C);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, 0x44);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 0x00);
+
+    // sleep for stable output
+    miosix::Thread::sleep(100);
+
+    // wait for gyroscope data ready
+    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+    byteValue = (byteValue & 0x02) >> 1;
+    while (byteValue != 1)
+    {
+        miosix::Thread::sleep(50);
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = (byteValue & 0x02) >> 1;
+    }
+    // read and discard data
+    getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G);
+    getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G);
+    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G);
+
+    // read normal data (self test disabled)
+    for (idx = 0; idx < SIZE_DATA; ++idx)
+    {
+        // wait for gyroscope data ready
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = (byteValue & 0x02) >> 1;
+        while (byteValue != 1)
+        {
+            miosix::Thread::sleep(50);
+            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+            byteValue = (byteValue & 0x02) >> 1;
+        }
+
+        // read data
+        averageNormal.x += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G));
+        averageNormal.y += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G));
+        averageNormal.z += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G));
+    }
+    averageNormal.x /= SIZE_DATA;
+    averageNormal.y /= SIZE_DATA;
+    averageNormal.z /= SIZE_DATA;
+
+    // enable gyroscope self test
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x04);
+
+    // wait for stable output
+    miosix::Thread::sleep(100);
+
+    // wait for gyroscope data ready
+    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+    byteValue = (byteValue & 0x02) >> 1;
+    while (byteValue != 1)
+    {
+        miosix::Thread::sleep(50);
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = (byteValue & 0x02) >> 1;
+    }
+    // read and discard data
+    getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G);
+    getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G);
+    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G);
+
+    // read self test data
+    for (idx = 0; idx < SIZE_DATA; ++idx)
+    {
+        // wait for gyroscope data ready
+        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = (byteValue & 0x02) >> 1;
+        while (byteValue != 1)
+        {
+            miosix::Thread::sleep(50);
+            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+            byteValue = (byteValue & 0x02) >> 1;
+        }
+
+        // read data
+        averageSF.x += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G));
+        averageSF.y += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G));
+        averageSF.z += static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G));
+    }
+    averageSF.x /= SIZE_DATA;
+    averageSF.y /= SIZE_DATA;
+    averageSF.z /= SIZE_DATA;
+
+    if (LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
+            std::abs(averageSF.x - averageNormal.x) &&
+        std::abs(averageSF.x - averageNormal.x) <=
+            LSM6DSRXDefs::GYR_SELF_TEST_MAX &&
+        LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
+            std::abs(averageSF.y - averageNormal.y) &&
+        std::abs(averageSF.y - averageNormal.y) <=
+            LSM6DSRXDefs::GYR_SELF_TEST_MAX &&
+        LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
+            std::abs(averageSF.z - averageNormal.z) &&
+        std::abs(averageSF.z - averageNormal.z) <=
+            LSM6DSRXDefs::GYR_SELF_TEST_MAX)
+    {
+        returnValue = true;
+    }
+    else
+    {
+        returnValue = false;
+    }
+
+    // Disable self test
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    // Disable sensor
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x00);
 
     return returnValue;
 }
@@ -368,7 +517,7 @@ bool LSM6DSRX::selfTest()
 
     m_isInit = false;
 
-    if (!selfTestAcc() /*|| !selfTestGyr()*/)
+    if (!selfTestAcc() || !selfTestGyr())
     {
         return false;
     }
