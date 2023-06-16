@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <memory>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -85,51 +86,108 @@ int main()
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
-    sensConfig.fifoWatermark = 400;
+    sensConfig.fifoWatermark = 511;
 
-    LSM6DSRX* sens = new LSM6DSRX(bus, csPin, busConfiguration, sensConfig);
+    // LSM6DSRX* sens = new LSM6DSRX(bus, csPin, busConfiguration, sensConfig);
 
-    if (sens->init() == false)
+    // if (sens->init() == false)
+    // {
+    //     while (true)
+    //     {
+    //         TRACE("Error, sensor not initialized\n\n");
+    //         Thread::sleep(2000);
+    //     }
+    // }
+
+    // if (sens->selfTest())
+    // {
+    //     TRACE("Self test successful\n\n");
+    //     Thread::sleep(2000);
+    // }
+    // else
+    // {
+    //     TRACE("Self test failed\n\n");
+    //     while (true)
+    //     {
+    //         Thread::sleep(2000);
+    //     }
+    // }
+
+    struct odrs
     {
-        while (true)
+        LSM6DSRXConfig::ACC_ODR acc;
+        LSM6DSRXConfig::GYR_ODR gyr;
+    };
+
+    odrs arr[] = {
+        {LSM6DSRXConfig::ACC_ODR::HZ_12_5, LSM6DSRXConfig::GYR_ODR::HZ_12_5},
+        {LSM6DSRXConfig::ACC_ODR::HZ_26, LSM6DSRXConfig::GYR_ODR::HZ_26},
+        {LSM6DSRXConfig::ACC_ODR::HZ_52, LSM6DSRXConfig::GYR_ODR::HZ_52},
+        {LSM6DSRXConfig::ACC_ODR::HZ_104, LSM6DSRXConfig::GYR_ODR::HZ_104},
+        {LSM6DSRXConfig::ACC_ODR::HZ_208, LSM6DSRXConfig::GYR_ODR::HZ_208},
+        {LSM6DSRXConfig::ACC_ODR::HZ_416, LSM6DSRXConfig::GYR_ODR::HZ_416},
+        {LSM6DSRXConfig::ACC_ODR::HZ_833, LSM6DSRXConfig::GYR_ODR::HZ_833},
+        {LSM6DSRXConfig::ACC_ODR::HZ_1660, LSM6DSRXConfig::GYR_ODR::HZ_1660},
+        {LSM6DSRXConfig::ACC_ODR::HZ_3330, LSM6DSRXConfig::GYR_ODR::HZ_3330},
+        {LSM6DSRXConfig::ACC_ODR::HZ_6660, LSM6DSRXConfig::GYR_ODR::HZ_6660},
+    };
+
+    for(unsigned int odrIdx = 0; odrIdx < sizeof(arr) / sizeof(odrs); ++odrIdx)
+    {
+        sensConfig.odrAcc = arr[odrIdx].acc;
+        sensConfig.odrGyr = arr[odrIdx].gyr;
+
+        std::unique_ptr<LSM6DSRX> sens = std::make_unique<LSM6DSRX>(bus, csPin, busConfiguration, sensConfig);
+        if (sens->init() == false)
         {
-            TRACE("Error, sensor not initialized\n\n");
-            Thread::sleep(2000);
+            while (true)
+            {
+                TRACE("Error, sensor not initialized at index %d\n\n", odrIdx);
+                Thread::sleep(2000);
+            }
         }
-    }
 
-    if (sens->selfTest())
-    {
-        TRACE("Self test successful\n\n");
-        Thread::sleep(2000);
-    }
-    else
-    {
-        TRACE("Self test failed\n\n");
-        while (true)
-        {
-            Thread::sleep(2000);
-        }
-    }
+        // empty the fifo
+        sens->sampleImpl();
 
-    std::cout << "sensor initialized\n";
-    while (true)
-    {
+        // test time needed to fill the fifo
         uint64_t t0 = TimestampTimer::getTimestamp();
-
-        auto d = sens->sampleImpl();
-
+        int dataReady = int2Pin.value();
+        while (dataReady != 1)
+        {
+            Thread::sleep(1);
+            dataReady = int2Pin.value();
+        }
         uint64_t t1 = TimestampTimer::getTimestamp();
 
         uint64_t diff = t1 - t0;
 
-        std::cout << "sampleImpl() execution time(us): " << diff << "\n";
-        std::cout << "last fifo sample:\n";
-        d.print(std::cout);
-        std::cout << "\n\n\n";
-
-        miosix::Thread::sleep(1000);
+        std::cout << odrIdx << ") Filling time(us): " << diff << "\n\n";
     }
+
+    while(true)
+    {
+        Thread::sleep(5000);
+    }
+
+    // std::cout << "sensor initialized\n";
+    // while (true)
+    // {
+    //     uint64_t t0 = TimestampTimer::getTimestamp();
+
+    //     auto d = sens->sampleImpl();
+
+    //     uint64_t t1 = TimestampTimer::getTimestamp();
+
+    //     uint64_t diff = t1 - t0;
+
+    //     std::cout << "sampleImpl() execution time(us): " << diff << "\n";
+    //     std::cout << "last fifo sample:\n";
+    //     d.print(std::cout);
+    //     std::cout << "\n\n\n";
+
+    //     miosix::Thread::sleep(1000);
+    // }
 
     // while (true)
     // {
@@ -157,6 +215,6 @@ int main()
     //     std::cout << "\n\n\n";
     // }
 
-    delete sens;
+    // delete sens;
     return 0;
 }
