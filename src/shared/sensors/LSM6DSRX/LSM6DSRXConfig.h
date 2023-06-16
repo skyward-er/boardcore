@@ -154,9 +154,11 @@ struct LSM6DSRXConfig
     enum class FIFO_TEMPERATURE_BDR : uint8_t
     {
         DISABLED = 0,  ///< Temperature not batched in FIFO.
-        HZ_1_6   = 1,  ///< 1.6 Hz
-        HZ_12_5  = 2,  ///< 12.5 Hz
-        HZ_52    = 3,  ///< 52 Hz
+
+        // commented so that temperature doesn't get sampled in fifo.
+        // HZ_1_6   = 1,  ///< 1.6 Hz
+        // HZ_12_5  = 2,  ///< 12.5 Hz
+        // HZ_52    = 3,  ///< 52 Hz
     };
 
     /**

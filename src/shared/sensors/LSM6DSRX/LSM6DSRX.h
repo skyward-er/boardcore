@@ -54,18 +54,8 @@ public:
 
     /**
      * @brief Returns the timestamp resolution in milliseconds.
-     * USED ONLY FOR TESTING, TO BE REMOVED
      */
-    float getSensorTimestampResolution()
-    {
-        SPITransaction spi{m_spiSlave};
-
-        uint8_t value = spi.readRegister(LSM6DSRXDefs::REG_INTERNAL_FREQ_FINE);
-
-        // TS_Res = 1 / (40000 + (0.0015 * INTERNAL_FREQ_FINE * 40000))
-        float TS_Res = 1 / (40000 + (0.0015 * value * 40000));
-        return TS_Res * 1000;
-    }
+    float getSensorTimestampResolution();
 
     /**
      * @brief Performs a really simple reading from the FIFO buffer.
@@ -99,6 +89,11 @@ public:
     LSM6DSRXData getSensorData();
 
     /**
+     * @brief Returns the timestamp from the sensor.
+     */
+    uint32_t getSensorTimestamp();
+
+    /**
      * @brief Gather data from FIFO/data registers and temperature sensor.
      */
     LSM6DSRXData sampleImpl() override;
@@ -112,7 +107,23 @@ private:
     float m_sensitivityGyr = 0.0;  ///< Sensitivity value for the gyroscope.
 
     /**
-     * @brief when extracting data from fifo i get data only from one sensor,
+     * @brief These two values represent the same instant from the two different
+     * clocks: the one on the sensor and the one from TimestampTimer. They are
+     * used to convert a sensor timestamp to a TimestampTimer one.
+     */
+    uint64_t m_timestamp0 = 0;  ///< Timestamp given by TimestampTimer class.
+    uint32_t m_sensorTimestamp0 = 0;  ///< Timestamp given by the sensor.
+
+    float m_sensorTimestampResolution =
+        0.0;  ///< Resolution of the sensor's timestamps in microseconds.
+
+    /**
+     * @brief Updated every time the fifo is sampled, so that after
+     */
+    uint8_t m_sampleCounter = 0;
+
+    /**
+     * @brief When extracting data from fifo i get data only from one sensor,
     but the struct LSM6DSRXData is made to have data from both sensors. The idea
     is to copy the value from the last valid sample for the sensor that hasn't
     received data.
@@ -208,16 +219,17 @@ private:
     void getGyroscopeData(LSM6DSRXData& data);
 
     /**
-     * @brief Returns the timestamp from the sensor.
-     */
-    uint32_t getSensorTimestamp();
-
-    /**
      * @brief Converts timestamp from the value given by the sensor to the one
      * given by TimestampTimer class.
-     * @param t The timestamp to be converted.
+     * @param sensorTimestamp The timestamp from the sensor to be converted into
+     * a TimestampTimer one.
      */
-    uint64_t convertTimestamp(uint64_t t);
+    uint64_t convertTimestamp(const uint32_t sensorTimestamp);
+
+    /**
+     * @brief Utility to set timestamp values for conversion.
+     */
+    void correlateTimestamps();
 };
 
 }  // namespace Boardcore

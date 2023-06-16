@@ -58,16 +58,16 @@ bool LSM6DSRX::init()
                                      static_cast<uint8_t>(m_config.bdu));
     }
 
-    // Setup accelerometer (pag. 28)
+    // Setup accelerometer
     initAccelerometer();
 
-    // Setup gyroscope (pag. 28)
+    // Setup gyroscope
     initGyroscope();
 
-    // setup Fifo (pag. 33)
+    // setup Fifo
     initFifo();
 
-    // enable timestamp (pag. 61 datasheet)
+    // enable timestamp
     {
         SPITransaction spiTransaction{m_spiSlave};
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 1 << 5);
@@ -75,6 +75,13 @@ bool LSM6DSRX::init()
 
     // set interrupt
     initInterrupts();
+
+    // set timestamps
+    correlateTimestamps();
+    m_sensorTimestampResolution =
+        getSensorTimestampResolution() *
+        1000;  // return value is in milliseconds, need microseconds.
+    m_sampleCounter = 0;
 
     m_isInit = true;
     return true;
@@ -540,7 +547,7 @@ void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-    // D(assert(m_isInit && "init() was not called"));
+    D(assert(m_isInit && "init() was not called"));
 
     SPITransaction spi{m_spiSlave};
 
@@ -615,7 +622,43 @@ float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
     return ret;
 }
 
-uint64_t LSM6DSRX::convertTimestamp(uint64_t t) { return t; }
+uint64_t LSM6DSRX::convertTimestamp(const uint32_t sensorTimestamp)
+{
+    uint32_t deltaSensor = 0;  // difference between 2 sensor timestamps.
+    if (sensorTimestamp > m_sensorTimestamp0)
+    {
+        deltaSensor = sensorTimestamp - m_sensorTimestamp0;
+    }
+    else
+    {
+        // CHECK
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        deltaSensor = static_cast<uint32_t>(-1) - m_sensorTimestamp0 +
+                      sensorTimestamp + 1;
+    }
+
+    // delta evaluated from TimestampTimer point of view.
+    uint64_t delta = deltaSensor * m_sensorTimestampResolution;
+
+    return m_timestamp0 + delta;
+}
+
+void LSM6DSRX::correlateTimestamps()
+{
+    m_timestamp0       = TimestampTimer::getTimestamp();
+    m_sensorTimestamp0 = getSensorTimestamp();
+}
+
+float LSM6DSRX::getSensorTimestampResolution()
+{
+    SPITransaction spi{m_spiSlave};
+
+    uint8_t value = spi.readRegister(LSM6DSRXDefs::REG_INTERNAL_FREQ_FINE);
+
+    // TS_Res = 1 / (40000 + (0.0015 * INTERNAL_FREQ_FINE * 40000))
+    float TS_Res = 1 / (40000 + (0.0015 * value * 40000));
+    return TS_Res * 1000;
+}
 
 void LSM6DSRX::readFromFifo()
 {
@@ -748,6 +791,14 @@ void LSM6DSRX::readFromFifo()
                 //     // last_error_bad_data;
                 //     break;
         }
+    }
+
+    // check if timestamp base values need to be updated
+    ++m_sampleCounter;
+    if (m_sampleCounter >= LSM6DSRXDefs::TIMESTAMP_UPDATE_VALUE)
+    {
+        m_sampleCounter = 0;
+        correlateTimestamps();
     }
 
     // problema: vuole uint8_t, ma potrei avere molto piu' ... questo sensore

@@ -245,7 +245,7 @@ int main()
 
 //     uint64_t legacy0 = 0, legacy1 = 0;// misurazioni a t0 e t1
 //     uint64_t legacy1calcolato = 0;// valore legacy a t1 calcolato partendo
-//     dai dati del sensore uint64_t sens0 = 0, sens1 = 0;// misurazioni a t0 e
+//     dai dati del sensore uint32_t sens0 = 0, sens1 = 0;// misurazioni a t0 e
 //     t1 uint64_t deltaSens = 0, deltaLegacy = 0;// variazione tra la misura a
 //     t0 e quella a t1 uint64_t diff = 0;// differenza tra legacy1 e
 //     legacy1calcolato
@@ -254,30 +254,66 @@ int main()
 //     sens0 = sens.getSensorTimestamp();
 
 //     const float sensResolution = sens.getSensorTimestampResolution() *
-//     1000;// la funzione restituisce in ms TRACE("Resolution: %f\n",
-//     sensResolution); for(i = 0; i < NUM_TEST; ++i)
+//     1000;// la funzione restituisce in ms
+//     // TRACE("Resolution: %f\n", sensResolution);
+//     // for(i = 0; i < NUM_TEST; ++i)
+//     // {
+//     //     Thread::sleep((rand() % 2000) + 1000);
+
+//     //     legacy1 = TimestampTimer::getTimestamp();
+//     //     sens1 = sens.getSensorTimestamp();
+
+//     //     deltaSens = sens1 - sens0;
+//     //     deltaLegacy = deltaSens * sensResolution;
+
+//     //     legacy1calcolato = legacy0 + deltaLegacy;
+
+//     //     diff = differenza(legacy1, legacy1calcolato);
+
+//     //     TRACE("Campione %d:\n"
+//     //             "legacy1:\t\t%llu\n"
+//     //             "legacy1calcolato:\t%llu\n"
+//     //             "differenza:\t\t%llu\n\n", i, legacy1, legacy1calcolato,
+//     //             diff);
+
+//     //     // prepara per i cicli successivi
+//     //     legacy0 = legacy1;
+//     //     sens0 = sens1;
+//     // }
+
+//     // new test
+//     for(i = 0; i < NUM_TEST; ++i)
 //     {
-//         Thread::sleep((rand() % 2000) + 1000);
+//         legacy0 = TimestampTimer::getTimestamp();
+//         sens0 = sens.getSensorTimestamp();
+
+//         // for(int k = 0; k < 3; ++k)
+//         // {
+//         //     Thread::sleep((rand() % 1000) + 1000);
+//         //     sens1 = sens.getSensorTimestamp();
+//         // }
+//         Thread::sleep(1000);
 
 //         legacy1 = TimestampTimer::getTimestamp();
 //         sens1 = sens.getSensorTimestamp();
 
-//         deltaSens = sens1 - sens0;
+//         // deltaSens = sens1 - sens0;
+//         if(sens1 > sens0)
+//         {
+//             deltaSens = sens1 - sens0;
+//         }
+//         else
+//         {
+//             deltaSens = static_cast<uint64_t>(-1) - sens0 + sens1 + 1;
+//         }
+
 //         deltaLegacy = deltaSens * sensResolution;
 
 //         legacy1calcolato = legacy0 + deltaLegacy;
 
-//         diff = differenza(legacy1, legacy1calcolato);
+//         diff = differenza(legacy1calcolato, legacy1);
+//         TRACE("Test %d\nDifferenza: %llu\n\n", i, diff);
 
-//         TRACE("Campione %d:\n"
-//                 "legacy1:\t\t%llu\n"
-//                 "legacy1calcolato:\t%llu\n"
-//                 "differenza:\t\t%llu\n\n", i, legacy1, legacy1calcolato,
-//                 diff);
-
-//         // prepara per i cicli successivi
-//         legacy0 = legacy1;
-//         sens0 = sens1;
 //     }
 
 //     while(true)
