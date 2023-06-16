@@ -57,13 +57,23 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
     }
 }
 
-void sampleOneShotMode(LPS28DFW &lps28dfw)
+void sampleOneShotMode(I2C &i2c)
 {
     printf("Start One-Shot\n");
-    LPS28DFW::SensorConfig lps28dfwConfig{
-        LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
-        LPS28DFW::Mode::ONE_SHOT_MODE, LPS28DFW::ODR::ONE_SHOT, false};
-    lps28dfw.setConfig(lps28dfwConfig);
+
+    // Setting up the Sensor
+    LPS28DFW::SensorConfig lps28dfwConfig{false,
+                                          LPS28DFW::FullScaleRange::FS_1260,
+                                          LPS28DFW::AVG::AVG_64,
+                                          LPS28DFW::Mode::ONE_SHOT_MODE,
+                                          LPS28DFW::ODR::ONE_SHOT,
+                                          false};
+    LPS28DFW lps28dfw(i2c, lps28dfwConfig);
+    if (!lps28dfw.init())
+    {
+        printf("Error initialization of sensor\n");
+        return;
+    }
 
     for (uint8_t i = 0; i < nSamples; i++)
     {
@@ -83,13 +93,23 @@ void sampleOneShotMode(LPS28DFW &lps28dfw)
     printf("End One-Shot\n");
 }
 
-void sampleContinuousMode(LPS28DFW &lps28dfw)
+void sampleContinuousMode(I2C &i2c)
 {
     printf("Start Continuous\n");
-    LPS28DFW::SensorConfig lps28dfwConfig{
-        LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
-        LPS28DFW::Mode::CONTINUOUS_MODE, LPS28DFW::ODR::ODR_10, false};
-    lps28dfw.setConfig(lps28dfwConfig);
+
+    // Setting up the Sensor
+    LPS28DFW::SensorConfig lps28dfwConfig{false,
+                                          LPS28DFW::FullScaleRange::FS_1260,
+                                          LPS28DFW::AVG::AVG_64,
+                                          LPS28DFW::Mode::CONTINUOUS_MODE,
+                                          LPS28DFW::ODR::ODR_10,
+                                          false};
+    LPS28DFW lps28dfw(i2c, lps28dfwConfig);
+    if (!lps28dfw.init())
+    {
+        printf("Error initialization of sensor\n");
+        return;
+    }
 
     for (uint8_t i = 0; i < nSamples; i++)
     {
@@ -110,13 +130,22 @@ void sampleContinuousMode(LPS28DFW &lps28dfw)
     printf("End Continuous\n");
 }
 
-void sampleInterruptMode(LPS28DFW &lps28dfw)
+void sampleInterruptMode(I2C &i2c)
 {
     printf("Start Interrupt\n");
-    LPS28DFW::SensorConfig lps28dfwConfig{
-        LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
-        LPS28DFW::Mode::CONTINUOUS_MODE, LPS28DFW::ODR::ODR_10, true};
-    lps28dfw.setConfig(lps28dfwConfig);
+    // Setting up the Sensor
+    LPS28DFW::SensorConfig lps28dfwConfig{false,
+                                          LPS28DFW::FullScaleRange::FS_1260,
+                                          LPS28DFW::AVG::AVG_64,
+                                          LPS28DFW::Mode::CONTINUOUS_MODE,
+                                          LPS28DFW::ODR::ODR_10,
+                                          true};
+    LPS28DFW lps28dfw(i2c, lps28dfwConfig);
+    if (!lps28dfw.init())
+    {
+        printf("Error initialization of sensor\n");
+        return;
+    }
 
     for (uint8_t i = 0; i < nSamples; i++)
     {
@@ -145,32 +174,16 @@ void sampleInterruptMode(LPS28DFW &lps28dfw)
 int main()
 {
     I2C i2c(I2C1, i1scl::getPin(), i1sda::getPin());
-    LPS28DFW lps28dfw(i2c, false);
 
     waiting = Thread::getCurrentThread();
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::RISING_EDGE);
 
-    if (!lps28dfw.init())
-    {
-        printf("Error initialization of sensor\n");
-        return 0;
-    }
-    printf("Initialization complete\n");
-
-    if (!lps28dfw.selfTest())
-    {
-        printf("SelfTest failed\n");
-        return 0;
-    }
-    printf("SelfTest succeeded\n");
-    Thread::sleep(1000);
-
     for (;;)
     {
         printf("\nNew set of samples\n");
-        sampleOneShotMode(lps28dfw);
-        sampleContinuousMode(lps28dfw);
-        sampleInterruptMode(lps28dfw);
+        sampleOneShotMode(i2c);
+        sampleContinuousMode(i2c);
+        sampleInterruptMode(i2c);
     }
 
     return 0;

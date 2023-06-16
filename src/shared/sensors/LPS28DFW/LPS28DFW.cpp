@@ -28,10 +28,10 @@
 
 namespace Boardcore
 {
-LPS28DFW::LPS28DFW(I2C& i2c, bool sa0, SensorConfig sensorConfig)
+LPS28DFW::LPS28DFW(I2C& i2c, SensorConfig sensorConfig)
     : i2c(i2c), sensorConfig(sensorConfig),
-      i2cConfig{(sa0 ? LPS28DFWDefs::lsp28dfwAddress1
-                     : LPS28DFWDefs::lsp28dfwAddress0),
+      i2cConfig{(sensorConfig.sa0 ? LPS28DFWDefs::lsp28dfwAddress1
+                                  : LPS28DFWDefs::lsp28dfwAddress0),
                 I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED},
       pressureSensitivity(4096)
 {
@@ -76,8 +76,9 @@ bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
         switch (newSensorConfig.mode)
         {
             case Mode::ONE_SHOT_MODE:
-                sensorConfig = {newSensorConfig.fsr, newSensorConfig.avg,
-                                Mode::ONE_SHOT_MODE, ODR::ONE_SHOT, false};
+                sensorConfig = {newSensorConfig.sa0, newSensorConfig.fsr,
+                                newSensorConfig.avg, Mode::ONE_SHOT_MODE,
+                                ODR::ONE_SHOT,       false};
                 fifo_ctrl |= LPS28DFWDefs::FIFO_CTRL::BYPASS;
                 break;
             case Mode::CONTINUOUS_MODE:

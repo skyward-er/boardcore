@@ -97,6 +97,8 @@ public:
      */
     typedef struct
     {
+        bool sa0;  ///< Last bit of the slave address; tells if the SA0 pin on
+                   ///< the sensor is connected to GND or VDD (3.3V, not 5V!).
         FullScaleRange fsr;  ///< Full scale range
         AVG avg;             ///< Average avg samples
         Mode mode;           ///< Mode of operation
@@ -109,15 +111,10 @@ public:
      * them to the sensor).
      * @param i2c I2C Peripheral that will be used to communicate with the
      * sensor.
-     * @param sa0 Last bit of the slave address; tells if the SA0 pin on the
-     * sensor is connected to GND or VDD (3.3V, not 5V!).
      * @param sensorConfig Configuration of the sensor with ODR, AVG, FSR,
      * interrupt enabled and fifo size.
      */
-    LPS28DFW(I2C& i2c, bool sa0,
-             SensorConfig sensorConfig = {FullScaleRange::FS_1260, AVG::AVG_32,
-                                          Mode::CONTINUOUS_MODE, ODR::ODR_100,
-                                          false});
+    LPS28DFW(I2C& i2c, SensorConfig sensorConfig);
 
     /**
      * @brief Initializes the sensor with the current settings.
