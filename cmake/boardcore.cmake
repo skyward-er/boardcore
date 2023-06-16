@@ -110,6 +110,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
         ${SBS_BASE}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
         ${SBS_BASE}/src/shared/sensors/LPS28DFW/LPS28DFW.cpp
+        ${SBS_BASE}/src/shared/sensors/LPS22DF/LPS22DF.cpp
 
         # Calibration
         ${SBS_BASE}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
