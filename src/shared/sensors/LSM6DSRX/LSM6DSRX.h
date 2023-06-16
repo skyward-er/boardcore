@@ -114,12 +114,12 @@ public:
     {
         uint8_t value        = 0;
         int numUnreadSamples = 0;
-        SPITransaction spiTransaction{m_spiSlave};
+        SPITransaction spi{m_spiSlave};
 
         // reads the number of unread samples in the fifo
-        numUnreadSamples = static_cast<int>(
-            spiTransaction.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1));
-        value = spiTransaction.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2);
+        numUnreadSamples =
+            static_cast<int>(spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1));
+        value = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2);
         numUnreadSamples |= static_cast<int>(value & 3) << 8;
 
         if (numUnreadSamples < num)
@@ -131,9 +131,9 @@ public:
         for (int i = 0; i < num; ++i)
         {
             {
-                SPITransaction spiTransaction{m_spiSlave};
-                buf[i].tag = spiTransaction.readRegister(
-                    LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
+                // SPITransaction spiTransaction{m_spiSlave};
+                buf[i].tag =
+                    spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
             }
             buf[i].x = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
                                    LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H);
