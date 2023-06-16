@@ -37,25 +37,29 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
 {
     isInit = false;
 
-    // check that the watermark value is suitable
-    D(assert(config.fifoWatermark < 512 &&
-             "fifoWatermark should be a 9bits number."));
+    // check that the watermark value is suitable (it should be a 9bits number)
+    config.fifoWatermark = std::min(config.fifoWatermark, uint16_t(511));
 
-    // check that ACC_ODR is set to HZ_1_6 only if
-    // OPERATING_MODE is equal to NORMAL
-    D(assert(((config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6 &&
-               config.opModeAcc == LSM6DSRXConfig::OPERATING_MODE::NORMAL) ||
-              config.odrAcc != LSM6DSRXConfig::ACC_ODR::HZ_1_6) &&
-             "Accelerometer odr of 1.6Hz is available only with "
-             "OPERATING_MODE::NORMAL."));
+    // check that ACC_ODR is set to HZ_1_6 only if OPERATING_MODE is equal to
+    // NORMAL
+    if (config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6)
+    {
+        config.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
+    }
 }
 
 bool LSM6DSRX::init()
 {
-    D(assert(!isInit && "init() should be called once"));
+    if (isInit)
+    {
+        LOG_ERR(logger, "init() should be called once");
+        lastError = SensorErrors::ALREADY_INIT;
+        return false;
+    }
 
     if (checkWhoAmI() == false)
     {
+        LOG_ERR(logger, "Got bad CHIPID");
         lastError = SensorErrors::INVALID_WHOAMI;
         return false;
     }
@@ -359,6 +363,7 @@ bool LSM6DSRX::selfTestAcc()
     }
     else
     {
+        LOG_ERR(logger, "Accelerometer self-test failed!");
         returnValue = false;
     }
 
@@ -503,6 +508,7 @@ bool LSM6DSRX::selfTestGyr()
     }
     else
     {
+        LOG_ERR(logger, "Gyroscope self-test failed!");
         returnValue = false;
     }
 
@@ -833,16 +839,17 @@ void LSM6DSRX::readFromFifo()
                 // flags are restored -> if 'flag' is true it means that only 1
                 // of the 2 samples is present, and it is going to be
                 // overwritten by this new timestamp
-#ifdef DEBUG
-                bool flag = timestamps[timeslotTag].accPresent ||
-                            timestamps[timeslotTag].gyrPresent;
-                if (flag == true)
-                {
-                    TRACE(
-                        "ERROR, overwriting not pushed sample with a new "
-                        "timestamp\n");
-                }
-#endif
+                // #ifdef DEBUG
+                //                 bool flag =
+                //                 timestamps[timeslotTag].accPresent ||
+                //                             timestamps[timeslotTag].gyrPresent;
+                //                 if (flag == true)
+                //                 {
+                //                     TRACE(
+                //                         "ERROR, overwriting not pushed sample
+                //                         with a new " "timestamp\n");
+                //                 }
+                // #endif
 
                 // Set new data
                 timestamps[timeslotTag].data.accelerationTimestamp =

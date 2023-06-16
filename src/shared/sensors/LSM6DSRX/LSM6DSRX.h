@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
@@ -103,6 +104,8 @@ private:
      * inside this array, then it get processed and stored inside `lastFifo`.
      */
     std::array<LSM6DSRXDefs::RawFifoData, LSM6DSRXDefs::FIFO_SIZE> rawFifo;
+
+    PrintLogger logger = Logging::getLogger("lsm6dsrx");
 
     /**
      * @brief Check who_am_i register for validity.
