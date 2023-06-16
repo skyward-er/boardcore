@@ -207,8 +207,8 @@ void LSM6DSRX::initInterrupts()
     ui8Value = static_cast<uint8_t>(m_config.fifoWatermark &
                                     255);  // the first 8bits of the number.
     spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, ui8Value);
-    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark &
-                                    256);  // the 9th bit of the number.
+    ui8Value = static_cast<uint8_t>((m_config.fifoWatermark >> 8) &
+                                    0x01);  // the 9th bit of the number.
     spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, ui8Value);
 }
 
