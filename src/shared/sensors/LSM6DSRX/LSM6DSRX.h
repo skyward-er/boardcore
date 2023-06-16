@@ -56,21 +56,6 @@ public:
     bool init() override;
 
     /**
-     * @brief Returns the timestamp resolution in milliseconds.
-     */
-    float getSensorTimestampResolution();
-
-    /**
-     * @brief Performs a really simple reading from the FIFO buffer.
-     */
-    void readFromFifo();
-
-    /**
-     * @brief Returns the number of unread data in the fifo.
-     */
-    uint16_t unreadDataInFifo();
-
-    /**
      * @brief Performs self test for the sensor.
      * @return Return true if the test was successful.
      */
@@ -87,22 +72,22 @@ public:
     LSM6DSRXData sampleImpl() override;
 
 private:
-    bool m_isInit = false;
-    SPISlave m_spiSlave;
-    LSM6DSRXConfig m_config;
+    bool isInit = false;
+    SPISlave spiSlave;
+    LSM6DSRXConfig config;
 
-    float m_sensitivityAcc = 0.0;  ///< Sensitivity value for the accelerator.
-    float m_sensitivityGyr = 0.0;  ///< Sensitivity value for the gyroscope.
+    float sensitivityAcc = 0.0;  ///< Sensitivity value for the accelerator.
+    float sensitivityGyr = 0.0;  ///< Sensitivity value for the gyroscope.
 
     /**
      * @brief These two values represent the same instant from the two different
      * clocks: the one on the sensor and the one from TimestampTimer. They are
      * used to convert a sensor timestamp to a TimestampTimer one.
      */
-    uint64_t m_timestamp0 = 0;  ///< Timestamp given by TimestampTimer class.
-    uint32_t m_sensorTimestamp0 = 0;  ///< Timestamp given by the sensor.
+    uint64_t timestamp0 = 0;  ///< Timestamp given by TimestampTimer class.
+    uint32_t sensorTimestamp0 = 0;  ///< Timestamp given by the sensor.
 
-    float m_sensorTimestampResolution =
+    float sensorTimestampResolution =
         0.0;  ///< Resolution of the sensor's timestamps in microseconds.
 
     /**
@@ -111,13 +96,13 @@ private:
      * idea is to copy the value from the last valid sample for the sensor that
      * hasn't received data.
      */
-    LSM6DSRXData m_lastValidSample;
+    LSM6DSRXData lastValidSample;
 
     /**
      * @brief When extracting samples from fifo data is first read and saved
      * inside this array, then it get processed and stored inside `lastFifo`.
      */
-    std::array<LSM6DSRXDefs::RawFifoData, LSM6DSRXDefs::FIFO_SIZE> m_rawFifo;
+    std::array<LSM6DSRXDefs::RawFifoData, LSM6DSRXDefs::FIFO_SIZE> rawFifo;
 
     /**
      * @brief Check who_am_i register for validity.
@@ -125,6 +110,16 @@ private:
      * @return Returns false if not valid.
      */
     bool checkWhoAmI();
+
+    /**
+     * @brief Performs a really simple reading from the FIFO buffer.
+     */
+    void readFromFifo();
+
+    /**
+     * @brief Returns the number of unread data in the fifo.
+     */
+    uint16_t unreadDataInFifo();
 
     /**
      * @brief Utility for combining two 8 bits numbers in one 16 bits number.
@@ -218,6 +213,11 @@ private:
      * @brief Returns the timestamp from the sensor.
      */
     uint32_t getSensorTimestamp();
+
+    /**
+     * @brief Returns the timestamp resolution in milliseconds.
+     */
+    float getSensorTimestampResolution();
 };
 
 }  // namespace Boardcore

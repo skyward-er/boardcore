@@ -33,26 +33,26 @@ namespace Boardcore
 
 LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, LSM6DSRXConfig& configuration)
-    : m_spiSlave(bus, csPin, busConfiguration), m_config(configuration)
+    : spiSlave(bus, csPin, busConfiguration), config(configuration)
 {
-    m_isInit = false;
+    isInit = false;
 
     // check that the watermark value is suitable
-    D(assert(m_config.fifoWatermark < 512 &&
+    D(assert(config.fifoWatermark < 512 &&
              "fifoWatermark should be a 9bits number."));
 
     // check that ACC_ODR is set to HZ_1_6 only if
     // OPERATING_MODE is equal to NORMAL
-    D(assert(((m_config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6 &&
-               m_config.opModeAcc == LSM6DSRXConfig::OPERATING_MODE::NORMAL) ||
-              m_config.odrAcc != LSM6DSRXConfig::ACC_ODR::HZ_1_6) &&
+    D(assert(((config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6 &&
+               config.opModeAcc == LSM6DSRXConfig::OPERATING_MODE::NORMAL) ||
+              config.odrAcc != LSM6DSRXConfig::ACC_ODR::HZ_1_6) &&
              "Accelerometer odr of 1.6Hz is available only with "
              "OPERATING_MODE::NORMAL."));
 }
 
 bool LSM6DSRX::init()
 {
-    D(assert(!m_isInit && "init() should be called once"));
+    D(assert(!isInit && "init() should be called once"));
 
     if (checkWhoAmI() == false)
     {
@@ -62,9 +62,9 @@ bool LSM6DSRX::init()
 
     // Set BDU and multiple spi read/write
     {
-        SPITransaction spiTransaction{m_spiSlave};
+        SPITransaction spiTransaction{spiSlave};
 
-        uint8_t value = static_cast<uint8_t>(m_config.bdu) << 6;  // set bdu
+        uint8_t value = static_cast<uint8_t>(config.bdu) << 6;  // set bdu
         value |= 1 << 2;  // set multiple spi read/write
 
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, value);
@@ -81,9 +81,9 @@ bool LSM6DSRX::init()
 
     // enable timestamp
     {
-        static constexpr uint8_t REG_CTRL10_TIMESTAMP_EN = 1 << 5;
+        constexpr uint8_t REG_CTRL10_TIMESTAMP_EN = 1 << 5;
 
-        SPITransaction spiTransaction{m_spiSlave};
+        SPITransaction spiTransaction{spiSlave};
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C,
                                      REG_CTRL10_TIMESTAMP_EN);
     }
@@ -93,11 +93,11 @@ bool LSM6DSRX::init()
 
     // set timestamps
     correlateTimestamps();
-    m_sensorTimestampResolution =
+    sensorTimestampResolution =
         getSensorTimestampResolution() *
         1000;  // return value is in milliseconds, need microseconds.
 
-    m_isInit  = true;
+    isInit    = true;
     lastError = SensorErrors::NO_ERRORS;
     return true;
 }
@@ -105,38 +105,38 @@ bool LSM6DSRX::init()
 void LSM6DSRX::initAccelerometer()
 {
     uint8_t configByte = 0;
-    SPITransaction spiTransaction{m_spiSlave};
+    SPITransaction spiTransaction{spiSlave};
 
     // Setup accelerometer
 
     // set accelerometer odr, fullscale and high resolution
-    configByte = static_cast<uint8_t>(m_config.odrAcc) << 4 |  // odr
-                 static_cast<uint8_t>(m_config.fsAcc) << 2 |   // fullscale
+    configByte = static_cast<uint8_t>(config.odrAcc) << 4 |  // odr
+                 static_cast<uint8_t>(config.fsAcc) << 2 |   // fullscale
                  0 << 1;  // high resolution selection
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, configByte);
 
     // set accelerometer performance mode
-    configByte = static_cast<uint8_t>(m_config.opModeAcc) << 4;
+    configByte = static_cast<uint8_t>(config.opModeAcc) << 4;
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, configByte);
 
     // set sensitivity
-    switch (m_config.fsAcc)
+    switch (config.fsAcc)
     {
         case LSM6DSRXConfig::ACC_FULLSCALE::G2:
-            m_sensitivityAcc = 0.061;
+            sensitivityAcc = 0.061;
             break;
         case LSM6DSRXConfig::ACC_FULLSCALE::G4:
-            m_sensitivityAcc = 0.122;
+            sensitivityAcc = 0.122;
             break;
         case LSM6DSRXConfig::ACC_FULLSCALE::G8:
-            m_sensitivityAcc = 0.244;
+            sensitivityAcc = 0.244;
             break;
         case LSM6DSRXConfig::ACC_FULLSCALE::G16:
-            m_sensitivityAcc = 0.488;
+            sensitivityAcc = 0.488;
             break;
         default:
-            m_config.fsAcc   = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-            m_sensitivityAcc = 0.061;
+            config.fsAcc   = LSM6DSRXConfig::ACC_FULLSCALE::G2;
+            sensitivityAcc = 0.061;
             break;
     };
 }
@@ -144,41 +144,41 @@ void LSM6DSRX::initAccelerometer()
 void LSM6DSRX::initGyroscope()
 {
     uint8_t configByte = 0;
-    SPITransaction spiTransaction{m_spiSlave};
+    SPITransaction spiTransaction{spiSlave};
 
     // set odr and fullscale
-    configByte = static_cast<uint8_t>(m_config.odrGyr) << 4 |  // odr
-                 static_cast<uint8_t>(m_config.fsGyr);         // fullscale
+    configByte = static_cast<uint8_t>(config.odrGyr) << 4 |  // odr
+                 static_cast<uint8_t>(config.fsGyr);         // fullscale
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, configByte);
 
     // set performance mode
-    configByte = static_cast<uint8_t>(m_config.opModeGyr) << 7;
+    configByte = static_cast<uint8_t>(config.opModeGyr) << 7;
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, configByte);
 
     // set sensitivity
-    switch (m_config.fsGyr)
+    switch (config.fsGyr)
     {
         case LSM6DSRXConfig::GYR_FULLSCALE::DPS_125:
-            m_sensitivityGyr = 4.375;
+            sensitivityGyr = 4.375;
             break;
         case LSM6DSRXConfig::GYR_FULLSCALE::DPS_250:
-            m_sensitivityGyr = 8.75;
+            sensitivityGyr = 8.75;
             break;
         case LSM6DSRXConfig::GYR_FULLSCALE::DPS_500:
-            m_sensitivityGyr = 17.5;
+            sensitivityGyr = 17.5;
             break;
         case LSM6DSRXConfig::GYR_FULLSCALE::DPS_1000:
-            m_sensitivityGyr = 35.0;
+            sensitivityGyr = 35.0;
             break;
         case LSM6DSRXConfig::GYR_FULLSCALE::DPS_2000:
-            m_sensitivityGyr = 70.0;
+            sensitivityGyr = 70.0;
             break;
         case LSM6DSRXConfig::GYR_FULLSCALE::DPS_4000:
-            m_sensitivityGyr = 140.0;
+            sensitivityGyr = 140.0;
             break;
         default:
-            m_config.fsGyr   = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-            m_sensitivityGyr = 4.375;
+            config.fsGyr   = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
+            sensitivityGyr = 4.375;
             break;
     }
 }
@@ -187,41 +187,40 @@ void LSM6DSRX::initFifo()
 {
     // setup Fifo
     uint8_t configByte = 0;
-    SPITransaction spiTransaction{m_spiSlave};
+    SPITransaction spiTransaction{spiSlave};
 
     // select batch data rate in FIFO_CTRL3
-    configByte = static_cast<uint8_t>(m_config.odrAcc) |  // accelerometer bdr
-                 (static_cast<uint8_t>(m_config.odrGyr) << 4);  // gyroscope bdr
+    configByte = static_cast<uint8_t>(config.odrAcc) |  // accelerometer bdr
+                 (static_cast<uint8_t>(config.odrGyr) << 4);  // gyroscope bdr
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL3, configByte);
 
     // set fifo mode, batch data rate for temperature sensor and the decimation
     // factor for timestamp batching
-    configByte =
-        static_cast<uint8_t>(m_config.fifoMode) |  // fifo operating mode
-        static_cast<uint8_t>(m_config.fifoTemperatureBdr)
-            << 4 |  // batch data rate for temperature data
-        static_cast<uint8_t>(m_config.fifoTimestampDecimation)
-            << 6;  // timestamp decimation
+    configByte = static_cast<uint8_t>(config.fifoMode) |  // fifo operating mode
+                 static_cast<uint8_t>(config.fifoTemperatureBdr)
+                     << 4 |  // batch data rate for temperature data
+                 static_cast<uint8_t>(config.fifoTimestampDecimation)
+                     << 6;  // timestamp decimation
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL4, configByte);
 }
 
 void LSM6DSRX::initInterrupts()
 {
     uint8_t ui8Value = 0;
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     // set interrupt on pin INT1
     spi.writeRegister(LSM6DSRXDefs::REG_INT1_CTRL,
-                      static_cast<uint8_t>(m_config.int1InterruptSelection));
+                      static_cast<uint8_t>(config.int1InterruptSelection));
     // set interrupt on pin INT2
     spi.writeRegister(LSM6DSRXDefs::REG_INT2_CTRL,
-                      static_cast<uint8_t>(m_config.int2InterruptSelection));
+                      static_cast<uint8_t>(config.int2InterruptSelection));
 
     // set watermark level
-    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark &
+    ui8Value = static_cast<uint8_t>(config.fifoWatermark &
                                     255);  // the first 8bits of the number.
     spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, ui8Value);
-    ui8Value = static_cast<uint8_t>((m_config.fifoWatermark >> 8) &
+    ui8Value = static_cast<uint8_t>((config.fifoWatermark >> 8) &
                                     0x01);  // the 9th bit of the number.
     spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, ui8Value);
 }
@@ -232,7 +231,7 @@ bool LSM6DSRX::selfTestAcc()
     uint8_t byteValue       = 0;  // used to read and write in registers
     uint8_t idx             = 0;
     const uint8_t SIZE_DATA = 5;  // number of sample for the test
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     // sleep time for data ready interrupt (150% odr during self-test)
     // expressed in milliseconds.
@@ -377,7 +376,7 @@ bool LSM6DSRX::selfTestGyr()
     uint8_t byteValue       = 0;
     uint8_t idx             = 0;
     const uint8_t SIZE_DATA = 5;
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     // sleep time for data ready interrupt (150% odr during self-test)
     // expressed in milliseconds.
@@ -519,7 +518,7 @@ bool LSM6DSRX::checkWhoAmI()
 {
     uint8_t regValue = 0;
     {
-        SPITransaction transaction{m_spiSlave};
+        SPITransaction transaction{spiSlave};
         regValue = transaction.readRegister(LSM6DSRXDefs::REG_WHO_AM_I);
     }
 
@@ -546,35 +545,29 @@ void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
     data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
-    data.accelerationX =
-        getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
-                    m_sensitivityAcc);
-    data.accelerationY =
-        getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A,
-                    m_sensitivityAcc);
-    data.accelerationZ =
-        getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A,
-                    m_sensitivityAcc);
+    data.accelerationX = getAxisData(
+        LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, sensitivityAcc);
+    data.accelerationY = getAxisData(
+        LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, sensitivityAcc);
+    data.accelerationZ = getAxisData(
+        LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, sensitivityAcc);
 }
 
 void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
     data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
 
-    data.angularSpeedX =
-        getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
-                    m_sensitivityGyr);
-    data.angularSpeedY =
-        getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G,
-                    m_sensitivityGyr);
-    data.angularSpeedZ =
-        getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G,
-                    m_sensitivityGyr);
+    data.angularSpeedX = getAxisData(
+        LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, sensitivityGyr);
+    data.angularSpeedY = getAxisData(
+        LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, sensitivityGyr);
+    data.angularSpeedZ = getAxisData(
+        LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, sensitivityGyr);
 }
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     uint32_t value = spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP0);
     value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP1) << 8;
@@ -586,7 +579,7 @@ uint32_t LSM6DSRX::getSensorTimestamp()
 
 LSM6DSRXData LSM6DSRX::getSensorData()
 {
-    D(assert(m_isInit && "init() was not called"));
+    D(assert(isInit && "init() was not called"));
 
     LSM6DSRXData data;
 
@@ -598,9 +591,9 @@ LSM6DSRXData LSM6DSRX::getSensorData()
 
 bool LSM6DSRX::selfTest()
 {
-    D(assert(m_isInit && "init() was not called"));
+    D(assert(isInit && "init() was not called"));
 
-    m_isInit = false;
+    isInit = false;
 
     if (!selfTestAcc() || !selfTestGyr())
     {
@@ -613,11 +606,11 @@ bool LSM6DSRX::selfTest()
 
 LSM6DSRXData LSM6DSRX::sampleImpl()
 {
-    D(assert(m_isInit && "init() was not called"));
+    D(assert(isInit && "init() was not called"));
     // Reset any errors.
     lastError = SensorErrors::NO_ERRORS;
 
-    if (m_config.fifoMode == LSM6DSRXConfig::FIFO_MODE::BYPASS)
+    if (config.fifoMode == LSM6DSRXConfig::FIFO_MODE::BYPASS)
     {
         return getSensorData();
     }
@@ -632,7 +625,7 @@ LSM6DSRXData LSM6DSRX::sampleImpl()
     {
         // no new data
         lastError = SensorErrors::NO_NEW_DATA;
-        return LSM6DSRXData();
+        return lastValidSample;
     }
 }
 
@@ -642,7 +635,7 @@ float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
     int8_t low = 0, high = 0;
     int16_t sample = 0;
 
-    SPITransaction transaction{m_spiSlave};
+    SPITransaction transaction{spiSlave};
 
     high = transaction.readRegister(highReg);
     low  = transaction.readRegister(lowReg);
@@ -659,7 +652,7 @@ int16_t LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
     int8_t low = 0, high = 0;
     int16_t sample = 0;
 
-    SPITransaction transaction{m_spiSlave};
+    SPITransaction transaction{spiSlave};
 
     high = transaction.readRegister(highReg);
     low  = transaction.readRegister(lowReg);
@@ -672,31 +665,31 @@ int16_t LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
 uint64_t LSM6DSRX::convertTimestamp(const uint64_t sensorTimestamp)
 {
     uint64_t deltaSensor = 0;  // difference between 2 sensor timestamps.
-    if (sensorTimestamp >= m_sensorTimestamp0)
+    if (sensorTimestamp >= sensorTimestamp0)
     {
-        deltaSensor = sensorTimestamp - m_sensorTimestamp0;
+        deltaSensor = sensorTimestamp - sensorTimestamp0;
     }
     else
     {
-        deltaSensor = static_cast<uint64_t>(-1) - m_sensorTimestamp0 +
-                      sensorTimestamp + 1;
+        deltaSensor =
+            static_cast<uint64_t>(-1) - sensorTimestamp0 + sensorTimestamp + 1;
     }
 
     // delta evaluated from TimestampTimer point of view.
-    uint64_t delta = deltaSensor * m_sensorTimestampResolution;
+    uint64_t delta = deltaSensor * sensorTimestampResolution;
 
-    return m_timestamp0 + delta;
+    return timestamp0 + delta;
 }
 
 void LSM6DSRX::correlateTimestamps()
 {
-    m_timestamp0       = TimestampTimer::getTimestamp();
-    m_sensorTimestamp0 = getSensorTimestamp();
+    timestamp0       = TimestampTimer::getTimestamp();
+    sensorTimestamp0 = getSensorTimestamp();
 }
 
 float LSM6DSRX::getSensorTimestampResolution()
 {
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     uint8_t value = spi.readRegister(LSM6DSRXDefs::REG_INTERNAL_FREQ_FINE);
 
@@ -707,7 +700,7 @@ float LSM6DSRX::getSensorTimestampResolution()
 
 void LSM6DSRX::readFromFifo()
 {
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     // get number of sample to read
     const uint16_t numSamples =
@@ -723,7 +716,7 @@ void LSM6DSRX::readFromFifo()
 
     // read samples from the sensors
     spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
-                      reinterpret_cast<uint8_t*>(m_rawFifo.data()),
+                      reinterpret_cast<uint8_t*>(rawFifo.data()),
                       numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
 
     // not all data extracted from fifo is sample data, timestamps are not
@@ -733,15 +726,15 @@ void LSM6DSRX::readFromFifo()
     uint16_t idxFifo = 0;
     for (uint16_t i = 0; i < numSamples; ++i)
     {
-        const uint8_t sensorTag   = (m_rawFifo[i].sampleTag >> 3) & 31;
-        const uint8_t timeslotTag = (m_rawFifo[i].sampleTag & 6) >> 1;
+        const uint8_t sensorTag   = (rawFifo[i].sampleTag >> 3) & 31;
+        const uint8_t timeslotTag = (rawFifo[i].sampleTag & 6) >> 1;
 
-        const uint8_t xl = m_rawFifo[i].xl;
-        const uint8_t xh = m_rawFifo[i].xh;
-        const uint8_t yl = m_rawFifo[i].yl;
-        const uint8_t yh = m_rawFifo[i].yh;
-        const uint8_t zl = m_rawFifo[i].zl;
-        const uint8_t zh = m_rawFifo[i].zh;
+        const uint8_t xl = rawFifo[i].xl;
+        const uint8_t xh = rawFifo[i].xh;
+        const uint8_t yl = rawFifo[i].yl;
+        const uint8_t yh = rawFifo[i].yh;
+        const uint8_t zl = rawFifo[i].zl;
+        const uint8_t zh = rawFifo[i].zh;
 
         switch (sensorTag)
         {
@@ -749,36 +742,30 @@ void LSM6DSRX::readFromFifo()
                 // gyroscope data
                 lastFifo[idxFifo].angularSpeedX =
                     static_cast<float>(combineHighLowBits(xl, xh)) *
-                    m_sensitivityGyr;
+                    sensitivityGyr;
                 lastFifo[idxFifo].angularSpeedY =
                     static_cast<float>(combineHighLowBits(yl, yh)) *
-                    m_sensitivityGyr;
+                    sensitivityGyr;
                 lastFifo[idxFifo].angularSpeedZ =
                     static_cast<float>(combineHighLowBits(zl, zh)) *
-                    m_sensitivityGyr;
+                    sensitivityGyr;
 
                 lastFifo[idxFifo].angularSpeedTimestamp =
                     timestamps[timeslotTag];
 
                 // set old acc data
-                lastFifo[idxFifo].accelerationX =
-                    m_lastValidSample.accelerationX;
-                lastFifo[idxFifo].accelerationY =
-                    m_lastValidSample.accelerationY;
-                lastFifo[idxFifo].accelerationZ =
-                    m_lastValidSample.accelerationZ;
+                lastFifo[idxFifo].accelerationX = lastValidSample.accelerationX;
+                lastFifo[idxFifo].accelerationY = lastValidSample.accelerationY;
+                lastFifo[idxFifo].accelerationZ = lastValidSample.accelerationZ;
                 lastFifo[idxFifo].accelerationTimestamp =
-                    m_lastValidSample.accelerationTimestamp;
+                    lastValidSample.accelerationTimestamp;
 
                 // update last valid sample for the gyroscope
-                m_lastValidSample.angularSpeedTimestamp =
+                lastValidSample.angularSpeedTimestamp =
                     lastFifo[idxFifo].angularSpeedTimestamp;
-                m_lastValidSample.angularSpeedX =
-                    lastFifo[idxFifo].angularSpeedX;
-                m_lastValidSample.angularSpeedY =
-                    lastFifo[idxFifo].angularSpeedY;
-                m_lastValidSample.angularSpeedZ =
-                    lastFifo[idxFifo].angularSpeedZ;
+                lastValidSample.angularSpeedX = lastFifo[idxFifo].angularSpeedX;
+                lastValidSample.angularSpeedY = lastFifo[idxFifo].angularSpeedY;
+                lastValidSample.angularSpeedZ = lastFifo[idxFifo].angularSpeedZ;
 
                 // update fifo index
                 ++idxFifo;
@@ -788,36 +775,30 @@ void LSM6DSRX::readFromFifo()
                 // accelerometer data
                 lastFifo[idxFifo].accelerationX =
                     static_cast<float>(combineHighLowBits(xl, xh)) *
-                    m_sensitivityAcc;
+                    sensitivityAcc;
                 lastFifo[idxFifo].accelerationY =
                     static_cast<float>(combineHighLowBits(yl, yh)) *
-                    m_sensitivityAcc;
+                    sensitivityAcc;
                 lastFifo[idxFifo].accelerationZ =
                     static_cast<float>(combineHighLowBits(zl, zh)) *
-                    m_sensitivityAcc;
+                    sensitivityAcc;
 
                 lastFifo[idxFifo].accelerationTimestamp =
                     timestamps[timeslotTag];
 
                 // set old gyro data
-                lastFifo[idxFifo].angularSpeedX =
-                    m_lastValidSample.angularSpeedX;
-                lastFifo[idxFifo].angularSpeedY =
-                    m_lastValidSample.angularSpeedY;
-                lastFifo[idxFifo].angularSpeedZ =
-                    m_lastValidSample.angularSpeedZ;
+                lastFifo[idxFifo].angularSpeedX = lastValidSample.angularSpeedX;
+                lastFifo[idxFifo].angularSpeedY = lastValidSample.angularSpeedY;
+                lastFifo[idxFifo].angularSpeedZ = lastValidSample.angularSpeedZ;
                 lastFifo[idxFifo].angularSpeedTimestamp =
-                    m_lastValidSample.angularSpeedTimestamp;
+                    lastValidSample.angularSpeedTimestamp;
 
                 // update lastValidSample for the accelerometer
-                m_lastValidSample.accelerationTimestamp =
+                lastValidSample.accelerationTimestamp =
                     lastFifo[idxFifo].accelerationTimestamp;
-                m_lastValidSample.accelerationX =
-                    lastFifo[idxFifo].accelerationX;
-                m_lastValidSample.accelerationY =
-                    lastFifo[idxFifo].accelerationY;
-                m_lastValidSample.accelerationZ =
-                    lastFifo[idxFifo].accelerationZ;
+                lastValidSample.accelerationX = lastFifo[idxFifo].accelerationX;
+                lastValidSample.accelerationY = lastFifo[idxFifo].accelerationY;
+                lastValidSample.accelerationZ = lastFifo[idxFifo].accelerationZ;
 
                 // update fifo index
                 ++idxFifo;
@@ -847,7 +828,7 @@ void LSM6DSRX::readFromFifo()
 uint16_t LSM6DSRX::unreadDataInFifo()
 {
     uint16_t ris = 0;
-    SPITransaction spi{m_spiSlave};
+    SPITransaction spi{spiSlave};
 
     ris = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1);
     ris = ris | (static_cast<uint16_t>(

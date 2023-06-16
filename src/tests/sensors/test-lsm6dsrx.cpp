@@ -28,11 +28,31 @@
 
 #include <algorithm>
 #include <iostream>
-#include <vector>
 #include <memory>
+#include <vector>
 
 using namespace Boardcore;
 using namespace miosix;
+
+/**
+ * @brief Test how much time it takes to fill completely the fifo from empty.
+ */
+void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
+                         SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
+                         miosix::GpioPin intPin);
+
+/**
+ * @brief Test the execution time of sampleImpl().
+ */
+void testSampleImplTime(SPIBus& bus, miosix::GpioPin csPin,
+                        SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
+
+/**
+ * @brief Test fifo read.
+ */
+void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
+                  SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
+                  miosix::GpioPin intPin);
 
 int main()
 {
@@ -58,7 +78,7 @@ int main()
     int2Pin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_8;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_2;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
@@ -88,31 +108,24 @@ int main()
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
     sensConfig.fifoWatermark = 511;
 
-    // LSM6DSRX* sens = new LSM6DSRX(bus, csPin, busConfiguration, sensConfig);
+    // testFifoRead(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
-    // if (sens->init() == false)
-    // {
-    //     while (true)
-    //     {
-    //         TRACE("Error, sensor not initialized\n\n");
-    //         Thread::sleep(2000);
-    //     }
-    // }
+    testSampleImplTime(bus, csPin, busConfiguration, sensConfig);
 
-    // if (sens->selfTest())
-    // {
-    //     TRACE("Self test successful\n\n");
-    //     Thread::sleep(2000);
-    // }
-    // else
-    // {
-    //     TRACE("Self test failed\n\n");
-    //     while (true)
-    //     {
-    //         Thread::sleep(2000);
-    //     }
-    // }
+    // testFifoFillingTime(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
+    while (true)
+    {
+        Thread::sleep(5000);
+    }
+
+    return 0;
+}
+
+void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
+                         SPIBusConfig busConfiguration,
+                         LSM6DSRXConfig& sensConfig, miosix::GpioPin intPin)
+{
     struct odrs
     {
         LSM6DSRXConfig::ACC_ODR acc;
@@ -132,12 +145,13 @@ int main()
         {LSM6DSRXConfig::ACC_ODR::HZ_6660, LSM6DSRXConfig::GYR_ODR::HZ_6660},
     };
 
-    for(unsigned int odrIdx = 0; odrIdx < sizeof(arr) / sizeof(odrs); ++odrIdx)
+    for (unsigned int odrIdx = 0; odrIdx < sizeof(arr) / sizeof(odrs); ++odrIdx)
     {
         sensConfig.odrAcc = arr[odrIdx].acc;
         sensConfig.odrGyr = arr[odrIdx].gyr;
 
-        std::unique_ptr<LSM6DSRX> sens = std::make_unique<LSM6DSRX>(bus, csPin, busConfiguration, sensConfig);
+        std::unique_ptr<LSM6DSRX> sens = std::make_unique<LSM6DSRX>(
+            bus, csPin, busConfiguration, sensConfig);
         if (sens->init() == false)
         {
             while (true)
@@ -151,12 +165,12 @@ int main()
         sens->sampleImpl();
 
         // test time needed to fill the fifo
-        uint64_t t0 = TimestampTimer::getTimestamp();
-        int dataReady = int2Pin.value();
+        uint64_t t0   = TimestampTimer::getTimestamp();
+        int dataReady = intPin.value();
         while (dataReady != 1)
         {
             Thread::sleep(1);
-            dataReady = int2Pin.value();
+            dataReady = intPin.value();
         }
         uint64_t t1 = TimestampTimer::getTimestamp();
 
@@ -164,57 +178,111 @@ int main()
 
         std::cout << odrIdx << ") Filling time(us): " << diff << "\n\n";
     }
+}
 
-    while(true)
+void testSampleImplTime(SPIBus& bus, miosix::GpioPin csPin,
+                        SPIBusConfig busConfiguration,
+                        LSM6DSRXConfig& sensConfig)
+{
+    std::unique_ptr<LSM6DSRX> sens =
+        std::make_unique<LSM6DSRX>(bus, csPin, busConfiguration, sensConfig);
+
+    if (sens->init() == false)
     {
-        Thread::sleep(5000);
+        while (true)
+        {
+            TRACE("Error, sensor not initialized\n\n");
+            Thread::sleep(2000);
+        }
     }
 
-    // std::cout << "sensor initialized\n";
-    // while (true)
-    // {
-    //     uint64_t t0 = TimestampTimer::getTimestamp();
+    if (sens->selfTest())
+    {
+        TRACE("Self test successful\n\n");
+        Thread::sleep(2000);
+    }
+    else
+    {
+        TRACE("Self test failed\n\n");
+        while (true)
+        {
+            Thread::sleep(2000);
+        }
+    }
 
-    //     auto d = sens->sampleImpl();
+    std::cout << "sensor initialized\n";
+    while (true)
+    {
+        uint64_t t0 = TimestampTimer::getTimestamp();
 
-    //     uint64_t t1 = TimestampTimer::getTimestamp();
+        auto d = sens->sampleImpl();
 
-    //     uint64_t diff = t1 - t0;
+        uint64_t t1 = TimestampTimer::getTimestamp();
 
-    //     std::cout << "sampleImpl() execution time(us): " << diff << "\n";
-    //     std::cout << "last fifo sample:\n";
-    //     d.print(std::cout);
-    //     std::cout << "\n\n\n";
+        uint64_t diff = t1 - t0;
 
-    //     miosix::Thread::sleep(1000);
-    // }
+        std::cout << "sampleImpl() execution time(us): " << diff << "\n";
+        std::cout << "last fifo sample:\n";
+        d.print(std::cout);
+        std::cout << "\n\n\n";
 
-    // while (true)
-    // {
-    //     // wait for fifo full interrupt
-    //     int dataReady = int2Pin.value();
-    //     while (dataReady != 1)
-    //     {
-    //         Thread::sleep(20);
-    //         dataReady = int2Pin.value();
-    //     }
+        miosix::Thread::sleep(1000);
+    }
+}
 
-    //     sens->sample();
+void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
+                  SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
+                  miosix::GpioPin intPin)
+{
+    std::unique_ptr<LSM6DSRX> sens =
+        std::make_unique<LSM6DSRX>(bus, csPin, busConfiguration, config);
 
-    //     const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-    //         sens->getLastFifo();
+    if (sens->init() == false)
+    {
+        while (true)
+        {
+            TRACE("Error, sensor not initialized\n\n");
+            Thread::sleep(2000);
+        }
+    }
 
-    //     // print last element from fifo
-    //     // std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
-    //     // buf[sens->getLastFifoSize() - 1].print(std::cout);
-    //     for(uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
-    //     {
-    //         buf[i].print(std::cout);
-    //         std::cout << "\n";
-    //     }
-    //     std::cout << "\n\n\n";
-    // }
+    if (sens->selfTest())
+    {
+        TRACE("Self test successful\n\n");
+        Thread::sleep(2000);
+    }
+    else
+    {
+        TRACE("Self test failed\n\n");
+        while (true)
+        {
+            Thread::sleep(2000);
+        }
+    }
 
-    // delete sens;
-    return 0;
+    while (true)
+    {
+        // wait for fifo full interrupt
+        int dataReady = intPin.value();
+        while (dataReady != 1)
+        {
+            Thread::sleep(20);
+            dataReady = intPin.value();
+        }
+
+        sens->sample();
+
+        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+            sens->getLastFifo();
+
+        // print last element from fifo
+        // std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
+        // buf[sens->getLastFifoSize() - 1].print(std::cout);
+        for (uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
+        {
+            buf[i].print(std::cout);
+            std::cout << "\n";
+        }
+        std::cout << "\n\n\n";
+    }
 }
