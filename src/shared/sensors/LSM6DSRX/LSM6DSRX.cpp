@@ -48,6 +48,7 @@ bool LSM6DSRX::init()
 
     if (checkWhoAmI() == false)
     {
+        lastError = SensorErrors::INVALID_WHOAMI;
         return false;
     }
 
@@ -83,7 +84,8 @@ bool LSM6DSRX::init()
         1000;  // return value is in milliseconds, need microseconds.
     m_sampleCounter = 0;
 
-    m_isInit = true;
+    m_isInit  = true;
+    lastError = SensorErrors::NO_ERRORS;
     return true;
 }
 
@@ -579,6 +581,7 @@ bool LSM6DSRX::selfTest()
 
     if (!selfTestAcc() || !selfTestGyr())
     {
+        lastError = SensorErrors::SELF_TEST_FAIL;
         return false;
     }
 
@@ -602,7 +605,17 @@ LSM6DSRXData LSM6DSRX::sampleImpl()
 
     // leggi dalla fifo
     readFromFifo();
-    return lastFifo[lastFifoLevel - 1];
+
+    if (lastFifoLevel > 0)
+    {
+        return lastFifo[lastFifoLevel - 1];
+    }
+    else
+    {
+        // no new data
+        lastError = SensorErrors::NO_NEW_DATA;
+        return LSM6DSRXData();
+    }
 }
 
 float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
