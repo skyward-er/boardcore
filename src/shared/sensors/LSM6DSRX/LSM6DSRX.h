@@ -146,6 +146,18 @@ public:
         return num;
     }
 
+    unsigned int unreadDataInFifo()
+    {
+        unsigned int ris = 0;
+        SPITransaction spi{m_spiSlave};
+
+        ris = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1);
+        ris = ris | (static_cast<unsigned int>(
+                         spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2) & 3)
+                     << 8);
+        return ris;
+    }
+
     /**
      * @brief Performs self test for the sensor.
      * @return Return true if the test was successful.

@@ -171,7 +171,7 @@ struct LSM6DSRXConfig
 
         // not ready yet
 
-        // FIFO_THRESHOLD = 8, ///< FIFO threshold interrupt.
+        FIFO_THRESHOLD = 8,  ///< FIFO threshold interrupt.
         // FIFO_OVERRUN = 16,  ///< FIFO overrun interrupt.
         FIFO_FULL = 32,  ///< FIFO full interrupt.
     };

@@ -59,22 +59,27 @@ int main()
     LSM6DSRXConfig sensConfig;
     sensConfig.bdu = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
 
+    // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_12_5;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_1_6;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
+    // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
     sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
+    // fifo
     sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
     sensConfig.fifoTimestampDecimation =
         LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DISABLED;
     sensConfig.fifoTemperatureBdr =
         LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
 
-    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::FIFO_FULL;
-    sensConfig.int2InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
+    // interrupt
+    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
+    sensConfig.int2InterruptSelection =
+        LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
 
     LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 
@@ -87,18 +92,23 @@ int main()
         }
     }
 
-    // if (sens.selfTest())
+    if (sens.selfTest())
+    {
+        TRACE("Self test successful\n\n");
+        Thread::sleep(2000);
+    }
+    else
+    {
+        TRACE("Self test failed\n\n");
+        while (true)
+        {
+            Thread::sleep(2000);
+        }
+    }
+
+    // while(true)
     // {
-    //     TRACE("Self test successful\n\n");
-    //     Thread::sleep(2000);
-    // }
-    // else
-    // {
-    //     TRACE("Self test failed\n\n");
-    //     while (true)
-    //     {
-    //         Thread::sleep(2000);
-    //     }
+    //     Thread::sleep(5000);
     // }
 
     // Thread::sleep(
@@ -106,7 +116,7 @@ int main()
     //     FIFO.
 
     // LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
-    const int SIZE = 30;
+    const int SIZE = 60;
     LSM6DSRX::FifoData buf[SIZE];
 
     int dataReady = 0;
@@ -139,17 +149,23 @@ int main()
         // TRACE("z: %f\n\n", data.z);
 
         // wait for fifo full interrupt
-        dataReady = int1Pin.value();
+        dataReady = int2Pin.value();
         while (dataReady != 1)
         {
             Thread::sleep(20);
-            dataReady = int1Pin.value();
+            dataReady = int2Pin.value();
         }
 
+        TRACE(
+            "Interrupt ricevuto\n"
+            "dati non letti pre-lettura: %u\n",
+            sens.unreadDataInFifo());
         const int numBatchRed = sens.readFromFifo(buf, SIZE);
-        TRACE("Number of batch in buf: %d\n", numBatchRed);
+        TRACE("numero dati letti: %d\n", numBatchRed);
+        TRACE("dati non letti post-lettura: %u\n\n", sens.unreadDataInFifo());
+
         float sensitivity = 0.0;
-        for (int i = 0; i < numBatchRed; ++i)
+        for (int i = 0; i < numBatchRed && i < 4; ++i)
         {
             // read sensor tag
             uint8_t tagSensor = (buf[i].tag >> 3) & 31;
