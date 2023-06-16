@@ -30,21 +30,36 @@ namespace Boardcore
 namespace LSM6DSRXDefs
 {
 
-/// @brief Fifo max size expressed as number of samples.
+/**
+ * @brief Fifo max size expressed as number of samples.
+ */
 const uint16_t FIFO_SIZE = 550;
 
-/// @brief Sensor who_am_i register value.
+/**
+ * @brief Sensor who_am_i register value.
+ */
 const uint8_t WHO_AM_I_VALUE = 0x6B;
 
-/// @brief Lower bound value for accelerometer self test.
+/**
+ * @brief Lower bound value for accelerometer self test.
+ */
 const float ACC_SELF_TEST_MIN = 40.0;
-/// @brief Upper bound value for accelerometer self test.
+
+/**
+ * @brief Upper bound value for accelerometer self test.
+ */
 const float ACC_SELF_TEST_MAX = 1700.0;
-/// @brief Lower bound value for gyroscope self test. Valid for self test
-/// fullscale = 2000dps.
+
+/**
+ * @brief Lower bound value for gyroscope self test.
+ * Valid for self test fullscale = 2000dps.
+ */
 const float GYR_SELF_TEST_MIN = 1500.0;
-/// @brief Upper bound value for gyroscope self test.  Valid for self test
-/// fullscale = 2000dps.
+
+/**
+ * @brief Upper bound value for gyroscope self test.
+ * Valid for self test fullscale = 2000dps.
+ */
 const float GYR_SELF_TEST_MAX = 7000.0;
 
 /**

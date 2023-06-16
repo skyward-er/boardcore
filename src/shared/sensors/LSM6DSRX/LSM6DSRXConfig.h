@@ -35,17 +35,17 @@ struct LSM6DSRXConfig
      */
     enum class ACC_ODR : uint8_t
     {
-        POWER_DOWN = 0,
+        POWER_DOWN = 0,   ///< Disabled
         HZ_1_6     = 11,  ///< Output data rate of 1.6 Hz
         HZ_12_5    = 1,   ///< Output data rate of 12.5 Hz
-        HZ_26      = 2,
-        HZ_52      = 3,
-        HZ_104     = 4,
-        HZ_208     = 5,
-        HZ_416     = 6,
-        HZ_833     = 7,
-        HZ_1660    = 8,
-        HZ_3330    = 9,
+        HZ_26      = 2,   ///< Output data rate of 26 Hz
+        HZ_52      = 3,   ///< Output data rate of 52 Hz
+        HZ_104     = 4,   ///< Output data rate of 104 Hz
+        HZ_208     = 5,   ///< Output data rate of 208 Hz
+        HZ_416     = 6,   ///< Output data rate of 416 Hz
+        HZ_833     = 7,   ///< Output data rate of 833 Hz
+        HZ_1660    = 8,   ///< Output data rate of 1.66 kHz
+        HZ_3330    = 9,   ///< Output data rate of 3.33 kHz
         HZ_6660    = 10,  ///< Output data rate of 6.66 kHz
     };
 
@@ -54,16 +54,16 @@ struct LSM6DSRXConfig
      */
     enum class GYR_ODR : uint8_t
     {
-        POWER_DOWN = 0,
-        HZ_12_5    = 1,  ///< Output data rate of 12.5 Hz
-        HZ_26      = 2,
-        HZ_52      = 3,
-        HZ_104     = 4,
-        HZ_208     = 5,
-        HZ_416     = 6,
-        HZ_833     = 7,
-        HZ_1660    = 8,
-        HZ_3330    = 9,
+        POWER_DOWN = 0,   ///< Disabled
+        HZ_12_5    = 1,   ///< Output data rate of 12.5 Hz
+        HZ_26      = 2,   ///< Output data rate of 26 Hz
+        HZ_52      = 3,   ///< Output data rate of 52 Hz
+        HZ_104     = 4,   ///< Output data rate of 104 Hz
+        HZ_208     = 5,   ///< Output data rate of 208 Hz
+        HZ_416     = 6,   ///< Output data rate of 416 Hz
+        HZ_833     = 7,   ///< Output data rate of 833 Hz
+        HZ_1660    = 8,   ///< Output data rate of 1.66 kHz
+        HZ_3330    = 9,   ///< Output data rate of 3.33 kHz
         HZ_6660    = 10,  ///< Output data rate of 6.66 kHz
     };
 
