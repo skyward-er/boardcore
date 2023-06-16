@@ -769,13 +769,6 @@ void LSM6DSRX::readFromFifo()
                     static_cast<float>(combineHighLowBits(zl, zh)) *
                     sensitivityGyr;
 
-#ifdef DEBUG
-                // Check for debugging
-                if (timestamps[timeslotTag].gyrPresent == true)
-                {
-                    TRACE("ERROR, writing twice gyr data\n");
-                }
-#endif
                 // Set flag
                 timestamps[timeslotTag].gyrPresent = true;
 
@@ -798,12 +791,6 @@ void LSM6DSRX::readFromFifo()
                     static_cast<float>(combineHighLowBits(zl, zh)) *
                     sensitivityAcc;
 
-#ifdef DEBUG
-                if (timestamps[timeslotTag].accPresent == true)
-                {
-                    TRACE("ERROR, writing twice acc data\n");
-                }
-#endif
                 timestamps[timeslotTag].accPresent = true;
 
                 // Check if we can push into fifo (both samples are present)
@@ -820,23 +807,6 @@ void LSM6DSRX::readFromFifo()
                     static_cast<uint32_t>(combineHighLowBitsUnsigned(xl, xh));
                 t |= static_cast<uint32_t>(combineHighLowBitsUnsigned(yl, yh))
                      << 16;
-
-                // Check data
-                // when both samples are present the data is saved in fifo and
-                // flags are restored -> if 'flag' is true it means that only 1
-                // of the 2 samples is present, and it is going to be
-                // overwritten by this new timestamp
-                // #ifdef DEBUG
-                //                 bool flag =
-                //                 timestamps[timeslotTag].accPresent ||
-                //                             timestamps[timeslotTag].gyrPresent;
-                //                 if (flag == true)
-                //                 {
-                //                     TRACE(
-                //                         "ERROR, overwriting not pushed sample
-                //                         with a new " "timestamp\n");
-                //                 }
-                // #endif
 
                 // Set new data
                 timestamps[timeslotTag].data.accelerationTimestamp =
