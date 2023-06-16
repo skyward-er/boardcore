@@ -78,7 +78,7 @@ int main()
         }
     }
 
-    if(sens.selfTest())
+    if (sens.selfTest())
     {
         TRACE("Self test successful\n\n");
         Thread::sleep(2000);
@@ -90,7 +90,7 @@ int main()
     else
     {
         TRACE("Self test failed\n\n");
-        while(true)
+        while (true)
         {
             Thread::sleep(2000);
         }
