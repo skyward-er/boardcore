@@ -26,6 +26,8 @@
 #include <sensors/LSM6DSRX/LSM6DSRX.h>
 #include <utils/Debug.h>
 
+#include <algorithm>
+
 using namespace Boardcore;
 using namespace miosix;
 
@@ -61,7 +63,7 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_1_6;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_12_5;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
@@ -72,14 +74,15 @@ int main()
     // fifo
     sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
     sensConfig.fifoTimestampDecimation =
-        LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DISABLED;
+        LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DEC_1;
     sensConfig.fifoTemperatureBdr =
         LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
 
     // interrupt
-    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
+    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::GYR_DRDY;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
+    sensConfig.fifoWatermark = 100;
 
     LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 
@@ -130,10 +133,14 @@ int main()
         //     dataReady = int1Pin.value();
         // }
         // sens.getGyroscopeData(data);
-        // TRACE("Gyroscope:\n");
-        // TRACE("x: %f\n", data.x);
-        // TRACE("y: %f\n", data.y);
-        // TRACE("z: %f\n\n\n", data.z);
+        // if(std::max({data.x, data.y, data.z}) > 1000.0 || std::min({data.x,
+        // data.y, data.z}) < -1000.0)
+        // {
+        //     TRACE("Gyroscope:\n");
+        //     TRACE("x: %f\n", data.x);
+        //     TRACE("y: %f\n", data.y);
+        //     TRACE("z: %f\n\n\n", data.z);
+        // }
 
         // accelerometer, wait for data ready
         // dataReady = int2Pin.value();
@@ -179,7 +186,7 @@ int main()
                 case 0x02:
                     // accelerometer
                     TRACE("%d) ACCELEROMETER\n", i);
-                    sensitivity = 0.122;
+                    sensitivity = 0.061;
                     break;
                 case 0x04:
                     // timestamp
@@ -195,10 +202,19 @@ int main()
             if (tagSensor != 0x04)
             {
                 // print data
-                TRACE("x: %f\n", static_cast<float>(buf[i].x) * sensitivity);
-                TRACE("y: %f\n", static_cast<float>(buf[i].y) * sensitivity);
+
+                // note: data from sensors has to be casted as signed, before
+                // casting again as float.
+
+                TRACE("x: %f\n",
+                      static_cast<float>(static_cast<int16_t>(buf[i].x)) *
+                          sensitivity);
+                TRACE("y: %f\n",
+                      static_cast<float>(static_cast<int16_t>(buf[i].y)) *
+                          sensitivity);
                 TRACE("z: %f\n\n\n",
-                      static_cast<float>(buf[i].z) * sensitivity);
+                      static_cast<float>(static_cast<int16_t>(buf[i].z)) *
+                          sensitivity);
             }
             else
             {

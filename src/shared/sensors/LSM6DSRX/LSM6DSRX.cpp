@@ -126,22 +126,7 @@ bool LSM6DSRX::init()
     }
 
     // set interrupt
-    {
-        SPITransaction spi{m_spiSlave};
-        spi.writeRegister(
-            LSM6DSRXDefs::REG_INT1_CTRL,
-            static_cast<uint8_t>(m_config.int1InterruptSelection));
-        spi.writeRegister(
-            LSM6DSRXDefs::REG_INT2_CTRL,
-            static_cast<uint8_t>(m_config.int2InterruptSelection));
-
-        // setto a caso watermark per la fifo
-        uint8_t numeroByte =
-            100;  // 100 campioni
-                  // //////////////////////////////////////////////////////////////////////
-        spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, numeroByte);
-        spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, 0);
-    }
+    initInterrupts();
 
     m_isInit = true;
     return true;
@@ -208,6 +193,25 @@ bool LSM6DSRX::initFifo()
     spiTransaction.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL4, configByte);
 
     return true;
+}
+
+void LSM6DSRX::initInterrupts()
+{
+    uint8_t ui8Value = 0;
+    SPITransaction spi{m_spiSlave};
+
+    // set interrupt on pin INT1
+    spi.writeRegister(LSM6DSRXDefs::REG_INT1_CTRL,
+                      static_cast<uint8_t>(m_config.int1InterruptSelection));
+    // set interrupt on pin INT2
+    spi.writeRegister(LSM6DSRXDefs::REG_INT2_CTRL,
+                      static_cast<uint8_t>(m_config.int2InterruptSelection));
+
+    // set watermark level
+    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark & 255);
+    spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, ui8Value);
+    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark & 768);
+    spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, ui8Value);
 }
 
 bool LSM6DSRX::selfTestAcc()
