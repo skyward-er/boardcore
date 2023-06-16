@@ -29,10 +29,10 @@
 namespace Boardcore
 {
 LPS28DFW::LPS28DFW(I2C& i2c, SensorConfig sensorConfig)
-    : i2c(i2c), sensorConfig(sensorConfig),
-      i2cConfig{(sensorConfig.sa0 ? LPS28DFWDefs::lsp28dfwAddress1
-                                  : LPS28DFWDefs::lsp28dfwAddress0),
-                I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED}
+    : i2cConfig{sensorConfig.sa0 ? LPS28DFWDefs::lsp28dfwAddress1
+                                 : LPS28DFWDefs::lsp28dfwAddress0,
+                I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED},
+      i2c(i2c), sensorConfig(sensorConfig)
 {
     pressureSensitivity = (sensorConfig.fsr == FullScaleRange::FS_1260
                                ? LPS28DFWDefs::pressureSensitivity1260hPa
@@ -255,9 +255,10 @@ LPS28DFWData LPS28DFW::sampleImpl()
     data.pressureTimestamp = data.temperatureTimestamp =
         TimestampTimer::getTimestamp();
 
-    if (sensorConfig.odr == ODR::ONE_SHOT)
+    if (sensorConfig.mode == Mode::ONE_SHOT_MODE)
     {
         uint8_t ctrl_reg2_val{0};
+
         // Reading always 5 bytes because in one-shot mode the sensor samples
         // both pressure and temperature
         if (!(i2c.readRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr,
@@ -285,35 +286,32 @@ LPS28DFWData LPS28DFW::sampleImpl()
     }
 
     // If pressure new data present
-    if (status & LPS28DFWDefs::STATUS::P_DA)
-    {
-        // reading 5 bytes if also Temperature new sample, otherwise only the 3
-        // pressure sensors bytes
-        if (!i2c.readFromRegister(
-                i2cConfig, LPS28DFWDefs::PRESS_OUT_XL_addr, val,
-                ((status & LPS28DFWDefs::STATUS::T_DA) ? 5 : 3)))
-        {
-            lastError = BUS_FAULT;
-            return lastSample;
-        }
-
-        data.pressure = convertPressure(val[0], val[1], val[2]);
-
-        // If temperature new data present
-        if (status & LPS28DFWDefs::STATUS::T_DA)
-        {
-            data.temperature = convertTemperature(val[3], val[4]);
-        }
-        else
-        {
-            data.temperature          = lastSample.temperature;
-            data.temperatureTimestamp = lastSample.temperatureTimestamp;
-        }
-    }
-    else
+    if (!(status & LPS28DFWDefs::STATUS::P_DA))
     {
         lastError = NO_NEW_DATA;
         return lastSample;
+    }
+
+    // reading 5 bytes if also Temperature new sample, otherwise only the 3
+    // pressure bytes
+    if (!i2c.readFromRegister(i2cConfig, LPS28DFWDefs::PRESS_OUT_XL_addr, val,
+                              ((status & LPS28DFWDefs::STATUS::T_DA) ? 5 : 3)))
+    {
+        lastError = BUS_FAULT;
+        return lastSample;
+    }
+
+    data.pressure = convertPressure(val[0], val[1], val[2]);
+
+    // If temperature new data present
+    if (status & LPS28DFWDefs::STATUS::T_DA)
+    {
+        data.temperature = convertTemperature(val[3], val[4]);
+    }
+    else
+    {
+        data.temperature          = lastSample.temperature;
+        data.temperatureTimestamp = lastSample.temperatureTimestamp;
     }
 
     return data;
