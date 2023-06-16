@@ -123,7 +123,8 @@ static const uint8_t FIFO_DATA_OUT_PRESS_H_addr{0x7a};
 
 LPS28DFW::LPS28DFW(I2C& i2c, bool sa0, SensorConfig sensorConfig)
     : i2c(i2c), i2cConfig{(sa0 ? lsp28dfwAddress1 : lsp28dfwAddress0),
-                          I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST},
+                          I2CDriver::Addressing::BIT7,
+                          I2CDriver::Speed::MAX_SPEED},
       sensorConfig(sensorConfig)
 {
     pressureSensitivity = 4096;  // [LSB/hPa]
