@@ -210,23 +210,21 @@ void LSM6DSRX::initFifo()
 
 void LSM6DSRX::initInterrupts()
 {
-    uint8_t ui8Value = 0;
+    uint8_t buf[] = {0, 0};
     SPITransaction spi{spiSlave};
 
-    // set interrupt on pin INT1
-    spi.writeRegister(LSM6DSRXDefs::REG_INT1_CTRL,
-                      static_cast<uint8_t>(config.int1InterruptSelection));
-    // set interrupt on pin INT2
-    spi.writeRegister(LSM6DSRXDefs::REG_INT2_CTRL,
-                      static_cast<uint8_t>(config.int2InterruptSelection));
+    buf[0] = static_cast<uint8_t>(
+        config.int1InterruptSelection);  // set interrupt on pin INT1
+    buf[1] = static_cast<uint8_t>(
+        config.int2InterruptSelection);  // set interrupt on pin INT2
+    spi.writeRegisters(LSM6DSRXDefs::REG_INT1_CTRL, buf, 2);
 
     // set watermark level
-    ui8Value = static_cast<uint8_t>(config.fifoWatermark &
-                                    255);  // the first 8bits of the number.
-    spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, ui8Value);
-    ui8Value = static_cast<uint8_t>((config.fifoWatermark >> 8) &
-                                    0x01);  // the 9th bit of the number.
-    spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, ui8Value);
+    buf[0] = static_cast<uint8_t>(config.fifoWatermark &
+                                  255);  // the first 8bits of the number.
+    buf[1] = static_cast<uint8_t>((config.fifoWatermark >> 8) &
+                                  0x01);  // the 9th bit of the number.
+    spi.writeRegisters(LSM6DSRXDefs::REG_FIFO_CTRL1, buf, 2);
 }
 
 bool LSM6DSRX::selfTestAcc()

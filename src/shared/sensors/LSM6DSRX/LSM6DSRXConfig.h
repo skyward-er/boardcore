@@ -200,8 +200,17 @@ struct LSM6DSRXConfig
     // interrupt
     INTERRUPT int1InterruptSelection;  ///< interrupts selected on INT1 pin.
     INTERRUPT int2InterruptSelection;  ///< interrupts selected on INT2 pin.
-    uint16_t fifoWatermark;  ///< fifo watermark level (expressed as number of
-                             ///< sample). Expressed as a 9 bits number.
+
+    /**
+     * @brief Fifo watermark level (expressed as a 9 bits number). Warning: this
+     * number represents the number of samples extracted from the sensor's fifo,
+     * not the actual number of samples that will be present inside the driver's
+     * fifo `lastFifo`.
+     *
+     * The sensor's fifo max size is 511 samples, and those samples can be
+     * accelerometer data, gyroscope data or timestamps.
+     */
+    uint16_t fifoWatermark;
 };
 
 }  // namespace Boardcore
