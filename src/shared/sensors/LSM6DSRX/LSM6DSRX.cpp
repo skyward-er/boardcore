@@ -243,7 +243,7 @@ bool LSM6DSRX::selfTestAcc()
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(10);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
@@ -261,7 +261,7 @@ bool LSM6DSRX::selfTestAcc()
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(50);
+            miosix::Thread::sleep(10);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
@@ -289,7 +289,7 @@ bool LSM6DSRX::selfTestAcc()
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(10);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
@@ -307,7 +307,7 @@ bool LSM6DSRX::selfTestAcc()
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(50);
+            miosix::Thread::sleep(10);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
@@ -384,7 +384,7 @@ bool LSM6DSRX::selfTestGyr()
     byteValue = (byteValue & 0x02) >> 1;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(10);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
     }
@@ -401,7 +401,7 @@ bool LSM6DSRX::selfTestGyr()
         byteValue = (byteValue & 0x02) >> 1;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(50);
+            miosix::Thread::sleep(10);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = (byteValue & 0x02) >> 1;
         }
@@ -429,7 +429,7 @@ bool LSM6DSRX::selfTestGyr()
     byteValue = (byteValue & 0x02) >> 1;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(10);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
     }
@@ -446,7 +446,7 @@ bool LSM6DSRX::selfTestGyr()
         byteValue = (byteValue & 0x02) >> 1;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(50);
+            miosix::Thread::sleep(10);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = (byteValue & 0x02) >> 1;
         }
