@@ -794,10 +794,7 @@ void LSM6DSRX::readFromFifo()
         correlateTimestamps();
     }
 
-    // problema: vuole uint8_t, ma potrei avere molto piu' ... questo sensore
-    // usa 10bit per unread samples...
-    lastFifoLevel = static_cast<uint8_t>(
-        num);  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    lastFifoLevel = num;
 }
 
 uint16_t LSM6DSRX::unreadDataInFifo()
