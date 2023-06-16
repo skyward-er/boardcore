@@ -173,7 +173,7 @@ struct LSM6DSRXConfig
 
         // FIFO_THRESHOLD = 8, ///< FIFO threshold interrupt.
         // FIFO_OVERRUN = 16,  ///< FIFO overrun interrupt.
-        // FIFO_FULL = 32, ///< FIFO full interrupt.
+        FIFO_FULL = 32,  ///< FIFO full interrupt.
     };
 
     BDU bdu;  ///< Data update mode.
