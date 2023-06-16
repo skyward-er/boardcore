@@ -22,6 +22,7 @@
 
 #include "LSM6DSRX.h"
 
+#include <assert.h>
 #include <utils/Debug.h>
 
 namespace Boardcore
@@ -29,10 +30,31 @@ namespace Boardcore
 
 LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, BDU blockDataUpdate,
-                   ACC_ODR odrAccelerometer, OPERATING_MODE opModeAccelerometer)
+                   ACC_ODR odrAccelerometer, OPERATING_MODE opModeAccelerometer,
+                   ACC_FULLSCALE fsAccelerator)
     : spiSlave(bus, csPin, busConfiguration), bdu(blockDataUpdate),
-      odrAcc(odrAccelerometer), opModeAcc(opModeAccelerometer)
+      odrAcc(odrAccelerometer), opModeAcc(opModeAccelerometer),
+      fsAcc(fsAccelerator)
 {
+    switch (fsAcc)
+    {
+        case ACC_FULLSCALE::G2:
+            sensitivityAcc = 0.061;
+            break;
+        case ACC_FULLSCALE::G4:
+            sensitivityAcc = 0.122;
+            break;
+        case ACC_FULLSCALE::G8:
+            sensitivityAcc = 0.244;
+            break;
+        case ACC_FULLSCALE::G16:
+            sensitivityAcc = 0.488;
+            break;
+        default:
+            fsAcc          = ACC_FULLSCALE::G2;
+            sensitivityAcc = 0.061;
+            break;
+    };
 }
 
 bool LSM6DSRX::init()
@@ -85,6 +107,33 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
     int16_t ret = high;
     ret <<= 8;
     ret |= low;
+    return ret;
+}
+
+void LSM6DSRX::getAccelerometerData(AccData& data)
+{
+    // #ifdef DEBUG    // NOT WORKING
+    //     assert(isInit && "init() was not called");  // linter off
+    // #endif
+
+    data.x = getAxisData(REG_OUTX_L_A, REG_OUTX_H_A);
+    data.y = getAxisData(REG_OUTY_L_A, REG_OUTY_H_A);
+    data.z = getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A);
+}
+
+float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg)
+{
+    int8_t low = 0, high = 0;
+    int16_t sample = 0;
+
+    SPITransaction transaction{spiSlave};
+
+    high = transaction.readRegister(highReg);
+    low  = transaction.readRegister(lowReg);
+
+    sample = combineHighLowBits(low, high);
+
+    float ret = static_cast<float>(sample) * sensitivityAcc;
     return ret;
 }
 

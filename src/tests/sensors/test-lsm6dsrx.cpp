@@ -52,7 +52,8 @@ int main()
 
     LSM6DSRX sens(bus, csPin, busConfiguration,
                   LSM6DSRX::BDU::CONTINUOUS_UPDATE, LSM6DSRX::ACC_ODR::HZ_104,
-                  LSM6DSRX::OPERATING_MODE::NORMAL);
+                  LSM6DSRX::OPERATING_MODE::NORMAL,
+                  LSM6DSRX::ACC_FULLSCALE::G2);
 
     if (sens.init() == false)
     {
@@ -63,10 +64,13 @@ int main()
         }
     }
 
+    LSM6DSRX::AccData data{0.0, 0.0, 0.0};
     while (true)
     {
-        float zAcc = sens.getZAxisAccData();
-        TRACE("z: %f\n\n", zAcc);
+        sens.getAccelerometerData(data);
+        TRACE("x: %f\n", data.x);
+        TRACE("y: %f\n", data.y);
+        TRACE("z: %f\n\n\n", data.z);
 
         Thread::sleep(1000);
     }
