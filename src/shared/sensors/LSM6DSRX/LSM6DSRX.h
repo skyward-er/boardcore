@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "LSM6DSRXConfig.h"
-
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
+
+#include "LSM6DSRXConfig.h"
 
 namespace Boardcore
 {
@@ -33,7 +33,6 @@ namespace Boardcore
 class LSM6DSRX
 {
 public:
-
     /**
      * @brief Struct used to store the accelerometer data.
      */
@@ -44,7 +43,6 @@ public:
         float z;
     };
 
-
     /**
      * @brief LSM6DSRX constructor.
      *
@@ -53,31 +51,27 @@ public:
      * @param busConfiguration SPI bus configuration.
      * @param config LSM6DSRX configuration.
      */
-    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
-
+    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
+             LSM6DSRXConfig& config);
 
     /**
      * @brief Initialize the sensor.
      */
     bool init();
 
-
     /**
      * @brief Retrieves data from the accelerometer.
      */
     void getAccelerometerData(AccData& data);
 
-
 private:
-
     bool m_isInit = false;
     SPISlave m_spiSlave;
     LSM6DSRXConfig m_config;
-    
-    float m_sensitivityAcc;      ///< Sensitivity value for the accelerator.
+
+    float m_sensitivityAcc;  ///< Sensitivity value for the accelerator.
 
     const uint8_t WHO_AM_I_VALUE = 0x6B;
-
 
     /**
      * @brief Internal registers definitions.
@@ -107,7 +101,6 @@ private:
             0x2D,  ///< High bits output register for the accelerometer (z axis)
     };
 
-
     /**
      * @brief Check who_am_i register for validity.
      *
@@ -115,14 +108,12 @@ private:
      */
     bool checkWhoAmI();
 
-
     /**
      * @brief Utility for combining two 8 bits numbers in one 16 bits number.
      * @param low Low bits of the 16 bit number.
      * @param high High bits of the 16 bit number.
      */
     int16_t combineHighLowBits(uint8_t low, uint8_t high);
-
 
     /**
      * @brief Reads 16-bits float data from the specified registers.
