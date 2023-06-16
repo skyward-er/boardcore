@@ -172,8 +172,6 @@ int main()
         }
 
         sens.sample();
-        std::cout << "lastFifoLevel: " << sens.getLastFifoSize() << "\n\n";
-        Thread::sleep(1000);
 
         const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
             sens.getLastFifo();
@@ -184,6 +182,7 @@ int main()
             buf[i].print(std::cout);
             std::cout << "\n\n";
         }
+        TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
 
         std::cout << "Press a key to continue...\n\n";
         char ch = 0;

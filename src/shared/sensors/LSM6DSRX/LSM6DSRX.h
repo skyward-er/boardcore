@@ -179,17 +179,17 @@ private:
     /**
      * @brief Initialize the accelerometer.
      */
-    bool initAccelerometer();
+    void initAccelerometer();
 
     /**
      * @brief Initialize the gyroscope.
      */
-    bool initGyroscope();
+    void initGyroscope();
 
     /**
      * @brief Initialize fifo.
      */
-    bool initFifo();
+    void initFifo();
 
     /**
      * @brief Initialize interrupts.
