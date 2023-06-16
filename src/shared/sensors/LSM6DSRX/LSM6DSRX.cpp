@@ -220,6 +220,11 @@ bool LSM6DSRX::selfTestAcc()
     const uint8_t SIZE_DATA = 5;  // number of sample for the test
     SPITransaction spi{m_spiSlave};
 
+    // sleep time for data ready interrupt (150% odr during self-test)
+    // expressed in milliseconds.
+    // for this self-test the odr is 52Hz
+    const unsigned int dataReadyWaitTime = 29;
+
     LSM6DSRXData averageSF;      // average data during self test
     LSM6DSRXData averageNormal;  // average normal data
 
@@ -243,7 +248,7 @@ bool LSM6DSRX::selfTestAcc()
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(10);
+        miosix::Thread::sleep(dataReadyWaitTime);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
@@ -261,7 +266,7 @@ bool LSM6DSRX::selfTestAcc()
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(10);
+            miosix::Thread::sleep(dataReadyWaitTime);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
@@ -289,7 +294,7 @@ bool LSM6DSRX::selfTestAcc()
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(10);
+        miosix::Thread::sleep(dataReadyWaitTime);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
@@ -307,7 +312,7 @@ bool LSM6DSRX::selfTestAcc()
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(10);
+            miosix::Thread::sleep(dataReadyWaitTime);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
@@ -360,6 +365,11 @@ bool LSM6DSRX::selfTestGyr()
     const uint8_t SIZE_DATA = 5;
     SPITransaction spi{m_spiSlave};
 
+    // sleep time for data ready interrupt (150% odr during self-test)
+    // expressed in milliseconds.
+    // for this self-test the odr is 208Hz
+    const unsigned int dataReadyWaitTime = 8;
+
     LSM6DSRXData averageSF;      // average data during self test
     LSM6DSRXData averageNormal;  // average normal data
 
@@ -384,7 +394,7 @@ bool LSM6DSRX::selfTestGyr()
     byteValue = (byteValue & 0x02) >> 1;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(10);
+        miosix::Thread::sleep(dataReadyWaitTime);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
     }
@@ -401,7 +411,7 @@ bool LSM6DSRX::selfTestGyr()
         byteValue = (byteValue & 0x02) >> 1;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(10);
+            miosix::Thread::sleep(dataReadyWaitTime);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = (byteValue & 0x02) >> 1;
         }
@@ -429,7 +439,7 @@ bool LSM6DSRX::selfTestGyr()
     byteValue = (byteValue & 0x02) >> 1;
     while (byteValue != 1)
     {
-        miosix::Thread::sleep(10);
+        miosix::Thread::sleep(dataReadyWaitTime);
         byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
     }
@@ -446,7 +456,7 @@ bool LSM6DSRX::selfTestGyr()
         byteValue = (byteValue & 0x02) >> 1;
         while (byteValue != 1)
         {
-            miosix::Thread::sleep(10);
+            miosix::Thread::sleep(dataReadyWaitTime);
             byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
             byteValue = (byteValue & 0x02) >> 1;
         }
