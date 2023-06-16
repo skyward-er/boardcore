@@ -113,6 +113,9 @@ bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
 
 bool LPS28DFW::selfTest()
 {
+    // Since the sensor doesn't provide any self-test feature we just try to
+    // probe the sensor and read his whoami register.
+
     // Trying to probe the sensor to check if it is connected
     if (!i2c.probe(i2cConfig))
     {
@@ -122,7 +125,7 @@ bool LPS28DFW::selfTest()
         return false;
     }
 
-    // Checking the whoami value to assure communication
+    // Reading the whoami value to assure communication
     uint8_t whoamiValue{0};
     if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::WHO_AM_I, whoamiValue))
     {
@@ -131,6 +134,7 @@ bool LPS28DFW::selfTest()
         return false;
     }
 
+    // Checking the whoami value to assure correct communication
     if (whoamiValue != LPS28DFWDefs::WHO_AM_I_VALUE)
     {
         LOG_ERR(logger,
@@ -146,6 +150,10 @@ bool LPS28DFW::selfTest()
 
 bool LPS28DFW::setAverage(AVG avg)
 {
+    // Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
+    // internal driver state to set the register with the wanted ODR and AVG
+    // without previously reading it. This allows to avoid a useless
+    // transaction.
     if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG1_addr,
                            sensorConfig.odr | avg))
     {
@@ -159,6 +167,10 @@ bool LPS28DFW::setAverage(AVG avg)
 
 bool LPS28DFW::setOutputDataRate(ODR odr)
 {
+    // Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
+    // internal driver state to set the register with the wanted ODR and AVG
+    // without previously reading it. This allows to avoid a useless
+    // transaction.
     if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG1_addr,
                            odr | sensorConfig.avg))
     {
@@ -246,8 +258,8 @@ LPS28DFWData LPS28DFW::sampleImpl()
     if (sensorConfig.odr == ODR::ONE_SHOT)
     {
         uint8_t ctrl_reg2_val{0};
-        // reading 5 bytes if also Temperature new sample, otherwise only the 3
-        // pressure sensors bytes
+        // Reading always 5 bytes because in one-shot mode the sensor samples
+        // both pressure and temperature
         if (!(i2c.readRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr,
                                ctrl_reg2_val) &&
               i2c.writeRegister(
