@@ -146,6 +146,9 @@ public:
         return num;
     }
 
+    /**
+     * @brief Returns the number of unread data in the fifo.
+     */
     unsigned int unreadDataInFifo()
     {
         unsigned int ris = 0;
@@ -230,6 +233,11 @@ private:
      * @brief Initialize fifo.
      */
     bool initFifo();
+
+    /**
+     * @brief Initialize interrupts.
+     */
+    void initInterrupts();
 
     /**
      * @brief Performs self test for the accelerometer.

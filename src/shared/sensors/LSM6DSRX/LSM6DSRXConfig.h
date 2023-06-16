@@ -173,7 +173,7 @@ struct LSM6DSRXConfig
 
         FIFO_THRESHOLD = 8,  ///< FIFO threshold interrupt.
         // FIFO_OVERRUN = 16,  ///< FIFO overrun interrupt.
-        FIFO_FULL = 32,  ///< FIFO full interrupt.
+        // FIFO_FULL = 32,  ///< FIFO full interrupt.
     };
 
     BDU bdu;  ///< Data update mode.
@@ -199,6 +199,8 @@ struct LSM6DSRXConfig
     // interrupt
     INTERRUPT int1InterruptSelection;  ///< interrupts selected on INT1 pin.
     INTERRUPT int2InterruptSelection;  ///< interrupts selected on INT2 pin.
+    uint16_t fifoWatermark;  ///< fifo watermark level (expressed as number of
+                             ///< sample). Expressed as a 10 bits number.
 };
 
 }  // namespace Boardcore
