@@ -103,11 +103,6 @@ private:
         0.0;  ///< Resolution of the sensor's timestamps in microseconds.
 
     /**
-     * @brief Updated every time the fifo is sampled, so that after
-     */
-    // uint8_t m_sampleCounter = 0;
-
-    /**
      * @brief When extracting data from fifo i get data only from one sensor,
     but the struct LSM6DSRXData is made to have data from both sensors. The idea
     is to copy the value from the last valid sample for the sensor that hasn't
@@ -128,13 +123,13 @@ private:
      * @param high High bits of the 16 bit number.
      */
     int16_t combineHighLowBits(uint8_t low, uint8_t high);
-    uint16_t combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
-    {
-        uint16_t sample = high;
-        sample <<= 8;
-        sample |= low;
-        return sample;
-    }
+
+    /**
+     * @brief Utility for combining two 8 bits numbers in one 16 bits number.
+     * @param low Low bits of the 16 bit number.
+     * @param high High bits of the 16 bit number.
+     */
+    uint16_t combineHighLowBitsUnsigned(uint8_t low, uint8_t high);
 
     /**
      * @brief Reads 16-bits float data from the specified registers.
@@ -151,20 +146,7 @@ private:
      * @param highReg Register containing the high bits of the output.
      */
     int16_t getAxisData(LSM6DSRXDefs::Registers lowReg,
-                        LSM6DSRXDefs::Registers highReg)
-    {
-        int8_t low = 0, high = 0;
-        int16_t sample = 0;
-
-        SPITransaction transaction{m_spiSlave};
-
-        high = transaction.readRegister(highReg);
-        low  = transaction.readRegister(lowReg);
-
-        sample = combineHighLowBits(low, high);
-
-        return sample;
-    }
+                        LSM6DSRXDefs::Registers highReg);
 
     /**
      * @brief Initialize the accelerometer.
