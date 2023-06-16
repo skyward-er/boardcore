@@ -165,13 +165,12 @@ struct LSM6DSRXConfig
      */
     enum class INTERRUPT : uint8_t
     {
-        NOTHING  = 0,  ///< no interrupt selected
-        ACC_DRDY = 1,  ///< Accelerometer data ready.
-        GYR_DRDY = 2,  ///< Gyroscope data ready.
+        NOTHING        = 0,  ///< no interrupt selected
+        ACC_DRDY       = 1,  ///< Accelerometer data ready.
+        GYR_DRDY       = 2,  ///< Gyroscope data ready.
+        FIFO_THRESHOLD = 8,  ///< FIFO threshold interrupt.
 
         // not ready yet
-
-        FIFO_THRESHOLD = 8,  ///< FIFO threshold interrupt.
         // FIFO_OVERRUN = 16,  ///< FIFO overrun interrupt.
         // FIFO_FULL = 32,  ///< FIFO full interrupt.
     };

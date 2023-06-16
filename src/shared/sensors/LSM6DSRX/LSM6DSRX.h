@@ -26,6 +26,7 @@
 #include <miosix.h>
 
 #include "LSM6DSRXConfig.h"
+#include "LSM6DSRXData.h"
 #include "LSM6DSRXDefs.h"
 
 namespace Boardcore
