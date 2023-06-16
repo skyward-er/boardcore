@@ -65,12 +65,12 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_12_5;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_416;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_416;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // fifo
@@ -84,7 +84,7 @@ int main()
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::GYR_DRDY;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
-    sensConfig.fifoWatermark = 100;
+    sensConfig.fifoWatermark = 60;
 
     LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 
@@ -121,17 +121,17 @@ int main()
     //     FIFO.
 
     // LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
-    LSM6DSRXData data;
+    // LSM6DSRXData data;
     // const int SIZE = 60;
     // LSM6DSRX::FifoData buf[SIZE];
 
     while (true)
     {
-        data = sens.getSensorData();
+        // data = sens.getSensorData();
 
-        std::cout << data.header() << "\n";
-        data.print(std::cout);
-        std::cout << "\n\n";
+        // std::cout << data.header() << "\n";
+        // data.print(std::cout);
+        // std::cout << "\n\n";
 
         // gyroscope, wait for data ready
         // dataReady = int1Pin.value();
@@ -164,17 +164,36 @@ int main()
         // TRACE("z: %f\n\n", data.z);
 
         // wait for fifo full interrupt
-        // int dataReady = int2Pin.value();
-        // while (dataReady != 1)
-        // {
-        //     Thread::sleep(20);
-        //     dataReady = int2Pin.value();
-        // }
+        int dataReady = int2Pin.value();
+        while (dataReady != 1)
+        {
+            Thread::sleep(20);
+            dataReady = int2Pin.value();
+        }
+
+        sens.sample();
+        std::cout << "lastFifoLevel: " << sens.getLastFifoSize() << "\n\n";
+        Thread::sleep(1000);
+
+        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+            sens.getLastFifo();
+        for (unsigned int i = 0; i < buf.size(); ++i)
+        {
+            std::cout << "sample " << i << "\n";
+            std::cout << buf[i].header() << "\n";
+            buf[i].print(std::cout);
+            std::cout << "\n\n";
+        }
+
+        std::cout << "Press a key to continue...\n\n";
+        char ch = 0;
+        std::cin >> ch;
 
         // TRACE(
         //     "Interrupt ricevuto\n"
         //     "dati non letti pre-lettura: %u\n",
         //     sens.unreadDataInFifo());
+        // sens.sampleImpl();
         // const int numBatchRed = sens.readFromFifo(buf, SIZE);
         // TRACE("numero dati letti: %d\n", numBatchRed);
         // TRACE("dati non letti post-lettura: %u\n\n",
@@ -234,7 +253,7 @@ int main()
         //     }
         // }
 
-        Thread::sleep(1000);
+        // Thread::sleep(1000);
     }
 
     return 0;
