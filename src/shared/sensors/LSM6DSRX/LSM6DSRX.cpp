@@ -113,6 +113,13 @@ bool LSM6DSRX::init()
         return false;
     }
 
+    // enable timestamp (pag. 61 datasheet)
+    {
+        SPITransaction spiTransaction{m_spiSlave};
+        spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 1 << 5);
+    }
+
+
     return true;
 }
 

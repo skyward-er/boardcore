@@ -82,10 +82,6 @@ int main()
     {
         TRACE("Self test successful\n\n");
         Thread::sleep(2000);
-        // while(true)
-        // {
-        //     Thread::sleep(2000);
-        // }
     }
     else
     {
