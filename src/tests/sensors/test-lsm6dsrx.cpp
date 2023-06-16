@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -112,15 +112,8 @@ int main()
         }
     }
 
-    // test data
-
     while (true)
     {
-        // LSM6DSRXData data = sens.getSensorData();
-        // std::cout << data.header() << "\n";
-        // data.print(std::cout);
-        // std::cout << "\n\n";
-
         // wait for fifo full interrupt
         int dataReady = int2Pin.value();
         while (dataReady != 1)
@@ -144,74 +137,6 @@ int main()
         // }
         std::cout << "\n\n\n";
     }
-
-    // test timestamps
-
-    // std::vector<uint64_t> vetTimestamps;
-    // vetTimestamps.reserve(LSM6DSRXDefs::FIFO_SIZE);
-    // while (true)
-    // {
-    //     // skip some samples
-    //     for (int i = 0; i < 5; ++i)
-    //     {
-    //         // wait for fifo full interrupt
-    //         int dataReady = int2Pin.value();
-    //         while (dataReady != 1)
-    //         {
-    //             Thread::sleep(20);
-    //             dataReady = int2Pin.value();
-    //         }
-    //         sens->sampleImpl();
-    //     }
-
-    //     // wait for fifo full interrupt
-    //     int dataReady = int2Pin.value();
-    //     while (dataReady != 1)
-    //     {
-    //         Thread::sleep(20);
-    //         dataReady = int2Pin.value();
-    //     }
-    //     sens->sampleImpl();
-
-    //     // data extraction
-    //     const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-    //         sens->getLastFifo();
-    //     vetTimestamps.clear();
-    //     for (int i = 0; i < sens->getLastFifoSize(); ++i)
-    //     {
-    //         vetTimestamps.push_back(buf[i].accelerationTimestamp);
-
-    //         if (buf[i].accelerationTimestamp == 0)
-    //         {
-    //             TRACE("Acc timestamp is 0\n");
-    //         }
-    //         if (buf[i].angularSpeedTimestamp == 0)
-    //         {
-    //             TRACE("Gyr timestamp is 0\n");
-    //         }
-    //     }
-    //     std::sort(vetTimestamps.begin(), vetTimestamps.end());
-
-    //     // test max difference between timestamps
-    //     uint64_t diffMax = 0, diff = 0;
-    //     for (unsigned int i = 1; i < vetTimestamps.size(); ++i)
-    //     {
-    //         diff = vetTimestamps[i] - vetTimestamps[i - 1];
-    //         if (diff > diffMax)
-    //         {
-    //             diffMax = diff;
-    //         }
-    //     }
-
-    //     // print data
-    //     std::cout << "diffMax: " << diffMax << "\n";
-    //     // std::cout << "vetTimestamps:\n";
-    //     // for (unsigned int i = 0; i < vetTimestamps.size(); ++i)
-    //     // {
-    //     //     std::cout << vetTimestamps[i] << ", ";
-    //     // }
-    //     std::cout << "\n\n\n";
-    // }
 
     delete sens;
     return 0;

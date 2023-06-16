@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
