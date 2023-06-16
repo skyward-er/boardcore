@@ -126,7 +126,7 @@ LPS28DFW::LPS28DFW(I2C& i2c, bool sa0, SensorConfig sensorConfig)
                           I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST},
       sensorConfig(sensorConfig)
 {
-    setFullScaleRange(sensorConfig.fsr);
+    pressureSensitivity = 4096;  // hPa
 }
 
 bool LPS28DFW::init()
@@ -164,8 +164,14 @@ bool LPS28DFW::init()
         return false;
     }
 
-    setConfig(sensorConfig);
+    if (!setConfig(sensorConfig))
+    {
+        LOG_ERR(logger, "Configuration not applied correctly");
+        lastError = SensorErrors::INIT_FAIL;
+        return false;
+    }
 
+    lastError     = SensorErrors::NO_ERRORS;
     isInitialized = true;
     return true;
 }
@@ -207,6 +213,14 @@ bool LPS28DFW::setConfig(const SensorConfig& sensorConfig)
     if (sensorConfig.drdy)
     {
         if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr, INT_EN | DRDY))
+        {
+            lastError = BUS_FAULT;
+            return false;
+        }
+    }
+    else
+    {
+        if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr, 0))
         {
             lastError = BUS_FAULT;
             return false;
