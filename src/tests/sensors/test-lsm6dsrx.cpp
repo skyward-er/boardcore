@@ -54,12 +54,18 @@ int main()
     sensConfig.bdu = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
 
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G4;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_104;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_12_5;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_104;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
+
+    sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::BYPASS;
+    sensConfig.fifoTimestampDecimation =
+        LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DISABLED;
+    sensConfig.fifoTemperatureBdr =
+        LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
 
     LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 

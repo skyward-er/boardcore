@@ -124,15 +124,60 @@ struct LSM6DSRXConfig
         NORMAL = 1,  ///< Works in low power or normal mode depending on the odr
     };
 
+    /**
+     * @brief Fifo operating mode.
+     */
+    enum class FIFO_MODE : uint8_t
+    {
+        BYPASS     = 0,  ///< Fifo disabled.
+        FIFO       = 1,  ///< Stops collecting data when FIFO is full.
+        CONTINUOUS = 6,  ///< If the FIFO is full, the new sample overwrites the
+                         ///< older one.
+    };
+
+    /**
+     * @brief Selects decimation for timestamp batching in FIFO. Write rate will
+     * be the maximum rate between accelerometer and gyro BDR divided by
+     * decimation decoder.
+     */
+    enum class FIFO_TIMESTAMP_DECIMATION : uint8_t
+    {
+        DISABLED = 0,  ///< Timestamp not batched in FIFO.
+        DEC_1    = 1,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) [Hz]
+        DEC_8    = 2,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) / 8 [Hz]
+        DEC_32   = 3,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) / 32 [Hz]
+    };
+
+    /**
+     * @brief Selects batch data rate in FIFO for temperature data.
+     */
+    enum class FIFO_TEMPERATURE_BDR : uint8_t
+    {
+        DISABLED = 0,  ///< Temperature not batched in FIFO.
+        HZ_1_6   = 1,  ///< 1.6 Hz
+        HZ_12_5  = 2,  ///< 12.5 Hz
+        HZ_52    = 3,  ///< 52 Hz
+    };
+
     BDU bdu;  ///< Data update mode.
 
+    // accelerometer
     ACC_ODR odrAcc;            ///< Accelerometer odr.
     OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer.
     ACC_FULLSCALE fsAcc;       ///< Fullscale selection for the accelerometer.
 
+    // gyroscope
     GYR_ODR odrGyr;            ///< Accelerometer odr.
     OPERATING_MODE opModeGyr;  ///< Operating mode for the accelerometer.
     GYR_FULLSCALE fsGyr;       ///< Fullscale selection for the accelerometer.
+
+    // fifo
+    FIFO_MODE fifoMode;  ///< Fifo operating mode.
+    FIFO_TIMESTAMP_DECIMATION
+    fifoTimestampDecimation;  ///< decimation for timestamp batching in
+                              ///< FIFO.
+    FIFO_TEMPERATURE_BDR
+    fifoTemperatureBdr;  ///< batch data rate for temperature data in FIFO.
 };
 
 }  // namespace Boardcore

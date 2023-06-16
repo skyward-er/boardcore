@@ -116,37 +116,39 @@ bool LSM6DSRX::init()
 
 bool LSM6DSRX::initAccelerometer()
 {
+    uint8_t configByte = 0;
     SPITransaction spiTransaction{m_spiSlave};
 
     // Setup accelerometer (pag. 28)
 
     // set accelerometer odr, fullscale and high resolution (pag. 52)
-    uint8_t accSetup = static_cast<uint8_t>(m_config.odrAcc) << 4 |  // odr
-                       static_cast<uint8_t>(m_config.fsAcc) << 2 |  // fullscale
-                       0 << 1;  // high resolution selection
-    spiTransaction.writeRegister(REG_CTRL1_XL, accSetup);
+    configByte = static_cast<uint8_t>(m_config.odrAcc) << 4 |  // odr
+                 static_cast<uint8_t>(m_config.fsAcc) << 2 |   // fullscale
+                 0 << 1;  // high resolution selection
+    spiTransaction.writeRegister(REG_CTRL1_XL, configByte);
 
     // set accelerometer performance mode (pag. 57)
-    uint8_t accPerformanceMode = static_cast<uint8_t>(m_config.opModeAcc) << 4;
-    spiTransaction.writeRegister(REG_CTRL6_C, accPerformanceMode);
+    configByte = static_cast<uint8_t>(m_config.opModeAcc) << 4;
+    spiTransaction.writeRegister(REG_CTRL6_C, configByte);
 
     return true;
 }
 
 bool LSM6DSRX::initGyroscope()
 {
+    uint8_t configByte = 0;
     SPITransaction spiTransaction{m_spiSlave};
 
     // setup pag. 28
 
     // set odr, fullscale pag. 53
-    uint8_t gyrSetup = static_cast<uint8_t>(m_config.odrGyr) << 4 |  // odr
-                       static_cast<uint8_t>(m_config.fsGyr);  // fullscale
-    spiTransaction.writeRegister(REG_CTRL2_G, gyrSetup);
+    configByte = static_cast<uint8_t>(m_config.odrGyr) << 4 |  // odr
+                 static_cast<uint8_t>(m_config.fsGyr);         // fullscale
+    spiTransaction.writeRegister(REG_CTRL2_G, configByte);
 
     // set performance mode pag. 58
-    uint8_t gyrPerformanceMode = static_cast<uint8_t>(m_config.opModeGyr) << 7;
-    spiTransaction.writeRegister(REG_CTRL7_G, gyrPerformanceMode);
+    configByte = static_cast<uint8_t>(m_config.opModeGyr) << 7;
+    spiTransaction.writeRegister(REG_CTRL7_G, configByte);
 
     return true;
 }
@@ -154,11 +156,23 @@ bool LSM6DSRX::initGyroscope()
 bool LSM6DSRX::initFifo()
 {
     // setup Fifo (pag. 33)
+    uint8_t configByte = 0;
     SPITransaction spiTransaction{m_spiSlave};
 
-    // set fifo mode: bypass_mode = 0 (pag. 48)
-    uint8_t fifoMode = 0;
-    spiTransaction.writeRegister(REG_FIFO_CTRL4, fifoMode);
+    // select batch data rate in FIFO_CTRL3
+    configByte = static_cast<uint8_t>(m_config.odrAcc) |  // accelerometer bdr
+                 (static_cast<uint8_t>(m_config.odrGyr) << 4);  // gyroscope bdr
+    spiTransaction.writeRegister(REG_FIFO_CTRL3, configByte);
+
+    // set fifo mode, batch data rate for temperature sensor and the decimation
+    // factor for timestamp batching
+    configByte =
+        static_cast<uint8_t>(m_config.fifoMode) |  // fifo operating mode
+        static_cast<uint8_t>(m_config.fifoTemperatureBdr)
+            << 4 |  // batch data rate for temperature data
+        static_cast<uint8_t>(m_config.fifoTimestampDecimation)
+            << 6;  // timestamp decimation
+    spiTransaction.writeRegister(REG_FIFO_CTRL4, configByte);
 
     return true;
 }
