@@ -60,11 +60,14 @@ bool LSM6DSRX::init()
         return false;
     }
 
-    // set BDU
+    // Set BDU and multiple spi read/write
     {
         SPITransaction spiTransaction{m_spiSlave};
-        spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL3_C,
-                                     static_cast<uint8_t>(m_config.bdu));
+
+        uint8_t value = static_cast<uint8_t>(m_config.bdu) << 6;  // set bdu
+        value |= 1 << 2;  // set multiple spi read/write
+
+        spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, value);
     }
 
     // Setup accelerometer
@@ -704,9 +707,11 @@ float LSM6DSRX::getSensorTimestampResolution()
 
 void LSM6DSRX::readFromFifo()
 {
-    uint16_t numUnreadSamples = 0;
     SPITransaction spi{m_spiSlave};
-    uint16_t num = LSM6DSRXDefs::FIFO_SIZE;  // number of sample to read
+
+    // get number of sample to read
+    const uint16_t numSamples =
+        std::min(LSM6DSRXDefs::FIFO_SIZE, unreadDataInFifo());
 
     // data has 2bits tags that determins the corresponding time slot.
     // 00 -> first element of the array (timestamps[0])
@@ -716,34 +721,27 @@ void LSM6DSRX::readFromFifo()
     // TimestampTimer class.
     uint64_t timestamps[4] = {0};
 
-    // reads the number of unread samples in the fifo
-    numUnreadSamples = unreadDataInFifo();
-    if (numUnreadSamples < num)
-    {
-        // there is no enough data.
-        num = numUnreadSamples;
-    }
+    // read samples from the sensors
+    spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+                      reinterpret_cast<uint8_t*>(m_rawFifo.data()),
+                      numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
 
     // not all data extracted from fifo is sample data, timestamps are not
     // saved.
-    // --> 'i' keeps count of the number of elements extracted from the sensor
-    // fifo
-    //     'idxFifo' keeps track of the samples saved inside 'lastFifo'
+    // --> `i` keeps count of the number of elements in `rawFifo`
+    //     `idxFifo` keeps track of the samples saved inside `lastFifo`
     uint16_t idxFifo = 0;
-    for (uint16_t i = 0; i < num; ++i)
+    for (uint16_t i = 0; i < numSamples; ++i)
     {
-        const uint8_t sampleTag =
-            spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
-        const uint8_t sensorTag   = (sampleTag >> 3) & 31;
-        const uint8_t timeslotTag = (sampleTag & 6) >> 1;  // & 0b0110
+        const uint8_t sensorTag   = (m_rawFifo[i].sampleTag >> 3) & 31;
+        const uint8_t timeslotTag = (m_rawFifo[i].sampleTag & 6) >> 1;
 
-        // read all registers
-        uint8_t xl = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L);
-        uint8_t xh = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H);
-        uint8_t yl = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L);
-        uint8_t yh = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H);
-        uint8_t zl = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L);
-        uint8_t zh = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H);
+        const uint8_t xl = m_rawFifo[i].xl;
+        const uint8_t xh = m_rawFifo[i].xh;
+        const uint8_t yl = m_rawFifo[i].yl;
+        const uint8_t yh = m_rawFifo[i].yh;
+        const uint8_t zl = m_rawFifo[i].zl;
+        const uint8_t zh = m_rawFifo[i].zh;
 
         switch (sensorTag)
         {
@@ -811,7 +809,7 @@ void LSM6DSRX::readFromFifo()
                 lastFifo[idxFifo].angularSpeedTimestamp =
                     m_lastValidSample.angularSpeedTimestamp;
 
-                // update lastValidSampe for the accelerometer
+                // update lastValidSample for the accelerometer
                 m_lastValidSample.accelerationTimestamp =
                     lastFifo[idxFifo].accelerationTimestamp;
                 m_lastValidSample.accelerationX =

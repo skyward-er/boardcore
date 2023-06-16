@@ -57,7 +57,7 @@ int main()
     int2Pin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_64;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_8;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
@@ -112,31 +112,50 @@ int main()
         }
     }
 
+    std::cout << "sensor initialized\n";
     while (true)
     {
-        // wait for fifo full interrupt
-        int dataReady = int2Pin.value();
-        while (dataReady != 1)
-        {
-            Thread::sleep(20);
-            dataReady = int2Pin.value();
-        }
+        uint64_t t0 = TimestampTimer::getTimestamp();
 
-        sens->sample();
+        auto d = sens->sampleImpl();
 
-        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-            sens->getLastFifo();
+        uint64_t t1 = TimestampTimer::getTimestamp();
 
-        // print last element from fifo
-        std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
-        buf[sens->getLastFifoSize() - 1].print(std::cout);
-        // for(uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
-        // {
-        //     buf[i].print(std::cout);
-        //     std::cout << "\n";
-        // }
+        uint64_t diff = t1 - t0;
+
+        std::cout << "sampleImpl() execution time(us): " << diff << "\n";
+        std::cout << "last fifo sample:\n";
+        d.print(std::cout);
         std::cout << "\n\n\n";
+
+        miosix::Thread::sleep(1000);
     }
+
+    // while (true)
+    // {
+    //     // wait for fifo full interrupt
+    //     int dataReady = int2Pin.value();
+    //     while (dataReady != 1)
+    //     {
+    //         Thread::sleep(20);
+    //         dataReady = int2Pin.value();
+    //     }
+
+    //     sens->sample();
+
+    //     const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+    //         sens->getLastFifo();
+
+    //     // print last element from fifo
+    //     // std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
+    //     // buf[sens->getLastFifoSize() - 1].print(std::cout);
+    //     for(uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
+    //     {
+    //         buf[i].print(std::cout);
+    //         std::cout << "\n";
+    //     }
+    //     std::cout << "\n\n\n";
+    // }
 
     delete sens;
     return 0;
