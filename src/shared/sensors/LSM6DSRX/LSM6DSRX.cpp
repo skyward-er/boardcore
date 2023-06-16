@@ -23,6 +23,7 @@
 #include "LSM6DSRX.h"
 
 #include <assert.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <utils/Debug.h>
 
 #include <cmath>
@@ -510,33 +511,41 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
     return ret;
 }
 
-void LSM6DSRX::getAccelerometerData(SensorData& data)
+void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
-    D(assert(m_isInit && "init() was not called"));
+    // D(assert(m_isInit && "init() was not called"));
 
-    data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
-                         m_sensitivityAcc);
-    data.y = getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A,
-                         m_sensitivityAcc);
-    data.z = getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A,
-                         m_sensitivityAcc);
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+
+    data.accelerationX =
+        getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
+                    m_sensitivityAcc);
+    data.accelerationY =
+        getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A,
+                    m_sensitivityAcc);
+    data.accelerationZ =
+        getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A,
+                    m_sensitivityAcc);
 }
 
-void LSM6DSRX::getGyroscopeData(SensorData& data)
+void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
-    D(assert(m_isInit && "init() was not called"));
+    // D(assert(m_isInit && "init() was not called"));
 
-    data.x = getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
-                         m_sensitivityGyr);
-    data.y = getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G,
-                         m_sensitivityGyr);
-    data.z = getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G,
-                         m_sensitivityGyr);
+    data.angularSpeedX =
+        getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
+                    m_sensitivityGyr);
+    data.angularSpeedY =
+        getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G,
+                    m_sensitivityGyr);
+    data.angularSpeedZ =
+        getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G,
+                    m_sensitivityGyr);
 }
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-    D(assert(m_isInit && "init() was not called"));
+    // D(assert(m_isInit && "init() was not called"));
 
     SPITransaction spi{m_spiSlave};
 
@@ -546,6 +555,18 @@ uint32_t LSM6DSRX::getSensorTimestamp()
     value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP3) << 24;
 
     return value;
+}
+
+LSM6DSRXData LSM6DSRX::getSensorData()
+{
+    D(assert(m_isInit && "init() was not called"));
+
+    LSM6DSRXData data;
+
+    getAccelerometerData(data);
+    getGyroscopeData(data);
+
+    return data;
 }
 
 bool LSM6DSRX::selfTest()
@@ -560,6 +581,26 @@ bool LSM6DSRX::selfTest()
     }
 
     return init();
+}
+
+/**
+ * @brief Gather data from FIFO/data registers and temperature sensor.
+ */
+LSM6DSRXData LSM6DSRX::sampleImpl()
+{
+    D(assert(m_isInit && "init() was not called"));
+    // Reset any errors.
+    lastError = SensorErrors::NO_ERRORS;
+
+    if (m_config.fifoMode == LSM6DSRXConfig::FIFO_MODE::BYPASS)
+    {
+        // leggi i registri, restituisci dato
+        return getSensorData();
+    }
+
+    // leggi dalla fifo
+    readFromFifo();
+    return lastFifo[lastFifoLevel - 1];
 }
 
 float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
