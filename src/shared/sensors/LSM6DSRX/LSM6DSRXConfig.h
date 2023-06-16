@@ -165,14 +165,12 @@ struct LSM6DSRXConfig
      */
     enum class INTERRUPT : uint8_t
     {
-        NOTHING        = 0,  ///< no interrupt selected
-        ACC_DRDY       = 1,  ///< Accelerometer data ready.
-        GYR_DRDY       = 2,  ///< Gyroscope data ready.
-        FIFO_THRESHOLD = 8,  ///< FIFO threshold interrupt.
-
-        // not ready yet
-        // FIFO_OVERRUN = 16,  ///< FIFO overrun interrupt.
-        // FIFO_FULL = 32,  ///< FIFO full interrupt.
+        NOTHING        = 0,   ///< no interrupt selected
+        ACC_DRDY       = 1,   ///< Accelerometer data ready.
+        GYR_DRDY       = 2,   ///< Gyroscope data ready.
+        FIFO_THRESHOLD = 8,   ///< FIFO threshold interrupt.
+        FIFO_OVERRUN   = 16,  ///< FIFO overrun interrupt.
+        FIFO_FULL      = 32,  ///< FIFO full interrupt.
     };
 
     BDU bdu;  ///< Data update mode.
@@ -199,7 +197,7 @@ struct LSM6DSRXConfig
     INTERRUPT int1InterruptSelection;  ///< interrupts selected on INT1 pin.
     INTERRUPT int2InterruptSelection;  ///< interrupts selected on INT2 pin.
     uint16_t fifoWatermark;  ///< fifo watermark level (expressed as number of
-                             ///< sample). Expressed as a 10 bits number.
+                             ///< sample). Expressed as a 9 bits number.
 };
 
 }  // namespace Boardcore

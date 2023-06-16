@@ -65,12 +65,12 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_416;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_1_6;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_416;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // fifo
@@ -81,7 +81,7 @@ int main()
         LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
 
     // interrupt
-    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::GYR_DRDY;
+    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
     sensConfig.fifoWatermark = 60;
@@ -131,34 +131,31 @@ int main()
             dataReady = int2Pin.value();
         }
 
-        sens.sample();
+        // sens.sample();
 
-        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-            sens.getLastFifo();
-        for (unsigned int i = 0; i < buf.size(); ++i)
-        {
-            std::cout << "sample " << i << "\n";
-            std::cout << buf[i].header() << "\n";
-            buf[i].print(std::cout);
-            std::cout << "\n\n";
-        }
-        TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
+        // const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+        //     sens.getLastFifo();
+        // for (unsigned int i = 0; i < buf.size(); ++i)
+        // {
+        //     std::cout << "sample " << i << "\n";
+        //     std::cout << buf[i].header() << "\n";
+        //     buf[i].print(std::cout);
+        //     std::cout << "\n\n";
+        // }
+        // TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
 
-        std::cout << "Press a key to continue...\n\n";
-        char ch = 0;
-        std::cin >> ch;
+        // std::cout << "Press a key to continue...\n\n";
+        // char ch = 0;
+        // std::cin >> ch;
 
-        // TRACE(
-        //     "Interrupt ricevuto\n"
-        //     "dati non letti pre-lettura: %u\n",
-        //     sens.unreadDataInFifo());
-        // sens.sampleImpl();
-        // const int numBatchRed = sens.readFromFifo(buf, SIZE);
-        // TRACE("numero dati letti: %d\n", numBatchRed);
-        // TRACE("dati non letti post-lettura: %u\n\n",
-        // sens.unreadDataInFifo());
+        TRACE(
+            "Interrupt ricevuto\n"
+            "dati non letti pre-lettura: %u\n",
+            sens.unreadDataInFifo());
+        sens.sampleImpl();
+        TRACE("dati non letti post-lettura: %u\n\n", sens.unreadDataInFifo());
 
-        // Thread::sleep(1000);
+        // Thread::sleep(5000);
     }
 
     return 0;

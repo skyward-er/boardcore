@@ -36,6 +36,10 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
     : m_spiSlave(bus, csPin, busConfiguration), m_config(configuration)
 {
     m_isInit = false;
+
+    // check that the watermark value is suitable
+    D(assert(m_config.fifoWatermark < 512 &&
+             "fifoWatermark should be a 9bits number."));
 }
 
 bool LSM6DSRX::init()
@@ -194,9 +198,11 @@ void LSM6DSRX::initInterrupts()
                       static_cast<uint8_t>(m_config.int2InterruptSelection));
 
     // set watermark level
-    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark & 255);
+    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark &
+                                    255);  // the first 8bits of the number.
     spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, ui8Value);
-    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark & 768);
+    ui8Value = static_cast<uint8_t>(m_config.fifoWatermark &
+                                    256);  // the 9th bit of the number.
     spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, ui8Value);
 }
 
