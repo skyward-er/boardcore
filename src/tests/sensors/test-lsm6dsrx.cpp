@@ -51,10 +51,15 @@ int main()
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
     LSM6DSRXConfig sensConfig;
-    sensConfig.bdu       = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
+    sensConfig.bdu = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
+
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G4;
     sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_104;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
+
+    sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_104;
+    sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 
@@ -67,17 +72,20 @@ int main()
         }
     }
 
-    LSM6DSRX::AccData data{0.0, 0.0, 0.0};
+    LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
     while (true)
     {
         sens.getAccelerometerData(data);
         TRACE("Accelerometer:\n");
         TRACE("x: %f\n", data.x);
         TRACE("y: %f\n", data.y);
-        TRACE("z: %f\n", data.z);
+        TRACE("z: %f\n\n", data.z);
 
+        sens.getGyroscopeData(data);
         TRACE("Gyroscope:\n");
-        TRACE("z: %f\n\n\n", sens.getZAxisGyroscopeData());
+        TRACE("x: %f\n", data.x);
+        TRACE("y: %f\n", data.y);
+        TRACE("z: %f\n\n\n", data.z);
 
         Thread::sleep(1000);
     }
