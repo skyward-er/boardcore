@@ -21,6 +21,7 @@
  */
 
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/LSM6DSRX/LSM6DSRX.h>
 #include <utils/Debug.h>
@@ -63,7 +64,7 @@ int main()
 
     sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
     sensConfig.fifoTimestampDecimation =
-        LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DISABLED;
+        LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DEC_1;
     sensConfig.fifoTemperatureBdr =
         LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
 
@@ -96,8 +97,8 @@ int main()
         1000);  // sleep in order to produce some data before reading from FIFO.
 
     // LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
-    const int SIZE = 4;
-    LSM6DSRX::FifoData buf[SIZE];
+    // const int SIZE = 4;
+    // LSM6DSRX::FifoData buf[SIZE];
 
     while (true)
     {
@@ -113,37 +114,63 @@ int main()
         // TRACE("y: %f\n", data.y);
         // TRACE("z: %f\n\n\n", data.z);
 
-        const int numBatchRed = sens.readFromFifo(buf, SIZE);
-        TRACE("Number of batch in buf: %d\n", numBatchRed);
-        float sensitivity = 0.0;
-        for (int i = 0; i < numBatchRed; ++i)
-        {
-            // read sensor tag
-            uint8_t tagSensor = (buf[i].tag >> 3) & 31;
-            switch (tagSensor)
-            {
-                case 0x01:
-                    // gyroscope
-                    TRACE("%d) GYROSCOPE\n", i);
-                    sensitivity = 4.375;
-                    break;
-                case 0x02:
-                    // accelerometer
-                    TRACE("%d) ACCELEROMETER\n", i);
-                    sensitivity = 0.122;
-                    break;
-                default:
-                    TRACE("%d) UNRECOGNIZED DATA\n", i);
-                    sensitivity = 1.0;
-                    break;
-            }
+        uint32_t sensTime  = sens.getSensorTimestamp();
+        uint32_t timestamp = TimestampTimer::getTimestamp();
+        long long delta    = sensTime - timestamp;
 
-            // print data
-            TRACE("x: %f\n", static_cast<float>(buf[i].x) * sensitivity);
-            TRACE("y: %f\n", static_cast<float>(buf[i].y) * sensitivity);
-            TRACE("z: %f\n\n\n", static_cast<float>(buf[i].z) * sensitivity);
-        }
+        TRACE(
+            "Sensor timestamp: %u\n"
+            "Timestamp: %u\n"
+            "Delta: %lld\n\n\n",
+            sensTime, timestamp, delta);
 
+        // const int numBatchRed = sens.readFromFifo(buf, SIZE);
+        // TRACE("Number of batch in buf: %d\n", numBatchRed);
+        // float sensitivity = 0.0;
+        // for (int i = 0; i < numBatchRed; ++i)
+        // {
+        //     // read sensor tag
+        //     uint8_t tagSensor = (buf[i].tag >> 3) & 31;
+        //     switch (tagSensor)
+        //     {
+        //         case 0x01:
+        //             // gyroscope
+        //             TRACE("%d) GYROSCOPE\n", i);
+        //             sensitivity = 4.375;
+        //             break;
+        //         case 0x02:
+        //             // accelerometer
+        //             TRACE("%d) ACCELEROMETER\n", i);
+        //             sensitivity = 0.122;
+        //             break;
+        //         case 0x04:
+        //             // timestamp
+        //             TRACE("%d) TIMESTAMP\n", i);
+        //             sensitivity = 1.0;
+        //             break;
+        //         default:
+        //             TRACE("%d) UNRECOGNIZED DATA\n", i);
+        //             sensitivity = 1.0;
+        //             break;
+        //     }
+
+        //     if(tagSensor != 0x04)
+        //     {
+        //         // print data
+        //         TRACE("x: %f\n", static_cast<float>(buf[i].x) * sensitivity);
+        //         TRACE("y: %f\n", static_cast<float>(buf[i].y) * sensitivity);
+        //         TRACE("z: %f\n\n\n", static_cast<float>(buf[i].z) *
+        //         sensitivity);
+        //     }
+        //     else
+        //     {
+        //         // print timestamp data
+        //         uint32_t timestamp = static_cast<uint32_t>(buf[i].x);
+        //         timestamp |= static_cast<uint32_t>(buf[i].y) << 16;
+        //         TRACE("Value: %u\n\n\n", timestamp);
+        //     }
+
+        // }
 
         Thread::sleep(2000);
     }

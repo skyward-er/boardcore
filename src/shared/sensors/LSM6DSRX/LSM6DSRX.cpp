@@ -125,7 +125,6 @@ bool LSM6DSRX::init()
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 1 << 5);
     }
 
-
     m_isInit = true;
     return true;
 }
@@ -517,6 +516,22 @@ void LSM6DSRX::getGyroscopeData(SensorData& data)
                          m_sensitivityGyr);
     data.z = getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G,
                          m_sensitivityGyr);
+}
+
+uint32_t LSM6DSRX::getSensorTimestamp()
+{
+#ifdef DEBUG
+    assert(m_isInit && "init() was not called");
+#endif
+
+    SPITransaction spi{m_spiSlave};
+
+    uint32_t value = spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP0);
+    value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP1) << 8;
+    value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP2) << 16;
+    value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP3) << 24;
+
+    return value;
 }
 
 bool LSM6DSRX::selfTest()

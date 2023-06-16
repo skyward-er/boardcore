@@ -49,9 +49,9 @@ public:
      */
     struct FifoData
     {
-        int16_t x;  ///< value red from REG_FIFO_DATA_OUT_X
-        int16_t y;
-        int16_t z;
+        uint16_t x;  ///< value red from REG_FIFO_DATA_OUT_X
+        uint16_t y;
+        uint16_t z;
         uint8_t tag;  ///< value red from REG_FIFO_DATA_OUT_TAG
     };
 
@@ -82,6 +82,11 @@ public:
      * @param data The structure where data from the sensor is to be saved.
      */
     void getGyroscopeData(SensorData& data);
+
+    /**
+     * @brief Returns the timestamp from the sensor.
+     */
+    uint32_t getSensorTimestamp();
 
     /**
      * @brief Performs a really simple reading from the FIFO buffer.
