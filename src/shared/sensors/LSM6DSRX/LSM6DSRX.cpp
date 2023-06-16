@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -70,8 +70,11 @@ bool LSM6DSRX::init()
 
     // enable timestamp
     {
+        static constexpr uint8_t REG_CTRL10_TIMESTAMP_EN = 1 << 5;
+
         SPITransaction spiTransaction{m_spiSlave};
-        spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 1 << 5);
+        spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C,
+                                     REG_CTRL10_TIMESTAMP_EN);
     }
 
     // set interrupt

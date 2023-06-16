@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,39 +32,45 @@ struct LSM6DSRXConfig
 
     /**
      * @brief Output data rate definitions for the accelerometer.
+     *
+     * If OPERATING_MODE is set to NORMAL, the power mode depends on the choosen
+     * odr.
      */
     enum class ACC_ODR : uint8_t
     {
         POWER_DOWN = 0,   ///< Disabled
-        HZ_1_6     = 11,  ///< Output data rate of 1.6 Hz
-        HZ_12_5    = 1,   ///< Output data rate of 12.5 Hz
-        HZ_26      = 2,   ///< Output data rate of 26 Hz
-        HZ_52      = 3,   ///< Output data rate of 52 Hz
-        HZ_104     = 4,   ///< Output data rate of 104 Hz
-        HZ_208     = 5,   ///< Output data rate of 208 Hz
-        HZ_416     = 6,   ///< Output data rate of 416 Hz
-        HZ_833     = 7,   ///< Output data rate of 833 Hz
-        HZ_1660    = 8,   ///< Output data rate of 1.66 kHz
-        HZ_3330    = 9,   ///< Output data rate of 3.33 kHz
-        HZ_6660    = 10,  ///< Output data rate of 6.66 kHz
+        HZ_1_6     = 11,  ///< ODR of 1.6 Hz - AVAILABLE ONLY IN LOW POWER MODE
+        HZ_12_5    = 1,   ///< ODR of 12.5 Hz - low power
+        HZ_26      = 2,   ///< ODR of 26 Hz - low power
+        HZ_52      = 3,   ///< ODR of 52 Hz - low power
+        HZ_104     = 4,   ///< ODR of 104 Hz - normal
+        HZ_208     = 5,   ///< ODR of 208 Hz - normal
+        HZ_416     = 6,   ///< ODR of 416 Hz - high performance
+        HZ_833     = 7,   ///< ODR of 833 Hz - high performance
+        HZ_1660    = 8,   ///< ODR of 1.66 kHz - high performance
+        HZ_3330    = 9,   ///< ODR of 3.33 kHz - high performance
+        HZ_6660    = 10,  ///< ODR of 6.66 kHz - high performance
     };
 
     /**
      * @brief Output data rate definitions for the gyroscope.
+     *
+     * If OPERATING_MODE is set to NORMAL, the power mode depends on the choosen
+     * odr.
      */
     enum class GYR_ODR : uint8_t
     {
         POWER_DOWN = 0,   ///< Disabled
-        HZ_12_5    = 1,   ///< Output data rate of 12.5 Hz
-        HZ_26      = 2,   ///< Output data rate of 26 Hz
-        HZ_52      = 3,   ///< Output data rate of 52 Hz
-        HZ_104     = 4,   ///< Output data rate of 104 Hz
-        HZ_208     = 5,   ///< Output data rate of 208 Hz
-        HZ_416     = 6,   ///< Output data rate of 416 Hz
-        HZ_833     = 7,   ///< Output data rate of 833 Hz
-        HZ_1660    = 8,   ///< Output data rate of 1.66 kHz
-        HZ_3330    = 9,   ///< Output data rate of 3.33 kHz
-        HZ_6660    = 10,  ///< Output data rate of 6.66 kHz
+        HZ_12_5    = 1,   ///< ODR of 12.5 Hz - low power
+        HZ_26      = 2,   ///< ODR of 26 Hz - low power
+        HZ_52      = 3,   ///< ODR of 52 Hz - low power
+        HZ_104     = 4,   ///< ODR of 104 Hz - normal
+        HZ_208     = 5,   ///< ODR of 208 Hz - normal
+        HZ_416     = 6,   ///< ODR of 416 Hz - high performance
+        HZ_833     = 7,   ///< ODR of 833 Hz - high performance
+        HZ_1660    = 8,   ///< ODR of 1.66 kHz - high performance
+        HZ_3330    = 9,   ///< ODR of 3.33 kHz - high performance
+        HZ_6660    = 10,  ///< ODR of 6.66 kHz - high performance
     };
 
     /**
@@ -81,23 +87,14 @@ struct LSM6DSRXConfig
     /**
      * @brief Fullscale values for the gyroscope.
      */
-    /*
-    FS		FS1G	FS0G	FS_125	FS_4000		Decimal value
-    125		0   	0   	1   	0		    = 2
-    250		0   	0   	0   	0   		= 0
-    500		0	    1   	0   	0   		= 4
-    1000	1   	0   	0   	0   		= 8
-    2000	1   	1   	0   	0   		= 12
-    4000	0	    0   	0   	1   		= 1
-    */
     enum class GYR_FULLSCALE : uint8_t
     {
-        DPS_125  = 2,
+        DPS_125  = 0b0010,
         DPS_250  = 0,
-        DPS_500  = 4,
-        DPS_1000 = 8,
-        DPS_2000 = 12,
-        DPS_4000 = 1,
+        DPS_500  = 0b0100,
+        DPS_1000 = 0b1000,
+        DPS_2000 = 0b1100,
+        DPS_4000 = 0b0001,
     };
 
     /**
