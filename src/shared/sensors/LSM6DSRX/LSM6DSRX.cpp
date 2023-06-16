@@ -205,11 +205,11 @@ bool LSM6DSRX::selfTestAcc()
     bool returnValue        = false;
     uint8_t byteValue       = 0;  // used to read and write in registers
     uint8_t idx             = 0;
-    const uint8_t SIZE_DATA = 5;  // s
+    const uint8_t SIZE_DATA = 5;  // number of sample for the test
     SPITransaction spi{m_spiSlave};
 
-    SensorData averageSF{0.0, 0.0, 0.0};      // average data during self test
-    SensorData averageNormal{0.0, 0.0, 0.0};  // average normal data
+    LSM6DSRXData averageSF;      // average data during self test
+    LSM6DSRXData averageNormal;  // average normal data
 
     // set registers
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x38);
@@ -255,16 +255,16 @@ bool LSM6DSRX::selfTestAcc()
         }
 
         // read data
-        averageNormal.x += static_cast<float>(getAxisData(
+        averageNormal.accelerationX += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A));
-        averageNormal.y += static_cast<float>(getAxisData(
+        averageNormal.accelerationY += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A));
-        averageNormal.z += static_cast<float>(getAxisData(
+        averageNormal.accelerationZ += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A));
     }
-    averageNormal.x /= SIZE_DATA;
-    averageNormal.y /= SIZE_DATA;
-    averageNormal.z /= SIZE_DATA;
+    averageNormal.accelerationX /= SIZE_DATA;
+    averageNormal.accelerationY /= SIZE_DATA;
+    averageNormal.accelerationZ /= SIZE_DATA;
 
     // enable accelerometer self test
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x01);
@@ -301,28 +301,28 @@ bool LSM6DSRX::selfTestAcc()
         }
 
         // read data
-        averageSF.x += static_cast<float>(getAxisData(
+        averageSF.accelerationX += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A));
-        averageSF.y += static_cast<float>(getAxisData(
+        averageSF.accelerationY += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A));
-        averageSF.z += static_cast<float>(getAxisData(
+        averageSF.accelerationZ += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A));
     }
-    averageSF.x /= SIZE_DATA;
-    averageSF.y /= SIZE_DATA;
-    averageSF.z /= SIZE_DATA;
+    averageSF.accelerationX /= SIZE_DATA;
+    averageSF.accelerationY /= SIZE_DATA;
+    averageSF.accelerationZ /= SIZE_DATA;
 
     if (LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
-            std::abs(averageSF.x - averageNormal.x) &&
-        std::abs(averageSF.x - averageNormal.x) <=
+            std::abs(averageSF.accelerationX - averageNormal.accelerationX) &&
+        std::abs(averageSF.accelerationX - averageNormal.accelerationX) <=
             LSM6DSRXDefs::ACC_SELF_TEST_MAX &&
         LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
-            std::abs(averageSF.y - averageNormal.y) &&
-        std::abs(averageSF.y - averageNormal.y) <=
+            std::abs(averageSF.accelerationY - averageNormal.accelerationY) &&
+        std::abs(averageSF.accelerationY - averageNormal.accelerationY) <=
             LSM6DSRXDefs::ACC_SELF_TEST_MAX &&
         LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
-            std::abs(averageSF.z - averageNormal.z) &&
-        std::abs(averageSF.z - averageNormal.z) <=
+            std::abs(averageSF.accelerationZ - averageNormal.accelerationZ) &&
+        std::abs(averageSF.accelerationZ - averageNormal.accelerationZ) <=
             LSM6DSRXDefs::ACC_SELF_TEST_MAX)
     {
         returnValue = true;
@@ -348,8 +348,8 @@ bool LSM6DSRX::selfTestGyr()
     const uint8_t SIZE_DATA = 5;
     SPITransaction spi{m_spiSlave};
 
-    SensorData averageSF{0.0, 0.0, 0.0};      // average data during self test
-    SensorData averageNormal{0.0, 0.0, 0.0};  // average normal data
+    LSM6DSRXData averageSF;      // average data during self test
+    LSM6DSRXData averageNormal;  // average normal data
 
     // Initialize and turn on sensor
     // Set BDU = 1, ODR = 208 Hz, FS = +-2000 dps
@@ -395,16 +395,16 @@ bool LSM6DSRX::selfTestGyr()
         }
 
         // read data
-        averageNormal.x += static_cast<float>(getAxisData(
+        averageNormal.angularSpeedX += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G));
-        averageNormal.y += static_cast<float>(getAxisData(
+        averageNormal.angularSpeedY += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G));
-        averageNormal.z += static_cast<float>(getAxisData(
+        averageNormal.angularSpeedZ += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G));
     }
-    averageNormal.x /= SIZE_DATA;
-    averageNormal.y /= SIZE_DATA;
-    averageNormal.z /= SIZE_DATA;
+    averageNormal.angularSpeedX /= SIZE_DATA;
+    averageNormal.angularSpeedY /= SIZE_DATA;
+    averageNormal.angularSpeedZ /= SIZE_DATA;
 
     // enable gyroscope self test
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x04);
@@ -440,28 +440,28 @@ bool LSM6DSRX::selfTestGyr()
         }
 
         // read data
-        averageSF.x += static_cast<float>(getAxisData(
+        averageSF.angularSpeedX += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G));
-        averageSF.y += static_cast<float>(getAxisData(
+        averageSF.angularSpeedY += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G));
-        averageSF.z += static_cast<float>(getAxisData(
+        averageSF.angularSpeedZ += static_cast<float>(getAxisData(
             LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G));
     }
-    averageSF.x /= SIZE_DATA;
-    averageSF.y /= SIZE_DATA;
-    averageSF.z /= SIZE_DATA;
+    averageSF.angularSpeedX /= SIZE_DATA;
+    averageSF.angularSpeedY /= SIZE_DATA;
+    averageSF.angularSpeedZ /= SIZE_DATA;
 
     if (LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
-            std::abs(averageSF.x - averageNormal.x) &&
-        std::abs(averageSF.x - averageNormal.x) <=
+            std::abs(averageSF.angularSpeedX - averageNormal.angularSpeedX) &&
+        std::abs(averageSF.angularSpeedX - averageNormal.angularSpeedX) <=
             LSM6DSRXDefs::GYR_SELF_TEST_MAX &&
         LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
-            std::abs(averageSF.y - averageNormal.y) &&
-        std::abs(averageSF.y - averageNormal.y) <=
+            std::abs(averageSF.angularSpeedY - averageNormal.angularSpeedY) &&
+        std::abs(averageSF.angularSpeedY - averageNormal.angularSpeedY) <=
             LSM6DSRXDefs::GYR_SELF_TEST_MAX &&
         LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
-            std::abs(averageSF.z - averageNormal.z) &&
-        std::abs(averageSF.z - averageNormal.z) <=
+            std::abs(averageSF.angularSpeedZ - averageNormal.angularSpeedZ) &&
+        std::abs(averageSF.angularSpeedZ - averageNormal.angularSpeedZ) <=
             LSM6DSRXDefs::GYR_SELF_TEST_MAX)
     {
         returnValue = true;

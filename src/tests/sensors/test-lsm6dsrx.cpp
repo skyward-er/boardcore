@@ -116,52 +116,12 @@ int main()
     //     Thread::sleep(5000);
     // }
 
-    // Thread::sleep(
-    //     1000);  // sleep in order to produce some data before reading from
-    //     FIFO.
-
-    // LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
-    // LSM6DSRXData data;
-    // const int SIZE = 60;
-    // LSM6DSRX::FifoData buf[SIZE];
-
     while (true)
     {
-        // data = sens.getSensorData();
-
+        // LSM6DSRXData data = sens.getSensorData();
         // std::cout << data.header() << "\n";
         // data.print(std::cout);
         // std::cout << "\n\n";
-
-        // gyroscope, wait for data ready
-        // dataReady = int1Pin.value();
-        // while (dataReady != 1)
-        // {
-        //     Thread::sleep(20);
-        //     dataReady = int1Pin.value();
-        // }
-        // sens.getGyroscopeData(data);
-        // if(std::max({data.x, data.y, data.z}) > 1000.0 || std::min({data.x,
-        // data.y, data.z}) < -1000.0)
-        // {
-        //     TRACE("Gyroscope:\n");
-        //     TRACE("x: %f\n", data.x);
-        //     TRACE("y: %f\n", data.y);
-        //     TRACE("z: %f\n\n\n", data.z);
-        // }
-
-        // accelerometer, wait for data ready
-        // dataReady = int2Pin.value();
-        // while (dataReady != 1)
-        // {
-        //     Thread::sleep(20);
-        //     dataReady = int2Pin.value();
-        // }
-        // sens.getAccelerometerData(data);
-        // TRACE("Accelerometer:\n");
-        // TRACE("x: %f\n", data.x);
-        // TRACE("y: %f\n", data.y);
-        // TRACE("z: %f\n\n", data.z);
 
         // wait for fifo full interrupt
         int dataReady = int2Pin.value();
@@ -197,60 +157,6 @@ int main()
         // TRACE("numero dati letti: %d\n", numBatchRed);
         // TRACE("dati non letti post-lettura: %u\n\n",
         // sens.unreadDataInFifo());
-
-        // float sensitivity = 0.0;
-        // for (int i = 0; i < numBatchRed && i < 4; ++i)
-        // {
-        //     // read sensor tag
-        //     uint8_t tagSensor = (buf[i].tag >> 3) & 31;
-        //     switch (tagSensor)
-        //     {
-        //         case 0x01:
-        //             // gyroscope
-        //             TRACE("%d) GYROSCOPE\n", i);
-        //             sensitivity = 4.375;
-        //             break;
-        //         case 0x02:
-        //             // accelerometer
-        //             TRACE("%d) ACCELEROMETER\n", i);
-        //             sensitivity = 0.061;
-        //             break;
-        //         case 0x04:
-        //             // timestamp
-        //             TRACE("%d) TIMESTAMP\n", i);
-        //             sensitivity = 1.0;
-        //             break;
-        //         default:
-        //             TRACE("%d) UNRECOGNIZED DATA\n", i);
-        //             sensitivity = 1.0;
-        //             break;
-        //     }
-
-        //     if (tagSensor != 0x04)
-        //     {
-        //         // print data
-
-        //         // note: data from sensors has to be casted as signed, before
-        //         // casting again as float.
-
-        //         TRACE("x: %f\n",
-        //               static_cast<float>(static_cast<int16_t>(buf[i].x)) *
-        //                   sensitivity);
-        //         TRACE("y: %f\n",
-        //               static_cast<float>(static_cast<int16_t>(buf[i].y)) *
-        //                   sensitivity);
-        //         TRACE("z: %f\n\n\n",
-        //               static_cast<float>(static_cast<int16_t>(buf[i].z)) *
-        //                   sensitivity);
-        //     }
-        //     else
-        //     {
-        //         // print timestamp data
-        //         uint32_t timestamp = static_cast<uint32_t>(buf[i].x);
-        //         timestamp |= static_cast<uint32_t>(buf[i].y) << 16;
-        //         TRACE("Value: %u\n\n\n", timestamp);
-        //     }
-        // }
 
         // Thread::sleep(1000);
     }
