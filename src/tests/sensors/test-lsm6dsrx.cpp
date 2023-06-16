@@ -106,7 +106,7 @@ int main()
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
-    sensConfig.fifoWatermark = 511;
+    sensConfig.fifoWatermark = 170;
 
     testFifoRead(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
@@ -241,19 +241,19 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
     {
         while (true)
         {
-            TRACE("Error, sensor not initialized\n\n");
+            std::cout << "Error, sensor not initialized\n\n";
             Thread::sleep(2000);
         }
     }
 
     if (sens->selfTest())
     {
-        TRACE("Self test successful\n\n");
+        std::cout << "Self test successful\n\n";
         Thread::sleep(2000);
     }
     else
     {
-        TRACE("Self test failed\n\n");
+        std::cout << "Self test failed\n\n";
         while (true)
         {
             Thread::sleep(2000);
@@ -276,13 +276,9 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
             sens->getLastFifo();
 
         // Print fifo
-        // std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
-        // buf[sens->getLastFifoSize() - 1].print(std::cout);
-        // for (uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
-        // {
-        //     buf[i].print(std::cout);
-        //     std::cout << "\n";
-        // }
+        std::cout << "last fifo element:\n";
+        buf[sens->getLastFifoSize() - 1].print(std::cout);
+        std::cout << "last fifo size: " << sens->getLastFifoSize() << "\n";
 
         // Check fifo data
         for (uint16_t i = 1; i < sens->getLastFifoSize(); ++i)
@@ -309,6 +305,6 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
         }
 
         std::cout << "Extraction completed\n\n" << std::endl;
-        getchar();
+        Thread::sleep(1000);
     }
 }
