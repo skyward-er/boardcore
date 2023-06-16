@@ -34,7 +34,7 @@ class LSM6DSRX
 {
 public:
     /**
-     * @brief Struct used to store the accelerometer data.
+     * @brief Struct used to store data from the accelerometer and gyroscope.
      */
     struct SensorData
     {

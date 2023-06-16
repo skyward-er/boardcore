@@ -74,7 +74,25 @@ int main()
         while (true)
         {
             TRACE("Error, sensor not initialized\n\n");
-            Thread::sleep(1000);
+            Thread::sleep(2000);
+        }
+    }
+
+    if(sens.selfTest())
+    {
+        TRACE("Self test successful\n\n");
+        Thread::sleep(2000);
+        // while(true)
+        // {
+        //     Thread::sleep(2000);
+        // }
+    }
+    else
+    {
+        TRACE("Self test failed\n\n");
+        while(true)
+        {
+            Thread::sleep(2000);
         }
     }
 
