@@ -29,30 +29,26 @@ namespace Boardcore
 {
 
 LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
-                   SPIBusConfig busConfiguration, BDU blockDataUpdate,
-                   ACC_ODR odrAccelerometer, OPERATING_MODE opModeAccelerometer,
-                   ACC_FULLSCALE fsAccelerator)
-    : spiSlave(bus, csPin, busConfiguration), bdu(blockDataUpdate),
-      odrAcc(odrAccelerometer), opModeAcc(opModeAccelerometer),
-      fsAcc(fsAccelerator)
+                   SPIBusConfig busConfiguration, LSM6DSRXConfig& configuration)
+    : m_spiSlave(bus, csPin, busConfiguration), m_config(configuration)
 {
-    switch (fsAcc)
+    switch (m_config.fsAcc)
     {
-        case ACC_FULLSCALE::G2:
-            sensitivityAcc = 0.061;
+        case LSM6DSRXConfig::ACC_FULLSCALE::G2:
+            m_sensitivityAcc = 0.061;
             break;
-        case ACC_FULLSCALE::G4:
-            sensitivityAcc = 0.122;
+        case LSM6DSRXConfig::ACC_FULLSCALE::G4:
+            m_sensitivityAcc = 0.122;
             break;
-        case ACC_FULLSCALE::G8:
-            sensitivityAcc = 0.244;
+        case LSM6DSRXConfig::ACC_FULLSCALE::G8:
+            m_sensitivityAcc = 0.244;
             break;
-        case ACC_FULLSCALE::G16:
-            sensitivityAcc = 0.488;
+        case LSM6DSRXConfig::ACC_FULLSCALE::G16:
+            m_sensitivityAcc = 0.488;
             break;
         default:
-            fsAcc          = ACC_FULLSCALE::G2;
-            sensitivityAcc = 0.061;
+            m_config.fsAcc          = LSM6DSRXConfig::ACC_FULLSCALE::G2;
+            m_sensitivityAcc = 0.061;
             break;
     };
 }
@@ -64,15 +60,15 @@ bool LSM6DSRX::init()
         return false;
     }
 
-    SPITransaction spiTransaction{spiSlave};
+    SPITransaction spiTransaction{m_spiSlave};
 
     // set BDU pag. 54
-    spiTransaction.writeRegister(REG_CTRL3_C, static_cast<uint8_t>(bdu));
+    spiTransaction.writeRegister(REG_CTRL3_C, static_cast<uint8_t>(m_config.bdu));
 
     // Setup accelerometer (pag. 28)
 
     // set accelerometer odr (pag. 52)
-    uint8_t accSetup = static_cast<uint8_t>(odrAcc)
+    uint8_t accSetup = static_cast<uint8_t>(m_config.odrAcc)
                        << 4  // odr
                              // full scale (defaul = 00 --> +-2g)
         ;                    // high resolution selection (default)
@@ -80,7 +76,7 @@ bool LSM6DSRX::init()
 
     // set accelerometer performance mode (pag. 57)
     // high performance disabled
-    uint8_t accPerformanceMode = static_cast<uint8_t>(opModeAcc) << 4;
+    uint8_t accPerformanceMode = static_cast<uint8_t>(m_config.opModeAcc) << 4;
     spiTransaction.writeRegister(REG_CTRL6_C, accPerformanceMode);
 
     // setup Fifo (pag. 33)
@@ -95,7 +91,7 @@ bool LSM6DSRX::checkWhoAmI()
 {
     uint8_t regValue = 0;
     {
-        SPITransaction transaction{spiSlave};
+        SPITransaction transaction{m_spiSlave};
         regValue = transaction.readRegister(Registers::REG_WHO_AM_I);
     }
 
@@ -126,14 +122,14 @@ float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg)
     int8_t low = 0, high = 0;
     int16_t sample = 0;
 
-    SPITransaction transaction{spiSlave};
+    SPITransaction transaction{m_spiSlave};
 
     high = transaction.readRegister(highReg);
     low  = transaction.readRegister(lowReg);
 
     sample = combineHighLowBits(low, high);
 
-    float ret = static_cast<float>(sample) * sensitivityAcc;
+    float ret = static_cast<float>(sample) * m_sensitivityAcc;
     return ret;
 }
 

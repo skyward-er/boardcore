@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "LSM6DSRXConfig.h"
+
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
@@ -31,6 +33,7 @@ namespace Boardcore
 class LSM6DSRX
 {
 public:
+
     /**
      * @brief Struct used to store the accelerometer data.
      */
@@ -41,54 +44,6 @@ public:
         float z;
     };
 
-    /**
-     * @brief Output data rate definitions for the accelerometer.
-     */
-    enum class ACC_ODR : uint8_t
-    {
-        POWER_DOWN = 0,
-        HZ_1_6     = 11,
-        HZ_12_5    = 1,
-        HZ_26      = 2,
-        HZ_52      = 3,
-        HZ_104     = 4,
-        HZ_208     = 5,
-        HZ_416     = 6,
-        HZ_833     = 7,
-        HZ_1660    = 8,
-        HZ_3330    = 9,
-        HZ_6660    = 10,
-    };
-
-    /**
-     * @brief .
-     */
-    enum class ACC_FULLSCALE : uint8_t
-    {
-        G2  = 0,
-        G4  = 1,
-        G8  = 2,
-        G16 = 3,
-    };
-
-    /**
-     * @brief Data update mode for the sensor.
-     */
-    enum class BDU : uint8_t
-    {
-        CONTINUOUS_UPDATE = 0,
-        UPDATE_AFTER_READ = 1,  ///< Output registers are not updated until MSB
-                                ///< and LSB have been read
-    };
-
-    /**
-     * @brief Operating mode for the sensor.
-     */
-    enum class OPERATING_MODE : uint8_t
-    {
-        HIGH_PERFORMANCE = 0,  ///< Valid for all odrs
-        NORMAL = 1,  ///< Works in low power or normal mode depending on the odr
-    };
 
     /**
      * @brief LSM6DSRX constructor.
@@ -96,36 +51,33 @@ public:
      * @param bus SPI bus.
      * @param csPin SPI chip select pin.
      * @param busConfiguration SPI bus configuration.
-     * @param blockDataUpdate Data update mode for the sensor.
-     * @param odrAccelerometer Odr value for the accelerometer.
-     * @param opModeAccelerometer Operating mode for the accelerometer.
-     * @param fsAccelerator Fullscale selection for the accelerometer.
+     * @param config LSM6DSRX configuration.
      */
-    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
-             BDU blockDataUpdate, ACC_ODR odrAccelerometer,
-             OPERATING_MODE opModeAccelerometer, ACC_FULLSCALE fsAccelerator);
+    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
+
 
     /**
      * @brief Initialize the sensor.
      */
     bool init();
 
+
     /**
      * @brief Retrieves data from the accelerometer.
      */
     void getAccelerometerData(AccData& data);
 
-private:
-    bool isInit = false;
-    SPISlave spiSlave;
-    BDU bdu;
 
-    ACC_ODR odrAcc;            ///< Accelerometer odr.
-    OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer.
-    ACC_FULLSCALE fsAcc;       ///< Fullscale selection for the accelerometer.
-    float sensitivityAcc;      ///< Sensitivity value for the accelerator.
+private:
+
+    bool m_isInit = false;
+    SPISlave m_spiSlave;
+    LSM6DSRXConfig m_config;
+    
+    float m_sensitivityAcc;      ///< Sensitivity value for the accelerator.
 
     const uint8_t WHO_AM_I_VALUE = 0x6B;
+
 
     /**
      * @brief Internal registers definitions.
@@ -155,6 +107,7 @@ private:
             0x2D,  ///< High bits output register for the accelerometer (z axis)
     };
 
+
     /**
      * @brief Check who_am_i register for validity.
      *
@@ -162,12 +115,14 @@ private:
      */
     bool checkWhoAmI();
 
+
     /**
      * @brief Utility for combining two 8 bits numbers in one 16 bits number.
      * @param low Low bits of the 16 bit number.
      * @param high High bits of the 16 bit number.
      */
     int16_t combineHighLowBits(uint8_t low, uint8_t high);
+
 
     /**
      * @brief Reads 16-bits float data from the specified registers.
