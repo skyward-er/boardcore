@@ -192,8 +192,7 @@ struct LSM6DSRXConfig
     // fifo
     FIFO_MODE fifoMode;  ///< Fifo operating mode.
     FIFO_TIMESTAMP_DECIMATION
-    fifoTimestampDecimation;  ///< decimation for timestamp batching in
-                              ///< FIFO.
+    fifoTimestampDecimation;  ///< decimation for timestamp sampling in FIFO.
     FIFO_TEMPERATURE_BDR
     fifoTemperatureBdr;  ///< batch data rate for temperature data in FIFO.
 
@@ -202,13 +201,8 @@ struct LSM6DSRXConfig
     INTERRUPT int2InterruptSelection;  ///< interrupts selected on INT2 pin.
 
     /**
-     * @brief Fifo watermark level (expressed as a 9 bits number). Warning: this
-     * number represents the number of samples extracted from the sensor's fifo,
-     * not the actual number of samples that will be present inside the driver's
-     * fifo `lastFifo`.
-     *
-     * The sensor's fifo max size is 511 samples, and those samples can be
-     * accelerometer data, gyroscope data or timestamps.
+     * @brief Fifo watermark level, expressed as number of samples.
+     * Max value is 170.
      */
     uint16_t fifoWatermark;
 };

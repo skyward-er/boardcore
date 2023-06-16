@@ -31,9 +31,14 @@ namespace LSM6DSRXDefs
 {
 
 /**
- * @brief Fifo max size expressed as number of samples.
+ * @brief Driver's fifo size expressed as number of samples.
  */
-const uint16_t FIFO_SIZE = 550;
+const uint16_t FIFO_SIZE = 200;
+
+/**
+ * @brief Size of the sensor's internal fifo.
+ */
+const uint16_t SENSOR_FIFO_SIZE = 512;
 
 /**
  * @brief Sensor who_am_i register value.

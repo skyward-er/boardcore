@@ -103,7 +103,8 @@ private:
      * @brief When extracting samples from fifo data is first read and saved
      * inside this array, then it get processed and stored inside `lastFifo`.
      */
-    std::array<LSM6DSRXDefs::RawFifoData, LSM6DSRXDefs::FIFO_SIZE> rawFifo;
+    std::array<LSM6DSRXDefs::RawFifoData, LSM6DSRXDefs::SENSOR_FIFO_SIZE>
+        rawFifo;
 
     PrintLogger logger = Logging::getLogger("lsm6dsrx");
 
