@@ -144,6 +144,20 @@ enum Registers
     REG_INT2_CTRL = 0x0E,  ///< set interrupts on INT2 pin.
 };
 
+/**
+ * @brief Structure used to store data from fifo before being processed.
+ */
+struct RawFifoData
+{
+    uint8_t sampleTag;  ///< Tag used to identify data
+    uint8_t xl;         ///< low part of DATA_OUT_X register
+    uint8_t xh;         ///< high part of DATA_OUT_X register
+    uint8_t yl;         ///< low part of DATA_OUT_Y register
+    uint8_t yh;         ///< high part of DATA_OUT_Y register
+    uint8_t zl;         ///< low part of DATA_OUT_Z register
+    uint8_t zh;         ///< high part of DATA_OUT_Z register
+};
+
 }  // namespace LSM6DSRXDefs
 
 }  // namespace Boardcore

@@ -114,6 +114,12 @@ private:
     LSM6DSRXData m_lastValidSample;
 
     /**
+     * @brief When extracting samples from fifo data is first read and saved
+     * inside this array, then it get processed and stored inside `lastFifo`.
+     */
+    std::array<LSM6DSRXDefs::RawFifoData, LSM6DSRXDefs::FIFO_SIZE> m_rawFifo;
+
+    /**
      * @brief Check who_am_i register for validity.
      *
      * @return Returns false if not valid.
