@@ -623,20 +623,6 @@ void LSM6DSRX::readFromFifo()
     SPITransaction spi{m_spiSlave};
     unsigned int num = lastFifo.max_size();  // number of sample to read
 
-    // when extracting data from fifo i get data only from one sensor, but
-    // the struct LSM6DSRXData is made to have data from both sensors. The
-    // idea is to copy the value from the last valid sample for the sensor
-    // that hasn't received data.
-    LSM6DSRXData lastValidSample;
-    lastValidSample.accelerationTimestamp = 0;
-    lastValidSample.angularSpeedTimestamp = 0;
-    lastValidSample.accelerationX         = 0.0;
-    lastValidSample.accelerationY         = 0.0;
-    lastValidSample.accelerationZ         = 0.0;
-    lastValidSample.angularSpeedX         = 0.0;
-    lastValidSample.angularSpeedY         = 0.0;
-    lastValidSample.angularSpeedZ         = 0.0;
-
     // data has 2bits tags that determins the corresponding time slot.
     // 00 -> first element of the array (timestamps[0])
     // 11 -> last element of the array (timestamps[3])
@@ -690,18 +676,18 @@ void LSM6DSRX::readFromFifo()
 
                 // CHECK: va bene cosi'? o devo vedere quali valori hanno lo
                 // stesso timestamp e metterli insieme?
-                lastFifo[i].accelerationX = lastValidSample.accelerationX;
-                lastFifo[i].accelerationY = lastValidSample.accelerationY;
-                lastFifo[i].accelerationZ = lastValidSample.accelerationZ;
+                lastFifo[i].accelerationX = m_lastValidSample.accelerationX;
+                lastFifo[i].accelerationY = m_lastValidSample.accelerationY;
+                lastFifo[i].accelerationZ = m_lastValidSample.accelerationZ;
                 lastFifo[i].accelerationTimestamp =
-                    lastValidSample.accelerationTimestamp;
+                    m_lastValidSample.accelerationTimestamp;
 
                 // update last valid sample for the gyroscope
-                lastValidSample.angularSpeedTimestamp =
+                m_lastValidSample.angularSpeedTimestamp =
                     lastFifo[i].angularSpeedTimestamp;
-                lastValidSample.angularSpeedX = lastFifo[i].angularSpeedX;
-                lastValidSample.angularSpeedY = lastFifo[i].angularSpeedY;
-                lastValidSample.angularSpeedZ = lastFifo[i].angularSpeedZ;
+                m_lastValidSample.angularSpeedX = lastFifo[i].angularSpeedX;
+                m_lastValidSample.angularSpeedY = lastFifo[i].angularSpeedY;
+                m_lastValidSample.angularSpeedZ = lastFifo[i].angularSpeedZ;
 
                 break;
             case 0x02:
@@ -720,18 +706,18 @@ void LSM6DSRX::readFromFifo()
 
                 // CHECK: va bene cosi'? o devo vedere quali valori hanno lo
                 // stesso timestamp e metterli insieme?
-                lastFifo[i].angularSpeedX = lastValidSample.angularSpeedX;
-                lastFifo[i].angularSpeedY = lastValidSample.angularSpeedY;
-                lastFifo[i].angularSpeedZ = lastValidSample.angularSpeedZ;
+                lastFifo[i].angularSpeedX = m_lastValidSample.angularSpeedX;
+                lastFifo[i].angularSpeedY = m_lastValidSample.angularSpeedY;
+                lastFifo[i].angularSpeedZ = m_lastValidSample.angularSpeedZ;
                 lastFifo[i].angularSpeedTimestamp =
-                    lastValidSample.angularSpeedTimestamp;
+                    m_lastValidSample.angularSpeedTimestamp;
 
                 // update lastValidSampe for the accelerometer
-                lastValidSample.accelerationTimestamp =
+                m_lastValidSample.accelerationTimestamp =
                     lastFifo[i].accelerationTimestamp;
-                lastValidSample.accelerationX = lastFifo[i].accelerationX;
-                lastValidSample.accelerationY = lastFifo[i].accelerationY;
-                lastValidSample.accelerationZ = lastFifo[i].accelerationZ;
+                m_lastValidSample.accelerationX = lastFifo[i].accelerationX;
+                m_lastValidSample.accelerationY = lastFifo[i].accelerationY;
+                m_lastValidSample.accelerationZ = lastFifo[i].accelerationZ;
 
                 break;
             // case 0x03:

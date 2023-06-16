@@ -112,6 +112,14 @@ private:
     float m_sensitivityGyr = 0.0;  ///< Sensitivity value for the gyroscope.
 
     /**
+     * @brief when extracting data from fifo i get data only from one sensor,
+    but the struct LSM6DSRXData is made to have data from both sensors. The idea
+    is to copy the value from the last valid sample for the sensor that hasn't
+    received data.
+    */
+    LSM6DSRXData m_lastValidSample;
+
+    /**
      * @brief Check who_am_i register for validity.
      *
      * @return Returns false if not valid.
