@@ -33,6 +33,17 @@ namespace LSM6DSRXDefs
 /// @brief Sensor who_am_i register value.
 const uint8_t WHO_AM_I_VALUE = 0x6B;
 
+/// @brief Lower bound value for accelerometer self test.
+const float ACC_SELF_TEST_MIN = 40.0;
+/// @brief Upper bound value for accelerometer self test.
+const float ACC_SELF_TEST_MAX = 1700.0;
+/// @brief Lower bound value for gyroscope self test. Valid for self test
+/// fullscale = 2000dps.
+const float GYR_SELF_TEST_MIN = 1500.0;
+/// @brief Upper bound value for gyroscope self test.  Valid for self test
+/// fullscale = 2000dps.
+const float GYR_SELF_TEST_MAX = 7000.0;
+
 /**
  * @brief Internal registers definitions.
  */
