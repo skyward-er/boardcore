@@ -27,6 +27,10 @@
 namespace Boardcore
 {
 
+/**
+ * @brief Struct for the LPS28DFW barometer data. Pressures stored in Pa and
+ * Temperature in °C.
+ */
 struct LPS28DFWData : public PressureData, TemperatureData
 {
     static std::string header()
