@@ -65,17 +65,7 @@ public:
     /**
      * @brief Returns the number of unread data in the fifo.
      */
-    unsigned int unreadDataInFifo()
-    {
-        unsigned int ris = 0;
-        SPITransaction spi{m_spiSlave};
-
-        ris = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1);
-        ris = ris | (static_cast<unsigned int>(
-                         spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2) & 3)
-                     << 8);
-        return ris;
-    }
+    uint16_t unreadDataInFifo();
 
     /**
      * @brief Performs self test for the sensor.
@@ -87,11 +77,6 @@ public:
      * @brief Returns data from the sensors.
      */
     LSM6DSRXData getSensorData();
-
-    /**
-     * @brief Returns the timestamp from the sensor.
-     */
-    uint32_t getSensorTimestamp();
 
     /**
      * @brief Gather data from FIFO/data registers and temperature sensor.
@@ -230,6 +215,11 @@ private:
      * @brief Utility to set timestamp values for conversion.
      */
     void correlateTimestamps();
+
+    /**
+     * @brief Returns the timestamp from the sensor.
+     */
+    uint32_t getSensorTimestamp();
 };
 
 }  // namespace Boardcore

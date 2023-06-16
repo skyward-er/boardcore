@@ -662,9 +662,9 @@ float LSM6DSRX::getSensorTimestampResolution()
 
 void LSM6DSRX::readFromFifo()
 {
-    unsigned int numUnreadSamples = 0;
+    uint16_t numUnreadSamples = 0;
     SPITransaction spi{m_spiSlave};
-    unsigned int num = lastFifo.max_size();  // number of sample to read
+    uint16_t num = LSM6DSRXDefs::FIFO_SIZE;  // number of sample to read
 
     // data has 2bits tags that determins the corresponding time slot.
     // 00 -> first element of the array (timestamps[0])
@@ -686,7 +686,7 @@ void LSM6DSRX::readFromFifo()
         num = numUnreadSamples;
     }
 
-    for (unsigned int i = 0; i < num; ++i)
+    for (uint16_t i = 0; i < num; ++i)
     {
         const uint8_t sampleTag =
             spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
@@ -763,13 +763,6 @@ void LSM6DSRX::readFromFifo()
                 m_lastValidSample.accelerationZ = lastFifo[i].accelerationZ;
 
                 break;
-            // case 0x03:
-            //     // temperature data
-
-            //     // NECESSARIO? VERRA' CAMPIONATA? perche' se si devo
-            //     // aggiungere il valore a LSM6DSRXData
-
-            //     break;
             case 0x04:
                 // timestamp data --> update timestamps
 
@@ -805,6 +798,18 @@ void LSM6DSRX::readFromFifo()
     // usa 10bit per unread samples...
     lastFifoLevel = static_cast<uint8_t>(
         num);  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+
+uint16_t LSM6DSRX::unreadDataInFifo()
+{
+    uint16_t ris = 0;
+    SPITransaction spi{m_spiSlave};
+
+    ris = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1);
+    ris = ris | (static_cast<uint16_t>(
+                     spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2) & 3)
+                 << 8);
+    return ris;
 }
 
 }  // namespace Boardcore

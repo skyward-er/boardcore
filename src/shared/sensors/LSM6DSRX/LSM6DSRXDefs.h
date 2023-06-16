@@ -31,7 +31,7 @@ namespace LSM6DSRXDefs
 {
 
 /// @brief Fifo max size expressed as number of samples.
-const uint16_t FIFO_SIZE = 50;
+const uint16_t FIFO_SIZE = 200;
 
 /// @brief How many times the fifo is sampled before updating timestamps
 /// (m_timestamp0, m_sensorTimestamp0)

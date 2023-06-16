@@ -84,11 +84,11 @@ int main()
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
-    sensConfig.fifoWatermark = 60;
+    sensConfig.fifoWatermark = 250;
 
-    LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
+    LSM6DSRX* sens = new LSM6DSRX(bus, csPin, busConfiguration, sensConfig);
 
-    if (sens.init() == false)
+    if (sens->init() == false)
     {
         while (true)
         {
@@ -97,7 +97,7 @@ int main()
         }
     }
 
-    if (sens.selfTest())
+    if (sens->selfTest())
     {
         TRACE("Self test successful\n\n");
         Thread::sleep(2000);
@@ -151,13 +151,14 @@ int main()
         TRACE(
             "Interrupt ricevuto\n"
             "dati non letti pre-lettura: %u\n",
-            sens.unreadDataInFifo());
-        sens.sampleImpl();
-        TRACE("dati non letti post-lettura: %u\n\n", sens.unreadDataInFifo());
+            sens->unreadDataInFifo());
+        sens->sampleImpl();
+        TRACE("dati non letti post-lettura: %u\n\n", sens->unreadDataInFifo());
 
         // Thread::sleep(5000);
     }
 
+    delete sens;
     return 0;
 }
 
