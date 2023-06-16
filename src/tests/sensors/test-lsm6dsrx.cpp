@@ -85,7 +85,7 @@ int main()
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
     sensConfig.int2InterruptSelection =
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
-    sensConfig.fifoWatermark = 250;
+    sensConfig.fifoWatermark = 400;
 
     LSM6DSRX* sens = new LSM6DSRX(bus, csPin, busConfiguration, sensConfig);
 
@@ -112,65 +112,12 @@ int main()
         }
     }
 
-    // while (true)
-    // {
-    //     // LSM6DSRXData data = sens.getSensorData();
-    //     // std::cout << data.header() << "\n";
-    //     // data.print(std::cout);
-    //     // std::cout << "\n\n";
-
-    //     // wait for fifo full interrupt
-    //     int dataReady = int2Pin.value();
-    //     while (dataReady != 1)
-    //     {
-    //         Thread::sleep(20);
-    //         dataReady = int2Pin.value();
-    //     }
-
-    //     // sens.sample();
-
-    //     // const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-    //     //     sens.getLastFifo();
-    //     // for (unsigned int i = 0; i < buf.size(); ++i)
-    //     // {
-    //     //     std::cout << "sample " << i << "\n";
-    //     //     std::cout << buf[i].header() << "\n";
-    //     //     buf[i].print(std::cout);
-    //     //     std::cout << "\n\n";
-    //     // }
-    //     // TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
-
-    //     // std::cout << "Press a key to continue...\n\n";
-    //     // char ch = 0;
-    //     // std::cin >> ch;
-
-    //     TRACE(
-    //         "Interrupt ricevuto\n"
-    //         "dati non letti pre-lettura: %u\n",
-    //         sens->unreadDataInFifo());
-    //     sens->sampleImpl();
-    //     TRACE("dati non letti post-lettura: %u\n\n",
-    //     sens->unreadDataInFifo());
-
-    //     // Thread::sleep(5000);
-    // }
-
-    std::vector<uint64_t> vetTimestamps;
-    vetTimestamps.reserve(LSM6DSRXDefs::FIFO_SIZE);
     while (true)
     {
-        // skip some samples
-        for (int i = 0; i < 5; ++i)
-        {
-            // wait for fifo full interrupt
-            int dataReady = int2Pin.value();
-            while (dataReady != 1)
-            {
-                Thread::sleep(20);
-                dataReady = int2Pin.value();
-            }
-            sens->sampleImpl();
-        }
+        // LSM6DSRXData data = sens.getSensorData();
+        // std::cout << data.header() << "\n";
+        // data.print(std::cout);
+        // std::cout << "\n\n";
 
         // wait for fifo full interrupt
         int dataReady = int2Pin.value();
@@ -179,45 +126,102 @@ int main()
             Thread::sleep(20);
             dataReady = int2Pin.value();
         }
-        sens->sampleImpl();
 
-        // data extraction
+        sens->sample();
+
         const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
             sens->getLastFifo();
-        vetTimestamps.clear();
-        for (int i = 0; i < sens->getLastFifoSize(); ++i)
-        {
-            vetTimestamps.push_back(buf[i].accelerationTimestamp);
-        }
-        std::sort(vetTimestamps.begin(), vetTimestamps.end());
+        // for (unsigned int i = 0; i < buf.size(); ++i)
+        // {
+        //     std::cout << "sample " << i << "\n";
+        //     std::cout << buf[i].header() << "\n";
+        //     buf[i].print(std::cout);
+        //     std::cout << "\n\n";
+        // }
+        // TRACE("main) lastFifoLevel: %u\n\n", sens.getLastFifoSize());
 
-        // test max difference between timestamps
-        uint64_t diffMax = 0, diff = 0;
-        for (unsigned int i = 1; i < vetTimestamps.size(); ++i)
-        {
-            if (vetTimestamps[i] == 0)
-            {
-                TRACE("Timestamp is 0\n");
-            }
-            if (vetTimestamps[i - 1] > 0)
-            {
-                diff = vetTimestamps[i] - vetTimestamps[i - 1];
-                if (diff > diffMax)
-                {
-                    diffMax = diff;
-                }
-            }
-        }
+        std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
+        buf[sens->getLastFifoSize() - 1].print(std::cout);
+        std::cout << "\n\n";
 
-        // print data
-        std::cout << "diffMax: " << diffMax << "\n";
-        std::cout << "vetTimestamps:\n";
-        for (unsigned int i = 0; i < vetTimestamps.size(); ++i)
-        {
-            std::cout << vetTimestamps[i] << ", ";
-        }
-        std::cout << "\n\n\n";
+        // std::cout << "Press a key to continue...\n\n";
+        // char ch = 0;
+        // std::cin >> ch;
+
+        // TRACE(
+        //     "Interrupt ricevuto\n"
+        //     "dati non letti pre-lettura: %u\n",
+        //     sens->unreadDataInFifo());
+        // sens->sampleImpl();
+        // TRACE("dati non letti post-lettura: %u\n\n",
+        // sens->unreadDataInFifo());
+
+        // Thread::sleep(5000);
     }
+
+    // std::vector<uint64_t> vetTimestamps;
+    // vetTimestamps.reserve(LSM6DSRXDefs::FIFO_SIZE);
+    // while (true)
+    // {
+    //     // skip some samples
+    //     for (int i = 0; i < 5; ++i)
+    //     {
+    //         // wait for fifo full interrupt
+    //         int dataReady = int2Pin.value();
+    //         while (dataReady != 1)
+    //         {
+    //             Thread::sleep(20);
+    //             dataReady = int2Pin.value();
+    //         }
+    //         sens->sampleImpl();
+    //     }
+
+    //     // wait for fifo full interrupt
+    //     int dataReady = int2Pin.value();
+    //     while (dataReady != 1)
+    //     {
+    //         Thread::sleep(20);
+    //         dataReady = int2Pin.value();
+    //     }
+    //     sens->sampleImpl();
+
+    //     // data extraction
+    //     const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+    //         sens->getLastFifo();
+    //     vetTimestamps.clear();
+    //     for (int i = 0; i < sens->getLastFifoSize(); ++i)
+    //     {
+    //         vetTimestamps.push_back(buf[i].accelerationTimestamp);
+    //     }
+    //     std::sort(vetTimestamps.begin(), vetTimestamps.end());
+
+    //     // test max difference between timestamps
+    //     uint64_t diffMax = 0, diff = 0;
+    //     for (unsigned int i = 1; i < vetTimestamps.size(); ++i)
+    //     {
+    //         if (vetTimestamps[i] == 0)
+    //         {
+    //             TRACE("Timestamp is 0\n");
+    //         }
+    //         if (vetTimestamps[i - 1] > 0)
+    //         {
+    //             diff = vetTimestamps[i] - vetTimestamps[i - 1];
+    //             if (diff > diffMax)
+    //             {
+    //                 diffMax = diff;
+    //             }
+    //         }
+    //     }
+
+    //     // print data
+    //     std::cout << "diffMax: " << diffMax << "\n";
+    //     std::cout << "vetTimestamps:\n";
+    //     for (unsigned int i = 0; i < vetTimestamps.size(); ++i)
+    //     {
+    //         std::cout << vetTimestamps[i] << ", ";
+    //     }
+    //     std::cout << "\n\n\n";
+    // }
 
     delete sens;
     return 0;
