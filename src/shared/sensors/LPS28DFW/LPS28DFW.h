@@ -162,7 +162,7 @@ private:
     LPS28DFWData sampleImpl() override;
 
     /**
-     * @brief Converting the bytes read from the sensor to the pressure in hPa.
+     * @brief Converting the bytes read from the sensor to the pressure in Pa.
      */
     float convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH);
 
@@ -177,7 +177,7 @@ private:
     SensorConfig sensorConfig;            ///< Sensor settings
     bool isInitialized =
         false;  ///< Flag to tell if the sensor has been initialized
-    uint16_t pressureSensitivity;  ///< pressure sensitivity [LSB/hPa]
+    uint16_t pressureSensitivity;  ///< pressure sensitivity [LSB/Pa]
     PrintLogger logger = Logging::getLogger("lps28dfw");
 };
 
