@@ -62,12 +62,9 @@ void sampleOneShotMode(I2C &i2c)
     printf("Start One-Shot\n");
 
     // Setting up the Sensor
-    LPS28DFW::SensorConfig lps28dfwConfig{false,
-                                          LPS28DFW::FullScaleRange::FS_1260,
-                                          LPS28DFW::AVG::AVG_64,
-                                          LPS28DFW::Mode::ONE_SHOT_MODE,
-                                          LPS28DFW::ODR::ONE_SHOT,
-                                          false};
+    LPS28DFW::SensorConfig lps28dfwConfig{
+        false, LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
+        LPS28DFW::ODR::ONE_SHOT, false};
     LPS28DFW lps28dfw(i2c, lps28dfwConfig);
     if (!lps28dfw.init())
     {
@@ -98,12 +95,9 @@ void sampleContinuousMode(I2C &i2c)
     printf("Start Continuous\n");
 
     // Setting up the Sensor
-    LPS28DFW::SensorConfig lps28dfwConfig{false,
-                                          LPS28DFW::FullScaleRange::FS_1260,
-                                          LPS28DFW::AVG::AVG_64,
-                                          LPS28DFW::Mode::CONTINUOUS_MODE,
-                                          LPS28DFW::ODR::ODR_10,
-                                          false};
+    LPS28DFW::SensorConfig lps28dfwConfig{
+        false, LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
+        LPS28DFW::ODR::ODR_10, false};
     LPS28DFW lps28dfw(i2c, lps28dfwConfig);
     if (!lps28dfw.init())
     {
@@ -134,12 +128,9 @@ void sampleInterruptMode(I2C &i2c)
 {
     printf("Start Interrupt\n");
     // Setting up the Sensor
-    LPS28DFW::SensorConfig lps28dfwConfig{false,
-                                          LPS28DFW::FullScaleRange::FS_1260,
-                                          LPS28DFW::AVG::AVG_64,
-                                          LPS28DFW::Mode::CONTINUOUS_MODE,
-                                          LPS28DFW::ODR::ODR_10,
-                                          true};
+    LPS28DFW::SensorConfig lps28dfwConfig{
+        false, LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
+        LPS28DFW::ODR::ODR_10, true};
     LPS28DFW lps28dfw(i2c, lps28dfwConfig);
     if (!lps28dfw.init())
     {

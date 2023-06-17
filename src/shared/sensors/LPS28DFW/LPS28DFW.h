@@ -48,9 +48,11 @@ public:
     };
 
     /**
-     * @brief Enumeration for the output data rate to set on the sensor.
+     * @brief Enumeration for Output Data Rate Configuration.
+     *
      * Available are One shot (only one sample calculated when signal sent), 1
-     * Hz to 200 Hz.
+     * Hz to 200 Hz. ODR configuration is valid for both pressure and
+     * temperature.
      */
     enum ODR : uint8_t
     {
@@ -66,9 +68,14 @@ public:
     };
 
     /**
-     * @brief Enumeration for the oversampling to set on the sensor. The value
-     * read from the sensor will actually be the average of multiple samples.
-     * Available are from 4 to 512 averaged samples.
+     * @brief Enumeration for the oversampling to set on the sensor.
+     *
+     * The value read from the sensor will actually be the average of multiple
+     * samples. Available are from 4 to 512 averaged samples.
+     *
+     * @warning For an AGV value of 512, 128, 64 the maximum ODR values are
+     * respectively of 25, 75 and 100 Hz. For any other AVG value all ODR
+     * configurations are possible.
      */
     enum AVG : uint8_t
     {
@@ -82,17 +89,6 @@ public:
     };
 
     /**
-     * @brief Working mode of the sensor. Available ones are one shot mode
-     * (samples acquired by the sensors only upon an explicit request) and
-     * continuous mode (samples calculated continuously).
-     */
-    enum Mode
-    {
-        ONE_SHOT_MODE,   // BYPASS, ODR = ONE_SHOT
-        CONTINUOUS_MODE  // BYPASS, ODR = odr
-    };
-
-    /**
      * @brief Struct that sums up all the settings of the sensor.
      */
     typedef struct
@@ -101,7 +97,6 @@ public:
                    ///< the sensor is connected to GND or VDD (3.3V, not 5V!).
         FullScaleRange fsr;  ///< Full scale range
         AVG avg;             ///< Average avg samples
-        Mode mode;           ///< Mode of operation
         ODR odr;             ///< Output data rate
         bool drdy;           ///< Enable Interrupt for Data Ready
     } SensorConfig;
@@ -118,6 +113,7 @@ public:
 
     /**
      * @brief Initializes the sensor with the current settings.
+     * @return true if initialization succeeded, false otherwise.
      */
     bool init() override;
 
@@ -130,7 +126,7 @@ public:
      * @brief The self test method returns true if we read the right whoami
      * value. We can't make a better self test due to the fact that the sensor
      * doesn't support this feature.
-     * @return true if the right whoami has been written.
+     * @return true if the right whoami has been read.
      */
     bool selfTest() override;
 
