@@ -67,13 +67,13 @@ int main()
         return 0;
     }
 
-    printf("Trying one shot mode for 10 seconds");
+    printf("Trying one shot mode for 10 seconds\n");
     for (int i = 0; i < 10 * 10; i++)
     {
         sensor.sample();
         LPS22DFData data = sensor.getLastSample();
 
-        printf("%.2f° | %.2fPa\n", data.temperature, data.pressure);
+        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure);
 
         miosix::Thread::sleep(100);
     }
@@ -85,7 +85,7 @@ int main()
         sensor.sample();
         LPS22DFData data = sensor.getLastSample();
 
-        printf("%.2f° | %.2fPa\n", data.temperature, data.pressure);
+        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure);
 
         miosix::Thread::sleep(100);
     }

@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
@@ -30,6 +32,7 @@
 #include <array>
 
 #include "LPS22DFData.h"
+#include "LPS22DFDefs.h"
 
 namespace Boardcore
 {
@@ -41,9 +44,11 @@ class LPS22DF : public Sensor<LPS22DFData>
 {
 public:
     /**
-     * @brief Constants for Output Data Rate Configuration
+     * @brief Enumeration for Output Data Rate Configuration.
      *
-     * ODR configuration is valid for both pressure and temperature.
+     * Available are One shot (only one sample calculated when signal sent), 1
+     * Hz to 200 Hz. ODR configuration is valid for both pressure and
+     * temperature.
      */
     enum ODR : uint8_t
     {
@@ -76,27 +81,64 @@ public:
         AVG_512 = 0b111
     };
 
+    /**
+     * @brief Struct that sums up all the settings of the sensor.
+     */
     struct Config
     {
         ODR odr = ODR::ODR_25;
         AVG avg = AVG::AVG_512;
     };
 
-    LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin);
+    /**
+     * @brief Constructor that stores the initial default settings (without
+     * applying them to the sensor).
+     * @param bus SPI bus.
+     * @param cs SPI Chip Select pin.
+     */
+    LPS22DF(SPIBusInterface& bus, miosix::GpioPin cs);
 
-    LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin, SPIBusConfig spiConfig,
+    /**
+     * @brief Constructor that stores the initial settings (without applying
+     * them to the sensor).
+     * @param bus SPI bus.
+     * @param cs SPI Chip Select pin.
+     * @param config LPS22DF configuration.
+     */
+    LPS22DF(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
             Config config);
 
     static SPIBusConfig getDefaultSPIConfig();
 
+    /**
+     * @brief Initializes the sensor with the current settings.
+     * @return true if initialization succeeded, false otherwise.
+     */
     bool init() override;
 
+    /**
+     * @brief The self test method returns true if we read the right whoami
+     * value. We can't make a better self test due to the fact that the sensor
+     * doesn't support this feature.
+     * @return true if the right whoami has been read.
+     */
     bool selfTest() override;
 
+    /**
+     * @brief Sets and saves the configurations passed on the parameters.
+     */
     void setConfig(const Config& config);
 
+    /**
+     * @brief Sets and saves the oversampling on the sensor.
+     * @return True if setting succeeded, false otherwise.
+     */
     void setAverage(AVG avg);
 
+    /**
+     * @brief Sets and saves the output data rate.
+     * @return True if setting succeeded, false otherwise.
+     */
     void setOutputDataRate(ODR odr);
 
 private:
@@ -106,33 +148,6 @@ private:
     Config config;
 
     bool isInitialized = false;
-
-    enum Registers : uint8_t
-    {
-        IF_CTRL_REG = 0x0e,
-
-        WHO_AM_I_REG = 0x0f,
-
-        CTRL1_REG = 0x10,
-        CTRL2_REG = 0x11,
-        CTRL3_REG = 0x12,
-        CTRL4_REG = 0x13,
-
-        STATUS_REG = 0x27,
-
-        PRESSURE_OUT_XL_REG = 0x28,
-        PRESSURE_OUT_L_REG  = 0x29,
-        PRESSURE_OUT_H_REG  = 0x2a,
-        TEMP_OUT_L_REG      = 0x2b,
-        TEMP_OUT_H_REG      = 0x2c,
-    };
-
-    static constexpr uint32_t WHO_AM_I_VALUE  = 0xb4;
-    static constexpr uint8_t I2C_I3C_DIS      = 1 << 6;
-    static constexpr uint8_t ONE_SHOT_TRIGGER = 1 << 0;
-
-    static constexpr float TEMP_SENS = 100;    // LSB / °C
-    static constexpr float PRES_SENS = 40.96;  // LSB / Pa
 
     PrintLogger logger = Logging::getLogger("lps22df");
 };
