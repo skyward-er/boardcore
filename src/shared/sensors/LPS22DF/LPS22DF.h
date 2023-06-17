@@ -60,6 +60,10 @@ public:
 
     /**
      * @brief Averaging of pressure and temperature.
+     *
+     * For an AGV value of 512, 128, 64 the maximum ODR values are respectively
+     * of 25, 75 and 100 Hz. For any other AVG value all ODR configurations are
+     * possible.
      */
     enum AVG : uint8_t
     {
@@ -72,11 +76,11 @@ public:
         AVG_512 = 0b111
     };
 
-    typedef struct
+    struct Config
     {
         ODR odr = ODR::ODR_25;
         AVG avg = AVG::AVG_512;
-    } Config;
+    };
 
     LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin);
 
