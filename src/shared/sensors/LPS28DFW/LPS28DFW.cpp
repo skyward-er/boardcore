@@ -26,17 +26,18 @@
 
 #include "LPS28DFWDefs.h"
 
+using namespace Boardcore::LPS28DFWDefs;
+
 namespace Boardcore
 {
 LPS28DFW::LPS28DFW(I2C& i2c, SensorConfig sensorConfig)
-    : i2cConfig{sensorConfig.sa0 ? LPS28DFWDefs::lsp28dfwAddress1
-                                 : LPS28DFWDefs::lsp28dfwAddress0,
+    : i2cConfig{sensorConfig.sa0 ? lsp28dfwAddress1 : lsp28dfwAddress0,
                 I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED},
       i2c(i2c), sensorConfig(sensorConfig)
 {
     pressureSensitivity = (sensorConfig.fsr == FullScaleRange::FS_1260
-                               ? LPS28DFWDefs::pressureSensitivity1260hPa
-                               : LPS28DFWDefs::pressureSensitivity4060hPa);
+                               ? pressureSensitivity1260hPa
+                               : pressureSensitivity4060hPa);
 }
 
 bool LPS28DFW::init()
@@ -45,14 +46,6 @@ bool LPS28DFW::init()
     {
         LOG_ERR(logger, "Attempted to initialized sensor twice but failed");
         lastError = ALREADY_INIT;
-        return false;
-    }
-
-    // Checking the whoami value to assure communication
-    if (!selfTest())
-    {
-        LOG_ERR(logger, "Self-test failed");
-        lastError = SELF_TEST_FAIL;
         return false;
     }
 
@@ -69,35 +62,61 @@ bool LPS28DFW::init()
     return true;
 }
 
+bool LPS28DFW::selfTest()
+{
+    // Since the sensor doesn't provide any self-test feature we just try to
+    // probe the sensor and read his whoami register.
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "Invoked selfTest() but sensor was uninitialized");
+        lastError = NOT_INIT;
+        return false;
+    }
+
+    // Trying to probe the sensor to check if it is connected
+    if (!i2c.probe(i2cConfig))
+    {
+        LOG_ERR(logger,
+                "Can't communicate with the sensor or sensor not attached");
+        lastError = BUS_FAULT;
+        return false;
+    }
+
+    // Reading the whoami value to assure communication
+    uint8_t whoamiValue{0};
+    if (!i2c.readRegister(i2cConfig, WHO_AM_I_addr, whoamiValue))
+    {
+        LOG_ERR(logger, "Can't communicate with the sensor");
+        lastError = BUS_FAULT;
+        return false;
+    }
+
+    // Checking the whoami value to assure correct communication
+    if (whoamiValue != WHO_AM_I_VALUE)
+    {
+        LOG_ERR(logger,
+                "WHO_AM_I value differs from expectation: read 0x{02x} "
+                "but expected 0x{02x}",
+                whoamiValue, WHO_AM_I_VALUE);
+        lastError = INVALID_WHOAMI;
+        return false;
+    }
+
+    return true;
+}
+
 bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
 {
+    // Setting the FIFO_CTRL register to the correct mode (according to the
+    // ODR set: BYPASS for the one shot mode and CONTINUOUS for the
+    // continuous mode).
+    if (!i2c.writeRegister(
+            i2cConfig, FIFO_CTRL_addr,
+            (newSensorConfig.odr == ODR::ONE_SHOT ? FIFO_CTRL::BYPASS
+                                                  : FIFO_CTRL::CONTINUOUS)))
     {
-        // Setting the mode and checking for consistency in the settings. If
-        // ONE_SHOT mode, other settings adapted to match this.
-        uint8_t fifo_ctrl{0};
-        switch (newSensorConfig.mode)
-        {
-            case Mode::ONE_SHOT_MODE:
-                sensorConfig = {newSensorConfig.sa0, newSensorConfig.fsr,
-                                newSensorConfig.avg, Mode::ONE_SHOT_MODE,
-                                ODR::ONE_SHOT,       false};
-                fifo_ctrl |= LPS28DFWDefs::FIFO_CTRL::BYPASS;
-                break;
-            case Mode::CONTINUOUS_MODE:
-                sensorConfig = newSensorConfig;
-                fifo_ctrl |= LPS28DFWDefs::FIFO_CTRL::CONTINUOUS;
-                break;
-            default:
-                LOG_ERR(logger, "Mode not supported");
-                break;
-        }
-
-        if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::FIFO_CTRL_addr,
-                               fifo_ctrl))
-        {
-            lastError = BUS_FAULT;
-            return false;
-        }
+        lastError = BUS_FAULT;
+        return false;
     }
 
     if (!(setFullScaleRange(sensorConfig.fsr) && setAverage(sensorConfig.avg) &&
@@ -111,51 +130,13 @@ bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
     return true;
 }
 
-bool LPS28DFW::selfTest()
-{
-    // Since the sensor doesn't provide any self-test feature we just try to
-    // probe the sensor and read his whoami register.
-
-    // Trying to probe the sensor to check if it is connected
-    if (!i2c.probe(i2cConfig))
-    {
-        LOG_ERR(logger,
-                "Can't communicate with the sensor or sensor not attached");
-        lastError = BUS_FAULT;
-        return false;
-    }
-
-    // Reading the whoami value to assure communication
-    uint8_t whoamiValue{0};
-    if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::WHO_AM_I, whoamiValue))
-    {
-        LOG_ERR(logger, "Can't communicate with the sensor");
-        lastError = BUS_FAULT;
-        return false;
-    }
-
-    // Checking the whoami value to assure correct communication
-    if (whoamiValue != LPS28DFWDefs::WHO_AM_I_VALUE)
-    {
-        LOG_ERR(logger,
-                "WHO_AM_I value differs from expectation: read 0x{02x} "
-                "but expected 0x{02x}",
-                whoamiValue, LPS28DFWDefs::WHO_AM_I_VALUE);
-        lastError = INVALID_WHOAMI;
-        return false;
-    }
-
-    return true;
-}
-
 bool LPS28DFW::setAverage(AVG avg)
 {
     // Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
     // internal driver state to set the register with the wanted ODR and AVG
     // without previously reading it. This allows to avoid a useless
     // transaction.
-    if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG1_addr,
-                           sensorConfig.odr | avg))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG1_addr, sensorConfig.odr | avg))
     {
         lastError = BUS_FAULT;
         return false;
@@ -171,8 +152,7 @@ bool LPS28DFW::setOutputDataRate(ODR odr)
     // internal driver state to set the register with the wanted ODR and AVG
     // without previously reading it. This allows to avoid a useless
     // transaction.
-    if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG1_addr,
-                           odr | sensorConfig.avg))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG1_addr, odr | sensorConfig.avg))
     {
         lastError = BUS_FAULT;
         return false;
@@ -185,7 +165,7 @@ bool LPS28DFW::setOutputDataRate(ODR odr)
 bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 {
     uint8_t ctrl_reg2;
-    if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr, ctrl_reg2))
+    if (!i2c.readRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2))
     {
         lastError = BUS_FAULT;
         return false;
@@ -193,16 +173,16 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 
     if (fs == FullScaleRange::FS_1260)
     {
-        pressureSensitivity = LPS28DFWDefs::pressureSensitivity1260hPa;
-        ctrl_reg2           = (ctrl_reg2 & ~LPS28DFWDefs::CTRL_REG2::FS_MODE);
+        pressureSensitivity = pressureSensitivity1260hPa;
+        ctrl_reg2           = (ctrl_reg2 & ~CTRL_REG2::FS_MODE);
     }
     else
     {
-        pressureSensitivity = LPS28DFWDefs::pressureSensitivity4060hPa;
-        ctrl_reg2           = (ctrl_reg2 | LPS28DFWDefs::CTRL_REG2::FS_MODE);
+        pressureSensitivity = pressureSensitivity4060hPa;
+        ctrl_reg2           = (ctrl_reg2 | CTRL_REG2::FS_MODE);
     }
 
-    if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr, ctrl_reg2))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2))
     {
         lastError = BUS_FAULT;
         return false;
@@ -214,9 +194,8 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 
 bool LPS28DFW::setDRDYInterrupt(bool drdy)
 {
-    if (!i2c.writeRegister(
-            i2cConfig, LPS28DFWDefs::CTRL_REG4_addr,
-            (drdy ? (LPS28DFWDefs::INT_EN | LPS28DFWDefs::DRDY) : 0)))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr,
+                           (drdy ? (INT_EN | DRDY) : 0)))
     {
         lastError = BUS_FAULT;
         return false;
@@ -242,76 +221,85 @@ float LPS28DFW::convertTemperature(uint8_t tempL, uint8_t tempH)
 {
     // Temperature conversion
     int16_t temp_temp = (tempH << 8) | (tempL << 0);
-    return ((float)temp_temp) / LPS28DFWDefs::temperatureSensitivity;
+    return ((float)temp_temp) / temperatureSensitivity;
 }
 
 LPS28DFWData LPS28DFW::sampleImpl()
 {
-    uint8_t status = 0;
+    uint8_t statusValue{0};
     uint8_t val[5] = {0};
     LPS28DFWData data;
 
-    lastError              = NO_ERRORS;
-    data.pressureTimestamp = data.temperatureTimestamp =
-        TimestampTimer::getTimestamp();
+    lastError = NO_ERRORS;
 
-    if (sensorConfig.mode == Mode::ONE_SHOT_MODE)
+    if (sensorConfig.odr == ODR::ONE_SHOT)
     {
         uint8_t ctrl_reg2_val{0};
 
-        // Reading always 5 bytes because in one-shot mode the sensor samples
-        // both pressure and temperature
-        if (!(i2c.readRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr,
-                               ctrl_reg2_val) &&
-              i2c.writeRegister(
-                  i2cConfig, LPS28DFWDefs::CTRL_REG2_addr,
-                  ctrl_reg2_val | LPS28DFWDefs::CTRL_REG2::ONE_SHOT_START) &&
-              i2c.readFromRegister(i2cConfig, LPS28DFWDefs::PRESS_OUT_XL_addr,
-                                   val, 5)))
+        // Triggering sampling
+        if (!(i2c.readRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2_val) &&
+              i2c.writeRegister(i2cConfig, CTRL_REG2_addr,
+                                ctrl_reg2_val | CTRL_REG2::ONE_SHOT_START)))
         {
             lastError = BUS_FAULT;
             return lastSample;
         }
 
-        data.pressure    = convertPressure(val[0], val[1], val[2]);
-        data.temperature = convertTemperature(val[3], val[4]);
-
-        return data;
+        // Poll status register until the sample is ready
+        do
+        {
+            if (!i2c.readRegister(i2cConfig, STATUS_addr, statusValue))
+            {
+                lastError = BUS_FAULT;
+                return lastSample;
+            }
+        } while ((statusValue & (STATUS::P_DA | STATUS::T_DA)) !=
+                 (STATUS::P_DA | STATUS::T_DA));
+    }
+    else
+    {
+        // read status register value
+        if (!i2c.readRegister(i2cConfig, STATUS_addr, statusValue))
+        {
+            lastError = BUS_FAULT;
+            return lastSample;
+        }
     }
 
-    if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::STATUS_addr, status))
+    auto ts = TimestampTimer::getTimestamp();
+
+    // reading 5 bytes if also Temperature new sample, otherwise only the 3
+    // pressure bytes
+    if (!i2c.readFromRegister(i2cConfig, PRESS_OUT_XL_addr, val,
+                              ((statusValue & STATUS::T_DA) ? 5 : 3)))
     {
         lastError = BUS_FAULT;
         return lastSample;
     }
 
     // If pressure new data present
-    if (!(status & LPS28DFWDefs::STATUS::P_DA))
+    if (statusValue & STATUS::P_DA)
     {
-        lastError = NO_NEW_DATA;
-        return lastSample;
-    }
-
-    // reading 5 bytes if also Temperature new sample, otherwise only the 3
-    // pressure bytes
-    if (!i2c.readFromRegister(i2cConfig, LPS28DFWDefs::PRESS_OUT_XL_addr, val,
-                              ((status & LPS28DFWDefs::STATUS::T_DA) ? 5 : 3)))
-    {
-        lastError = BUS_FAULT;
-        return lastSample;
-    }
-
-    data.pressure = convertPressure(val[0], val[1], val[2]);
-
-    // If temperature new data present
-    if (status & LPS28DFWDefs::STATUS::T_DA)
-    {
-        data.temperature = convertTemperature(val[3], val[4]);
+        data.pressureTimestamp = ts;
+        data.pressure          = convertPressure(val[0], val[1], val[2]);
     }
     else
     {
-        data.temperature          = lastSample.temperature;
+        lastError              = NO_NEW_DATA;
+        data.pressureTimestamp = lastSample.pressureTimestamp;
+        data.pressure          = lastSample.pressure;
+    }
+
+    // If temperature new data present
+    if (statusValue & STATUS::T_DA)
+    {
+        data.temperatureTimestamp = ts;
+        data.temperature          = convertTemperature(val[3], val[4]);
+    }
+    else
+    {
         data.temperatureTimestamp = lastSample.temperatureTimestamp;
+        data.temperature          = lastSample.temperature;
     }
 
     return data;
