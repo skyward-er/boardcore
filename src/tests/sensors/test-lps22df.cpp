@@ -31,13 +31,12 @@ using namespace miosix;
 GpioPin clk(GPIOA_BASE, 5);
 GpioPin miso(GPIOA_BASE, 6);
 GpioPin mosi(GPIOA_BASE, 7);
-GpioPin cs(GPIOA_BASE, 15);
+GpioPin cs(GPIOD_BASE, 14);
 
 int main()
 {
     clk.mode(Mode::ALTERNATE);
     clk.alternateFunction(5);
-    clk.speed(Speed::_100MHz);
     miso.mode(Mode::ALTERNATE);
     miso.alternateFunction(5);
     mosi.mode(Mode::ALTERNATE);
@@ -64,7 +63,7 @@ int main()
     if (!sensor.selfTest())
     {
         printf("Error: selfTest() returned false!\n");
-        return 0;
+        // return 0;
     }
 
     printf("Trying one shot mode for 10 seconds\n");

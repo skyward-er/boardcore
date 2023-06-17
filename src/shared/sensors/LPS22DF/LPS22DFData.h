@@ -31,21 +31,15 @@ struct LPS22DFData : public PressureData, public TemperatureData
 {
     LPS22DFData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
-    LPS22DFData(uint64_t t, float press, float deg)
-        : PressureData{t, press}, TemperatureData{t, deg}
-
-    {
-    }
-
-    LPS22DFData(PressureData pressData, TemperatureData tempData)
-        : PressureData(pressData), TemperatureData(tempData)
-
+    LPS22DFData(uint64_t timestamp, float pressure, float temperature)
+        : PressureData{timestamp, pressure}, TemperatureData{timestamp,
+                                                             temperature}
     {
     }
 
     static std::string header()
     {
-        return "pressureTimestamp, press, temperatureTimestamp, temp\n";
+        return "pressureTimestamp,pressure,temperatureTimestamp,temperature\n";
     }
 
     void print(std::ostream& os) const

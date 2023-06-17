@@ -23,11 +23,8 @@
 #include "LPS22DF.h"
 
 #include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
-#include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
-#include <utils/Debug.h>
 
-#include <iostream>
+#include "LPS22DFDefs.h"
 
 using namespace Boardcore::LPS22DFDefs;
 
@@ -56,6 +53,8 @@ SPIBusConfig LPS22DF::getDefaultSPIConfig()
 
 bool LPS22DF::init()
 {
+    SPITransaction spi(slave);
+
     if (isInitialized)
     {
         LOG_ERR(logger, "Attempted to initialized sensor twice");
@@ -63,11 +62,8 @@ bool LPS22DF::init()
         return false;
     }
 
-    {
-        // Disable I2C and I3C interfaces
-        SPITransaction spi(slave);
-        spi.writeRegister(IF_CTRL_addr, IF_CTRL::I2C_I3C_DIS);
-    }
+    // Disable I2C and I3C interfaces
+    spi.writeRegister(IF_CTRL, IF_CTRL::I2C_I3C_DIS);
 
     // Setting the actual sensor configurations (Mode, ODR, AVG)
     setConfig(config);
@@ -88,19 +84,17 @@ bool LPS22DF::selfTest()
         return false;
     }
 
-    {
-        // Reading the whoami value to assure communication
-        SPITransaction spi(slave);
-        uint8_t whoamiValue = spi.readRegister(WHO_AM_I_addr);
+    // Reading the whoami value to assure communication
+    SPITransaction spi(slave);
+    uint8_t whoamiValue = spi.readRegister(WHO_AM_I);
 
-        // Checking the whoami value to assure correct communication
-        if (whoamiValue != WHO_AM_I_VALUE)
-        {
-            LOG_ERR(logger, "WHO_AM_I: read 0x{:x} but expected 0x{:x}",
-                    whoamiValue, WHO_AM_I_VALUE);
-            lastError = INVALID_WHOAMI;
-            return false;
-        }
+    // Checking the whoami value to assure correct communication
+    if (whoamiValue != WHO_AM_I_VALUE)
+    {
+        LOG_ERR(logger, "WHO_AM_I: read 0x{:x} but expected 0x{:x}",
+                whoamiValue, WHO_AM_I_VALUE);
+        lastError = INVALID_WHOAMI;
+        return false;
     }
 
     return true;
@@ -114,32 +108,38 @@ void LPS22DF::setConfig(const Config& config)
 
 void LPS22DF::setAverage(AVG avg)
 {
-    // Since the CTRL_REG1 contains only the AVG and ODR settings, we use
-    // the internal driver state to set the register with the wanted ODR and
-    // AVG without previously reading it. This allows to avoid a useless
-    // transaction.
-    {
-        SPITransaction spi(slave);
-        spi.writeRegister(CTRL_REG1_addr, config.odr | avg);
-    }
+    SPITransaction spi(slave);
+
+    /**
+     * Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
+     * internal driver state to set the register with the wanted ODR and AVG
+     * without previously reading it. This allows to avoid a useless
+     * transaction.
+     */
+    spi.writeRegister(CTRL_REG1, config.odr | avg);
+
     config.avg = avg;
 }
 
 void LPS22DF::setOutputDataRate(ODR odr)
 {
-    // Since the CTRL_REG1 contains only the AVG and ODR settings, we use
-    // the internal driver state to set the register with the wanted ODR and
-    // AVG without previously reading it. This allows to avoid a useless
-    // transaction.
-    {
-        SPITransaction spi(slave);
-        spi.writeRegister(CTRL_REG1_addr, odr | config.avg);
-    }
+    SPITransaction spi(slave);
+
+    /**
+     * Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
+     * internal driver state to set the register with the wanted ODR and AVG
+     * without previously reading it. This allows to avoid a useless
+     * transaction.
+     */
+    spi.writeRegister(CTRL_REG1, odr | config.avg);
+
     config.odr = odr;
 }
 
 LPS22DFData LPS22DF::sampleImpl()
 {
+    SPITransaction spi(slave);
+
     if (!isInitialized)
     {
         LOG_ERR(logger, "Invoked sampleImpl() but sensor was not initialized");
@@ -148,28 +148,26 @@ LPS22DFData LPS22DF::sampleImpl()
     }
 
     LPS22DFData data;
-    SPITransaction spi(slave);
-    uint8_t statusValue{0};
+    uint8_t statusValue = 0;
 
     if (config.odr == ODR::ONE_SHOT)
     {
         // Reading previous value of Control Register 2
-        uint8_t ctrl_reg2_val = spi.readRegister(CTRL_REG2_addr);
+        uint8_t ctrl_reg2_val = spi.readRegister(CTRL_REG2);
 
         // Trigger sample
-        spi.writeRegister(CTRL_REG2_addr,
-                          ctrl_reg2_val | CTRL_REG2::ONE_SHOT_START);
+        spi.writeRegister(CTRL_REG2, ctrl_reg2_val | CTRL_REG2::ONE_SHOT_START);
 
-        // Pool status register until the sample is ready
+        // Pull status register until the sample is ready
         do
         {
-            statusValue = spi.readRegister(STATUS_addr);
+            statusValue = spi.readRegister(STATUS);
         } while (!(statusValue & (STATUS::P_DA | STATUS::T_DA)));
     }
     else
     {
-        // read status register value
-        statusValue = spi.readRegister(STATUS_addr);
+        // Read status register value
+        statusValue = spi.readRegister(STATUS);
     }
 
     auto ts = TimestampTimer::getTimestamp();
@@ -178,7 +176,7 @@ LPS22DFData LPS22DF::sampleImpl()
     if (statusValue & STATUS::P_DA)
     {
         data.pressureTimestamp = ts;
-        data.pressure = spi.readRegister24(PRESSURE_OUT_XL_addr) / PRES_SENS;
+        data.pressure          = spi.readRegister24(PRESS_OUT_XL) / PRES_SENS;
     }
     else
     {
@@ -191,7 +189,7 @@ LPS22DFData LPS22DF::sampleImpl()
     if (statusValue & STATUS::T_DA)
     {
         data.temperatureTimestamp = ts;
-        data.temperature = spi.readRegister16(TEMP_OUT_L_addr) / TEMP_SENS;
+        data.temperature          = spi.readRegister16(TEMP_OUT_L) / TEMP_SENS;
     }
     else
     {

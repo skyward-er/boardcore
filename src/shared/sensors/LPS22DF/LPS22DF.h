@@ -24,15 +24,9 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
-#include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
 #include <sensors/Sensor.h>
 
-#include <Eigen/Core>
-#include <array>
-
 #include "LPS22DFData.h"
-#include "LPS22DFDefs.h"
 
 namespace Boardcore
 {
@@ -64,11 +58,14 @@ public:
     };
 
     /**
-     * @brief Averaging of pressure and temperature.
+     * @brief Oversampling average values.
      *
-     * For an AGV value of 512, 128, 64 the maximum ODR values are respectively
-     * of 25, 75 and 100 Hz. For any other AVG value all ODR configurations are
-     * possible.
+     * The value read from the sensor will actually be the average of multiple
+     * samples. Available are from 4 to 512 averaged samples.
+     *
+     * @warning For an AGV value of 512, 128, 64 the maximum ODR values are
+     * respectively of 25, 75 and 100 Hz. For any other AVG value all ODR
+     * configurations are possible.
      */
     enum AVG : uint8_t
     {
@@ -103,7 +100,7 @@ public:
      * them to the sensor).
      * @param bus SPI bus.
      * @param cs SPI Chip Select pin.
-     * @param config LPS22DF configuration.
+     * @param config Sensor configuration.
      */
     LPS22DF(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
             Config config);
