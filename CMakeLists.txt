@@ -294,11 +294,11 @@ sbs_target(test-sx1278fsk-bidir stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278fsk-tx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-tx PRIVATE DISABLE_RX)
-sbs_target(test-sx1278fsk-tx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-tx stm32f767zi_compute_unit)
 
 add_executable(test-sx1278fsk-rx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278fsk-rx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-rx stm32f767zi_compute_unit)
 
 add_executable(test-sx1278fsk-gui-tx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278fsk-gui-tx PRIVATE DISABLE_RX)

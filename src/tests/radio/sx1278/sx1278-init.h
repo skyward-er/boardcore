@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <miosix.h>
+
 #include <drivers/interrupt/external_interrupts.h>
 
 // SX1278 includes
@@ -39,7 +41,7 @@
 // Uncomment the following line to enable Ebyte module
 // #define SX1278_IS_EBYTE
 // Uncomment the following line to ebable Skyward433 module
-// #define SX1278_IS_SKYWARD433
+#define SX1278_IS_SKYWARD433
 
 using cs   = miosix::peripherals::ra01::pc13::cs;
 using dio0 = miosix::peripherals::ra01::pc13::dio0;
@@ -84,6 +86,51 @@ using rxen                         = miosix::radio::rxEn;
 #define SX1278_IRQ_DIO1 EXTI12_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI13_IRQHandlerImpl
 
+#elif defined _BOARD_STM32F767ZI_COMPUTE_UNIT
+
+#define SX1278_IS_SKYWARD433
+
+// Comment to use SX1278_2
+#define SX1278_1
+
+#ifdef SX1278_1
+using cs   = miosix::Gpio<GPIOA_BASE, 4>;
+using dio0 = miosix::Gpio<GPIOC_BASE, 6>;
+using dio1 = miosix::Gpio<GPIOD_BASE, 4>;
+using dio3 = miosix::Gpio<GPIOD_BASE, 5>;
+
+using sck  = miosix::Gpio<GPIOA_BASE, 5>;
+using miso = miosix::Gpio<GPIOA_BASE, 6>;
+using mosi = miosix::Gpio<GPIOA_BASE, 7>;
+
+#define SX1278_NRST
+using rst = miosix::Gpio<GPIOA_BASE, 0>;
+
+#define SX1278_SPI SPI1
+
+#define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI5_IRQHandlerImpl
+#else
+using cs   = miosix::Gpio<GPIOA_BASE, 15>;
+using dio0 = miosix::Gpio<GPIOC_BASE, 8>;
+using dio1 = miosix::Gpio<GPIOC_BASE, 10>;
+using dio3 = miosix::Gpio<GPIOC_BASE, 12>;
+
+using sck  = miosix::Gpio<GPIOB_BASE, 3>;
+using miso = miosix::Gpio<GPIOB_BASE, 4>;
+using mosi = miosix::Gpio<GPIOD_BASE, 6>;
+
+#define SX1278_NRST
+using rst = miosix::Gpio<GPIOA_BASE, 3>;
+
+#define SX1278_SPI SPI3
+
+#define SX1278_IRQ_DIO0 EXTI8_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 stm32f429zi_skyward_groundstation_v2EXTI10_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI12_IRQHandlerImpl
+#endif
+
 #else
 #error "Target not supported"
 #endif
@@ -121,12 +168,26 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 #endif
 
 void initBoard()
-{
+{   
+    sck::mode(miosix::Mode::ALTERNATE);
+    sck::alternateFunction(5);
+    miso::mode(miosix::Mode::ALTERNATE);
+    miso::alternateFunction(5);
+    mosi::mode(miosix::Mode::ALTERNATE);
+    mosi::alternateFunction(5);
+    cs::mode(miosix::Mode::OUTPUT);
+    cs::high();
+
 #ifdef SX1278_IS_EBYTE
     rxen::mode(miosix::Mode::OUTPUT);
     txen::mode(miosix::Mode::OUTPUT);
     rxen::low();
     txen::low();
+#endif
+
+#ifdef SX1278_NRST
+    rst::mode(miosix::Mode::OUTPUT);
+    rst::high();
 #endif
 }
 
