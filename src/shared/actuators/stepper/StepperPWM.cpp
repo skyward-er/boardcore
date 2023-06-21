@@ -62,7 +62,7 @@ void StepperPWM::setMicroStepping(uint16_t microStep)
 
 void StepperPWM::move(int16_t steps)
 {
-    if (speed == 0 || steps == 0)
+    if (!enabled || speed == 0 || steps == 0)
         return;
 
     // First update currentPositionDeg. This method corrects the initial

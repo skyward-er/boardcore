@@ -113,7 +113,7 @@ void Stepper::setDirection()
 
 void Stepper::move(int16_t steps)
 {
-    if (speed == 0)
+    if (!enabled || speed == 0 || steps == 0)
         return;
 
     unsigned int halfStepDelay = 1e6 / (speed * 360 / stepAngle * microStep);
