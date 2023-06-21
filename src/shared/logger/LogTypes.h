@@ -23,6 +23,7 @@
 #pragma once
 
 #include <actuators/Servo/ServoData.h>
+#include <actuators/stepper/StepperData.h>
 #include <algorithms/ADA/ADAData.h>
 #include <algorithms/NAS/NASState.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
@@ -80,6 +81,7 @@ namespace LogTypes
 
 void registerTypes(Deserializer& ds)
 {
+    ds.registerType<StepperData>();
     ds.registerType<ServoData>();
     ds.registerType<ADAState>();
     ds.registerType<NASState>();

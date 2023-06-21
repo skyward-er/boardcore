@@ -31,11 +31,10 @@ struct StepperData
 {
     uint64_t timestamp;
     unsigned int pulsePinPort;
-    unsigned char pulsePinNumber;
+    unsigned int pulsePinNumber;
     bool enabled;
     float positionDeg;
     float speed;
-    uint8_t direction;
     float moveDeg;
 
     static std::string header()
@@ -47,10 +46,9 @@ struct StepperData
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << static_cast<int>(pulsePinPort) << ","
-           << static_cast<int>(pulsePinNumber) << ","
-           << static_cast<int>(enabled) << "," << positionDeg << "," << speed
-           << "," << direction << "," << moveDeg << "\n";
+        os << timestamp << "," << pulsePinPort << "," << pulsePinNumber << ","
+           << enabled << "," << positionDeg << "," << speed << "," << moveDeg
+           << "\n";
     }
 };
 

@@ -167,18 +167,11 @@ bool Stepper::isEnabled() { return enabled; }
 StepperData Stepper::getState(float moveDeg)
 {
     return {TimestampTimer::getTimestamp(),
-
-#ifndef COMPILE_FOR_HOST
-            stepPin.getPort(),
+            static_cast<unsigned int>(stepPin.getPort()),
             stepPin.getNumber(),
-#else
-            0,
-            0,
-#endif
             enabled,
             getCurrentDegPosition(),
             speed,
-            static_cast<uint8_t>(currentDirection),
             moveDeg};
 }
 
