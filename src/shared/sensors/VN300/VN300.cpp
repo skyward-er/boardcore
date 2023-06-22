@@ -26,11 +26,13 @@
 
 namespace Boardcore
 {
-VN300::VN300(USARTType *portNumber, USARTInterface::Baudrate baudRate,
-             CRCOptions crc, uint16_t samplePeriod)
-    : portNumber(portNumber), baudRate(baudRate), crc(crc)
+
+VN300::VN300(USART &usart, int baudRate, CRCOptions crc, uint16_t samplePeriod,
+             AntennaPosition antPosA, AntennaPosition antPosB,
+             Eigen::Matrix3f rotMat)
+    : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc),
+      antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
 {
-    this->samplePeriod = samplePeriod;
 }
 
 bool VN300::init()
@@ -41,7 +43,7 @@ bool VN300::init()
     if (isInit)
     {
         lastError = SensorErrors::ALREADY_INIT;
-        LOG_WARN(logger, "Sensor vn300 already initilized");
+        LOG_WARN(logger, "Sensor VN300 already initilized");
         return true;
     }
 
@@ -51,13 +53,13 @@ bool VN300::init()
     // Allocate the pre loaded strings based on the user selected crc
     if (crc == CRCOptions::CRC_ENABLE_16)
     {
-        preSampleImuString       = new string("$VNRRG,15*92EA\n");
-        preSampleTempPressString = new string("$VNRRG,54*4E0F\n");
+        preSampleImuString = new string("$VNRRG,15*92EA\n");
+        preSampleINSlla    = new string("$VNRRG,63*6BBB\n");
     }
     else
     {
-        preSampleImuString       = new string("$VNRRG,15*77\n");
-        preSampleTempPressString = new string("$VNRRG,54*72\n");
+        preSampleImuString = new string("$VNRRG,15*77\n");
+        preSampleINSlla    = new string("$VNRRG,63*76\n");
     }
 
     // Set the error to init fail and if the init process goes without problem
@@ -66,31 +68,43 @@ bool VN300::init()
 
     if (recvString == NULL)
     {
-        LOG_ERR(logger, "Unable to initialize the receive vn300 string");
+        LOG_ERR(logger, "Unable to initialize the receive VN300 string");
         return false;
     }
 
     if (!configDefaultSerialPort())
     {
-        LOG_ERR(logger, "Unable to config the default vn100 serial port");
+        LOG_ERR(logger, "Unable to config the default VN300 serial port");
         return false;
     }
 
     if (!setCrc(false))
     {
-        LOG_ERR(logger, "Unable to set the vn300 user selected CRC");
+        LOG_ERR(logger, "Unable to set the VN300 user selected CRC");
         return false;
     }
 
     if (!disableAsyncMessages(false))
     {
-        LOG_ERR(logger, "Unable to disable async messages from vn100");
+        LOG_ERR(logger, "Unable to disable async messages from VN300");
+        return false;
+    }
+
+    if (!setReferenceFrame(rotMat))
+    {
+        LOG_ERR(logger, "Unable to set reference frame rotation");
+        return false;
+    }
+
+    if (!writeSettingsCommand())
+    {
+        LOG_ERR(logger, "Unable to save settings to non-volatile memory");
         return false;
     }
 
     if (!configUserSerialPort())
     {
-        LOG_ERR(logger, "Unable to config the user vn100 serial port");
+        LOG_ERR(logger, "Unable to config the user VN300 serial port");
         return false;
     }
 
@@ -98,19 +112,25 @@ bool VN300::init()
     // serial port communication at the beginning
     if (!setCrc(true))
     {
-        LOG_ERR(logger, "Unable to set the vn100 user selected CRC");
+        LOG_ERR(logger, "Unable to set the VN300 user selected CRC");
         return false;
     }
 
     if (!disableAsyncMessages(true))
     {
-        LOG_ERR(logger, "Unable to disable async messages from vn100");
+        LOG_ERR(logger, "Unable to disable async messages from VN300");
         return false;
     }
 
-    if (!this->start())
+    if (!setAntennaA(antPosA))
     {
-        LOG_ERR(logger, "Unable to start the sampling thread");
+        LOG_ERR(logger, "Unable to set antenna A position");
+        return false;
+    }
+
+    if (!setCompassBaseline(antPosB))
+    {
+        LOG_ERR(logger, "Unable to set compass baseline");
         return false;
     }
 
@@ -128,14 +148,119 @@ void VN300::run()
     while (!shouldStop())
     {
         long long initialTime = miosix::getTick();
-
-        // Sample the data locking the mutex
-        miosix::Lock<FastMutex> l(mutex);
-        threadSample = sampleData();
-
+        {
+            // Sample the data locking the mutex
+            miosix::Lock<FastMutex> l(mutex);
+            threadSample = sampleData();
+        }
         // Sleep for the sampling period
         miosix::Thread::sleepUntil(initialTime + samplePeriod);
     }
+}
+
+bool VN300::sampleRaw()
+{
+    // Sensor not init
+    if (!isInit)
+    {
+        lastError = SensorErrors::NOT_INIT;
+        LOG_WARN(logger,
+                 "Unable to sample due to not initialized VN300 sensor");
+        return false;
+    }
+
+    // Send the IMU sampling command
+    usart.writeString(preSampleImuString->c_str());
+
+    // Wait some time
+    // TODO dimension the time
+    miosix::Thread::sleep(1);
+
+    // Receive the string
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
+        return false;
+    }
+
+    return true;
+}
+
+string VN300::getLastRawSample()
+{
+    // If not init i return the void string
+    if (!isInit)
+    {
+        return string("");
+    }
+
+    return string(recvString, recvStringLength);
+}
+
+bool VN300::closeAndReset()
+{
+    // Sensor not init
+    if (!isInit)
+    {
+        lastError = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Sensor VN300 already not initilized");
+        return true;
+    }
+
+    // Send the reset command to the VN300
+    if (!sendStringCommand("VNRST"))
+    {
+        LOG_WARN(logger, "Impossible to reset the VN300");
+        return false;
+    }
+
+    isInit = false;
+
+    // Free the recvString memory
+    delete recvString;
+
+    return true;
+}
+
+bool VN300::writeSettingsCommand()
+{
+    if (!sendStringCommand("VNWNV"))
+    {
+        LOG_WARN(logger, "Impossible to save settings");
+    }
+
+    // Write settings command takes approximately 500ms
+    miosix::Thread::sleep(500);
+
+    // Send the reset command to the VN300 in order to restart the Kalman filter
+    if (!sendStringCommand("VNRST"))
+    {
+        LOG_WARN(logger, "Impossible to reset the VN300");
+
+        return false;
+    }
+
+    miosix::Thread::sleep(1000);
+
+    return true;
+}
+
+bool VN300::selfTest()
+{
+    if (!selfTestImpl())
+    {
+        lastError = SensorErrors::SELF_TEST_FAIL;
+        LOG_WARN(logger, "Unable to perform a successful VN300 self test");
+        return false;
+    }
+
+    return true;
+}
+
+VN300Data VN300::sampleImpl()
+{
+    miosix::Lock<FastMutex> l(mutex);
+    return threadSample;
 }
 
 VN300Data VN300::sampleData()
@@ -144,7 +269,7 @@ VN300Data VN300::sampleData()
     {
         lastError = SensorErrors::NOT_INIT;
         LOG_WARN(logger,
-                 "Unable to sample due to not initialized vn100 sensor");
+                 "Unable to sample due to not initialized VN300 sensor");
         return lastSample;
     }
 
@@ -155,11 +280,7 @@ VN300Data VN300::sampleData()
     }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    if (!(serialInterface->writeString(preSampleImuString->c_str())))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
+    usart.writeString(preSampleImuString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -173,25 +294,18 @@ VN300Data VN300::sampleData()
 
     if (!verifyChecksum(recvString, recvStringLength))
     {
-        LOG_WARN(logger, "Vn100 sampling message invalid checksum");
+        LOG_WARN(logger, "VN300 sampling message invalid checksum");
         // If something goes wrong i return the last sampled data
         return lastSample;
     }
 
-    // Now i have to parse the data
     QuaternionData quat   = sampleQuaternion();
     MagnetometerData mag  = sampleMagnetometer();
     AccelerometerData acc = sampleAccelerometer();
     GyroscopeData gyro    = sampleGyroscope();
 
-    // Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure
-    // (UNCOMPENSATED) DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND
-    // GYROSCOPE VALUES
-    if (!(serialInterface->writeString(preSampleTempPressString->c_str())))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
+    // Returns INS LLA message
+    usart.writeString(preSampleINSlla->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -199,22 +313,19 @@ VN300Data VN300::sampleData()
 
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
-        // If something goes wrong i return the last sampled data
         return lastSample;
     }
 
     if (!verifyChecksum(recvString, recvStringLength))
     {
-        LOG_WARN(logger, "Vn100 sampling message invalid checksum");
-        // If something goes wrong i return the last sampled data
+        LOG_WARN(logger, "VN300 sampling message invalid checksum");
+
         return lastSample;
     }
 
-    // Parse the data
-    TemperatureData temp = sampleTemperature();
-    PressureData press   = samplePressure();
+    Ins_Lla ins = sampleIns();
 
-    return VN100Data(quat, mag, acc, gyro, temp, press);
+    return VN300Data(quat, mag, acc, gyro, ins);
 }
 
 bool VN300::disableAsyncMessages(bool waitResponse)
@@ -233,32 +344,9 @@ bool VN300::disableAsyncMessages(bool waitResponse)
     if (waitResponse)
     {
         recvStringCommand(recvString, recvStringMaxDimension);
-    }
 
-    return true;
-}
-
-bool VN300::AsyncPauseCommand(bool waitResponse, bool selection)
-{
-    if (selection)
-    {
-        if (!sendStringCommand(ASYNC_PAUSE_COMMAND))
-        {
+        if (checkErrorVN(recvString))
             return false;
-        }
-    }
-    else
-    {
-        if (!sendStringCommand(ASYNC_RESUME_COMMAND))
-        {
-            return false;
-        }
-    }
-
-    // Read the answer
-    if (waitResponse)
-    {
-        recvStringCommand(recvString, recvStringMaxDimension);
     }
 
     return true;
@@ -267,10 +355,10 @@ bool VN300::AsyncPauseCommand(bool waitResponse, bool selection)
 bool VN300::configDefaultSerialPort()
 {
     // Initial default settings
-    serialInterface = new USART(portNumber, USARTInterface::Baudrate::B115200);
+    usart.setBaudrate(115200);
 
     // Check correct serial init
-    return serialInterface->init();
+    return true;
 }
 
 /**
@@ -282,7 +370,7 @@ bool VN300::configUserSerialPort()
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", static_cast<int>(baudRate));
+    command = fmt::format("{}{}", "VNWRG,5,2", baudRate);
 
     // I can send the command
     if (!sendStringCommand(command))
@@ -290,14 +378,11 @@ bool VN300::configUserSerialPort()
         return false;
     }
 
-    // Destroy the serial object
-    delete serialInterface;
-
     // I can open the serial with user's baud rate
-    serialInterface = new USART(portNumber, baudRate);
+    usart.setBaudrate(baudRate);
 
     // Check correct serial init
-    return serialInterface->init();
+    return true;
 }
 
 bool VN300::setCrc(bool waitResponse)
@@ -311,14 +396,14 @@ bool VN300::setCrc(bool waitResponse)
     {
         // The 3 inside the command is the 16bit select. The others are default
         // values
-        command = "VNRRG,30,0,0,0,0,3,0,1";
+        command = "VNWRG,30,0,0,0,0,3,0,1";
     }
     else
     {
         // Even if the CRC is not enabled i put the 8 bit
         // checksum because i need to know how many 'X' add at the end
         // of every command sent
-        command = "VNRRG,30,0,0,0,0,1,0,1";
+        command = "VNWRG,30,0,0,0,0,1,0,1";
     }
 
     // I need to send the command in both crc because i don't know what type
@@ -336,6 +421,7 @@ bool VN300::setCrc(bool waitResponse)
     if (waitResponse)
     {
         recvStringCommand(recvString, recvStringMaxDimension);
+        checkErrorVN(recvString);
     }
 
     crc = CRCOptions::CRC_ENABLE_16;
@@ -350,12 +436,260 @@ bool VN300::setCrc(bool waitResponse)
     if (waitResponse)
     {
         recvStringCommand(recvString, recvStringMaxDimension);
+        checkErrorVN(recvString);
     }
 
     // Restore the crc
     crc = backup;
 
     return true;
+}
+
+bool VN300::setAntennaA(AntennaPosition antPos)
+{
+    std::string command;
+
+    command = fmt::format("{}{},{},{}", "VNWRG,57,", antPos.posX, antPos.posY,
+                          antPos.posZ);
+
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool VN300::setCompassBaseline(AntennaPosition antPos)
+{
+    std::string command;
+
+    command = fmt::format("{}{},{},{},{},{},{}", "VNWRG,93,", antPos.posX,
+                          antPos.posY, antPos.posZ, antPos.uncX, antPos.uncY,
+                          antPos.uncZ);
+
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
+{
+    std::string command;
+
+    command =
+        fmt::format("{}{},{},{},{},{},{},{},{},{}", "VNWRG, 26", rotMat(0, 0),
+                    rotMat(0, 1), rotMat(0, 2), rotMat(1, 0), rotMat(1, 1),
+                    rotMat(1, 2), rotMat(2, 0), rotMat(2, 1), rotMat(2, 2));
+
+    // I can send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool VN300::selfTestImpl()
+{
+    char modelNumber[]          = "VN-300T-CR";
+    const int modelNumberOffset = 10;
+
+    // Check the init status
+    if (!isInit)
+    {
+        lastError = SensorErrors::NOT_INIT;
+        LOG_WARN(
+            logger,
+            "Unable to perform VN300 self test due to not initialized sensor");
+        return false;
+    }
+
+    // removing junk
+    usart.clearQueue();
+
+    // I check the model number
+    if (!sendStringCommand("VNRRG,01"))
+    {
+        LOG_WARN(logger, "Unable to send string command");
+        return false;
+    }
+
+    miosix::Thread::sleep(100);
+
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to receive string command");
+        return false;
+    }
+
+    // Now i check that the model number is VN-100 starting from the 10th
+    // position because of the message structure
+    if (strncmp(modelNumber, recvString + modelNumberOffset,
+                strlen(modelNumber)) != 0)
+    {
+        LOG_ERR(logger, "VN-300 not corresponding: {} != {}", recvString,
+                modelNumber);
+        return false;
+    }
+
+    // I check the checksum
+    if (!verifyChecksum(recvString, recvStringLength))
+    {
+        LOG_ERR(logger, "Checksum verification failed: {}", recvString);
+        return false;
+    }
+
+    return true;
+}
+
+QuaternionData VN300::sampleQuaternion()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    QuaternionData data;
+
+    // Look for the second ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 2; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.quatTimestamp = TimestampTimer::getTimestamp();
+    data.quatX         = strtod(recvString + indexStart + 1, &nextNumber);
+    data.quatY         = strtod(nextNumber + 1, &nextNumber);
+    data.quatZ         = strtod(nextNumber + 1, &nextNumber);
+    data.quatW         = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+MagnetometerData VN300::sampleMagnetometer()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    MagnetometerData data;
+
+    // Look for the sixth ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 6; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.magneticFieldTimestamp = TimestampTimer::getTimestamp();
+    data.magneticFieldX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.magneticFieldY = strtod(nextNumber + 1, &nextNumber);
+    data.magneticFieldZ = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+AccelerometerData VN300::sampleAccelerometer()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    AccelerometerData data;
+
+    // Look for the ninth ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 9; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+    data.accelerationX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.accelerationY = strtod(nextNumber + 1, &nextNumber);
+    data.accelerationZ = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+GyroscopeData VN300::sampleGyroscope()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    GyroscopeData data;
+
+    // Look for the twelfth ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 12; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
+    data.angularSpeedX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.angularSpeedY = strtod(nextNumber + 1, &nextNumber);
+    data.angularSpeedZ = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+Ins_Lla VN300::sampleIns()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    Ins_Lla data;
+
+    // Look for the eleventh ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 2; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.insTimestamp = TimestampTimer::getTimestamp();
+    data.time_gps     = strtod(recvString + indexStart + 1, &nextNumber);
+    data.week         = strtod(nextNumber + 1, &nextNumber);
+    data.status       = strtod(nextNumber + 1, &nextNumber);
+    data.yaw          = strtof(nextNumber + 1, &nextNumber);
+    data.pitch        = strtof(nextNumber + 1, &nextNumber);
+    data.roll         = strtof(nextNumber + 1, &nextNumber);
+    data.latitude     = strtof(nextNumber + 1, &nextNumber);
+    data.longitude    = strtof(nextNumber + 1, &nextNumber);
+    data.altitude     = strtof(nextNumber + 1, &nextNumber);
+    data.nedVelX      = strtof(nextNumber + 1, &nextNumber);
+    data.nedVelY      = strtof(nextNumber + 1, &nextNumber);
+    data.nedVelZ      = strtof(nextNumber + 1, NULL);
+
+    return data;
 }
 
 bool VN300::sendStringCommand(std::string command)
@@ -388,18 +722,101 @@ bool VN300::sendStringCommand(std::string command)
         // in cas of CRC_NO the enabled crc is 8 bit
         command = fmt::format("{}{}{}", "$", command, "*XX\n");
     }
-
+    printf("%s\n", command.c_str());
     // I send the final command
-    if (!serialInterface->writeString(command.c_str()))
+    usart.writeString(command.c_str());
+
+    // Wait some time
+    // TODO dimension the time
+    // miosix::Thread::sleep(1);
+
+    return true;
+}
+
+bool VN300::recvStringCommand(char *command, int maxLength)
+{
+    int i = 0;
+    // Read the buffer
+    if (!usart.readBlocking(command, maxLength))
     {
         return false;
     }
 
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(500);
+    // Iterate until i reach the end or i find \n then i substitute it with a \0
+    while (i < maxLength && command[i] != '\n')
+    {
+        i++;
+    }
+
+    // Terminate the string
+    command[i] = '\0';
+
+    // Assing the length
+    recvStringLength = i - 1;
 
     return true;
+}
+
+bool VN300::checkErrorVN(const char *message)
+{
+    if (strncmp(message, "$VNERR,", 7) == 0)
+    {
+        // Extract the error code
+        int errorCode = atoi(&message[7]);
+        string error;
+        // Handle the error based on the error code
+        switch (errorCode)
+        {
+            case 1:
+                error = "VN300 Hard Fault";
+                break;
+            case 2:
+                error = "VN300 Serial Buffer Overflow";
+                break;
+            case 3:
+                error = "VN300 Invalid Checksum";
+                break;
+            case 4:
+                error = "VN300 Invalid Command";
+                break;
+            case 5:
+                error = "VN300 Not Enough Parameters";
+                break;
+            case 6:
+                error = "VN300 Too Many Parameters";
+                break;
+            case 7:
+                error = "VN300 Invalid Parameter";
+                break;
+            case 8:
+                error = "VN300 Invalid Register";
+                break;
+            case 9:
+                error = "VN300 Unauthorized Access";
+                break;
+            case 10:
+                error = "VN300 Watchdog Reset";
+                break;
+            case 11:
+                error = "VN300 Output Buffer Overflow";
+                break;
+            case 12:
+                error = "VN300 Insufficient Baud Rate";
+                break;
+            case 255:
+                error = "VN300 Error Buffer Overflow";
+                break;
+            default:
+                error = "VN300 Unknown error";
+                break;
+        }
+
+        printf("%s\n", error.c_str());
+
+        return true;  // Error detected
+    }
+
+    return false;  // No error detected
 }
 
 bool VN300::verifyChecksum(char *command, int length)
