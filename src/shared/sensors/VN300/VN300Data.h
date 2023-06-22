@@ -40,15 +40,43 @@ struct QuaternionData
 };
 
 /**
- * @brief Structure to handle quaternion data
+ * @brief Structure to handle antenna A position units [m]
  */
+struct AntennaPosition
+{
+    float posX;
+    float posY;
+    float posZ;
+    float uncX;
+    float uncY;
+    float uncZ;
+};
 
+struct Ins_Lla
+{
+    uint64_t insTimestamp;
+    double time_gps;
+    uint16_t week;
+    uint16_t status;
+    float yaw;
+    float pitch;
+    float roll;
+    float latitude;
+    float longitude;
+    float altitude;
+    float nedVelX;
+    float nedVelY;
+    float nedVelZ;
+};
+
+/**
+ * @brief data type class
+ */
 struct VN300Data : public QuaternionData,
                    public MagnetometerData,
                    public AccelerometerData,
                    public GyroscopeData,
-                   public TemperatureData,
-                   public PressureData
+                   public Ins_Lla
 {
 
     /**
@@ -56,10 +84,12 @@ struct VN300Data : public QuaternionData,
      */
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data()
-        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
-                                                                  0.0},
-          AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
-          TemperatureData{0, 0.0}, PressureData{0, 0.0}
+        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0},
+          MagnetometerData{0, 0.0, 0.0, 0.0}, AccelerometerData{0, 0.0, 0.0,
+                                                                0.0},
+          GyroscopeData{0, 0.0, 0.0, 0.0}, Ins_Lla{0,   0.0, 0,   0,   0.0, 0.0,
+                                                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                   0.0}
     {
     }
 
@@ -71,11 +101,9 @@ struct VN300Data : public QuaternionData,
     // cppcheck-suppress passedByValue
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data(QuaternionData quat, MagnetometerData magData,
-              AccelerometerData accData, GyroscopeData gyro,
-              TemperatureData temp, PressureData pres)
+              AccelerometerData accData, GyroscopeData gyro, Ins_Lla ins)
         : QuaternionData(quat), MagnetometerData(magData),
-          AccelerometerData(accData), GyroscopeData(gyro),
-          TemperatureData(temp), PressureData(pres)
+          AccelerometerData(accData), GyroscopeData(gyro), Ins_Lla(ins)
     {
     }
 
@@ -85,9 +113,11 @@ struct VN300Data : public QuaternionData,
                "magneticFieldX,magneticFieldY,magneticFieldZ,"
                "accelerationTimestamp,accelerationX,accelerationY,"
                "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,temperatureTimestamp,"
-               "temperature,pressureTimestamp,pressure\n";
+               "angularSpeedY,angularSpeedZ,insTimeStamp,"
+               "time_gps,week,status,yaw,pitch,roll,latitude,"
+               "longitude,altitude,nedVelX,nedVelY,nedVelZ\n";
     }
+
     void print(std::ostream& os) const
     {
         os << quatTimestamp << "," << quatX << "," << quatY << "," << quatZ
@@ -96,9 +126,10 @@ struct VN300Data : public QuaternionData,
            << "," << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << ","
-           << temperatureTimestamp << "," << temperature << ","
-           << pressureTimestamp << "," << pressure << "\n";
+           << angularSpeedY << "," << angularSpeedZ << "," << insTimestamp
+           << "," << time_gps << "," << week << "," << status << yaw << pitch
+           << roll << latitude << longitude << altitude << nedVelX << nedVelY
+           << nedVelZ << "\n";
     }
 };
 
