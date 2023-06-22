@@ -109,6 +109,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
         ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
+        ${SBS_BASE}/src/shared/sensors/VN300/VN300.cpp
         ${SBS_BASE}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
         ${SBS_BASE}/src/shared/sensors/LPS28DFW/LPS28DFW.cpp
         ${SBS_BASE}/src/shared/sensors/LPS22DF/LPS22DF.cpp
