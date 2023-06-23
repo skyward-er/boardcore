@@ -90,17 +90,14 @@ int main()
 
     for (int j = 0; j < 10; j++)
     {
-        uint64_t time_start = 0, time_end = 0;
+        
         for (int i = 0; i < 10; i++)
         {   
-            time_start = 0;
-            time_end   = 0;
-            time_start = TimestampTimer::getTimestamp();
+    
             sensor.sample();
             sample   = sensor.getLastSample();
-            time_end = TimestampTimer::getTimestamp();
-            printf("Sample %i done in %" PRIu64 " microseconds\n", i,
-                   (time_end - time_start));
+            
+            printf("Sample %i\n", i);
             printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
                    sample.accelerationTimestamp, sample.accelerationX,
                    sample.accelerationY, sample.accelerationZ);
