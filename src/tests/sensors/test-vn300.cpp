@@ -40,8 +40,8 @@ int main()
     u6tx1.alternateFunction(8);
     u6tx1.mode(Mode::ALTERNATE);
 
-    USART usart(USART6, 115200, 1000);
-    VN300 sensor{usart, 115200, VN300::CRCOptions::CRC_ENABLE_8};
+    USART usart(USART6, 115200);
+    VN300 sensor{usart, 460800, VN300::CRCOptions::CRC_ENABLE_8};
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -74,12 +74,12 @@ int main()
     {
         sensor.sample();
         sample = sensor.getLastSample();
-        printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
+        printf("acc: %" PRIu64 ", %.6f, %.6f, %.6f\n",
                sample.accelerationTimestamp, sample.accelerationX,
                sample.accelerationY, sample.accelerationZ);
-        printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
+        printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
                sample.angularSpeedY, sample.angularSpeedZ);
-        printf("ins: %.3f, %.3f, %.3f\n", sample.yaw, sample.pitch,
+        printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
                sample.roll);
 
         //sensor.sampleRaw();
@@ -104,9 +104,9 @@ int main()
             printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
                    sample.accelerationTimestamp, sample.accelerationX,
                    sample.accelerationY, sample.accelerationZ);
-            printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
+            printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
                    sample.angularSpeedY, sample.angularSpeedZ);
-            printf("ins: %.3f, %.3f, %.3f\n", sample.yaw, sample.pitch,
+            printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
                    sample.roll);
             //Thread::sleep(20);
         }
