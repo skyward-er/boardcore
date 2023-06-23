@@ -72,11 +72,29 @@ bool VN300::init()
         return false;
     }
 
-    if (!configDefaultSerialPort())
+    if (!findBaudrate())
     {
-        LOG_ERR(logger, "Unable to config the default VN300 serial port");
+        LOG_ERR(logger, "Unable to find the VN300 baudrate");
         return false;
     }
+
+    if (!asyncPause())
+    {
+        LOG_ERR(logger, "Unable to pause the async messages");
+        return false;
+    }
+
+    // if (!configDefaultSerialPort())
+    //{
+    //     LOG_ERR(logger, "Unable to config the default VN300 serial port");
+    //     return false;
+    // }
+
+    // if (!resetFactorySettings())
+    //{
+    //     LOG_ERR(logger, "Unable to reset the VN300 to factory settings");
+    //     return false;
+    // }
 
     if (!setCrc(false))
     {
@@ -87,6 +105,18 @@ bool VN300::init()
     if (!disableAsyncMessages(false))
     {
         LOG_ERR(logger, "Unable to disable async messages from VN300");
+        return false;
+    }
+
+    if (!setAntennaA(antPosA))
+    {
+        LOG_ERR(logger, "Unable to set antenna A position");
+        return false;
+    }
+
+    if (!setCompassBaseline(antPosB))
+    {
+        LOG_ERR(logger, "Unable to set compass baseline");
         return false;
     }
 
@@ -119,18 +149,6 @@ bool VN300::init()
     if (!disableAsyncMessages(true))
     {
         LOG_ERR(logger, "Unable to disable async messages from VN300");
-        return false;
-    }
-
-    if (!setAntennaA(antPosA))
-    {
-        LOG_ERR(logger, "Unable to set antenna A position");
-        return false;
-    }
-
-    if (!setCompassBaseline(antPosB))
-    {
-        LOG_ERR(logger, "Unable to set compass baseline");
         return false;
     }
 
@@ -240,7 +258,7 @@ bool VN300::writeSettingsCommand()
         return false;
     }
 
-    miosix::Thread::sleep(1000);
+    miosix::Thread::sleep(500);
 
     return true;
 }
@@ -283,12 +301,11 @@ VN300Data VN300::sampleData()
     usart.writeString(preSampleImuString->c_str());
 
     // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(1);
 
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
         // If something goes wrong i return the last sampled data
+        assert(false);
         return lastSample;
     }
 
@@ -296,6 +313,7 @@ VN300Data VN300::sampleData()
     {
         LOG_WARN(logger, "VN300 sampling message invalid checksum");
         // If something goes wrong i return the last sampled data
+        assert(false);
         return lastSample;
     }
 
@@ -308,24 +326,34 @@ VN300Data VN300::sampleData()
     usart.writeString(preSampleINSlla->c_str());
 
     // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(1);
 
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
         return lastSample;
     }
 
     if (!verifyChecksum(recvString, recvStringLength))
     {
         LOG_WARN(logger, "VN300 sampling message invalid checksum");
-
+        assert(false);
         return lastSample;
     }
 
     Ins_Lla ins = sampleIns();
 
     return VN300Data(quat, mag, acc, gyro, ins);
+}
+
+bool VN300::asyncPause()
+{
+    std::string command = "$VNASY,0*XX\n\0";
+
+    usart.writeString(command.c_str());
+
+    miosix::Thread::sleep(1000);
+
+    return true;
 }
 
 bool VN300::disableAsyncMessages(bool waitResponse)
@@ -361,6 +389,34 @@ bool VN300::configDefaultSerialPort()
     return true;
 }
 
+bool VN300::findBaudrate()
+{
+    for (uint32_t i = 0; i < BaudrateList.size(); i++)
+    {
+        // I set the baudrate
+        usart.setBaudrate(BaudrateList[i]);
+        printf("Baudrate: %d\n", BaudrateList[i]);
+        char initChar;
+        uint64_t in_time = miosix::getTick();
+        while (miosix::getTick() - in_time < 30)
+        {
+            usart.writeString("$VNRRG,01*XX\n");
+            // Read the first char
+            if (usart.read(&initChar, 1))
+            {
+                // If it is a '$' i break
+                if (initChar == '$')
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    // If i'm here, i didn't find the correct baudrate
+    return false;
+}
+
 /**
  * Even if the user configured baudrate is the default, I want to reset the
  * buffer to clean the junk.
@@ -370,7 +426,7 @@ bool VN300::configUserSerialPort()
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,2", baudRate);
+    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
 
     // I can send the command
     if (!sendStringCommand(command))
@@ -378,10 +434,44 @@ bool VN300::configUserSerialPort()
         return false;
     }
 
-    // I can open the serial with user's baud rate
-    usart.setBaudrate(baudRate);
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
+        return false;
+    }
 
-    // Check correct serial init
+    if (checkErrorVN(recvString))
+    {
+        LOG_WARN(logger, "Unable to change serial port baudrate");
+        return false;
+    }
+    else
+    {
+        // I can open the serial with user's baud rate
+        usart.setBaudrate(baudRate);
+    }
+
+    return true;
+}
+
+bool VN300::resetFactorySettings()
+{
+    // Command string
+    std::string command =
+        "VNRFS";  // Put 0 in register number 0 (Factory Settings)
+
+    // Send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    // if (!recvStringCommand(recvString, recvStringMaxDimension))
+    //{
+    //     LOG_WARN(logger, "Unable to sample due to serial communication
+    //     error"); return false;
+    // }
+
     return true;
 }
 
@@ -481,7 +571,7 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
     std::string command;
 
     command =
-        fmt::format("{}{},{},{},{},{},{},{},{},{}", "VNWRG, 26", rotMat(0, 0),
+        fmt::format("{}{},{},{},{},{},{},{},{},{}", "VNWRG,26,", rotMat(0, 0),
                     rotMat(0, 1), rotMat(0, 2), rotMat(1, 0), rotMat(1, 1),
                     rotMat(1, 2), rotMat(2, 0), rotMat(2, 1), rotMat(2, 2));
 
@@ -662,7 +752,7 @@ Ins_Lla VN300::sampleIns()
     char *nextNumber;
     Ins_Lla data;
 
-    // Look for the eleventh ',' in the string
+    // Look for the second ',' in the string
     // I can avoid the string control because it has already been done in
     // sampleImpl
     for (int i = 0; i < 2; i++)
@@ -676,18 +766,19 @@ Ins_Lla VN300::sampleIns()
 
     // Parse the data
     data.insTimestamp = TimestampTimer::getTimestamp();
-    data.time_gps     = strtod(recvString + indexStart + 1, &nextNumber);
-    data.week         = strtod(nextNumber + 1, &nextNumber);
-    data.status       = strtod(nextNumber + 1, &nextNumber);
-    data.yaw          = strtof(nextNumber + 1, &nextNumber);
-    data.pitch        = strtof(nextNumber + 1, &nextNumber);
-    data.roll         = strtof(nextNumber + 1, &nextNumber);
-    data.latitude     = strtof(nextNumber + 1, &nextNumber);
-    data.longitude    = strtof(nextNumber + 1, &nextNumber);
-    data.altitude     = strtof(nextNumber + 1, &nextNumber);
-    data.nedVelX      = strtof(nextNumber + 1, &nextNumber);
-    data.nedVelY      = strtof(nextNumber + 1, &nextNumber);
-    data.nedVelZ      = strtof(nextNumber + 1, NULL);
+    data.time_gps     = strtod(recvString + indexStart, &nextNumber);
+    data.week = static_cast<uint16_t>(strtol(nextNumber + 1, &nextNumber, 16));
+    data.status =
+        static_cast<uint16_t>(strtol(nextNumber + 1, &nextNumber, 16));
+    data.yaw       = strtof(nextNumber + 1, &nextNumber);
+    data.pitch     = strtof(nextNumber + 1, &nextNumber);
+    data.roll      = strtof(nextNumber + 1, &nextNumber);
+    data.latitude  = strtof(nextNumber + 1, &nextNumber);
+    data.longitude = strtof(nextNumber + 1, &nextNumber);
+    data.altitude  = strtof(nextNumber + 1, &nextNumber);
+    data.nedVelX   = strtof(nextNumber + 1, &nextNumber);
+    data.nedVelY   = strtof(nextNumber + 1, &nextNumber);
+    data.nedVelZ   = strtof(nextNumber + 1, NULL);
 
     return data;
 }
@@ -726,18 +817,33 @@ bool VN300::sendStringCommand(std::string command)
     // I send the final command
     usart.writeString(command.c_str());
 
-    // Wait some time
-    // TODO dimension the time
-    // miosix::Thread::sleep(1);
-
     return true;
 }
 
 bool VN300::recvStringCommand(char *command, int maxLength)
 {
+    uint64_t end_time = 0;
+    uint64_t in_time  = TimestampTimer::getTimestamp();
+    char initChar;
+    for (;;)
+    {
+        // Read the first char
+        if (!usart.readBlocking(&initChar, 1))
+        {
+            return false;
+        }
+        // If it is a '$' i break
+        if (initChar == '$')
+        {
+            break;
+        }
+    }
+    command[0] = '$';
+
     int i = 0;
     // Read the buffer
-    if (!usart.readBlocking(command, maxLength))
+
+    if (!usart.readBlocking(command + 1, maxLength - 1))
     {
         return false;
     }
@@ -746,6 +852,8 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     while (i < maxLength && command[i] != '\n')
     {
         i++;
+        // assert for testing purposes
+        assert(i < maxLength);
     }
 
     // Terminate the string
@@ -754,6 +862,9 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     // Assing the length
     recvStringLength = i - 1;
 
+    end_time = TimestampTimer::getTimestamp() - in_time;
+    printf("Time to read: %lld\n", end_time);
+    
     return true;
 }
 
