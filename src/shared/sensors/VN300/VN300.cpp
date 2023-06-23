@@ -163,16 +163,19 @@ bool VN300::init()
 
 void VN300::run()
 {
-    while (!shouldStop())
+     while (!shouldStop())
     {
         long long initialTime = miosix::getTick();
+
+        VN300Data data = sampleData();
         {
             // Sample the data locking the mutex
             miosix::Lock<FastMutex> l(mutex);
-            threadSample = sampleData();
+            threadSample = data;
         }
         // Sleep for the sampling period
         miosix::Thread::sleepUntil(initialTime + samplePeriod);
+        printf("Sample time: %lld\n", miosix::getTick() - initialTime);
     }
 }
 
