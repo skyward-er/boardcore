@@ -43,7 +43,7 @@ ohai() {
 }
 
 init_dirs() {
-    sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
+    sbs_base="$(cd -- "$(dirname "$0")" >/dev/null 2>&1 && pwd -P)"
     source_dir="$PWD"
     build_default_dir="$source_dir/$BUILD_DEFAULT_DIRNAME"
     build_host_dir="$source_dir/$BUILD_HOST_DIRNAME"
@@ -52,82 +52,100 @@ init_dirs() {
 
 find_deps() {
     ohai "Find dependencies"
-    
-    command -v cmake               > /dev/null 2>&1 && found_cmake=true
-    command -v arm-miosix-eabi-g++ > /dev/null 2>&1 && found_miosixgpp=true
-    command -v ccache              > /dev/null 2>&1 && found_ccache=true
-    command -v ninja               > /dev/null 2>&1 && found_ninja=true
-    command -v python              > /dev/null 2>&1 && found_python=true
-    command -v cppcheck            > /dev/null 2>&1 && found_cppcheck=true
-    command -v clang-tidy          > /dev/null 2>&1 && found_clangtidy=true
-    command -v clang-format        > /dev/null 2>&1 && found_clangformat=true
-    command -v st-flash            > /dev/null 2>&1 && found_stflash=true
-    command -v ST-LINK_CLI.exe     > /dev/null 2>&1 && found_stlink=true
-    
-    printf "Found CMake: ";               [ "$found_cmake" = true ]       && echo "yes" || echo "no"
-    printf "Found arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true ]   && echo "yes" || echo "no"
-    printf "Found Ccache: ";              [ "$found_ccache" = true ]      && echo "yes" || echo "no"
-    printf "Found Ninja: ";               [ "$found_ninja" = true ]       && echo "yes" || echo "no"
-    printf "Found Python: ";              [ "$found_python" = true ]      && echo "yes" || echo "no"
-    printf "Found Cppcheck: ";            [ "$found_cppcheck" = true ]    && echo "yes" || echo "no"
-    printf "Found clang-tidy: ";          [ "$found_clangtidy" = true ]   && echo "yes" || echo "no"
-    printf "Found clang-format: ";        [ "$found_clangformat" = true ] && echo "yes" || echo "no"
-    printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" \
-    || { [ "$found_stlink" = true ] && echo "st-link" || echo "no"; }
-    
-    [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; return 1; }
-    [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; return 1; }
+
+    command -v cmake >/dev/null 2>&1 && found_cmake=true
+    command -v arm-miosix-eabi-g++ >/dev/null 2>&1 && found_miosixgpp=true
+    command -v ccache >/dev/null 2>&1 && found_ccache=true
+    command -v ninja >/dev/null 2>&1 && found_ninja=true
+    command -v python >/dev/null 2>&1 && found_python=true
+    command -v cppcheck >/dev/null 2>&1 && found_cppcheck=true
+    command -v clang-tidy >/dev/null 2>&1 && found_clangtidy=true
+    command -v clang-format >/dev/null 2>&1 && found_clangformat=true
+    command -v st-flash >/dev/null 2>&1 && found_stflash=true
+    command -v ST-LINK_CLI.exe >/dev/null 2>&1 && found_stlink=true
+
+    printf "Found CMake: "
+    [ "$found_cmake" = true ] && echo "yes" || echo "no"
+    printf "Found arm-miosix-eabi-g++: "
+    [ "$found_miosixgpp" = true ] && echo "yes" || echo "no"
+    printf "Found Ccache: "
+    [ "$found_ccache" = true ] && echo "yes" || echo "no"
+    printf "Found Ninja: "
+    [ "$found_ninja" = true ] && echo "yes" || echo "no"
+    printf "Found Python: "
+    [ "$found_python" = true ] && echo "yes" || echo "no"
+    printf "Found Cppcheck: "
+    [ "$found_cppcheck" = true ] && echo "yes" || echo "no"
+    printf "Found clang-tidy: "
+    [ "$found_clangtidy" = true ] && echo "yes" || echo "no"
+    printf "Found clang-format: "
+    [ "$found_clangformat" = true ] && echo "yes" || echo "no"
+    printf "Found flasher: "
+    [ "$found_stflash" = true ] && echo "st-flash" ||
+        { [ "$found_stlink" = true ] && echo "st-link" || echo "no"; }
+
+    [ "$found_cmake" = true ] || {
+        echo "Error: CMake must be installed"
+        return 1
+    }
+    [ "$found_miosixgpp" = true ] || {
+        echo "Error: arm-miosix-eabi-g++ must be installed"
+        return 1
+    }
 }
 
 # Workaround: Disable tests in excluded subdirectories
 # See: https://gitlab.kitware.com/cmake/cmake/-/issues/20212
 cmake_disable_excluded_tests() {
     declare build_dir="$1"
-    
+
     [ ! -f "$build_dir/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$build_dir/$CTEST_FILENAME"
 }
 
 configure() {
     declare build_dir="$1"
-    
+
     ohai "Configure"
-    
-    [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; return 1; }
-    
+
+    if ! [[ -f "$toolchain_file" ]]; then
+        echo "Error: CMake Toolchain File for Miosix was not found"
+        return 1
+    fi
+
     declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
     defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
-    [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
-    [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
-    [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=(-DCMAKE_BUILD_TYPE=Release)
+    [ "$config_host" = false ] && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
+    [ "$found_ccache" = true ] && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
+    [ "$config_debug" = true ] && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=(-DCMAKE_BUILD_TYPE=Release)
     [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
-    
+
     declare gen
     [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
-    
+
     cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
-    
-    { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
+
+    { [ "$config_debug" = true ] && touch "$build_dir/$DEBUG_FILENAME"; } || rm -f "$build_dir/$DEBUG_FILENAME"
     { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
 }
 
 check_configured() {
     declare build_dir="$1"
-    
+
     declare to_reconfigure=false
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
-        elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
+    elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
         rm -rf "$build_dir"
         to_reconfigure=true
     else
-        [ -f "$build_dir/$DEBUG_FILENAME" ]   && found_debug=true   || found_debug=false
+        [ -f "$build_dir/$DEBUG_FILENAME" ] && found_debug=true || found_debug=false
         [ -f "$build_dir/$VERBOSE_FILENAME" ] && found_verbose=true || found_verbose=false
-        if [ "$config_debug" != "$found_debug" ] \
-        || [ "$config_verbose" != "$found_verbose" ]; then
+        if [ "$config_debug" != "$found_debug" ] ||
+            [ "$config_verbose" != "$found_verbose" ]; then
             to_reconfigure=true
         fi
     fi
-    
+
     if [ "$to_reconfigure" = true ]; then
         configure "$build_dir"
     fi
@@ -136,36 +154,36 @@ check_configured() {
 build() {
     declare build_dir="$1"
     declare target="$2"
-    
+
     check_configured "$build_dir" || return
-    
+
     ohai "Build"
-    
+
     declare -a opts
     get_build_opts opts
-    
+
     cmake --build "$build_dir" "${opts[@]}" --target "$target"
 }
 
 build_all() {
     declare build_dir="$build_default_dir"
-    
+
     build "$build_dir" all
 }
 
 clean() {
     declare build_desc="$1"
     declare build_dir="$2"
-    
+
     ohai "Clean ($build_desc)"
-    
+
     if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
         declare -a opts
         get_build_opts opts
-        
+
         cmake --build "$build_dir" "${opts[@]}" --target clean
     fi
-    
+
     echo "Removing build folder..."
     rm -rf "$build_dir"
 }
@@ -178,16 +196,19 @@ clean_all() {
 flash() {
     declare target="$1"
     declare build_dir="$build_default_dir"
-    
+
     build "$build_dir" "$target" || return
-    
+
     ohai "Flash"
-    
-    [ -f "$build_dir/$target.bin" ] || { echo "Error: target '$target' is not flashable"; return 1; }
-    
+
+    if [ -f "$build_dir/$target.bin" ]; then
+        echo "Error: target '$target' is not flashable"
+        return 1
+    fi
+
     if [ "$found_stflash" = true ]; then
         st-flash --reset write "$build_dir/$target.bin" 0x8000000
-        elif [ "$found_stlink" = true ]; then
+    elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
         echo "Error: No flashing software found!"
@@ -198,119 +219,122 @@ flash() {
 run_tests() {
     declare target="$1"
     declare build_dir="$build_host_dir"
-    
+
     config_host=true
-    
+
     build "$build_dir" "$target" || return
-    
+
     ohai "Test"
-    
+
     cmake_disable_excluded_tests "$build_dir"
-    ( cd "$build_dir" || return; ctest )
+    (
+        cd "$build_dir" || return
+        ctest
+    )
 }
 
 list() {
     declare build_dir="$build_default_dir"
 
     check_configured "$build_dir" || return
-    
-    if [ "$1" != "--only-list" ] ; then
+
+    if [ "$1" != "--only-list" ]; then
         ohai "List targets"
         echo "[1/1] All SBS targets available:"
     fi
 
-    cmake --build "$build_dir" --target help \
-    | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+    cmake --build "$build_dir" --target help |
+        grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
 }
 
 boards() {
     declare build_dir="$build_default_dir"
-    
+
     check_configured "$build_dir" || return
-    
+
     ohai "List boards"
-    
+
     declare -a opts
     get_build_opts opts
-    
+
     cmake --build "$build_dir" "${opts[@]}" --target help-boards
 }
 
 lint_copyright() {
     ohai "Lint (Copyright)"
-    
+
     "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
 }
 
 lint_find() {
     ohai "Lint (Find)"
-    
+
     "$sbs_base/scripts/linter.py" --find "$source_dir/src"
 }
 
 lint_clangtidy() {
     declare build_dir="$1"
-    
+
     check_configured "$build_dir" || return
-    
+
     ohai "Lint (clang-tidy)"
-    
-    defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1 \
-    --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
+
+    defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1
+        --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
     IFS=$'\n' read -rd '' -a incs < \
-    <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 \
-    | sed -n "s/^ /--extra-arg=-isystem/p")
-    
+        <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 |
+            sed -n "s/^ /--extra-arg=-isystem/p")
+
     declare opts=()
     [ "$to_edit" = true ] && opts+=(--fix-notes --fix-errors)
-    
+
     find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" \
-    "${incs[@]}" "${opts[@]}" {} \;
+        -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+        -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" \
+        "${incs[@]}" "${opts[@]}" {} \;
 }
 
 lint_cppcheck() {
     ohai "Lint (Cppcheck)"
-    
+
     declare -a opts=()
     [ -n "$jobs" ] && opts+=("-j $jobs")
-    
+
     cppcheck --language=c++ --std=c++14 --enable=all --inline-suppr \
-    --suppress=unmatchedSuppression --suppress=unusedFunction \
-    --suppress=missingInclude --error-exitcode=1 -q "${opts[@]}" \
-    "$source_dir/src"
+        --suppress=unmatchedSuppression --suppress=unusedFunction \
+        --suppress=missingInclude --error-exitcode=1 -q "${opts[@]}" \
+        "$source_dir/src"
 }
 
 lint_clangformat() {
     declare to_edit="$1"
-    
+
     ohai "Lint (clang-format)"
-    
+
     declare -a opts=(--style=file --Werror)
     [ "$to_edit" = true ] && opts+=(-i) || opts+=(--dry-run)
-    
+
     find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-format "${opts[@]}" {} \;
+        -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+        -exec clang-format "${opts[@]}" {} \;
 }
 
 lint() {
     declare to_edit="$1"
-    
+
     if [ "$found_python" = true ]; then
         lint_copyright
         lint_find
     fi
-    
+
     if [ "$found_clangtidy" = true ] && [ "$lint_clangtidy" = true ]; then
         lint_clangtidy "$build_default_dir"
     fi
-    
+
     if [ "$found_cppcheck" = true ]; then
         lint_cppcheck
     fi
-    
+
     if [ "$found_clangformat" = true ]; then
         lint_clangformat "$to_edit"
     fi

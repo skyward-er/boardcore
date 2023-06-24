@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-source "$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)/scripts/sbs_implementation"
+source "$(cd -- "$(dirname "$0")" >/dev/null 2>&1 && pwd -P)/scripts/sbs_implementation"
 
 print_banner
 init_dirs
@@ -29,40 +29,73 @@ init_dirs
 for arg in "$@"; do
     shift
     case "$arg" in
-        --boards)     set -- "$@" "-r";;
-        --build)      set -- "$@" "-b";;
-        --clang-tidy) set_clangtidy;;
-        --clean)      set -- "$@" "-c";;
-        --configure)  set -- "$@" "-u";;
-        --debug)      set -- "$@" "-d";;
-        --edit)       set -- "$@" "-e";;
-        --flash)      set -- "$@" "-f";;
-        --help)       set -- "$@" "-h";;
-        --jobs)       set -- "$@" "-j";;
-        --lint)       set -- "$@" "-n";;
-        --list)       set -- "$@" "-l";;
-        --test)       set -- "$@" "-t";;
-        --verbose)    set -- "$@" "-v";;
-        *)            set -- "$@" "$arg"
+    --boards) set -- "$@" "-r" ;;
+    --build) set -- "$@" "-b" ;;
+    --clang-tidy) set_clangtidy ;;
+    --clean) set -- "$@" "-c" ;;
+    --configure) set -- "$@" "-u" ;;
+    --debug) set -- "$@" "-d" ;;
+    --edit) set -- "$@" "-e" ;;
+    --flash) set -- "$@" "-f" ;;
+    --help) set -- "$@" "-h" ;;
+    --jobs) set -- "$@" "-j" ;;
+    --lint) set -- "$@" "-n" ;;
+    --list) set -- "$@" "-l" ;;
+    --test) set -- "$@" "-t" ;;
+    --verbose) set -- "$@" "-v" ;;
+    *) set -- "$@" "$arg" ;;
     esac
 done
 
 while getopts b:cdef:hj:lnrt:uv opt; do
     case "$opt" in
-        b) find_deps && build "$build_default_dir" "$OPTARG"; exit;;
-        c) find_deps && clean_all; exit;;
-        d) set_debug;;
-        e) find_deps && lint true; exit;;
-        f) find_deps && flash "$OPTARG"; exit;;
-        h) usage; exit 0;;
-        j) set_jobs "$OPTARG";;
-        l) find_deps && list; exit;;
-        n) find_deps && lint false; exit;;
-        r) find_deps && boards; exit;;
-        t) find_deps && run_tests "$OPTARG"; exit;;
-        u) find_deps && configure "$build_default_dir"; exit;;
-        v) set_verbose;;
-        ?) usage; exit 2;;
+    b)
+        find_deps && build "$build_default_dir" "$OPTARG"
+        exit
+        ;;
+    c)
+        find_deps && clean_all
+        exit
+        ;;
+    d) set_debug ;;
+    e)
+        find_deps && lint true
+        exit
+        ;;
+    f)
+        find_deps && flash "$OPTARG"
+        exit
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    j) set_jobs "$OPTARG" ;;
+    l)
+        find_deps && list
+        exit
+        ;;
+    n)
+        find_deps && lint false
+        exit
+        ;;
+    r)
+        find_deps && boards
+        exit
+        ;;
+    t)
+        find_deps && run_tests "$OPTARG"
+        exit
+        ;;
+    u)
+        find_deps && configure "$build_default_dir"
+        exit
+        ;;
+    v) set_verbose ;;
+    ?)
+        usage
+        exit 2
+        ;;
     esac
 done
 shift $((OPTIND - 1))
