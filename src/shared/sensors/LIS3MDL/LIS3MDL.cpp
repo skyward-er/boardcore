@@ -219,8 +219,8 @@ LIS3MDLData LIS3MDL::sampleImpl()
         tempCounter % configuration.temperatureDivider == 0)
     {
         val = spi.readRegister(TEMP_OUT_H);
-        val = val << 8;
-        val = spi.readRegister(TEMP_OUT_L);
+        val = (val << 8);
+        val |= spi.readRegister(TEMP_OUT_L);
 
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
         newData.temperature =
@@ -231,16 +231,19 @@ LIS3MDLData LIS3MDL::sampleImpl()
         newData.temperature = lastSample.temperature;
     }
 
-    val                    = spi.readRegister(OUT_X_H);
-    val                    = (val << 8) | spi.readRegister(OUT_X_L);
+    val = spi.readRegister(OUT_X_H);
+    val = (val << 8);
+    val |= spi.readRegister(OUT_X_L);
     newData.magneticFieldX = currentUnit * val;
 
-    val                    = spi.readRegister(OUT_Y_H);
-    val                    = (val << 8) | spi.readRegister(OUT_Y_L);
+    val = spi.readRegister(OUT_Y_H);
+    val = (val << 8);
+    val |= spi.readRegister(OUT_Y_L);
     newData.magneticFieldY = currentUnit * val;
 
-    val                    = spi.readRegister(OUT_Z_H);
-    val                    = (val << 8) | spi.readRegister(OUT_Z_L);
+    val = spi.readRegister(OUT_Z_H);
+    val = (val << 8);
+    val |= spi.readRegister(OUT_Z_L);
     newData.magneticFieldZ = currentUnit * val;
 
     return newData;
