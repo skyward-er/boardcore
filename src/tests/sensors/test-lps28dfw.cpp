@@ -35,146 +35,56 @@ using namespace std;
 using namespace miosix;
 using namespace Boardcore;
 
-// I2C1
-typedef Gpio<GPIOB_BASE, 8> i1scl;
-typedef Gpio<GPIOB_BASE, 9> i1sda;
-
-uint8_t nSamples = 10;
-/**
- * ONE_SHOT | AVG4   : 161.6 us/samp (W1+R1+W2+W1+R5)   @1Hz: 1.7  uA [FROM DS]
- * ONE_SHOT | AVG512 : 162 us/samp (W1+R1+W2+W1+R5)     @1Hz: 32.2 uA [FROM DS]
- * ODR1     | AVG4   : 127.8 us/samp (W1+R1+W1+R5)      @1Hz: 2.5  uA [FROM DS]
- * ODR1     | AVG512 : 127.8 us/samp (W1+R1+W1+R5)      @1Hz: 32.8 uA [FROM DS]
- */
-miosix::Thread *waiting = 0;
-bool sampleAvailable    = false;
-void __attribute__((used)) EXTI5_IRQHandlerImpl()
-{
-    if (waiting)
-    {
-        sampleAvailable = true;
-        waiting->IRQwakeup();
-    }
-}
-
-void sampleOneShotMode(I2C &i2c)
-{
-    printf("Start One-Shot\n");
-
-    // Setting up the Sensor
-    LPS28DFW::SensorConfig lps28dfwConfig{
-        false, LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
-        LPS28DFW::ODR::ONE_SHOT, false};
-    LPS28DFW lps28dfw(i2c, lps28dfwConfig);
-    if (!lps28dfw.init())
-    {
-        printf("Error initialization of sensor\n");
-        return;
-    }
-
-    for (uint8_t i = 0; i < nSamples; i++)
-    {
-        lps28dfw.sample();
-
-        if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-        {
-            lps28dfw.getLastSample().print(std::cout);
-        }
-        else
-        {
-            printf("Error: %d\n", lps28dfw.getLastError());
-        }
-        Thread::sleep(100);
-    }
-
-    printf("End One-Shot\n");
-}
-
-void sampleContinuousMode(I2C &i2c)
-{
-    printf("Start Continuous\n");
-
-    // Setting up the Sensor
-    LPS28DFW::SensorConfig lps28dfwConfig{
-        false, LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
-        LPS28DFW::ODR::ODR_10, false};
-    LPS28DFW lps28dfw(i2c, lps28dfwConfig);
-    if (!lps28dfw.init())
-    {
-        printf("Error initialization of sensor\n");
-        return;
-    }
-
-    for (uint8_t i = 0; i < nSamples; i++)
-    {
-        lps28dfw.sample();
-
-        if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-        {
-            lps28dfw.getLastSample().print(std::cout);
-        }
-        else
-        {
-            printf("Error: %d\n", lps28dfw.getLastError());
-        }
-
-        Thread::sleep(100);
-    }
-
-    printf("End Continuous\n");
-}
-
-void sampleInterruptMode(I2C &i2c)
-{
-    printf("Start Interrupt\n");
-    // Setting up the Sensor
-    LPS28DFW::SensorConfig lps28dfwConfig{
-        false, LPS28DFW::FullScaleRange::FS_1260, LPS28DFW::AVG::AVG_64,
-        LPS28DFW::ODR::ODR_10, true};
-    LPS28DFW lps28dfw(i2c, lps28dfwConfig);
-    if (!lps28dfw.init())
-    {
-        printf("Error initialization of sensor\n");
-        return;
-    }
-
-    for (uint8_t i = 0; i < nSamples; i++)
-    {
-
-        while (!sampleAvailable)
-        {
-            waiting->wait();
-        }
-
-        sampleAvailable = false;
-        lps28dfw.sample();
-
-        if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-        {
-            lps28dfw.getLastSample().print(std::cout);
-        }
-        else
-        {
-            printf("Error: %d\n", lps28dfw.getLastError());
-        }
-    }
-
-    printf("End Interrupt\n");
-}
+GpioPin scl(GPIOB_BASE, 8);
+GpioPin sda(GPIOB_BASE, 9);
 
 int main()
 {
-    I2C i2c(I2C1, i1scl::getPin(), i1sda::getPin());
+    I2C i2c(I2C1, scl, sda);
 
-    waiting = Thread::getCurrentThread();
-    enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::RISING_EDGE);
+    LPS28DFW::Config config;
+    config.sa0 = false;
+    config.fsr = LPS28DFW::FullScaleRange::FS_1260;
+    config.odr = LPS28DFW::ODR::ONE_SHOT;
+    config.avg = LPS28DFW::AVG::AVG_64;
 
-    for (;;)
+    LPS28DFW sensor(i2c, config);
+
+    printf("Starting...\n");
+
+    if (!sensor.init())
     {
-        printf("\nNew set of samples\n");
-        sampleOneShotMode(i2c);
-        sampleContinuousMode(i2c);
-        sampleInterruptMode(i2c);
+        printf("Init failed\n");
+        return 0;
+    }
+
+    if (!sensor.selfTest())
+    {
+        printf("Error: selfTest() returned false!\n");
+        return 0;
+    }
+
+    printf("Trying one shot mode for 10 seconds\n");
+    for (uint8_t i = 0; i < 10 * 10; i++)
+    {
+        sensor.sample();
+        LPS28DFWData data = sensor.getLastSample();
+
+        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure);
+
+        miosix::Thread::sleep(100);
+    }
+
+    printf("Now setting 10Hz continuous mode\n");
+    sensor.setOutputDataRate(LPS28DFW::ODR::ODR_10);
+    while (true)
+    {
+        sensor.sample();
+        LPS28DFWData data = sensor.getLastSample();
+
+        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure);
+
+        miosix::Thread::sleep(100);
     }
 
     return 0;

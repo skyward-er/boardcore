@@ -31,8 +31,7 @@ namespace Boardcore
 {
 
 /**
- * @brief Driver for LPS28DFW STMicroelectronics digital pressure sensor working
- * in I2C.
+ * @brief Driver for LPS28DFW STMicroelectronics digital pressure sensor.
  */
 class LPS28DFW : public Sensor<LPS28DFWData>
 {
@@ -56,19 +55,19 @@ public:
      */
     enum ODR : uint8_t
     {
-        ONE_SHOT = (0b0000 << 3),
-        ODR_1    = (0b0001 << 3),
-        ODR_4    = (0b0010 << 3),
-        ODR_10   = (0b0011 << 3),
-        ODR_25   = (0b0100 << 3),
-        ODR_50   = (0b0101 << 3),
-        ODR_75   = (0b0110 << 3),
-        ODR_100  = (0b0111 << 3),
-        ODR_200  = (0b1000 << 3)
+        ONE_SHOT = 0b0000 << 3,
+        ODR_1    = 0b0001 << 3,
+        ODR_4    = 0b0010 << 3,
+        ODR_10   = 0b0011 << 3,
+        ODR_25   = 0b0100 << 3,
+        ODR_50   = 0b0101 << 3,
+        ODR_75   = 0b0110 << 3,
+        ODR_100  = 0b0111 << 3,
+        ODR_200  = 0b1000 << 3
     };
 
     /**
-     * @brief Enumeration for the oversampling to set on the sensor.
+     * @brief Oversampling average values.
      *
      * The value read from the sensor will actually be the average of multiple
      * samples. Available are from 4 to 512 averaged samples.
@@ -91,25 +90,25 @@ public:
     /**
      * @brief Struct that sums up all the settings of the sensor.
      */
-    typedef struct
+    struct Config
     {
-        bool sa0;  ///< Last bit of the slave address; tells if the SA0 pin on
-                   ///< the sensor is connected to GND or VDD (3.3V, not 5V!).
-        FullScaleRange fsr;  ///< Full scale range
-        AVG avg;             ///< Average avg samples
-        ODR odr;             ///< Output data rate
-        bool drdy;           ///< Enable Interrupt for Data Ready
-    } SensorConfig;
+        /**
+         * Last bit of the slave address; tells if the SA0 pin on the sensor is
+         * connected to GND or VDD (3.3V, not 5V!).
+         */
+        bool sa0;
+        FullScaleRange fsr;
+        ODR odr = ODR::ODR_25;
+        AVG avg = AVG::AVG_512;
+    };
 
     /**
      * @brief Constructor that stores the initial settings (without applying
      * them to the sensor).
-     * @param i2c I2C Peripheral that will be used to communicate with the
-     * sensor.
-     * @param sensorConfig Configuration of the sensor with ODR, AVG, FSR,
-     * interrupt enabled and fifo size.
+     * @param i2c I2C Peripheral.
+     * @param sensorConfig Sensor configuration.
      */
-    LPS28DFW(I2C& i2c, SensorConfig sensorConfig);
+    LPS28DFW(I2C& i2c, Config sensorConfig);
 
     /**
      * @brief Initializes the sensor with the current settings.
@@ -118,17 +117,17 @@ public:
     bool init() override;
 
     /**
-     * @brief Sets and saves the configurations passed on the parameters.
-     */
-    bool setConfig(const SensorConfig& config);
-
-    /**
      * @brief The self test method returns true if we read the right whoami
      * value. We can't make a better self test due to the fact that the sensor
      * doesn't support this feature.
      * @return true if the right whoami has been read.
      */
     bool selfTest() override;
+
+    /**
+     * @brief Sets and saves the configurations passed on the parameters.
+     */
+    bool setConfig(const Config& config);
 
     /**
      * @brief Sets and saves the oversampling on the sensor.
@@ -148,32 +147,17 @@ public:
      */
     bool setFullScaleRange(FullScaleRange fs);
 
-    /**
-     * @brief Sets and saves the full scale range.
-     * @return True if setting succeeded, false otherwise.
-     */
-    bool setDRDYInterrupt(bool drdy);
-
 private:
     LPS28DFWData sampleImpl() override;
 
-    /**
-     * @brief Converting the bytes read from the sensor to the pressure in Pa.
-     */
-    float convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH);
+    I2C& i2c;
+    I2CDriver::I2CSlaveConfig i2cConfig;
+    Config config;
 
-    /**
-     * @brief Converting the bytes read from the sensor to the temperature in
-     * °C.
-     */
-    float convertTemperature(uint8_t tempL, uint8_t tempH);
+    bool isInitialized = false;
 
-    I2CDriver::I2CSlaveConfig i2cConfig;  ///< I2C address and speed mode
-    I2C& i2c;                             ///< I2C bus on which the sensor lays
-    SensorConfig sensorConfig;            ///< Sensor settings
-    bool isInitialized =
-        false;  ///< Flag to tell if the sensor has been initialized
-    uint16_t pressureSensitivity;  ///< pressure sensitivity [LSB/Pa]
+    float pressureSensitivity;  ///< pressure sensitivity [LSB/Pa]
+
     PrintLogger logger = Logging::getLogger("lps28dfw");
 };
 
