@@ -124,9 +124,13 @@ bool LIS3MDL::selfTest()
 
     bool passed = true;
     for (int j = 0; j < 3; ++j)
+    {
         if (deltas[j] < (deltaRange[j][0] - t) ||
             deltas[j] > (deltaRange[j][1] + t))
+        {
             passed = false;
+        }
+    }
 
     // Reset configuration, then return
     applyConfig(configuration);
@@ -209,26 +213,39 @@ LIS3MDLData LIS3MDL::sampleImpl()
 
     SPITransaction spi(slave);
     LIS3MDLData newData;
-
+    int16_t val;
     tempCounter++;
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-        uint8_t values[2];
-        spi.readRegisters(TEMP_OUT_L, values, sizeof(values));
 
-        int16_t outTemp              = values[1] << 8 | values[0];
+        val = spi.readRegister(TEMP_OUT_L);
+        val |= spi.readRegister(TEMP_OUT_H) << 8;
+
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
-        newData.temperature          = DEG_PER_LSB * outTemp;
-        newData.temperature += REFERENCE_TEMPERATURE;
+        newData.temperature =
+            static_cast<float>(val) * DEG_PER_LSB + REFERENCE_TEMPERATURE;
     }
     else
     {
         newData.temperature = lastSample.temperature;
     }
 
-    uint8_t values[6];
-    spi.readRegisters(OUT_X_L, values, sizeof(values));
+    // uint8_t values[6];
+
+    val = spi.readRegister(OUT_X_L);
+    val |= spi.readRegister(OUT_X_H) << 8;
+    newData.magneticFieldX = currentUnit * val;
+
+    val = spi.readRegister(OUT_Y_L);
+    val |= spi.readRegister(OUT_Y_H) << 8;
+    newData.magneticFieldY = currentUnit * val;
+
+    val = spi.readRegister(OUT_Z_L);
+    val |= spi.readRegister(OUT_Z_H) << 8;
+    newData.magneticFieldZ         = currentUnit * val;
+    newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
+    /*spi.readRegisters(OUT_X_L, values, sizeof(values));
 
     int16_t outX = values[1] << 8 | values[0];
     int16_t outY = values[3] << 8 | values[2];
@@ -237,7 +254,7 @@ LIS3MDLData LIS3MDL::sampleImpl()
     newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
     newData.magneticFieldX         = currentUnit * outX;
     newData.magneticFieldY         = currentUnit * outY;
-    newData.magneticFieldZ         = currentUnit * outZ;
+    newData.magneticFieldZ         = currentUnit * outZ;*/
 
     return newData;
 }
