@@ -218,9 +218,9 @@ LIS3MDLData LIS3MDL::sampleImpl()
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-
+        val = spi.readRegister(TEMP_OUT_H);
+        val = val << 8;
         val = spi.readRegister(TEMP_OUT_L);
-        val |= spi.readRegister(TEMP_OUT_H) << 8;
 
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
         newData.temperature =
@@ -231,30 +231,17 @@ LIS3MDLData LIS3MDL::sampleImpl()
         newData.temperature = lastSample.temperature;
     }
 
-    // uint8_t values[6];
-
-    val = spi.readRegister(OUT_X_L);
-    val |= spi.readRegister(OUT_X_H) << 8;
+    val                    = spi.readRegister(OUT_X_H);
+    val                    = (val << 8) | spi.readRegister(OUT_X_L);
     newData.magneticFieldX = currentUnit * val;
 
-    val = spi.readRegister(OUT_Y_L);
-    val |= spi.readRegister(OUT_Y_H) << 8;
+    val                    = spi.readRegister(OUT_Y_H);
+    val                    = (val << 8) | spi.readRegister(OUT_Y_L);
     newData.magneticFieldY = currentUnit * val;
 
-    val = spi.readRegister(OUT_Z_L);
-    val |= spi.readRegister(OUT_Z_H) << 8;
-    newData.magneticFieldZ         = currentUnit * val;
-    newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-    /*spi.readRegisters(OUT_X_L, values, sizeof(values));
-
-    int16_t outX = values[1] << 8 | values[0];
-    int16_t outY = values[3] << 8 | values[2];
-    int16_t outZ = values[5] << 8 | values[4];
-
-    newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-    newData.magneticFieldX         = currentUnit * outX;
-    newData.magneticFieldY         = currentUnit * outY;
-    newData.magneticFieldZ         = currentUnit * outZ;*/
+    val                    = spi.readRegister(OUT_Z_H);
+    val                    = (val << 8) | spi.readRegister(OUT_Z_L);
+    newData.magneticFieldZ = currentUnit * val;
 
     return newData;
 }
