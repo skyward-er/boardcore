@@ -20,25 +20,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-source "$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)/sbs_implementation"
+current_path="$(cd -- "$(dirname "$0")" >/dev/null 2>&1 && pwd -P)"
+
+# Target directory name
+target_dir="skyward-boardcore"
+
+# Cut the path to the target directory
+while [[ "$current_path" != "/" && "$(basename "$current_path")" != "$target_dir" ]]; do
+    current_path="$(dirname "$current_path")"
+done
+
+source "$current_path/scripts/sbs_implementation"
 
 function _sbs_autocomplete() {
-    local curr_arg="${COMP_WORDS[COMP_CWORD]}"
-    local prev_arg="${COMP_WORDS[COMP_CWORD-1]}"
+    declare curr_arg="${COMP_WORDS[COMP_CWORD]}"
+    declare prev_arg="${COMP_WORDS[COMP_CWORD - 1]}"
 
     case "$prev_arg" in
-        "-b"|"--build")
-            ;&
-        "-f"|"--flash")
-        ;&
-        "-t"|"--test")
-            # Autocomplete options for build, flash and test
-            init_dirs
-            COMPREPLY=( $(compgen -W "$(list --only-list)" -- "$curr_arg") )
-            ;;
-        *)
-            # Autocomplete options for general options
-            COMPREPLY=( $(compgen -W "\
+    "-b" | "--build") ;&
+    "-f" | "--flash") ;&
+    "-t" | "--test")
+        # Autocomplete options for build, flash and test
+        init_dirs
+        COMPREPLY=($(compgen -W "$(list --only-list)" -- "$curr_arg"))
+        ;;
+    *)
+        # Autocomplete options for general options
+        COMPREPLY=($(compgen -W "\
                 -h --help      \
                 -j --jobs      \
                 -l --list      \
@@ -52,8 +60,8 @@ function _sbs_autocomplete() {
                 -v --verbose   \
                 -n --lint      \
                 -e --edit      \
-                --clang-tidy" -- "$curr_arg") )
-            ;;
+                --clang-tidy" -- "$curr_arg"))
+        ;;
     esac
 }
 

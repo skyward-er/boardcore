@@ -126,6 +126,39 @@ configure() {
 
     { [ "$config_debug" = true ] && touch "$build_dir/$DEBUG_FILENAME"; } || rm -f "$build_dir/$DEBUG_FILENAME"
     { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
+
+    install_autocompletion
+}
+
+install_autocompletion() {
+    declare autocomplete_script="$sbs_base/scripts/sbs_autocomplete"
+    declare -A shell_files=(
+        ["bash"]="$HOME/.bashrc"
+        ["zsh"]="$HOME/.zshrc"
+        ["fish"]="$HOME/.config/fish/config.fish"
+    )
+
+    declare -a installed_shells
+
+    for shell in "${!shell_files[@]}"; do
+        local shell_file="${shell_files[$shell]}"
+
+        if [[ -f "$shell_file" ]]; then
+            if ! grep -q "source $autocomplete_script" "$shell_file"; then
+                echo "source $autocomplete_script" >>"$shell_file"
+            fi
+            installed_shells+=("$shell")
+        fi
+    done
+
+    if [[ ${#installed_shells[@]} -gt 0 ]]; then
+        echo "Autocomplete script has been added for the following shells:"
+        for shell in "${installed_shells[@]}"; do
+            echo "- $shell"
+        done
+    else
+        echo "No supported shells found. Please add the following line to your shell's initialization file manually: 'source $autocomplete_script'"
+    fi
 }
 
 check_configured() {
