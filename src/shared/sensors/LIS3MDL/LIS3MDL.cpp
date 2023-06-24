@@ -31,6 +31,8 @@ LIS3MDL::LIS3MDL(SPIBusInterface& bus, miosix::GpioPin pin,
                  SPIBusConfig spiConfig, Config config)
     : slave(bus, pin, spiConfig), configuration(config)
 {
+    slave.config.byteOrder = SPI::Order::LSB_FIRST;
+    slave.config.mode      = SPI::Mode::MODE_3;
 }
 
 bool LIS3MDL::init()
@@ -49,8 +51,8 @@ bool LIS3MDL::init()
         if (res != WHO_AM_I_VALUE)
         {
             LOG_ERR(logger,
-                    "WHO_AM_I value differs from expectation: read 0x{02x} "
-                    "but expected 0x{02x}",
+                    "WHO_AM_I value differs from expectation: read 0x{:x} "
+                    "but expected 0x{:x}",
                     res, WHO_AM_I_VALUE);
             lastError = INVALID_WHOAMI;
             return false;
@@ -213,38 +215,27 @@ LIS3MDLData LIS3MDL::sampleImpl()
 
     SPITransaction spi(slave);
     LIS3MDLData newData;
-    int16_t val;
     tempCounter++;
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-        val = spi.readRegister(TEMP_OUT_H);
-        val = (val << 8);
-        val |= spi.readRegister(TEMP_OUT_L);
-
+        int16_t outTemp = spi.readRegister16(TEMP_OUT_L | INCREMENT_REG_FLAG);
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
-        newData.temperature =
-            static_cast<float>(val) * DEG_PER_LSB + REFERENCE_TEMPERATURE;
+        newData.temperature          = DEG_PER_LSB * outTemp;
+        newData.temperature += REFERENCE_TEMPERATURE;
     }
     else
     {
         newData.temperature = lastSample.temperature;
     }
 
-    val = spi.readRegister(OUT_X_H);
-    val = (val << 8);
-    val |= spi.readRegister(OUT_X_L);
-    newData.magneticFieldX = currentUnit * val;
+    int16_t values[3];
+    spi.readRegisters(OUT_X_L | INCREMENT_REG_FLAG,
+                      reinterpret_cast<uint8_t*>(values), sizeof(values));
 
-    val = spi.readRegister(OUT_Y_H);
-    val = (val << 8);
-    val |= spi.readRegister(OUT_Y_L);
-    newData.magneticFieldY = currentUnit * val;
-
-    val = spi.readRegister(OUT_Z_H);
-    val = (val << 8);
-    val |= spi.readRegister(OUT_Z_L);
-    newData.magneticFieldZ = currentUnit * val;
+    newData.magneticFieldX = currentUnit * values[0];
+    newData.magneticFieldY = currentUnit * values[1];
+    newData.magneticFieldZ = currentUnit * values[2];
 
     return newData;
 }

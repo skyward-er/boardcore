@@ -203,6 +203,13 @@ private:
     static constexpr uint32_t ENABLE_INT_Y   = 1 << 6;
     static constexpr uint32_t ENABLE_INT_Z   = 1 << 5;
 
+    /**
+     * This flag is needed because the device requires the 7th address bit
+     * asserted in order to increment the address in transaction with more than
+     * one bytes.
+     */
+    static constexpr uint8_t INCREMENT_REG_FLAG = 0x40;
+
     PrintLogger logger = Logging::getLogger("lis3mdl");
 };
 
