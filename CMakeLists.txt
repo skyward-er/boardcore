@@ -381,7 +381,7 @@ add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
 sbs_target(test-mpu9250 stm32f429zi_stm32f4discovery)
 
 add_executable(test-ms5803-spi src/tests/sensors/test-ms5803-spi.cpp)
-sbs_target(test-ms5803-spi stm32f429zi_skyward_death_stack_x)
+sbs_target(test-ms5803-spi stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-ms5803-i2c src/tests/sensors/test-ms5803-i2c.cpp)
 sbs_target(test-ms5803-i2c stm32f429zi_stm32f4discovery)
