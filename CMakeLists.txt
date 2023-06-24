@@ -416,6 +416,9 @@ sbs_target(test-lis2mdl stm32f429zi_stm32f4discovery)
 add_executable(test-h3lis331dl src/tests/sensors/test-h3lis331dl.cpp)
 sbs_target(test-h3lis331dl stm32f407vg_stm32f4discovery)
 
+add_executable(test-vl53l7cxa src/tests/sensors/test-vl53l7cxa-i2c.cpp)
+sbs_target(test-vl53l7cxa stm32f429zi_stm32f4discovery)
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
