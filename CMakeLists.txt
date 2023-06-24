@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.25)
 enable_testing()
 include(cmake/sbs.cmake)
 
@@ -34,16 +34,13 @@ project(SkywardBoardcore)
 #-----------------------------------------------------------------------------#
 
 add_executable(bmx160-calibration-v2 src/entrypoints/bmx160-calibration-entry.cpp)
-sbs_target(bmx160-calibration-v2 stm32f429zi_skyward_death_stack_x)
+sbs_target(bmx160-calibration-v2 stm32f429zi_skyward_death_stack_v2)
 
 add_executable(bmx160-calibration-v3 src/entrypoints/bmx160-calibration-entry.cpp)
 sbs_target(bmx160-calibration-v3 stm32f429zi_skyward_death_stack_v3)
 
 add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
 sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
-
-add_executable(imu-calibration src/entrypoints/imu-calibration.cpp)
-sbs_target(imu-calibration stm32f429zi_skyward_parafoil)
 
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
@@ -55,15 +52,15 @@ add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
 sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
 
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
-sbs_target(sdcard-benchmark stm32f429zi_skyward_death_stack_x)
+sbs_target(sdcard-benchmark stm32f429zi_skyward_death_stack_v2)
 
 add_executable(sx1278fsk-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-serial PRIVATE SX1278_IS_FSK)
-sbs_target(sx1278fsk-serial stm32f429zi_skyward_groundstation_v2)
+sbs_target(sx1278fsk-serial stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(sx1278lora-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278lora-serial PRIVATE SX1278_IS_LORA)
-sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_v2)
+sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_nokia)
 
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
@@ -91,7 +88,7 @@ add_executable(test-rtc src/tests/test-rtc.cpp)
 sbs_target(test-rtc stm32f767zi_compute_unit)
 
 add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
-sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
+sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-serial src/tests/test-serial.cpp)
 sbs_target(test-serial stm32f756zg_nucleo)
@@ -134,9 +131,6 @@ sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
 add_executable(test-servo src/tests/actuators/test-servo.cpp)
 sbs_target(test-servo stm32f429zi_stm32f4discovery)
 
-add_executable(test-buzzer src/tests/actuators/test-buzzer.cpp)
-sbs_target(test-buzzer stm32f429zi_hre_test_stand)
-
 add_executable(test-stepper src/tests/actuators/test-stepper.cpp)
 sbs_target(test-stepper stm32f767zi_nucleo)
 
@@ -150,26 +144,17 @@ sbs_target(test-stepper-pwm stm32f767zi_nucleo)
 add_executable(test-kalman-benchmark src/tests/algorithms/Kalman/test-kalman-benchmark.cpp)
 sbs_target(test-kalman-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
-sbs_target(test-attitude-parafoil stm32f429zi_skyward_parafoil)
-
 add_executable(test-attitude-stack src/tests/algorithms/NAS/test-attitude-stack.cpp)
-sbs_target(test-attitude-stack stm32f429zi_skyward_death_stack_x)
-
-add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
-sbs_target(test-nas-parafoil stm32f429zi_skyward_parafoil)
+sbs_target(test-attitude-stack stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
 sbs_target(test-nas stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
-sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_x)
+sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
 sbs_target(test-triad stm32f429zi_skyward_death_stack_v3)
-
-add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
-sbs_target(test-triad-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
 sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
@@ -198,10 +183,10 @@ add_executable(test-can-filters src/tests/drivers/canbus/CanDriver/test-can-filt
 sbs_target(test-can-filters stm32f429zi_skyward_pyxis_auxiliary)
 
 add_executable(test-can-loopback src/tests/drivers/canbus/CanDriver/test-can-loopback.cpp)
-sbs_target(test-can-loopback stm32f429zi_skyward_death_stack_x)
+sbs_target(test-can-loopback stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-can-protocol src/tests/drivers/canbus/CanProtocol/test-can-protocol.cpp)
-sbs_target(test-can-protocol stm32f429zi_skyward_death_stack_x)
+sbs_target(test-can-protocol stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
 sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
@@ -234,7 +219,7 @@ add_executable(test-timestamptimer src/tests/drivers/timer/test-timestamptimer.c
 sbs_target(test-timestamptimer stm32f429zi_stm32f4discovery)
 
 add_executable(test-xbee-bidir src/tests/drivers/xbee/test-xbee-bidir.cpp)
-sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_x)
+sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-xbee-gui
     src/tests/drivers/xbee/test-xbee-gui.cpp
@@ -278,46 +263,46 @@ sbs_target(test-fsm stm32f429zi_stm32f4discovery)
 #-----------------------------------------------------------------------------#
 
 add_executable(test-sx1278fsk-bidir src/tests/radio/sx1278/fsk/test-sx1278-bidir.cpp)
-sbs_target(test-sx1278fsk-bidir stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-bidir stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278fsk-tx src/tests/radio/sx1278/fsk/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-tx PRIVATE DISABLE_RX)
-sbs_target(test-sx1278fsk-tx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-tx stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278fsk-rx src/tests/radio/sx1278/fsk/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278fsk-rx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-rx stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278fsk-gui src/tests/radio/sx1278/fsk/test-sx1278-bench-gui.cpp)
-sbs_target(test-sx1278fsk-gui stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-gui stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278fsk-gui-rx src/tests/radio/sx1278/fsk/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278fsk-gui-tx src/tests/radio/sx1278/fsk/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278fsk-gui-tx PRIVATE DISABLE_RX)
-sbs_target(test-sx1278fsk-gui-tx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-gui-tx stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278fsk-mavlink src/tests/radio/sx1278/fsk/test-sx1278-mavlink.cpp)
-sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_nokia)
 
 # add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
 # sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
 
 add_executable(test-sx1278lora-bidir src/tests/radio/sx1278/lora/test-sx1278-bidir.cpp)
-sbs_target(test-sx1278lora-bidir stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278lora-bidir stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278lora-mavlink src/tests/radio/sx1278/lora/test-sx1278-mavlink.cpp)
-sbs_target(test-sx1278lora-mavlink stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278lora-mavlink stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278lora-rx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
 target_compile_definitions(test-sx1278lora-rx PRIVATE ENABLE_RX)
-sbs_target(test-sx1278lora-rx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278lora-rx stm32f429zi_skyward_groundstation_nokia)
 
 add_executable(test-sx1278lora-tx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
 target_compile_definitions(test-sx1278lora-tx PRIVATE ENABLE_TX)
-sbs_target(test-sx1278lora-tx stm32f429zi_skyward_groundstation_v2)
+sbs_target(test-sx1278lora-tx stm32f429zi_skyward_groundstation_nokia)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
@@ -357,10 +342,10 @@ add_executable(test-bmp280-i2c src/tests/sensors/test-bmp280-i2c.cpp)
 sbs_target(test-bmp280-i2c stm32f429zi_stm32f4discovery)
 
 add_executable(test-bmx160 src/tests/sensors/test-bmx160.cpp)
-sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
+sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-bmx160-with-correction src/tests/sensors/test-bmx160-with-correction.cpp)
-sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_x)
+sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-hx711 src/tests/sensors/test-hx711.cpp)
 sbs_target(test-hx711 stm32f429zi_stm32f4discovery)
@@ -375,7 +360,7 @@ add_executable(test-lis3dsh src/tests/sensors/test-lis3dsh.cpp)
 sbs_target(test-lis3dsh stm32f407vg_stm32f4discovery)
 
 add_executable(test-lis3mdl src/tests/sensors/test-lis3mdl.cpp)
-sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
+sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-lis331hh src/tests/sensors/test-lis331hh.cpp)
 sbs_target(test-lis331hh stm32f205rc_skyward_ciuti)
@@ -393,7 +378,7 @@ add_executable(test-max31856 src/tests/sensors/test-max31856.cpp)
 sbs_target(test-max31856 stm32f767zi_compute_unit)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f429zi_skyward_parafoil)
+sbs_target(test-mpu9250 stm32f429zi_stm32f4discovery)
 
 add_executable(test-ms5803-spi src/tests/sensors/test-ms5803-spi.cpp)
 sbs_target(test-ms5803-spi stm32f429zi_skyward_death_stack_x)
@@ -402,10 +387,10 @@ add_executable(test-ms5803-i2c src/tests/sensors/test-ms5803-i2c.cpp)
 sbs_target(test-ms5803-i2c stm32f429zi_stm32f4discovery)
 
 add_executable(test-ubxgps-serial src/tests/sensors/test-ubxgps-serial.cpp)
-sbs_target(test-ubxgps-serial stm32f429zi_skyward_death_stack_x)
+sbs_target(test-ubxgps-serial stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-ubxgps-spi src/tests/sensors/test-ubxgps-spi.cpp)
-sbs_target(test-ubxgps-spi stm32f429zi_skyward_death_stack_x)
+sbs_target(test-ubxgps-spi stm32f429zi_skyward_death_stack_v2)
 
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)

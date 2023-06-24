@@ -23,9 +23,12 @@ include(dependencies)
 
 include(boardcore-host)
 
+# Create a library for each board
 foreach(OPT_BOARD ${BOARDS})
-    set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
-    add_library(${BOARDCORE_LIBRARY} STATIC EXCLUDE_FROM_ALL
+    set(BOARDCORE_LIB boardcore-${OPT_BOARD})
+
+    # Add Boardcore sources
+    add_library(${BOARDCORE_LIB} STATIC EXCLUDE_FROM_ALL
 
         # Actuators
         ${SBS_BASE}/src/shared/actuators/HBridge/HBridge.cpp
@@ -127,10 +130,17 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
         ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
     )
-    add_library(SkywardBoardcore::Boardcore::${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
-    target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
-    target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC
-        Miosix::Miosix::${OPT_BOARD}
+
+    # Add include paths
+    target_include_directories(${BOARDCORE_LIB} PUBLIC ${SBS_BASE}/src/shared)
+
+    # Define DEBUG when in Debug mode
+    target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<CONFIG:Debug>:DEBUG>) 
+
+    # Link libraries
+    target_link_libraries(${BOARDCORE_LIB} PUBLIC
+        $<TARGET_OBJECTS:Miosix::Boot::${OPT_BOARD}>
+        $<LINK_GROUP:RESCAN,Miosix::Kernel::${OPT_BOARD},stdc++,c,m,gcc,atomic>
         TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only
@@ -140,6 +150,9 @@ foreach(OPT_BOARD ${BOARDS})
 
     # Link MxGui only if supported by the target
     if(${OPT_BOARD} IN_LIST MXGUI_BOARDS)
-        target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC Mxgui::Mxgui::${OPT_BOARD})
+        target_link_libraries(${BOARDCORE_LIB} PUBLIC Mxgui::Mxgui::${OPT_BOARD})
     endif()
+
+    # Create a nice alias for the library
+    add_library(Skyward::Boardcore::${OPT_BOARD} ALIAS ${BOARDCORE_LIB})
 endforeach()

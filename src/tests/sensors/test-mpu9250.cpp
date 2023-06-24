@@ -57,7 +57,7 @@ int main()
 
     // Device initialization
     SPIBus spiBus(SPI1);
-    MPU9250 mpu9250(spiBus, sensors::mpu9250::cs::getPin());
+    MPU9250 mpu9250(spiBus, csPin);
 
     // Initialize the device
     bool result = mpu9250.init();

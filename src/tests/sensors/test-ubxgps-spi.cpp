@@ -28,7 +28,7 @@ using namespace Boardcore;
 
 int main()
 {
-#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHSTACK_V2
     SPIBus spiBus(SPI2);
     GpioPin spiCs(GPIOG_BASE, 3);
     GpioPin spiSck(GPIOB_BASE, 13);

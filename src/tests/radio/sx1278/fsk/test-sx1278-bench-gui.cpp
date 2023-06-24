@@ -35,7 +35,7 @@ using namespace Boardcore;
 using namespace miosix;
 using namespace mxgui;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_SKYWARD_GROUNDSTATION_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 using cs   = peripherals::ra01::pc13::cs;

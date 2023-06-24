@@ -51,7 +51,7 @@ constexpr uint32_t STATS_TM_PERIOD      = 2000;
 using Mav =
     MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_SKYWARD_GROUNDSTATION_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 using cs   = peripherals::ra01::pc13::cs;

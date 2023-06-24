@@ -43,7 +43,7 @@
 using namespace Boardcore;
 using namespace miosix;
 
-#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHSTACK_V2
 #include "interfaces-impl/hwmapping.h"
 using GpioMiso = miosix::interfaces::spi2::miso;
 using GpioMosi = miosix::interfaces::spi2::mosi;
@@ -74,7 +74,7 @@ using GpioUserBtn = Gpio<GPIOA_BASE, 0>;
 Xbee::Xbee* xbeeDriver = nullptr;
 Logger& logger         = Logger::getInstance();
 
-#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHSTACK_V2
 void __attribute__((used)) EXTI10_IRQHandlerImpl()
 #else
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
@@ -88,7 +88,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 
 int getUserBtnValue()
 {
-#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHSTACK_V2
     return 0;
 #else
     return GpioUserBtn::value();
@@ -97,7 +97,7 @@ int getUserBtnValue()
 
 void configure()
 {
-#ifndef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
+#ifndef _BOARD_STM32F429ZI_SKYWARD_DEATHSTACK_V2
     {
         FastInterruptDisableLock dLock;
 
@@ -123,7 +123,7 @@ void configure()
     GpioLedLog::low();
 #endif
 
-#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHSTACK_V2
     enableExternalInterrupt(GPIOF_BASE, 10, InterruptTrigger::FALLING_EDGE);
 #else
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
