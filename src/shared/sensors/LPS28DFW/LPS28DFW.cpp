@@ -84,7 +84,7 @@ bool LPS28DFW::selfTest()
 
     // Reading the whoami value to assure communication
     uint8_t whoamiValue{0};
-    if (!i2c.readRegister(i2cConfig, WHO_AM_I_addr, whoamiValue))
+    if (!i2c.readRegister(i2cConfig, WHO_AM_I, whoamiValue))
     {
         LOG_ERR(logger, "Can't communicate with the sensor");
         lastError = BUS_FAULT;
@@ -111,7 +111,7 @@ bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
     // ODR set: BYPASS for the one shot mode and CONTINUOUS for the
     // continuous mode).
     if (!i2c.writeRegister(
-            i2cConfig, FIFO_CTRL_addr,
+            i2cConfig, FIFO_CTRL,
             (newSensorConfig.odr == ODR::ONE_SHOT ? FIFO_CTRL::BYPASS
                                                   : FIFO_CTRL::CONTINUOUS)))
     {
@@ -136,7 +136,7 @@ bool LPS28DFW::setAverage(AVG avg)
     // internal driver state to set the register with the wanted ODR and AVG
     // without previously reading it. This allows to avoid a useless
     // transaction.
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG1_addr, sensorConfig.odr | avg))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG1, sensorConfig.odr | avg))
     {
         lastError = BUS_FAULT;
         return false;
@@ -152,7 +152,7 @@ bool LPS28DFW::setOutputDataRate(ODR odr)
     // internal driver state to set the register with the wanted ODR and AVG
     // without previously reading it. This allows to avoid a useless
     // transaction.
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG1_addr, odr | sensorConfig.avg))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG1, odr | sensorConfig.avg))
     {
         lastError = BUS_FAULT;
         return false;
@@ -165,7 +165,7 @@ bool LPS28DFW::setOutputDataRate(ODR odr)
 bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 {
     uint8_t ctrl_reg2;
-    if (!i2c.readRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2))
+    if (!i2c.readRegister(i2cConfig, CTRL_REG2, ctrl_reg2))
     {
         lastError = BUS_FAULT;
         return false;
@@ -182,7 +182,7 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
         ctrl_reg2           = (ctrl_reg2 | CTRL_REG2::FS_MODE);
     }
 
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG2, ctrl_reg2))
     {
         lastError = BUS_FAULT;
         return false;
@@ -194,8 +194,7 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 
 bool LPS28DFW::setDRDYInterrupt(bool drdy)
 {
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr,
-                           (drdy ? (INT_EN | DRDY) : 0)))
+    if (!i2c.writeRegister(i2cConfig, CTRL_REG4, (drdy ? (INT_EN | DRDY) : 0)))
     {
         lastError = BUS_FAULT;
         return false;
@@ -237,8 +236,8 @@ LPS28DFWData LPS28DFW::sampleImpl()
         uint8_t ctrl_reg2_val{0};
 
         // Triggering sampling
-        if (!(i2c.readRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2_val) &&
-              i2c.writeRegister(i2cConfig, CTRL_REG2_addr,
+        if (!(i2c.readRegister(i2cConfig, CTRL_REG2, ctrl_reg2_val) &&
+              i2c.writeRegister(i2cConfig, CTRL_REG2,
                                 ctrl_reg2_val | CTRL_REG2::ONE_SHOT_START)))
         {
             lastError = BUS_FAULT;
@@ -248,7 +247,7 @@ LPS28DFWData LPS28DFW::sampleImpl()
         // Poll status register until the sample is ready
         do
         {
-            if (!i2c.readRegister(i2cConfig, STATUS_addr, statusValue))
+            if (!i2c.readRegister(i2cConfig, STATUS, statusValue))
             {
                 lastError = BUS_FAULT;
                 return lastSample;
@@ -259,7 +258,7 @@ LPS28DFWData LPS28DFW::sampleImpl()
     else
     {
         // read status register value
-        if (!i2c.readRegister(i2cConfig, STATUS_addr, statusValue))
+        if (!i2c.readRegister(i2cConfig, STATUS, statusValue))
         {
             lastError = BUS_FAULT;
             return lastSample;
@@ -270,7 +269,7 @@ LPS28DFWData LPS28DFW::sampleImpl()
 
     // reading 5 bytes if also Temperature new sample, otherwise only the 3
     // pressure bytes
-    if (!i2c.readFromRegister(i2cConfig, PRESS_OUT_XL_addr, val,
+    if (!i2c.readFromRegister(i2cConfig, PRESS_OUT_XL, val,
                               ((statusValue & STATUS::T_DA) ? 5 : 3)))
     {
         lastError = BUS_FAULT;

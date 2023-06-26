@@ -42,46 +42,46 @@ static const float temperatureSensitivity{
 
 enum Registers : uint8_t
 {
-    INTERRUPT_CFG_addr = 0x0B,  ///< Interrupt mode for pressure acquisition
+    INTERRUPT_CFG = 0x0B,  ///< Interrupt mode for pressure acquisition
 
-    THS_P_L_addr = 0x0C,  ///< User-defined threshold LSB register
-    THS_P_H_addr = 0x0D,  ///< User-defined threshold MSB register
+    THS_P_L = 0x0C,  ///< User-defined threshold LSB register
+    THS_P_H = 0x0D,  ///< User-defined threshold MSB register
 
-    IF_CTRL_addr = 0x0E,  ///< Interface control register
+    IF_CTRL = 0x0E,  ///< Interface control register
 
-    WHO_AM_I_addr = 0x0F,  ///< Device Who am I register
+    WHO_AM_I = 0x0F,  ///< Device Who am I register
 
-    CTRL_REG1_addr = 0x10,  ///< Control Register 1 [ODR, AVG]
-    CTRL_REG2_addr = 0x11,  ///< Control Register 2
-    CTRL_REG3_addr = 0x12,  ///< Control Register 3
-    CTRL_REG4_addr = 0x13,  ///< Control Register 4
+    CTRL_REG1 = 0x10,  ///< Control Register 1 [ODR, AVG]
+    CTRL_REG2 = 0x11,  ///< Control Register 2
+    CTRL_REG3 = 0x12,  ///< Control Register 3
+    CTRL_REG4 = 0x13,  ///< Control Register 4
 
-    FIFO_CTRL_addr = 0x14,  ///< FIFO control register
-    FIFO_WTM_addr  = 0x15,  ///< FIFO threshold setting register
+    FIFO_CTRL = 0x14,  ///< FIFO control register
+    FIFO_WTM  = 0x15,  ///< FIFO threshold setting register
 
-    REF_P_L_addr = 0x16,  ///< Reference pressure LSB data
-    REF_P_H_addr = 0x17,  ///< Reference pressure MSB data
+    REF_P_L = 0x16,  ///< Reference pressure LSB data
+    REF_P_H = 0x17,  ///< Reference pressure MSB data
 
-    RPDS_L_addr = 0x1a,  ///< Pressure offset LSB data
-    RPDS_H_addr = 0x1b,  ///< Pressure offset HSB data
+    RPDS_L = 0x1a,  ///< Pressure offset LSB data
+    RPDS_H = 0x1b,  ///< Pressure offset HSB data
 
-    INT_SOURCE_addr = 0x24,  ///< Interrupt source register
+    INT_SOURCE = 0x24,  ///< Interrupt source register
 
-    FIFO_STATUS1_addr = 0x25,  ///< FIFO status register 1
-    FIFO_STATUS2_addr = 0x26,  ///< FIFO status register 2
+    FIFO_STATUS1 = 0x25,  ///< FIFO status register 1
+    FIFO_STATUS2 = 0x26,  ///< FIFO status register 2
 
-    STATUS_addr = 0x27,  ///< Status register
+    STATUS = 0x27,  ///< Status register
 
-    PRESS_OUT_XL_addr = 0x28,  ///< Pressure output value LSB data
-    PRESS_OUT_L_addr  = 0x29,  ///< Pressure output value middle data
-    PRESS_OUT_H_addr  = 0x2a,  ///< Pressure output value MSB data
+    PRESS_OUT_XL = 0x28,  ///< Pressure output value LSB data
+    PRESS_OUT_L  = 0x29,  ///< Pressure output value middle data
+    PRESS_OUT_H  = 0x2a,  ///< Pressure output value MSB data
 
-    TEMP_OUT_L_addr = 0x2b,  ///< Temperature output value LSB data
-    TEMP_OUT_H_addr = 0x2c,  ///< Temperature output value MSB data
+    TEMP_OUT_L = 0x2b,  ///< Temperature output value LSB data
+    TEMP_OUT_H = 0x2c,  ///< Temperature output value MSB data
 
-    FIFO_DATA_OUT_PRESS_XL_addr = 0x78,  ///< FIFO pressure output LSB data
-    FIFO_DATA_OUT_PRESS_L_addr  = 0x79,  ///< FIFO pressure output middle data
-    FIFO_DATA_OUT_PRESS_H_addr  = 0x7a,  ///< FIFO pressure output MSB data
+    FIFO_DATA_OUT_PRESS_XL = 0x78,  ///< FIFO pressure output LSB data
+    FIFO_DATA_OUT_PRESS_L  = 0x79,  ///< FIFO pressure output middle data
+    FIFO_DATA_OUT_PRESS_H  = 0x7a,  ///< FIFO pressure output MSB data
 };
 
 enum CTRL_REG2 : uint8_t

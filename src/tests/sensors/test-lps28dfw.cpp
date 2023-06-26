@@ -107,6 +107,8 @@ void sampleContinuousMode(I2C &i2c)
 
     for (uint8_t i = 0; i < nSamples; i++)
     {
+        Thread::sleep(100);
+
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
@@ -117,8 +119,6 @@ void sampleContinuousMode(I2C &i2c)
         {
             printf("Error: %d\n", lps28dfw.getLastError());
         }
-
-        Thread::sleep(100);
     }
 
     printf("End Continuous\n");
