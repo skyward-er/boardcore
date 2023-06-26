@@ -23,6 +23,10 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <inttypes.h>
 #include <sensors/VN300/VN300.h>
+#include <utils/Stats/Stats.h>
+
+#include "diagnostic/CpuMeter/CpuMeter.h"
+#define ENABLE_CPU_METER
 
 using namespace miosix;
 using namespace Boardcore;
@@ -41,7 +45,7 @@ int main()
     u6tx1.mode(Mode::ALTERNATE);
 
     USART usart(USART6, 115200);
-    VN300 sensor{usart, 460800, VN300::CRCOptions::CRC_ENABLE_8};
+    VN300 sensor(usart, 115200, VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -60,16 +64,7 @@ int main()
         return 0;
     }
 
-    if (!sensor.start())
-    {
-        printf("Unable to start the sampling thread\n");
-        return 0;
-    }
-
-    printf("Sensor sampling thread started!\n");
-    
-    
-    // Sample and print 100 samples
+    // Sample and print 10 samples
     for (int i = 0; i < 10; i++)
     {
         sensor.sample();
@@ -81,38 +76,37 @@ int main()
                sample.angularSpeedY, sample.angularSpeedZ);
         printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
                sample.roll);
-
-        //sensor.sampleRaw();
-        //sampleRaw = sensor.getLastRawSample();
-        //printf("%s\n", sampleRaw.c_str());
-        //printf("\n");
     }
 
-    for (int j = 0; j < 10; j++)
+    CpuMeter::resetCpuStats();
+
+    Thread::sleep(1000);
+
+    uint64_t time_start = getTick();
+    for (int i = 0; i < 30; i++)
     {
-        
-        for (int i = 0; i < 10; i++)
-        {   
-    
-            sensor.sample();
-            sample   = sensor.getLastSample();
-            
-            printf("Sample %i\n", i);
-            printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
-                   sample.accelerationTimestamp, sample.accelerationX,
-                   sample.accelerationY, sample.accelerationZ);
-            printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
-                   sample.angularSpeedY, sample.angularSpeedZ);
-            printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
-                   sample.roll);
-            //Thread::sleep(20);
-        }
-        // = TimestampTimer::getTimestamp();
-        // printf("Run %i done in %" PRIu64 " microseconds\n", j, (time_end -
-        // time_start));
-    }
 
-   // sensor.closeAndReset();
+        ledOn();
+        sensor.sample();
+        sample = sensor.getLastSample();
+
+        printf("Sample %i\n", i);
+        printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
+               sample.accelerationTimestamp, sample.accelerationX,
+               sample.accelerationY, sample.accelerationZ);
+        printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
+               sample.angularSpeedY, sample.angularSpeedZ);
+        printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
+               sample.roll);
+    }
+    ledOff();
+
+    printf("Run done in %" PRIu64 " milliseconds\n", (getTick() - time_start));
+
+    CpuMeterData cpuData = Boardcore::CpuMeter::getCpuStats();
+    printf("CPU: %f\n", cpuData.mean);
+
+    // sensor.closeAndReset();
     printf("Sensor communication closed!\n");
 
     return 0;
