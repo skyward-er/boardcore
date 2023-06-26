@@ -136,6 +136,8 @@ protected:
         enableIrqs();
     }
 
+    ~SX1278Common() { disableIrqs(); }
+
     /**
      * @brief RAII scoped bus lock guard.
      */
@@ -217,6 +219,7 @@ protected:
 
 private:
     void enableIrqs();
+    void disableIrqs();
 
     void waitForIrqInner(LockMode &guard, bool unlock);
 
