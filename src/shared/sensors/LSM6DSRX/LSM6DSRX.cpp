@@ -152,6 +152,11 @@ void LSM6DSRX::initAccelerometer()
             sensitivityAcc = 0.061;
             break;
     };
+
+    // the sensor's unit of measurement is milli-g, we need to convert
+    // to meters per second squared
+    constexpr float accelerationConversion = Constants::g / 1000.0;
+    sensitivityAcc *= accelerationConversion;
 }
 
 void LSM6DSRX::initGyroscope()
@@ -194,6 +199,11 @@ void LSM6DSRX::initGyroscope()
             sensitivityGyr = 4.375;
             break;
     }
+
+    // the sensor's unit of measurement is milli-degree per second, we need
+    // to convert to radians per second
+    constexpr float angularConversion = Constants::DEGREES_TO_RADIANS / 1000.0;
+    sensitivityGyr *= angularConversion;
 }
 
 void LSM6DSRX::initFifo()
@@ -599,8 +609,6 @@ LSM6DSRXData LSM6DSRX::getSensorData()
     getAccelerometerData(data);
     getGyroscopeData(data);
 
-    convertSampleMeasurementUnit(data);
-
     return data;
 }
 
@@ -847,8 +855,6 @@ void LSM6DSRX::pushIntoFifo(LSM6DSRXDefs::FifoTimeslotData& timeslot,
         return;
     }
 
-    convertSampleMeasurementUnit(timeslot.data);
-
     // push into fifo and update index
     lastFifo[fifoIdx] = timeslot.data;
     ++fifoIdx;
@@ -867,22 +873,6 @@ uint16_t LSM6DSRX::unreadDataInFifo()
                      spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2) & 3)
                  << 8);
     return ris;
-}
-
-void LSM6DSRX::convertSampleMeasurementUnit(LSM6DSRXData& sample)
-{
-    // convert accelerometer data from milli-g to meters (per second squared)
-    constexpr float accelerationConversion = Constants::g / 1000.0;
-    sample.accelerationX *= accelerationConversion;
-    sample.accelerationY *= accelerationConversion;
-    sample.accelerationZ *= accelerationConversion;
-
-    // converts gyroscope data from milli-degree per second to radiants per
-    // second
-    constexpr float angularConversion = Constants::DEGREES_TO_RADIANS / 1000.0;
-    sample.angularSpeedX *= angularConversion;
-    sample.angularSpeedY *= angularConversion;
-    sample.angularSpeedZ *= angularConversion;
 }
 
 }  // namespace Boardcore
