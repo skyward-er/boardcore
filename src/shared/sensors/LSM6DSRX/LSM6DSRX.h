@@ -237,6 +237,15 @@ private:
      * @brief Returns the timestamp resolution in milliseconds.
      */
     float getSensorTimestampResolution();
+
+    /**
+     * @brief Converts the sample from the sensor's unit of measurement (milli-g
+     * for accelerometer data, milli-degree per second for gyroscope data) to
+     * our units (meters per second squared and radiants per second).
+     *
+     * @param sample The sample to be converted.
+     */
+    void convertSampleMeasurementUnit(LSM6DSRXData& sample);
 };
 
 }  // namespace Boardcore
