@@ -28,8 +28,8 @@ namespace Boardcore
 {
 
 VN300::VN300(USART &usart, int baudRate, CRCOptions crc, uint16_t samplePeriod,
-             AntennaPosition antPosA, AntennaPosition antPosB,
-             Eigen::Matrix3f rotMat)
+             const AntennaPosition antPosA, const AntennaPosition antPosB,
+             const Eigen::Matrix3f rotMat)
     : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc),
       antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
 {
@@ -84,17 +84,11 @@ bool VN300::init()
         return false;
     }
 
-    // if (!configDefaultSerialPort())
-    //{
-    //     LOG_ERR(logger, "Unable to config the default VN300 serial port");
-    //     return false;
-    // }
-
-    // if (!resetFactorySettings())
-    //{
-    //     LOG_ERR(logger, "Unable to reset the VN300 to factory settings");
-    //     return false;
-    // }
+    if (!configDefaultSerialPort())
+    {
+        LOG_ERR(logger, "Unable to config the default VN300 serial port");
+        return false;
+    }
 
     if (!setCrc(false))
     {
@@ -161,63 +155,6 @@ bool VN300::init()
     return true;
 }
 
-void VN300::run()
-{
-     while (!shouldStop())
-    {
-        long long initialTime = miosix::getTick();
-
-        VN300Data data = sampleData();
-        {
-            // Sample the data locking the mutex
-            miosix::Lock<FastMutex> l(mutex);
-            threadSample = data;
-        }
-        // Sleep for the sampling period
-        miosix::Thread::sleepUntil(initialTime + samplePeriod);
-        printf("Sample time: %lld\n", miosix::getTick() - initialTime);
-    }
-}
-
-bool VN300::sampleRaw()
-{
-    // Sensor not init
-    if (!isInit)
-    {
-        lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger,
-                 "Unable to sample due to not initialized VN300 sensor");
-        return false;
-    }
-
-    // Send the IMU sampling command
-    usart.writeString(preSampleImuString->c_str());
-
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(1);
-
-    // Receive the string
-    if (!recvStringCommand(recvString, recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
-
-    return true;
-}
-
-string VN300::getLastRawSample()
-{
-    // If not init i return the void string
-    if (!isInit)
-    {
-        return string("");
-    }
-
-    return string(recvString, recvStringLength);
-}
-
 bool VN300::closeAndReset()
 {
     // Sensor not init
@@ -250,9 +187,6 @@ bool VN300::writeSettingsCommand()
         LOG_WARN(logger, "Impossible to save settings");
     }
 
-    // Write settings command takes approximately 500ms
-    miosix::Thread::sleep(500);
-
     // Send the reset command to the VN300 in order to restart the Kalman filter
     if (!sendStringCommand("VNRST"))
     {
@@ -260,8 +194,6 @@ bool VN300::writeSettingsCommand()
 
         return false;
     }
-
-    miosix::Thread::sleep(500);
 
     return true;
 }
@@ -279,12 +211,6 @@ bool VN300::selfTest()
 }
 
 VN300Data VN300::sampleImpl()
-{
-    miosix::Lock<FastMutex> l(mutex);
-    return threadSample;
-}
-
-VN300Data VN300::sampleData()
 {
     if (!isInit)
     {
@@ -350,11 +276,8 @@ VN300Data VN300::sampleData()
 
 bool VN300::asyncPause()
 {
-    std::string command = "$VNASY,0*XX\n\0";
 
-    usart.writeString(command.c_str());
-
-    miosix::Thread::sleep(1000);
+    usart.writeString("$VNASY,0*XX\n");
 
     return true;
 }
@@ -385,33 +308,58 @@ bool VN300::disableAsyncMessages(bool waitResponse)
 
 bool VN300::configDefaultSerialPort()
 {
-    // Initial default settings
+    // I can send the command
+    if (!sendStringCommand("VNWRG,5,115200"))
+    {
+        return false;
+    }
+
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
+        return false;
+    }
+
+    if (checkErrorVN(recvString))
+    {
+        LOG_WARN(logger, "Unable to change serial port baudrate");
+        return false;
+    }
+
+    // I can open the serial with user's baud rate
     usart.setBaudrate(115200);
 
-    // Check correct serial init
     return true;
 }
 
 bool VN300::findBaudrate()
 {
+    char modelNumber[]          = "VN-300T-CR";
+    const int modelNumberOffset = 10;
+
     for (uint32_t i = 0; i < BaudrateList.size(); i++)
     {
-        // I set the baudrate
         usart.setBaudrate(BaudrateList[i]);
-        printf("Baudrate: %d\n", BaudrateList[i]);
-        char initChar;
-        uint64_t in_time = miosix::getTick();
-        while (miosix::getTick() - in_time < 30)
+
+        // I pause the async messages, we don't know if they are present.
+        asyncPause();
+
+        // removing junk
+        usart.clearQueue();
+
+        // I check the model number
+        if (!sendStringCommand("VNRRG,01"))
         {
-            usart.writeString("$VNRRG,01*XX\n");
-            // Read the first char
-            if (usart.read(&initChar, 1))
+            LOG_WARN(logger, "Unable to send string command");
+            return false;
+        }
+
+        if (recvStringCommand(recvString, recvStringMaxDimension))
+        {
+            if (strncmp(modelNumber, recvString + modelNumberOffset,
+                        strlen(modelNumber)) != 0)
             {
-                // If it is a '$' i break
-                if (initChar == '$')
-                {
-                    return true;
-                }
+                return true;
             }
         }
     }
@@ -426,6 +374,7 @@ bool VN300::findBaudrate()
  */
 bool VN300::configUserSerialPort()
 {
+
     std::string command;
 
     // I format the command to change baud rate
@@ -448,11 +397,9 @@ bool VN300::configUserSerialPort()
         LOG_WARN(logger, "Unable to change serial port baudrate");
         return false;
     }
-    else
-    {
-        // I can open the serial with user's baud rate
-        usart.setBaudrate(baudRate);
-    }
+
+    // I can open the serial with user's baud rate
+    usart.setBaudrate(baudRate);
 
     return true;
 }
@@ -469,11 +416,13 @@ bool VN300::resetFactorySettings()
         return false;
     }
 
-    // if (!recvStringCommand(recvString, recvStringMaxDimension))
-    //{
-    //     LOG_WARN(logger, "Unable to sample due to serial communication
-    //     error"); return false;
-    // }
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
+        return false;
+    }
+
+    miosix::Thread::sleep(500);
 
     return true;
 }
@@ -602,6 +551,8 @@ bool VN300::selfTestImpl()
         return false;
     }
 
+    miosix::Thread::sleep(100);
+
     // removing junk
     usart.clearQueue();
 
@@ -611,8 +562,6 @@ bool VN300::selfTestImpl()
         LOG_WARN(logger, "Unable to send string command");
         return false;
     }
-
-    miosix::Thread::sleep(100);
 
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
@@ -816,7 +765,7 @@ bool VN300::sendStringCommand(std::string command)
         // in cas of CRC_NO the enabled crc is 8 bit
         command = fmt::format("{}{}{}", "$", command, "*XX\n");
     }
-    printf("%s\n", command.c_str());
+
     // I send the final command
     usart.writeString(command.c_str());
 
@@ -825,49 +774,36 @@ bool VN300::sendStringCommand(std::string command)
 
 bool VN300::recvStringCommand(char *command, int maxLength)
 {
-    uint64_t end_time = 0;
-    uint64_t in_time  = TimestampTimer::getTimestamp();
     char initChar;
-    for (;;)
+    int j     = 1;
+    bool read = false;
+
+    for (int i = 0; i < 10000; i++)
     {
         // Read the first char
-        if (!usart.readBlocking(&initChar, 1))
+        if (usart.read(&initChar, 1) && initChar == '$')
         {
-            return false;
-        }
-        // If it is a '$' i break
-        if (initChar == '$')
-        {
+            command[0] = '$';
+
+            while (usart.read(&initChar, 1) && initChar != '\n' &&
+                   j < maxLength)
+            {
+                command[j] = initChar;
+                j++;
+            }
+
+            read = true;
             break;
         }
     }
-    command[0] = '$';
 
-    int i = 0;
-    // Read the buffer
-
-    if (!usart.readBlocking(command + 1, maxLength - 1))
+    if (read)
     {
-        return false;
+        command[j] = '\0';
     }
 
-    // Iterate until i reach the end or i find \n then i substitute it with a \0
-    while (i < maxLength && command[i] != '\n')
-    {
-        i++;
-        // assert for testing purposes
-        assert(i < maxLength);
-    }
+    recvStringLength = j - 1;
 
-    // Terminate the string
-    command[i] = '\0';
-
-    // Assing the length
-    recvStringLength = i - 1;
-
-    end_time = TimestampTimer::getTimestamp() - in_time;
-    printf("Time to read: %lld\n", end_time);
-    
     return true;
 }
 
@@ -924,8 +860,6 @@ bool VN300::checkErrorVN(const char *message)
                 error = "VN300 Unknown error";
                 break;
         }
-
-        printf("%s\n", error.c_str());
 
         return true;  // Error detected
     }

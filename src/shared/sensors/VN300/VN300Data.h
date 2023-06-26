@@ -84,12 +84,10 @@ struct VN300Data : public QuaternionData,
      */
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data()
-        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0},
-          MagnetometerData{0, 0.0, 0.0, 0.0}, AccelerometerData{0, 0.0, 0.0,
-                                                                0.0},
-          GyroscopeData{0, 0.0, 0.0, 0.0}, Ins_Lla{0,   0.0, 0,   0,   0.0, 0.0,
-                                                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                   0.0}
+        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
+                                                                  0.0},
+          AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
+          Ins_Lla{0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
     {
     }
 
@@ -98,10 +96,10 @@ struct VN300Data : public QuaternionData,
      *
      * @param single data structures for all the data
      */
-    // cppcheck-suppress passedByValue
     // cppcheck-suppress uninitDerivedMemberVar
-    VN300Data(QuaternionData quat, MagnetometerData magData,
-              AccelerometerData accData, GyroscopeData gyro, Ins_Lla ins)
+    VN300Data(const QuaternionData& quat, const MagnetometerData& magData,
+              const AccelerometerData& accData, const GyroscopeData& gyro,
+              const Ins_Lla& ins)
         : QuaternionData(quat), MagnetometerData(magData),
           AccelerometerData(accData), GyroscopeData(gyro), Ins_Lla(ins)
     {
