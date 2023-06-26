@@ -45,10 +45,18 @@ void SX1278Common::handleDioIRQ()
     }
 }
 
-void SX1278Common::enableIrqs() {
-    enableExternalInterrupt(dio0.getPort(), dio0.getNumber(), InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio1.getPort(), dio1.getNumber(), InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio3.getPort(), dio3.getNumber(), InterruptTrigger::RISING_EDGE);
+void SX1278Common::enableIrqs()
+{
+    enableExternalInterrupt(dio0, InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1, InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3, InterruptTrigger::RISING_EDGE);
+}
+
+void SX1278Common::disableIrqs()
+{
+    disableExternalInterrupt(dio0);
+    disableExternalInterrupt(dio1);
+    disableExternalInterrupt(dio3);
 }
 
 void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
@@ -236,7 +244,7 @@ void SX1278Common::enterMode(Mode mode, DioMapping mapping,
     // Change DIO1 interrupt kind
     if (dio1_trigger != state.dio1_trigger)
     {
-        enableExternalInterrupt(dio1.getPort(), dio1.getNumber(), dio1_trigger);
+        changeInterruptTrigger(dio1, dio1_trigger);
         state.dio1_trigger = dio1_trigger;
     }
 
