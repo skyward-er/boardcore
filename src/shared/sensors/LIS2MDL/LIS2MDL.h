@@ -62,8 +62,6 @@ public:
      */
     struct Config
     {
-        Config() {}
-
         ODR odr                  = ODR_10_HZ;
         OperativeMode deviceMode = MD_IDLE1;
 
@@ -76,8 +74,8 @@ public:
         unsigned temperatureDivider = 0;
     };
 
-    LIS2MDL(SPIBusInterface& bus, miosix::GpioPin pin,
-            SPIBusConfig spiConfig = {}, Config config = {});
+    LIS2MDL(SPIBusInterface& bus, miosix::GpioPin pin, SPIBusConfig spiConfig,
+            Config config);
 
     static SPIBusConfig getDefaultSPIConfig();
 
