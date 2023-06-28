@@ -27,11 +27,11 @@
 namespace Boardcore
 {
 
-VN300::VN300(USART &usart, int baudRate, CRCOptions crc, uint16_t samplePeriod,
-             const AntennaPosition antPosA, const AntennaPosition antPosB,
-             const Eigen::Matrix3f rotMat)
-    : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc),
-      antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
+VN300::VN300(USART &usart, int userBaudRate, CRCOptions crc,
+             uint16_t samplePeriod, const AntennaPosition antPosA,
+             const AntennaPosition antPosB, const Eigen::Matrix3f rotMat)
+    : usart(usart), userBaudRate(userBaudRate), samplePeriod(samplePeriod),
+      crc(crc), antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
 {
 }
 
@@ -84,15 +84,15 @@ bool VN300::init()
         return false;
     }
 
-    if (!configDefaultSerialPort())
+    if (!setCrc(true))
     {
-        LOG_ERR(logger, "Unable to config the default VN300 serial port");
+        LOG_ERR(logger, "Unable to set the VN300 user selected CRC");
         return false;
     }
 
-    if (!setCrc(false))
+    if (!configBaudRate(defaultBaudRate))
     {
-        LOG_ERR(logger, "Unable to set the VN300 user selected CRC");
+        LOG_ERR(logger, "Unable to config the default VN300 serial port");
         return false;
     }
 
@@ -125,14 +125,14 @@ bool VN300::init()
         LOG_ERR(logger, "Unable to save settings to non-volatile memory");
         return false;
     }
+    miosix::Thread::sleep(2000);
 
-    if (!configUserSerialPort())
+    if (!configBaudRate(userBaudRate))
     {
         LOG_ERR(logger, "Unable to config the user VN300 serial port");
         return false;
     }
 
-    // I need to repeat this in case of a non default
     // serial port communication at the beginning
     if (!setCrc(true))
     {
@@ -183,14 +183,18 @@ bool VN300::closeAndReset()
 bool VN300::writeSettingsCommand()
 {
     miosix::Thread::sleep(50);
+    clearBuffer();
     if (!sendStringCommand("VNWNV"))
     {
         LOG_WARN(logger, "Impossible to save settings");
     }
 
-    miosix::Thread::sleep(500);
+    miosix::Thread::sleep(1000);
     // Read the answer
-    recvStringCommand(recvString, recvStringMaxDimension);
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        return false;
+    }
 
     if (checkErrorVN(recvString))
         return false;
@@ -205,7 +209,11 @@ bool VN300::writeSettingsCommand()
 
     miosix::Thread::sleep(500);
     // Read the answer
-    recvStringCommand(recvString, recvStringMaxDimension);
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Impossible to reset the VN300");
+        return false;
+    }
 
     if (checkErrorVN(recvString))
         return false;
@@ -305,6 +313,7 @@ bool VN300::disableAsyncMessages(bool waitResponse)
 
     miosix::Thread::sleep(50);
     // Send the command
+    clearBuffer();
     if (!sendStringCommand(command))
     {
         return false;
@@ -322,37 +331,10 @@ bool VN300::disableAsyncMessages(bool waitResponse)
     return true;
 }
 
-bool VN300::configDefaultSerialPort()
-{
-    miosix::Thread::sleep(50);
-    // I can send the command
-    if (!sendStringCommand("VNWRG,5,115200"))
-    {
-        return false;
-    }
-
-    if (!recvStringCommand(recvString, recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
-
-    if (checkErrorVN(recvString))
-    {
-        LOG_WARN(logger, "Unable to change serial port baudrate");
-        return false;
-    }
-
-    // I can open the serial with user's baud rate
-    usart.setBaudrate(115200);
-
-    return true;
-}
-
 bool VN300::findBaudrate()
 {
-    char modelNumber[]          = "VN-300T-CR";
-    const int modelNumberOffset = 10;
+    char modelNumber[]          = "VN";
+    const int modelNumberOffset = 1;
 
     for (uint32_t i = 0; i < BaudrateList.size(); i++)
     {
@@ -363,9 +345,6 @@ bool VN300::findBaudrate()
         // I pause the async messages, we don't know if they are present.
         asyncPause();
 
-        // removing junk
-        usart.clearQueue();
-
         // I check the model number
         // if (!sendStringCommand("VNRRG,01"))
         //{
@@ -373,12 +352,13 @@ bool VN300::findBaudrate()
         //    return false;
         //}
         miosix::Thread::sleep(50);
+
         usart.writeString("$VNRRG,01*XX\n");
 
         if (recvStringCommand(recvString, recvStringMaxDimension))
         {
             if (strncmp(modelNumber, recvString + modelNumberOffset,
-                        strlen(modelNumber)) != 0)
+                        strlen(modelNumber)) == 0)
             {
                 return true;
             }
@@ -393,15 +373,17 @@ bool VN300::findBaudrate()
  * Even if the user configured baudrate is the default, I want to reset the
  * buffer to clean the junk.
  */
-bool VN300::configUserSerialPort()
+bool VN300::configBaudRate(int baudRate)
 {
 
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+    command                     = fmt::format("{}{}", "VNWRG,05,", baudRate);
+    const int modelNumberOffset = 1;
 
     miosix::Thread::sleep(50);
+    clearBuffer();
     // I can send the command
     if (!sendStringCommand(command))
     {
@@ -413,10 +395,10 @@ bool VN300::configUserSerialPort()
         LOG_WARN(logger, "Unable to sample due to serial communication error");
         return false;
     }
-
-    if (checkErrorVN(recvString))
+    if (strncmp(command.c_str(), recvString + modelNumberOffset,
+                strlen(command.c_str())) != 0)
     {
-        LOG_WARN(logger, "Unable to change serial port baudrate");
+        LOG_WARN(logger, "The message is wrong {}", recvString);
         return false;
     }
 
@@ -426,7 +408,7 @@ bool VN300::configUserSerialPort()
     return true;
 }
 
-bool VN300::resetFactorySettings()
+[[maybe_unused]] bool VN300::resetFactorySettings()
 {
     // Command string
     std::string command =
@@ -475,6 +457,7 @@ bool VN300::setCrc(bool waitResponse)
     crc = CRCOptions::CRC_ENABLE_8;
 
     miosix::Thread::sleep(50);
+    clearBuffer();
     // Send the command
     if (!sendStringCommand(command))
     {
@@ -484,27 +467,41 @@ bool VN300::setCrc(bool waitResponse)
     // Read the answer
     if (waitResponse)
     {
-        recvStringCommand(recvString, recvStringMaxDimension);
-        uint8_t error = checkErrorVN(recvString);
-        if (error == 3)
+        if (recvStringCommand(recvString, recvStringMaxDimension))
         {
-            crc = CRCOptions::CRC_ENABLE_16;
+            uint8_t error = checkErrorVN(recvString);
 
-            // Send the command
-            if (!sendStringCommand(command))
+            if (error == 3)
+            {
+                crc = CRCOptions::CRC_ENABLE_16;
+
+                miosix::Thread::sleep(50);
+                clearBuffer();
+                // Send the command
+                if (!sendStringCommand(command))
+                {
+                    return false;
+                }
+                if (!recvStringCommand(recvString, recvStringMaxDimension))
+                {
+                    return false;
+                }
+
+                uint8_t error2 = checkErrorVN(recvString);
+
+                if (error2 != 0)
+                {
+                    return false;
+                }
+            }
+            else if (error != 0)
             {
                 return false;
             }
-            recvStringCommand(recvString, recvStringMaxDimension);
-            checkErrorVN(recvString);
-        }
-        else if (error != 0)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
+            else
+            {
+                return true;
+            }
         }
     }
     else
@@ -539,6 +536,7 @@ bool VN300::setAntennaA(AntennaPosition antPos)
                           antPos.posZ);
 
     miosix::Thread::sleep(50);
+    clearBuffer();
     if (!sendStringCommand(command))
     {
         return false;
@@ -563,6 +561,7 @@ bool VN300::setCompassBaseline(AntennaPosition antPos)
                           antPos.uncZ);
 
     miosix::Thread::sleep(50);
+    clearBuffer();
     if (!sendStringCommand(command))
     {
         return false;
@@ -588,7 +587,7 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
                     rotMat(1, 2), rotMat(2, 0), rotMat(2, 1), rotMat(2, 2));
 
     miosix::Thread::sleep(50);
-    // I can send the command
+    clearBuffer();
     if (!sendStringCommand(command))
     {
         return false;
@@ -842,10 +841,12 @@ bool VN300::sendStringCommand(std::string command)
 bool VN300::recvStringCommand(char *command, int maxLength)
 {
     char initChar;
-    int j     = 1;
-    bool read = false;
+    int j      = 1;
+    bool read  = false;
+    command[0] = '\0';
 
-    for (int i = 0; i < 10000; i++)
+    int i = 0;
+    while (read == false && i < 10000)
     {
         // Read the first char
         if (usart.read(&initChar, 1) && initChar == '$')
@@ -857,16 +858,20 @@ bool VN300::recvStringCommand(char *command, int maxLength)
             {
                 command[j] = initChar;
                 j++;
+                read = true;
             }
-
-            read = true;
             break;
         }
+        i++;
     }
 
     if (read)
     {
         command[j] = '\0';
+    }
+    else
+    {
+        return false;
     }
 
     recvStringLength = j - 1;
@@ -1023,6 +1028,14 @@ uint16_t VN300::calculateChecksum16(uint8_t *message, int length)
     }
 
     return result;
+}
+
+void VN300::clearBuffer()
+{
+    char c;
+    while (usart.read(&c, 1))
+    {
+    }
 }
 
 }  // namespace Boardcore
