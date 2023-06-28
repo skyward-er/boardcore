@@ -45,7 +45,7 @@ int main()
     u6tx1.mode(Mode::ALTERNATE);
 
     USART usart(USART6, 115200);
-    VN300 sensor(usart, 115200, VN300::CRCOptions::CRC_ENABLE_8);
+    VN300 sensor(usart, 230400, VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -106,7 +106,7 @@ int main()
     CpuMeterData cpuData = Boardcore::CpuMeter::getCpuStats();
     printf("CPU: %f\n", cpuData.mean);
 
-    // sensor.closeAndReset();
+    sensor.closeAndReset();
     printf("Sensor communication closed!\n");
 
     return 0;
