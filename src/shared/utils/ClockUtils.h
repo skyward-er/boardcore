@@ -68,6 +68,11 @@ bool enablePeripheralClock(void* peripheral);
  */
 bool disablePeripheralClock(void* peripheral);
 
+/**
+ * @brief Returns the APB bus to which the peripheral is connected.
+ */
+bool getPeripheralBus(void* peripheral, APB apb);
+
 }  // namespace ClockUtils
 
 inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
@@ -908,6 +913,202 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
     }
 
     RCC_SYNC();
+
+    return true;
+}
+
+inline bool ClockUtils::getPeripheralBus(void* peripheral, APB apb)
+{
+    switch (reinterpret_cast<uint32_t>(peripheral))
+    {
+        // APB1 peripherals
+        {
+#ifdef TIM2_BASE
+            case TIM2_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM3_BASE
+            case TIM3_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM4_BASE
+            case TIM4_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM5_BASE
+            case TIM5_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM6_BASE
+            case TIM6_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM7_BASE
+            case TIM7_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM12_BASE
+            case TIM12_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM13_BASE
+            case TIM13_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef TIM14_BASE
+            case TIM14_BASE:
+                apb = APB::APB1;
+#endif
+// RTC register interface gate only on stm32f7 micro controllers
+#if defined(RTC_BASE) && defined(_ARCH_CORTEXM7_STM32F7)
+            case RTC_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef WWDG_BASE
+            case WWDG_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef SPI2_BASE
+            case SPI2_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef SPI3_BASE
+            case SPI3_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef USART2_BASE
+            case USART2_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef USART3_BASE
+            case USART3_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef UART4_BASE
+            case UART4_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef UART5_BASE
+            case UART5_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef I2C1_BASE
+            case I2C1_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef I2C2_BASE
+            case I2C2_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef I2C3_BASE
+            case I2C3_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef CAN1_BASE
+            case CAN1_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef CAN2_BASE
+            case CAN2_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef PWR_BASE
+            case PWR_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef DAC_BASE
+            case DAC_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef UART7_BASE
+            case UART7_BASE:
+                apb = APB::APB1;
+#endif
+#ifdef UART8_BASE
+            case UART8_BASE:
+                apb = APB::APB1;
+#endif
+        }
+
+        // APB2 peripherals
+        {
+#ifdef TIM1_BASE
+            case TIM1_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef TIM8_BASE
+            case TIM8_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef USART1_BASE
+            case USART1_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef USART6_BASE
+            case USART6_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef ADC1_BASE
+            case ADC1_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef ADC2_BASE
+            case ADC2_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef ADC3_BASE
+            case ADC3_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SDIO_BASE
+            case SDIO_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SPI1_BASE
+            case SPI1_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SPI4_BASE
+            case SPI4_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SYSCFG_BASE
+            case SYSCFG_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef TIM9_BASE
+            case TIM9_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef TIM10_BASE
+            case TIM10_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef TIM11_BASE
+            case TIM11_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SPI5_BASE
+            case SPI5_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SPI6_BASE
+            case SPI6_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef SAI1_BASE
+            case SAI1_BASE:
+                apb = APB::APB2;
+#endif
+#ifdef LTDC_BASE
+            case LTDC_BASE:
+                apb = APB::APB2;
+#endif
+        }
+
+        default:
+            return false;
+    }
 
     return true;
 }

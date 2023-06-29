@@ -24,6 +24,7 @@
 
 #include <interfaces-impl/gpio_impl.h>
 #include <stddef.h>
+#include <utils/ClockUtils.h>
 
 #include "SPIDefs.h"
 
@@ -45,13 +46,13 @@ namespace Boardcore
 struct SPIBusConfig
 {
     ///< Peripheral clock division
-    SPI::ClockDivider clockDivider;
+    SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256;
 
     ///< Clock polarity and phase configuration
-    SPI::Mode mode;
+    SPI::Mode mode = SPI::Mode::MODE_0;
 
     ///< MSBit or LSBit first
-    SPI::Order bitOrder;
+    SPI::Order bitOrder = SPI::Order::MSB_FIRST;
 
     /**
      * @brief MSByte or LSByte first
@@ -74,28 +75,16 @@ struct SPIBusConfig
      * @warning This driver does not support devices which decrements registers
      * address during multiple registers accesses.
      */
-    SPI::Order byteOrder;
+    SPI::Order byteOrder = SPI::Order::MSB_FIRST;
 
     ///< Write bit behaviour, default high when reading
-    SPI::WriteBit writeBit;
+    SPI::WriteBit writeBit = SPI::WriteBit::NORMAL;
 
     ///< How long to wait before starting a tranmission after CS is set (us)
-    unsigned int csSetupTimeUs;
+    unsigned int csSetupTimeUs = 0;
 
     ///< How long to hold cs after the end of a tranmission (us)
-    unsigned int csHoldTimeUs;
-
-    SPIBusConfig(SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256,
-                 SPI::Mode mode                 = SPI::Mode::MODE_0,
-                 SPI::Order bitOrder            = SPI::Order::MSB_FIRST,
-                 SPI::Order byteOrder           = SPI::Order::MSB_FIRST,
-                 SPI::WriteBit writeBit         = SPI::WriteBit::NORMAL,
-                 unsigned int csSetupTimeUs = 0, unsigned int csHoldTimeUs = 0)
-        : clockDivider(clockDivider), mode(mode), bitOrder(bitOrder),
-          byteOrder(byteOrder), writeBit(writeBit),
-          csSetupTimeUs(csSetupTimeUs), csHoldTimeUs(csHoldTimeUs)
-    {
-    }
+    unsigned int csHoldTimeUs = 0;
 
     bool operator==(const SPIBusConfig& other) const
     {
@@ -108,6 +97,40 @@ struct SPIBusConfig
     bool operator!=(const SPIBusConfig& other) const
     {
         return !(*this == other);
+    }
+
+    /**
+     * @brief Computes the clock divider for the provided maximum frequency.
+     *
+     * The computed divider has the lowest possible value which generates a
+     * frequency not higher than the provided one.
+     * The spi peripheral is needed to get the source clock frequency, which
+     * depends on which APB bus the spi is connected to.
+     */
+    static SPI::ClockDivider computeDivider(SPI_TypeDef* spi, uint32_t maxFreq)
+    {
+        ClockUtils::APB apb;
+        ClockUtils::getPeripheralBus(spi, apb);
+
+        uint32_t sourceFreq   = ClockUtils::getAPBPeripheralsClock(apb);
+        uint32_t idealDivider = sourceFreq / maxFreq;
+
+        if (idealDivider <= 2)
+            return SPI::ClockDivider::DIV_2;
+        else if (idealDivider <= 4)
+            return SPI::ClockDivider::DIV_4;
+        else if (idealDivider <= 8)
+            return SPI::ClockDivider::DIV_8;
+        else if (idealDivider <= 16)
+            return SPI::ClockDivider::DIV_16;
+        else if (idealDivider <= 32)
+            return SPI::ClockDivider::DIV_32;
+        else if (idealDivider <= 64)
+            return SPI::ClockDivider::DIV_64;
+        else if (idealDivider <= 128)
+            return SPI::ClockDivider::DIV_128;
+        else
+            return SPI::ClockDivider::DIV_256;
     }
 };
 
