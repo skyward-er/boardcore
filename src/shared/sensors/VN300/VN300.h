@@ -61,6 +61,7 @@
 #include <Eigen/Core>
 
 #include "VN300Data.h"
+#include "VN300Defs.h"
 #include "drivers/usart/USART.h"
 
 namespace Boardcore
@@ -77,7 +78,7 @@ public:
         CRC_ENABLE_8  = 0x08,
         CRC_ENABLE_16 = 0x10
     };
-
+    
     std::array<uint32_t, 9> BaudrateList = {
         9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
 
@@ -91,7 +92,7 @@ public:
      * @param samplePeriod Sampling period in ms
      * @param antPos antenna A position
      */
-    VN300(USART &usart, int userBaudRate,
+    VN300(USART &usart, int userBaudRate, bool isBinary = true,
           CRCOptions crc = CRCOptions::CRC_ENABLE_8, uint16_t samplePeriod = 15,
           AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -191,15 +192,21 @@ private:
     bool setCompassBaseline(AntennaPosition antPos);
 
     /**
-     * @brief set the reference frame rotation of the sensor in order to have
+     * @brief Set the reference frame rotation of the sensor in order to have
      * all the data on the desired reference frame.
      *
      * @param rotMat rotation matrix.
      *
-     * @return if operation succeeded.
+     * @return True if operation succeeded.
      */
     bool setReferenceFrame(Eigen::Matrix3f rotMat);
 
+    /**
+     * @brief Set the binary output register
+     * 
+     * @return True if operation succeeded.
+    */
+    bool setBinaryOutput();
     /**
      * @brief Method implementation of self test.
      *
@@ -216,6 +223,13 @@ private:
     GyroscopeData sampleGyroscope();
 
     Ins_Lla sampleIns();
+
+    BinaryData sampleBin();
+
+    VN300Data sampleBinary();
+
+    VN300Data sampleASCII();
+
     /**
      * @brief Sends the command to the sensor with the correct checksum added
      * so '*' symbol is not needed at the end of the string as well as the '$'
@@ -237,6 +251,8 @@ private:
      * @return True if operation succeeded.
      */
     bool recvStringCommand(char *command, int maxLength);
+
+    int recvBinaryCommand(uint8_t *command);
 
     /**
      * @brief check if the VN-300 returned an error and differentiate between
@@ -299,6 +315,7 @@ private:
     uint16_t samplePeriod;
     CRCOptions crc;
     bool isInit = false;
+    bool isBinary = true;
 
     AntennaPosition antPosA;
     AntennaPosition antPosB;
@@ -315,11 +332,15 @@ private:
      */
     string *preSampleINSlla = nullptr;
 
+    string *preSampleBin1 = nullptr;
+
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
      * only (200 bytes).
      */
     char *recvString = nullptr;
+
+    unsigned char *recvBin = nullptr;
 
     /**
      * @brief Actual strlen() of the recvString.

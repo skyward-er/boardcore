@@ -55,8 +55,8 @@ struct AntennaPosition
 struct Ins_Lla
 {
     uint64_t insTimestamp;
-    double time_gps;
-    uint16_t week;
+    uint8_t fix_gps;
+    uint8_t fix_ins;
     uint16_t status;
     float yaw;
     float pitch;
@@ -67,6 +67,41 @@ struct Ins_Lla
     float nedVelX;
     float nedVelY;
     float nedVelZ;
+};
+
+struct __attribute__((packed)) BinaryData
+{
+    uint8_t group;
+    uint16_t common;
+    uint16_t gnss;
+    float yaw_bin;
+    float pitch_bin;
+    float roll_bin;
+    float quatX_bin;
+    float quatY_bin;
+    float quatZ_bin;
+    float quatW_bin;
+    float angx;
+    float angy;
+    float angz;
+    float velx;
+    float vely;
+    float velz;
+    float accx;
+    float accy;
+    float accz;
+    float magx;
+    float magy;
+    float magz;
+    float temp;
+    float pres;
+    uint16_t ins_status;
+    uint8_t numsats;
+    uint8_t fix;
+    double latitude_bin;
+    double longitude_bin;
+    double altitude_bin;
+    uint16_t checksum;
 };
 
 /**
@@ -87,7 +122,7 @@ struct VN300Data : public QuaternionData,
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
           AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
-          Ins_Lla{0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+          Ins_Lla{0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
     {
     }
 
@@ -112,7 +147,7 @@ struct VN300Data : public QuaternionData,
                "accelerationTimestamp,accelerationX,accelerationY,"
                "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
                "angularSpeedY,angularSpeedZ,insTimeStamp,"
-               "time_gps,week,status,yaw,pitch,roll,latitude,"
+               "status,yaw,pitch,roll,latitude,"
                "longitude,altitude,nedVelX,nedVelY,nedVelZ\n";
     }
 
@@ -125,9 +160,9 @@ struct VN300Data : public QuaternionData,
            << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << "," << insTimestamp
-           << "," << time_gps << "," << week << "," << status << yaw << pitch
-           << roll << latitude << longitude << altitude << nedVelX << nedVelY
-           << nedVelZ << "\n";
+           << "," << status << "," << yaw << "," << pitch << "," << roll << ","
+           << latitude << "," << longitude << "," << altitude << "," << nedVelX
+           << "," << nedVelY << "," << nedVelZ << "\n";
     }
 };
 

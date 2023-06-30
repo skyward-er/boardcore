@@ -25,6 +25,8 @@
 #include <sensors/VN300/VN300.h>
 #include <utils/Stats/Stats.h>
 
+#include <iostream>
+
 #include "diagnostic/CpuMeter/CpuMeter.h"
 #define ENABLE_CPU_METER
 
@@ -36,16 +38,18 @@ int main()
     VN300Data sample;
     string sampleRaw;
 
+    GpioPin dbg(GPIOB_BASE, 4);
     GpioPin u6tx1(GPIOG_BASE, 14);
     GpioPin u6rx1(GPIOG_BASE, 9);
 
     u6rx1.alternateFunction(8);
-    u6rx1.mode(Mode::ALTERNATE);
+    u6rx1.mode(Mode::ALTERNATE_PULL_UP);
     u6tx1.alternateFunction(8);
     u6tx1.mode(Mode::ALTERNATE);
+    dbg.mode(Mode::OUTPUT);
 
     USART usart(USART6, 115200);
-    VN300 sensor(usart, 230400, VN300::CRCOptions::CRC_ENABLE_8);
+    VN300 sensor(usart, 230400, true, VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -83,21 +87,33 @@ int main()
     Thread::sleep(1000);
 
     uint64_t time_start = getTick();
-    for (int i = 0; i < 30; i++)
+    CpuMeter::resetCpuStats();
+
+    for (int i = 0; i < 10000; i++)
     {
 
-        ledOn();
+        dbg.high();
         sensor.sample();
+        dbg.low();
+
         sample = sensor.getLastSample();
 
-        printf("Sample %i\n", i);
+        // printf("Sample %i\n", i);
         printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
                sample.accelerationTimestamp, sample.accelerationX,
                sample.accelerationY, sample.accelerationZ);
         printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
                sample.angularSpeedY, sample.angularSpeedZ);
-        printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
-               sample.roll);
+        // printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
+        //        sample.roll);
+        //// printf("gps: %.6f, %.6f, %.6f\n", sample.latitude,
+        ///sample.longitude,
+        //        sample.altitude);
+        // sample.print(std::cout);
+
+        printf("CPU: %5.1f\n", CpuMeter::getCpuStats().mean);
+
+        Thread::sleep(10);
     }
     ledOff();
 

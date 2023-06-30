@@ -24,14 +24,17 @@
 
 #include <drivers/timer/TimestampTimer.h>
 
+#include "diagnostic/CpuMeter/CpuMeter.h"
+
 namespace Boardcore
 {
 
-VN300::VN300(USART &usart, int userBaudRate, CRCOptions crc,
+VN300::VN300(USART &usart, int userBaudRate, bool isBinary, CRCOptions crc,
              uint16_t samplePeriod, const AntennaPosition antPosA,
              const AntennaPosition antPosB, const Eigen::Matrix3f rotMat)
-    : usart(usart), userBaudRate(userBaudRate), samplePeriod(samplePeriod),
-      crc(crc), antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
+    : usart(usart), userBaudRate(userBaudRate), isBinary(isBinary),
+      samplePeriod(samplePeriod), crc(crc), antPosA(antPosA), antPosB(antPosB),
+      rotMat(rotMat)
 {
 }
 
@@ -55,11 +58,13 @@ bool VN300::init()
     {
         preSampleImuString = new string("$VNRRG,15*92EA\n");
         preSampleINSlla    = new string("$VNRRG,63*6BBB\n");
+        preSampleBin1      = new string("$VNBOM,1*749D\n");
     }
     else
     {
         preSampleImuString = new string("$VNRRG,15*77\n");
         preSampleINSlla    = new string("$VNRRG,63*76\n");
+        preSampleBin1      = new string("$VNBOM,1*45\n");
     }
 
     // Set the error to init fail and if the init process goes without problem
@@ -99,6 +104,12 @@ bool VN300::init()
     if (!disableAsyncMessages(false))
     {
         LOG_ERR(logger, "Unable to disable async messages from VN300");
+        return false;
+    }
+
+    if (!setBinaryOutput())
+    {
+        LOG_ERR(logger, "Unable to set binary output register");
         return false;
     }
 
@@ -235,6 +246,7 @@ bool VN300::selfTest()
 
 VN300Data VN300::sampleImpl()
 {
+
     if (!isInit)
     {
         lastError = SensorErrors::NOT_INIT;
@@ -249,6 +261,75 @@ VN300Data VN300::sampleImpl()
         return lastSample;
     }
 
+    VN300Data data;
+
+    if (isBinary == true)
+    {
+        data = sampleBinary();
+    }
+    else
+    {
+        data = sampleASCII();
+    }
+
+    return data;
+}
+
+VN300Data VN300::sampleBinary()
+{
+    if (!isInit)
+    {
+        lastError = SensorErrors::NOT_INIT;
+        LOG_WARN(logger,
+                 "Unable to sample due to not initialized VN300 sensor");
+        return lastSample;
+    }
+
+    // Before sampling i check for errors
+    if (lastError != SensorErrors::NO_ERRORS)
+    {
+        return lastSample;
+    }
+
+    clearBuffer();
+
+    usart.writeString(preSampleBin1->c_str());
+
+    BinaryData bindata = sampleBin();
+    
+    QuaternionData quat{TimestampTimer::getTimestamp(), bindata.quatW_bin,
+                        bindata.quatX_bin, bindata.quatY_bin,
+                        bindata.quatZ_bin};
+    AccelerometerData acc{TimestampTimer::getTimestamp(), bindata.accx,
+                          bindata.accy, bindata.accz};
+
+    MagnetometerData mag{TimestampTimer::getTimestamp(), bindata.magx,
+                         bindata.magy, bindata.magz};
+
+    GyroscopeData gyro{TimestampTimer::getTimestamp(), bindata.angx,
+                       bindata.angy, bindata.angz};
+
+    Ins_Lla ins{TimestampTimer::getTimestamp(),
+                bindata.fix,
+                bindata.ins_status,
+                bindata.ins_status,
+                bindata.yaw_bin,
+                bindata.pitch_bin,
+                bindata.roll_bin,
+                static_cast<float>(bindata.latitude_bin),
+                static_cast<float>(bindata.longitude_bin),
+                static_cast<float>(bindata.altitude_bin),
+                bindata.velx,
+                bindata.vely,
+                bindata.velz};
+    
+
+    return VN300Data(quat, mag, acc, gyro, ins);
+}
+
+VN300Data VN300::sampleASCII()
+{
+    clearBuffer();
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
     usart.writeString(preSampleImuString->c_str());
 
@@ -274,6 +355,7 @@ VN300Data VN300::sampleImpl()
     AccelerometerData acc = sampleAccelerometer();
     GyroscopeData gyro    = sampleGyroscope();
 
+    clearBuffer();
     // Returns INS LLA message
     usart.writeString(preSampleINSlla->c_str());
 
@@ -395,6 +477,7 @@ bool VN300::configBaudRate(int baudRate)
         LOG_WARN(logger, "Unable to sample due to serial communication error");
         return false;
     }
+    
     if (strncmp(command.c_str(), recvString + modelNumberOffset,
                 strlen(command.c_str())) != 0)
     {
@@ -602,6 +685,47 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
     return true;
 }
 
+bool VN300::setBinaryOutput()
+{
+    uint16_t outputGroup =
+        VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
+
+    uint16_t commonGroup =
+        VN300Defs::COMMONGROUP_YAWPITCHROLL |
+        VN300Defs::COMMONGROUP_QUATERNION | VN300Defs::COMMONGROUP_ANGULARRATE |
+        VN300Defs::COMMONGROUP_VELOCITY | VN300Defs::COMMONGROUP_ACCEL |
+        VN300Defs::COMMONGROUP_MAGPRES | VN300Defs::COMMONGROUP_INSSTATUS;
+
+    uint16_t gnssGroup = VN300Defs::GPSGROUP_NUMSATS | VN300Defs::GPSGROUP_FIX |
+                         VN300Defs::GPSGROUP_POSLLA;
+
+    std::string command;
+    command = fmt::format("{},{},{:x},{:x}", "VNWRG,75,0,8", outputGroup,
+                          commonGroup, gnssGroup);
+
+    miosix::Thread::sleep(50);
+    clearBuffer();
+    // I can send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
+        return false;
+    }
+    std::string comp = "VNWRG,75,0,8";
+    if (strncmp(comp.c_str(), recvString + 1, strlen(comp.c_str())) != 0)
+    {
+        LOG_WARN(logger, "The message is wrong {}", recvString);
+        return false;
+    }
+
+    return true;
+}
+
 bool VN300::selfTestImpl()
 {
     char modelNumber[]          = "VN-300T-CR";
@@ -784,21 +908,55 @@ Ins_Lla VN300::sampleIns()
 
     // Parse the data
     data.insTimestamp = TimestampTimer::getTimestamp();
-    data.time_gps     = strtod(recvString + indexStart, &nextNumber);
-    data.week = static_cast<uint16_t>(strtol(nextNumber + 1, &nextNumber, 16));
+    double time_gps   = strtod(recvString + indexStart, &nextNumber);
+    uint16_t week =
+        static_cast<uint16_t>(strtol(nextNumber + 1, &nextNumber, 16));
     data.status =
         static_cast<uint16_t>(strtol(nextNumber + 1, &nextNumber, 16));
     data.yaw       = strtof(nextNumber + 1, &nextNumber);
     data.pitch     = strtof(nextNumber + 1, &nextNumber);
     data.roll      = strtof(nextNumber + 1, &nextNumber);
-    data.latitude  = strtof(nextNumber + 1, &nextNumber);
-    data.longitude = strtof(nextNumber + 1, &nextNumber);
-    data.altitude  = strtof(nextNumber + 1, &nextNumber);
+    data.latitude  = strtod(nextNumber + 1, &nextNumber);
+    data.longitude = strtod(nextNumber + 1, &nextNumber);
+    data.altitude  = strtod(nextNumber + 1, &nextNumber);
     data.nedVelX   = strtof(nextNumber + 1, &nextNumber);
     data.nedVelY   = strtof(nextNumber + 1, &nextNumber);
     data.nedVelZ   = strtof(nextNumber + 1, NULL);
 
     return data;
+}
+
+BinaryData VN300::sampleBin()
+{
+
+    BinaryData bindata;
+    int i     = 0;
+    int j     = 1;
+    bool read = false;
+    unsigned char initByte;
+
+    miosix::GpioPin dbg(GPIOB_BASE, 8);
+    dbg.mode(miosix::Mode::OUTPUT);
+
+    dbg.high();
+    miosix::Thread::sleep(2);
+    while (read == false && i < 10000)
+    {
+        if (usart.read(&initByte, 1))
+        {
+            dbg.low();
+            while (usart.read(&bindata, sizeof(BinaryData)) && j < 200)
+            {
+                read = true;
+            }
+
+            break;
+        }
+    }
+
+    i++;
+
+    return bindata;
 }
 
 bool VN300::sendStringCommand(std::string command)
@@ -846,13 +1004,14 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     command[0] = '\0';
 
     int i = 0;
+    miosix::Thread::sleep(2);
     while (read == false && i < 10000)
     {
         // Read the first char
         if (usart.read(&initChar, 1) && initChar == '$')
         {
             command[0] = '$';
-
+            
             while (usart.read(&initChar, 1) && initChar != '\n' &&
                    j < maxLength)
             {
@@ -877,6 +1036,44 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     recvStringLength = j - 1;
 
     return true;
+}
+
+int VN300::recvBinaryCommand(uint8_t *command)
+{
+    uint8_t initByte;
+    int i     = 0;
+    int j     = 1;
+    bool read = false;
+    memset(command, '-', sizeof(command));
+
+    miosix::Thread::sleep(2);
+    while (read == false && i < 10000)
+    {
+        if (usart.read(&initByte, 1))
+        {
+            command[0] = initByte;
+
+            while (usart.read(&initByte, 1) && j < 200)
+            {
+                command[j] = initByte;
+                j++;
+                read = true;
+            }
+
+            break;
+        }
+
+        i++;
+    }
+
+    if (read)
+    {
+        return --j;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 uint8_t VN300::checkErrorVN(const char *message)
