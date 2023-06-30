@@ -419,6 +419,9 @@ sbs_target(test-h3lis331dl stm32f407vg_stm32f4discovery)
 add_executable(test-lps28dfw src/tests/sensors/test-lps28dfw.cpp)
 sbs_target(test-lps28dfw stm32f767zi_nucleo)
 
+add_executable(test-lps22df src/tests/sensors/test-lps22df.cpp)
+sbs_target(test-lps22df stm32f767zi_nucleo)
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
