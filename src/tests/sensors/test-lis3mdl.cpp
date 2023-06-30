@@ -30,8 +30,8 @@ using namespace miosix;
 
 int main()
 {
-    GpioPin cs(GPIOB_BASE, 1), miso(GPIOB_BASE, 4), mosi(GPIOB_BASE, 5),
-        clk(GPIOB_BASE, 3);
+    GpioPin cs(GPIOG_BASE, 6), miso(GPIOA_BASE, 6), mosi(GPIOA_BASE, 7),
+        clk(GPIOA_BASE, 5);
 
     cs.mode(Mode::OUTPUT);
     cs.high();

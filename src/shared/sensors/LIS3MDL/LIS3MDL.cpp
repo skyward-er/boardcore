@@ -31,6 +31,8 @@ LIS3MDL::LIS3MDL(SPIBusInterface& bus, miosix::GpioPin pin,
                  SPIBusConfig spiConfig, Config config)
     : slave(bus, pin, spiConfig), configuration(config)
 {
+    slave.config.byteOrder = SPI::Order::LSB_FIRST;
+    slave.config.mode      = SPI::Mode::MODE_3;
 }
 
 bool LIS3MDL::init()
@@ -49,8 +51,8 @@ bool LIS3MDL::init()
         if (res != WHO_AM_I_VALUE)
         {
             LOG_ERR(logger,
-                    "WHO_AM_I value differs from expectation: read 0x{02x} "
-                    "but expected 0x{02x}",
+                    "WHO_AM_I value differs from expectation: read 0x{:x} "
+                    "but expected 0x{:x}",
                     res, WHO_AM_I_VALUE);
             lastError = INVALID_WHOAMI;
             return false;
@@ -124,9 +126,13 @@ bool LIS3MDL::selfTest()
 
     bool passed = true;
     for (int j = 0; j < 3; ++j)
+    {
         if (deltas[j] < (deltaRange[j][0] - t) ||
             deltas[j] > (deltaRange[j][1] + t))
+        {
             passed = false;
+        }
+    }
 
     // Reset configuration, then return
     applyConfig(configuration);
@@ -209,15 +215,11 @@ LIS3MDLData LIS3MDL::sampleImpl()
 
     SPITransaction spi(slave);
     LIS3MDLData newData;
-
     tempCounter++;
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-        uint8_t values[2];
-        spi.readRegisters(TEMP_OUT_L, values, sizeof(values));
-
-        int16_t outTemp              = values[1] << 8 | values[0];
+        int16_t outTemp = spi.readRegister16(TEMP_OUT_L | INCREMENT_REG_FLAG);
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
         newData.temperature          = DEG_PER_LSB * outTemp;
         newData.temperature += REFERENCE_TEMPERATURE;
@@ -227,17 +229,13 @@ LIS3MDLData LIS3MDL::sampleImpl()
         newData.temperature = lastSample.temperature;
     }
 
-    uint8_t values[6];
-    spi.readRegisters(OUT_X_L, values, sizeof(values));
+    int16_t values[3];
+    spi.readRegisters(OUT_X_L | INCREMENT_REG_FLAG,
+                      reinterpret_cast<uint8_t*>(values), sizeof(values));
 
-    int16_t outX = values[1] << 8 | values[0];
-    int16_t outY = values[3] << 8 | values[2];
-    int16_t outZ = values[5] << 8 | values[4];
-
-    newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-    newData.magneticFieldX         = currentUnit * outX;
-    newData.magneticFieldY         = currentUnit * outY;
-    newData.magneticFieldZ         = currentUnit * outZ;
+    newData.magneticFieldX = currentUnit * values[0];
+    newData.magneticFieldY = currentUnit * values[1];
+    newData.magneticFieldZ = currentUnit * values[2];
 
     return newData;
 }
