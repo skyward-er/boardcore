@@ -31,8 +31,7 @@ H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
                        H3LIS331DLDefs::FullScaleRange fs)
     : spi(spiBus, cs, cfg), odr(odr), bdu(bdu), fs(fs), initialized(false)
 {
-    spi.config.byteOrder = SPI::Order::LSB_FIRST;
-    spi.config.mode      = SPI::Mode::MODE_3;
+    spi.config = getDefaultSPIConfig();
 }
 
 H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
@@ -41,6 +40,15 @@ H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
                        H3LIS331DLDefs::FullScaleRange fs)
     : H3LIS331DL(spiBus, cs, {}, odr, bdu, fs)
 {
+}
+
+SPIBusConfig H3LIS331DL::getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_128;
+    spiConfig.mode         = SPI::Mode::MODE_3;
+    spiConfig.byteOrder    = SPI::Order::LSB_FIRST;
+    return spiConfig;
 }
 
 bool H3LIS331DL::init()
