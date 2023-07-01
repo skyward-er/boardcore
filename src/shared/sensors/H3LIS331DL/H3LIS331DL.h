@@ -71,6 +71,8 @@ public:
                H3LIS331DLDefs::BlockDataUpdate bdu,
                H3LIS331DLDefs::FullScaleRange fs);
 
+    static SPIBusConfig getDefaultSPIConfig();
+
     /**
      * @brief Initializes the H3LIS331DL
      *
