@@ -97,8 +97,24 @@ public:
      */
     void calibrateOffset();
 
+    /**
+     * @brief changes the oversampling ratio.
+     *
+     * Keep in mind that after changing the oversampling ratio the device resets
+     * the internal digital filter and needs some time to settle.
+     * So if you immediately take a sample you'll read zeros.
+     *
+     * @warning This is especially important if you perform an offset
+     * calibration right after changing the oversampling ratio.
+     */
     void setOversamplingRatio(ADS131M08Defs::OversamplingRatio ratio);
 
+    /**
+     * @brief Sets the channel programmable gain amplifier.
+     *
+     * The programmable gain amplifier allows the ADC to measure low level
+     * signals with the full resolution.
+     */
     void setChannelPGA(ADS131M08Defs::Channel channel, ADS131M08Defs::PGA gain);
 
     /**
@@ -111,15 +127,8 @@ public:
     /**
      * @brief Sets the channel gain calibration.
      *
-     * The ADS131M08 corrects for gain errors by multiplying the ADC conversion
-     * result using the gain calibration registers.
-     * The gain calibration value is interpreted as a 24bit unsigned. The values
-     * corresponds to n * (1/2^23), ranging from 0 to 2 - (1/2^23).
-     *
-     * This function accepts a value between 0 and 2, it then compute the
-     * correct gain register value.
-     *
-     * @param gain Must be between 0 and 2.
+     * @param gain Gain value between 0 and 2. Values outside this range will be
+     * capped.
      */
     void setChannelGainCalibration(ADS131M08Defs::Channel channel, double gain);
 
@@ -127,10 +136,35 @@ public:
 
     void disableChannel(ADS131M08Defs::Channel channel);
 
+    /**
+     * @brief Enables the global chop mode.
+     *
+     * When global chop mode is enabled the ADC uses the conversion results from
+     * two consecutive internal conversions taken with opposite input polarity
+     * to cancel the device internal offset voltage.
+     *
+     * The drawback of this mode is that the sampling rate is reduced. The
+     * conversion period is reduced because every time the device swaps the
+     * input polarity, the internal filter is reset. The ADC then always takes
+     * three internal conversions to produce one result.
+     *
+     * For more details see chapter 8.4.3.2 of the datasheet.
+     */
     void enableGlobalChopMode();
 
+    /**
+     * @brief Disables the global chop mode.
+     *
+     * See enableGlobalChopMode() for more details on the global chop mode.
+     */
     void disableGlobalChopMode();
 
+    /**
+     * @brief The self test samples internally connects each channel to known
+     * test signals and verifies if the sampled values are in an expected range.
+     *
+     * @returns True if the self test is successful, false otherwise.
+     */
     bool selfTest() override;
 
 private:
@@ -139,11 +173,23 @@ private:
     void setChannelInput(ADS131M08Defs::Channel channel,
                          ADS131M08Defs::Input input);
 
+    /**
+     * setChannelPGS() implementation without saving the gain value in
+     * the local variable.
+     */
     void setChannelPGAImpl(ADS131M08Defs::Channel channel,
                            ADS131M08Defs::PGA gain);
 
+    /**
+     * setChannelOffset() implementation without saving the offset value in
+     * the local variable.
+     */
     void setChannelOffsetImpl(ADS131M08Defs::Channel channel, uint32_t offset);
 
+    /**
+     * setChannelGainCalibration() implementation without saving the gain value
+     * in the local variable.
+     */
     void setChannelGainCalibrationImpl(ADS131M08Defs::Channel channel,
                                        double gain);
 
@@ -162,6 +208,12 @@ private:
     ADS131M08Defs::Register getChannelGainRegisterLSB(
         ADS131M08Defs::Channel channel);
 
+    /**
+     * @brief Sends a NULL command, reads the channels samples and stores the
+     * values in the given array.
+     *
+     * @returns Returns true if the CRC is correct, false otherwise.
+     */
     bool readSamples(int32_t rawValues[ADS131M08Defs::CHANNELS_NUM]);
 
     uint16_t readRegister(ADS131M08Defs::Register reg);
@@ -174,11 +226,17 @@ private:
     void sendCommand(SPITransaction& transaction, ADS131M08Defs::Command cmd,
                      uint8_t data[ADS131M08Defs::FULL_FRAME_SIZE]);
 
+    /**
+     * @brief Given a gain value returns the conversion value for a raw data
+     * sample.
+     */
     float getLSBSizeFromGain(ADS131M08Defs::PGA gain);
 
     SPISlave spiSlave;
 
-    // Current channels configuration
+    // Saving the current configuration of the device
+    // This is necessary because the selfTest and calibrateOffset functions
+    // temporarily resets the channels configuration
     ADS131M08Defs::PGA channelsPGAGain[ADS131M08Defs::CHANNELS_NUM];
     uint32_t channelsOffset[ADS131M08Defs::CHANNELS_NUM];
     double channelsGain[ADS131M08Defs::CHANNELS_NUM];

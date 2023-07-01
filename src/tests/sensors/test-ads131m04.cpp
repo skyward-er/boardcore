@@ -70,11 +70,11 @@ int main()
     printf("Now performing self test...\n");
     if (ads131.selfTest())
     {
-        printf("Self test failed!\n");
+        printf("Self test succeeded\n");
     }
     else
     {
-        printf("Self test succeeded\n");
+        printf("Self test failed!\n");
     }
 
     while (true)

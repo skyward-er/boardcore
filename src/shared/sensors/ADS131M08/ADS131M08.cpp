@@ -40,7 +40,7 @@ ADS131M08::ADS131M08(SPIBusInterface &bus, miosix::GpioPin cs,
 
 ADS131M08::ADS131M08(SPISlave spiSlave) : spiSlave(spiSlave)
 {
-    // Initialize the channel configurations
+    // Initialize the channel configurations to the default values
     for (int i = 0; i < CHANNELS_NUM; i++)
     {
         channelsPGAGain[i] = PGA::PGA_1;
@@ -87,7 +87,10 @@ bool ADS131M08::reset()
 
 void ADS131M08::calibrateOffset()
 {
-    // Reset all offsets and gains, otherwise the calibration would be wrong
+    // The device internal data chain firsts subtracts the offset and then
+    // multiplies for the gain. To calibrate the offset we first reset it, then
+    // take some samples and apply the average as the new offset.
+    // So we need to reset the offset and gain
     for (int i = 0; i < CHANNELS_NUM; i++)
     {
         setChannelOffsetImpl(static_cast<Channel>(i), 0);
@@ -117,17 +120,32 @@ void ADS131M08::calibrateOffset()
 
         realSampleCount++;
     }
+
+    if (realSampleCount == 0)
+    {
+        LOG_ERR(logger, "Calibration failed, no valid samples");
+    }
+    else
+    {
+        for (int i = 0; i < CHANNELS_NUM; i++)
+        {
+            // Compute the average
+            averageValues[i] /= realSampleCount;
+            LOG_INFO(logger, "Channel {} average offset: {}", i,
+                     averageValues[i] * getLSBSizeFromGain(channelsPGAGain[i]));
+
+            // Set the new offset only if valid, otherwise keep the old one
+            if (averageValues[i] != 0)
+            {
+                channelsOffset[i] = averageValues[i];
+            }
+        }
+    }
+
+    // Update the offset values and reset the gain as it was before
     for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        // Compute the average
-        averageValues[i] /= realSampleCount;
-        LOG_INFO(logger, "Channel {} average offset: {}", i,
-                 averageValues[i] * getLSBSizeFromGain(channelsPGAGain[i]));
-
-        // The new offset is the average value
-        setChannelOffset(static_cast<Channel>(i), averageValues[i]);
-
-        // Reset the gain as it was before
+        setChannelOffset(static_cast<Channel>(i), channelsOffset[i]);
         setChannelGainCalibrationImpl(static_cast<Channel>(i), channelsGain[i]);
     }
 }
@@ -181,8 +199,7 @@ void ADS131M08::disableGlobalChopMode()
 
 bool ADS131M08::selfTest()
 {
-    float voltage[CHANNELS_NUM] = {0};
-    bool success                = true;
+    bool success = true;
 
     // Reset PGA, offsets and gains and connect the positive test signal
     for (int i = 0; i < CHANNELS_NUM; i++)
@@ -194,31 +211,59 @@ bool ADS131M08::selfTest()
     }
 
     // Take some samples
+    int32_t averageValues[CHANNELS_NUM] = {0};
+    int realSampleCount                 = 0;
     for (int i = 0; i < SELF_TEST_SAMPLES; i++)
     {
+        // Wait for a sample to be ready
         Thread::sleep(4);
-        auto newSample = sampleImpl();
+
+        // Sample the channels
+        int32_t rawValues[CHANNELS_NUM];
+        if (!readSamples(rawValues))
+        {
+            // If the CRC failed we skip this sample
+            continue;
+        }
 
         for (int j = 0; j < CHANNELS_NUM; j++)
         {
-            voltage[j] += newSample.voltage[j];
+            averageValues[j] += rawValues[j];
         }
+
+        realSampleCount++;
     }
 
-    // Check the values
-    for (int i = 0; i < CHANNELS_NUM; i++)
+    if (realSampleCount == 0)
     {
-        // Compute the average
-        voltage[i] /= SELF_TEST_SAMPLES;
-
-        // Check if the value is in the acceptable range
-        if (voltage[i] < V_REF * TEST_SIGNAL_FACTOR - TEST_SIGNAL_SLACK)
+        LOG_ERR(logger,
+                "Failed self test with positive DC signal, no valid samples");
+        success = false;
+    }
+    else
+    {
+        // Check the values
+        for (int i = 0; i < CHANNELS_NUM; i++)
         {
-            LOG_ERR(logger,
+            // Compute the average
+            averageValues[i] /= realSampleCount;
+
+            // Convert the value to Volts
+            float volts = averageValues[i] * getLSBSizeFromGain(PGA::PGA_1);
+
+            // Check if the value is in the acceptable range
+            if (volts < V_REF * TEST_SIGNAL_FACTOR - TEST_SIGNAL_SLACK)
+            {
+                LOG_ERR(
+                    logger,
                     "Self test failed on channel {} on positive test signal, "
                     "value was {}",
-                    i, voltage[i]);
-            success = false;
+                    i, volts);
+                success = false;
+            }
+
+            // Reset the raw value
+            averageValues[i] = 0;
         }
     }
 
@@ -229,38 +274,56 @@ bool ADS131M08::selfTest()
     }
 
     // Take some samples
+    realSampleCount = 0;
     for (int i = 0; i < SELF_TEST_SAMPLES; i++)
     {
+        // Wait for a sample to be ready
         Thread::sleep(4);
-        auto newSample = sampleImpl();
+
+        // Sample the channels
+        int32_t rawValues[CHANNELS_NUM];
+        if (!readSamples(rawValues))
+        {
+            // If the CRC failed we skip this sample
+            continue;
+        }
 
         for (int j = 0; j < CHANNELS_NUM; j++)
         {
-            voltage[j] += newSample.voltage[j];
+            averageValues[j] += rawValues[j];
         }
+
+        realSampleCount++;
     }
 
-    // Check the values
-    for (int i = 0; i < CHANNELS_NUM; i++)
+    if (realSampleCount == 0)
     {
-        // Compute the average
-        voltage[i] /= SELF_TEST_SAMPLES;
-
-        // Check if the value is in the acceptable range
-        if (voltage[i] > -V_REF * TEST_SIGNAL_FACTOR + TEST_SIGNAL_SLACK)
+        LOG_ERR(logger,
+                "Failed self test with positive DC signal, no valid samples");
+        success = false;
+    }
+    else
+    {
+        // Check the values
+        for (int i = 0; i < CHANNELS_NUM; i++)
         {
-            LOG_ERR(logger,
+            // Compute the average
+            averageValues[i] /= realSampleCount;
+
+            // Convert the value to Volts
+            float volts = averageValues[i] * getLSBSizeFromGain(PGA::PGA_1);
+
+            // Check if the value is in the acceptable range
+            if (volts > -V_REF * TEST_SIGNAL_FACTOR + TEST_SIGNAL_SLACK)
+            {
+                LOG_ERR(
+                    logger,
                     "Self test failed on channel {} on negative test signal, "
                     "value was {}",
-                    i, voltage[i]);
-            success = false;
+                    i, volts);
+                success = false;
+            }
         }
-    }
-
-    // If any channel failed we return false
-    if (!success)
-    {
-        return false;
     }
 
     // Reset channels previous configuration
@@ -272,7 +335,8 @@ bool ADS131M08::selfTest()
         setChannelInput(static_cast<Channel>(i), Input::DEFAULT);
     }
 
-    return true;
+    // We fail even if one channel didn't pass the test
+    return success;
 }
 
 ADS131M08Data ADS131M08::sampleImpl()
