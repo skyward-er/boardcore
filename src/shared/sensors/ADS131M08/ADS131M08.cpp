@@ -54,17 +54,7 @@ void ADS131M08::setOversamplingRatio(OversamplingRatio ratio)
                    REG_CLOCK_OSR);
 }
 
-bool ADS131M08::init()
-{
-    if (!reset())
-    {
-        lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Initialization failed");
-        return false;
-    }
-
-    return true;
-}
+bool ADS131M08::init() { return true; }
 
 bool ADS131M08::reset()
 {
