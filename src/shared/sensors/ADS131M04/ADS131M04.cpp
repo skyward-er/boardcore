@@ -26,6 +26,7 @@
 #include <util/crc16.h>
 #include <utils/CRC.h>
 
+using namespace miosix;
 using namespace Boardcore::ADS131M04RegisterBitMasks;
 
 namespace Boardcore
@@ -100,32 +101,47 @@ bool ADS131M04::reset()
 
 void ADS131M04::calibrateOffset()
 {
-    int32_t averageValues[4] = {0};
-
-    // Sample the channels and average the samples
-    for (int i = 0; i < 1000; i++)
+    // Reset all offsets and gains
+    for (int i = 0; i < 8; i++)
     {
-        sample();
-        miosix::delayUs(1);
-
-        for (int ii = 0; ii < 4; ii++)
-            averageValues[ii] +=
-                lastSample.voltage[ii] /
-                PGA_LSB_SIZE[static_cast<uint16_t>(channelsPGAGain[ii])];
+        setChannelOffset(static_cast<Channel>(i), 0);
     }
 
+    // Sample the channels and average the samples
+    int32_t averageValues[4] = {0};
+    for (int i = 0; i < 250; i++)
+    {
+        Thread::sleep(4);
+
+        uint8_t data[18] = {0};
+
+        data[0] = static_cast<uint16_t>(Commands::NULL_CMD) >> 8;
+        data[1] = static_cast<uint16_t>(Commands::NULL_CMD);
+
+        SPITransaction transaction(spiSlave);
+        transaction.transfer(data, sizeof(data));
+
+        for (int j = 0; j < 4; j++)
+        {
+            int32_t tmp = static_cast<uint32_t>(data[j * 3 + 3]) << 16 |
+                          static_cast<uint32_t>(data[j * 3 + 4]) << 8 |
+                          static_cast<uint32_t>(data[j * 3 + 5]);
+
+            // Check for the sign bit
+            if (tmp & 0x00800000)
+                tmp |= 0xFF000000;  // Extend the sign bit
+
+            averageValues[j] += tmp;
+        }
+    }
     for (int i = 0; i < 4; i++)
-        averageValues[i] /= 1000;
+        averageValues[i] /= 250;
 
     // Configure the offset registers
-    writeRegister(Registers::REG_CH0_OCAL_MSB, averageValues[0] >> 8);
-    writeRegister(Registers::REG_CH0_OCAL_LSB, averageValues[0] << 16);
-    writeRegister(Registers::REG_CH1_OCAL_MSB, averageValues[1] >> 8);
-    writeRegister(Registers::REG_CH1_OCAL_LSB, averageValues[1] << 16);
-    writeRegister(Registers::REG_CH2_OCAL_MSB, averageValues[2] >> 8);
-    writeRegister(Registers::REG_CH2_OCAL_LSB, averageValues[2] << 16);
-    writeRegister(Registers::REG_CH3_OCAL_MSB, averageValues[3] >> 8);
-    writeRegister(Registers::REG_CH3_OCAL_LSB, averageValues[3] << 16);
+    for (int i = 0; i < 4; i++)
+    {
+        setChannelOffset(static_cast<Channel>(i), averageValues[i]);
+    }
 }
 
 void ADS131M04::setChannelPGA(Channel channel, PGA gain)
@@ -162,8 +178,8 @@ void ADS131M04::setChannelOffset(Channel channel, uint32_t offset)
             break;
     }
 
-    writeRegister(regMSB, static_cast<uint16_t>(offset) >> 16);
-    writeRegister(regLSB, static_cast<uint16_t>(offset) << 8);
+    writeRegister(regMSB, offset >> 8);
+    writeRegister(regLSB, offset << 16);
 }
 
 void ADS131M04::setChannelGainCalibration(Channel channel, double gain)
@@ -201,6 +217,32 @@ void ADS131M04::setChannelGainCalibration(Channel channel, double gain)
     writeRegister(regLSB, rawGain << 8);
 }
 
+void ADS131M04::setChannelInput(Channel channel, Input input)
+{
+    // Set the correct register based on the selected channel
+    Registers reg;
+    switch (static_cast<int>(channel))
+    {
+        case 0:
+            reg = Registers::REG_CH0_CFG;
+            break;
+        case 1:
+            reg = Registers::REG_CH1_CFG;
+            break;
+        case 2:
+            reg = Registers::REG_CH2_CFG;
+            break;
+        default:
+            reg = Registers::REG_CH3_CFG;
+            break;
+    }
+
+    uint16_t value = readRegister(reg);
+    value &= REG_CHx_CFG_MUX;
+    value |= static_cast<uint16_t>(input);
+    writeRegister(reg, value);
+}
+
 void ADS131M04::enableChannel(Channel channel)
 {
     changeRegister(Registers::REG_CLOCK, 1 << (static_cast<int>(channel) + 8),
@@ -233,7 +275,65 @@ ADCData ADS131M04::getVoltage(Channel channel)
 
 bool ADS131M04::selfTest()
 {
-    // TODO
+    static constexpr float V_REF              = 1.2;
+    static constexpr float TEST_SIGNAL_FACTOR = 2 / 15;
+    static constexpr float TEST_SIGNAL_SLACK  = 0.1;  // Not defined in DS
+
+    float voltage[4] = {0};
+
+    // Connect all channels to the positive DC test signal
+    for (int i = 0; i < 4; i++)
+    {
+        setChannelInput(static_cast<Channel>(i), Input::POSITIVE_DC_TEST);
+        setChannelPGA(static_cast<Channel>(i), PGA::PGA_1);
+    }
+
+    // Take some samples
+    for (int i = 0; i < 100; i++)
+    {
+        Thread::sleep(4);
+        auto newSample = sampleImpl();
+
+        for (int j = 0; j < 4; j++)
+        {
+            voltage[j] += newSample.voltage[j];
+        }
+    }
+
+    // Check values
+    for (int i = 0; i < 4; i++)
+    {
+        voltage[i] /= 100;
+        if (voltage[i] < V_REF * TEST_SIGNAL_FACTOR - TEST_SIGNAL_SLACK)
+            return false;
+    }
+
+    // Connect all channels to the negative DC test signal
+    for (int i = 0; i < 4; i++)
+    {
+        setChannelInput(static_cast<Channel>(i), Input::NEGATIVE_DC_TEST);
+    }
+
+    // Take some samples
+    for (int i = 0; i < 100; i++)
+    {
+        Thread::sleep(4);
+        auto newSample = sampleImpl();
+
+        for (int j = 0; j < 4; j++)
+        {
+            voltage[j] += newSample.voltage[j];
+        }
+    }
+
+    // Check values
+    for (int i = 0; i < 4; i++)
+    {
+        voltage[i] /= 100;
+        if (voltage[i] > -V_REF * TEST_SIGNAL_FACTOR + TEST_SIGNAL_SLACK)
+            return false;
+    }
+
     return true;
 }
 
@@ -250,18 +350,12 @@ ADS131M04Data ADS131M04::sampleImpl()
 
     // Extract each channel value
     int32_t rawValue[4];
-    rawValue[0] = static_cast<uint32_t>(data[3]) << 16 |
-                  static_cast<uint32_t>(data[4]) << 8 |
-                  static_cast<uint32_t>(data[5]);
-    rawValue[1] = static_cast<uint32_t>(data[6]) << 16 |
-                  static_cast<uint32_t>(data[7]) << 8 |
-                  static_cast<uint32_t>(data[8]);
-    rawValue[2] = static_cast<uint32_t>(data[9]) << 16 |
-                  static_cast<uint32_t>(data[10]) << 8 |
-                  static_cast<uint32_t>(data[11]);
-    rawValue[3] = static_cast<uint32_t>(data[12]) << 16 |
-                  static_cast<uint32_t>(data[13]) << 8 |
-                  static_cast<uint32_t>(data[14]);
+    for (int i = 0; i < 4; i++)
+    {
+        rawValue[i] = static_cast<uint32_t>(data[i * 3 + 3]) << 16 |
+                      static_cast<uint32_t>(data[i * 3 + 4]) << 8 |
+                      static_cast<uint32_t>(data[i * 3 + 5]);
+    }
 
     // Extract and verify the CRC
     uint16_t dataCrc =
@@ -281,7 +375,7 @@ ADS131M04Data ADS131M04::sampleImpl()
     for (int i = 0; i < 4; i++)
     {
         // Check for the sign bit
-        if (rawValue[i] & 0x800000)
+        if (rawValue[i] & 0x00800000)
             rawValue[i] |= 0xFF000000;  // Extend the sign bit
     }
 

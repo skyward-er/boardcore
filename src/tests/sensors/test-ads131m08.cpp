@@ -59,7 +59,22 @@ int main()
     ADS131M08 ads131(spiSlave);
 
     // Initialize the device
-    ads131.init();
+    if (!ads131.init())
+    {
+        printf("Initialization failed!\n");
+    }
+    else
+    {
+        printf("Initialization done\n");
+    }
+    if (!ads131.selfTest())
+    {
+        printf("Self test failed!\n");
+    }
+    else
+    {
+        printf("Self test done\n");
+    }
     ads131.enableGlobalChopMode();
     ads131.setOversamplingRatio(ADS131M08::OversamplingRatio::OSR_16256);
     ads131.calibrateOffset();

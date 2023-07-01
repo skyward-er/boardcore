@@ -116,6 +116,14 @@ public:
         CHANNEL_3 = 3
     };
 
+    enum class Input : uint8_t
+    {
+        DEFAULT          = 0,  // AINxP and AINxN (default)
+        SHORTED          = 1,  // ADC inputs shorted
+        POSITIVE_DC_TEST = 2,  // Positive DC test signal
+        NEGATIVE_DC_TEST = 3   // Negative DC test signal
+    };
+
     ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
               SPIBusConfig config = getDefaultSPIConfig());
 
@@ -163,6 +171,8 @@ public:
      * @param gain Must be between 0 and 2.
      */
     void setChannelGainCalibration(Channel channel, double gain);
+
+    void setChannelInput(Channel channel, Input input);
 
     void enableChannel(Channel channel);
 
