@@ -40,8 +40,7 @@ struct StepperData
     static std::string header()
     {
         return "timestamp,pulsePinPort,pulsePinNumber,enabled,positionDeg,"
-               "speed,direction,"
-               "moveDeg\n";
+               "speed,moveDeg\n";
     }
 
     void print(std::ostream& os) const
