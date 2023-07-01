@@ -334,6 +334,12 @@ bool ADS131M04::selfTest()
             return false;
     }
 
+    // Reset channel connections
+    for (int i = 0; i < 8; i++)
+    {
+        setChannelInput(static_cast<Channel>(i), Input::POSITIVE_DC_TEST);
+    }
+
     return true;
 }
 

@@ -28,22 +28,22 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOA_BASE, 5);
-GpioPin misoPin = GpioPin(GPIOA_BASE, 6);
-GpioPin mosiPin = GpioPin(GPIOA_BASE, 7);
-GpioPin csPin   = GpioPin(GPIOA_BASE, 3);
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
+GpioPin mosiPin = GpioPin(GPIOE_BASE, 6);
+GpioPin csPin   = GpioPin(GPIOG_BASE, 10);
 
 void initBoard()
 {
     // Setup gpio pins
-    csPin.mode(Mode::OUTPUT);
-    csPin.high();
     sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);
     misoPin.mode(Mode::ALTERNATE);
     misoPin.alternateFunction(5);
     mosiPin.mode(Mode::ALTERNATE);
     mosiPin.alternateFunction(5);
+    csPin.mode(Mode::OUTPUT);
+    csPin.high();
 }
 
 int main()
@@ -52,7 +52,7 @@ int main()
     initBoard();
 
     // SPI configuration setup
-    SPIBus spiBus(SPI1);
+    SPIBus spiBus(SPI4);
     SPISlave spiSlave(spiBus, csPin, ADS131M08::getDefaultSPIConfig());
 
     // Device initialization
