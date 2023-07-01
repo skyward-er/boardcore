@@ -38,18 +38,7 @@ ADS131M08::ADS131M08(SPIBusInterface &bus, miosix::GpioPin cs,
 {
 }
 
-ADS131M08::ADS131M08(SPISlave spiSlave) : spiSlave(spiSlave)
-{
-    // Reset the configuration
-    channelsPGAGain[0] = PGA::PGA_1;
-    channelsPGAGain[1] = PGA::PGA_1;
-    channelsPGAGain[2] = PGA::PGA_1;
-    channelsPGAGain[3] = PGA::PGA_1;
-    channelsPGAGain[4] = PGA::PGA_1;
-    channelsPGAGain[5] = PGA::PGA_1;
-    channelsPGAGain[6] = PGA::PGA_1;
-    channelsPGAGain[7] = PGA::PGA_1;
-}
+ADS131M08::ADS131M08(SPISlave spiSlave) : spiSlave(spiSlave) {}
 
 SPIBusConfig ADS131M08::getDefaultSPIConfig()
 {
@@ -93,7 +82,7 @@ bool ADS131M08::reset()
     uint16_t response = data[0] << 8 | data[1];
 
     // Check for the correct response
-    if (response != 0xFF28)
+    if (response != RESET_CMD_RESPONSE)
     {
         lastError = SensorErrors::COMMAND_FAILED;
         LOG_ERR(logger, "Reset command failed, response was {:X}", response);

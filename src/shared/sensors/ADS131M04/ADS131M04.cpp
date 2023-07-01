@@ -38,14 +38,7 @@ ADS131M04::ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
 {
 }
 
-ADS131M04::ADS131M04(SPISlave spiSlave) : spiSlave(spiSlave)
-{
-    // Reset the configuration
-    channelsPGAGain[0] = PGA::PGA_1;
-    channelsPGAGain[1] = PGA::PGA_1;
-    channelsPGAGain[2] = PGA::PGA_1;
-    channelsPGAGain[3] = PGA::PGA_1;
-}
+ADS131M04::ADS131M04(SPISlave spiSlave) : spiSlave(spiSlave) {}
 
 SPIBusConfig ADS131M04::getDefaultSPIConfig()
 {
@@ -89,7 +82,7 @@ bool ADS131M04::reset()
     uint16_t response = data[0] << 8 | data[1];
 
     // Check for the correct response
-    if (response != 0xFF24)
+    if (response != RESET_CMD_RESPONSE)
     {
         lastError = SensorErrors::COMMAND_FAILED;
         LOG_ERR(logger, "Reset command failed, response was {:X}", response);
@@ -148,10 +141,9 @@ void ADS131M04::setChannelPGA(Channel channel, PGA gain)
 {
     channelsPGAGain[static_cast<int>(channel)] = gain;
 
-    changeRegister(Registers::REG_GAIN,
-                   static_cast<uint16_t>(gain)
-                       << (static_cast<int>(channel) * 4),
-                   REG_GAIN_PGAGAIN0 << (static_cast<int>(channel) * 4));
+    int shift = static_cast<int>(channel) * 4;
+    changeRegister(Registers::REG_GAIN, static_cast<uint16_t>(gain) << shift,
+                   REG_GAIN_PGAGAIN0 << shift);
 }
 
 void ADS131M04::setChannelOffset(Channel channel, uint32_t offset)

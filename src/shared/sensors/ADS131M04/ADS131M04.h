@@ -248,17 +248,18 @@ private:
         WREG     = 0x6000
     };
 
+    SPISlave spiSlave;
+
+    PGA channelsPGAGain[4] = {PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1};
+
+    PrintLogger logger = Logging::getLogger("ads131m04");
+
+    static constexpr uint16_t RESET_CMD_RESPONSE = 0xFF24;
+
     ///< Digit value in mV for each pga configurations
     const float PGA_LSB_SIZE[8] = {143.0511e-9, 71.5256e-9, 35.7628e-9,
                                    17.8814e-9,  8.9407e-9,  4.4703e-9,
                                    2.2352e-9,   1.1176e-9};
-
-    PGA channelsPGAGain[4] = {PGA::PGA_1};
-
-protected:
-    SPISlave spiSlave;
-
-    PrintLogger logger = Logging::getLogger("ads131m04");
 };
 
 namespace ADS131M04RegisterBitMasks

@@ -34,7 +34,7 @@ namespace Boardcore
 /**
  * @brief Driver for ADS131M08 8 simultaneous channels adc.
  *
- * The ADS131M08 is a four-channel, simultaneously-sampling, 24-bit,
+ * The ADS131M08 is an eight-channel, simultaneously-sampling, 24-bit,
  * delta-sigma (ΔΣ), analog-to-digital converter (ADC). The individual ADC
  * channels can be independently configured depending on the sensor input. A
  * low-noise, programmable gain amplifier (PGA) provides gains ranging from 1
@@ -114,10 +114,10 @@ public:
         CHANNEL_1 = 1,
         CHANNEL_2 = 2,
         CHANNEL_3 = 3,
-        CHANNEL_4 = 3,
-        CHANNEL_5 = 3,
-        CHANNEL_6 = 3,
-        CHANNEL_7 = 3
+        CHANNEL_4 = 4,
+        CHANNEL_5 = 5,
+        CHANNEL_6 = 6,
+        CHANNEL_7 = 7
     };
 
     enum class Input : uint8_t
@@ -273,17 +273,19 @@ private:
         WREG     = 0x6000
     };
 
+    SPISlave spiSlave;
+
+    PGA channelsPGAGain[8] = {PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1,
+                              PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1};
+
+    PrintLogger logger = Logging::getLogger("ads131m08");
+
+    static constexpr uint16_t RESET_CMD_RESPONSE = 0xFF28;
+
     ///< Digit value in mV for each pga configurations
     const float PGA_LSB_SIZE[8] = {143.0511e-9, 71.5256e-9, 35.7628e-9,
                                    17.8814e-9,  8.9407e-9,  4.4703e-9,
                                    2.2352e-9,   1.1176e-9};
-
-    PGA channelsPGAGain[8] = {PGA::PGA_1};
-
-protected:
-    SPISlave spiSlave;
-
-    PrintLogger logger = Logging::getLogger("ads131m08");
 };
 
 namespace ADS131M08RegisterBitMasks
