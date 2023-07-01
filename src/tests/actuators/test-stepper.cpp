@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <actuators/Stepper.h>
+#include <actuators/stepper/Stepper.h>
 
 using namespace miosix;
 using namespace Boardcore;

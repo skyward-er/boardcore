@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <actuators/StepperPWM.h>
+#include <actuators/stepper/StepperPWM.h>
 #include <drivers/timer/CountedPWM.h>
 #include <miosix.h>
 

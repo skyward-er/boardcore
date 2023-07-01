@@ -30,8 +30,8 @@ foreach(OPT_BOARD ${BOARDS})
         # Actuators
         ${SBS_BASE}/src/shared/actuators/HBridge/HBridge.cpp
         ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
-        ${SBS_BASE}/src/shared/actuators/Stepper.cpp
-        ${SBS_BASE}/src/shared/actuators/StepperPWM.cpp
+        ${SBS_BASE}/src/shared/actuators/stepper/Stepper.cpp
+        ${SBS_BASE}/src/shared/actuators/stepper/StepperPWM.cpp
 
         # Algorithms
         ${SBS_BASE}/src/shared/algorithms/ADA/ADA.cpp

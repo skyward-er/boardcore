@@ -52,6 +52,7 @@ void Stepper::enable()
     {
         enablePin.high();
     }
+    enabled = true;
 }
 
 void Stepper::disable()
@@ -64,6 +65,7 @@ void Stepper::disable()
     {
         enablePin.low();
     }
+    enabled = false;
 }
 
 void Stepper::setDirection()
@@ -111,7 +113,7 @@ void Stepper::setDirection()
 
 void Stepper::move(int16_t steps)
 {
-    if (speed == 0)
+    if (!enabled || speed == 0 || steps == 0)
         return;
 
     unsigned int halfStepDelay = 1e6 / (speed * 360 / stepAngle * microStep);
@@ -158,6 +160,19 @@ void Stepper::move(int16_t steps)
     }
 
     currentPositionDeg += steps * stepAngle / microStep;
+}
+
+bool Stepper::isEnabled() { return enabled; }
+
+StepperData Stepper::getState(float moveDeg)
+{
+    return {TimestampTimer::getTimestamp(),
+            static_cast<unsigned int>(stepPin.getPort()),
+            stepPin.getNumber(),
+            enabled,
+            getCurrentDegPosition(),
+            speed,
+            moveDeg};
 }
 
 }  // namespace Boardcore

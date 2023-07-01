@@ -22,9 +22,12 @@
 
 #pragma once
 
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces-impl/gpio_impl.h>
 #include <interfaces/delays.h>
 #include <utils/TestUtils/MockGpioPin.h>
+
+#include "StepperData.h"
 
 namespace Boardcore
 {
@@ -115,6 +118,16 @@ public:
      */
     virtual float getCurrentDegPosition();
 
+    /**
+     * @brief Returns whether the stepper is enabled or not.
+     */
+    bool isEnabled();
+
+    /**
+     * @brief Returns the current position and the current timestamp.
+     */
+    StepperData getState(float moveDeg);
+
 protected:
     /**
      * @brief Sets the directionPin to the right value to go in the direction
@@ -138,6 +151,7 @@ protected:
     miosix::GpioPin directionPin;
     float speed;      // [rev/s]
     float stepAngle;  // [deg/step]
+    bool enabled = false;
     bool revertDirection;
     uint16_t microStep;
     PinConfiguration pinConfig;
