@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,6 +27,7 @@
 #include <sensors/Sensor.h>
 
 #include "ADS131M04Data.h"
+#include "ADS131M04Defs.h"
 
 namespace Boardcore
 {
@@ -74,57 +75,7 @@ namespace Boardcore
 class ADS131M04 : public Sensor<ADS131M04Data>
 {
 public:
-    /**
-     * @brief ADC's oversampling ratio configurations.
-     *
-     * The OSR determins the output data rate, depending on the master clock
-     * frequency.
-     *
-     * ODR = f_CLK / 2 / OSR
-     *
-     * On Skyward's boards an 8.192MHz clock is used.
-     */
-    enum class OversamplingRatio : uint16_t
-    {
-        OSR_128   = 0,         // ODR is 32KHz
-        OSR_256   = 0x1 << 2,  // ODR is 16KHz
-        OSR_512   = 0x2 << 2,  // ODR is 8KHz
-        OSR_1024  = 0x3 << 2,  // ODR is 4KHz
-        OSR_2048  = 0x4 << 2,  // ODR is 2KHz
-        OSR_4096  = 0x5 << 2,  // ODR is 1KHz
-        OSR_8192  = 0x6 << 2,  // ODR is 500Hz
-        OSR_16256 = 0x7 << 2   // ODR is 250Hz
-    };
-
-    enum class PGA : uint16_t
-    {
-        PGA_1   = 0,    ///< Full scale resolution is ±1.2V
-        PGA_2   = 0x1,  ///< Full scale resolution is ±600mV
-        PGA_4   = 0x2,  ///< Full scale resolution is ±300mV
-        PGA_8   = 0x3,  ///< Full scale resolution is ±150mV
-        PGA_16  = 0x4,  ///< Full scale resolution is ±75mV
-        PGA_32  = 0x5,  ///< Full scale resolution is ±37.5mV
-        PGA_64  = 0x6,  ///< Full scale resolution is ±18.75mV
-        PGA_128 = 0x7   ///< Full scale resolution is ±9.375mV
-    };
-
-    enum class Channel : uint8_t
-    {
-        CHANNEL_0 = 0,
-        CHANNEL_1 = 1,
-        CHANNEL_2 = 2,
-        CHANNEL_3 = 3
-    };
-
-    enum class Input : uint8_t
-    {
-        DEFAULT          = 0,  // AINxP and AINxN (default)
-        SHORTED          = 1,  // ADC inputs shorted
-        POSITIVE_DC_TEST = 2,  // Positive DC test signal
-        NEGATIVE_DC_TEST = 3   // Negative DC test signal
-    };
-
-    ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
+    ADS131M04(SPIBusInterface& bus, miosix::GpioPin cs,
               SPIBusConfig config = getDefaultSPIConfig());
 
     explicit ADS131M04(SPISlave spiSlave);
@@ -146,16 +97,16 @@ public:
      */
     void calibrateOffset();
 
-    void setOversamplingRatio(OversamplingRatio ratio);
+    void setOversamplingRatio(ADS131M04Defs::OversamplingRatio ratio);
 
-    void setChannelPGA(Channel channel, PGA gain);
+    void setChannelPGA(ADS131M04Defs::Channel channel, ADS131M04Defs::PGA gain);
 
     /**
      * @brief Sets the channel offset.
      *
      * Note that the device offset is a 24bit two complement.
      */
-    void setChannelOffset(Channel channel, uint32_t offset);
+    void setChannelOffset(ADS131M04Defs::Channel channel, uint32_t offset);
 
     /**
      * @brief Sets the channel gain calibration.
@@ -170,152 +121,69 @@ public:
      *
      * @param gain Must be between 0 and 2.
      */
-    void setChannelGainCalibration(Channel channel, double gain);
+    void setChannelGainCalibration(ADS131M04Defs::Channel channel, double gain);
 
-    void setChannelInput(Channel channel, Input input);
+    void enableChannel(ADS131M04Defs::Channel channel);
 
-    void enableChannel(Channel channel);
-
-    void disableChannel(Channel channel);
+    void disableChannel(ADS131M04Defs::Channel channel);
 
     void enableGlobalChopMode();
 
     void disableGlobalChopMode();
 
-    ADCData getVoltage(Channel channel);
-
     bool selfTest() override;
 
-protected:
+private:
     ADS131M04Data sampleImpl() override;
 
-private:
-    enum class Registers : uint16_t
-    {
-        // Device settings and indicators
-        REG_ID     = 0,
-        REG_STATUS = 0x1,
+    void setChannelInput(ADS131M04Defs::Channel channel,
+                         ADS131M04Defs::Input input);
 
-        // Global settings across channels
-        REG_MODE        = 0x2,
-        REG_CLOCK       = 0x3,
-        REG_GAIN        = 0x4,
-        REG_CFG         = 0x6,
-        REG_THRSHLD_MSB = 0x7,
-        REG_THRSHLD_LSB = 0x8,
+    void setChannelPGAImpl(ADS131M04Defs::Channel channel,
+                           ADS131M04Defs::PGA gain);
 
-        // Channel specific settings
-        REG_CH0_CFG      = 0x9,
-        REG_CH0_OCAL_MSB = 0xA,
-        REG_CH0_OCAL_LSB = 0xB,
-        REG_CH0_GCAL_MSB = 0xC,
-        REG_CH0_GCAL_LSB = 0xD,
-        REG_CH1_CFG      = 0xE,
-        REG_CH1_OCAL_MSB = 0xF,
-        REG_CH1_OCAL_LSB = 0x10,
-        REG_CH1_GCAL_MSB = 0x11,
-        REG_CH1_GCAL_LSB = 0x12,
-        REG_CH2_CFG      = 0x13,
-        REG_CH2_OCAL_MSB = 0x14,
-        REG_CH2_OCAL_LSB = 0x15,
-        REG_CH2_GCAL_MSB = 0x16,
-        REG_CH2_GCAL_LSB = 0x17,
-        REG_CH3_CFG      = 0x18,
-        REG_CH3_OCAL_MSB = 0x19,
-        REG_CH3_OCAL_LSB = 0x1A,
-        REG_CH3_GCAL_MSB = 0x1B,
-        REG_CH3_GCAL_LSB = 0x1C,
+    void setChannelOffsetImpl(ADS131M04Defs::Channel channel, uint32_t offset);
 
-        // Register map CRC
-        REG_REGMAP_CRC = 0x3E
-    };
+    void setChannelGainCalibrationImpl(ADS131M04Defs::Channel channel,
+                                       double gain);
 
-    uint16_t readRegister(Registers reg);
+    ADS131M04Defs::Register getChannelConfigRegister(
+        ADS131M04Defs::Channel channel);
 
-    void writeRegister(Registers reg, uint16_t data);
+    ADS131M04Defs::Register getChannelOffsetRegisterMSB(
+        ADS131M04Defs::Channel channel);
 
-    void changeRegister(Registers reg, uint16_t newValue, uint16_t mask);
+    ADS131M04Defs::Register getChannelOffsetRegisterLSB(
+        ADS131M04Defs::Channel channel);
 
-    enum class Commands : uint16_t
-    {
-        NULL_CMD = 0,
-        RESET    = 0x11,
-        STANDBY  = 0x22,
-        WAKEUP   = 0x33,
-        LOCK     = 0x555,
-        UNLOCK   = 0x655,
-        RREG     = 0xA000,
-        WREG     = 0x6000
-    };
+    ADS131M04Defs::Register getChannelGainRegisterMSB(
+        ADS131M04Defs::Channel channel);
+
+    ADS131M04Defs::Register getChannelGainRegisterLSB(
+        ADS131M04Defs::Channel channel);
+
+    bool readSamples(int32_t rawValues[ADS131M04Defs::CHANNELS_NUM]);
+
+    uint16_t readRegister(ADS131M04Defs::Register reg);
+
+    void writeRegister(ADS131M04Defs::Register reg, uint16_t data);
+
+    void changeRegister(ADS131M04Defs::Register reg, uint16_t newValue,
+                        uint16_t mask);
+
+    void sendCommand(SPITransaction& transaction, ADS131M04Defs::Command cmd,
+                     uint8_t data[ADS131M04Defs::FULL_FRAME_SIZE]);
+
+    float getLSBSizeFromGain(ADS131M04Defs::PGA gain);
 
     SPISlave spiSlave;
 
-    PGA channelsPGAGain[4] = {PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1};
+    // Current channels configuration
+    ADS131M04Defs::PGA channelsPGAGain[ADS131M04Defs::CHANNELS_NUM];
+    uint32_t channelsOffset[ADS131M04Defs::CHANNELS_NUM];
+    double channelsGain[ADS131M04Defs::CHANNELS_NUM];
 
     PrintLogger logger = Logging::getLogger("ads131m04");
-
-    static constexpr uint16_t RESET_CMD_RESPONSE = 0xFF24;
-
-    ///< Digit value in mV for each pga configurations
-    const float PGA_LSB_SIZE[8] = {143.0511e-9, 71.5256e-9, 35.7628e-9,
-                                   17.8814e-9,  8.9407e-9,  4.4703e-9,
-                                   2.2352e-9,   1.1176e-9};
 };
-
-namespace ADS131M04RegisterBitMasks
-{
-
-// Status register
-constexpr uint16_t REG_STATUS_LOCK     = 1 << 15;
-constexpr uint16_t REG_STATUS_F_RESYNC = 1 << 14;
-constexpr uint16_t REG_STATUS_REG_MAP  = 1 << 13;
-constexpr uint16_t REG_STATUS_CRC_ERR  = 1 << 12;
-constexpr uint16_t REG_STATUS_CRC_TYPE = 1 << 11;
-constexpr uint16_t REG_STATUS_RESET    = 1 << 10;
-constexpr uint16_t REG_STATUS_WLENGTH  = 3 << 8;
-constexpr uint16_t REG_STATUS_DRDY3    = 1 << 3;
-constexpr uint16_t REG_STATUS_DRDY2    = 1 << 2;
-constexpr uint16_t REG_STATUS_DRDY1    = 1 << 1;
-constexpr uint16_t REG_STATUS_DRDY0    = 1;
-
-// Mode register
-constexpr uint16_t REG_MODE_REG_CRC_EN = 1 << 13;
-constexpr uint16_t REG_MODE_RX_CRC_EN  = 1 << 12;
-constexpr uint16_t REG_MODE_CRC_TYPE   = 1 << 11;
-constexpr uint16_t REG_MODE_RESET      = 1 << 10;
-constexpr uint16_t REG_MODE_WLENGTH    = 3 << 8;
-constexpr uint16_t REG_MODE_TIMEOUT    = 1 << 4;
-constexpr uint16_t REG_MODE_DRDY_SEL   = 3 << 2;
-constexpr uint16_t REG_MODE_DRDY_HiZ   = 1 << 1;
-constexpr uint16_t REG_MODE_DRDY_FMT   = 1 << 0;
-
-// Clock register
-constexpr uint16_t REG_CLOCK_CH3_EN = 1 << 11;
-constexpr uint16_t REG_CLOCK_CH2_EN = 1 << 10;
-constexpr uint16_t REG_CLOCK_CH1_EN = 1 << 9;
-constexpr uint16_t REG_CLOCK_CH0_EN = 1 << 8;
-constexpr uint16_t REG_CLOCK_OSR    = 7 << 2;
-constexpr uint16_t REG_CLOCK_PWR    = 3;
-
-// Gain register
-constexpr uint16_t REG_GAIN_PGAGAIN3 = 7 << 12;
-constexpr uint16_t REG_GAIN_PGAGAIN2 = 7 << 8;
-constexpr uint16_t REG_GAIN_PGAGAIN1 = 7 << 4;
-constexpr uint16_t REG_GAIN_PGAGAIN0 = 7;
-
-// Configuration register
-constexpr uint16_t REG_CFG_GC_DLY   = 0xF << 9;
-constexpr uint16_t REG_CFG_GC_EN    = 1 << 8;
-constexpr uint16_t REG_CFG_CD_ALLCH = 1 << 7;
-constexpr uint16_t REG_CFG_CD_NUM   = 7 << 4;
-constexpr uint16_t REG_CFG_CD_LEN   = 7 << 1;
-constexpr uint16_t REG_CFG_CD_EN    = 1;
-
-// Channel configuration register
-constexpr uint16_t REG_CHx_CFG_PHASE     = 0x3FF << 6;
-constexpr uint16_t REG_CHx_CFG_DCBLK_DIS = 1 << 2;
-constexpr uint16_t REG_CHx_CFG_MUX       = 3;
-
-}  // namespace ADS131M04RegisterBitMasks
 
 }  // namespace Boardcore

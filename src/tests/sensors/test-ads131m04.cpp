@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -36,14 +36,14 @@ GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
 void initBoard()
 {
     // Setup gpio pins
-    csPin.mode(Mode::OUTPUT);
-    csPin.high();
     sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);
     misoPin.mode(Mode::ALTERNATE);
     misoPin.alternateFunction(5);
     mosiPin.mode(Mode::ALTERNATE);
     mosiPin.alternateFunction(5);
+    csPin.mode(Mode::OUTPUT);
+    csPin.high();
 }
 
 int main()
@@ -53,19 +53,29 @@ int main()
 
     // SPI configuration setup
     SPIBus spiBus(SPI4);
-    SPIBusConfig spiConfig = {};
-    spiConfig.mode         = SPI::Mode::MODE_1;
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
-    SPISlave spiSlave(spiBus, csPin, spiConfig);
+    SPISlave spiSlave(spiBus, csPin, ADS131M04::getDefaultSPIConfig());
 
     // Device initialization
     ADS131M04 ads131(spiSlave);
 
-    // Initialize the device
-    ads131.init();
+    ads131.reset();
+
     ads131.enableGlobalChopMode();
-    ads131.setOversamplingRatio(ADS131M04::OversamplingRatio::OSR_16256);
+    ads131.setOversamplingRatio(ADS131M04Defs::OversamplingRatio::OSR_16256);
+
+    // WARNING: After changing the OSR the device needs some time to settle
+    delayMs(20);
     ads131.calibrateOffset();
+
+    printf("Now performing self test...\n");
+    if (ads131.selfTest())
+    {
+        printf("Self test failed!\n");
+    }
+    else
+    {
+        printf("Self test succeeded\n");
+    }
 
     while (true)
     {

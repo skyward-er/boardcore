@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,7 +27,7 @@
 #include <utils/CRC.h>
 
 using namespace miosix;
-using namespace Boardcore::ADS131M08RegisterBitMasks;
+using namespace Boardcore::ADS131M08Defs;
 
 namespace Boardcore
 {
@@ -38,7 +38,16 @@ ADS131M08::ADS131M08(SPIBusInterface &bus, miosix::GpioPin cs,
 {
 }
 
-ADS131M08::ADS131M08(SPISlave spiSlave) : spiSlave(spiSlave) {}
+ADS131M08::ADS131M08(SPISlave spiSlave) : spiSlave(spiSlave)
+{
+    // Initialize the channel configurations
+    for (int i = 0; i < CHANNELS_NUM; i++)
+    {
+        channelsPGAGain[i] = PGA::PGA_1;
+        channelsOffset[i]  = 0;
+        channelsGain[i]    = 1.0;
+    }
+}
 
 SPIBusConfig ADS131M08::getDefaultSPIConfig()
 {
@@ -48,28 +57,22 @@ SPIBusConfig ADS131M08::getDefaultSPIConfig()
     return spiConfig;
 }
 
-void ADS131M08::setOversamplingRatio(OversamplingRatio ratio)
-{
-    changeRegister(Registers::REG_CLOCK, static_cast<uint16_t>(ratio),
-                   REG_CLOCK_OSR);
-}
-
 bool ADS131M08::init() { return true; }
 
 bool ADS131M08::reset()
 {
-    // Write all the communication frame which is maximum 6 24bit words
-    uint8_t data[30] = {0};
-
-    // Prepare the command
-    data[1] = static_cast<uint16_t>(Commands::RESET);
-
     SPITransaction transaction(spiSlave);
-    transaction.write(data, sizeof(data));
-    miosix::delayUs(10);
-    transaction.read(data, 3);
 
-    uint16_t response = data[0] << 8 | data[1];
+    uint8_t data[ADS131M08Defs::FULL_FRAME_SIZE] = {0};
+    sendCommand(transaction, Command::RESET, data);
+
+    // The reset command takes typically 5us to reload the register contents.
+    // We wait 10us to be sure
+    miosix::delayUs(10);
+
+    // To read the response we need to read the full 3 bytes word. The response
+    // code is contained in the first 2 bytes, the last byte is padding
+    uint16_t response = transaction.read24() >> 8;
 
     // Check for the correct response
     if (response != RESET_CMD_RESPONSE)
@@ -84,297 +87,189 @@ bool ADS131M08::reset()
 
 void ADS131M08::calibrateOffset()
 {
-    // Reset all offsets and gains
-    for (int i = 0; i < 8; i++)
+    // Reset all offsets and gains, otherwise the calibration would be wrong
+    for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        setChannelOffset(static_cast<Channel>(i), 0);
+        setChannelOffsetImpl(static_cast<Channel>(i), 0);
+        setChannelGainCalibrationImpl(static_cast<Channel>(i), 1.0);
     }
 
     // Sample the channels and average the samples
-    int32_t averageValues[8] = {0};
-    for (int i = 0; i < 250; i++)
+    int32_t averageValues[CHANNELS_NUM] = {0};
+    int realSampleCount                 = 0;
+    for (int i = 0; i < CALIBRATION_SAMPLES; i++)
     {
+        // Wait for a sample to be ready
         Thread::sleep(4);
 
-        uint8_t data[30] = {0};
-
-        data[0] = static_cast<uint16_t>(Commands::NULL_CMD) >> 8;
-        data[1] = static_cast<uint16_t>(Commands::NULL_CMD);
-
-        SPITransaction transaction(spiSlave);
-        transaction.transfer(data, sizeof(data));
-
-        for (int j = 0; j < 8; j++)
+        // Sample the channels
+        int32_t rawValues[CHANNELS_NUM];
+        if (!readSamples(rawValues))
         {
-            int32_t tmp = static_cast<uint32_t>(data[j * 3 + 3]) << 16 |
-                          static_cast<uint32_t>(data[j * 3 + 4]) << 8 |
-                          static_cast<uint32_t>(data[j * 3 + 5]);
-
-            // Check for the sign bit
-            if (tmp & 0x00800000)
-                tmp |= 0xFF000000;  // Extend the sign bit
-
-            averageValues[j] += tmp;
+            // If the CRC failed we skip this sample
+            continue;
         }
-    }
-    for (int i = 0; i < 8; i++)
-        averageValues[i] /= 250;
 
-    // Configure the offset registers
-    for (int i = 0; i < 8; i++)
-    {
-        setChannelOffset(static_cast<Channel>(i), averageValues[i]);
+        for (int j = 0; j < CHANNELS_NUM; j++)
+        {
+            averageValues[j] += rawValues[j];
+        }
+
+        realSampleCount++;
     }
+    for (int i = 0; i < CHANNELS_NUM; i++)
+    {
+        // Compute the average
+        averageValues[i] /= realSampleCount;
+        LOG_INFO(logger, "Channel {} average offset: {}", i,
+                 averageValues[i] * getLSBSizeFromGain(channelsPGAGain[i]));
+
+        // The new offset is the average value
+        setChannelOffset(static_cast<Channel>(i), averageValues[i]);
+
+        // Reset the gain as it was before
+        setChannelGainCalibrationImpl(static_cast<Channel>(i), channelsGain[i]);
+    }
+}
+
+void ADS131M08::setOversamplingRatio(OversamplingRatio ratio)
+{
+    changeRegister(Register::REG_CLOCK, static_cast<uint16_t>(ratio),
+                   RegClockMasks::OSR);
 }
 
 void ADS131M08::setChannelPGA(Channel channel, PGA gain)
 {
+    setChannelPGAImpl(channel, gain);
     channelsPGAGain[static_cast<int>(channel)] = gain;
-
-    if (channel <= Channel::CHANNEL_3)
-    {
-        int shift = static_cast<int>(channel) * 4;
-        changeRegister(Registers::REG_GAIN_1,
-                       static_cast<uint16_t>(gain) << shift,
-                       REG_GAIN_PGAGAIN0 << shift);
-    }
-    else
-    {
-        int shift = (static_cast<int>(channel) - 4) * 4;
-        changeRegister(Registers::REG_GAIN_2,
-                       static_cast<uint16_t>(gain) << shift,
-                       REG_GAIN_PGAGAIN0 << shift);
-    }
 }
 
 void ADS131M08::setChannelOffset(Channel channel, uint32_t offset)
 {
-    // Set the correct registers based on the selected channel
-    Registers regMSB, regLSB;
-    switch (static_cast<int>(channel))
-    {
-        case 0:
-            regMSB = Registers::REG_CH0_OCAL_MSB;
-            regLSB = Registers::REG_CH0_OCAL_LSB;
-            break;
-        case 1:
-            regMSB = Registers::REG_CH1_OCAL_MSB;
-            regLSB = Registers::REG_CH1_OCAL_LSB;
-            break;
-        case 2:
-            regMSB = Registers::REG_CH2_OCAL_MSB;
-            regLSB = Registers::REG_CH2_OCAL_LSB;
-            break;
-        case 3:
-            regMSB = Registers::REG_CH3_OCAL_MSB;
-            regLSB = Registers::REG_CH3_OCAL_LSB;
-            break;
-        case 4:
-            regMSB = Registers::REG_CH4_OCAL_MSB;
-            regLSB = Registers::REG_CH4_OCAL_LSB;
-            break;
-        case 5:
-            regMSB = Registers::REG_CH5_OCAL_MSB;
-            regLSB = Registers::REG_CH5_OCAL_LSB;
-            break;
-        case 6:
-            regMSB = Registers::REG_CH6_OCAL_MSB;
-            regLSB = Registers::REG_CH6_OCAL_LSB;
-            break;
-        default:
-            regMSB = Registers::REG_CH7_OCAL_MSB;
-            regLSB = Registers::REG_CH7_OCAL_LSB;
-            break;
-    }
-
-    writeRegister(regMSB, offset >> 8);
-    writeRegister(regLSB, offset << 16);
+    setChannelOffsetImpl(channel, offset);
+    channelsOffset[static_cast<int>(channel)] = offset;
 }
 
 void ADS131M08::setChannelGainCalibration(Channel channel, double gain)
 {
-    // Check gain value
-    if (gain < 0 || gain > 2)
-        return;
-
-    // Set the correct registers based on the selected channel
-    Registers regMSB, regLSB;
-    switch (static_cast<int>(channel))
-    {
-        case 0:
-            regMSB = Registers::REG_CH0_GCAL_MSB;
-            regLSB = Registers::REG_CH0_GCAL_LSB;
-            break;
-        case 1:
-            regMSB = Registers::REG_CH1_GCAL_MSB;
-            regLSB = Registers::REG_CH1_GCAL_LSB;
-            break;
-        case 2:
-            regMSB = Registers::REG_CH2_GCAL_MSB;
-            regLSB = Registers::REG_CH2_GCAL_LSB;
-            break;
-        case 3:
-            regMSB = Registers::REG_CH3_GCAL_MSB;
-            regLSB = Registers::REG_CH3_GCAL_LSB;
-            break;
-        case 4:
-            regMSB = Registers::REG_CH4_GCAL_MSB;
-            regLSB = Registers::REG_CH4_GCAL_LSB;
-            break;
-        case 5:
-            regMSB = Registers::REG_CH5_GCAL_MSB;
-            regLSB = Registers::REG_CH5_GCAL_LSB;
-            break;
-        case 6:
-            regMSB = Registers::REG_CH6_GCAL_MSB;
-            regLSB = Registers::REG_CH6_GCAL_LSB;
-            break;
-        default:
-            regMSB = Registers::REG_CH7_GCAL_MSB;
-            regLSB = Registers::REG_CH7_GCAL_LSB;
-            break;
-    }
-
-    // Compute the correct gain register parameter
-    uint32_t rawGain = gain * 8388608;  // 2^23
-
-    writeRegister(regMSB, rawGain >> 16);
-    writeRegister(regLSB, rawGain << 8);
-}
-
-void ADS131M08::setChannelInput(Channel channel, Input input)
-{
-    // Set the correct register based on the selected channel
-    Registers reg;
-    switch (static_cast<int>(channel))
-    {
-        case 0:
-            reg = Registers::REG_CH0_CFG;
-            break;
-        case 1:
-            reg = Registers::REG_CH1_CFG;
-            break;
-        case 2:
-            reg = Registers::REG_CH2_CFG;
-            break;
-        case 3:
-            reg = Registers::REG_CH3_CFG;
-            break;
-        case 4:
-            reg = Registers::REG_CH4_CFG;
-            break;
-        case 5:
-            reg = Registers::REG_CH5_CFG;
-            break;
-        case 6:
-            reg = Registers::REG_CH6_CFG;
-            break;
-        default:
-            reg = Registers::REG_CH7_CFG;
-            break;
-    }
-
-    uint16_t value = readRegister(reg);
-    value &= REG_CHx_CFG_MUX;
-    value |= static_cast<uint16_t>(input);
-    writeRegister(reg, value);
+    setChannelGainCalibrationImpl(channel, gain);
+    channelsGain[static_cast<int>(channel)] = gain;
 }
 
 void ADS131M08::enableChannel(Channel channel)
 {
-    changeRegister(Registers::REG_CLOCK, 1 << (static_cast<int>(channel) + 8),
+    changeRegister(Register::REG_CLOCK, 1 << (static_cast<int>(channel) + 8),
                    1 << (static_cast<int>(channel) + 8));
 }
 
 void ADS131M08::disableChannel(Channel channel)
 {
-    changeRegister(Registers::REG_CLOCK, 0,
+    changeRegister(Register::REG_CLOCK, 0,
                    1 << (static_cast<int>(channel) + 8));
 }
 
 void ADS131M08::enableGlobalChopMode()
 {
-    changeRegister(Registers::REG_CFG, ADS131M08RegisterBitMasks::REG_CFG_GC_EN,
-                   ADS131M08RegisterBitMasks::REG_CFG_GC_EN);
+    changeRegister(Register::REG_CFG, RegConfigurationMasks::GC_EN,
+                   RegConfigurationMasks::GC_EN);
 }
 
 void ADS131M08::disableGlobalChopMode()
 {
-    changeRegister(Registers::REG_CFG, 0,
-                   ADS131M08RegisterBitMasks::REG_CFG_GC_EN);
-}
-
-ADCData ADS131M08::getVoltage(Channel channel)
-{
-    return {lastSample.timestamp, static_cast<uint8_t>(channel),
-            lastSample.voltage[static_cast<uint8_t>(channel)]};
+    changeRegister(Register::REG_CFG, 0, RegConfigurationMasks::GC_EN);
 }
 
 bool ADS131M08::selfTest()
 {
-    static constexpr float V_REF              = 1.2;
-    static constexpr float TEST_SIGNAL_FACTOR = 2 / 15;
-    static constexpr float TEST_SIGNAL_SLACK  = 0.1;  // Not defined in DS
+    float voltage[CHANNELS_NUM] = {0};
+    bool success                = true;
 
-    float voltage[8] = {0};
-
-    // Connect all channels to the positive DC test signal
-    for (int i = 0; i < 8; i++)
+    // Reset PGA, offsets and gains and connect the positive test signal
+    for (int i = 0; i < CHANNELS_NUM; i++)
     {
+        setChannelPGAImpl(static_cast<Channel>(i), PGA::PGA_1);
+        setChannelOffsetImpl(static_cast<Channel>(i), 0);
+        setChannelGainCalibrationImpl(static_cast<Channel>(i), 1.0);
         setChannelInput(static_cast<Channel>(i), Input::POSITIVE_DC_TEST);
-        setChannelPGA(static_cast<Channel>(i), PGA::PGA_1);
     }
 
     // Take some samples
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < SELF_TEST_SAMPLES; i++)
     {
         Thread::sleep(4);
         auto newSample = sampleImpl();
 
-        for (int j = 0; j < 8; j++)
+        for (int j = 0; j < CHANNELS_NUM; j++)
         {
             voltage[j] += newSample.voltage[j];
         }
     }
 
-    // Check values
-    for (int i = 0; i < 8; i++)
+    // Check the values
+    for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        voltage[i] /= 100;
+        // Compute the average
+        voltage[i] /= SELF_TEST_SAMPLES;
+
+        // Check if the value is in the acceptable range
         if (voltage[i] < V_REF * TEST_SIGNAL_FACTOR - TEST_SIGNAL_SLACK)
-            return false;
+        {
+            LOG_ERR(logger,
+                    "Self test failed on channel {} on positive test signal, "
+                    "value was {}",
+                    i, voltage[i]);
+            success = false;
+        }
     }
 
     // Connect all channels to the negative DC test signal
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < CHANNELS_NUM; i++)
     {
         setChannelInput(static_cast<Channel>(i), Input::NEGATIVE_DC_TEST);
     }
 
     // Take some samples
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < SELF_TEST_SAMPLES; i++)
     {
         Thread::sleep(4);
         auto newSample = sampleImpl();
 
-        for (int j = 0; j < 8; j++)
+        for (int j = 0; j < CHANNELS_NUM; j++)
         {
             voltage[j] += newSample.voltage[j];
         }
     }
 
-    // Check values
-    for (int i = 0; i < 8; i++)
+    // Check the values
+    for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        voltage[i] /= 100;
+        // Compute the average
+        voltage[i] /= SELF_TEST_SAMPLES;
+
+        // Check if the value is in the acceptable range
         if (voltage[i] > -V_REF * TEST_SIGNAL_FACTOR + TEST_SIGNAL_SLACK)
-            return false;
+        {
+            LOG_ERR(logger,
+                    "Self test failed on channel {} on negative test signal, "
+                    "value was {}",
+                    i, voltage[i]);
+            success = false;
+        }
     }
 
-    // Reset channel connections
-    for (int i = 0; i < 8; i++)
+    // If any channel failed we return false
+    if (!success)
     {
-        setChannelInput(static_cast<Channel>(i), Input::POSITIVE_DC_TEST);
+        return false;
+    }
+
+    // Reset channels previous configuration
+    for (int i = 0; i < CHANNELS_NUM; i++)
+    {
+        setChannelPGAImpl(static_cast<Channel>(i), channelsPGAGain[i]);
+        setChannelOffsetImpl(static_cast<Channel>(i), channelsOffset[i]);
+        setChannelGainCalibrationImpl(static_cast<Channel>(i), channelsGain[i]);
+        setChannelInput(static_cast<Channel>(i), Input::DEFAULT);
     }
 
     return true;
@@ -382,27 +277,235 @@ bool ADS131M08::selfTest()
 
 ADS131M08Data ADS131M08::sampleImpl()
 {
-    // Send the NULL command and read response
-    uint8_t data[30] = {0};
+    // Read the samples and check if the CRC is correct
+    int32_t rawValues[CHANNELS_NUM];
+    if (!readSamples(rawValues))
+    {
+        // The CRC failed, return the last sample
+        return lastSample;
+    }
 
-    data[0] = static_cast<uint16_t>(Commands::NULL_CMD) >> 8;
-    data[1] = static_cast<uint16_t>(Commands::NULL_CMD);
+    // Convert the raw values to voltages
+    ADS131M08Data adcData;
+    adcData.timestamp = TimestampTimer::getTimestamp();
+    for (int i = 0; i < CHANNELS_NUM; i++)
+    {
+        adcData.voltage[i] =
+            rawValues[i] * getLSBSizeFromGain(channelsPGAGain[i]);
+    }
+
+    return adcData;
+}
+
+void ADS131M08::setChannelInput(Channel channel, Input input)
+{
+    Register reg = getChannelConfigRegister(channel);
+    changeRegister(reg, static_cast<uint16_t>(input), RegChannelMasks::CFG_MUX);
+}
+
+void ADS131M08::setChannelPGAImpl(Channel channel, PGA gain)
+{
+    if (channel <= Channel::CHANNEL_3)
+    {
+        int shift = static_cast<int>(channel) * 4;
+        changeRegister(Register::REG_GAIN_1,
+                       static_cast<uint16_t>(gain) << shift,
+                       RegGainMasks::PGA_GAIN_0 << shift);
+    }
+    else
+    {
+        int shift = (static_cast<int>(channel) - 4) * 4;
+        changeRegister(Register::REG_GAIN_2,
+                       static_cast<uint16_t>(gain) << shift,
+                       RegGainMasks::PGA_GAIN_0 << shift);
+    }
+}
+
+void ADS131M08::setChannelOffsetImpl(Channel channel, uint32_t offset)
+{
+    // The offset is a 24 bit value. Its two most significant bytes are stored
+    // in the MSB register, and the least significant in the LSB register, like
+    // this:
+    // +----------+-------+
+    // |          | 23-16 |
+    // | OCAL_MSB +-------+
+    // |          | 15-8  |
+    // +----------+-------+
+    // |          |  7-0  |
+    // | OCAL_LSB +-------+
+    // |          |       |
+    // +----------+-------+
+    writeRegister(getChannelOffsetRegisterMSB(channel), offset >> 8);
+    writeRegister(getChannelOffsetRegisterLSB(channel), offset << 8);
+}
+
+void ADS131M08::setChannelGainCalibrationImpl(Channel channel, double gain)
+{
+    // If the user passes a value outside the range [0, 2] we cap it.
+    if (gain < 0)
+    {
+        gain = 0;
+    }
+    else if (gain > 2)
+    {
+        gain = 2;
+    }
+
+    // The ADS131M08 corrects for gain errors by multiplying the ADC conversion
+    // result using the gain calibration registers.
+    // The contents of the gain calibration registers are interpreted by the
+    // dives as 24-bit unsigned values corresponding to linear steps from 0 to
+    // 2-(1/2^23).
+    // So effectively the register value is a fixed point number with 1bit for
+    // the integer part and 23 bits for the fractional part.
+    // So to convert the gain value to the register value we multiply it by 2^23
+    uint32_t rawGain = gain * (1 << 23);
+
+    // The gain is a 24 bit value. Its two most significant bytes are stored
+    // in the MSB register, and the least significant in the LSB register, like
+    // this:
+    // +----------+-------+
+    // |          | 23-16 |
+    // | GCAL_MSB +-------+
+    // |          | 15-8  |
+    // +----------+-------+
+    // |          |  7-0  |
+    // | GCAL_LSB +-------+
+    // |          |       |
+    // +----------+-------+
+    writeRegister(getChannelGainRegisterMSB(channel), rawGain >> 8);
+    writeRegister(getChannelGainRegisterLSB(channel), rawGain << 8);
+}
+
+Register ADS131M08::getChannelConfigRegister(Channel channel)
+{
+    switch (static_cast<int>(channel))
+    {
+        case 0:
+            return Register::REG_CH0_CFG;
+        case 1:
+            return Register::REG_CH1_CFG;
+        case 2:
+            return Register::REG_CH2_CFG;
+        case 3:
+            return Register::REG_CH3_CFG;
+        case 4:
+            return Register::REG_CH4_CFG;
+        case 5:
+            return Register::REG_CH5_CFG;
+        case 6:
+            return Register::REG_CH6_CFG;
+        default:
+            return Register::REG_CH7_CFG;
+    }
+}
+
+Register ADS131M08::getChannelOffsetRegisterMSB(Channel channel)
+{
+    switch (static_cast<int>(channel))
+    {
+        case 0:
+            return Register::REG_CH0_OCAL_MSB;
+        case 1:
+            return Register::REG_CH1_OCAL_MSB;
+        case 2:
+            return Register::REG_CH2_OCAL_MSB;
+        case 3:
+            return Register::REG_CH3_OCAL_MSB;
+        case 4:
+            return Register::REG_CH4_OCAL_MSB;
+        case 5:
+            return Register::REG_CH5_OCAL_MSB;
+        case 6:
+            return Register::REG_CH6_OCAL_MSB;
+        default:
+            return Register::REG_CH7_OCAL_MSB;
+    }
+}
+
+Register ADS131M08::getChannelOffsetRegisterLSB(Channel channel)
+{
+    switch (static_cast<int>(channel))
+    {
+        case 0:
+            return Register::REG_CH0_OCAL_LSB;
+        case 1:
+            return Register::REG_CH1_OCAL_LSB;
+        case 2:
+            return Register::REG_CH2_OCAL_LSB;
+        case 3:
+            return Register::REG_CH3_OCAL_LSB;
+        case 4:
+            return Register::REG_CH4_OCAL_LSB;
+        case 5:
+            return Register::REG_CH5_OCAL_LSB;
+        case 6:
+            return Register::REG_CH6_OCAL_LSB;
+        default:
+            return Register::REG_CH7_OCAL_LSB;
+    }
+}
+
+Register ADS131M08::getChannelGainRegisterMSB(Channel channel)
+{
+    switch (static_cast<int>(channel))
+    {
+        case 0:
+            return Register::REG_CH0_GCAL_MSB;
+        case 1:
+            return Register::REG_CH1_GCAL_MSB;
+        case 2:
+            return Register::REG_CH2_GCAL_MSB;
+        case 3:
+            return Register::REG_CH3_GCAL_MSB;
+        case 4:
+            return Register::REG_CH4_GCAL_MSB;
+        case 5:
+            return Register::REG_CH5_GCAL_MSB;
+        case 6:
+            return Register::REG_CH6_GCAL_MSB;
+        default:
+            return Register::REG_CH7_GCAL_MSB;
+    }
+}
+
+Register ADS131M08::getChannelGainRegisterLSB(Channel channel)
+{
+    switch (static_cast<int>(channel))
+    {
+        case 0:
+            return Register::REG_CH0_GCAL_LSB;
+        case 1:
+            return Register::REG_CH1_GCAL_LSB;
+        case 2:
+            return Register::REG_CH2_GCAL_LSB;
+        case 3:
+            return Register::REG_CH3_GCAL_LSB;
+        case 4:
+            return Register::REG_CH4_GCAL_LSB;
+        case 5:
+            return Register::REG_CH5_GCAL_LSB;
+        case 6:
+            return Register::REG_CH6_GCAL_LSB;
+        default:
+            return Register::REG_CH7_GCAL_LSB;
+    }
+}
+
+bool ADS131M08::readSamples(int32_t rawValues[CHANNELS_NUM])
+{
+    // Send the NULL command and read response
+    uint8_t data[FULL_FRAME_SIZE] = {0};
+
+    data[0] = (static_cast<uint16_t>(Command::NULL_CMD) & 0xff00) >> 8;
+    data[1] = (static_cast<uint16_t>(Command::NULL_CMD) & 0x00ff);
 
     SPITransaction transaction(spiSlave);
     transaction.transfer(data, sizeof(data));
 
-    // Extract each channel value
-    int32_t rawValue[8];
-    for (int i = 0; i < 8; i++)
-    {
-        rawValue[i] = static_cast<uint32_t>(data[i * 3 + 3]) << 16 |
-                      static_cast<uint32_t>(data[i * 3 + 4]) << 8 |
-                      static_cast<uint32_t>(data[i * 3 + 5]);
-    }
-
     // Extract and verify the CRC
     uint16_t dataCrc =
-        static_cast<uint32_t>(data[27]) << 8 | static_cast<uint32_t>(data[28]);
+        static_cast<uint16_t>(data[27]) << 8 | static_cast<uint16_t>(data[28]);
     uint16_t calculatedCrc = CRCUtils::crc16(data, sizeof(data) - 3);
 
     if (dataCrc != calculatedCrc)
@@ -411,36 +514,30 @@ ADS131M08Data ADS131M08::sampleImpl()
         LOG_ERR(logger, "Failed CRC check during sensor sampling");
 
         // Return and don't convert the corrupted data
-        return lastSample;
+        return false;
     }
 
-    // Set the two complement
-    for (int i = 0; i < 8; i++)
+    // Extract each channel value
+    for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        // Check for the sign bit
-        if (rawValue[i] & 0x00800000)
-            rawValue[i] |= 0xFF000000;  // Extend the sign bit
+        rawValues[i] = static_cast<uint32_t>(data[i * 3 + 3]) << 16 |
+                       static_cast<uint32_t>(data[i * 3 + 4]) << 8 |
+                       static_cast<uint32_t>(data[i * 3 + 5]);
+
+        // Extend the sign bit with a double shift
+        rawValues[i] <<= 8;
+        rawValues[i] >>= 8;
     }
 
-    // Convert values
-    ADS131M08Data adcData;
-    adcData.timestamp = TimestampTimer::getTimestamp();
-    for (int i = 0; i < 8; i++)
-    {
-        adcData.voltage[i] =
-            rawValue[i] *
-            PGA_LSB_SIZE[static_cast<uint16_t>(channelsPGAGain[i])];
-    }
-
-    return adcData;
+    return true;
 }
 
-uint16_t ADS131M08::readRegister(Registers reg)
+uint16_t ADS131M08::readRegister(Register reg)
 {
     uint8_t data[3] = {0};
 
     // Prepare the command
-    data[0] = static_cast<uint16_t>(Commands::RREG) >> 8 |
+    data[0] = static_cast<uint16_t>(Command::RREG) >> 8 |
               static_cast<uint16_t>(reg) >> 1;
     data[1] = static_cast<uint16_t>(reg) << 7;
 
@@ -451,12 +548,14 @@ uint16_t ADS131M08::readRegister(Registers reg)
     return data[0] << 8 | data[1];
 }
 
-void ADS131M08::writeRegister(Registers reg, uint16_t data)
+void ADS131M08::writeRegister(Register reg, uint16_t data)
 {
+    // The write command uses two communication words (3 bytes each), one for
+    // the register address and one for the data to write
     uint8_t writeCommand[6] = {0};
 
     // Prepare the command
-    writeCommand[0] = static_cast<uint16_t>(Commands::WREG) >> 8 |
+    writeCommand[0] = static_cast<uint16_t>(Command::WREG) >> 8 |
                       static_cast<uint16_t>(reg) >> 1;
     writeCommand[1] = static_cast<uint16_t>(reg) << 7;
     writeCommand[3] = data >> 8;
@@ -465,29 +564,47 @@ void ADS131M08::writeRegister(Registers reg, uint16_t data)
     SPITransaction transaction(spiSlave);
     transaction.write(writeCommand, sizeof(writeCommand));
 
-    // Check response
-    transaction.read(writeCommand, 3);
-    uint16_t response = writeCommand[0] << 8 | writeCommand[1];
-    if (response != (0x4000 | (static_cast<uint16_t>(reg) << 7)))
+    // The response contains a fixed part and the register address.
+    uint16_t response = transaction.read24() >> 8;
+    if (response != (WRITE_CMD_RESPONSE | (static_cast<uint16_t>(reg) << 7)))
     {
         lastError = SensorErrors::COMMAND_FAILED;
         LOG_ERR(logger, "Write command failed, response was {:X}", response);
     }
 }
 
-void ADS131M08::changeRegister(Registers reg, uint16_t newValue, uint16_t mask)
+void ADS131M08::changeRegister(Register reg, uint16_t newValue, uint16_t mask)
 {
     // Read the clock register
     uint16_t regValue = readRegister(reg);
 
-    // Remove the OSR configuration
+    // Remove the target configuration
     regValue &= ~mask;
 
-    // Set the OSR
+    // Set the new value
     regValue |= newValue;
 
     // Write the new value
     writeRegister(reg, regValue);
+}
+
+void ADS131M08::sendCommand(SPITransaction &transaction, Command command,
+                            uint8_t data[FULL_FRAME_SIZE])
+{
+    // All commands (a part from read and write) needs the full 10 words
+    // communication frame. Each word is (by default) 3 bytes long
+
+    // The command is 16 bits long and goes in the most significant bytes of the
+    // first communication word
+    data[0] = (static_cast<uint16_t>(command) & 0xff00) >> 8;
+    data[1] = (static_cast<uint16_t>(command) & 0x00ff);
+
+    transaction.write(data, FULL_FRAME_SIZE);
+}
+
+float ADS131M08::getLSBSizeFromGain(PGA gain)
+{
+    return PGA_LSB_SIZE[static_cast<uint16_t>(gain)];
 }
 
 }  // namespace Boardcore

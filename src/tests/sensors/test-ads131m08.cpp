@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -58,26 +58,24 @@ int main()
     // Device initialization
     ADS131M08 ads131(spiSlave);
 
-    // Initialize the device
-    if (!ads131.init())
-    {
-        printf("Initialization failed!\n");
-    }
-    else
-    {
-        printf("Initialization done\n");
-    }
-    if (!ads131.selfTest())
+    ads131.reset();
+
+    ads131.enableGlobalChopMode();
+    ads131.setOversamplingRatio(ADS131M08Defs::OversamplingRatio::OSR_16256);
+
+    // WARNING: After changing the OSR the device needs some time to settle
+    delayMs(20);
+    ads131.calibrateOffset();
+
+    printf("Now performing self test...\n");
+    if (ads131.selfTest())
     {
         printf("Self test failed!\n");
     }
     else
     {
-        printf("Self test done\n");
+        printf("Self test succeeded\n");
     }
-    ads131.enableGlobalChopMode();
-    ads131.setOversamplingRatio(ADS131M08::OversamplingRatio::OSR_16256);
-    ads131.calibrateOffset();
 
     while (true)
     {
