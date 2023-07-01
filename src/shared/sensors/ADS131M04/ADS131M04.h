@@ -75,27 +75,69 @@ namespace Boardcore
 class ADS131M04 : public Sensor<ADS131M04Data>
 {
 public:
-    ADS131M04(SPIBusInterface& bus, miosix::GpioPin cs,
-              SPIBusConfig config = getDefaultSPIConfig());
+    struct Config
+    {
+        struct ChannelConfig
+        {
+            bool enabled           = true;
+            ADS131M04Defs::PGA pga = ADS131M04Defs::PGA::PGA_1;
+            int32_t offset         = 0;
+            double gain            = 1.0;
+        };
 
-    explicit ADS131M04(SPISlave spiSlave);
+        ChannelConfig channelsConfig[ADS131M04Defs::CHANNELS_NUM];
 
-    /**
-     * Constructs the default config for SPI Bus.
-     *
-     * @returns The default SPIBusConfig.
-     */
-    static SPIBusConfig getDefaultSPIConfig();
+        ADS131M04Defs::OversamplingRatio oversamplingRatio =
+            ADS131M04Defs::OversamplingRatio::OSR_16256;
+        bool globalChopModeEnabled = false;
+    };
+
+    ADS131M04(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+              const Config& config);
 
     bool init() override;
 
     bool reset();
 
     /**
+     * @brief Overwrites the sensor settings.
+     *
+     * Writes a certain config to the sensor registers. This method is
+     * automatically called in ADS131M04::init() using as parameter the
+     * configuration given in the constructor.
+     *
+     * @param config The configuration to be applied.
+     */
+    void applyConfig(Config config);
+
+    /**
      * @brief Samples each channel, averages the samples and applies offset
      * compensation in the device.
      */
-    void calibrateOffset();
+    void calibrateOffset(ADS131M04Defs::Channel channel);
+
+    /**
+     * @brief The self test samples internally connects each channel to known
+     * test signals and verifies if the sampled values are in an expected range.
+     *
+     * @returns True if the self test is successful, false otherwise.
+     */
+    bool selfTest() override;
+
+private:
+    ADS131M04Data sampleImpl() override;
+
+    /**
+     * @brief Overwrites the channel settings.
+     *
+     * Writes a certain configuration to the sensor registers. This method is
+     * automatically called in ADS131M04::applyConfig and in other routines.
+     *
+     * @param channel Specific channel where the configuration will be applied.
+     * @param config The configuration to be applied.
+     */
+    void applyChannelConfig(ADS131M04Defs::Channel channel,
+                            Config::ChannelConfig config);
 
     /**
      * @brief changes the oversampling ratio.
@@ -130,7 +172,7 @@ public:
      * @param gain Gain value between 0 and 2. Values outside this range will be
      * capped.
      */
-    void setChannelGainCalibration(ADS131M04Defs::Channel channel, double gain);
+    void setChannelGain(ADS131M04Defs::Channel channel, double gain);
 
     void enableChannel(ADS131M04Defs::Channel channel);
 
@@ -159,39 +201,8 @@ public:
      */
     void disableGlobalChopMode();
 
-    /**
-     * @brief The self test samples internally connects each channel to known
-     * test signals and verifies if the sampled values are in an expected range.
-     *
-     * @returns True if the self test is successful, false otherwise.
-     */
-    bool selfTest() override;
-
-private:
-    ADS131M04Data sampleImpl() override;
-
     void setChannelInput(ADS131M04Defs::Channel channel,
                          ADS131M04Defs::Input input);
-
-    /**
-     * setChannelPGS() implementation without saving the gain value in
-     * the local variable.
-     */
-    void setChannelPGAImpl(ADS131M04Defs::Channel channel,
-                           ADS131M04Defs::PGA gain);
-
-    /**
-     * setChannelOffset() implementation without saving the offset value in
-     * the local variable.
-     */
-    void setChannelOffsetImpl(ADS131M04Defs::Channel channel, uint32_t offset);
-
-    /**
-     * setChannelGainCalibration() implementation without saving the gain value
-     * in the local variable.
-     */
-    void setChannelGainCalibrationImpl(ADS131M04Defs::Channel channel,
-                                       double gain);
 
     ADS131M04Defs::Register getChannelConfigRegister(
         ADS131M04Defs::Channel channel);
@@ -234,12 +245,8 @@ private:
 
     SPISlave spiSlave;
 
-    // Saving the current configuration of the device
-    // This is necessary because the selfTest and calibrateOffset functions
-    // temporarily resets the channels configuration
-    ADS131M04Defs::PGA channelsPGAGain[ADS131M04Defs::CHANNELS_NUM];
-    uint32_t channelsOffset[ADS131M04Defs::CHANNELS_NUM];
-    double channelsGain[ADS131M04Defs::CHANNELS_NUM];
+    // Current device configuration
+    Config config;
 
     PrintLogger logger = Logging::getLogger("ads131m04");
 };

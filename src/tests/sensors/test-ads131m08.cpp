@@ -51,21 +51,17 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    // SPI configuration setup
-    SPIBus spiBus(SPI4);
-    SPISlave spiSlave(spiBus, csPin, ADS131M08::getDefaultSPIConfig());
+    // ADC configuration
+    ADS131M08::Config config{
+        .oversamplingRatio     = ADS131M08Defs::OversamplingRatio::OSR_8192,
+        .globalChopModeEnabled = true,
+    };
 
     // Device initialization
-    ADS131M08 ads131(spiSlave);
+    SPIBus spiBus(SPI4);
+    ADS131M08 ads131(spiBus, csPin, {}, config);
 
-    ads131.reset();
-
-    ads131.enableGlobalChopMode();
-    ads131.setOversamplingRatio(ADS131M08Defs::OversamplingRatio::OSR_16256);
-
-    // WARNING: After changing the OSR the device needs some time to settle
-    delayMs(20);
-    ads131.calibrateOffset();
+    ads131.init();
 
     printf("Now performing self test...\n");
     if (ads131.selfTest())
@@ -77,6 +73,15 @@ int main()
         printf("Self test failed!\n");
     }
 
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_0);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_1);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_2);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_3);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_4);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_5);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_6);
+    ads131.calibrateOffset(ADS131M08Defs::Channel::CHANNEL_7);
+
     while (true)
     {
         ads131.sample();
@@ -84,10 +89,10 @@ int main()
         ADS131M08Data data = ads131.getLastSample();
 
         printf(
-            "% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\n",
+            "% 2.8f\t% 2.8f\t% 2.8f\t% 2.8f\t% 2.8f\t% 2.8f\t% 2.8f\t% 2.8f\n",
             data.voltage[0], data.voltage[1], data.voltage[2], data.voltage[3],
             data.voltage[4], data.voltage[5], data.voltage[6], data.voltage[7]);
 
-        delayMs(50);
+        delayMs(100);
     }
 }

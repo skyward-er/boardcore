@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <sensors/SensorData.h>
 #include <stdint.h>
 
 #include <ostream>
@@ -67,7 +68,7 @@ struct ADS131M08Data
            << voltage[5] << "," << voltage[6] << "," << voltage[7] << "\n";
     }
 
-    ADCData getVoltage(ADS131M08Defs::Channel channel)
+    const ADCData getVoltage(ADS131M08Defs::Channel channel)
     {
         return {timestamp, static_cast<uint8_t>(channel),
                 voltage[static_cast<uint8_t>(channel)]};

@@ -33,37 +33,26 @@ namespace Boardcore
 {
 
 ADS131M04::ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
-                     SPIBusConfig config)
-    : ADS131M04(SPISlave(bus, cs, config))
+                     SPIBusConfig spiConfig, const Config &config)
+    : spiSlave(bus, cs, spiConfig), config(config)
 {
+    // Impose the correct spi mode
+    spiSlave.config.mode = SPI::Mode::MODE_1;
 }
 
-ADS131M04::ADS131M04(SPISlave spiSlave) : spiSlave(spiSlave)
+bool ADS131M04::init()
 {
-    // Initialize the channel configurations to the default values
-    for (int i = 0; i < CHANNELS_NUM; i++)
-    {
-        channelsPGAGain[i] = PGA::PGA_1;
-        channelsOffset[i]  = 0;
-        channelsGain[i]    = 1.0;
-    }
-}
+    reset();
+    applyConfig(config);
 
-SPIBusConfig ADS131M04::getDefaultSPIConfig()
-{
-    SPIBusConfig spiConfig{};
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
-    spiConfig.mode         = SPI::Mode::MODE_1;
-    return spiConfig;
+    return true;
 }
-
-bool ADS131M04::init() { return true; }
 
 bool ADS131M04::reset()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t data[ADS131M04Defs::FULL_FRAME_SIZE] = {0};
+    uint8_t data[FULL_FRAME_SIZE] = {0};
     sendCommand(transaction, Command::RESET, data);
 
     // The reset command takes typically 5us to reload the register contents.
@@ -85,21 +74,44 @@ bool ADS131M04::reset()
     return true;
 }
 
-void ADS131M04::calibrateOffset()
+void ADS131M04::applyConfig(Config config)
+{
+    for (int i = 0; i < CHANNELS_NUM; i++)
+    {
+        applyChannelConfig(static_cast<Channel>(i), config.channelsConfig[i]);
+    }
+
+    setOversamplingRatio(config.oversamplingRatio);
+    if (config.globalChopModeEnabled)
+    {
+        enableGlobalChopMode();
+    }
+    else
+    {
+        disableGlobalChopMode();
+    }
+
+    // Save the newly applied configuration
+    this->config = config;
+}
+
+void ADS131M04::calibrateOffset(Channel channel)
 {
     // The device internal data chain firsts subtracts the offset and then
     // multiplies for the gain. To calibrate the offset we first reset it, then
     // take some samples and apply the average as the new offset.
     // So we need to reset the offset and gain
-    for (int i = 0; i < CHANNELS_NUM; i++)
-    {
-        setChannelOffsetImpl(static_cast<Channel>(i), 0);
-        setChannelGainCalibrationImpl(static_cast<Channel>(i), 1.0);
-    }
+    Config::ChannelConfig calibrationConfig{
+        .enabled = true,
+        .pga     = PGA::PGA_1,
+        .offset  = 0,
+        .gain    = 1.0,
+    };
+    applyChannelConfig(channel, calibrationConfig);
 
-    // Sample the channels and average the samples
-    int32_t averageValues[CHANNELS_NUM] = {0};
-    int realSampleCount                 = 0;
+    // Sample the channel and average the samples
+    int32_t averageValue = 0;
+    int realSampleCount  = 0;
     for (int i = 0; i < CALIBRATION_SAMPLES; i++)
     {
         // Wait for a sample to be ready
@@ -113,10 +125,7 @@ void ADS131M04::calibrateOffset()
             continue;
         }
 
-        for (int j = 0; j < CHANNELS_NUM; j++)
-        {
-            averageValues[j] += rawValues[j];
-        }
+        averageValue += rawValues[static_cast<int>(channel)];
 
         realSampleCount++;
     }
@@ -127,88 +136,43 @@ void ADS131M04::calibrateOffset()
     }
     else
     {
-        for (int i = 0; i < CHANNELS_NUM; i++)
-        {
-            // Compute the average
-            averageValues[i] /= realSampleCount;
-            LOG_INFO(logger, "Channel {} average offset: {}", i,
-                     averageValues[i] * getLSBSizeFromGain(channelsPGAGain[i]));
+        // Compute the average
+        averageValue /= realSampleCount;
+        LOG_INFO(logger, "Channel {} average offset: {}",
+                 static_cast<int>(channel),
+                 averageValue * getLSBSizeFromGain(calibrationConfig.pga));
 
-            // Set the new offset only if valid, otherwise keep the old one
-            if (averageValues[i] != 0)
-            {
-                channelsOffset[i] = averageValues[i];
-            }
+        // Set the new offset only if valid, otherwise keep the old one
+        if (averageValue != 0)
+        {
+            config.channelsConfig[static_cast<int>(channel)].offset =
+                averageValue;
         }
     }
 
-    // Update the offset values and reset the gain as it was before
-    for (int i = 0; i < CHANNELS_NUM; i++)
-    {
-        setChannelOffset(static_cast<Channel>(i), channelsOffset[i]);
-        setChannelGainCalibrationImpl(static_cast<Channel>(i), channelsGain[i]);
-    }
-}
-
-void ADS131M04::setOversamplingRatio(OversamplingRatio ratio)
-{
-    changeRegister(Register::REG_CLOCK, static_cast<uint16_t>(ratio),
-                   RegClockMasks::OSR);
-}
-
-void ADS131M04::setChannelPGA(Channel channel, PGA gain)
-{
-    setChannelPGAImpl(channel, gain);
-    channelsPGAGain[static_cast<int>(channel)] = gain;
-}
-
-void ADS131M04::setChannelOffset(Channel channel, uint32_t offset)
-{
-    setChannelOffsetImpl(channel, offset);
-    channelsOffset[static_cast<int>(channel)] = offset;
-}
-
-void ADS131M04::setChannelGainCalibration(Channel channel, double gain)
-{
-    setChannelGainCalibrationImpl(channel, gain);
-    channelsGain[static_cast<int>(channel)] = gain;
-}
-
-void ADS131M04::enableChannel(Channel channel)
-{
-    changeRegister(Register::REG_CLOCK, 1 << (static_cast<int>(channel) + 8),
-                   1 << (static_cast<int>(channel) + 8));
-}
-
-void ADS131M04::disableChannel(Channel channel)
-{
-    changeRegister(Register::REG_CLOCK, 0,
-                   1 << (static_cast<int>(channel) + 8));
-}
-
-void ADS131M04::enableGlobalChopMode()
-{
-    changeRegister(Register::REG_CFG, RegConfigurationMasks::GC_EN,
-                   RegConfigurationMasks::GC_EN);
-}
-
-void ADS131M04::disableGlobalChopMode()
-{
-    changeRegister(Register::REG_CFG, 0, RegConfigurationMasks::GC_EN);
+    // Reset the original configuration with the new offset value
+    applyChannelConfig(channel,
+                       config.channelsConfig[static_cast<int>(channel)]);
 }
 
 bool ADS131M04::selfTest()
 {
     bool success = true;
 
-    // Reset PGA, offsets and gains and connect the positive test signal
+    // Reset configuration and connect the positive test signal
+    Config::ChannelConfig selfTestConfig{
+        .enabled = true,
+        .pga     = PGA::PGA_1,
+        .offset  = 0,
+        .gain    = 1.0,
+    };
     for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        setChannelPGAImpl(static_cast<Channel>(i), PGA::PGA_1);
-        setChannelOffsetImpl(static_cast<Channel>(i), 0);
-        setChannelGainCalibrationImpl(static_cast<Channel>(i), 1.0);
+        applyChannelConfig(static_cast<Channel>(i), selfTestConfig);
         setChannelInput(static_cast<Channel>(i), Input::POSITIVE_DC_TEST);
     }
+    setOversamplingRatio(OversamplingRatio::OSR_16256);
+    disableGlobalChopMode();
 
     // Take some samples
     int32_t averageValues[CHANNELS_NUM] = {0};
@@ -249,7 +213,8 @@ bool ADS131M04::selfTest()
             averageValues[i] /= realSampleCount;
 
             // Convert the value to Volts
-            float volts = averageValues[i] * getLSBSizeFromGain(PGA::PGA_1);
+            float volts =
+                averageValues[i] * getLSBSizeFromGain(selfTestConfig.pga);
 
             // Check if the value is in the acceptable range
             if (volts < V_REF * TEST_SIGNAL_FACTOR - TEST_SIGNAL_SLACK)
@@ -311,7 +276,8 @@ bool ADS131M04::selfTest()
             averageValues[i] /= realSampleCount;
 
             // Convert the value to Volts
-            float volts = averageValues[i] * getLSBSizeFromGain(PGA::PGA_1);
+            float volts =
+                averageValues[i] * getLSBSizeFromGain(selfTestConfig.pga);
 
             // Check if the value is in the acceptable range
             if (volts > -V_REF * TEST_SIGNAL_FACTOR + TEST_SIGNAL_SLACK)
@@ -326,14 +292,14 @@ bool ADS131M04::selfTest()
         }
     }
 
-    // Reset channels previous configuration
+    // Reset channels input to default
     for (int i = 0; i < CHANNELS_NUM; i++)
     {
-        setChannelPGAImpl(static_cast<Channel>(i), channelsPGAGain[i]);
-        setChannelOffsetImpl(static_cast<Channel>(i), channelsOffset[i]);
-        setChannelGainCalibrationImpl(static_cast<Channel>(i), channelsGain[i]);
         setChannelInput(static_cast<Channel>(i), Input::DEFAULT);
     }
+
+    // Reset to previous configuration
+    applyConfig(config);
 
     // We fail even if one channel didn't pass the test
     return success;
@@ -355,26 +321,42 @@ ADS131M04Data ADS131M04::sampleImpl()
     for (int i = 0; i < CHANNELS_NUM; i++)
     {
         adcData.voltage[i] =
-            rawValues[i] * getLSBSizeFromGain(channelsPGAGain[i]);
+            rawValues[i] * getLSBSizeFromGain(config.channelsConfig[i].pga);
     }
 
     return adcData;
 }
 
-void ADS131M04::setChannelInput(Channel channel, Input input)
+void ADS131M04::applyChannelConfig(Channel channel,
+                                   Config::ChannelConfig config)
 {
-    Register reg = getChannelConfigRegister(channel);
-    changeRegister(reg, static_cast<uint16_t>(input), RegChannelMasks::CFG_MUX);
+    if (config.enabled)
+    {
+        setChannelPGA(channel, config.pga);
+        setChannelOffset(channel, config.offset);
+        setChannelGain(channel, config.gain);
+        enableChannel(channel);
+    }
+    else
+    {
+        disableChannel(channel);
+    }
 }
 
-void ADS131M04::setChannelPGAImpl(Channel channel, PGA gain)
+void ADS131M04::setOversamplingRatio(OversamplingRatio ratio)
+{
+    changeRegister(Register::REG_CLOCK, static_cast<uint16_t>(ratio),
+                   RegClockMasks::OSR);
+}
+
+void ADS131M04::setChannelPGA(Channel channel, PGA gain)
 {
     int shift = static_cast<int>(channel) * 4;
     changeRegister(Register::REG_GAIN, static_cast<uint16_t>(gain) << shift,
                    RegGainMasks::PGA_GAIN_0 << shift);
 }
 
-void ADS131M04::setChannelOffsetImpl(Channel channel, uint32_t offset)
+void ADS131M04::setChannelOffset(Channel channel, uint32_t offset)
 {
     // The offset is a 24 bit value. Its two most significant bytes are stored
     // in the MSB register, and the least significant in the LSB register, like
@@ -392,7 +374,7 @@ void ADS131M04::setChannelOffsetImpl(Channel channel, uint32_t offset)
     writeRegister(getChannelOffsetRegisterLSB(channel), offset << 8);
 }
 
-void ADS131M04::setChannelGainCalibrationImpl(Channel channel, double gain)
+void ADS131M04::setChannelGain(Channel channel, double gain)
 {
     // If the user passes a value outside the range [0, 2] we cap it.
     if (gain < 0)
@@ -404,7 +386,7 @@ void ADS131M04::setChannelGainCalibrationImpl(Channel channel, double gain)
         gain = 2;
     }
 
-    // The ADS131M08 corrects for gain errors by multiplying the ADC conversion
+    // The ADS131M04 corrects for gain errors by multiplying the ADC conversion
     // result using the gain calibration registers.
     // The contents of the gain calibration registers are interpreted by the
     // dives as 24-bit unsigned values corresponding to linear steps from 0 to
@@ -428,6 +410,35 @@ void ADS131M04::setChannelGainCalibrationImpl(Channel channel, double gain)
     // +----------+-------+
     writeRegister(getChannelGainRegisterMSB(channel), rawGain >> 8);
     writeRegister(getChannelGainRegisterLSB(channel), rawGain << 8);
+}
+
+void ADS131M04::enableChannel(Channel channel)
+{
+    changeRegister(Register::REG_CLOCK, 1 << (static_cast<int>(channel) + 8),
+                   1 << (static_cast<int>(channel) + 8));
+}
+
+void ADS131M04::disableChannel(Channel channel)
+{
+    changeRegister(Register::REG_CLOCK, 0,
+                   1 << (static_cast<int>(channel) + 8));
+}
+
+void ADS131M04::enableGlobalChopMode()
+{
+    changeRegister(Register::REG_CFG, RegConfigurationMasks::GC_EN,
+                   RegConfigurationMasks::GC_EN);
+}
+
+void ADS131M04::disableGlobalChopMode()
+{
+    changeRegister(Register::REG_CFG, 0, RegConfigurationMasks::GC_EN);
+}
+
+void ADS131M04::setChannelInput(Channel channel, Input input)
+{
+    Register reg = getChannelConfigRegister(channel);
+    changeRegister(reg, static_cast<uint16_t>(input), RegChannelMasks::CFG_MUX);
 }
 
 Register ADS131M04::getChannelConfigRegister(Channel channel)

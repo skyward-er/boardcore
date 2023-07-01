@@ -22,9 +22,12 @@
 
 #pragma once
 
+#include <sensors/SensorData.h>
 #include <stdint.h>
 
 #include <ostream>
+
+#include "ADS131M04Defs.h"
 
 namespace Boardcore
 {
@@ -56,6 +59,12 @@ struct ADS131M04Data
     {
         os << timestamp << "," << voltage[0] << "," << voltage[1] << ","
            << voltage[2] << "," << voltage[3] << "\n";
+    }
+
+    const ADCData getVoltage(ADS131M04Defs::Channel channel)
+    {
+        return {timestamp, static_cast<uint8_t>(channel),
+                voltage[static_cast<uint8_t>(channel)]};
     }
 };
 

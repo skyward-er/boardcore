@@ -28,10 +28,10 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
-GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
-GpioPin mosiPin = GpioPin(GPIOE_BASE, 6);
-GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
+GpioPin sckPin  = GpioPin(GPIOA_BASE, 5);
+GpioPin misoPin = GpioPin(GPIOA_BASE, 6);
+GpioPin mosiPin = GpioPin(GPIOA_BASE, 7);
+GpioPin csPin   = GpioPin(GPIOA_BASE, 4);
 
 void initBoard()
 {
@@ -51,21 +51,17 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    // SPI configuration setup
-    SPIBus spiBus(SPI4);
-    SPISlave spiSlave(spiBus, csPin, ADS131M04::getDefaultSPIConfig());
+    // ADC configuration
+    ADS131M04::Config config{
+        .oversamplingRatio     = ADS131M04Defs::OversamplingRatio::OSR_8192,
+        .globalChopModeEnabled = true,
+    };
 
     // Device initialization
-    ADS131M04 ads131(spiSlave);
+    SPIBus spiBus(SPI1);
+    ADS131M04 ads131(spiBus, csPin, {}, config);
 
-    ads131.reset();
-
-    ads131.enableGlobalChopMode();
-    ads131.setOversamplingRatio(ADS131M04Defs::OversamplingRatio::OSR_16256);
-
-    // WARNING: After changing the OSR the device needs some time to settle
-    delayMs(20);
-    ads131.calibrateOffset();
+    ads131.init();
 
     printf("Now performing self test...\n");
     if (ads131.selfTest())
@@ -77,13 +73,18 @@ int main()
         printf("Self test failed!\n");
     }
 
+    // ads131.calibrateOffset(ADS131M04Defs::Channel::CHANNEL_0);
+    // ads131.calibrateOffset(ADS131M04Defs::Channel::CHANNEL_1);
+    // ads131.calibrateOffset(ADS131M04Defs::Channel::CHANNEL_2);
+    // ads131.calibrateOffset(ADS131M04Defs::Channel::CHANNEL_3);
+
     while (true)
     {
         ads131.sample();
 
         ADS131M04Data data = ads131.getLastSample();
 
-        printf("% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\n", data.voltage[0],
+        printf("% 2.8f\t% 2.8f\t% 2.8f\t% 2.8f\n", data.voltage[0],
                data.voltage[1], data.voltage[2], data.voltage[3]);
 
         delayMs(50);

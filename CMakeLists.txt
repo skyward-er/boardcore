@@ -327,7 +327,7 @@ add_executable(test-ads1118 src/tests/sensors/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
 add_executable(test-ads131m04 src/tests/sensors/test-ads131m04.cpp)
-sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
+sbs_target(test-ads131m04 stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-ads131m08 src/tests/sensors/test-ads131m08.cpp)
 sbs_target(test-ads131m08 stm32f767zi_compute_unit)
