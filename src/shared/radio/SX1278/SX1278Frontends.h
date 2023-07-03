@@ -75,7 +75,7 @@ public:
     Skyward433Frontend() {}
 
     bool isOnPaBoost() override { return false; }
-    int maxInPower() override { return 17; }
+    int maxInPower() override { return 15; }
 
     void enableRx() override {}
     void disableRx() override {}
