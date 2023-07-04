@@ -38,6 +38,9 @@ LPS28DFW::LPS28DFW(I2C& i2c, SensorConfig sensorConfig)
     pressureSensitivity = (sensorConfig.fsr == FullScaleRange::FS_1260
                                ? pressureSensitivity1260hPa
                                : pressureSensitivity4060hPa);
+
+    // Set the address of the sensor
+    lastSample.sa0 = sensorConfig.sa0;
 }
 
 bool LPS28DFW::init()

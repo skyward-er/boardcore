@@ -33,6 +33,8 @@ namespace Boardcore
  */
 struct LPS28DFWData : public PressureData, TemperatureData
 {
+    // Selects if the used address is the 0 one
+    bool sa0 = false;
 
     LPS28DFWData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
