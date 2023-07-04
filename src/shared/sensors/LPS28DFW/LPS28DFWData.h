@@ -33,6 +33,8 @@ namespace Boardcore
  */
 struct LPS28DFWData : public PressureData, TemperatureData
 {
+    // Describes what is the I2C address of the sensor
+    bool sensorAddress = false;
 
     LPS28DFWData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
