@@ -104,8 +104,6 @@ public:
 
     void set8BitFrameFormat();
 
-    void set16BitFrameFormat();
-
     void enableSoftwareSlaveManagement();
 
     void disableSoftwareSlaveManagement();
@@ -331,24 +329,14 @@ inline void SPIBus::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
 
 inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
 
-inline void SPIBus::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
-
 #else
 
 inline void SPIBus::set8bitRXNE() { spi->CR2 |= SPI_CR2_FRXTH; }
-
-inline void SPIBus::set16bitRXNE() { spi->CR2 &= ~SPI_CR2_FRXTH; }
 
 inline void SPIBus::set8BitFrameFormat()
 {
     spi->CR2 &= ~SPI_CR2_DS;
     set8bitRXNE();
-}
-
-inline void SPIBus::set16BitFrameFormat()
-{
-    spi->CR2 |= SPI_CR2_DS;
-    set16bitRXNE();
 }
 
 #endif
@@ -443,11 +431,7 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
         enableInternalSlaveSelection();
         setMasterConfiguration();
 
-#ifdef _ARCH_CORTEXM7_STM32F7
-        // By default the driver uses 8 bit transactions. Therefore, for f7s,
-        // configure the FIFO threshold to 8 bit
-        set8bitRXNE();
-#endif
+        set8BitFrameFormat();
 
         // Enable the peripheral
         enable();
@@ -490,37 +474,20 @@ inline void SPIBus::read(uint8_t* data, size_t nBytes)
 
 inline void SPIBus::read16(uint16_t* data, size_t nBytes)
 {
-    // At the start of the transfer we assume that the RX FIFO is empty
-    assert((spi->SR & SPI_SR_RXNE) == 0);
+    // nBytes to be read must be a multiple of 2
+    assert(nBytes % 2 == 0);
 
-    // Set 16 bit frame format
-    set16BitFrameFormat();
-
+    uint16_t temp[2] = {0};
     for (size_t i = 0; i < nBytes / 2; i++)
     {
-        // Wait until the peripheral is ready to transmit
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
+        // Receiving MSB
+        temp[0] = static_cast<uint16_t>(read());
+        // Receiving LSB
+        temp[1] = static_cast<uint16_t>(read());
 
-        // Write the data item to transmit
-        spi->DR = 0;
-
-        // Make sure transmission is complete
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;
-
-        // Wait until data is received
-        while ((spi->SR & SPI_SR_RXNE) == 0)
-            ;
-
-        // Read the received data item
-        data[i] = static_cast<uint16_t>(spi->DR);
+        // MSB | LSB
+        data[i] = temp[0] << 8 | temp[1];
     }
-
-    // Go back to 8 bit frame format
-    set8BitFrameFormat();
 }
 
 inline void SPIBus::write(uint8_t data) { transfer(data); }
@@ -539,37 +506,16 @@ inline void SPIBus::write(const uint8_t* data, size_t nBytes)
 
 inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
 {
-    // At the start of the transfer we assume that the RX FIFO is empty
-    assert((spi->SR & SPI_SR_RXNE) == 0);
-
-    // Set 16 bit frame format
-    set16BitFrameFormat();
+    // nBytes to be read must be a multiple of 2
+    assert(nBytes % 2 == 0);
 
     for (size_t i = 0; i < nBytes / 2; i++)
     {
-        // Wait until the peripheral is ready to transmit
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-
-        // Write the data item to transmit
-        spi->DR = static_cast<uint16_t>(data[i]);
-
-        // Make sure transmission is complete
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;
-
-        // Wait until data is received
-        while ((spi->SR & SPI_SR_RXNE) == 0)
-            ;
-
-        // Read the received data item
-        (void)spi->DR;
+        // Sending MSB
+        write(static_cast<uint8_t>(data[i] >> 8));
+        // Sending LSB
+        write(static_cast<uint8_t>(data[i]));
     }
-
-    // Go back to 8 bit frame format
-    set8BitFrameFormat();
 }
 
 inline uint8_t SPIBus::transfer(uint8_t data)
@@ -600,52 +546,38 @@ inline uint8_t SPIBus::transfer(uint8_t data)
 
 inline uint16_t SPIBus::transfer16(uint16_t data)
 {
-    // At the start of the transfer we assume that the RX FIFO is empty
-    assert((spi->SR & SPI_SR_RXNE) == 0);
-
-    // Set 16 bit frame format
-    set16BitFrameFormat();
-
-    // Wait until the peripheral is ready to transmit
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-
-    // Write the data item to transmit
-    spi->DR = static_cast<uint16_t>(data);
-
-    // Make sure transmission is complete
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    while ((spi->SR & SPI_SR_BSY) > 0)
-        ;
-
-    // Wait until data is received
-    while ((spi->SR & SPI_SR_RXNE) == 0)
-        ;
-
-    // Read the received data item
-    data = static_cast<uint16_t>(spi->DR);
-
-    // Go back to 8 bit frame format
-    set8BitFrameFormat();
-
-    return data;
+    uint16_t temp[2] = {0};
+    // Transferring MSB, putting the read value in the MSB of temp
+    temp[0] = static_cast<uint16_t>(transfer(static_cast<uint8_t>(data >> 8)));
+    // Transferring LSB, putting the read value in the LSB of temp
+    temp[1] = static_cast<uint16_t>(transfer(static_cast<uint8_t>(data)));
+    // MSB | LSB
+    return temp[0] << 8 | temp[1];
 }
 
 inline uint32_t SPIBus::transfer24(uint32_t data)
 {
-    uint32_t res = static_cast<uint32_t>(transfer16(data >> 8)) << 8;
-    res |= transfer(data);
+    uint32_t temp[3] = {0};
+    // Transferring MSB, putting the read value in the MSB of temp
+    temp[0] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 16)));
+    temp[1] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 8)));
+    // Transferring LSB, putting the read value in the LSB of temp
+    temp[2] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data)));
 
-    return res;
+    return temp[0] << 16 | temp[1] << 8 | temp[2];
 }
 
 inline uint32_t SPIBus::transfer32(uint32_t data)
 {
-    uint32_t res = static_cast<uint32_t>(transfer16(data >> 16)) << 16;
-    res |= transfer16(data);
+    uint32_t temp[4] = {0};
+    // Transferring MSB, putting the read value in the MSB of temp
+    temp[0] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 24)));
+    temp[1] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 16)));
+    temp[2] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 8)));
+    // Transferring LSB, putting the read value in the LSB of temp
+    temp[3] = transfer(static_cast<uint8_t>(data));
 
-    return res;
+    return temp[0] << 24 | temp[1] << 16 | temp[2] << 8 | temp[3];
 }
 
 inline void SPIBus::transfer(uint8_t* data, size_t nBytes)
@@ -656,37 +588,19 @@ inline void SPIBus::transfer(uint8_t* data, size_t nBytes)
 
 inline void SPIBus::transfer16(uint16_t* data, size_t nBytes)
 {
-    // At the start of the transfer we assume that the RX FIFO is empty
-    assert((spi->SR & SPI_SR_RXNE) == 0);
+    // nBytes to be read must be a multiple of 2
+    assert(nBytes % 2 == 0);
 
-    // Set 16 bit frame format
-    set16BitFrameFormat();
+    uint16_t temp[2] = {0};
 
     for (size_t i = 0; i < nBytes / 2; i++)
     {
-        // Wait until the peripheral is ready to transmit
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-
-        // Write the data item to transmit
-        spi->DR = static_cast<uint16_t>(data[i]);
-
-        // Make sure transmission is complete
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;
-
-        // Wait until data is received
-        while ((spi->SR & SPI_SR_RXNE) == 0)
-            ;
-
-        // Read the received data item
-        data[i] = static_cast<uint16_t>(spi->DR);
+        temp[0] =
+            static_cast<uint16_t>(transfer(static_cast<uint8_t>(data[i] >> 8)));
+        temp[1] =
+            static_cast<uint16_t>(transfer(static_cast<uint8_t>(data[i])));
+        data[i] = temp[0] << 8 | temp[1];
     }
-
-    // Go back to 8 bit frame format
-    set8BitFrameFormat();
 }
 
 }  // namespace Boardcore
