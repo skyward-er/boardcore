@@ -162,16 +162,21 @@ private:
 
     static constexpr unsigned int maxFilenameNumber =
         10000;  ///< Limit on files
-#ifndef _ARCH_CORTEXM3_STM32F2
-    static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
-    static constexpr unsigned int numRecords = 512;  ///< Size of record queues
-    static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
-    static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
-#else
+#ifdef _ARCH_CORTEXM3_STM32F2
     static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
     static constexpr unsigned int numRecords = 64;  ///< Size of record queues
     static constexpr unsigned int numBuffers = 8;   ///< Number of buffers
     static constexpr unsigned int bufferSize = 4 * 1024;  ///< Size of buffers
+#elif _ARCH_CORTEXM4_STM32L4
+    static constexpr unsigned int maxRecordSize = 256;  ///< Limit on data
+    static constexpr unsigned int numRecords = 256;  ///< Size of record queues
+    static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
+    static constexpr unsigned int bufferSize = 64 * 512;  ///< Size of buffers
+#else
+    static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
+    static constexpr unsigned int numRecords = 512;  ///< Size of record queues
+    static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
+    static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
 #endif
 
     /**
