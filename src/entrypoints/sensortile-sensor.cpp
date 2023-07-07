@@ -21,6 +21,8 @@
  */
 
 #include <logger/Logger.h>
+#include <utils/Debug.h>
+#include <sensors/LIS2MDL/LIS2MDL.h>
 #include <miosix.h>
 
 using namespace miosix;
@@ -28,29 +30,74 @@ using namespace Boardcore;
 
 Logger& logger = Logger::getInstance();
 
+using GpioSck  = Gpio<GPIOB_BASE, 3>;
+using GpioMiso = Gpio<GPIOB_BASE, 4>;
+using GpioMosi = Gpio<GPIOB_BASE, 5>;
+using GpioCS   = Gpio<GPIOA_BASE, 15>;
+
 int main()
 {
+    // start logger
+    TRACE("Setting up Logger...\n");
     if (!logger.start())
     {
-        while (true)
-        {
-            ledOn();
-            Thread::sleep(100);
-            ledOff();
-            Thread::sleep(100);
-        }
+        TRACE("Logger failed to start, aborting.\n");
+        return 1;
     }
 
-    logger.log("Hello, world!");
+    TRACE("Setting up Pins...\n");
+    GpioCS::mode(Mode::OUTPUT);
+    GpioCS::high();
 
-    logger.stop();
-    while (true)
+    GpioSck::mode(Mode::ALTERNATE);
+    GpioSck::alternateFunction(5);
+
+    GpioMiso::mode(Mode::ALTERNATE);
+    GpioMiso::alternateFunction(5);
+
+    GpioMosi::mode(Mode::ALTERNATE);
+    GpioMosi::alternateFunction(5);
+
+    TRACE("Setting up SPI...\n");
+    SPIBus bus(SPI3);
+
+    SPIBusConfig busConfig;
+    busConfig.clockDivider = SPI::ClockDivider::DIV_32;
+
+    LIS2MDL::Config config;
+    config.odr                = LIS2MDL::ODR_100_HZ;
+    config.deviceMode         = LIS2MDL::MD_CONTINUOUS;
+    config.temperatureDivider = 5;
+
+    TRACE("Setting up Sensor...\n");
+    LIS2MDL sensor(bus, GpioCS::getPin(), busConfig, config);
+
+    if (!sensor.init())
     {
-        ledOn();
-        Thread::sleep(500);
-        ledOff();
-        Thread::sleep(500);
+        TRACE("LIS3MDL: Init failed\n");
+        return 1;
     }
 
+    TRACE("Doing self test!\n");
+    bool ok = sensor.selfTest();
+    if (!ok)
+    {
+        TRACE("Error: selfTest() returned false!\n");
+    }
+
+    TRACE("Now printing some sensor data:\n");
+    Thread::sleep(100);
+
+    for (int i = 0; i < 10; i++)
+    {
+        sensor.sample();
+        LIS2MDLData data __attribute__((unused)) = sensor.getLastSample();
+        TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature,
+              data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
+        miosix::Thread::sleep(2000);
+    }
+
+    TRACE("Completed\n");
+    logger.stop();
     return 0;
 }
