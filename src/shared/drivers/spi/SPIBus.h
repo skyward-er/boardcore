@@ -327,13 +327,19 @@ inline void SPIBus::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
  * For this reason, on f7s we need to configure the 16 bit frame format
  * differently and change the fifo threshold level.
  */
-#ifndef _ARCH_CORTEXM7_STM32F7
+#ifdef _ARCH_CORTEXM4_STM32L4
 
-inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
+inline void SPIBus::set8BitFrameFormat()
+{
+    spi->CR1 &= ~SPI_CR1_CRCNEXT;
+}
 
-inline void SPIBus::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
+inline void SPIBus::set16BitFrameFormat()
+{
+    spi->CR1 |= SPI_CR1_CRCNEXT;
+}
 
-#else
+#elif _ARCH_CORTEXM7_STM32F7
 
 inline void SPIBus::set8bitRXNE() { spi->CR2 |= SPI_CR2_FRXTH; }
 
@@ -350,6 +356,12 @@ inline void SPIBus::set16BitFrameFormat()
     spi->CR2 |= SPI_CR2_DS;
     set16bitRXNE();
 }
+
+#else
+
+inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
+
+inline void SPIBus::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
 
 #endif
 
