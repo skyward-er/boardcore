@@ -68,6 +68,9 @@ sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_v2)
 add_executable(sensortile-entry src/entrypoints/sensortile-entry.cpp)
 sbs_target(sensortile-entry stm32l4r9zi_sensortile)
 
+add_executable(sensortile-sensor src/entrypoints/sensortile-sensor.cpp)
+sbs_target(sensortile-sensor stm32l4r9zi_sensortile)
+
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
