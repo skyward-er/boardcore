@@ -45,7 +45,11 @@ GP32bitTimer TimestampTimer::initTimestampTimer()
     {
         miosix::FastInterruptDisableLock dLock;
         // Enable TIM2 peripheral clock
+        #ifdef _ARCH_CORTEXM4_STM32L4
         RCC->APB1ENR1 |= RCC_APB1ENR1_TIM2EN;
+        #else
+        RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+        #endif
     }
 
     timer.reset();
