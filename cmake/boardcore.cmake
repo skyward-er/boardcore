@@ -54,9 +54,9 @@ foreach(OPT_BOARD ${BOARDS})
         # ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
         # ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         # ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
-        # ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
+        ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         # ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
-        # ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
+        ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
         # ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f4.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f7.cpp
@@ -100,7 +100,7 @@ foreach(OPT_BOARD ${BOARDS})
         # ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
         # ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
         # ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
-        # ${SBS_BASE}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
+        ${SBS_BASE}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
 
         # Calibration
         ${SBS_BASE}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
