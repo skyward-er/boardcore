@@ -59,8 +59,11 @@ bool LIS2MDL::init()
     }
 
     {
+        TRACE("Starting SPI transaction\n");
         SPITransaction spi(slave);
+        TRACE("writing to CFG_REG_A\n");
         spi.writeRegister(CFG_REG_C, ENABLE_4WSPI | I2C_DISABLE);
+        TRACE("SPI transaction ended\n");
     }
 
     {

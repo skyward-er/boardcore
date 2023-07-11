@@ -21,7 +21,7 @@
  */
 
 #include "SPITransaction.h"
-
+#include <utils/Debug.h>
 #include <interfaces/endianness.h>
 
 namespace Boardcore
@@ -255,9 +255,14 @@ void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
         reg |= 0x80;
 
+    TRACE("SPI: writeRegister: reg=%02X, data=%02X\n", reg, data);
+    TRACE("selecting slave %d\n", slave.cs);
     slave.bus.select(slave.cs);
+    TRACE("writing reg\n");
     slave.bus.write(reg);
+    TRACE("writing data\n");
     slave.bus.write(data);
+    TRACE("deselecting slave %d\n", slave.cs);
     slave.bus.deselect(slave.cs);
 }
 

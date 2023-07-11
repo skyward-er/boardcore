@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <interfaces/delays.h>
 #include <utils/ClockUtils.h>
+#include <utils/Debug.h>
 
 #include "SPIBusInterface.h"
 
@@ -602,9 +603,11 @@ inline uint8_t SPIBus::transfer(uint8_t data)
     while ((spi->SR & SPI_SR_BSY) > 0)
         ;
 
+    TRACE("Waiting for RXNE\n");
     // Wait until data is received
     while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
+    TRACE("RXNE\n");
 
     // Read the received data item
     return static_cast<uint8_t>(spi->DR);
