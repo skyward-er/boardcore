@@ -37,6 +37,7 @@ int main()
 
     TRACE("Setting up SPI...\n");
     SPIBus bus(SPI3);
+    bus.set8BitFrameFormat();
 
     SPIBusConfig busConfig = LIS2MDL::getDefaultSPIConfig();
 
@@ -44,6 +45,9 @@ int main()
     config.odr                = LIS2MDL::ODR_10_HZ;
     config.deviceMode         = LIS2MDL::MD_CONTINUOUS;
     config.temperatureDivider = 5;
+
+    TRACE("Setting up RCC...\n");
+    RCC->APB1ENR1 |= RCC_APB1ENR1_SPI3EN;    
 
     TRACE("Setting up Sensor...\n");
     LIS2MDL sensor(bus, cs, busConfig, config);
