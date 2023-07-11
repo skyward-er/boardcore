@@ -24,20 +24,19 @@ int main()
     }
 
     TRACE("Setting up Pins...\n");
-
     clk.mode(Mode::ALTERNATE);
-    clk.alternateFunction(5);
+    clk.alternateFunction(6);
     clk.speed(Speed::_100MHz);
     miso.mode(Mode::ALTERNATE);
-    miso.alternateFunction(5);
+    miso.alternateFunction(6);
     mosi.mode(Mode::ALTERNATE);
-    mosi.alternateFunction(5);
+    mosi.alternateFunction(6);
     cs.mode(Mode::OUTPUT);
     cs.high();
 
     TRACE("Setting up SPI...\n");
     SPIBus bus(SPI3);
-    bus.set8BitFrameFormat();
+    // bus.set8BitFrameFormat();
 
     SPIBusConfig busConfig = LIS2MDL::getDefaultSPIConfig();
 
