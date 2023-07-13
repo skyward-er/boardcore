@@ -119,6 +119,9 @@ private:
         InterruptTrigger dio1_trigger = InterruptTrigger::RISING_EDGE;
     };
 
+    // This is reasonably the maximum we should wait for an interrupt
+    static constexpr int IRQ_TIMEOUT = 100;
+
 public:
     /**
      * @brief Handle generic DIO irq.
@@ -221,7 +224,7 @@ private:
     void enableIrqs();
     void disableIrqs();
 
-    void waitForIrqInner(LockMode &guard, bool unlock);
+    bool waitForIrqInner(LockMode &guard, bool unlock);
 
     DeviceState lockMode(Mode mode, DioMapping mapping,
                          InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
