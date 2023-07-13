@@ -88,9 +88,6 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
 
         if(!waitForIrqInner(guard, unlock)) 
         {
-            while(true) {
-                printf("[sx1278] Timeout!\n");
-            }
             // TODO: Something bad happened, do something!
         }
 
