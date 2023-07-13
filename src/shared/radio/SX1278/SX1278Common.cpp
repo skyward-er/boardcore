@@ -63,9 +63,8 @@ void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
                                   InterruptTrigger dio1_trigger,
                                   bool tx_frontend, bool rx_frontend)
 {
-    mutex.lock();
+    miosix::Lock<miosix::FastMutex> lock(mutex);
     enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
-    mutex.unlock();
 }
 
 ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
@@ -77,17 +76,23 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
     {
         // An interrupt could occur and read from this variables
         {
-            miosix::FastInterruptDisableLock dLock;
+            miosix::FastInterruptDisableLock lock;
             state.irq_wait_thread = miosix::Thread::IRQgetCurrentThread();
         }
 
         // Check that this hasn't already happened
-        if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
+        if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0) 
         {
             break;
         }
 
-        waitForIrqInner(guard, unlock);
+        if(!waitForIrqInner(guard, unlock)) 
+        {
+            while(true) {
+                printf("[sx1278] Timeout!\n");
+            }
+            // TODO: Something bad happened, do something!
+        }
 
         // TODO: Check state of the device, and reset if needed!
 
@@ -129,7 +134,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
     return 0;
 }
 
-void SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
+bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
 {
     // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
     // otherwise don't do anything with it
@@ -141,15 +146,14 @@ void SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
         mutex.unlock();
     }
 
+    int start = miosix::getTick();
+    miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
+
     {
-        miosix::FastInterruptDisableLock dLock;
-        while (state.irq_wait_thread)
+        miosix::FastInterruptDisableLock lock;
+        while (state.irq_wait_thread && result == miosix::TimedWaitResult::NoTimeout)
         {
-            miosix::Thread::IRQwait();
-            {
-                miosix::FastInterruptEnableLock eLock(dLock);
-                miosix::Thread::yield();
-            }
+            result = miosix::Thread::IRQenableIrqAndTimedWaitMs(lock, start + IRQ_TIMEOUT);
         }
     }
 
@@ -158,6 +162,9 @@ void SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
     {
         mutex.lock();
     }
+
+    // Check that we didn't have a timeout
+    return result == miosix::TimedWaitResult::NoTimeout;
 }
 
 ISX1278::IrqFlags SX1278Common::checkForIrqAndReset(IrqFlags set_irq,

@@ -41,7 +41,7 @@
 // Uncomment the following line to enable Ebyte module
 // #define SX1278_IS_EBYTE
 // Uncomment the following line to ebable Skyward433 module
-#define SX1278_IS_SKYWARD433
+// #define SX1278_IS_SKYWARD433
 
 using cs   = miosix::peripherals::ra01::pc13::cs;
 using dio0 = miosix::peripherals::ra01::pc13::dio0;
@@ -91,7 +91,7 @@ using rxen                         = miosix::radio::rxEn;
 #define SX1278_IS_SKYWARD433
 
 // Comment to use SX1278_2
-#define SX1278_1
+// #define SX1278_1
 
 #ifdef SX1278_1
 using cs   = miosix::Gpio<GPIOA_BASE, 4>;
@@ -127,7 +127,7 @@ using rst = miosix::Gpio<GPIOA_BASE, 3>;
 #define SX1278_SPI SPI3
 
 #define SX1278_IRQ_DIO0 EXTI8_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 stm32f429zi_skyward_groundstation_v2EXTI10_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI10_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI12_IRQHandlerImpl
 #endif
 
@@ -169,14 +169,14 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 
 void initBoard()
 {   
-    sck::mode(miosix::Mode::ALTERNATE);
-    sck::alternateFunction(5);
-    miso::mode(miosix::Mode::ALTERNATE);
-    miso::alternateFunction(5);
-    mosi::mode(miosix::Mode::ALTERNATE);
-    mosi::alternateFunction(5);
-    cs::mode(miosix::Mode::OUTPUT);
-    cs::high();
+    // sck::mode(miosix::Mode::ALTERNATE);
+    // sck::alternateFunction(6);
+    // miso::mode(miosix::Mode::ALTERNATE);
+    // miso::alternateFunction(6);
+    // mosi::mode(miosix::Mode::ALTERNATE);
+    // mosi::alternateFunction(5);
+    // cs::mode(miosix::Mode::OUTPUT);
+    // cs::high();
 
 #ifdef SX1278_IS_EBYTE
     rxen::mode(miosix::Mode::OUTPUT);
@@ -236,7 +236,7 @@ bool initRadio()
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
                                             dio1::getPin(), dio3::getPin(),
-                                            Boardcore::SPI::ClockDivider::DIV_64,
+                                            Boardcore::SPI::ClockDivider::DIV_32,
                                             std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
