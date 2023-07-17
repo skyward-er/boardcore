@@ -46,10 +46,15 @@ int main()
             "Corrupted packets: %d\n"
             "RSSI:              %.2f dBm\n"
             "FEI:               %.2f Hz\n"
-            "SNR:               %.2f\n",
+            "SNR:               %.2f\n"
+            "%d %d %d\n",
             static_cast<float>(stats.txBitrate()) / 1000.0f, stats.sent_count,
             static_cast<float>(stats.rxBitrate()) / 1000.0f, stats.recv_count,
-            stats.corrupted_count, stats.rssi, stats.fei, stats.snr);
+            stats.corrupted_count, stats.rssi, stats.fei, stats.snr, dio0_cnt, dio1_cnt, dio3_cnt);
+        dio0_cnt = 0;
+        dio1_cnt = 0;
+        dio3_cnt = 0;
+
 
         miosix::Thread::sleep(2000);
     }

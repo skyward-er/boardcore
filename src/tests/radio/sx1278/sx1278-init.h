@@ -86,7 +86,8 @@ using rxen                         = miosix::radio::rxEn;
 #define SX1278_IRQ_DIO1 EXTI12_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI13_IRQHandlerImpl
 
-#elif defined _BOARD_STM32F767ZI_COMPUTE_UNIT
+#elif defined _BOARD_STM32F767ZI_GEMINI_GS
+#include "interfaces-impl/hwmapping.h"
 
 #define SX1278_IS_SKYWARD433
 
@@ -94,41 +95,41 @@ using rxen                         = miosix::radio::rxEn;
 // #define SX1278_1
 
 #ifdef SX1278_1
-using cs   = miosix::Gpio<GPIOA_BASE, 4>;
-using dio0 = miosix::Gpio<GPIOC_BASE, 6>;
-using dio1 = miosix::Gpio<GPIOD_BASE, 4>;
-using dio3 = miosix::Gpio<GPIOD_BASE, 5>;
+using cs   = miosix::radio1::cs;
+using dio0 = miosix::radio1::dio0;
+using dio1 = miosix::radio1::dio1;
+using dio3 = miosix::radio1::dio3;
 
-using sck  = miosix::Gpio<GPIOA_BASE, 5>;
-using miso = miosix::Gpio<GPIOA_BASE, 6>;
-using mosi = miosix::Gpio<GPIOA_BASE, 7>;
+using sck  = miosix::radio1::spi::sck;
+using miso = miosix::radio1::spi::miso;
+using mosi = miosix::radio1::spi::mosi;
 
 #define SX1278_NRST
-using rst = miosix::Gpio<GPIOA_BASE, 0>;
+using rst = miosix::radio1::nrst;
 
-#define SX1278_SPI SPI1
+#define SX1278_SPI MIOSIX_RADIO1_SPI
 
-#define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
-#define SX1278_IRQ_DIO3 EXTI5_IRQHandlerImpl
+#define SX1278_IRQ_DIO0 MIOSIX_RADIO1_DIO0_IRQ
+#define SX1278_IRQ_DIO1 MIOSIX_RADIO1_DIO1_IRQ
+#define SX1278_IRQ_DIO3 MIOSIX_RADIO1_DIO3_IRQ
 #else
-using cs   = miosix::Gpio<GPIOA_BASE, 15>;
-using dio0 = miosix::Gpio<GPIOC_BASE, 8>;
-using dio1 = miosix::Gpio<GPIOC_BASE, 10>;
-using dio3 = miosix::Gpio<GPIOC_BASE, 12>;
+using cs   = miosix::radio2::cs;
+using dio0 = miosix::radio2::dio0;
+using dio1 = miosix::radio2::dio1;
+using dio3 = miosix::radio2::dio3;
 
-using sck  = miosix::Gpio<GPIOB_BASE, 3>;
-using miso = miosix::Gpio<GPIOB_BASE, 4>;
-using mosi = miosix::Gpio<GPIOD_BASE, 6>;
+using sck  = miosix::radio2::spi::sck;
+using miso = miosix::radio2::spi::miso;
+using mosi = miosix::radio2::spi::mosi;
 
 #define SX1278_NRST
-using rst = miosix::Gpio<GPIOA_BASE, 3>;
+using rst = miosix::radio2::nrst;
 
-#define SX1278_SPI SPI3
+#define SX1278_SPI MIOSIX_RADIO2_SPI
 
-#define SX1278_IRQ_DIO0 EXTI8_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 EXTI10_IRQHandlerImpl
-#define SX1278_IRQ_DIO3 EXTI12_IRQHandlerImpl
+#define SX1278_IRQ_DIO0 MIOSIX_RADIO2_DIO0_IRQ
+#define SX1278_IRQ_DIO1 MIOSIX_RADIO2_DIO1_IRQ
+#define SX1278_IRQ_DIO3 MIOSIX_RADIO2_DIO3_IRQ
 #endif
 
 #else
@@ -143,9 +144,14 @@ static constexpr size_t SX1278_MTU = Boardcore::SX1278Fsk::MTU;
 Boardcore::SX1278Fsk *sx1278       = nullptr;
 #endif
 
+volatile int dio0_cnt = 0;
+volatile int dio1_cnt = 0;
+volatile int dio3_cnt = 0;
+
 #ifdef SX1278_IRQ_DIO0
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
+    dio0_cnt++;
     if (sx1278)
         sx1278->handleDioIRQ();
 }
@@ -154,6 +160,7 @@ void __attribute__((used)) SX1278_IRQ_DIO0()
 #ifdef SX1278_IRQ_DIO1
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
+    dio1_cnt++;
     if (sx1278)
         sx1278->handleDioIRQ();
 }
@@ -162,22 +169,14 @@ void __attribute__((used)) SX1278_IRQ_DIO1()
 #ifdef SX1278_IRQ_DIO3
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
+    dio3_cnt++;
     if (sx1278)
         sx1278->handleDioIRQ();
 }
 #endif
 
 void initBoard()
-{   
-    // sck::mode(miosix::Mode::ALTERNATE);
-    // sck::alternateFunction(6);
-    // miso::mode(miosix::Mode::ALTERNATE);
-    // miso::alternateFunction(6);
-    // mosi::mode(miosix::Mode::ALTERNATE);
-    // mosi::alternateFunction(5);
-    // cs::mode(miosix::Mode::OUTPUT);
-    // cs::high();
-
+{
 #ifdef SX1278_IS_EBYTE
     rxen::mode(miosix::Mode::OUTPUT);
     txen::mode(miosix::Mode::OUTPUT);
