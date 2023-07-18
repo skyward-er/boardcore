@@ -43,7 +43,7 @@ constexpr float PGA_LSB_SIZE[8] = {143.0511e-9, 71.5256e-9, 35.7628e-9,
                                    2.2352e-9,   1.1176e-9};
 
 static constexpr float V_REF              = 1.2;
-static constexpr float TEST_SIGNAL_FACTOR = 2 / 15;
+static constexpr float TEST_SIGNAL_FACTOR = 2.0 / 15.0;
 static constexpr float TEST_SIGNAL_SLACK  = 0.1;  // Not defined in DS
 
 /**
