@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
 #include <cstring>
@@ -35,15 +36,42 @@ inline Canbus::CanMessage toCanMessage(const PitotData& data)
 {
     Canbus::CanMessage message;
 
-    uint32_t deltaP, airspeed;
-    memcpy(&deltaP, &(data.deltaP), sizeof(deltaP));
+    uint32_t airspeed;
     memcpy(&airspeed, &(data.airspeed), sizeof(airspeed));
 
     message.id         = -1;
     message.length     = 2;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= deltaP;
-    message.payload[1] = airspeed;
+    message.payload[0] |= airspeed;
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const PressureData& data)
+{
+    Canbus::CanMessage message;
+
+    uint32_t pressure;
+    memcpy(&pressure, &(data.pressure), sizeof(pressure));
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.pressureTimestamp & ~0x3) << 30;
+    message.payload[0] |= pressure;
+
+    return message;
+}
+inline Canbus::CanMessage toCanMessage(const TemperatureData& data)
+{
+    Canbus::CanMessage message;
+
+    uint32_t temperature;
+    memcpy(&temperature, &(data.temperature), sizeof(temperature));
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.temperatureTimestamp & ~0x3) << 30;
+    message.payload[0] |= temperature;
 
     return message;
 }
@@ -52,12 +80,35 @@ inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     PitotData data;
 
-    uint32_t deltaP   = msg.payload[0];
-    uint32_t airspeed = msg.payload[1];
-    memcpy(&(data.deltaP), &deltaP, sizeof(data.deltaP));
+    uint32_t airspeed = msg.payload[0];
     memcpy(&(data.airspeed), &airspeed, sizeof(data.airspeed));
 
     data.timestamp = (msg.payload[0] >> 30) & ~0x3;
+
+    return data;
+}
+
+inline PressureData pressureDataFromCanMessage(const Canbus::CanMessage& msg)
+{
+    PressureData data;
+
+    uint32_t pressure = msg.payload[0];
+    memcpy(&(data.pressure), &pressure, sizeof(data.pressure));
+
+    data.pressureTimestamp = (msg.payload[0] >> 30) & ~0x3;
+
+    return data;
+}
+
+inline TemperatureData temperatureDataFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    TemperatureData data;
+
+    uint32_t temperature = msg.payload[0];
+    memcpy(&(data.temperature), &temperature, sizeof(data.temperature));
+
+    data.temperatureTimestamp = (msg.payload[0] >> 30) & ~0x3;
 
     return data;
 }

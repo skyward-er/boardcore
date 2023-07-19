@@ -101,6 +101,14 @@ public:
                       uint8_t destination, uint8_t secondaryType);
 
     /**
+     * @brief Non-blocking send function for an event with a payload of 1 can
+     * packet, to send generic events/commands with a short payload.
+     */
+    bool enqueueEvent(uint8_t priority, uint8_t primaryType, uint8_t source,
+                      uint8_t destination, uint8_t secondaryType,
+                      uint64_t payload);
+
+    /**
      * @brief Non-blocking send function for a generic data type.
      *
      * @warning There must be a function called with this prototype:

@@ -53,29 +53,6 @@ namespace Canbus
  * the receiver end. The message informations are encoded into the packets id,
  * therefore they have an effect on packets priorities.
  */
-/**
- * The CanProtocol allows to transmit arbitrarily sized messages over the CanBus
- * overcoming the 8 byte limitation of each single packet.
- *
- * Our CanProtocol uses the extended can packet, the 29 bits id is divided such
- * as:
- * - Priority           4 bit \
- * - Primary type       6 bit |
- * - Source             4 bit | 22 bits - Message informations
- * - Destination        4 bit |
- * - Secondary type     4 bit /
- * - First packet flag  1 bit \ 7 bits - Sequential informations
- * - Remaining packets  6 bit /
- * shiftNameOfField the number of shift needed to reach that field
- *
- * The id is split into 2 parts:
- * - Message information: Common to every packet of a given message
- * - Sequential information: Used to distinguish between packets
- *
- * The sender splits into multiple packets a message that is then recomposed on
- * the receiver end. The message informations are encoded into the packets id,
- * therefore they have an effect on packets priorities.
- */
 
 /**
  * @brief Masks of the elements composing can packets ids.
