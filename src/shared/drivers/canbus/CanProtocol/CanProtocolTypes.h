@@ -83,6 +83,8 @@ inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
     uint32_t airspeed = msg.payload[0];
     memcpy(&(data.airspeed), &airspeed, sizeof(data.airspeed));
 
+    data.deltaP = 0.0;  // put to 0 to avoid undefined behaviour
+
     data.timestamp = (msg.payload[0] >> 30) & ~0x3;
 
     return data;
