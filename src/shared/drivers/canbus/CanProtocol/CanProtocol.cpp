@@ -163,13 +163,13 @@ bool CanProtocol::enqueueEvent(uint8_t priority, uint8_t primaryType,
                                uint8_t source, uint8_t destination,
                                uint8_t secondaryType)
 {
-    return enqueueEvent(priority, primaryType, source, destination,
-                        secondaryType, 0xFF);
+    return enqueueSimplePacket(priority, primaryType, source, destination,
+                               secondaryType, 0xFF);
 }
 
-bool CanProtocol::enqueueEvent(uint8_t priority, uint8_t primaryType,
-                               uint8_t source, uint8_t destination,
-                               uint8_t secondaryType, uint64_t payload)
+bool CanProtocol::enqueueSimplePacket(uint8_t priority, uint8_t primaryType,
+                                      uint8_t source, uint8_t destination,
+                                      uint8_t secondaryType, uint64_t payload)
 {
     if (priority > 0xF || primaryType > 0x3F || source > 0xF ||
         destination > 0xF || secondaryType > 0xF)
