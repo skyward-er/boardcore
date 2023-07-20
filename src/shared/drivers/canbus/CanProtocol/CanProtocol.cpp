@@ -163,6 +163,14 @@ bool CanProtocol::enqueueEvent(uint8_t priority, uint8_t primaryType,
                                uint8_t source, uint8_t destination,
                                uint8_t secondaryType)
 {
+    return enqueueSimplePacket(priority, primaryType, source, destination,
+                               secondaryType, 0xFF);
+}
+
+bool CanProtocol::enqueueSimplePacket(uint8_t priority, uint8_t primaryType,
+                                      uint8_t source, uint8_t destination,
+                                      uint8_t secondaryType, uint64_t payload)
+{
     if (priority > 0xF || primaryType > 0x3F || source > 0xF ||
         destination > 0xF || secondaryType > 0xF)
         return false;
@@ -171,7 +179,7 @@ bool CanProtocol::enqueueEvent(uint8_t priority, uint8_t primaryType,
 
     // Length set to a minumum of 1 even if there is no payload
     msg.length     = 1;
-    msg.payload[0] = 0xFF;
+    msg.payload[0] = payload;
 
     // clang-format off
     msg.id =  priority      << static_cast<uint32_t>(CanProtocolShiftInformation::PRIORITY);
