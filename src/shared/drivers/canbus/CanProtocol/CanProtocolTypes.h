@@ -40,7 +40,7 @@ inline Canbus::CanMessage toCanMessage(const PitotData& data)
     memcpy(&airspeed, &(data.airspeed), sizeof(airspeed));
 
     message.id         = -1;
-    message.length     = 2;
+    message.length     = 1;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
     message.payload[0] |= airspeed;
 
