@@ -96,14 +96,34 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     // Enable interrupts
     can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
 
-    NVIC_EnableIRQ(CAN1_RX0_IRQn);
-    NVIC_SetPriority(CAN1_RX0_IRQn, 14);
+    // Enable the corresponding interrupts
+    if (can == CAN1)
+    {
+        NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        NVIC_SetPriority(CAN1_RX0_IRQn, 14);
 
-    NVIC_EnableIRQ(CAN1_RX1_IRQn);
-    NVIC_SetPriority(CAN1_RX1_IRQn, 14);
+        NVIC_EnableIRQ(CAN1_RX1_IRQn);
+        NVIC_SetPriority(CAN1_RX1_IRQn, 14);
 
-    NVIC_EnableIRQ(CAN1_TX_IRQn);
-    NVIC_SetPriority(CAN1_TX_IRQn, 14);
+        NVIC_EnableIRQ(CAN1_TX_IRQn);
+        NVIC_SetPriority(CAN1_TX_IRQn, 14);
+    }
+    else if (can == CAN2)
+    {
+        NVIC_EnableIRQ(CAN2_RX0_IRQn);
+        NVIC_SetPriority(CAN2_RX0_IRQn, 14);
+
+        NVIC_EnableIRQ(CAN2_RX1_IRQn);
+        NVIC_SetPriority(CAN2_RX1_IRQn, 14);
+
+        NVIC_EnableIRQ(CAN2_TX_IRQn);
+        NVIC_SetPriority(CAN2_TX_IRQn, 14);
+    }
+    else
+    {
+        PrintLogger ls = l.getChild("constructor");
+        LOG_ERR(ls, "Not supported peripheral");
+    }
 }
 
 CanbusDriver::~CanbusDriver() { ClockUtils::disablePeripheralClock(can); }
@@ -202,6 +222,13 @@ void CanbusDriver::init()
 bool CanbusDriver::addFilter(FilterBank filter)
 {
     PrintLogger ls = l.getChild("addfilter");
+    uint8_t index  = filterIndex;
+
+    // CAN2 filters start from the 15th position
+    if (can == CAN2)
+    {
+        index = index + 14;
+    }
 
     if (isInit)
     {
@@ -209,21 +236,23 @@ bool CanbusDriver::addFilter(FilterBank filter)
         return false;
     }
 
-    if (filterIndex == NUM_FILTER_BANKS)
+    if (index == NUM_FILTER_BANKS)
     {
         LOG_ERR(ls, "Cannot add filter: no more filter banks available");
         return false;
     }
 
-    can->sFilterRegister[filterIndex].FR1 = filter.FR1;
-    can->sFilterRegister[filterIndex].FR2 = filter.FR2;
+    // NOTE: the filters are set in CAN1 peripheral because the filter registers
+    // between the peripherals are in common.
+    CAN1->sFilterRegister[index].FR1 = filter.FR1;
+    CAN1->sFilterRegister[index].FR2 = filter.FR2;
 
-    can->FM1R |= (filter.mode == FilterMode::MASK ? 0 : 1) << filterIndex;
-    can->FS1R |= (filter.scale == FilterScale::DUAL16 ? 0 : 1) << filterIndex;
-    can->FFA1R |= (filter.fifo & 0x1) << filterIndex;
+    CAN1->FM1R |= (filter.mode == FilterMode::MASK ? 0 : 1) << index;
+    CAN1->FS1R |= (filter.scale == FilterScale::DUAL16 ? 0 : 1) << index;
+    CAN1->FFA1R |= (filter.fifo & 0x1) << index;
 
     // Enable the filter
-    can->FA1R |= 1 << filterIndex;
+    CAN1->FA1R |= 1 << index;
 
     ++filterIndex;
 
