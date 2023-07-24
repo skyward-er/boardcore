@@ -94,10 +94,7 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
         sx1278->handleDioIRQ();
 }
 
-void initBoard()
-{
-
-}
+void initBoard() {}
 
 Mav* channel;
 
@@ -154,8 +151,9 @@ int main()
 
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 
-    sx1278 =
-        new SX1278Fsk(bus, cs::getPin(), dio0::getPin(), dio1::getPin(), dio3::getPin(), SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new SX1278Fsk(bus, cs::getPin(), dio0::getPin(), dio1::getPin(),
+                           dio3::getPin(), SPI::ClockDivider::DIV_64,
+                           std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
