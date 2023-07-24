@@ -163,7 +163,8 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     enterLoraMode();
 
     // Then make sure the device remains in standby and not in sleep
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, InterruptTrigger::RISING_EDGE, false, false);
+    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                   InterruptTrigger::RISING_EDGE, false, false);
 
     // Lock the bus
     Lock guard(*this);

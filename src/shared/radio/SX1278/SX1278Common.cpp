@@ -81,12 +81,12 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
         }
 
         // Check that this hasn't already happened
-        if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0) 
+        if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
         {
             break;
         }
 
-        if(!waitForIrqInner(guard, unlock)) 
+        if (!waitForIrqInner(guard, unlock))
         {
             // TODO: Something bad happened, do something!
         }
@@ -143,14 +143,16 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
         mutex.unlock();
     }
 
-    int start = miosix::getTick();
+    int start                      = miosix::getTick();
     miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
 
     {
         miosix::FastInterruptDisableLock lock;
-        while (state.irq_wait_thread && result == miosix::TimedWaitResult::NoTimeout)
+        while (state.irq_wait_thread &&
+               result == miosix::TimedWaitResult::NoTimeout)
         {
-            result = miosix::Thread::IRQenableIrqAndTimedWaitMs(lock, start + IRQ_TIMEOUT);
+            result = miosix::Thread::IRQenableIrqAndTimedWaitMs(
+                lock, start + IRQ_TIMEOUT);
         }
     }
 

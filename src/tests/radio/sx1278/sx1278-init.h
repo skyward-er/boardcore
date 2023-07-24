@@ -22,9 +22,8 @@
 
 #pragma once
 
-#include <miosix.h>
-
 #include <drivers/interrupt/external_interrupts.h>
+#include <miosix.h>
 
 // SX1278 includes
 #include <radio/SX1278/SX1278Frontends.h>
@@ -92,7 +91,7 @@ using rxen                         = miosix::radio::rxEn;
 #define SX1278_IS_SKYWARD433
 
 // Comment to use SX1278_2
-// #define SX1278_1
+#define SX1278_1
 
 #ifdef SX1278_1
 using cs   = miosix::radio1::cs;
@@ -105,7 +104,7 @@ using miso = miosix::radio1::spi::miso;
 using mosi = miosix::radio1::spi::mosi;
 
 #define SX1278_NRST
-using rst = miosix::radio1::nrst;
+using rst  = miosix::radio1::nrst;
 
 #define SX1278_SPI MIOSIX_RADIO1_SPI
 
@@ -123,7 +122,7 @@ using miso = miosix::radio2::spi::miso;
 using mosi = miosix::radio2::spi::mosi;
 
 #define SX1278_NRST
-using rst = miosix::radio2::nrst;
+using rst  = miosix::radio2::nrst;
 
 #define SX1278_SPI MIOSIX_RADIO2_SPI
 
@@ -215,6 +214,8 @@ bool initRadio()
     Boardcore::SX1278Lora::Config config;
     Boardcore::SX1278Lora::Error err;
 
+    config.freq_rf = 444000000;
+
     sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
                                        dio1::getPin(), dio3::getPin(),
                                        Boardcore::SPI::ClockDivider::DIV_64,
@@ -232,6 +233,8 @@ bool initRadio()
     // Run default configuration
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
+
+    config.freq_rf = 444000000;
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
                                             dio1::getPin(), dio3::getPin(),
