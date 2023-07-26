@@ -32,14 +32,14 @@ namespace Canbus
 
 CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
                          uint32_t baudRate)
-    : can(can), onReceive(onReceive)
+    : can(can), onReceive(onReceive), baudRate(baudRate)
 {
-    loadEstimator = new BusLoadEstimation(baudRate);
 }
 
 bool CanProtocol::start()
 {
-    stopFlag = false;
+    loadEstimator = new BusLoadEstimation(baudRate);
+    stopFlag      = false;
 
     if (can == nullptr)
         return false;

@@ -195,7 +195,9 @@ private:
 
     SyncCircularBuffer<CanMessage, 10> outQueue;
 
-    BusLoadEstimation* loadEstimator;
+    uint32_t baudRate;
+
+    BusLoadEstimation* loadEstimator = NULL;
 
     PrintLogger logger = Logging::getLogger("canprotocol");
 };
