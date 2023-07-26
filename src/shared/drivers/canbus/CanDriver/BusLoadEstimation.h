@@ -40,7 +40,7 @@ namespace Canbus
 
 class BusLoadEstimation
 {
-    static constexpr uint16_t BUFFER_LEN = 100;
+    static constexpr uint16_t BUFFER_LEN = 20;
 
 public:
     struct BusLoadInfo
@@ -60,6 +60,7 @@ public:
 
     BusLoadInfo getLoadInfo()
     {
+        // implements a simple "moving avg"
         Lock<FastMutex> l(mutex);
         if (c.count() < 2)
         {

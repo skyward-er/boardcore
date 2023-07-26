@@ -31,8 +31,16 @@ namespace Canbus
 {
 
 CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive)
+{
+    // We assume the bus to be configured at its max velocity
+    CanProtocol(can, onReceive, 500 * 1000);
+}
+
+CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
+                         uint32_t baudRate)
     : can(can), onReceive(onReceive)
 {
+    loadEstimator = new BusLoadEstimation(baudRate);
 }
 
 bool CanProtocol::start()
@@ -138,6 +146,8 @@ void CanProtocol::sendMessage(const CanMessage& msg)
 
     // Send the first packet
     can->send(packet);
+    // Updates the loadEstimator
+    loadEstimator->addPacket(packet);
     leftToSend--;
 
     // Prepare the remaining packets
@@ -155,6 +165,8 @@ void CanProtocol::sendMessage(const CanMessage& msg)
             packet.data[k] = msg.payload[i] >> (8 * k);
 
         can->send(packet);
+        // Updates the loadEstimator
+        loadEstimator->addPacket(packet);
         leftToSend--;
     }
 }

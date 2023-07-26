@@ -23,6 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
 #include <drivers/canbus/CanDriver/CanDriver.h>
 #include <utils/Debug.h>
 #include <utils/collections/SyncCircularBuffer.h>
@@ -54,8 +55,24 @@ public:
      * @brief Construct a new CanProtocol object.
      *
      * @param can Pointer to a CanbusDriver object.
+     *
+     * @param onReceive function to be called when a new message is received.
      */
-    CanProtocol(CanbusDriver* can, MsgHandler onReceive);
+
+    CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive);
+
+    /**
+     * @brief Construct a new CanProtocol object.
+     *
+     * @param can Pointer to a CanbusDriver object.
+     *
+     * @param onReceive function to be called when a new message is received.
+     *
+     * @param baudRate used to calculate bus usage.
+     */
+
+    CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
+                             uint32_t baudRate);
 
     /**
      * @brief Start the receiving and sending threads.
@@ -182,6 +199,8 @@ private:
     miosix::Thread* rcvThread = nullptr;
 
     SyncCircularBuffer<CanMessage, 10> outQueue;
+
+    BusLoadEstimation* loadEstimator;
 
     PrintLogger logger = Logging::getLogger("canprotocol");
 };
