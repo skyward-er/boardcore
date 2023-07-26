@@ -59,7 +59,7 @@ public:
      * @param onReceive function to be called when a new message is received.
      */
 
-    CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive);
+    CanProtocol(CanbusDriver* can, MsgHandler onReceive);
 
     /**
      * @brief Construct a new CanProtocol object.
@@ -71,8 +71,7 @@ public:
      * @param baudRate used to calculate bus usage.
      */
 
-    CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
-                             uint32_t baudRate);
+    CanProtocol(CanbusDriver* can, MsgHandler onReceive, uint32_t baudRate);
 
     /**
      * @brief Start the receiving and sending threads.
