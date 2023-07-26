@@ -236,7 +236,7 @@ bool CanbusDriver::addFilter(FilterBank filter)
         return false;
     }
 
-    if (index == NUM_FILTER_BANKS)
+    if (index >= NUM_FILTER_BANKS)
     {
         LOG_ERR(ls, "Cannot add filter: no more filter banks available");
         return false;
