@@ -31,7 +31,7 @@ namespace Canbus
 {
 
 CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
-                         uint32_t baudRate = 500 * 1000)
+                         uint32_t baudRate)
     : can(can), onReceive(onReceive)
 {
     loadEstimator = new BusLoadEstimation(baudRate);

@@ -61,7 +61,8 @@ public:
      * @param baudRate used to calculate bus usage (default 500*1000).
      */
 
-    CanProtocol(CanbusDriver* can, MsgHandler onReceive, uint32_t baudRate);
+    CanProtocol(CanbusDriver* can, MsgHandler onReceive,
+                uint32_t baudRate = 500 * 1000);
 
     /**
      * @brief Start the receiving and sending threads.
