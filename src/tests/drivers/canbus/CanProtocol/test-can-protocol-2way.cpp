@@ -29,33 +29,27 @@
 #include <diagnostic/PrintLogger.h>
 #include <drivers/canbus/CanDriver/BusLoadEstimation.h>
 #include <drivers/canbus/CanDriver/CanDriver.h>
+#include <drivers/canbus/CanProtocol/CanProtocol.h>
+#include <miosix.h>
 #include <utils/Debug.h>
 #include <utils/Stats/Stats.h>
 #include <utils/collections/CircularBuffer.h>
 
+#include <functional>
 #include <string>
-
-#include "SimpleCanManager.h"
 
 constexpr uint32_t BAUD_RATE         = 500 * 1000;
 constexpr float SAMPLE_POINT         = 87.5f / 100.0f;
 constexpr uint32_t MSG_DEADLINE      = 100;  // ms
 constexpr uint32_t MSG_LOST_DEADLINE = 400;  // ms
 
-using std::string;
+using namespace std;
+using namespace placeholders;
 using namespace Boardcore;
-using namespace Boardcore::Canbus;
+using namespace Canbus;
 using namespace miosix;
 
-#ifdef _ARCH_CORTEXM3_STM32F1
-using CanRX = Gpio<GPIOA_BASE, 11>;
-using CanTX = Gpio<GPIOA_BASE, 12>;
-#else
-using CanRX = Gpio<GPIOA_BASE, 11>;
-using CanTX = Gpio<GPIOA_BASE, 12>;
-#endif
-
-SimpleCanManager* canManager;
+CanProtocol* protocol;
 
 struct CanMsg
 {
@@ -63,25 +57,28 @@ struct CanMsg
     uint32_t ts;
 };
 
-CircularBuffer<CanMsg, 4000> msgs;
+CircularBuffer<CanMsg, 64> msgs;
 FastMutex mutexMsgs;
 
-void handleCanMessage(Canbus::CanRXPacket packet)
+void handleCanMessage(CanMessage packet)
 {
-    if (packet.packet.data[0] == 0x44)  // This is a request
+
+    if (packet.getPriority() == 0x00)  // This is a request
     {
-        CanPacket response = packet.packet;
-        response.data[0]   = 0x55;
-        canManager->send(response);
+        PressureData temp = pressureDataFromCanMessage(packet);
+        // we resend the same packet
+        protocol->enqueueData(0x01, packet.getPrimaryType(), packet.getSource(),
+                              packet.getDestination(),
+                              packet.getSecondaryType(), temp);
     }
-    else if (packet.packet.data[0] == 0x55)  // This is a response to a request
+    else if (packet.getPriority() == 0x1)  // This is a response to a request
     {
         Lock<FastMutex> l(mutexMsgs);
 
         for (size_t i = 0; i < msgs.count(); ++i)
         {
             CanMsg& msg = msgs.get(i);
-            if (msg.id == packet.packet.id)
+            if (msg.id == packet.getPrimaryType())
             {
                 msg.id = 0;
                 msg.ts = getTick() - msg.ts;
@@ -91,33 +88,31 @@ void handleCanMessage(Canbus::CanRXPacket packet)
     }
 }
 
-int seq = 1;
+uint8_t seq = 1;
 void sendNewRequest()
 {
-    CanPacket packet;
-    packet.id = seq++;
-
-    if (packet.id % 2 == 0)
+    CanMessage message;
+    uint8_t id;
+    if (seq >= 0x3F)
     {
-        packet.id = 0xFFFFFFF - packet.id;
+        seq = 1;
     }
+    id = seq;
+    seq++;
 
-    packet.ext    = 1;
-    packet.length = 8;
-    packet.rtr    = false;
-
-    packet.data[0] = 0x44;
-    for (int i = 1; i < 8; ++i)
+    if (id % 2 == 0)
     {
-        packet.data[i] = seq + i;
+        id = 0x3F - id;
     }
 
     {
         Lock<FastMutex> l(mutexMsgs);
-        msgs.put({packet.id, (uint32_t)getTick()});
+        msgs.put({id, (uint32_t)getTick()});
     }
-
-    canManager->send(packet);
+    PressureData f;
+    f.pressureTimestamp = 0x12345678;
+    f.pressure          = 9876;
+    protocol->enqueueData(0x00, id, 0x01, 0x00, 0x00, f);
 }
 
 class MessageCollector : public ActiveObject
@@ -175,7 +170,7 @@ public:
                     res.maxValue, res.minValue, bufferFull);
 
                 Canbus::BusLoadInfo info __attribute__((unused)) =
-                    canManager->getLoadSensor().getLoadInfo();
+                    protocol->getLoad();
                 printf(
                     "Payload rate: %.2f kbps, Frame rate: %.2f kbps, Load: "
                     "%.2f %%\n",
@@ -201,45 +196,26 @@ int main()
 {
     Logging::startAsyncLogger();
 
-    {
-        miosix::FastInterruptDisableLock dLock;
-
-#ifdef _ARCH_CORTEXM3_STM32F1
-        CanRX::mode(Mode::ALTERNATE);
-        CanTX::mode(Mode::ALTERNATE);
-#else
-        CanRX::mode(Mode::ALTERNATE);
-        CanTX::mode(Mode::ALTERNATE);
-
-        CanRX::alternateFunction(9);
-        CanTX::alternateFunction(9);
-#endif
-    }
-
     CanbusDriver::CanbusConfig cfg{};
+    cfg.nart = 0;
     CanbusDriver::AutoBitTiming bt;
     bt.baudRate    = BAUD_RATE;
     bt.samplePoint = SAMPLE_POINT;
 
-    CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
-    canManager      = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
+    CanbusDriver* c1 = new CanbusDriver(CAN1, cfg, bt);
+    CanbusDriver* c  = new CanbusDriver(CAN2, cfg, bt);
+    protocol = new CanProtocol(c, bind(&handleCanMessage, _1), BAUD_RATE);
 
-    // Allow every message
+    // Allow every message _1
     Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
     c->addFilter(f2);
     c->init();
+    protocol->start();
 
-    canManager->start();
     mc.start();
-    const int slp = 5;
+    const int slp = 20;
     for (;;)
     {
-        sendNewRequest();
-        Thread::sleep(slp);
-        sendNewRequest();
-        Thread::sleep(slp);
-        sendNewRequest();
-        Thread::sleep(slp);
         sendNewRequest();
         Thread::sleep(slp);
     }

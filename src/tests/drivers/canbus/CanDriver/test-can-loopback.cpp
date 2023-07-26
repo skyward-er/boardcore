@@ -64,8 +64,8 @@ public:
     {
         while (!shouldStop())
         {
-            long long start                     = miosix::getTick();
-            BusLoadEstimation::BusLoadInfo info = ble.getLoadInfo();
+            long long start  = miosix::getTick();
+            BusLoadInfo info = ble.getLoadInfo();
             LOG_INFO(l,
                      "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, "
                      "utilization: {:.2f}%",

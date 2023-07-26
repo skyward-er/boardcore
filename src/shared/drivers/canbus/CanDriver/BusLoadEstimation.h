@@ -38,18 +38,17 @@ namespace Boardcore
 namespace Canbus
 {
 
+struct BusLoadInfo
+{
+    float payloadBitRate;
+    float totalBitRate;
+    float loadPercent;
+};
 class BusLoadEstimation
 {
     static constexpr uint16_t BUFFER_LEN = 20;
 
 public:
-    struct BusLoadInfo
-    {
-        float payloadBitRate;
-        float totalBitRate;
-        float loadPercent;
-    };
-
     BusLoadEstimation(uint32_t baudRate) : baudRate(baudRate) {}
 
     void addPacket(CanPacket p)
@@ -75,8 +74,9 @@ public:
         for (size_t i = 0; i < c.count(); ++i)
         {
             sizePayload += c.get(i).dataLength * 8;
+            sizeFrames += ((54 + c.get(i).dataLength * 8 - 1) / 4);
         }
-        sizeFrames = sizePayload + (64 + 8) * c.count();
+        sizeFrames += sizePayload + 64 * c.count();
 
         return BusLoadInfo{(sizePayload / dt), (sizeFrames / dt),
                            ((sizeFrames / dt) / baudRate) * 100};

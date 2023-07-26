@@ -137,12 +137,17 @@ public:
     bool enqueueData(uint8_t priority, uint8_t primaryType, uint8_t source,
                      uint8_t destination, uint8_t secondaryType, const T& t);
 
+    /**
+     * @brief Return can load.
+     */
+    BusLoadInfo getLoad();
+
 private:
     /**
      * @brief Blocking send function, puts the CanMessage object on the bus.
      *
-     * Takes a CanMessage object, splits it into multiple CanPackets with the
-     * correct sequential id.
+     * Takes a CanMessage object, splits it into multiple CanPackets with
+     * the correct sequential id.
      *
      * @param msg Contains the id and the data of the packet to send.
      */

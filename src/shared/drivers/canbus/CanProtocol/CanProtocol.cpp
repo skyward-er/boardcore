@@ -206,6 +206,10 @@ bool CanProtocol::enqueueSimplePacket(uint8_t priority, uint8_t primaryType,
     return enqueueMsg(msg);
 }
 
+BusLoadInfo CanProtocol::getLoad(){
+    return loadEstimator->getLoadInfo();
+}
+
 void CanProtocol::runReceiver()
 {
     CanMessage msg;

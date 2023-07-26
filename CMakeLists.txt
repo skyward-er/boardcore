@@ -200,8 +200,11 @@ sbs_target(test-can-filters stm32f429zi_skyward_pyxis_auxiliary)
 add_executable(test-can-loopback src/tests/drivers/canbus/CanDriver/test-can-loopback.cpp)
 sbs_target(test-can-loopback stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-can-protocol src/tests/drivers/canbus/CanProtocol/test-can-protocol.cpp)
-sbs_target(test-can-protocol stm32f429zi_skyward_death_stack_x)
+add_executable(test-can-protocol-loopback src/tests/drivers/canbus/CanProtocol/test-can-protocol-loopback.cpp)
+sbs_target(test-can-protocol-loopback stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-can-protocol-2way src/tests/drivers/canbus/CanProtocol/test-can-protocol-2way.cpp)
+sbs_target(test-can-protocol-2way stm32f429zi_skyward_pyxis_auxiliary)
 
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
 sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
