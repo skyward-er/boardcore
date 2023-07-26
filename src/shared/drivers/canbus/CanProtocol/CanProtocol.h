@@ -57,18 +57,8 @@ public:
      * @param can Pointer to a CanbusDriver object.
      *
      * @param onReceive function to be called when a new message is received.
-     */
-
-    CanProtocol(CanbusDriver* can, MsgHandler onReceive);
-
-    /**
-     * @brief Construct a new CanProtocol object.
      *
-     * @param can Pointer to a CanbusDriver object.
-     *
-     * @param onReceive function to be called when a new message is received.
-     *
-     * @param baudRate used to calculate bus usage.
+     * @param baudRate used to calculate bus usage (default 500*1000).
      */
 
     CanProtocol(CanbusDriver* can, MsgHandler onReceive, uint32_t baudRate);

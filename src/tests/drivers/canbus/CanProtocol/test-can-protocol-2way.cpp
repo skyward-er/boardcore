@@ -115,7 +115,7 @@ void sendNewRequest()
     protocol->enqueueData(0x00, id, 0x01, 0x00, 0x00, f);
 }
 
-class MessageCollector : public ActiveObject
+class MessageCollect : public ActiveObject
 {
 public:
     void run() override
@@ -190,7 +190,7 @@ private:
     Stats msgstats;
 };
 
-MessageCollector mc;
+MessageCollect mc;
 
 int main()
 {
@@ -203,7 +203,10 @@ int main()
     bt.samplePoint = SAMPLE_POINT;
 
     CanbusDriver* c1 = new CanbusDriver(CAN1, cfg, bt);
-    CanbusDriver* c  = new CanbusDriver(CAN2, cfg, bt);
+    if (false && c1)
+    {
+    }
+    CanbusDriver* c = new CanbusDriver(CAN2, cfg, bt);
     protocol = new CanProtocol(c, bind(&handleCanMessage, _1), BAUD_RATE);
 
     // Allow every message _1

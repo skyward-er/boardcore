@@ -30,14 +30,8 @@ namespace Boardcore
 namespace Canbus
 {
 
-CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive)
-{
-    // We assume the bus to be configured at its max velocity
-    CanProtocol(can, onReceive, 500 * 1000);
-}
-
 CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
-                         uint32_t baudRate)
+                         uint32_t baudRate = 500 * 1000)
     : can(can), onReceive(onReceive)
 {
     loadEstimator = new BusLoadEstimation(baudRate);
