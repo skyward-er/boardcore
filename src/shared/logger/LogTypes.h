@@ -54,7 +54,6 @@
 #include <sensors/VN100/VN100Data.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
-#include <sensors/analog/CurrentSensorData.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN030PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN160KAData.h>
@@ -114,7 +113,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<VN100Data>();
     ds.registerType<AnalogLoadCellData>();
     ds.registerType<BatteryVoltageSensorData>();
-    ds.registerType<CurrentSensorData>();
+    ds.registerType<CurrentData>();
     ds.registerType<HSCMAND015PAData>();
     ds.registerType<HSCMRNN030PAData>();
     ds.registerType<HSCMRNN160KAData>();

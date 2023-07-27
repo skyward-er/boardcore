@@ -272,4 +272,20 @@ struct ADCData
     float voltage             = 0;
 };
 
+/**
+ * @brief Structure to handle current data.
+ */
+struct CurrentData
+{
+    uint64_t currentTimestamp = 0;
+    float current             = 0;
+
+    static std::string header() { return "timestamp,current\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << currentTimestamp << "," << current << "\n";
+    }
+};
+
 }  // namespace Boardcore

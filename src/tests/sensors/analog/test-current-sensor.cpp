@@ -80,9 +80,8 @@ int main()
 
             currentSensor.sample();
 
-            CurrentSensorData currentData = currentSensor.getLastSample();
-            printf("%llu %u %f %f \n", currentData.voltageTimestamp,
-                   currentData.channelId, currentData.voltage,
+            CurrentData currentData = currentSensor.getLastSample();
+            printf("%llu %f \n", currentData.currentTimestamp,
                    currentData.current);
 
             miosix::Thread::sleep(100);

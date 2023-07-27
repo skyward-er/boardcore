@@ -76,6 +76,21 @@ inline Canbus::CanMessage toCanMessage(const TemperatureData& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const CurrentData& data)
+{
+    Canbus::CanMessage message;
+
+    uint32_t current;
+    memcpy(&current, &(data.current), sizeof(current));
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.currentTimestamp & ~0x3) << 30;
+    message.payload[0] |= current;
+
+    return message;
+}
+
 inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     PitotData data;
@@ -111,6 +126,18 @@ inline TemperatureData temperatureDataFromCanMessage(
     memcpy(&(data.temperature), &temperature, sizeof(data.temperature));
 
     data.temperatureTimestamp = (msg.payload[0] >> 30) & ~0x3;
+
+    return data;
+}
+
+inline CurrentData currentDataFromCanMessage(const Canbus::CanMessage& msg)
+{
+    CurrentData data;
+
+    uint32_t current = msg.payload[0];
+    memcpy(&(data.current), &current, sizeof(data.current));
+
+    data.currentTimestamp = (msg.payload[0] >> 30) & ~0x3;
 
     return data;
 }
