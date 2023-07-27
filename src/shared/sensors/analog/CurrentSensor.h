@@ -26,8 +26,6 @@
 
 #include <functional>
 
-#include "CurrentSensorData.h"
-
 namespace Boardcore
 {
 
@@ -36,7 +34,7 @@ namespace Boardcore
  *
  * It needs a transfer function to convert the read voltage into current.
  */
-class CurrentSensor : public Sensor<CurrentSensorData>
+class CurrentSensor : public Sensor<CurrentData>
 {
 public:
     static constexpr int MOVING_AVERAGE_N = 20;
@@ -53,7 +51,7 @@ public:
     bool selfTest() override { return true; };
 
     ///< Converts the voltage value to pressure
-    CurrentSensorData sampleImpl() override
+    CurrentData sampleImpl() override
     {
         ADCData adc_data = getVoltage();
 
@@ -62,10 +60,8 @@ public:
             lastSample.current = voltageToCurrent(adc_data.voltage);
         }
 
-        CurrentSensorData current_data;
-        current_data.voltageTimestamp = adc_data.voltageTimestamp;
-        current_data.channelId        = adc_data.channelId;
-        current_data.voltage          = adc_data.voltage;
+        CurrentData current_data;
+        current_data.currentTimestamp = adc_data.voltageTimestamp;
 
         // Moving average
         current_data.current = lastSample.current * MOVING_AVERAGE_COMP_COEFF;
