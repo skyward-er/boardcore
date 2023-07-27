@@ -42,21 +42,43 @@ void print(const CanMessage& msg)
 
 int main()
 {
-    // Prepare the cab driver
+    GpioPin canA{GPIOB_BASE, 8};
+    GpioPin canB{GPIOB_BASE, 9};
+
+    canA.mode(Mode::ALTERNATE);
+    canB.mode(Mode::ALTERNATE);
+    canA.alternateFunction(9);
+    canB.alternateFunction(9);
+
+    GpioPin can2A{GPIOB_BASE, 12};
+    GpioPin can2B{GPIOB_BASE, 13};
+
+    can2A.mode(Mode::ALTERNATE);
+    can2B.mode(Mode::ALTERNATE);
+    can2A.alternateFunction(9);
+    can2B.alternateFunction(9);
+
+    printf("provolone fritto\n");
+
+    // // Prepare the cab driver
     CanbusDriver::CanbusConfig config;
     config.loopback = true;
     CanbusDriver::AutoBitTiming bitTiming;
-    bitTiming.baudRate    = 500 * 1000;
+    bitTiming.baudRate    = 50 * 1000;
     bitTiming.samplePoint = 87.5f / 100.0f;
-    CanbusDriver* driver  = new CanbusDriver(CAN1, config, bitTiming);
 
-    // Prepare the can driver
-    CanProtocol protocol(driver, print);
+    // To make the CAN2 work the driver must be created also for CAN1
+    // TODO change this thing
+    CanbusDriver* driver1 = new CanbusDriver(CAN1, config, bitTiming);
+    CanbusDriver* driver2 = new CanbusDriver(CAN2, config, bitTiming);
+
+    // // Prepare the can driver
+    CanProtocol protocol(driver2, print);
 
     // Add a filter to allow every message
     Mask32FilterBank f2(0, 0, 1, 1, 0, 0, 0);
-    driver->addFilter(f2);
-    driver->init();
+    driver2->addFilter(f2);
+    driver2->init();
 
     // Start the protocol
     protocol.start();
