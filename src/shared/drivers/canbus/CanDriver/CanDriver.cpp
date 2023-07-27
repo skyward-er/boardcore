@@ -49,6 +49,11 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
                            BitTiming bitTiming)
     : can(can)
 {
+    if (can == CAN2)
+    {
+        // CAN2 also need the CAN1 clock
+        ClockUtils::enablePeripheralClock(CAN1);
+    }
     // Enable the peripheral clock
     ClockUtils::enablePeripheralClock(can);
 
@@ -126,7 +131,14 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     }
 }
 
-CanbusDriver::~CanbusDriver() { ClockUtils::disablePeripheralClock(can); }
+CanbusDriver::~CanbusDriver()
+{
+    ClockUtils::disablePeripheralClock(can);
+    if (can == CAN2)
+    {
+        ClockUtils::disablePeripheralClock(CAN1);
+    }
+}
 
 CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
 {
