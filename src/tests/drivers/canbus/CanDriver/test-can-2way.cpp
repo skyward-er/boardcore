@@ -47,14 +47,6 @@ using namespace Boardcore;
 using namespace Boardcore::Canbus;
 using namespace miosix;
 
-#ifdef _ARCH_CORTEXM3_STM32F1
-using CanRX = Gpio<GPIOA_BASE, 11>;
-using CanTX = Gpio<GPIOA_BASE, 12>;
-#else
-using CanRX = Gpio<GPIOA_BASE, 11>;
-using CanTX = Gpio<GPIOA_BASE, 12>;
-#endif
-
 SimpleCanManager* canManager;
 
 struct CanMsg
@@ -201,28 +193,13 @@ int main()
 {
     Logging::startAsyncLogger();
 
-    {
-        miosix::FastInterruptDisableLock dLock;
-
-#ifdef _ARCH_CORTEXM3_STM32F1
-        CanRX::mode(Mode::ALTERNATE);
-        CanTX::mode(Mode::ALTERNATE);
-#else
-        CanRX::mode(Mode::ALTERNATE);
-        CanTX::mode(Mode::ALTERNATE);
-
-        CanRX::alternateFunction(9);
-        CanTX::alternateFunction(9);
-#endif
-    }
-
     CanbusDriver::CanbusConfig cfg{};
     CanbusDriver::AutoBitTiming bt;
-    bt.baudRate    = BAUD_RATE;
-    bt.samplePoint = SAMPLE_POINT;
-
-    CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
-    canManager      = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
+    bt.baudRate      = BAUD_RATE;
+    bt.samplePoint   = SAMPLE_POINT;
+    CanbusDriver* c1 = new CanbusDriver(CAN1, cfg, bt);
+    CanbusDriver* c  = new CanbusDriver(CAN2, cfg, bt);
+    canManager       = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
 
     // Allow every message
     Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
