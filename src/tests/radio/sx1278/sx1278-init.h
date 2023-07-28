@@ -89,6 +89,7 @@ using rxen                         = miosix::radio::rxEn;
 #include "interfaces-impl/hwmapping.h"
 
 #define SX1278_IS_SKYWARD433
+// #define SX1278_IS_EBYTE
 
 // Comment to use SX1278_2
 #define SX1278_1
@@ -102,6 +103,9 @@ using dio3 = miosix::radio1::dio3;
 using sck  = miosix::radio1::spi::sck;
 using miso = miosix::radio1::spi::miso;
 using mosi = miosix::radio1::spi::mosi;
+
+using txen = miosix::radio1::txen;
+using rxen = miosix::radio1::rxen;
 
 #define SX1278_NRST
 using rst  = miosix::radio1::nrst;
@@ -120,6 +124,9 @@ using dio3 = miosix::radio2::dio3;
 using sck  = miosix::radio2::spi::sck;
 using miso = miosix::radio2::spi::miso;
 using mosi = miosix::radio2::spi::mosi;
+
+using txen = miosix::radio2::txen;
+using rxen = miosix::radio2::rxen;
 
 #define SX1278_NRST
 using rst  = miosix::radio2::nrst;
@@ -214,11 +221,11 @@ bool initRadio()
     Boardcore::SX1278Lora::Config config;
     Boardcore::SX1278Lora::Error err;
 
-    config.freq_rf = 444000000;
+    config.freq_rf = 434000000;
 
     sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
                                        dio1::getPin(), dio3::getPin(),
-                                       Boardcore::SPI::ClockDivider::DIV_64,
+                                       Boardcore::SPI::ClockDivider::DIV_32,
                                        std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 lora...\n");
@@ -234,11 +241,11 @@ bool initRadio()
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
 
-    config.freq_rf = 444000000;
+    config.freq_rf = 434000000;
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
                                             dio1::getPin(), dio3::getPin(),
-                                            Boardcore::SPI::ClockDivider::DIV_32,
+                                            Boardcore::SPI::ClockDivider::DIV_256,
                                             std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
