@@ -263,15 +263,38 @@ bool LSM6DSRX::selfTestAcc()
     LSM6DSRXData averageNormal;  // average normal data
 
     // set registers
+
+    // set odr=52Hz, fs=4g
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x38);
+
+    // power off the gyro
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x00);
+
+    // set bdu to UPDATE_AFTER_READ
+    // register address automatically incremented during a multiple byte access
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, 0x44);
+
+    // disable gyro sleep mode
+    // disable data ready
+    // disable i2c
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, 0x00);
+
+    // disable accelerometer and gyro self test (for acc it will be enabled
+    // later on)
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+
+    // more settings for the accelerometer (performance mode)
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, 0x00);
+
+    // gyro settings
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, 0x00);
+
+    // disables accelerometers additional filters
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, 0x00);
+
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, 0x00);
+
+    // disable timestamp counter
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 0x00);
 
     // wait for stable output
@@ -317,7 +340,7 @@ bool LSM6DSRX::selfTestAcc()
     averageNormal.accelerationY /= SIZE_DATA;
     averageNormal.accelerationZ /= SIZE_DATA;
 
-    // enable accelerometer self test
+    // enable accelerometer positive sign self test
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x01);
 
     // wait for stable output
@@ -408,17 +431,40 @@ bool LSM6DSRX::selfTestGyr()
     LSM6DSRXData averageSF;      // average data during self test
     LSM6DSRXData averageNormal;  // average normal data
 
-    // Initialize and turn on sensor
-    // Set BDU = 1, ODR = 208 Hz, FS = +-2000 dps
+    // set registers
+
+    // disable accelerometer (power down)
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x00);
+
+    // set odr and fullscale for the gyro
+    // odr: 208Hz
+    // fs: 2000 dps
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x5C);
+
+    // set bdu to UPDATE_AFTER_READ
+    // register address automatically incremented during a multiple byte access
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, 0x44);
+
+    // disable gyro sleep mode
+    // disable data ready
+    // disable i2c
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, 0x00);
+
+    // disable accelerometer and gyro self test
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+
+    // more settings for the accelerometer (performance mode)
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, 0x00);
+
+    // enables high performance mode for the gyro
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, 0x00);
+
+    // disables accelerometer's filters
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, 0x00);
+
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, 0x00);
+
+    // disable timestamp counter
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 0x00);
 
     // sleep for stable output
@@ -463,7 +509,7 @@ bool LSM6DSRX::selfTestGyr()
     averageNormal.angularSpeedY /= SIZE_DATA;
     averageNormal.angularSpeedZ /= SIZE_DATA;
 
-    // enable gyroscope self test
+    // enable gyroscope positive sign self test
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x04);
 
     // wait for stable output
