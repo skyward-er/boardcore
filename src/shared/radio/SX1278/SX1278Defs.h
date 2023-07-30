@@ -54,6 +54,16 @@ inline SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
     return bus_config;
 }
 
+constexpr int MIN_BITRATE = FXOSC / 0xffff;
+constexpr int MAX_BITRATE = FXOSC;
+
+constexpr int MIN_FREQ_DEV = 0;
+constexpr int MAX_FREQ_DEV = 0x3fff * FSTEP;
+
+constexpr int MIN_FREQ_RF = 0;
+constexpr int MAX_FREQ_RF = 0xffffff * FSTEP;
+
+
 /**
  * @brief Represents a DIO..
  */
