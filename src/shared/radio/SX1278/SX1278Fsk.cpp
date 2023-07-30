@@ -80,8 +80,6 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     assert(((config.ocp >= 0 && config.ocp <= 120) ||
             (config.ocp >= 130 && config.ocp <= 240)) &&
            "[sx1278] Invalid ocp!");
-    assert(config.bitrate >= MIN_BITRATE && config.bitrate <= MAX_BITRATE &&
-           "[sx1278] Invalid bitrate!");
     assert(config.freq_dev >= MIN_FREQ_DEV && config.freq_dev <= MAX_FREQ_DEV &&
            "[sx1278] Invalid freq_dev!");
     assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
@@ -105,7 +103,7 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 0, 1000))
     //     return Error::IRQ_TIMEOUT;
 
-    int bitrate = std::max(std::min(config.bitrate, MAX_BITRATE), MIN_BITRATE);
+    int bitrate = config.bitrate;
     int freq_dev =
         std::max(std::min(config.freq_dev, MAX_FREQ_DEV), MIN_FREQ_DEV);
     int freq_rf = std::max(std::min(config.freq_rf, MAX_FREQ_RF), MIN_FREQ_RF);
