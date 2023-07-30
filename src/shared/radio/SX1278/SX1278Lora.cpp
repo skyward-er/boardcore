@@ -159,6 +159,19 @@ bool SX1278Lora::checkVersion()
 
 SX1278Lora::Error SX1278Lora::configure(const Config &config)
 {
+    // Check that the configuration is actually valid
+    bool pa_boost = getFrontend().isOnPaBoost();
+    int min_power = pa_boost ? 2 : 0;
+    int max_power = getFrontend().maxInPower();
+
+    assert(config.power >= min_power && config.power <= max_power &&
+           "[sx1278] Configured power invalid for given frontend!");
+    assert(((config.ocp >= 0 && config.ocp <= 120) ||
+            (config.ocp >= 130 && config.ocp <= 240)) &&
+           "[sx1278] Invalid ocp!");
+    assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
+           "[sx1278] Invalid freq_rf");
+
     // First make sure the device is in lora mode and in standby
     enterLoraMode();
 
@@ -177,10 +190,10 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     RegModemConfig2::Sf sf =
         static_cast<RegModemConfig2::Sf>(config.spreading_factor);
 
-    int freq_rf   = config.freq_rf;
-    int ocp       = config.ocp;
-    int power     = std::min(config.power, getFrontend().maxInPower());
-    bool pa_boost = getFrontend().isOnPaBoost();
+    int freq_rf = std::max(std::min(config.freq_rf, MAX_FREQ_RF), MIN_FREQ_RF);
+    int ocp     = config.ocp <= 120 ? std::max(std::min(config.ocp, 120), 0)
+                                    : std::max(std::min(config.ocp, 240), 130);
+    int power   = std::max(std::min(config.power, max_power), min_power);
 
     bool low_data_rate_optimize = config.low_data_rate_optimize;
 
