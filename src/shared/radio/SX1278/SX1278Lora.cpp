@@ -312,10 +312,12 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
 
     Lock guard(*this);
 
-    SPITransaction spi(getSpiSlave());
+    {
+        SPITransaction spi(getSpiSlave());
 
-    spi.writeRegister(REG_PAYLOAD_LENGTH, len);
-    writeFifo(FIFO_TX_BASE_ADDR, pkt, len);
+        spi.writeRegister(REG_PAYLOAD_LENGTH, len);
+        writeFifo(FIFO_TX_BASE_ADDR, pkt, len);
+    }
 
     {
         // Now enter in mode TX to send the packet
