@@ -25,6 +25,7 @@
 #include <kernel/scheduler/scheduler.h>
 #include <utils/Debug.h>
 
+#include <cassert>
 #include <cmath>
 
 namespace Boardcore
@@ -69,6 +70,23 @@ bool SX1278Fsk::checkVersion()
 
 SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
 {
+    // Check that the configuration is actually valid
+    bool pa_boost = getFrontend().isOnPaBoost();
+    int min_power = pa_boost ? 2 : 0;
+    int max_power = getFrontend().maxInPower();
+
+    assert(config.power >= min_power && config.power <= max_power &&
+           "[sx1278] Configured power invalid for given frontend!");
+    assert(((config.ocp >= 0 && config.ocp <= 120) ||
+            (config.ocp >= 130 && config.ocp <= 240)) &&
+           "[sx1278] Invalid ocp!");
+    assert(config.bitrate >= MIN_BITRATE && config.bitrate <= MAX_BITRATE &&
+           "[sx1278] Invalid bitrate!");
+    assert(config.freq_dev >= MIN_FREQ_DEV && config.freq_dev <= MAX_FREQ_DEV &&
+           "[sx1278] Invalid freq_dev!");
+    assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
+           "[sx1278] Invalid freq_rf");
+
     // First make sure the device is in fsk and in standby
     enterFskMode();
 
@@ -87,14 +105,15 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 0, 1000))
     //     return Error::IRQ_TIMEOUT;
 
-    int bitrate              = config.bitrate;
-    int freq_dev             = config.freq_dev;
-    int freq_rf              = config.freq_rf;
+    int bitrate = std::max(std::min(config.bitrate, MAX_BITRATE), MIN_BITRATE);
+    int freq_dev =
+        std::max(std::min(config.freq_dev, MAX_FREQ_DEV), MIN_FREQ_DEV);
+    int freq_rf = std::max(std::min(config.freq_rf, MAX_FREQ_RF), MIN_FREQ_RF);
     RegRxBw::RxBw rx_bw      = static_cast<RegRxBw::RxBw>(config.rx_bw);
     RegAfcBw::RxBwAfc afc_bw = static_cast<RegAfcBw::RxBwAfc>(config.afc_bw);
-    int ocp                  = config.ocp;
-    int power     = std::min(config.power, getFrontend().maxInPower());
-    bool pa_boost = getFrontend().isOnPaBoost();
+    int ocp   = config.ocp <= 120 ? std::max(std::min(config.ocp, 120), 0)
+                                  : std::max(std::min(config.ocp, 240), 130);
+    int power = std::max(std::min(config.power, max_power), min_power);
     RegPaRamp::ModulationShaping shaping =
         static_cast<RegPaRamp::ModulationShaping>(config.shaping);
     RegPacketConfig1::DcFree dc_free =
@@ -106,8 +125,8 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
         SPITransaction spi(getSpiSlave());
 
         // Setup bitrate
-        uint16_t bitrate_val = FXOSC / bitrate;
-        spi.writeRegister16(REG_BITRATE_MSB, bitrate_val);
+        uint16_t bitrate_raw = FXOSC / bitrate;
+        spi.writeRegister16(REG_BITRATE_MSB, bitrate_raw);
 
         // Setup frequency deviation
         uint16_t freq_dev_raw = freq_dev / FSTEP;
