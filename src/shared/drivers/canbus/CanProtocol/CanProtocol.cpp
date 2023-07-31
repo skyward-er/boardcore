@@ -136,8 +136,6 @@ void CanProtocol::sendMessage(const CanMessage& msg)
                  static_cast<uint32_t>(CanProtocolIdMask::LEFT_TO_SEND));
     packet.length = byteForUint64(msg.payload[0]);
 
-    packet.timestamp = Boardcore::TimestampTimer::getTimestamp();
-
     // Splits payload[0] in the right number of uint8_t
     for (int i = 0; i < packet.length; i++)
         packet.data[i] = msg.payload[0] >> (8 * i);
@@ -145,6 +143,7 @@ void CanProtocol::sendMessage(const CanMessage& msg)
     // Send the first packet
     can->send(packet);
     // Updates the loadEstimator
+    packet.timestamp = miosix::getTick();
     loadEstimator->addPacket(packet);
     leftToSend--;
 
@@ -164,6 +163,7 @@ void CanProtocol::sendMessage(const CanMessage& msg)
 
         can->send(packet);
         // Updates the loadEstimator
+        packet.timestamp = miosix::getTick();
         loadEstimator->addPacket(packet);
         leftToSend--;
     }

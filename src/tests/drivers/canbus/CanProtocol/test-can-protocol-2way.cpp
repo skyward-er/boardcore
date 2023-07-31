@@ -38,7 +38,7 @@
 #include <functional>
 #include <string>
 
-constexpr uint32_t BAUD_RATE         = 500 * 1000;
+constexpr uint32_t BAUD_RATE         = 250 * 1000;
 constexpr float SAMPLE_POINT         = 87.5f / 100.0f;
 constexpr uint32_t MSG_DEADLINE      = 100;  // ms
 constexpr uint32_t MSG_LOST_DEADLINE = 400;  // ms
@@ -212,7 +212,7 @@ int main()
     protocol->start();
 
     mc.start();
-    const int slp = 10;
+    const int slp = 5;
     for (;;)
     {
         sendNewRequest();
