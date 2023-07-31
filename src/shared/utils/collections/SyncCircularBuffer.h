@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+ * Author: Luca Erbetta, Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
 
 #include <miosix.h>
 
+#include <type_traits>
+
 #include "CircularBuffer.h"
 
 using miosix::ConditionVariable;
@@ -37,21 +39,18 @@ namespace Boardcore
  * Implementation of a synchronized circular buffer
  */
 template <typename T, unsigned int Size>
-class SyncCircularBuffer : public CircularBuffer<T, Size>
+class SyncCircularBuffer
 {
-
-    using Super = CircularBuffer<T, Size>;
-
 public:
     /**
      * Puts a copy of the element in the buffer
      * @param elem element
      */
-    T& put(const T& elem) override
+    void put(const T& elem)
     {
         Lock<FastMutex> l(mutex);
         cv.signal();
-        return Super::put(elem);
+        buffer.put(elem);
     }
 
     /**
@@ -65,10 +64,23 @@ public:
      * @param i Index of the element to get, starting from the oldest.
      * @return The element.
      */
-    T& get(unsigned int i = 0) override
+    T get(unsigned int i = 0)
     {
         Lock<FastMutex> l(mutex);
-        return Super::get(i);
+        return buffer.get(i);
+    }
+
+    /**
+     * @brief Returns the last element added in the buffer.
+     *
+     * @warning Remember to catch the exception!
+     * @throw range_error if buffer is empty.
+     * @return The element.
+     */
+    T last()
+    {
+        Lock<FastMutex> l(mutex);
+        return buffer.last();
     }
 
     /**
@@ -78,10 +90,10 @@ public:
      * @throw range_error if buffer is empty.
      * @return The element that has been popped.
      */
-    const T& pop() override
+    T pop()
     {
         Lock<FastMutex> l(mutex);
-        return Super::pop();
+        return buffer.pop();
     }
 
     /**
@@ -89,22 +101,22 @@ public:
      *
      * @return Number of elements in the buffer.
      */
-    size_t count() const override
+    size_t count() const
     {
         Lock<FastMutex> l(mutex);
-        return Super::count();
+        return buffer.count();
     }
 
-    bool isEmpty() const override
+    bool isEmpty() const
     {
         Lock<FastMutex> l(mutex);
-        return Super::isEmpty();
+        return buffer.isEmpty();
     }
 
-    bool isFull() const override
+    bool isFull() const
     {
         Lock<FastMutex> l(mutex);
-        return Super::isFull();
+        return buffer.isFull();
     }
 
     /**
@@ -113,15 +125,25 @@ public:
     void waitUntilNotEmpty()
     {
         Lock<FastMutex> l(mutex);
-        while (Super::isEmpty())
+        while (buffer.isEmpty())
         {
             cv.wait(l);
         }
     }
 
+    /**
+     * @brief Returns the maximum number of elements that can be stored in the
+     * buffer.
+     *
+     * @return Buffer size.
+     */
+    size_t getSize() const { return Size; }
+
 private:
     mutable FastMutex mutex;
     mutable ConditionVariable cv;
+
+    CircularBuffer<T, Size> buffer;
 };
 
 }  // namespace Boardcore
