@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+ * Author: Luca Erbetta, Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ public:
      * @param elem Element to be added to the queue.
      * @return The element added.
      */
-    virtual T& put(const T& elem)
+    T& put(const T& elem)
     {
         buffer[writePtr] = elem;
         T& added         = buffer[writePtr];
@@ -78,7 +78,7 @@ public:
      * @param i Index of the element to get, starting from the oldest.
      * @return The element.
      */
-    virtual T& get(unsigned int i = 0)
+    T& get(unsigned int i = 0)
     {
         // Here we need to explicitly specify the name of this class because we
         // DO NOT want to call the version of count() overridden by a derived
@@ -102,7 +102,7 @@ public:
      * @throw range_error if buffer is empty.
      * @return The element.
      */
-    virtual T& last() { return get(count() - 1); }
+    T& last() { return get(count() - 1); }
 
     /**
      * @brief Pops the first element in the buffer.
@@ -111,7 +111,7 @@ public:
      * @throw range_error if buffer is empty.
      * @return The element that has been popped.
      */
-    virtual const T& pop()
+    const T& pop()
     {
         if (!empty)
         {
@@ -131,7 +131,7 @@ public:
      *
      * @return Number of elements in the buffer.
      */
-    virtual size_t count() const
+    size_t count() const
     {
         if (empty)
             return 0;
@@ -145,9 +145,9 @@ public:
         }
     }
 
-    virtual bool isEmpty() const { return empty; }
+    bool isEmpty() const { return empty; }
 
-    virtual bool isFull() const
+    bool isFull() const
     {
         // Same as in get(): explicitly specify the name of the class to avoid
         // deadlocks!

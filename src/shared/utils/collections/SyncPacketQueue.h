@@ -271,7 +271,7 @@ public:
     /**
      * @return The oldest packet, without removing it from the queue.
      */
-    const Packet<pktLen>& get()
+    const Packet<pktLen> get()
     {
         Lock<FastMutex> l(mutex);
         return buffer.get();
@@ -280,7 +280,7 @@ public:
     /**
      * @return The oldest packet, removing it from the queue.
      */
-    const Packet<pktLen>& pop()
+    const Packet<pktLen> pop()
     {
         Lock<FastMutex> l(mutex);
         return buffer.pop();
