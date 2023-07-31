@@ -225,7 +225,7 @@ bool initRadio()
 
     sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
                                        dio1::getPin(), dio3::getPin(),
-                                       Boardcore::SPI::ClockDivider::DIV_32,
+                                       Boardcore::SPI::ClockDivider::DIV_256,
                                        std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 lora...\n");
