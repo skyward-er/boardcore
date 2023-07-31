@@ -22,8 +22,6 @@
 
 #include "CanProtocol.h"
 
-#include <drivers/timer/TimestampTimer.h>
-
 using namespace miosix;
 
 namespace Boardcore
