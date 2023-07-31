@@ -59,13 +59,13 @@ const float ACC_SELF_TEST_MAX = 1700.0;
  * @brief Lower bound value for gyroscope self test.
  * Valid for self test fullscale = 2000dps.
  */
-const float GYR_SELF_TEST_MIN = 1500.0;
+const float GYR_SELF_TEST_MIN = 150.0;
 
 /**
  * @brief Upper bound value for gyroscope self test.
  * Valid for self test fullscale = 2000dps.
  */
-const float GYR_SELF_TEST_MAX = 7000.0;
+const float GYR_SELF_TEST_MAX = 700.0;
 
 /**
  * @brief Number of timeslots available when extracting

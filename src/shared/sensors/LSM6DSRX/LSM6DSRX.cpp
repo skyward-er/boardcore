@@ -264,8 +264,8 @@ bool LSM6DSRX::selfTestAcc()
 
     // set registers
 
-    // set odr=52Hz, fs=4g
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x38);
+    // set odr=52Hz, fs=2g
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x30);
 
     // power off the gyro
     spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x00);
@@ -330,11 +330,11 @@ bool LSM6DSRX::selfTestAcc()
 
         // read data
         averageNormal.accelerationX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A));
+            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, 0.061));
         averageNormal.accelerationY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A));
+            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, 0.061));
         averageNormal.accelerationZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A));
+            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, 0.061));
     }
     averageNormal.accelerationX /= SIZE_DATA;
     averageNormal.accelerationY /= SIZE_DATA;
@@ -376,11 +376,11 @@ bool LSM6DSRX::selfTestAcc()
 
         // read data
         averageSF.accelerationX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A));
+            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, 0.061));
         averageSF.accelerationY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A));
+            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, 0.061));
         averageSF.accelerationZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A));
+            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, 0.061));
     }
     averageSF.accelerationX /= SIZE_DATA;
     averageSF.accelerationY /= SIZE_DATA;
@@ -499,11 +499,11 @@ bool LSM6DSRX::selfTestGyr()
 
         // read data
         averageNormal.angularSpeedX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G));
+            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070));
         averageNormal.angularSpeedY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G));
+            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070));
         averageNormal.angularSpeedZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G));
+            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070));
     }
     averageNormal.angularSpeedX /= SIZE_DATA;
     averageNormal.angularSpeedY /= SIZE_DATA;
@@ -544,11 +544,11 @@ bool LSM6DSRX::selfTestGyr()
 
         // read data
         averageSF.angularSpeedX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G));
+            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070));
         averageSF.angularSpeedY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G));
+            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070));
         averageSF.angularSpeedZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G));
+            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070));
     }
     averageSF.angularSpeedX /= SIZE_DATA;
     averageSF.angularSpeedY /= SIZE_DATA;
