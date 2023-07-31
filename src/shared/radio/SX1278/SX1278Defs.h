@@ -50,6 +50,7 @@ inline SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
     bus_config.bitOrder     = SPI::Order::MSB_FIRST;
     bus_config.byteOrder    = SPI::Order::MSB_FIRST;
     bus_config.writeBit     = SPI::WriteBit::INVERTED;
+    bus_config.csHoldTimeUs = 3;
 
     return bus_config;
 }
