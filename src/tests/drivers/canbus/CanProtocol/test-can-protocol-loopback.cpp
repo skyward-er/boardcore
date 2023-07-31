@@ -42,21 +42,6 @@ void print(const CanMessage& msg)
 
 int main()
 {
-    GpioPin canA{GPIOB_BASE, 8};
-    GpioPin canB{GPIOB_BASE, 9};
-
-    canA.mode(Mode::ALTERNATE);
-    canB.mode(Mode::ALTERNATE);
-    canA.alternateFunction(9);
-    canB.alternateFunction(9);
-
-    GpioPin can2A{GPIOB_BASE, 12};
-    GpioPin can2B{GPIOB_BASE, 13};
-
-    can2A.mode(Mode::ALTERNATE);
-    can2B.mode(Mode::ALTERNATE);
-    can2A.alternateFunction(9);
-    can2B.alternateFunction(9);
 
     printf("provolone fritto\n");
 

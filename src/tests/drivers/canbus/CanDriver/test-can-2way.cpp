@@ -195,11 +195,10 @@ int main()
 
     CanbusDriver::CanbusConfig cfg{};
     CanbusDriver::AutoBitTiming bt;
-    bt.baudRate      = BAUD_RATE;
-    bt.samplePoint   = SAMPLE_POINT;
-    CanbusDriver* c1 = new CanbusDriver(CAN1, cfg, bt);
-    CanbusDriver* c  = new CanbusDriver(CAN2, cfg, bt);
-    canManager       = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
+    bt.baudRate     = BAUD_RATE;
+    bt.samplePoint  = SAMPLE_POINT;
+    CanbusDriver* c = new CanbusDriver(CAN2, cfg, bt);
+    canManager      = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
 
     // Allow every message
     Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
@@ -208,7 +207,7 @@ int main()
 
     canManager->start();
     mc.start();
-    const int slp = 5;
+    const int slp = 100;
     for (;;)
     {
         sendNewRequest();

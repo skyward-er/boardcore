@@ -202,10 +202,6 @@ int main()
     bt.baudRate    = BAUD_RATE;
     bt.samplePoint = SAMPLE_POINT;
 
-    CanbusDriver* c1 = new CanbusDriver(CAN1, cfg, bt);
-    if (false && c1)
-    {
-    }
     CanbusDriver* c = new CanbusDriver(CAN2, cfg, bt);
     protocol = new CanProtocol(c, bind(&handleCanMessage, _1), BAUD_RATE);
 
@@ -216,7 +212,7 @@ int main()
     protocol->start();
 
     mc.start();
-    const int slp = 20;
+    const int slp = 10;
     for (;;)
     {
         sendNewRequest();

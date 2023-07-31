@@ -22,6 +22,8 @@
 
 #include "CanProtocol.h"
 
+#include <drivers/timer/TimestampTimer.h>
+
 using namespace miosix;
 
 namespace Boardcore
@@ -133,6 +135,8 @@ void CanProtocol::sendMessage(const CanMessage& msg)
                 ((static_cast<uint32_t>(0x3F) - leftToSend) &
                  static_cast<uint32_t>(CanProtocolIdMask::LEFT_TO_SEND));
     packet.length = byteForUint64(msg.payload[0]);
+
+    packet.timestamp = Boardcore::TimestampTimer::getTimestamp();
 
     // Splits payload[0] in the right number of uint8_t
     for (int i = 0; i < packet.length; i++)
@@ -262,6 +266,7 @@ void CanProtocol::runReceiver()
 
                     // Add the data to the message
                     msg.payload[msg.length - leftToReceive - 1] = payload;
+                    loadEstimator->addPacket(pkt);
                     nReceived++;
                 }
             }

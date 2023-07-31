@@ -46,7 +46,7 @@ struct BusLoadInfo
 };
 class BusLoadEstimation
 {
-    static constexpr uint16_t BUFFER_LEN = 20;
+    static constexpr uint16_t BUFFER_LEN = 50;
 
 public:
     BusLoadEstimation(uint32_t baudRate) : baudRate(baudRate) {}
@@ -90,7 +90,7 @@ private:
     };
 
     CircularBuffer<PacketInfo, BUFFER_LEN> c;
-    mutable FastMutex mutex;
+    FastMutex mutex;
     uint32_t baudRate;
 };
 
