@@ -67,9 +67,6 @@ int main()
     bitTiming.baudRate    = 50 * 1000;
     bitTiming.samplePoint = 87.5f / 100.0f;
 
-    // To make the CAN2 work the driver must be created also for CAN1
-    // TODO change this thing
-    CanbusDriver* driver1 = new CanbusDriver(CAN1, config, bitTiming);
     CanbusDriver* driver2 = new CanbusDriver(CAN2, config, bitTiming);
 
     // // Prepare the can driver
