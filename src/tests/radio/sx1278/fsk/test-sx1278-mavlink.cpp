@@ -21,8 +21,10 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <thread>
 
@@ -44,9 +46,8 @@ using namespace miosix;
 constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
 constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
 constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
-constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 200;
+constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
 constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
-constexpr uint32_t STATS_TM_PERIOD      = 2000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
 using Mav =
@@ -149,20 +150,23 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 
 void initBoard() {}
 
+struct PendingAck
+{
+    int msgid;
+    int seq;
+};
+
+CircularBuffer<PendingAck, 10> pending_acks;
+FastMutex mutex;
+
 Mav* channel;
 
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
     {
-        // Prepare ack messages
-        mavlink_message_t ackMsg;
-        mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
-
-        // Send the ack back to the sender
-        channel->enqueueMsg(ackMsg);
-
-        printf("[sx1278] Sending ack\n");
+        Lock<FastMutex> l(mutex);
+        pending_acks.put({msg.msgid, msg.seq});
     }
 }
 
@@ -174,8 +178,24 @@ void flightTmLoop()
     {
         long long start = miosix::getTick();
 
+        {
+            Lock<FastMutex> l(mutex);
+            while (!pending_acks.isEmpty())
+            {
+                auto ack = pending_acks.pop();
+
+                // Prepare ack message
+                mavlink_message_t msg;
+                mavlink_msg_ack_tm_pack(171, 96, &msg, ack.msgid, ack.seq);
+
+                // Send the ack back to the sender
+                channel->enqueueMsg(msg);
+            }
+        }
+
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
+        tm.timestamp                  = TimestampTimer::getTimestamp();
         tm.acc_x                      = i;
         tm.acc_y                      = i * 2;
         tm.acc_z                      = i * 3;
@@ -186,8 +206,6 @@ void flightTmLoop()
 
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
         i += 1;
-
-        printf("[sx1278] Message sent\n");
     }
 }
 
