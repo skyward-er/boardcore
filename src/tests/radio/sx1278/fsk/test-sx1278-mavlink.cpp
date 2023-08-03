@@ -214,7 +214,7 @@ int main()
     initBoard();
 
     SX1278Fsk::Config config = {
-        .freq_rf    = 434000000,
+        .freq_rf    = 868000000,
         .freq_dev   = 50000,
         .bitrate    = 48000,
         .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
@@ -223,7 +223,7 @@ int main()
         .power      = 13,
         .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
         .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
-        .enable_crc = true};
+        .enable_crc = false};
 
     SX1278Fsk::Error err;
 
