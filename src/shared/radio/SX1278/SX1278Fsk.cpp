@@ -257,12 +257,10 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
     // TODO: Maybe flush stuff?
 
     uint8_t len = 0;
-    bool length_ok;
     bool crc_ok;
 
     do
     {
-        length_ok = false;
         crc_ok    = false;
 
         // Current FIFO read progress
@@ -307,23 +305,6 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
             // Advance the read pointer
             cur_len += read_size;
 
-            // If the payload went from high to low, this means we have read the
-            // whole packet
-            if (payload_ready &&
-                checkForIrqAndReset(0, RegIrqFlags::PAYLOAD_READY) != 0)
-            {
-                // Check if we have read the correct amount of data
-                length_ok = cur_len == len;
-                break;
-            }
-            else if (cur_len == len)
-            {
-                // We have read the whole packet, but PAYLOAD_READY did not
-                // trigger, something went wrong!
-                length_ok = false;
-                break;
-            }
-
             // Ok there is still more data, wait for it
             if ((waitForIrq(
                      guard_mode,
@@ -339,7 +320,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
         // For some reason this sometimes happen?
     } while (len == 0);
 
-    if (len > max_len || (!crc_ok && crc_enabled) || !length_ok)
+    if (len > max_len || (!crc_ok && crc_enabled))
         return -1;
 
     // Finally copy the packet to the destination
