@@ -67,7 +67,7 @@ sbs_target(sx1278lora-ra01-serial stm32f429zi_skyward_groundstation_v2)
 
 add_executable(sx1278fsk-skyward433-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-skyward433-serial PRIVATE SX1278_IS_FSK SX1278_IS_SKYWARD433)
-sbs_target(sx1278fsk-skyward433-serial stm32f429zi_skyward_groundstation_v2)
+sbs_target(sx1278fsk-skyward433-serial stm32f767zi_gemini_gs)
 
 add_executable(sx1278lora-skyward433-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278lora-skyward433-serial PRIVATE SX1278_IS_LORA SX1278_IS_SKYWARD433)
