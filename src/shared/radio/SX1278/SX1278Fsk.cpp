@@ -254,74 +254,67 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
     // Save the packet locally, we always want to read it all
     uint8_t tmp_pkt[MTU];
 
-    // TODO: Maybe flush stuff?
-
     uint8_t len = 0;
     bool crc_ok;
+    IrqFlags flags = 0;
 
     do
     {
-        crc_ok    = false;
+        crc_ok = false;
 
-        // Current FIFO read progress
         uint8_t cur_len = 0;
-        // Have we received payload ready yet? (aka the whole packet is in the
-        // FIFO)
-        bool payload_ready = false;
 
         // Special wait for fifo level/payload ready, release the lock at this
         // stage
-        if ((waitForIrq(guard_mode,
-                        RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0,
-                        true) &
-             RegIrqFlags::PAYLOAD_READY) != 0 &&
-            crc_enabled)
+        flags = waitForIrq(guard_mode,
+                           RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY,
+                           0, true);
+        if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
         {
-            payload_ready = true;
-            crc_ok        = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+            crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
         }
 
         // Record RSSI here, it's where it is the most accurate
         last_rx_rssi = getRssi();
 
-        // Now read packet length
+        // Now first packet bit
         {
             SPITransaction spi(getSpiSlave());
             len = spi.readRegister(REG_FIFO);
+
+            int read_size = std::min((int)len, FIFO_LEN / 2);
+            // Skip 0 sized read
+            if (read_size != 0)
+                spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
+
+            cur_len += read_size;
         }
 
+        // Then read the other chunks
         while (cur_len < len)
         {
-            // Calculate next read_size, remember, the FIFO will be at least
-            // FIFO_LEN / 2 filled at this point!
-            int read_size = std::min((int)(len - cur_len), FIFO_LEN / 2);
-
-            // Read the packet chunk
+            flags = waitForIrq(
+                guard_mode,
+                RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0);
+            if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
             {
-                SPITransaction spi(getSpiSlave());
-                spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
-            }
-
-            // Advance the read pointer
-            cur_len += read_size;
-
-            // Ok there is still more data, wait for it
-            if ((waitForIrq(
-                     guard_mode,
-                     RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0) &
-                 RegIrqFlags::PAYLOAD_READY) != 0 &&
-                crc_enabled)
-            {
-                payload_ready = true;
                 crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
             }
+
+            SPITransaction spi(getSpiSlave());
+
+            int read_size = std::min((int)(len - cur_len), FIFO_LEN / 2);
+            spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
+
+            cur_len += read_size;
         }
 
         // For some reason this sometimes happen?
     } while (len == 0);
 
-    if (len > max_len || (!crc_ok && crc_enabled))
+    if (len > max_len || (!crc_ok && crc_enabled)) {
         return -1;
+    }
 
     // Finally copy the packet to the destination
     memcpy(pkt, tmp_pkt, len);

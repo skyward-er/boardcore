@@ -94,7 +94,7 @@ using rxen                         = radio::rxEn;
 // #define SX1278_IS_EBYTE
 
 // Comment to use SX1278_2
-#define SX1278_1
+// #define SX1278_1
 
 #ifdef SX1278_1
 using cs   = miosix::radio1::cs;
@@ -248,15 +248,16 @@ int main()
 
 #ifdef SX1278_IS_LORA
     // Run default configuration
-    SX1278Lora::Config config;
-    SX1278Lora::Error err;
+    Boardcore::SX1278Lora::Config config;
+    Boardcore::SX1278Lora::Error err;
 
-    sx1278 = new SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
-                            dio1::getPin(), dio3::getPin(),
-                            SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
+                                       dio1::getPin(), dio3::getPin(),
+                                       Boardcore::SPI::ClockDivider::DIV_64,
+                                       std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 lora...\n");
-    if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
+    if ((err = sx1278->init(config)) != Boardcore::SX1278Lora::Error::NONE)
     {
         printf("[sx1278] sx1278->init error\n");
         return -1;
