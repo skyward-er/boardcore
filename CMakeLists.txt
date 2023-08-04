@@ -317,7 +317,7 @@ target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
 sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278fsk-mavlink src/tests/radio/sx1278/fsk/test-sx1278-mavlink.cpp)
-sbs_target(test-sx1278fsk-mavlink stm32f767zi_gemini_gs)
+sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)
 
 # add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
 # sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
