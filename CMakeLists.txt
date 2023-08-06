@@ -292,14 +292,6 @@ sbs_target(test-fsm stm32f429zi_stm32f4discovery)
 add_executable(test-sx1278fsk-bidir src/tests/radio/sx1278/fsk/test-sx1278-bidir.cpp)
 sbs_target(test-sx1278fsk-bidir stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-geminigs-sx1278fsk-tx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
-target_compile_definitions(test-geminigs-sx1278fsk-tx PRIVATE DISABLE_RX)
-sbs_target(test-geminigs-sx1278fsk-tx stm32f767zi_gemini_gs)
-
-add_executable(test-geminigs-sx1278fsk-rx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
-target_compile_definitions(test-geminigs-sx1278fsk-rx PRIVATE DISABLE_TX)
-sbs_target(test-geminigs-sx1278fsk-rx stm32f767zi_gemini_gs)
-
 add_executable(test-sx1278fsk-tx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-tx PRIVATE DISABLE_RX)
 sbs_target(test-sx1278fsk-tx stm32f429zi_skyward_groundstation_v2)
@@ -343,14 +335,6 @@ sbs_target(test-sx1278lora-tx stm32f429zi_skyward_groundstation_v2)
 add_executable(test-sx1278lora-rx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278lora-rx PRIVATE DISABLE_TX SX1278_IS_LORA)
 sbs_target(test-sx1278lora-rx stm32f429zi_skyward_groundstation_v2)
-
-add_executable(test-geminigs-sx1278lora-tx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
-target_compile_definitions(test-geminigs-sx1278lora-tx PRIVATE DISABLE_RX SX1278_IS_LORA)
-sbs_target(test-geminigs-sx1278lora-tx stm32f767zi_gemini_gs)
-
-add_executable(test-geminigs-sx1278lora-rx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
-target_compile_definitions(test-geminigs-sx1278lora-rx PRIVATE DISABLE_TX SX1278_IS_LORA)
-sbs_target(test-geminigs-sx1278lora-rx stm32f767zi_gemini_gs)
 
 add_executable(test-sx1278lora-gui-rx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278lora-gui-rx PRIVATE DISABLE_TX SX1278_IS_LORA)
