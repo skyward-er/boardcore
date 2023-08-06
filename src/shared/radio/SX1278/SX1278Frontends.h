@@ -38,10 +38,7 @@ public:
     }
 
     bool isOnPaBoost() override { return true; }
-    int maxInPower() override
-    {
-        return 15;
-    }
+    int maxInPower() override { return 15; }
 
     void enableRx() override { rx_enable.high(); }
     void disableRx() override { rx_enable.low(); }
