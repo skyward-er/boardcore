@@ -134,7 +134,6 @@ int main()
 
     // Run default configuration
     SX1278Fsk::Config config;
-    config.power = 2;
 
     SX1278Fsk::Error err;
 
