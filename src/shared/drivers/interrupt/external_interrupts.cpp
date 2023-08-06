@@ -391,9 +391,6 @@ void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
 
 void disableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum)
 {
-
-    NVIC_DisableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)));
-
     EXTI->RTSR &= ~(1 << gpioNum);
     EXTI->FTSR &= ~(1 << gpioNum);
     EXTI->IMR &= ~(1 << gpioNum);
