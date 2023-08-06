@@ -99,7 +99,11 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
                         InterruptTrigger::RISING_EDGE);
 
-    // The datasheet lies, this IRQ is unreliable, it doesn't always trigger
+    // This code is unreliable so it got commented out, the datasheet states
+    // that this triggers during a successful state transition, but for some
+    // reason, this isn't always the case, and can lead to random failures of
+    // the driver initialization. Removing it has no side effects, so that is
+    // what was done.
     // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 0, 1000))
     //     return Error::IRQ_TIMEOUT;
 
@@ -312,7 +316,8 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
         // For some reason this sometimes happen?
     } while (len == 0);
 
-    if (len > max_len || (!crc_ok && crc_enabled)) {
+    if (len > max_len || (!crc_ok && crc_enabled))
+    {
         return -1;
     }
 
