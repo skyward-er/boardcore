@@ -31,7 +31,6 @@ GUI *gui = nullptr;
 
 void initGUI()
 {
-    // TODO: This should be in bsp
     using GpioUserBtn = Gpio<GPIOA_BASE, 0>;
     GpioUserBtn::mode(Mode::INPUT_PULL_DOWN);
 

@@ -116,7 +116,7 @@ int main()
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
     {
-        printf("[sx1278] sx1278->init error: %s\n", "TODO");
+        printf("[sx1278] sx1278->init error\n");
         return -1;
     }
 

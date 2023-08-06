@@ -40,8 +40,6 @@ public:
     bool isOnPaBoost() override { return true; }
     int maxInPower() override
     {
-        // TODO: Set this to a proper value, right now it's just guessed, the
-        // datasheet is just too cryptic, fucking chinese datasheet
         return 15;
     }
 
