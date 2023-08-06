@@ -182,7 +182,7 @@ void flightTmLoop()
             Lock<FastMutex> l(mutex);
             while (!pending_acks.isEmpty())
             {
-                auto ack = pending_acks.pop();
+                PendingAck ack = pending_acks.pop();
 
                 // Prepare ack message
                 mavlink_message_t msg;
