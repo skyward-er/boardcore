@@ -166,13 +166,8 @@ bool Stepper::isEnabled() { return enabled; }
 
 StepperData Stepper::getState(float moveDeg)
 {
-    return {TimestampTimer::getTimestamp(),
-            static_cast<unsigned int>(stepPin.getPort()),
-            stepPin.getNumber(),
-            enabled,
-            getCurrentDegPosition(),
-            speed,
-            moveDeg};
+    return {TimestampTimer::getTimestamp(), enabled, getCurrentDegPosition(),
+            speed, moveDeg};
 }
 
 }  // namespace Boardcore
