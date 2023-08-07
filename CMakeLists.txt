@@ -57,13 +57,25 @@ sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_skyward_death_stack_x)
 
-add_executable(sx1278fsk-serial src/entrypoints/sx1278-serial.cpp)
-target_compile_definitions(sx1278fsk-serial PRIVATE SX1278_IS_FSK)
-sbs_target(sx1278fsk-serial stm32f429zi_skyward_groundstation_v2)
+add_executable(sx1278fsk-ra01-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278fsk-ra01-serial PRIVATE SX1278_IS_FSK)
+sbs_target(sx1278fsk-ra01-serial stm32f429zi_skyward_groundstation_v2)
 
-add_executable(sx1278lora-serial src/entrypoints/sx1278-serial.cpp)
-target_compile_definitions(sx1278lora-serial PRIVATE SX1278_IS_LORA)
-sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_v2)
+add_executable(sx1278lora-ra01-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278lora-ra01-serial PRIVATE SX1278_IS_LORA)
+sbs_target(sx1278lora-ra01-serial stm32f429zi_skyward_groundstation_v2)
+
+add_executable(sx1278fsk-skyward433-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278fsk-skyward433-serial PRIVATE SX1278_IS_FSK SX1278_IS_SKYWARD433)
+sbs_target(sx1278fsk-skyward433-serial stm32f767zi_gemini_gs)
+
+add_executable(sx1278lora-skyward433-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278lora-skyward433-serial PRIVATE SX1278_IS_LORA SX1278_IS_SKYWARD433)
+sbs_target(sx1278lora-skyward433-serial stm32f429zi_skyward_groundstation_v2)
+
+add_executable(sx1278fsk-ebyterig-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278fsk-ebyterig-serial PRIVATE SX1278_IS_FSK)
+sbs_target(sx1278fsk-ebyterig-serial stm32f429zi_skyward_rig)
 
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
@@ -280,24 +292,21 @@ sbs_target(test-fsm stm32f429zi_stm32f4discovery)
 add_executable(test-sx1278fsk-bidir src/tests/radio/sx1278/fsk/test-sx1278-bidir.cpp)
 sbs_target(test-sx1278fsk-bidir stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278fsk-tx src/tests/radio/sx1278/fsk/test-sx1278-bench-serial.cpp)
+add_executable(test-sx1278fsk-tx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-tx PRIVATE DISABLE_RX)
 sbs_target(test-sx1278fsk-tx stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278fsk-rx src/tests/radio/sx1278/fsk/test-sx1278-bench-serial.cpp)
+add_executable(test-sx1278fsk-rx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278fsk-rx PRIVATE DISABLE_TX)
 sbs_target(test-sx1278fsk-rx stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278fsk-gui src/tests/radio/sx1278/fsk/test-sx1278-bench-gui.cpp)
-sbs_target(test-sx1278fsk-gui stm32f429zi_skyward_groundstation_v2)
-
-add_executable(test-sx1278fsk-gui-rx src/tests/radio/sx1278/fsk/test-sx1278-bench-gui.cpp)
-target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
-
-add_executable(test-sx1278fsk-gui-tx src/tests/radio/sx1278/fsk/test-sx1278-bench-gui.cpp)
+add_executable(test-sx1278fsk-gui-tx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278fsk-gui-tx PRIVATE DISABLE_RX)
 sbs_target(test-sx1278fsk-gui-tx stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278fsk-gui-rx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
+target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
+sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278fsk-mavlink src/tests/radio/sx1278/fsk/test-sx1278-mavlink.cpp)
 sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)
@@ -311,13 +320,29 @@ sbs_target(test-sx1278lora-bidir stm32f429zi_skyward_groundstation_v2)
 add_executable(test-sx1278lora-mavlink src/tests/radio/sx1278/lora/test-sx1278-mavlink.cpp)
 sbs_target(test-sx1278lora-mavlink stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278lora-rx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
-target_compile_definitions(test-sx1278lora-rx PRIVATE ENABLE_RX)
+add_executable(test-sx1278lora-simple-rx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
+target_compile_definitions(test-sx1278lora-simple-rx PRIVATE ENABLE_RX)
+sbs_target(test-sx1278lora-simple-rx stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278lora-simple-tx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
+target_compile_definitions(test-sx1278lora-simple-tx PRIVATE ENABLE_TX)
+sbs_target(test-sx1278lora-simple-tx stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278lora-tx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
+target_compile_definitions(test-sx1278lora-tx PRIVATE DISABLE_RX SX1278_IS_LORA)
+sbs_target(test-sx1278lora-tx stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278lora-rx src/tests/radio/sx1278/test-sx1278-bench-serial.cpp)
+target_compile_definitions(test-sx1278lora-rx PRIVATE DISABLE_TX SX1278_IS_LORA)
 sbs_target(test-sx1278lora-rx stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278lora-tx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
-target_compile_definitions(test-sx1278lora-tx PRIVATE ENABLE_TX)
-sbs_target(test-sx1278lora-tx stm32f429zi_skyward_groundstation_v2)
+add_executable(test-sx1278lora-gui-rx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
+target_compile_definitions(test-sx1278lora-gui-rx PRIVATE DISABLE_TX SX1278_IS_LORA)
+sbs_target(test-sx1278lora-gui-rx stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278lora-gui-tx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
+target_compile_definitions(test-sx1278lora-gui-tx PRIVATE DISABLE_RX SX1278_IS_LORA)
+sbs_target(test-sx1278lora-gui-tx stm32f429zi_skyward_groundstation_v2)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #

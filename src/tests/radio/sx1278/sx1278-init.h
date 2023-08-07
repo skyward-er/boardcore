@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,17 +20,15 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <drivers/interrupt/external_interrupts.h>
-#include <filesystem/console/console_device.h>
+#include <miosix.h>
 
 // SX1278 includes
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
 #include <radio/SX1278/SX1278Lora.h>
-
-#include <thread>
-
-using namespace miosix;
 
 // Uncomment the following line to enable Lora mode
 // Or use SBS to define it for you
@@ -44,18 +42,18 @@ using namespace miosix;
 // Uncomment the following line to ebable Skyward433 module
 // #define SX1278_IS_SKYWARD433
 
-using cs   = peripherals::ra01::pc13::cs;
-using dio0 = peripherals::ra01::pc13::dio0;
-using dio1 = peripherals::ra01::pc13::dio1;
-using dio3 = peripherals::ra01::pc13::dio3;
+using cs   = miosix::peripherals::ra01::pc13::cs;
+using dio0 = miosix::peripherals::ra01::pc13::dio0;
+using dio1 = miosix::peripherals::ra01::pc13::dio1;
+using dio3 = miosix::peripherals::ra01::pc13::dio3;
 
-using sck  = interfaces::spi4::sck;
-using miso = interfaces::spi4::miso;
-using mosi = interfaces::spi4::mosi;
+using sck  = miosix::interfaces::spi4::sck;
+using miso = miosix::interfaces::spi4::miso;
+using mosi = miosix::interfaces::spi4::mosi;
 
 #ifdef SX1278_IS_EBYTE
-using txen = Gpio<GPIOE_BASE, 4>;
-using rxen = Gpio<GPIOD_BASE, 4>;
+using txen = miosix::Gpio<GPIOE_BASE, 4>;
+using rxen = miosix::Gpio<GPIOD_BASE, 4>;
 #endif
 
 #define SX1278_SPI SPI4
@@ -69,17 +67,17 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 
 #define SX1278_IS_EBYTE
 
-using cs   = radio::cs;
-using dio0 = radio::dio0;
-using dio1 = radio::dio1;
-using dio3 = radio::dio3;
+using cs   = miosix::radio::cs;
+using dio0 = miosix::radio::dio0;
+using dio1 = miosix::radio::dio1;
+using dio3 = miosix::radio::dio3;
 
-using sck  = radio::sck;
-using miso = radio::miso;
-using mosi = radio::mosi;
+using sck  = miosix::radio::sck;
+using miso = miosix::radio::miso;
+using mosi = miosix::radio::mosi;
 
-using txen                         = radio::txEn;
-using rxen                         = radio::rxEn;
+using txen                         = miosix::radio::txEn;
+using rxen                         = miosix::radio::rxEn;
 
 #define SX1278_SPI SPI4
 
@@ -90,11 +88,11 @@ using rxen                         = radio::rxEn;
 #elif defined _BOARD_STM32F767ZI_GEMINI_GS
 #include "interfaces-impl/hwmapping.h"
 
-// #define SX1278_IS_SKYWARD433
+#define SX1278_IS_SKYWARD433
 // #define SX1278_IS_EBYTE
 
 // Comment to use SX1278_2
-// #define SX1278_1
+#define SX1278_1
 
 #ifdef SX1278_1
 using cs   = miosix::radio1::cs;
@@ -186,8 +184,8 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 void initBoard()
 {
 #ifdef SX1278_IS_EBYTE
-    rxen::mode(Mode::OUTPUT);
-    txen::mode(Mode::OUTPUT);
+    rxen::mode(miosix::Mode::OUTPUT);
+    txen::mode(miosix::Mode::OUTPUT);
     rxen::low();
     txen::low();
 #endif
@@ -198,40 +196,11 @@ void initBoard()
 #endif
 }
 
-void recvLoop()
-{
-    uint8_t msg[SX1278_MTU];
-    while (1)
-    {
-        int len = sx1278->receive(msg, sizeof(msg));
-        if (len > 0)
-        {
-            auto serial = miosix::DefaultConsole::instance().get();
-            serial->writeBlock(msg, len, 0);
-        }
-    }
-}
-
-void sendLoop()
-{
-    uint8_t msg[SX1278_MTU];
-    while (1)
-    {
-        auto serial = miosix::DefaultConsole::instance().get();
-        int len     = serial->readBlock(msg, sizeof(msg), 0);
-        if (len > 0)
-        {
-            sx1278->send(msg, len);
-        }
-    }
-}
-
 Boardcore::SPIBus sx1278_bus(SX1278_SPI);
 
-int main()
+bool initRadio()
 {
-    initBoard();
-
+    // Initialize frontend (if any)
 #if defined SX1278_IS_EBYTE
     printf("[sx1278] Confuring Ebyte frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
@@ -246,6 +215,7 @@ int main()
          new Boardcore::RA01Frontend());
 #endif
 
+    // Initialize actual radio driver
 #ifdef SX1278_IS_LORA
     // Run default configuration
     Boardcore::SX1278Lora::Config config;
@@ -253,14 +223,14 @@ int main()
 
     sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
                                        dio1::getPin(), dio3::getPin(),
-                                       Boardcore::SPI::ClockDivider::DIV_64,
+                                       Boardcore::SPI::ClockDivider::DIV_256,
                                        std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 lora...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Lora::Error::NONE)
     {
         printf("[sx1278] sx1278->init error\n");
-        return -1;
+        return false;
     }
 
     printf("\n[sx1278] Initialization complete!\n");
@@ -268,9 +238,6 @@ int main()
     // Run default configuration
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
-
-    config.freq_rf    = 868000000;
-    config.enable_crc = false;
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
                                             dio1::getPin(), dio3::getPin(),
@@ -288,9 +255,5 @@ int main()
     printf("\n[sx1278] Initialization complete!\n");
 #endif
 
-    // Actually spawn threads
-    std::thread send([]() { sendLoop(); });
-    recvLoop();
-
-    return 0;
+    return true;
 }

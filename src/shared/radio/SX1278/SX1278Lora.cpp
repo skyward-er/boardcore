@@ -149,22 +149,40 @@ SX1278Lora::Error SX1278Lora::init(const Config &config)
 bool SX1278Lora::checkVersion()
 {
     Lock guard(*this);
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
-    return spi.readRegister(REG_VERSION) == 0x12;
+    uint8_t version = spi.readRegister(REG_VERSION);
+    TRACE("[sx1278] Chip id: %d\n", version);
+
+    return version == 0x12;
 }
 
 SX1278Lora::Error SX1278Lora::configure(const Config &config)
 {
-    // First cycle the device to bring it into LoRa mode (can only be changed in
-    // sleep)
-    setDefaultMode(RegOpMode::MODE_SLEEP, DEFAULT_MAPPING, false, false);
-    // Make sure the device remains in standby and not in sleep
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
+    // Check that the configuration is actually valid
+    bool pa_boost = getFrontend().isOnPaBoost();
+    int min_power = pa_boost ? 2 : 0;
+    int max_power = getFrontend().maxInPower();
+
+    assert(config.power >= min_power && config.power <= max_power &&
+           "[sx1278] Configured power invalid for given frontend!");
+    assert(((config.ocp >= 0 && config.ocp <= 120) ||
+            (config.ocp >= 130 && config.ocp <= 240)) &&
+           "[sx1278] Invalid ocp!");
+    assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
+           "[sx1278] Invalid freq_rf");
+
+    // First make sure the device is in lora mode and in standby
+    enterLoraMode();
+
+    // Then make sure the device remains in standby and not in sleep
+    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                   InterruptTrigger::RISING_EDGE, false, false);
 
     // Lock the bus
     Lock guard(*this);
-    LockMode mode_guard(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING);
+    LockMode mode_guard(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                        InterruptTrigger::RISING_EDGE);
 
     RegModemConfig1::Bw bw = static_cast<RegModemConfig1::Bw>(config.bandwidth);
     RegModemConfig1::Cr cr =
@@ -172,10 +190,10 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     RegModemConfig2::Sf sf =
         static_cast<RegModemConfig2::Sf>(config.spreading_factor);
 
-    int freq_rf   = config.freq_rf;
-    int ocp       = config.ocp;
-    int power     = config.power;
-    bool pa_boost = config.pa_boost;
+    int freq_rf = std::max(std::min(config.freq_rf, MAX_FREQ_RF), MIN_FREQ_RF);
+    int ocp     = config.ocp <= 120 ? std::max(std::min(config.ocp, 120), 0)
+                                    : std::max(std::min(config.ocp, 240), 130);
+    int power   = std::max(std::min(config.power, max_power), min_power);
 
     bool low_data_rate_optimize = config.low_data_rate_optimize;
 
@@ -187,8 +205,10 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     ErrataRegistersValues errata_values =
         ErrataRegistersValues::calculate(bw, freq_rf);
 
+    crc_enabled = config.enable_crc;
+
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
 
         // Setup FIFO sections
         spi.writeRegister(REG_FIFO_TX_BASE_ADDR, FIFO_TX_BASE_ADDR);
@@ -197,10 +217,7 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
 
         // Setup frequency
         uint32_t freq_rf_raw = errata_values.freq_rf / FSTEP;
-
-        spi.writeRegister(REG_FRF_MSB, freq_rf_raw >> 16);
-        spi.writeRegister(REG_FRF_MID, freq_rf_raw >> 8);
-        spi.writeRegister(REG_FRF_LSB, freq_rf_raw);
+        spi.writeRegister24(REG_FRF_MSB, freq_rf_raw);
 
         // Setup reg power amplifier
         const int MAX_POWER = 0b111;
@@ -244,7 +261,7 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
         spi.writeRegister(REG_MODEM_CONFIG_1,
                           RegModemConfig1::make(false, cr, bw));
         spi.writeRegister(REG_MODEM_CONFIG_2,
-                          RegModemConfig2::make(false, false, sf));
+                          RegModemConfig2::make(crc_enabled, false, sf));
         spi.writeRegister(REG_MODEM_CONFIG_3,
                           RegModemConfig3::make(true, low_data_rate_optimize));
 
@@ -277,24 +294,27 @@ ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
 {
     Lock guard(*this);
 
-    SPITransaction spi(slave);
+    // Use continuous because it doesn't go into timeout (and you cannot
+    // disable it...)
+    LockMode mode_guard(*this, guard, RegOpMode::MODE_RXCONTINUOUS,
+                        DioMapping(0, 0, 0, 0, 0, 0),
+                        InterruptTrigger::RISING_EDGE, false, true);
 
-    do
+    waitForIrq(mode_guard, RegIrqFlags::RX_DONE, 0, true);
+
+    uint8_t len;
     {
-        // Use continuous because it doesn't go into timeout (and you cannot
-        // disable it...)
-        LockMode mode_guard(*this, guard, RegOpMode::MODE_RXCONTINUOUS,
-                            DioMapping(0, 0, 0, 0, 0, 0), false, true);
+        SPITransaction spi(getSpiSlave());
+        len = spi.readRegister(REG_RX_NB_BYTES);
+    }
 
-        waitForIrq(mode_guard, RegIrqFlags::RX_DONE, true);
-    } while (checkForIrqAndReset(RegIrqFlags::PAYLOAD_CRC_ERROR));
-
-    uint8_t len = spi.readRegister(REG_RX_NB_BYTES);
-    if (len > max_len)
+    if (len > max_len ||
+        (crc_enabled &&
+         checkForIrqAndReset(RegIrqFlags::PAYLOAD_CRC_ERROR, 0) != 0))
         return -1;
 
+    // Finally read the contents of the fifo
     readFifo(FIFO_RX_BASE_ADDR, pkt, len);
-
     return len;
 }
 
@@ -305,18 +325,21 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
 
     Lock guard(*this);
 
-    SPITransaction spi(slave);
+    {
+        SPITransaction spi(getSpiSlave());
 
-    spi.writeRegister(REG_PAYLOAD_LENGTH, len);
-    writeFifo(FIFO_TX_BASE_ADDR, pkt, len);
+        spi.writeRegister(REG_PAYLOAD_LENGTH, len);
+        writeFifo(FIFO_TX_BASE_ADDR, pkt, len);
+    }
 
     {
         // Now enter in mode TX to send the packet
         LockMode mode_guard(*this, guard, RegOpMode::MODE_TX,
-                            DioMapping(1, 0, 0, 0, 0, 0), true, false);
+                            DioMapping(1, 0, 0, 0, 0, 0),
+                            InterruptTrigger::RISING_EDGE, true, false);
 
         // Wait for the transmission to end
-        waitForIrq(mode_guard, RegIrqFlags::TX_DONE);
+        waitForIrq(mode_guard, RegIrqFlags::TX_DONE, 0);
     }
 
     return true;
@@ -327,7 +350,7 @@ float SX1278Lora::getLastRxRssi()
     float rssi;
     {
         Lock guard(*this);
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
         rssi =
             static_cast<float>(spi.readRegister(REG_PKT_RSSI_VALUE)) - 164.0f;
     }
@@ -343,70 +366,58 @@ float SX1278Lora::getLastRxRssi()
 float SX1278Lora::getLastRxSnr()
 {
     Lock guard(*this);
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     return static_cast<float>(
                static_cast<int8_t>(spi.readRegister(REG_PKT_SNR_VALUE))) /
            4.0f;
 }
 
+void SX1278Lora::enterLoraMode()
+{
+    Lock guard(*this);
+    SPITransaction spi(getSpiSlave());
+
+    // First enter LoRa sleep
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(RegOpMode::MODE_SLEEP, true, false));
+    miosix::Thread::sleep(1);
+
+    // Then transition to standby
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(RegOpMode::MODE_STDBY, true, false));
+    miosix::Thread::sleep(1);
+}
+
 void SX1278Lora::readFifo(uint8_t addr, uint8_t *dst, uint8_t size)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.readRegisters(REG_FIFO, dst, size);
 }
 
 void SX1278Lora::writeFifo(uint8_t addr, uint8_t *src, uint8_t size)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.writeRegisters(REG_FIFO, src, size);
 }
 
-SX1278::DioMask SX1278Lora::getDioMaskFromIrqFlags(IrqFlags flags, Mode _mode,
-                                                   SX1278::DioMapping mapping)
-{
-    // In LoRa the mode doesn't matter for IRQs
-    (void)_mode;
-    DioMask dio_mask;
-
-    if (DIO_MAPPINGS[0][mapping.getMapping(Dio::DIO0)] & flags)
-        dio_mask.set(Dio::DIO0);
-
-    if (DIO_MAPPINGS[1][mapping.getMapping(Dio::DIO1)] & flags)
-        dio_mask.set(Dio::DIO1);
-
-    if (DIO_MAPPINGS[2][mapping.getMapping(Dio::DIO2)] & flags)
-        dio_mask.set(Dio::DIO2);
-
-    if (DIO_MAPPINGS[3][mapping.getMapping(Dio::DIO3)] & flags)
-        dio_mask.set(Dio::DIO3);
-
-    if (DIO_MAPPINGS[4][mapping.getMapping(Dio::DIO4)] & flags)
-        dio_mask.set(Dio::DIO4);
-
-    if (DIO_MAPPINGS[5][mapping.getMapping(Dio::DIO5)] & flags)
-        dio_mask.set(Dio::DIO5);
-
-    return dio_mask;
-}
-
 ISX1278::IrqFlags SX1278Lora::getIrqFlags()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     return spi.readRegister(REG_IRQ_FLAGS);
 }
 
 void SX1278Lora::resetIrqFlags(IrqFlags flags)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     // Register is write clear
     spi.writeRegister(REG_IRQ_FLAGS, flags);
 }
 
 void SX1278Lora::setMode(ISX1278::Mode mode)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     spi.writeRegister(
         REG_OP_MODE,
@@ -415,9 +426,8 @@ void SX1278Lora::setMode(ISX1278::Mode mode)
 
 void SX1278Lora::setMapping(SX1278::DioMapping mapping)
 {
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_DIO_MAPPING_1, mapping.raw >> 8);
-    spi.writeRegister(REG_DIO_MAPPING_2, mapping.raw);
+    SPITransaction spi(getSpiSlave());
+    spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 
 }  // namespace Boardcore

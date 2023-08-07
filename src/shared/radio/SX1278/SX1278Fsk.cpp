@@ -25,6 +25,7 @@
 #include <kernel/scheduler/scheduler.h>
 #include <utils/Debug.h>
 
+#include <cassert>
 #include <cmath>
 
 namespace Boardcore
@@ -34,17 +35,6 @@ using namespace SX1278;
 using namespace SX1278::Fsk;
 
 long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
-
-// Default values for registers
-constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
-                                        RegOpMode::MODULATION_TYPE_FSK |
-                                        RegOpMode::LOW_FREQUENCY_MODE_ON;
-
-constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
-    RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
-    RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
-
-constexpr uint8_t REG_IMAGE_CAL_DEFAULT = RegImageCal::TEMP_TRESHOLD_10DEG;
 
 // Enable:
 // - PayloadReady, PacketSent on DIO0 (mode 00)
@@ -57,7 +47,6 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
     // First probe for the device
     if (!checkVersion())
     {
-        TRACE("[sx1278] Wrong chipid\n");
         return Error::BAD_VALUE;
     }
 
@@ -71,73 +60,192 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
 bool SX1278Fsk::checkVersion()
 {
     Lock guard(*this);
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
-    return spi.readRegister(REG_VERSION) == 0x12;
+    uint8_t version = spi.readRegister(REG_VERSION);
+    TRACE("[sx1278] Chip id: %d\n", version);
+
+    return version == 0x12;
 }
 
 SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
 {
-    // First cycle the device to bring it into Fsk mode (can only be changed in
-    // sleep)
-    setDefaultMode(RegOpMode::MODE_SLEEP, DEFAULT_MAPPING, false, false);
-    // Make sure the device remains in standby and not in sleep
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
+    // Check that the configuration is actually valid
+    bool pa_boost = getFrontend().isOnPaBoost();
+    int min_power = pa_boost ? 2 : 0;
+    int max_power = getFrontend().maxInPower();
+
+    assert(config.power >= min_power && config.power <= max_power &&
+           "[sx1278] Configured power invalid for given frontend!");
+    assert(((config.ocp >= 0 && config.ocp <= 120) ||
+            (config.ocp >= 130 && config.ocp <= 240)) &&
+           "[sx1278] Invalid ocp!");
+    assert(config.freq_dev >= MIN_FREQ_DEV && config.freq_dev <= MAX_FREQ_DEV &&
+           "[sx1278] Invalid freq_dev!");
+    assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
+           "[sx1278] Invalid freq_rf");
+
+    // First make sure the device is in fsk and in standby
+    enterFskMode();
+
+    // Set default mode to standby, that way we reset the fifo every time we
+    // enter receive
+    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                   InterruptTrigger::RISING_EDGE, false, false);
+    miosix::Thread::sleep(1);
 
     // Lock the bus
     Lock guard(*this);
-    LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING);
+    LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                        InterruptTrigger::RISING_EDGE);
 
-    if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 1000))
-        return Error::IRQ_TIMEOUT;
+    // This code is unreliable so it got commented out, the datasheet states
+    // that this triggers during a successful state transition, but for some
+    // reason, this isn't always the case, and can lead to random failures of
+    // the driver initialization. Removing it has no side effects, so that is
+    // what was done.
+    // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 0, 1000))
+    //     return Error::IRQ_TIMEOUT;
 
-    setBitrate(config.bitrate);
-    setFreqDev(config.freq_dev);
-    setFreqRF(config.freq_rf);
+    int bitrate = config.bitrate;
+    int freq_dev =
+        std::max(std::min(config.freq_dev, MAX_FREQ_DEV), MIN_FREQ_DEV);
+    int freq_rf = std::max(std::min(config.freq_rf, MAX_FREQ_RF), MIN_FREQ_RF);
+    RegRxBw::RxBw rx_bw      = static_cast<RegRxBw::RxBw>(config.rx_bw);
+    RegAfcBw::RxBwAfc afc_bw = static_cast<RegAfcBw::RxBwAfc>(config.afc_bw);
+    int ocp   = config.ocp <= 120 ? std::max(std::min(config.ocp, 120), 0)
+                                  : std::max(std::min(config.ocp, 240), 130);
+    int power = std::max(std::min(config.power, max_power), min_power);
+    RegPaRamp::ModulationShaping shaping =
+        static_cast<RegPaRamp::ModulationShaping>(config.shaping);
+    RegPacketConfig1::DcFree dc_free =
+        static_cast<RegPacketConfig1::DcFree>(config.dc_free);
 
-    setRxBw(config.rx_bw);
-    setAfcBw(config.afc_bw);
+    crc_enabled = config.enable_crc;
 
-    setOcp(config.ocp);
-
-    uint8_t sync_word[2] = {0x12, 0xad};
-    setSyncWord(sync_word, 2);
-    setPreambleLen(2);
-    setPa(config.power, config.pa_boost);
-    setShaping(config.shaping);
-
-    // Setup generic parameters
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
 
-        spi.writeRegister(REG_RX_CONFIG,
-                          RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
-                              RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
-                              RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT);
+        // Setup bitrate
+        uint16_t bitrate_raw = FXOSC / bitrate;
+        spi.writeRegister16(REG_BITRATE_MSB, bitrate_raw);
+
+        // Setup frequency deviation
+        uint16_t freq_dev_raw = freq_dev / FSTEP;
+        spi.writeRegister16(REG_FDEV_MSB, freq_dev_raw & 0x3fff);
+
+        // Setup base frequency
+        uint32_t freq_rf_raw = freq_rf / FSTEP;
+        spi.writeRegister24(REG_FRF_MSB, freq_rf_raw);
+
+        // Setup RX bandwidth
+        spi.writeRegister(REG_RX_BW, RegRxBw::make(rx_bw));
+
+        // Setup afc bandwidth
+        spi.writeRegister(REG_AFC_BW, RegAfcBw::make(afc_bw));
+
+        // Setup reg over-current protection
+        if (config.ocp == 0)
+        {
+            spi.writeRegister(REG_OCP, RegOcp::make(0, false));
+        }
+        else if (ocp <= 120)
+        {
+            spi.writeRegister(REG_OCP, RegOcp::make((ocp - 45) / 5, true));
+        }
+        else
+        {
+            spi.writeRegister(REG_OCP, RegOcp::make((ocp + 30) / 10, true));
+        }
+
+        // Setup sync word
+        spi.writeRegister(
+            REG_SYNC_CONFIG,
+            RegSyncConfig::make(2, true, RegSyncConfig::PREAMBLE_POLARITY_55,
+                                RegSyncConfig::AUTO_RESTART_RX_MODE_OFF));
+        spi.writeRegister(REG_SYNC_VALUE_1, 0x12);
+        spi.writeRegister(REG_SYNC_VALUE_2, 0xad);
+
+        // Set preamble length
+        spi.writeRegister16(REG_PREAMBLE_MSB, 2);
+
+        // Setup shaping
+        spi.writeRegister(REG_PA_RAMP,
+                          RegPaRamp::make(RegPaRamp::PA_RAMP_US_40, shaping));
+
+        // Setup power amplifier
+        // [2, 17] or 20 if PA_BOOST
+        // [0, 15] if !PA_BOOST
+        const int MAX_POWER = 0b111;
+        if (!pa_boost)
+        {
+            // Don't use power amplifier boost
+            spi.writeRegister(REG_PA_CONFIG,
+                              RegPaConfig::make(power, MAX_POWER, false));
+            spi.writeRegister(REG_PA_DAC,
+                              RegPaDac::make(RegPaDac::PA_DAC_DEFAULT_VALUE));
+        }
+        else if (power != 20)
+        {
+            // Run power amplifier boost but not at full power
+            spi.writeRegister(REG_PA_CONFIG,
+                              RegPaConfig::make(power - 2, MAX_POWER, true));
+            spi.writeRegister(REG_PA_DAC,
+                              RegPaDac::make(RegPaDac::PA_DAC_PA_BOOST));
+        }
+        else
+        {
+            // Run power amplifier boost at full power
+            spi.writeRegister(REG_PA_CONFIG,
+                              RegPaConfig::make(0b1111, MAX_POWER, true));
+            spi.writeRegister(REG_PA_DAC,
+                              RegPaDac::make(RegPaDac::PA_DAC_PA_BOOST));
+        }
+
+        // Setup other registers
+
+        spi.writeRegister(
+            REG_RX_CONFIG,
+            RegRxConfig::make(true, true, true, true, false, false, false));
+
         spi.writeRegister(REG_RSSI_THRESH, 0xff);
+
         spi.writeRegister(
             REG_PREAMBLE_DETECT,
-            RegPreambleDetector::PREAMBLE_DETECTOR_ON |
-                RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES | 0x0a);
+            RegPreambleDetector::make(
+                0x0a, RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES,
+                true));
+
         spi.writeRegister(REG_RX_TIMEOUT_1, 0x00);
         spi.writeRegister(REG_RX_TIMEOUT_2, 0x00);
         spi.writeRegister(REG_RX_TIMEOUT_3, 0x00);
-        spi.writeRegister(REG_PACKET_CONFIG_1,
-                          RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                              static_cast<uint8_t>(config.dc_free) |
-                              RegPacketConfig1::CRC_ON |
-                              RegPacketConfig1::ADDRESS_FILTERING_NONE |
-                              RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
-        spi.writeRegister(REG_PACKET_CONFIG_2,
-                          RegPacketConfig2::DATA_MODE_PACKET);
+
+        spi.writeRegister(
+            REG_PACKET_CONFIG_1,
+            RegPacketConfig1::make(
+                RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC,
+                RegPacketConfig1::ADDRESS_FILTERING_NONE, true, crc_enabled,
+                dc_free, RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH));
+
+        spi.writeRegister(
+            REG_PACKET_CONFIG_2,
+            RegPacketConfig2::make(false, false, false,
+                                   RegPacketConfig2::DATA_MODE_PACKET));
+
+        // Set maximum payload length
+        spi.writeRegister(REG_PACKET_PAYLOAD_LENGTH, MTU);
+
+        // Setup threshold to half of the fifo
         spi.writeRegister(
             REG_FIFO_THRESH,
-            RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY | 0x0f);
+            RegFifoThresh::make(
+                FIFO_LEN / 2,
+                RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY));
+
         spi.writeRegister(REG_NODE_ADRS, 0x00);
         spi.writeRegister(REG_BROADCAST_ADRS, 0x00);
     }
 
-    // imageCalibrate();
     return Error::NONE;
 }
 
@@ -145,33 +253,81 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
 {
     Lock guard(*this);
     LockMode guard_mode(*this, guard, RegOpMode::MODE_RX, DEFAULT_MAPPING,
-                        false, true);
+                        InterruptTrigger::RISING_EDGE, false, true);
+
+    // Save the packet locally, we always want to read it all
+    uint8_t tmp_pkt[MTU];
 
     uint8_t len = 0;
+    bool crc_ok;
+    IrqFlags flags = 0;
+
     do
     {
-        // Special wait for payload ready
-        waitForIrq(guard_mode, RegIrqFlags::PAYLOAD_READY, true);
+        crc_ok = false;
+
+        uint8_t cur_len = 0;
+
+        // Special wait for fifo level/payload ready, release the lock at this
+        // stage
+        flags = waitForIrq(guard_mode,
+                           RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY,
+                           0, true);
+        if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
+        {
+            crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+        }
+
+        // Record RSSI here, it's where it is the most accurate
         last_rx_rssi = getRssi();
 
+        // Now first packet bit
         {
-            SPITransaction spi(slave);
+            SPITransaction spi(getSpiSlave());
             len = spi.readRegister(REG_FIFO);
-            if (len > max_len)
-                return -1;
 
-            spi.readRegisters(REG_FIFO, pkt, len);
+            int read_size = std::min((int)len, FIFO_LEN / 2);
+            // Skip 0 sized read
+            if (read_size != 0)
+                spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
+
+            cur_len += read_size;
+        }
+
+        // Then read the other chunks
+        while (cur_len < len)
+        {
+            flags = waitForIrq(
+                guard_mode,
+                RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0);
+            if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
+            {
+                crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+            }
+
+            SPITransaction spi(getSpiSlave());
+
+            int read_size = std::min((int)(len - cur_len), FIFO_LEN / 2);
+            spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
+
+            cur_len += read_size;
         }
 
         // For some reason this sometimes happen?
     } while (len == 0);
 
+    if (len > max_len || (!crc_ok && crc_enabled))
+    {
+        return -1;
+    }
+
+    // Finally copy the packet to the destination
+    memcpy(pkt, tmp_pkt, len);
     return len;
 }
 
 bool SX1278Fsk::send(uint8_t *pkt, size_t len)
 {
-    // Packets longer than FIFO_LEN (-1 for the len byte) are not supported
     if (len > MTU)
         return false;
 
@@ -180,20 +336,42 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     rateLimitTx();
 
     Lock guard(*this);
-    LockMode guard_mode(*this, guard, RegOpMode::MODE_TX, DEFAULT_MAPPING, true,
-                        false);
+    LockMode guard_mode(*this, guard, RegOpMode::MODE_TX, DEFAULT_MAPPING,
+                        InterruptTrigger::FALLING_EDGE, true, false);
 
-    waitForIrq(guard_mode, RegIrqFlags::TX_READY);
+    waitForIrq(guard_mode, RegIrqFlags::TX_READY, 0);
 
+    // Send first segment
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
 
         spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
-        spi.writeRegisters(REG_FIFO, pkt, len);
+
+        int write_size = std::min((int)len, FIFO_LEN - 1);
+        spi.writeRegisters(REG_FIFO, pkt, write_size);
+
+        pkt += write_size;
+        len -= write_size;
     }
 
+    // Then send the rest using fifo control
+    while (len > 0)
+    {
+        // Wait for FIFO_LEVEL to go down
+        waitForIrq(guard_mode, 0, RegIrqFlags::FIFO_LEVEL);
+
+        SPITransaction spi(getSpiSlave());
+
+        int write_size = std::min((int)len, FIFO_LEN / 2);
+        spi.writeRegisters(REG_FIFO, pkt, write_size);
+
+        pkt += write_size;
+        len -= write_size;
+    }
+
+    // Finally wait for packet sent
     // Wait for packet sent
-    waitForIrq(guard_mode, RegIrqFlags::PACKET_SENT);
+    waitForIrq(guard_mode, RegIrqFlags::PACKET_SENT, 0);
 
     last_tx = now();
     return true;
@@ -213,6 +391,24 @@ float SX1278Fsk::getCurRssi()
     return getRssi();
 }
 
+void SX1278Fsk::enterFskMode()
+{
+    Lock guard(*this);
+    SPITransaction spi(getSpiSlave());
+
+    // First enter Fsk sleep
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(RegOpMode::MODE_SLEEP, true,
+                                      RegOpMode::MODULATION_TYPE_FSK));
+    miosix::Thread::sleep(1);
+
+    // Then transition to standby
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(RegOpMode::MODE_STDBY, true,
+                                      RegOpMode::MODULATION_TYPE_FSK));
+    miosix::Thread::sleep(1);
+}
+
 void SX1278Fsk::rateLimitTx()
 {
     const long long RATE_LIMIT = 2;
@@ -224,50 +420,10 @@ void SX1278Fsk::rateLimitTx()
     }
 }
 
-void SX1278Fsk::imageCalibrate()
-{
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_IMAGE_CAL, REG_IMAGE_CAL_DEFAULT | (1 << 6));
-
-    // Wait for calibration complete by polling on running register
-    while (spi.readRegister(REG_IMAGE_CAL) & (1 << 5))
-        miosix::delayUs(10);
-}
-
-DioMask SX1278Fsk::getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                          DioMapping mapping)
-{
-    DioMask dio_mask;
-
-    if (DIO_MAPPINGS[0][mode][mapping.getMapping(Dio::DIO0)] & flags)
-        dio_mask.set(Dio::DIO0);
-
-    if (DIO_MAPPINGS[1][mode][mapping.getMapping(Dio::DIO1)] & flags)
-        dio_mask.set(Dio::DIO1);
-
-    if (DIO_MAPPINGS[2][mode][mapping.getMapping(Dio::DIO2)] & flags)
-        dio_mask.set(Dio::DIO2);
-
-    if (DIO_MAPPINGS[3][mode][mapping.getMapping(Dio::DIO3)] & flags)
-        dio_mask.set(Dio::DIO3);
-
-    if (DIO_MAPPINGS[4][mode][mapping.getMapping(Dio::DIO4)] & flags)
-        dio_mask.set(Dio::DIO4);
-
-    if (DIO_MAPPINGS[5][mode][mapping.getMapping(Dio::DIO5)] & flags)
-        dio_mask.set(Dio::DIO5);
-
-    return dio_mask;
-}
-
 ISX1278::IrqFlags SX1278Fsk::getIrqFlags()
 {
-    SPITransaction spi(slave);
-
-    uint8_t flags_msb = spi.readRegister(REG_IRQ_FLAGS_1);
-    uint8_t flags_lsb = spi.readRegister(REG_IRQ_FLAGS_2);
-
-    return (flags_msb << 8 | flags_lsb);
+    SPITransaction spi(getSpiSlave());
+    return spi.readRegister16(REG_IRQ_FLAGS_1);
 }
 
 void SX1278Fsk::resetIrqFlags(IrqFlags flags)
@@ -279,244 +435,39 @@ void SX1278Fsk::resetIrqFlags(IrqFlags flags)
 
     if (flags != 0)
     {
-        SPITransaction spi(slave);
-        spi.writeRegister(REG_IRQ_FLAGS_1, flags >> 8);
-        spi.writeRegister(REG_IRQ_FLAGS_2, flags);
+        SPITransaction spi(getSpiSlave());
+        spi.writeRegister16(REG_IRQ_FLAGS_1, flags);
     }
 }
 
 float SX1278Fsk::getRssi()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
-    return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
+    uint8_t rssi_raw = spi.readRegister(REG_RSSI_VALUE);
+    return static_cast<float>(rssi_raw) * -0.5f;
 }
 
 float SX1278Fsk::getFei()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
-    // Order of read is important!!
-    uint8_t fei_msb = spi.readRegister(REG_FEI_MSB);
-    uint8_t fei_lsb = spi.readRegister(REG_FEI_LSB);
-
-    uint16_t fei = (static_cast<uint16_t>(fei_msb) << 8) |
-                   (static_cast<uint16_t>(fei_lsb));
-
-    return static_cast<float>(fei) * FSTEP;
+    uint16_t fei_raw = spi.readRegister16(REG_FEI_MSB);
+    return static_cast<float>(fei_raw) * FSTEP;
 }
 
 void SX1278Fsk::setMode(Mode mode)
 {
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_OP_MODE, REG_OP_MODE_DEFAULT | mode);
+    SPITransaction spi(getSpiSlave());
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(static_cast<RegOpMode::Mode>(mode), true,
+                                      RegOpMode::MODULATION_TYPE_FSK));
 }
 
 void SX1278Fsk::setMapping(SX1278::DioMapping mapping)
 {
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_DIO_MAPPING_1, mapping.raw >> 8);
-    spi.writeRegister(REG_DIO_MAPPING_2, mapping.raw);
-}
-
-void SX1278Fsk::setBitrate(int bitrate)
-{
-    uint16_t val = FXOSC / bitrate;
-
-    // Update values
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_BITRATE_MSB, val >> 8);
-    spi.writeRegister(REG_BITRATE_LSB, val);
-}
-
-void SX1278Fsk::setFreqDev(int freq_dev)
-{
-    uint16_t val = freq_dev / FSTEP;
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_FDEV_MSB, (val >> 8) & 0x3f);
-    spi.writeRegister(REG_FDEV_LSB, val);
-}
-
-void SX1278Fsk::setFreqRF(int freq_rf)
-{
-    uint32_t val = freq_rf / FSTEP;
-
-    // Update values
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_FRF_MSB, val >> 16);
-    spi.writeRegister(REG_FRF_MID, val >> 8);
-    spi.writeRegister(REG_FRF_LSB, val);
-}
-
-void SX1278Fsk::setOcp(int ocp)
-{
-    SPITransaction spi(slave);
-    if (ocp == 0)
-    {
-        spi.writeRegister(REG_OCP, 0);
-    }
-    else if (ocp <= 120)
-    {
-        uint8_t raw = (ocp - 45) / 5;
-        spi.writeRegister(REG_OCP, RegOcp::OCP_ON | raw);
-    }
-    else
-    {
-        uint8_t raw = (ocp + 30) / 10;
-        spi.writeRegister(REG_OCP, RegOcp::OCP_ON | raw);
-    }
-}
-
-void SX1278Fsk::setSyncWord(uint8_t value[], int size)
-{
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
-
-    for (int i = 0; i < size; i++)
-    {
-        spi.writeRegister(REG_SYNC_VALUE_1 + i, value[i]);
-    }
-}
-
-void SX1278Fsk::setRxBw(RxBw rx_bw)
-{
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_RX_BW, static_cast<uint8_t>(rx_bw));
-}
-
-void SX1278Fsk::setAfcBw(RxBw afc_bw)
-{
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
-}
-
-void SX1278Fsk::setPreambleLen(int len)
-{
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_PREAMBLE_MSB, len >> 8);
-    spi.writeRegister(REG_PREAMBLE_LSB, len);
-}
-
-void SX1278Fsk::setPa(int power, bool pa_boost)
-{
-    // [2, 17] or 20 if PA_BOOST
-    // [0, 15] if !PA_BOOST
-
-    const uint8_t MAX_POWER = 0b111;
-
-    SPITransaction spi(slave);
-
-    if (!pa_boost)
-    {
-        // Don't use power amplifier boost
-        power = power - MAX_POWER + 15;
-        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power);
-        spi.writeRegister(REG_PA_DAC,
-                          RegPaDac::PA_DAC_DEFAULT_VALUE | 0x10 << 3);
-    }
-    else if (power != 20)
-    {
-        // Run power amplifier boost but not at full power
-        power = power - 2;
-        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
-                                             RegPaConfig::PA_SELECT_BOOST);
-        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
-    }
-    // RA01 modules aren't capable of this, disable it to avoid damaging them
-    // else
-    // {
-    //     // Run power amplifier boost at full power
-    //     power = 15;
-    //     spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
-    //                                          RegPaConfig::PA_SELECT_BOOST);
-    //     spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
-    // }
-}
-
-void SX1278Fsk::setShaping(Shaping shaping)
-{
-    SPITransaction spi(slave);
-    spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
-}
-
-void SX1278Fsk::debugDumpRegisters()
-{
-    Lock guard(*this);
-    struct RegDef
-    {
-        const char *name;
-        int addr;
-    };
-
-    const RegDef defs[] = {
-        RegDef{"REG_OP_MODE", REG_OP_MODE},
-        RegDef{"REG_BITRATE_MSB", REG_BITRATE_MSB},
-        RegDef{"REG_BITRATE_LSB", REG_BITRATE_LSB},
-        RegDef{"REG_FDEV_MSB", REG_FDEV_MSB},
-        RegDef{"REG_FDEV_LSB", REG_FDEV_LSB},
-        RegDef{"REG_FRF_MSB", REG_FRF_MSB}, RegDef{"REG_FRF_MID", REG_FRF_MID},
-        RegDef{"REG_FRF_LSB", REG_FRF_LSB},
-        RegDef{"REG_PA_CONFIG", REG_PA_CONFIG},
-        RegDef{"REG_PA_RAMP", REG_PA_RAMP}, RegDef{"REG_OCP", REG_OCP},
-        RegDef{"REG_LNA", REG_LNA}, RegDef{"REG_RX_CONFIG", REG_RX_CONFIG},
-        RegDef{"REG_RSSI_CONFIG", REG_RSSI_CONFIG},
-        RegDef{"REG_RSSI_COLLISION", REG_RSSI_COLLISION},
-        RegDef{"REG_RSSI_THRESH", REG_RSSI_THRESH},
-        // RegDef { "REG_RSSI_VALUE", REG_RSSI_VALUE },
-        RegDef{"REG_RX_BW", REG_RX_BW}, RegDef{"REG_AFC_BW", REG_AFC_BW},
-        RegDef{"REG_OOK_PEAK", REG_OOK_PEAK},
-        RegDef{"REG_OOK_FIX", REG_OOK_FIX}, RegDef{"REG_OOK_AVG", REG_OOK_AVG},
-        RegDef{"REG_AFC_FEI", REG_AFC_FEI}, RegDef{"REG_AFC_MSB", REG_AFC_MSB},
-        RegDef{"REG_AFC_LSB", REG_AFC_LSB}, RegDef{"REG_FEI_MSB", REG_FEI_MSB},
-        RegDef{"REG_FEI_LSB", REG_FEI_LSB},
-        RegDef{"REG_PREAMBLE_DETECT", REG_PREAMBLE_DETECT},
-        RegDef{"REG_RX_TIMEOUT_1", REG_RX_TIMEOUT_1},
-        RegDef{"REG_RX_TIMEOUT_2", REG_RX_TIMEOUT_2},
-        RegDef{"REG_RX_TIMEOUT_3", REG_RX_TIMEOUT_3},
-        RegDef{"REG_RX_DELAY", REG_RX_DELAY}, RegDef{"REG_OSC", REG_OSC},
-        RegDef{"REG_PREAMBLE_MSB", REG_PREAMBLE_MSB},
-        RegDef{"REG_PREAMBLE_LSB", REG_PREAMBLE_LSB},
-        RegDef{"REG_SYNC_CONFIG", REG_SYNC_CONFIG},
-        RegDef{"REG_SYNC_VALUE_1", REG_SYNC_VALUE_1},
-        RegDef{"REG_SYNC_VALUE_2", REG_SYNC_VALUE_2},
-        RegDef{"REG_SYNC_VALUE_3", REG_SYNC_VALUE_3},
-        RegDef{"REG_SYNC_VALUE_4", REG_SYNC_VALUE_4},
-        RegDef{"REG_SYNC_VALUE_5", REG_SYNC_VALUE_5},
-        RegDef{"REG_SYNC_VALUE_6", REG_SYNC_VALUE_6},
-        RegDef{"REG_SYNC_VALUE_7", REG_SYNC_VALUE_7},
-        RegDef{"REG_SYNC_VALUE_8", REG_SYNC_VALUE_8},
-        RegDef{"REG_PACKET_CONFIG_1", REG_PACKET_CONFIG_1},
-        RegDef{"REG_PACKET_CONFIG_2", REG_PACKET_CONFIG_2},
-        RegDef{"REG_PACKET_PAYLOAD_LENGTH", REG_PACKET_PAYLOAD_LENGTH},
-        RegDef{"REG_NODE_ADRS", REG_NODE_ADRS},
-        RegDef{"REG_BROADCAST_ADRS", REG_BROADCAST_ADRS},
-        RegDef{"REG_FIFO_THRESH", REG_FIFO_THRESH},
-        RegDef{"REG_SEQ_CONFIG_1", REG_SEQ_CONFIG_1},
-        RegDef{"REG_SEQ_CONFIG_2", REG_SEQ_CONFIG_2},
-        RegDef{"REG_TIMER_RESOL", REG_TIMER_RESOL},
-        RegDef{"REG_TIMER_1_COEF", REG_TIMER_1_COEF},
-        RegDef{"REG_TIMER_2_COEF", REG_TIMER_2_COEF},
-        RegDef{"REG_IMAGE_CAL", REG_IMAGE_CAL},
-        // RegDef { "REG_TEMP", REG_TEMP },
-        RegDef{"REG_LOW_BAT", REG_LOW_BAT},
-        // RegDef { "REG_IRQ_FLAGS_1", REG_IRQ_FLAGS_1 },
-        // RegDef { "REG_IRQ_FLAGS_2", REG_IRQ_FLAGS_2 },
-        RegDef{"REG_DIO_MAPPING_1", REG_DIO_MAPPING_1},
-        RegDef{"REG_DIO_MAPPING_2", REG_DIO_MAPPING_2},
-        RegDef{"REG_VERSION", REG_VERSION}, RegDef{NULL, 0}};
-
-    SPITransaction spi(slave);
-
-    int i = 0;
-    while (defs[i].name)
-    {
-        auto name = defs[i].name;
-        auto addr = defs[i].addr;
-
-        LOG_DEBUG(logger, "%s: 0x%x\n", name, spi.readRegister(addr));
-
-        i++;
-    }
+    SPITransaction spi(getSpiSlave());
+    spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 
 }  // namespace Boardcore

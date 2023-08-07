@@ -30,9 +30,9 @@ namespace Boardcore
 namespace SX1278
 {
 
-void SX1278Common::handleDioIRQ(Dio dio)
+void SX1278Common::handleDioIRQ()
 {
-    if (state.waiting_dio_mask.test(dio) && state.irq_wait_thread)
+    if (state.irq_wait_thread)
     {
         state.irq_wait_thread->IRQwakeup();
         if (state.irq_wait_thread->IRQgetPriority() >
@@ -45,73 +45,70 @@ void SX1278Common::handleDioIRQ(Dio dio)
     }
 }
 
-void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
-                                  bool tx_frontend, bool rx_frontend)
+void SX1278Common::enableIrqs()
 {
-    mutex.lock();
-    enterMode(mode, mapping, tx_frontend, rx_frontend);
-    mutex.unlock();
+    enableExternalInterrupt(dio0, InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1, InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3, InterruptTrigger::RISING_EDGE);
 }
 
-void SX1278Common::waitForIrq(LockMode &_guard, IrqFlags irq, bool unlock)
+void SX1278Common::disableIrqs()
 {
-    // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
-    // otherwise don't do anything with it
-    (void)_guard;
+    disableExternalInterrupt(dio0);
+    disableExternalInterrupt(dio1);
+    disableExternalInterrupt(dio3);
+}
 
-    // Convert the IRQ mask into a DIO mask
-    DioMask waiting_dio_mask =
-        getDioMaskFromIrqFlags(irq, state.mode, state.mapping);
+void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
+                                  InterruptTrigger dio1_trigger,
+                                  bool tx_frontend, bool rx_frontend)
+{
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+    enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
+}
+
+ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
+                                           IrqFlags reset_irq, bool unlock)
+{
+    IrqFlags ret_irq = 0;
 
     do
     {
         // An interrupt could occur and read from this variables
         {
-            miosix::FastInterruptDisableLock dLock;
-            state.waiting_dio_mask = waiting_dio_mask;
-            state.irq_wait_thread  = miosix::Thread::IRQgetCurrentThread();
+            miosix::FastInterruptDisableLock lock;
+            state.irq_wait_thread = miosix::Thread::IRQgetCurrentThread();
         }
 
         // Check that this hasn't already happened
-        if (checkForIrqAndReset(irq))
+        if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
         {
-            return;
+            break;
         }
 
-        if (unlock)
+        if (!waitForIrqInner(guard, unlock))
         {
-            mutex.unlock();
+            // TODO: Something bad happened, do something!
         }
 
-        {
-            miosix::FastInterruptDisableLock dLock;
-            while (state.irq_wait_thread)
-            {
-                miosix::Thread::IRQwait();
-                {
-                    miosix::FastInterruptEnableLock eLock(dLock);
-                    miosix::Thread::yield();
-                }
-            }
-        }
-
-        // Regain ownership of the lock
-        if (unlock)
-        {
-            mutex.lock();
-        }
+        // TODO: Check state of the device, and reset if needed!
 
         // Protect against sporadic IRQs
-    } while (!checkForIrqAndReset(irq));
+    } while ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) == 0);
+
+    return ret_irq;
 }
 
-bool SX1278Common::waitForIrqBusy(LockMode &_guard, IrqFlags irq, int timeout)
+ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
+                                               IrqFlags set_irq,
+                                               IrqFlags reset_irq, int timeout)
 {
     // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
     // otherwise don't do anything with it
     (void)_guard;
 
-    long long start = miosix::getTick();
+    long long start  = miosix::getTick();
+    IrqFlags ret_irq = 0;
 
     while ((miosix::getTick() - start) < timeout)
     {
@@ -121,44 +118,81 @@ bool SX1278Common::waitForIrqBusy(LockMode &_guard, IrqFlags irq, int timeout)
         // Tight loop on IRQ register
         for (unsigned int i = 0; i < 1000 / DELAY; i++)
         {
-            if (checkForIrqAndReset(irq))
+            // Check if some of the interrupts triggered
+            if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
             {
-                return true;
+                return ret_irq;
             }
 
             miosix::delayUs(DELAY);
         }
     }
 
-    return false;
+    return 0;
 }
 
-bool SX1278Common::checkForIrqAndReset(IrqFlags irq)
+bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
+{
+    // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
+    // otherwise don't do anything with it
+    (void)_guard;
+
+    // Release the lock for others to take
+    if (unlock)
+    {
+        mutex.unlock();
+    }
+
+    int start                      = miosix::getTick();
+    miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
+
+    {
+        miosix::FastInterruptDisableLock lock;
+        while (state.irq_wait_thread &&
+               result == miosix::TimedWaitResult::NoTimeout)
+        {
+            result = miosix::Thread::IRQenableIrqAndTimedWaitMs(
+                lock, start + IRQ_TIMEOUT);
+        }
+    }
+
+    // Regain ownership of the lock
+    if (unlock)
+    {
+        mutex.lock();
+    }
+
+    // Check that we didn't have a timeout
+    return result == miosix::TimedWaitResult::NoTimeout;
+}
+
+ISX1278::IrqFlags SX1278Common::checkForIrqAndReset(IrqFlags set_irq,
+                                                    IrqFlags reset_irq)
 {
     IrqFlags cur_irq = getIrqFlags();
-    if (cur_irq & irq)
+    if (cur_irq & set_irq)
     {
         // Reset all of the interrupts we have detected
-        resetIrqFlags(cur_irq & irq);
+        resetIrqFlags(cur_irq & set_irq);
+    }
 
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return (cur_irq & set_irq) | (~cur_irq & reset_irq);
 }
 
+ISX1278Frontend &SX1278Common::getFrontend() { return *frontend; }
+
+SPISlave &SX1278Common::getSpiSlave() { return slave; }
+
 SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
+                                                 InterruptTrigger dio1_trigger,
                                                  bool tx_frontend,
                                                  bool rx_frontend)
 {
     // Store previous state
     DeviceState old_state = state;
 
-    enterMode(mode, mapping, tx_frontend, rx_frontend);
-    state.irq_wait_thread  = nullptr;
-    state.waiting_dio_mask = DioMask();
+    enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
+    state.irq_wait_thread = nullptr;
 
     return old_state;
 }
@@ -166,10 +200,9 @@ SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
 void SX1278Common::unlockMode(DeviceState old_state)
 {
     // Do this copy manually, we want stuff to be copied in a specific order
-    state.irq_wait_thread  = old_state.irq_wait_thread;
-    state.waiting_dio_mask = old_state.waiting_dio_mask;
-    enterMode(old_state.mode, old_state.mapping, old_state.is_tx_frontend_on,
-              old_state.is_rx_frontend_on);
+    state.irq_wait_thread = old_state.irq_wait_thread;
+    enterMode(old_state.mode, old_state.mapping, old_state.dio1_trigger,
+              old_state.is_tx_frontend_on, old_state.is_rx_frontend_on);
 }
 
 void SX1278Common::lock() { mutex.lock(); }
@@ -177,6 +210,7 @@ void SX1278Common::lock() { mutex.lock(); }
 void SX1278Common::unlock() { mutex.unlock(); }
 
 void SX1278Common::enterMode(Mode mode, DioMapping mapping,
+                             InterruptTrigger dio1_trigger,
                              bool set_tx_frontend_on, bool set_rx_frontend_on)
 {
     // disable - enable in order to avoid having both RX/TX frontends active at
@@ -185,33 +219,39 @@ void SX1278Common::enterMode(Mode mode, DioMapping mapping,
     // First disable all of the frontend if necessary
     if (set_tx_frontend_on != state.is_tx_frontend_on && !set_tx_frontend_on)
     {
-        disableTxFrontend();
+        getFrontend().disableTx();
     }
 
     if (set_rx_frontend_on != state.is_rx_frontend_on && !set_rx_frontend_on)
     {
-        disableRxFrontend();
+        getFrontend().disableRx();
     }
 
     // Then enable the newly requested ones
     if (set_tx_frontend_on != state.is_tx_frontend_on && set_tx_frontend_on)
     {
-        enableTxFrontend();
+        getFrontend().enableTx();
     }
 
     if (set_rx_frontend_on != state.is_rx_frontend_on && set_rx_frontend_on)
     {
-        enableRxFrontend();
+        getFrontend().enableRx();
     }
 
     state.is_tx_frontend_on = set_tx_frontend_on;
     state.is_rx_frontend_on = set_rx_frontend_on;
 
-    // Check if necessary
     if (mode != state.mode)
     {
         setMode(mode);
         state.mode = mode;
+    }
+
+    // Change DIO1 interrupt kind
+    if (dio1_trigger != state.dio1_trigger)
+    {
+        changeInterruptTrigger(dio1, dio1_trigger);
+        state.dio1_trigger = dio1_trigger;
     }
 
     // Finally setup DIO mapping

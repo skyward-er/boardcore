@@ -22,15 +22,14 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <radio/SX1278/SX1278Fsk.h>
 #include <utils/MovingAverage.h>
 
 #include <thread>
 
+#include "sx1278-init.h"
+
 using namespace Boardcore;
 using namespace miosix;
-
-SX1278Fsk *sx1278 = nullptr;
 
 // Simple xorshift RNG
 uint32_t xorshift32()
@@ -48,7 +47,7 @@ uint32_t xorshift32()
 
 struct TestMsg
 {
-    static constexpr int WORD_COUNT = 14;
+    static constexpr int WORD_COUNT = 60;
 
     uint32_t payload[WORD_COUNT];
 
@@ -86,6 +85,7 @@ struct LinkStats
 
     float rssi = 0.0f;
     float fei  = 0.0f;
+    float snr  = 0.0f;
 
     uint64_t txBitrate()
     {
@@ -114,12 +114,13 @@ void recvLoop()
         TestMsg msg = {};
 
         sx1278->receive((uint8_t *)&msg, sizeof(msg));
-        if (true)
+        if (msg.validate())
         {
             stats.recv_count++;
 
             stats.rssi = sx1278->getLastRxRssi();
             stats.fei  = sx1278->getLastRxFei();
+            stats.snr  = sx1278->getLastRxSnr();
         }
         else
         {
@@ -165,4 +166,17 @@ void spawnThreads()
     std::thread send([]() { sendLoop(); });
     send.detach();
 #endif
+
+    // For now, I'll keep it here, just in case ...
+    /* std::thread watchdog([]() {
+        while(1) {
+            {
+                FastInterruptDisableLock dlock;
+                sx1278->handleDioIRQ();
+            }
+            Thread::sleep(2);
+        }
+    });
+    watchdog.detach();
+    //*/
 }

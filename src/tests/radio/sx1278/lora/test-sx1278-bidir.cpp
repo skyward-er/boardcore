@@ -22,7 +22,7 @@
 
 #include <drivers/interrupt/external_interrupts.h>
 #include <miosix.h>
-#include <radio/SX1278/Ebyte.h>
+#include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Lora.h>
 
 #include <cstring>
@@ -54,7 +54,7 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #define SX1278_SPI SPI4
 
 #define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
 
 #else
@@ -66,19 +66,19 @@ SX1278Lora *sx1278 = nullptr;
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Lora::Dio::DIO0);
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Lora::Dio::DIO1);
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Lora::Dio::DIO3);
+        sx1278->handleDioIRQ();
 }
 
 void initBoard()
@@ -89,17 +89,6 @@ void initBoard()
     rxen::low();
     txen::low();
 #endif
-
-    GpioPin dio0_pin = dio0::getPin();
-    GpioPin dio1_pin = dio1::getPin();
-    GpioPin dio3_pin = dio3::getPin();
-
-    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
 }
 
 bool isByteBuf(uint8_t *buf, ssize_t len)
@@ -157,7 +146,7 @@ void recvLoop()
 
 void sendLoop(int interval, const char *data)
 {
-    char buf[64];
+    char buf[SX1278Lora::MTU];
     strncpy(buf, data, sizeof(buf) - 1);
 
     while (1)
@@ -174,42 +163,44 @@ int main()
     initBoard();
 
     SX1278Lora::Config config = {};
-    config.pa_boost           = true;
     config.power              = 10;
     config.ocp                = 0;
-    config.coding_rate        = SX1278Lora::Config::Cr::CR_4;
-    config.spreading_factor   = SX1278Lora::Config::Sf::SF_12;
+    config.coding_rate        = SX1278Lora::Config::Cr::CR_2;
+    config.spreading_factor   = SX1278Lora::Config::Sf::SF_8;
 
     SX1278Lora::Error err;
 
     SPIBus bus(SX1278_SPI);
-    GpioPin cs = cs::getPin();
-
-    SPIBusConfig spi_config = {};
-    spi_config.clockDivider = SPI::ClockDivider::DIV_64;
-    spi_config.mode         = SPI::Mode::MODE_0;
-    spi_config.bitOrder     = SPI::Order::MSB_FIRST;
-    spi_config.byteOrder    = SPI::Order::MSB_FIRST;
-    spi_config.writeBit     = SPI::WriteBit::INVERTED;
 
 #ifdef IS_EBYTE
-    sx1278 = new EbyteLora(SPISlave(bus, cs, spi_config), txen::getPin(),
-                           rxen::getPin());
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(
+        new EbyteFrontend(txen::getPin(), rxen::getPin()));
 #else
-    sx1278 = new SX1278Lora(SPISlave(bus, cs, spi_config));
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 #endif
+
+    sx1278 = new SX1278Lora(bus, cs::getPin(), dio0::getPin(), dio1::getPin(),
+                            dio3::getPin(), SPI::ClockDivider::DIV_64,
+                            std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
     {
-        printf("[sx1278] sx1278->init error: %s\n", "TODO");
+        printf("[sx1278] sx1278->init error\n");
         return -1;
     }
 
     printf("\n[sx1278] Initialization complete!\n");
 
+    const char *msg =
+        "Very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "long message";
+
     // Spawn all threads
-    std::thread send([]() { sendLoop(3333, "Sample radio message"); });
+    std::thread send([msg]() { sendLoop(3333, msg); });
     std::thread recv([]() { recvLoop(); });
 
     // sx1278->debugDumpRegisters();

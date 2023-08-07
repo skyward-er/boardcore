@@ -21,7 +21,10 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
+#include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <thread>
 
@@ -32,7 +35,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-#include <mavlink_lib/pyxis/mavlink.h>
+#include <mavlink_lib/gemini/mavlink.h>
 #pragma GCC diagnostic pop
 
 #include <radio/MavlinkDriver/MavlinkDriver.h>
@@ -40,12 +43,11 @@
 using namespace Boardcore;
 using namespace miosix;
 
-constexpr uint32_t RADIO_PKT_LENGTH     = 63;
+constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
 constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
 constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
-constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 200;
+constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
 constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
-constexpr uint32_t STATS_TM_PERIOD      = 2000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
 using Mav =
@@ -66,8 +68,61 @@ using mosi = interfaces::spi4::mosi;
 #define SX1278_SPI SPI4
 
 #define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
+
+#elif defined _BOARD_STM32F767ZI_GEMINI_GS
+#include "interfaces-impl/hwmapping.h"
+
+#define SX1278_IS_SKYWARD433
+// #define SX1278_IS_EBYTE
+
+// Comment to use SX1278_2
+#define SX1278_1
+
+#ifdef SX1278_1
+using cs   = miosix::radio1::cs;
+using dio0 = miosix::radio1::dio0;
+using dio1 = miosix::radio1::dio1;
+using dio3 = miosix::radio1::dio3;
+
+using sck  = miosix::radio1::spi::sck;
+using miso = miosix::radio1::spi::miso;
+using mosi = miosix::radio1::spi::mosi;
+
+using txen = miosix::radio1::txen;
+using rxen = miosix::radio1::rxen;
+
+#define SX1278_NRST
+using rst  = miosix::radio1::nrst;
+
+#define SX1278_SPI MIOSIX_RADIO1_SPI
+
+#define SX1278_IRQ_DIO0 MIOSIX_RADIO1_DIO0_IRQ
+#define SX1278_IRQ_DIO1 MIOSIX_RADIO1_DIO1_IRQ
+#define SX1278_IRQ_DIO3 MIOSIX_RADIO1_DIO3_IRQ
+#else
+using cs   = miosix::radio2::cs;
+using dio0 = miosix::radio2::dio0;
+using dio1 = miosix::radio2::dio1;
+using dio3 = miosix::radio2::dio3;
+
+using sck  = miosix::radio2::spi::sck;
+using miso = miosix::radio2::spi::miso;
+using mosi = miosix::radio2::spi::mosi;
+
+using txen = miosix::radio2::txen;
+using rxen = miosix::radio2::rxen;
+
+#define SX1278_NRST
+using rst  = miosix::radio2::nrst;
+
+#define SX1278_SPI MIOSIX_RADIO2_SPI
+
+#define SX1278_IRQ_DIO0 MIOSIX_RADIO2_DIO0_IRQ
+#define SX1278_IRQ_DIO1 MIOSIX_RADIO2_DIO1_IRQ
+#define SX1278_IRQ_DIO3 MIOSIX_RADIO2_DIO3_IRQ
+#endif
 
 #else
 #error "Target not supported"
@@ -78,76 +133,79 @@ SX1278Fsk* sx1278 = nullptr;
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO0);
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO1);
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO3);
+        sx1278->handleDioIRQ();
 }
 
-void initBoard()
+void initBoard() {}
+
+struct PendingAck
 {
-    GpioPin dio0_pin = dio0::getPin();
-    GpioPin dio1_pin = dio1::getPin();
-    GpioPin dio3_pin = dio3::getPin();
+    int msgid;
+    int seq;
+};
 
-    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-}
+CircularBuffer<PendingAck, 10> pending_acks;
+FastMutex mutex;
 
 Mav* channel;
 
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
-    // Prepare ack messages
-    mavlink_message_t ackMsg;
-    mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
-
-    // Send the ack back to the sender
-    channel->enqueueMsg(ackMsg);
+    if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
+    {
+        Lock<FastMutex> l(mutex);
+        pending_acks.put({msg.msgid, msg.seq});
+    }
 }
 
 void flightTmLoop()
 {
+    int i = 0;
+
     while (1)
     {
         long long start = miosix::getTick();
 
+        {
+            Lock<FastMutex> l(mutex);
+            while (!pending_acks.isEmpty())
+            {
+                PendingAck ack = pending_acks.pop();
+
+                // Prepare ack message
+                mavlink_message_t msg;
+                mavlink_msg_ack_tm_pack(171, 96, &msg, ack.msgid, ack.seq);
+
+                // Send the ack back to the sender
+                channel->enqueueMsg(msg);
+            }
+        }
+
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
+        tm.timestamp                  = TimestampTimer::getTimestamp();
+        tm.acc_x                      = i;
+        tm.acc_y                      = i * 2;
+        tm.acc_z                      = i * 3;
+
         mavlink_msg_rocket_flight_tm_encode(171, 96, &msg, &tm);
 
         channel->enqueueMsg(msg);
 
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
-    }
-}
-
-void statsTmLoop()
-{
-    while (1)
-    {
-        long long start = miosix::getTick();
-
-        mavlink_message_t msg;
-        mavlink_rocket_stats_tm_t tm = {0};
-        mavlink_msg_rocket_stats_tm_encode(171, 96, &msg, &tm);
-
-        channel->enqueueMsg(msg);
-
-        Thread::sleepUntil(start + STATS_TM_PERIOD);
+        i += 1;
     }
 }
 
@@ -155,20 +213,27 @@ int main()
 {
     initBoard();
 
-    SX1278Fsk::Config config;
+    SX1278Fsk::Config config = {
+        .freq_rf    = 434000000,
+        .freq_dev   = 50000,
+        .bitrate    = 48000,
+        .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+        .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+        .ocp        = 120,
+        .power      = 13,
+        .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
+        .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
+        .enable_crc = false};
+
     SX1278Fsk::Error err;
 
     SPIBus bus(SX1278_SPI);
-    GpioPin cs = cs::getPin();
 
-    SPIBusConfig spi_config;
-    spi_config.clockDivider = SPI::ClockDivider::DIV_64;
-    spi_config.mode         = SPI::Mode::MODE_0;
-    spi_config.bitOrder     = SPI::Order::MSB_FIRST;
-    spi_config.byteOrder    = SPI::Order::MSB_FIRST;
-    spi_config.writeBit     = SPI::WriteBit::INVERTED;
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 
-    sx1278 = new SX1278Fsk(SPISlave(bus, cs, spi_config));
+    sx1278 = new SX1278Fsk(bus, cs::getPin(), dio0::getPin(), dio1::getPin(),
+                           dio3::getPin(), SPI::ClockDivider::DIV_64,
+                           std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
@@ -184,11 +249,7 @@ int main()
     channel = new Mav(sx1278, &onReceive, 0, MAV_OUT_BUFFER_MAX_AGE);
     channel->start();
 
-    std::thread flight_tm_loop([]() { flightTmLoop(); });
-    std::thread stats_tm_loop([]() { statsTmLoop(); });
-
-    while (1)
-        Thread::wait();
+    flightTmLoop();
 
     return 0;
 }

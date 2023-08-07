@@ -20,31 +20,51 @@
  * THE SOFTWARE.
  */
 
-#include "Ebyte.h"
+#include "gui/GUI.h"
 
-namespace Boardcore
-{
+// Include body of the test
+#include "test-sx1278-bench.cpp"
 
-EbyteFsk::Error EbyteFsk::configure(const Config& config)
+using namespace mxgui;
+
+GUI *gui = nullptr;
+
+void initGUI()
 {
-    // TODO(davide.mor): Validate input parameters
-    return SX1278Fsk::configure(config);
+    using GpioUserBtn = Gpio<GPIOA_BASE, 0>;
+    GpioUserBtn::mode(Mode::INPUT_PULL_DOWN);
+
+    gui = new GUI();
+
+    ButtonHandler::getInstance().registerButtonCallback(
+        GpioUserBtn::getPin(),
+        [](auto event) { gui->screen_manager.onButtonEvent(event); });
 }
 
-void EbyteFsk::enableRxFrontend() { rx_enable.high(); }
-void EbyteFsk::disableRxFrontend() { rx_enable.low(); }
-void EbyteFsk::enableTxFrontend() { tx_enable.high(); }
-void EbyteFsk::disableTxFrontend() { tx_enable.low(); }
-
-EbyteLora::Error EbyteLora::configure(const Config& config)
+int main()
 {
-    // TODO(davide.mor): Validate input parameters
-    return SX1278Lora::configure(config);
+    initBoard();
+    initGUI();
+    if (!initRadio())
+    {
+        while (1)
+            ;
+    }
+
+    // Set display to ready
+    gui->stats_screen.updateReady();
+
+    // Initialize backgrounds threads
+    spawnThreads();
+
+    while (1)
+    {
+        StatsScreen::Data data = {
+            stats.txBitrate(), stats.rxBitrate(), stats.corrupted_count,
+            stats.sent_count,  stats.recv_count,  stats.rssi,
+            stats.fei,         stats.snr};
+
+        gui->stats_screen.updateStats(data);
+        Thread::sleep(100);
+    }
 }
-
-void EbyteLora::enableRxFrontend() { rx_enable.high(); }
-void EbyteLora::disableRxFrontend() { rx_enable.low(); }
-void EbyteLora::enableTxFrontend() { tx_enable.high(); }
-void EbyteLora::disableTxFrontend() { tx_enable.low(); }
-
-}  // namespace Boardcore

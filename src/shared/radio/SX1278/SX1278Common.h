@@ -22,9 +22,13 @@
 
 #pragma once
 
+#include <drivers/interrupt/external_interrupts.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <radio/Transceiver.h>
+
+#include <cmath>
+#include <memory>
 
 #include "SX1278Defs.h"
 
@@ -34,25 +38,6 @@ namespace Boardcore
 namespace SX1278
 {
 
-/**
- * @brief Represents a set of Dio
- */
-class DioMask
-{
-public:
-    DioMask() : mask(0) {}
-
-    bool test(Dio dio) const
-    {
-        return (mask & (1 << static_cast<int>(dio))) != 0;
-    }
-    void set(Dio dio) { mask |= (1 << static_cast<int>(dio)); }
-    void reset(Dio dio) { mask &= ~(1 << static_cast<int>(dio)); }
-
-private:
-    uint8_t mask;
-};
-
 using DioMapping = RegDioMapping::Mapping;
 
 /**
@@ -60,6 +45,24 @@ using DioMapping = RegDioMapping::Mapping;
  */
 class ISX1278 : public Transceiver
 {
+public:
+    /**
+     * @brief Get the RSSI in dBm, during last packet receive.
+     */
+    virtual float getLastRxRssi() = 0;
+
+    /**
+     * @brief Get the frequency error index in Hz, during last packet receive
+     * (NaN if not available).
+     */
+    virtual float getLastRxFei() { return std::nanf(""); }
+
+    /**
+     * @brief Get the signal to noise ratio, during last packet receive (NaN if
+     * not available).
+     */
+    virtual float getLastRxSnr() { return std::nanf(""); }
+
 protected:
     /*
      * Stuff used internally by SX1278Common
@@ -73,14 +76,28 @@ protected:
 
     virtual IrqFlags getIrqFlags()             = 0;
     virtual void resetIrqFlags(IrqFlags flags) = 0;
+};
 
-    virtual DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                           DioMapping mapping) = 0;
+/**
+ * @brief Shared interface between all SX1278 frontends
+ */
+class ISX1278Frontend
+{
+public:
+    /**
+     * @brief Is this frontend connected to PA_BOOST or RFO_LF/_HF?
+     */
+    virtual bool isOnPaBoost() = 0;
 
-    virtual void enableRxFrontend()  = 0;
-    virtual void disableRxFrontend() = 0;
-    virtual void enableTxFrontend()  = 0;
-    virtual void disableTxFrontend() = 0;
+    /**
+     * @brief What is the maximum power supported by this frontend?
+     */
+    virtual int maxInPower() = 0;
+
+    virtual void enableRx()  = 0;
+    virtual void disableRx() = 0;
+    virtual void enableTx()  = 0;
+    virtual void disableTx() = 0;
 };
 
 class SX1278Common : public ISX1278
@@ -94,24 +111,35 @@ private:
         DioMapping mapping = DioMapping();
         // Thread waiting listening for interrupts
         miosix::Thread *irq_wait_thread = nullptr;
-        // What DIOs are we waiting on
-        DioMask waiting_dio_mask = DioMask();
         // True if the RX frontend is enabled
         bool is_rx_frontend_on = false;
         // True if the TX frontend is enabled
         bool is_tx_frontend_on = false;
+        // Mode of trigger for dio1
+        InterruptTrigger dio1_trigger = InterruptTrigger::RISING_EDGE;
     };
 
-public:
-    using Dio = SX1278::Dio;
+    // This is reasonably the maximum we should wait for an interrupt
+    static constexpr int IRQ_TIMEOUT = 100;
 
+public:
     /**
      * @brief Handle generic DIO irq.
      */
-    void handleDioIRQ(Dio dio);
+    void handleDioIRQ();
 
 protected:
-    explicit SX1278Common(SPISlave slave) : slave(slave) {}
+    explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
+                          miosix::GpioPin dio1, miosix::GpioPin dio3,
+                          SPI::ClockDivider clock_divider,
+                          std::unique_ptr<ISX1278Frontend> frontend)
+        : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider))), dio0(dio0),
+          dio1(dio1), dio3(dio3), frontend(std::move(frontend))
+    {
+        enableIrqs();
+    }
+
+    ~SX1278Common() { disableIrqs(); }
 
     /**
      * @brief RAII scoped bus lock guard.
@@ -134,13 +162,14 @@ protected:
     {
     public:
         LockMode(SX1278Common &driver, Lock &lock, Mode mode,
-                 DioMapping mapping, bool set_tx_frontend_on = false,
+                 DioMapping mapping, InterruptTrigger dio1_trigger,
+                 bool set_tx_frontend_on = false,
                  bool set_rx_frontend_on = false)
             : driver(driver), lock(lock)
         {
             // cppcheck-suppress useInitializationList
-            old_state = driver.lockMode(mode, mapping, set_tx_frontend_on,
-                                        set_rx_frontend_on);
+            old_state = driver.lockMode(mode, mapping, dio1_trigger,
+                                        set_tx_frontend_on, set_rx_frontend_on);
         }
 
         ~LockMode() { driver.unlockMode(old_state); }
@@ -156,44 +185,65 @@ protected:
      *
      * WARNING: This will lock the mutex.
      */
-    void setDefaultMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
+    void setDefaultMode(Mode mode, DioMapping mapping,
+                        InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
                         bool set_rx_frontend_on);
 
     /**
      * @brief Wait for generic irq.
      */
-    void waitForIrq(LockMode &guard, IrqFlags irq, bool unlock = false);
+    IrqFlags waitForIrq(LockMode &guard, IrqFlags set_irq, IrqFlags reset_irq,
+                        bool unlock = false);
 
     /**
      * @brief Busy waits for an interrupt by polling the irq register.
      *
      * USE ONLY DURING INITIALIZATION! BAD THINGS *HAVE* HAPPENED DUE TO THIS!
      */
-    bool waitForIrqBusy(LockMode &guard, IrqFlags irq, int timeout);
+    IrqFlags waitForIrqBusy(LockMode &guard, IrqFlags set_irq,
+                            IrqFlags reset_irq, int timeout);
 
     /**
-     * @brief Returns if an interrupt happened, and clears it if it did.
+     * @brief Returns a mask containing triggered interrupts.
+     *
+     * NOTE: This function checks both set irqs (rising edge), and reset irqs
+     * (falling edge). But it only resets set interrupts.
+     *
+     * @param set_irq Mask containing set (rising edge) interrupts.
+     * @param reset_irq Mask containing reset (falling edge) interrupts.
+     * @return Mask containing all triggered interrupts (both rising and
+     * falling)
      */
-    bool checkForIrqAndReset(IrqFlags irq);
+    IrqFlags checkForIrqAndReset(IrqFlags set_irq, IrqFlags reset_irq);
 
-    /**
-     * @brief The actual SPISlave, used by child classes.
-     */
-    SPISlave slave;
+    ISX1278Frontend &getFrontend();
+
+    SPISlave &getSpiSlave();
 
 private:
-    DeviceState lockMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
+    void enableIrqs();
+    void disableIrqs();
+
+    bool waitForIrqInner(LockMode &guard, bool unlock);
+
+    DeviceState lockMode(Mode mode, DioMapping mapping,
+                         InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
                          bool set_rx_frontend_on);
     void unlockMode(DeviceState old_state);
 
     void lock();
     void unlock();
 
-    void enterMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
-                   bool set_rx_frontend_on);
+    void enterMode(Mode mode, DioMapping mapping, InterruptTrigger dio1_trigger,
+                   bool set_tx_frontend_on, bool set_rx_frontend_on);
 
     miosix::FastMutex mutex;
     DeviceState state;
+    SPISlave slave;
+    miosix::GpioPin dio0;
+    miosix::GpioPin dio1;
+    miosix::GpioPin dio3;
+    std::unique_ptr<ISX1278Frontend> frontend;
 };
 
 }  // namespace SX1278

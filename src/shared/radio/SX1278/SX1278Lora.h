@@ -102,10 +102,10 @@ public:
         int ocp =
             120;  //< Over current protection limit in mA (0 for no limit).
         int power =
-            15;  //< Output power in dB (between +2 and +17 with pa_boost = on,
+            13;  //< Output power in dB (between +2 and +17 with pa_boost = on,
                  // and between +0 and +14 with pa_boost = off, +20 for +20dBm
                  // max power ignoring pa_boost).
-        bool pa_boost = true;  //< Enable output on PA_BOOST.
+        bool enable_crc = true;  //< Enable hardware CRC calculation/checking
 
         /**
          * @brief Calculates effective and usable bitrate.
@@ -133,7 +133,18 @@ public:
         IRQ_TIMEOUT,  //< Timeout on IRQ register.
     };
 
-    explicit SX1278Lora(SPISlave slave) : SX1278Common(slave) {}
+    /**
+     * @brief Construct a new SX1278
+     */
+    explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
+                        miosix::GpioPin dio1, miosix::GpioPin dio3,
+                        SPI::ClockDivider clock_divider,
+                        std::unique_ptr<SX1278::ISX1278Frontend> frontend)
+        : SX1278Common(bus, cs, dio0, dio1, dio3, clock_divider,
+                       std::move(frontend)),
+          crc_enabled(false)
+    {
+    }
 
     /**
      * @brief Setup the device.
@@ -173,26 +184,18 @@ public:
     /**
      * @brief Get the RSSI in dBm, during last packet receive.
      */
-    float getLastRxRssi();
+    float getLastRxRssi() override;
 
     /**
      * @brief Get the RSSI in dBm, during last packet receive.
      */
-    float getLastRxSnr();
-
-protected:
-    // Stuff to work with various front-ends
-    virtual void enableRxFrontend() override {}
-    virtual void disableRxFrontend() override {}
-    virtual void enableTxFrontend() override {}
-    virtual void disableTxFrontend() override {}
+    float getLastRxSnr() override;
 
 private:
+    void enterLoraMode();
+
     void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);
     void writeFifo(uint8_t addr, uint8_t *src, uint8_t size);
-
-    SX1278::DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                           SX1278::DioMapping mapping) override;
 
     IrqFlags getIrqFlags() override;
     void resetIrqFlags(IrqFlags flags) override;
@@ -201,6 +204,8 @@ private:
     void setMapping(SX1278::DioMapping mapping) override;
 
     void setFreqRF(int freq_rf);
+
+    bool crc_enabled;
 };
 
 }  // namespace Boardcore
