@@ -30,24 +30,32 @@ namespace Boardcore
 struct StepperData
 {
     uint64_t timestamp;
-    unsigned int pulsePinPort;
-    unsigned int pulsePinNumber;
     bool enabled;
     float positionDeg;
     float speed;
     float moveDeg;
 
+    StepperData()
+        : timestamp(0), enabled(0), positionDeg(0), speed(0), moveDeg(0)
+    {
+    }
+
+    StepperData(uint64_t timestamp, bool enabled, float positionDeg,
+                float speed, float moveDeg)
+        : timestamp(timestamp), enabled(enabled), positionDeg(positionDeg),
+          speed(speed), moveDeg(moveDeg)
+    {
+    }
+
     static std::string header()
     {
-        return "timestamp,pulsePinPort,pulsePinNumber,enabled,positionDeg,"
-               "speed,moveDeg\n";
+        return "timestamp,enabled,positionDeg,speed,moveDeg\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << pulsePinPort << "," << pulsePinNumber << ","
-           << enabled << "," << positionDeg << "," << speed << "," << moveDeg
-           << "\n";
+        os << timestamp << "," << enabled << "," << positionDeg << "," << speed
+           << "," << moveDeg << "\n";
     }
 };
 
