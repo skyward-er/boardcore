@@ -153,7 +153,7 @@ public:
         // object. It can be done because at every type, a unique id is assigned
         if (modules[id] != nullptr)
         {
-            return static_cast<T *>(modules[id]);
+            return dynamic_cast<T *>(modules[id]);
         }
 
         // Fail if the module hasn't been added before
