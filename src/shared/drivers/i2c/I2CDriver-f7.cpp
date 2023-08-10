@@ -76,7 +76,9 @@ I2CTimings calculateTimings(uint32_t f, uint32_t fi2c)
 
 #if defined(_BOARD_STM32F756ZG_NUCLEO)
     const uint16_t correction = 10;
-#elif defined(_BOARD_STM32F767ZI_COMPUTE_UNIT) || \
+#elif defined(_BOARD_STM32F767ZI_COMPUTE_UNIT) ||         \
+    defined(_BOARD_STM32F767ZI_GEMINI_GS) ||              \
+    defined(_BOARD_STM32F767ZI_SKYWARD_DEATH_STACK_V4) || \
     defined(_BOARD_STM32F767ZI_NUCLEO)
     const uint16_t correction = 7;
 #else
