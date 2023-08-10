@@ -74,14 +74,9 @@ I2CTimings calculateTimings(uint32_t f, uint32_t fi2c)
     // for SCLDEL and SDADEL
     uint32_t temp_presc = f / (64 * fi2c);
 
-#if defined(_BOARD_STM32F756ZG_NUCLEO)
+#if defined(STM32F756xx)
     const uint16_t correction = 10;
-#elif defined(_BOARD_STM32F767ZI_COMPUTE_UNIT) ||         \
-    defined(_BOARD_STM32F767ZI_GEMINI_GS) ||              \
-    defined(_BOARD_STM32F767ZI_SKYWARD_DEATH_STACK_V4) || \
-    defined(_BOARD_STM32F767ZI_GEMINI_MOTOR) ||           \
-    defined(_BOARD_STM32F767ZI_AUTOMATED_ANTENNAS) ||     \
-    defined(_BOARD_STM32F767ZI_NUCLEO)
+#elif defined(STM32F767xx)
     const uint16_t correction = 7;
 #else
     const uint16_t correction = 0;
