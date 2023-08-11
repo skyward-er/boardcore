@@ -50,30 +50,14 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
         return Error::BAD_VALUE;
     }
 
-    Error err;
-    if ((err = configure(config)) != Error::NONE)
-        return err;
-
-    return Error::NONE;
-}
-
-bool SX1278Fsk::checkVersion()
-{
-    Lock guard(*this);
-    SPITransaction spi(getSpiSlave());
-
-    uint8_t version = spi.readRegister(REG_VERSION);
-    TRACE("[sx1278] Chip id: %d\n", version);
-
-    return version == 0x12;
-}
-
-SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
-{
     // Check that the configuration is actually valid
     bool pa_boost = getFrontend().isOnPaBoost();
     int min_power = pa_boost ? 2 : 0;
     int max_power = getFrontend().maxInPower();
+
+    (void)pa_boost;
+    (void)min_power;
+    (void)max_power;
 
     assert(config.power >= min_power && config.power <= max_power &&
            "[sx1278] Configured power invalid for given frontend!");
@@ -85,19 +69,39 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
            "[sx1278] Invalid freq_rf");
 
+    Lock guard(*this);
+    this->config = config;
+    reconfigure(guard);
+
+    return Error::NONE;
+}
+
+bool SX1278Fsk::checkVersion()
+{
+    Lock guard(*this);
+    SPITransaction spi(getSpiSlave(guard));
+
+    uint8_t version = spi.readRegister(REG_VERSION);
+    TRACE("[sx1278] Chip id: %d\n", version);
+
+    return version == 0x12;
+}
+
+void SX1278Fsk::reconfigure(Lock &guard)
+{
+    bool pa_boost = getFrontend().isOnPaBoost();
+    int min_power = pa_boost ? 2 : 0;
+    int max_power = getFrontend().maxInPower();
+
     // First make sure the device is in fsk and in standby
-    enterFskMode();
+    enterFskMode(guard);
+    // After this the device will already be in STANDBY
 
     // Set default mode to standby, that way we reset the fifo every time we
     // enter receive
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+    setDefaultMode(guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
                    InterruptTrigger::RISING_EDGE, false, false);
     miosix::Thread::sleep(1);
-
-    // Lock the bus
-    Lock guard(*this);
-    LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
-                        InterruptTrigger::RISING_EDGE);
 
     // This code is unreliable so it got commented out, the datasheet states
     // that this triggers during a successful state transition, but for some
@@ -121,10 +125,10 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     RegPacketConfig1::DcFree dc_free =
         static_cast<RegPacketConfig1::DcFree>(config.dc_free);
 
-    crc_enabled = config.enable_crc;
+    bool crc_enabled = config.enable_crc;
 
     {
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(guard));
 
         // Setup bitrate
         uint16_t bitrate_raw = FXOSC / bitrate;
@@ -245,8 +249,6 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
         spi.writeRegister(REG_NODE_ADRS, 0x00);
         spi.writeRegister(REG_BROADCAST_ADRS, 0x00);
     }
-
-    return Error::NONE;
 }
 
 ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
@@ -273,17 +275,26 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
         flags = waitForIrq(guard_mode,
                            RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY,
                            0, true);
-        if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
+
+        if (guard_mode.wasDeviceInvalidated())
         {
-            crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+            // The device was invalidated, just do a quick return, nothing else
+            // matters
+            return -1;
+        }
+
+        if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && config.enable_crc)
+        {
+            crc_ok =
+                checkForIrqAndReset(guard_mode, RegIrqFlags::CRC_OK, 0) != 0;
         }
 
         // Record RSSI here, it's where it is the most accurate
-        last_rx_rssi = getRssi();
+        last_rx_rssi = getRssi(guard_mode.parent());
 
         // Now first packet bit
         {
-            SPITransaction spi(getSpiSlave());
+            SPITransaction spi(getSpiSlave(guard_mode.parent()));
             len = spi.readRegister(REG_FIFO);
 
             int read_size = std::min((int)len, FIFO_LEN / 2);
@@ -300,12 +311,21 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
             flags = waitForIrq(
                 guard_mode,
                 RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0);
-            if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
+
+            if (guard_mode.wasDeviceInvalidated())
             {
-                crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+                // The device was invalidated, just do a quick return, nothing
+                // else matters
+                return -1;
             }
 
-            SPITransaction spi(getSpiSlave());
+            if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && config.enable_crc)
+            {
+                crc_ok = checkForIrqAndReset(guard_mode, RegIrqFlags::CRC_OK,
+                                             0) != 0;
+            }
+
+            SPITransaction spi(getSpiSlave(guard_mode.parent()));
 
             int read_size = std::min((int)(len - cur_len), FIFO_LEN / 2);
             spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
@@ -316,7 +336,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
         // For some reason this sometimes happen?
     } while (len == 0);
 
-    if (len > max_len || (!crc_ok && crc_enabled))
+    if (len > max_len || (!crc_ok && config.enable_crc))
     {
         return -1;
     }
@@ -341,9 +361,16 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
 
     waitForIrq(guard_mode, RegIrqFlags::TX_READY, 0);
 
+    if (guard_mode.wasDeviceInvalidated())
+    {
+        // The device was invalidated, just do a quick return, nothing else
+        // matters
+        return -1;
+    }
+
     // Send first segment
     {
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(guard_mode.parent()));
 
         spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
 
@@ -360,7 +387,14 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
         // Wait for FIFO_LEVEL to go down
         waitForIrq(guard_mode, 0, RegIrqFlags::FIFO_LEVEL);
 
-        SPITransaction spi(getSpiSlave());
+        if (guard_mode.wasDeviceInvalidated())
+        {
+            // The device was invalidated, just do a quick return, nothing else
+            // matters
+            return -1;
+        }
+
+        SPITransaction spi(getSpiSlave(guard_mode.parent()));
 
         int write_size = std::min((int)len, FIFO_LEN / 2);
         spi.writeRegisters(REG_FIFO, pkt, write_size);
@@ -373,6 +407,13 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     // Wait for packet sent
     waitForIrq(guard_mode, RegIrqFlags::PACKET_SENT, 0);
 
+    if (guard_mode.wasDeviceInvalidated())
+    {
+        // The device was invalidated, just do a quick return, nothing else
+        // matters
+        return -1;
+    }
+
     last_tx = now();
     return true;
 }
@@ -380,7 +421,7 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
 float SX1278Fsk::getLastRxFei()
 {
     Lock guard(*this);
-    return getFei();
+    return getFei(guard);
 }
 
 float SX1278Fsk::getLastRxRssi() { return last_rx_rssi; }
@@ -388,13 +429,12 @@ float SX1278Fsk::getLastRxRssi() { return last_rx_rssi; }
 float SX1278Fsk::getCurRssi()
 {
     Lock guard(*this);
-    return getRssi();
+    return getRssi(guard);
 }
 
-void SX1278Fsk::enterFskMode()
+void SX1278Fsk::enterFskMode(Lock &guard)
 {
-    Lock guard(*this);
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
 
     // First enter Fsk sleep
     spi.writeRegister(REG_OP_MODE,
@@ -420,13 +460,26 @@ void SX1278Fsk::rateLimitTx()
     }
 }
 
-ISX1278::IrqFlags SX1278Fsk::getIrqFlags()
+bool SX1278Fsk::checkDeviceFailure(Lock &guard)
 {
-    SPITransaction spi(getSpiSlave());
+    // This check will be performed sometimes when hte IRQ timeout ends
+    // In such cases the device will NEVER be in standby, even if we keep it at
+    // standby between operations. So, if the device IS in standby in that case,
+    // then something must have gone wrong
+
+    SPITransaction spi(getSpiSlave(guard));
+    uint8_t mode = spi.readRegister(REG_OP_MODE);
+
+    return (mode & 0b111) == RegOpMode::Mode::MODE_STDBY;
+}
+
+SX1278Fsk::IrqFlags SX1278Fsk::getIrqFlags(Lock &guard)
+{
+    SPITransaction spi(getSpiSlave(guard));
     return spi.readRegister16(REG_IRQ_FLAGS_1);
 }
 
-void SX1278Fsk::resetIrqFlags(IrqFlags flags)
+void SX1278Fsk::resetIrqFlags(Lock &guard, IrqFlags flags)
 {
     // Mask only resettable flags
     flags &= RegIrqFlags::RSSI | RegIrqFlags::PREAMBLE_DETECT |
@@ -435,38 +488,38 @@ void SX1278Fsk::resetIrqFlags(IrqFlags flags)
 
     if (flags != 0)
     {
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(guard));
         spi.writeRegister16(REG_IRQ_FLAGS_1, flags);
     }
 }
 
-float SX1278Fsk::getRssi()
+float SX1278Fsk::getRssi(Lock &guard)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
 
     uint8_t rssi_raw = spi.readRegister(REG_RSSI_VALUE);
     return static_cast<float>(rssi_raw) * -0.5f;
 }
 
-float SX1278Fsk::getFei()
+float SX1278Fsk::getFei(Lock &guard)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
 
     uint16_t fei_raw = spi.readRegister16(REG_FEI_MSB);
     return static_cast<float>(fei_raw) * FSTEP;
 }
 
-void SX1278Fsk::setMode(Mode mode)
+void SX1278Fsk::setMode(Lock &guard, Mode mode)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     spi.writeRegister(REG_OP_MODE,
                       RegOpMode::make(static_cast<RegOpMode::Mode>(mode), true,
                                       RegOpMode::MODULATION_TYPE_FSK));
 }
 
-void SX1278Fsk::setMapping(SX1278::DioMapping mapping)
+void SX1278Fsk::setMapping(Lock &guard, SX1278::DioMapping mapping)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 

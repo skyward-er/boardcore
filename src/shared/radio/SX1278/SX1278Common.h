@@ -41,44 +41,6 @@ namespace SX1278
 using DioMapping = RegDioMapping::Mapping;
 
 /**
- * @brief Shared interface between all SX1278 drivers
- */
-class ISX1278 : public Transceiver
-{
-public:
-    /**
-     * @brief Get the RSSI in dBm, during last packet receive.
-     */
-    virtual float getLastRxRssi() = 0;
-
-    /**
-     * @brief Get the frequency error index in Hz, during last packet receive
-     * (NaN if not available).
-     */
-    virtual float getLastRxFei() { return std::nanf(""); }
-
-    /**
-     * @brief Get the signal to noise ratio, during last packet receive (NaN if
-     * not available).
-     */
-    virtual float getLastRxSnr() { return std::nanf(""); }
-
-protected:
-    /*
-     * Stuff used internally by SX1278Common
-     */
-
-    using IrqFlags = int;
-    using Mode     = int;
-
-    virtual void setMode(Mode mode)             = 0;
-    virtual void setMapping(DioMapping mapping) = 0;
-
-    virtual IrqFlags getIrqFlags()             = 0;
-    virtual void resetIrqFlags(IrqFlags flags) = 0;
-};
-
-/**
  * @brief Shared interface between all SX1278 frontends
  */
 class ISX1278Frontend
@@ -100,8 +62,12 @@ public:
     virtual void disableTx() = 0;
 };
 
-class SX1278Common : public ISX1278
+class SX1278Common : public Transceiver
 {
+protected:
+    using IrqFlags = int;
+    using Mode     = int;
+
 private:
     struct DeviceState
     {
@@ -127,6 +93,28 @@ public:
      * @brief Handle generic DIO irq.
      */
     void handleDioIRQ();
+
+    /**
+     * @brief Get the number of times this device has been reset.
+     */
+    int resetCount();
+
+    /**
+     * @brief Get the RSSI in dBm, during last packet receive.
+     */
+    virtual float getLastRxRssi() = 0;
+
+    /**
+     * @brief Get the frequency error index in Hz, during last packet receive
+     * (NaN if not available).
+     */
+    virtual float getLastRxFei() { return std::nanf(""); }
+
+    /**
+     * @brief Get the signal to noise ratio, during last packet receive (NaN if
+     * not available).
+     */
+    virtual float getLastRxSnr() { return std::nanf(""); }
 
 protected:
     explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
@@ -161,22 +149,44 @@ protected:
     class LockMode
     {
     public:
-        LockMode(SX1278Common &driver, Lock &lock, Mode mode,
+        LockMode(SX1278Common &driver, Lock &guard, Mode mode,
                  DioMapping mapping, InterruptTrigger dio1_trigger,
                  bool set_tx_frontend_on = false,
                  bool set_rx_frontend_on = false)
-            : driver(driver), lock(lock)
+            : driver(driver), guard(guard), reset_count(driver.reset_count)
         {
             // cppcheck-suppress useInitializationList
-            old_state = driver.lockMode(mode, mapping, dio1_trigger,
+            old_state = driver.lockMode(guard, mode, mapping, dio1_trigger,
                                         set_tx_frontend_on, set_rx_frontend_on);
         }
 
-        ~LockMode() { driver.unlockMode(old_state); }
+        ~LockMode()
+        {
+            // Restore device mode ONLY if the lock is valid!
+            if (!wasDeviceInvalidated())
+            {
+                driver.unlockMode(guard, old_state);
+            }
+        }
+
+        /**
+         * @brief Returns the parent simple lock.
+         */
+        Lock &parent() { return guard; }
+
+        /**
+         * @brief Returns true if this LockMode is still valid, and the device
+         * hasn't failed while holding the lock.
+         */
+        bool wasDeviceInvalidated()
+        {
+            return driver.reset_count != reset_count;
+        }
 
     private:
         SX1278Common &driver;
-        Lock &lock;
+        Lock &guard;
+        int reset_count;
         DeviceState old_state;
     };
 
@@ -185,7 +195,7 @@ protected:
      *
      * WARNING: This will lock the mutex.
      */
-    void setDefaultMode(Mode mode, DioMapping mapping,
+    void setDefaultMode(Lock &guard, Mode mode, DioMapping mapping,
                         InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
                         bool set_rx_frontend_on);
 
@@ -214,11 +224,22 @@ protected:
      * @return Mask containing all triggered interrupts (both rising and
      * falling)
      */
-    IrqFlags checkForIrqAndReset(IrqFlags set_irq, IrqFlags reset_irq);
+    IrqFlags checkForIrqAndReset(LockMode &guard, IrqFlags set_irq,
+                                 IrqFlags reset_irq);
 
     ISX1278Frontend &getFrontend();
 
-    SPISlave &getSpiSlave();
+    SPISlave &getSpiSlave(Lock &guard);
+
+protected:
+    virtual bool checkDeviceFailure(Lock &guard) = 0;
+    virtual void reconfigure(Lock &guard)        = 0;
+
+    virtual void setMode(Lock &guard, Mode mode)             = 0;
+    virtual void setMapping(Lock &guard, DioMapping mapping) = 0;
+
+    virtual IrqFlags getIrqFlags(Lock &guard)               = 0;
+    virtual void resetIrqFlags(Lock &guard, IrqFlags flags) = 0;
 
 private:
     void enableIrqs();
@@ -226,16 +247,17 @@ private:
 
     bool waitForIrqInner(LockMode &guard, bool unlock);
 
-    DeviceState lockMode(Mode mode, DioMapping mapping,
+    DeviceState lockMode(Lock &guard, Mode mode, DioMapping mapping,
                          InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
                          bool set_rx_frontend_on);
-    void unlockMode(DeviceState old_state);
+    void unlockMode(Lock &guard, DeviceState old_state);
 
     void lock();
     void unlock();
 
-    void enterMode(Mode mode, DioMapping mapping, InterruptTrigger dio1_trigger,
-                   bool set_tx_frontend_on, bool set_rx_frontend_on);
+    void enterMode(Lock &guard, Mode mode, DioMapping mapping,
+                   InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
+                   bool set_rx_frontend_on);
 
     miosix::FastMutex mutex;
     DeviceState state;
@@ -244,6 +266,7 @@ private:
     miosix::GpioPin dio1;
     miosix::GpioPin dio3;
     std::unique_ptr<ISX1278Frontend> frontend;
+    int reset_count = 0;
 };
 
 }  // namespace SX1278

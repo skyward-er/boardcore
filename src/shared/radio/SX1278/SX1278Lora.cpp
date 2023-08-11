@@ -139,30 +139,14 @@ SX1278Lora::Error SX1278Lora::init(const Config &config)
         return Error::BAD_VALUE;
     }
 
-    Error err;
-    if ((err = configure(config)) != Error::NONE)
-        return err;
-
-    return Error::NONE;
-}
-
-bool SX1278Lora::checkVersion()
-{
-    Lock guard(*this);
-    SPITransaction spi(getSpiSlave());
-
-    uint8_t version = spi.readRegister(REG_VERSION);
-    TRACE("[sx1278] Chip id: %d\n", version);
-
-    return version == 0x12;
-}
-
-SX1278Lora::Error SX1278Lora::configure(const Config &config)
-{
     // Check that the configuration is actually valid
     bool pa_boost = getFrontend().isOnPaBoost();
     int min_power = pa_boost ? 2 : 0;
     int max_power = getFrontend().maxInPower();
+
+    (void)pa_boost;
+    (void)min_power;
+    (void)max_power;
 
     assert(config.power >= min_power && config.power <= max_power &&
            "[sx1278] Configured power invalid for given frontend!");
@@ -172,17 +156,37 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     assert(config.freq_rf >= MIN_FREQ_RF && config.freq_rf <= MAX_FREQ_RF &&
            "[sx1278] Invalid freq_rf");
 
+    Lock guard(*this);
+    this->config = config;
+    reconfigure(guard);
+
+    return Error::NONE;
+}
+
+bool SX1278Lora::checkVersion()
+{
+    Lock guard(*this);
+    SPITransaction spi(getSpiSlave(guard));
+
+    uint8_t version = spi.readRegister(REG_VERSION);
+    TRACE("[sx1278] Chip id: %d\n", version);
+
+    return version == 0x12;
+}
+
+void SX1278Lora::reconfigure(Lock &guard)
+{
+    // Check that the configuration is actually valid
+    bool pa_boost = getFrontend().isOnPaBoost();
+    int min_power = pa_boost ? 2 : 0;
+    int max_power = getFrontend().maxInPower();
+
     // First make sure the device is in lora mode and in standby
-    enterLoraMode();
+    enterLoraMode(guard);
 
     // Then make sure the device remains in standby and not in sleep
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+    setDefaultMode(guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
                    InterruptTrigger::RISING_EDGE, false, false);
-
-    // Lock the bus
-    Lock guard(*this);
-    LockMode mode_guard(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
-                        InterruptTrigger::RISING_EDGE);
 
     RegModemConfig1::Bw bw = static_cast<RegModemConfig1::Bw>(config.bandwidth);
     RegModemConfig1::Cr cr =
@@ -205,10 +209,10 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     ErrataRegistersValues errata_values =
         ErrataRegistersValues::calculate(bw, freq_rf);
 
-    crc_enabled = config.enable_crc;
+    bool crc_enabled = config.enable_crc;
 
     {
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(guard));
 
         // Setup FIFO sections
         spi.writeRegister(REG_FIFO_TX_BASE_ADDR, FIFO_TX_BASE_ADDR);
@@ -286,8 +290,6 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
         if (errata_values.reg_if_freq_2 != -1)
             spi.writeRegister(REG_IF_FREQ_2, errata_values.reg_if_freq_2);
     }
-
-    return Error::NONE;
 }
 
 ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
@@ -302,19 +304,27 @@ ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
 
     waitForIrq(mode_guard, RegIrqFlags::RX_DONE, 0, true);
 
+    if (mode_guard.wasDeviceInvalidated())
+    {
+        // The device was invalidated, just do a quick return, nothing else
+        // matters
+        return -1;
+    }
+
     uint8_t len;
     {
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(mode_guard.parent()));
         len = spi.readRegister(REG_RX_NB_BYTES);
     }
 
     if (len > max_len ||
-        (crc_enabled &&
-         checkForIrqAndReset(RegIrqFlags::PAYLOAD_CRC_ERROR, 0) != 0))
+        (config.enable_crc &&
+         checkForIrqAndReset(mode_guard, RegIrqFlags::PAYLOAD_CRC_ERROR, 0) !=
+             0))
         return -1;
 
     // Finally read the contents of the fifo
-    readFifo(FIFO_RX_BASE_ADDR, pkt, len);
+    readFifo(mode_guard.parent(), FIFO_RX_BASE_ADDR, pkt, len);
     return len;
 }
 
@@ -326,11 +336,12 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
     Lock guard(*this);
 
     {
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(guard));
 
         spi.writeRegister(REG_PAYLOAD_LENGTH, len);
-        writeFifo(FIFO_TX_BASE_ADDR, pkt, len);
     }
+
+    writeFifo(guard, FIFO_TX_BASE_ADDR, pkt, len);
 
     {
         // Now enter in mode TX to send the packet
@@ -340,6 +351,13 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
 
         // Wait for the transmission to end
         waitForIrq(mode_guard, RegIrqFlags::TX_DONE, 0);
+
+        if (mode_guard.wasDeviceInvalidated())
+        {
+            // The device was invalidated, just do a quick return, nothing else
+            // matters
+            return -1;
+        }
     }
 
     return true;
@@ -350,7 +368,7 @@ float SX1278Lora::getLastRxRssi()
     float rssi;
     {
         Lock guard(*this);
-        SPITransaction spi(getSpiSlave());
+        SPITransaction spi(getSpiSlave(guard));
         rssi =
             static_cast<float>(spi.readRegister(REG_PKT_RSSI_VALUE)) - 164.0f;
     }
@@ -366,16 +384,15 @@ float SX1278Lora::getLastRxRssi()
 float SX1278Lora::getLastRxSnr()
 {
     Lock guard(*this);
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     return static_cast<float>(
                static_cast<int8_t>(spi.readRegister(REG_PKT_SNR_VALUE))) /
            4.0f;
 }
 
-void SX1278Lora::enterLoraMode()
+void SX1278Lora::enterLoraMode(Lock &guard)
 {
-    Lock guard(*this);
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
 
     // First enter LoRa sleep
     spi.writeRegister(REG_OP_MODE,
@@ -388,45 +405,48 @@ void SX1278Lora::enterLoraMode()
     miosix::Thread::sleep(1);
 }
 
-void SX1278Lora::readFifo(uint8_t addr, uint8_t *dst, uint8_t size)
+void SX1278Lora::readFifo(Lock &guard, uint8_t addr, uint8_t *dst, uint8_t size)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.readRegisters(REG_FIFO, dst, size);
 }
 
-void SX1278Lora::writeFifo(uint8_t addr, uint8_t *src, uint8_t size)
+void SX1278Lora::writeFifo(Lock &guard, uint8_t addr, uint8_t *src,
+                           uint8_t size)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.writeRegisters(REG_FIFO, src, size);
 }
 
-ISX1278::IrqFlags SX1278Lora::getIrqFlags()
+bool SX1278Lora::checkDeviceFailure(Lock &guard) { return false; }
+
+SX1278Common::IrqFlags SX1278Lora::getIrqFlags(Lock &guard)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     return spi.readRegister(REG_IRQ_FLAGS);
 }
 
-void SX1278Lora::resetIrqFlags(IrqFlags flags)
+void SX1278Lora::resetIrqFlags(Lock &guard, IrqFlags flags)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     // Register is write clear
     spi.writeRegister(REG_IRQ_FLAGS, flags);
 }
 
-void SX1278Lora::setMode(ISX1278::Mode mode)
+void SX1278Lora::setMode(Lock &guard, SX1278Common::Mode mode)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
 
     spi.writeRegister(
         REG_OP_MODE,
         RegOpMode::make(static_cast<RegOpMode::Mode>(mode), true, false));
 }
 
-void SX1278Lora::setMapping(SX1278::DioMapping mapping)
+void SX1278Lora::setMapping(Lock &guard, SX1278::DioMapping mapping)
 {
-    SPITransaction spi(getSpiSlave());
+    SPITransaction spi(getSpiSlave(guard));
     spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 

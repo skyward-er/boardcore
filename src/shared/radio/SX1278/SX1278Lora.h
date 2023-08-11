@@ -141,8 +141,7 @@ public:
                         SPI::ClockDivider clock_divider,
                         std::unique_ptr<SX1278::ISX1278Frontend> frontend)
         : SX1278Common(bus, cs, dio0, dio1, dio3, clock_divider,
-                       std::move(frontend)),
-          crc_enabled(false)
+                       std::move(frontend))
     {
     }
 
@@ -192,20 +191,21 @@ public:
     float getLastRxSnr() override;
 
 private:
-    void enterLoraMode();
+    void enterLoraMode(Lock &lock);
 
-    void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);
-    void writeFifo(uint8_t addr, uint8_t *src, uint8_t size);
+    void readFifo(Lock &guard, uint8_t addr, uint8_t *dst, uint8_t size);
+    void writeFifo(Lock &guard, uint8_t addr, uint8_t *src, uint8_t size);
 
-    IrqFlags getIrqFlags() override;
-    void resetIrqFlags(IrqFlags flags) override;
+    bool checkDeviceFailure(Lock &guard) override;
+    void reconfigure(Lock &guard) override;
 
-    void setMode(Mode mode) override;
-    void setMapping(SX1278::DioMapping mapping) override;
+    IrqFlags getIrqFlags(Lock &guard) override;
+    void resetIrqFlags(Lock &guard, IrqFlags flags) override;
 
-    void setFreqRF(int freq_rf);
+    void setMode(Lock &guard, Mode mode) override;
+    void setMapping(Lock &guard, SX1278::DioMapping mapping) override;
 
-    bool crc_enabled;
+    Config config;
 };
 
 }  // namespace Boardcore

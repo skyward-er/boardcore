@@ -140,8 +140,7 @@ public:
                        SPI::ClockDivider clock_divider,
                        std::unique_ptr<SX1278::ISX1278Frontend> frontend)
         : SX1278Common(bus, cs, dio0, dio1, dio3, clock_divider,
-                       std::move(frontend)),
-          crc_enabled(false)
+                       std::move(frontend))
     {
     }
 
@@ -154,11 +153,6 @@ public:
      * @brief Check if this device is connected.
      */
     bool checkVersion();
-
-    /**
-     * @brief Configure this device on the fly.
-     */
-    [[nodiscard]] virtual Error configure(const Config &config);
 
     /**
      * @brief Wait until a new packet is received.
@@ -196,22 +190,26 @@ public:
     float getLastRxFei() override;
 
 private:
-    void enterFskMode();
+    void enterFskMode(Lock &guard);
 
     void rateLimitTx();
 
-    IrqFlags getIrqFlags() override;
-    void resetIrqFlags(IrqFlags flags) override;
+    bool checkDeviceFailure(Lock &lock) override;
+    void reconfigure(Lock &lock) override;
 
-    float getRssi();
-    float getFei();
+    IrqFlags getIrqFlags(Lock &lock) override;
+    void resetIrqFlags(Lock &lock, IrqFlags flags) override;
 
-    void setMode(Mode mode) override;
-    void setMapping(SX1278::DioMapping mapping) override;
+    float getRssi(Lock &lock);
+    float getFei(Lock &lock);
 
-    bool crc_enabled;
+    void setMode(Lock &lock, Mode mode) override;
+    void setMapping(Lock &lock, SX1278::DioMapping mapping) override;
+
     long long last_tx  = 0;
     float last_rx_rssi = 0.0f;
+
+    Config config;
     PrintLogger logger = Logging::getLogger("sx1278");
 };
 
