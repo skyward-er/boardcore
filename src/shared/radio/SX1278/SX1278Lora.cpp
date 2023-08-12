@@ -32,6 +32,8 @@ namespace Boardcore
 using namespace SX1278;
 using namespace SX1278::Lora;
 
+static constexpr uint8_t LORA_SYNC_VALUE = 0x69;
+
 static constexpr uint8_t MAX_PAYLOAD_LENGTH = 0xff;
 static constexpr uint8_t FIFO_TX_BASE_ADDR  = 0x00;
 static constexpr uint8_t FIFO_RX_BASE_ADDR  = 0x00;
@@ -135,7 +137,6 @@ SX1278Lora::Error SX1278Lora::init(const Config &config)
     // First probe for the device
     if (!checkVersion())
     {
-        TRACE("[sx1278] Wrong chipid\n");
         return Error::BAD_VALUE;
     }
 
@@ -169,8 +170,6 @@ bool SX1278Lora::checkVersion()
     SPITransaction spi(getSpiSlave(guard));
 
     uint8_t version = spi.readRegister(REG_VERSION);
-    TRACE("[sx1278] Chip id: %d\n", version);
-
     return version == 0x12;
 }
 
@@ -213,6 +212,10 @@ void SX1278Lora::reconfigure(Lock &guard)
 
     {
         SPITransaction spi(getSpiSlave(guard));
+
+        // This must be the first register to be configured, so if anything goes
+        // wrong past this point, we can detect it
+        spi.writeRegister(REG_SYNC_WORD, LORA_SYNC_VALUE);
 
         // Setup FIFO sections
         spi.writeRegister(REG_FIFO_TX_BASE_ADDR, FIFO_TX_BASE_ADDR);
@@ -274,9 +277,6 @@ void SX1278Lora::reconfigure(Lock &guard)
             REG_DETECT_OPTIMIZE,
             RegDetectOptimize::make(0x03, errata_values.automatic_if_on));
         spi.writeRegister(REG_DETECTION_THRESHOLD, 0x0a);
-
-        // (just change it to something that isn't the default)
-        spi.writeRegister(REG_SYNC_WORD, 0x69);
 
         // Setup weird errata registers (see errata note)
         if (errata_values.reg_high_bw_optimize_1 != -1)
@@ -420,7 +420,15 @@ void SX1278Lora::writeFifo(Lock &guard, uint8_t addr, uint8_t *src,
     spi.writeRegisters(REG_FIFO, src, size);
 }
 
-bool SX1278Lora::checkDeviceFailure(Lock &guard) { return false; }
+bool SX1278Lora::checkDeviceFailure(Lock &guard) { 
+    // Check that this register is the same as when we configured it, otherwise
+    // the device has failed.
+
+    SPITransaction spi(getSpiSlave(guard));
+    uint8_t sync_value = spi.readRegister(REG_SYNC_WORD);
+
+    return sync_value != LORA_SYNC_VALUE;
+}
 
 SX1278Common::IrqFlags SX1278Lora::getIrqFlags(Lock &guard)
 {

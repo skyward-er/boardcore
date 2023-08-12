@@ -24,11 +24,10 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
+#include <radio/SX1278/SX1278Lora.h>
 #include <utils/collections/CircularBuffer.h>
 
 #include <thread>
-
-#include "common.h"
 
 // Ignore warnings, as we don't want to change third party generated files to
 // fix them
@@ -42,16 +41,6 @@
 
 using namespace Boardcore;
 using namespace miosix;
-
-constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
-constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
-constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
-constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
-constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
-
-// Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav =
-    MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
@@ -90,11 +79,11 @@ using sck  = miosix::radio1::spi::sck;
 using miso = miosix::radio1::spi::miso;
 using mosi = miosix::radio1::spi::mosi;
 
-using txen = miosix::radio1::txen;
-using rxen = miosix::radio1::rxen;
+using txen                         = miosix::radio1::txen;
+using rxen                         = miosix::radio1::rxen;
 
 #define SX1278_NRST
-using rst  = miosix::radio1::nrst;
+using rst                          = miosix::radio1::nrst;
 
 #define SX1278_SPI MIOSIX_RADIO1_SPI
 
@@ -128,25 +117,46 @@ using rst  = miosix::radio2::nrst;
 #error "Target not supported"
 #endif
 
-SX1278Fsk* sx1278 = nullptr;
+constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
+constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
+constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
+constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
 
+#ifdef SX1278_IS_LORA
+static constexpr size_t SX1278_MTU = Boardcore::SX1278Lora::MTU;
+Boardcore::SX1278Lora* sx1278      = nullptr;
+#else
+static constexpr size_t SX1278_MTU = Boardcore::SX1278Fsk::MTU;
+Boardcore::SX1278Fsk* sx1278       = nullptr;
+#endif
+
+// Mavlink out buffer with 10 packets, 256 bytes each.
+using Mav =
+    MavlinkDriver<SX1278_MTU, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
+
+#ifdef SX1278_IRQ_DIO0
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
         sx1278->handleDioIRQ();
 }
+#endif
 
+#ifdef SX1278_IRQ_DIO1
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
     if (sx1278)
         sx1278->handleDioIRQ();
 }
+#endif
 
+#ifdef SX1278_IRQ_DIO3
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
     if (sx1278)
         sx1278->handleDioIRQ();
 }
+#endif
 
 void initBoard() {}
 
@@ -165,6 +175,7 @@ void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
     {
+        printf("[sx1278] Received packet!\n");
         Lock<FastMutex> l(mutex);
         pending_acks.put({msg.msgid, msg.seq});
     }
@@ -189,7 +200,11 @@ void flightTmLoop()
                 mavlink_msg_ack_tm_pack(171, 96, &msg, ack.msgid, ack.seq);
 
                 // Send the ack back to the sender
-                channel->enqueueMsg(msg);
+                bool result = channel->enqueueMsg(msg);
+                if (!result)
+                {
+                    printf("[sx1278] Failed to enqueue packet!\n");
+                }
             }
         }
 
@@ -202,49 +217,88 @@ void flightTmLoop()
 
         mavlink_msg_rocket_flight_tm_encode(171, 96, &msg, &tm);
 
-        channel->enqueueMsg(msg);
+        bool result = channel->enqueueMsg(msg);
+        if (!result)
+        {
+            printf("[sx1278] Failed to enqueue packet!\n");
+        }
 
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
         i += 1;
     }
 }
 
+Boardcore::SPIBus sx1278_bus(SX1278_SPI);
+
 int main()
 {
+
     initBoard();
 
-    SX1278Fsk::Config config = {
-        .freq_rf    = 434000000,
-        .freq_dev   = 50000,
-        .bitrate    = 48000,
-        .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
-        .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
-        .ocp        = 120,
-        .power      = 13,
-        .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
-        .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
-        .enable_crc = false};
+    // Initialize frontend (if any)
+#if defined SX1278_IS_EBYTE
+    printf("[sx1278] Confuring Ebyte frontend...\n");
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
+        new Boardcore::EbyteFrontend(txen::getPin(), rxen::getPin()));
+#elif defined SX1278_IS_SKYWARD433
+    printf("[sx1278] Confuring Skyward 433 frontend...\n");
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
+        new Boardcore::Skyward433Frontend());
+#else
+    printf("[sx1278] Confuring RA01 frontend...\n");
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
+        new Boardcore::RA01Frontend());
+#endif
 
-    SX1278Fsk::Error err;
+    // Initialize actual radio driver
+#ifdef SX1278_IS_LORA
+    // Run default configuration
+    Boardcore::SX1278Lora::Config config;
+    Boardcore::SX1278Lora::Error err;
 
-    SPIBus bus(SX1278_SPI);
+    sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
+                                       dio1::getPin(), dio3::getPin(),
+                                       Boardcore::SPI::ClockDivider::DIV_256,
+                                       std::move(frontend));
 
-    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
-
-    sx1278 = new SX1278Fsk(bus, cs::getPin(), dio0::getPin(), dio1::getPin(),
-                           dio3::getPin(), SPI::ClockDivider::DIV_64,
-                           std::move(frontend));
-
-    printf("\n[sx1278] Configuring sx1278...\n");
-    if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
+    printf("\n[sx1278] Configuring sx1278 lora...\n");
+    if ((err = sx1278->init(config)) != Boardcore::SX1278Lora::Error::NONE)
     {
-        printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));
-
-        while (1)
-            Thread::wait();
+        printf("[sx1278] sx1278->init error\n");
+        return false;
     }
 
-    printConfig(config);
+    printf("\n[sx1278] Initialization complete!\n");
+#else
+    // Run default configuration
+    Boardcore::SX1278Fsk::Config config = {
+              .freq_rf    = 434000000,
+              .freq_dev   = 50000,
+              .bitrate    = 48000,
+              .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+              .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+              .ocp        = 120,
+              .power      = 13,
+              .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
+              .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
+              .enable_crc = false};
+    Boardcore::SX1278Fsk::Error err;
+
+    sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
+                                            dio1::getPin(), dio3::getPin(),
+                                            Boardcore::SPI::ClockDivider::DIV_256,
+                                            std::move(frontend));
+
+    printf("\n[sx1278] Configuring sx1278 fsk...\n");
+    if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
+    {
+        // FIXME: Why does clang-format put this line up here?
+        printf("[sx1278] sx1278->init error\n");
+        return false;
+    }
+
+    printf("\n[sx1278] Initialization complete!\n");
+#endif
 
     channel = new Mav(sx1278, &onReceive, 0, MAV_OUT_BUFFER_MAX_AGE);
     channel->start();

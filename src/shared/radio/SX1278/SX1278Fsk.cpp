@@ -34,6 +34,8 @@ namespace Boardcore
 using namespace SX1278;
 using namespace SX1278::Fsk;
 
+static constexpr uint16_t FSK_SYNC_VALUE = 0x12ad;
+
 long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
 
 // Enable:
@@ -82,8 +84,6 @@ bool SX1278Fsk::checkVersion()
     SPITransaction spi(getSpiSlave(guard));
 
     uint8_t version = spi.readRegister(REG_VERSION);
-    TRACE("[sx1278] Chip id: %d\n", version);
-
     return version == 0x12;
 }
 
@@ -130,6 +130,16 @@ void SX1278Fsk::reconfigure(Lock &guard)
     {
         SPITransaction spi(getSpiSlave(guard));
 
+        // This must be the first register to be configured, so if anything goes
+        // wrong past this point, we can detect it
+        spi.writeRegister16(REG_SYNC_VALUE_1, FSK_SYNC_VALUE);
+
+        // Setup sync word
+        spi.writeRegister(
+            REG_SYNC_CONFIG,
+            RegSyncConfig::make(2, true, RegSyncConfig::PREAMBLE_POLARITY_55,
+                                RegSyncConfig::AUTO_RESTART_RX_MODE_OFF));
+
         // Setup bitrate
         uint16_t bitrate_raw = FXOSC / bitrate;
         spi.writeRegister16(REG_BITRATE_MSB, bitrate_raw);
@@ -161,14 +171,6 @@ void SX1278Fsk::reconfigure(Lock &guard)
         {
             spi.writeRegister(REG_OCP, RegOcp::make((ocp + 30) / 10, true));
         }
-
-        // Setup sync word
-        spi.writeRegister(
-            REG_SYNC_CONFIG,
-            RegSyncConfig::make(2, true, RegSyncConfig::PREAMBLE_POLARITY_55,
-                                RegSyncConfig::AUTO_RESTART_RX_MODE_OFF));
-        spi.writeRegister(REG_SYNC_VALUE_1, 0x12);
-        spi.writeRegister(REG_SYNC_VALUE_2, 0xad);
 
         // Set preamble length
         spi.writeRegister16(REG_PREAMBLE_MSB, 2);
@@ -462,15 +464,13 @@ void SX1278Fsk::rateLimitTx()
 
 bool SX1278Fsk::checkDeviceFailure(Lock &guard)
 {
-    // This check will be performed sometimes when hte IRQ timeout ends
-    // In such cases the device will NEVER be in standby, even if we keep it at
-    // standby between operations. So, if the device IS in standby in that case,
-    // then something must have gone wrong
+    // Check that this register is the same as when we configured it, otherwise
+    // the device has failed.
 
     SPITransaction spi(getSpiSlave(guard));
-    uint8_t mode = spi.readRegister(REG_OP_MODE);
+    uint16_t sync_value = spi.readRegister16(REG_SYNC_VALUE_1);
 
-    return (mode & 0b111) == RegOpMode::Mode::MODE_STDBY;
+    return sync_value != FSK_SYNC_VALUE;
 }
 
 SX1278Fsk::IrqFlags SX1278Fsk::getIrqFlags(Lock &guard)

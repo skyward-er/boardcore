@@ -156,11 +156,6 @@ public:
     bool checkVersion();
 
     /**
-     * @brief Configure this device on the fly.
-     */
-    [[nodiscard]] virtual Error configure(const Config &config);
-
-    /**
      * @brief Wait until a new packet is received.
      *
      * @param pkt       Buffer to store the received packet into.
