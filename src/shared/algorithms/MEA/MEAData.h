@@ -29,15 +29,20 @@ namespace Boardcore
 struct MEAState
 {
     uint64_t timestamp;
+    float correctedPressure;
     float x0;
     float x1;
     float x2;
 
-    static std::string header() { return "timestamp,x0,x1,x2\n"; }
+    static std::string header()
+    {
+        return "timestamp,correctedPressure,x0,x1,x2\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << x0 << "," << x1 << "," << x2 << "\n";
+        os << timestamp << "," << correctedPressure << "," << x0 << "," << x1
+           << "," << x2 << "\n";
     }
 };
 }  // namespace Boardcore

@@ -22,6 +22,8 @@
 
 #include "MEA.h"
 
+#include <drivers/timer/TimestampTimer.h>
+
 namespace Boardcore
 {
 MEA::MEA(const KalmanFilter::KalmanConfig kalmanConfig)
@@ -47,5 +49,14 @@ void MEA::setKalmanConfig(KalmanFilter::KalmanConfig config)
     filter.setConfig(config);
 }
 
-void MEA::updateState() { const auto filterState = filter.getState(); }
+void MEA::updateState()
+{
+    const auto filterState = filter.getState();
+
+    state.timestamp         = TimestampTimer::getTimestamp();
+    state.correctedPressure = filterState(0);
+    state.x0                = filterState(0);
+    state.x1                = filterState(1);
+    state.x2                = filterState(2);
+}
 }  // namespace Boardcore
