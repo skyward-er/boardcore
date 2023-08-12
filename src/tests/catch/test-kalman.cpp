@@ -98,7 +98,7 @@ TEST_CASE("Update test")
         F_new(0, 2) = 0.5 * T * T;
         F_new(1, 2) = T;
 
-        filter.predictNewF(F_new);
+        filter.predictUpdateF(F_new);
 
         if (!filter.correct(y))
         {

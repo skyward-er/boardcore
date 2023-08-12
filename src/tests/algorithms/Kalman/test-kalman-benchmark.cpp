@@ -101,7 +101,7 @@ int main()
 
         y(0) = INPUT[i];
 
-        filter.predictNewF(F);
+        filter.predictUpdateF(F);
 
         if (!filter.correct(y))
             printf("Correction failed at iteration : %u \n", i);

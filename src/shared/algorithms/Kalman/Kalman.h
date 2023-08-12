@@ -100,7 +100,7 @@ public:
      *
      * @param F_new updated F matrix.
      */
-    void predictNewF(const MatrixNN& F_new)
+    void predictUpdateF(const MatrixNN& F_new)
     {
         F = F_new;
         predict();
@@ -122,7 +122,8 @@ public:
      * @param F_new updated F matrix.
      * @param control Control vector.
      */
-    void predictWithControlNewF(const MatrixNN& F_new, const CVectorM& control)
+    void predictWithControlUpdateF(const MatrixNN& F_new,
+                                   const CVectorM& control)
     {
         F = F_new;
         predictWithControl(control);
