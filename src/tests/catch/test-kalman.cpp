@@ -58,6 +58,8 @@ static const Matrix<float, STATES_DIM, STATES_DIM> Q =
         .finished();
 // Measurement variance
 static const Matrix<float, OUTPUTS_DIM, OUTPUTS_DIM> R{10};
+static const Kalman<float, STATES_DIM, OUTPUTS_DIM>::MatrixNM G =
+    Kalman<float, STATES_DIM, OUTPUTS_DIM>::MatrixNM::Zero();
 // State vector
 static const Matrix<float, STATES_DIM, 1> x0(INPUT[0], 0.0, 0.0);
 
@@ -70,6 +72,7 @@ getKalmanConfig()
     config.Q = Q;
     config.R = R;
     config.P = P;
+    config.G = G;
     config.x = x0;
 
     return config;
@@ -95,7 +98,7 @@ TEST_CASE("Update test")
         F_new(0, 2) = 0.5 * T * T;
         F_new(1, 2) = T;
 
-        filter.predict(F_new);
+        filter.predictUpdateF(F_new);
 
         if (!filter.correct(y))
         {

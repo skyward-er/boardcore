@@ -63,6 +63,8 @@ int main()
     // Measurement variance
     Matrix<float, p, p> R{10};
 
+    Matrix<float, n, 1> G = Matrix<float, n, 1>::Zero();
+
     Matrix<float, n, 1> x0(INPUT[0], 0.0, 0.0);
 
     Matrix<float, p, 1> y(p);  // vector with p elements (only one in this case)
@@ -73,6 +75,7 @@ int main()
     config.Q = Q;
     config.R = R;
     config.P = P;
+    config.G = G;
     config.x = x0;
 
     Kalman<float, n, p> filter(config);
@@ -98,7 +101,7 @@ int main()
 
         y(0) = INPUT[i];
 
-        filter.predict(F);
+        filter.predictUpdateF(F);
 
         if (!filter.correct(y))
             printf("Correction failed at iteration : %u \n", i);

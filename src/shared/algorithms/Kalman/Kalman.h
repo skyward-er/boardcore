@@ -33,7 +33,7 @@ namespace Boardcore
  * This class uses templates in order to know the size of each matrix at
  * compile-time. This way we avoid Eigen to allocate memory dynamically.
  */
-template <typename T, int N_size, int P_size>
+template <typename T, int N_size, int P_size, int M_size = 1>
 class Kalman
 {
 public:
@@ -41,8 +41,10 @@ public:
     using MatrixPN = Eigen::Matrix<T, P_size, N_size>;
     using MatrixNP = Eigen::Matrix<T, N_size, P_size>;
     using MatrixPP = Eigen::Matrix<T, P_size, P_size>;
+    using MatrixNM = Eigen::Matrix<T, N_size, M_size>;
     using CVectorN = Eigen::Vector<T, N_size>;
     using CVectorP = Eigen::Vector<T, P_size>;
+    using CVectorM = Eigen::Vector<T, M_size>;
 
     /**
      * @brief Configuration struct for the Kalman class.
@@ -54,6 +56,7 @@ public:
         MatrixNN Q;
         MatrixPP R;
         MatrixNN P;
+        MatrixNM G;
         CVectorN x;
     };
 
@@ -64,8 +67,8 @@ public:
      */
     Kalman(const KalmanConfig& config)
         : F(config.F), H(config.H), Q(config.Q), R(config.R), P(config.P),
-          S(MatrixPP::Zero(P_size, P_size)), K(MatrixNP::Zero(N_size, P_size)),
-          x(config.x)
+          G(config.G), S(MatrixPP::Zero(P_size, P_size)),
+          K(MatrixNP::Zero(N_size, P_size)), x(config.x)
     {
         I.setIdentity();
     }
@@ -77,6 +80,7 @@ public:
         Q = config.Q;
         R = config.R;
         P = config.P;
+        G = config.G;
         S = MatrixPP::Zero(P_size, P_size);
         K = MatrixNP::Zero(N_size, P_size);
         x = config.x;
@@ -96,10 +100,33 @@ public:
      *
      * @param F_new updated F matrix.
      */
-    void predict(const MatrixNN& F_new)
+    void predictUpdateF(const MatrixNN& F_new)
     {
         F = F_new;
         predict();
+    }
+
+    /**
+     * @brief Prediction step with previous F matrix and with the control
+     * vector.
+     */
+    void predictWithControl(const CVectorM& control)
+    {
+        x = F * x + G * control;
+        P = F * P * F.transpose() + Q;
+    }
+
+    /**
+     * @brief Prediction step.
+     *
+     * @param F_new updated F matrix.
+     * @param control Control vector.
+     */
+    void predictWithControlUpdateF(const MatrixNN& F_new,
+                                   const CVectorM& control)
+    {
+        F = F_new;
+        predictWithControl(control);
     }
 
     /**
@@ -169,6 +196,7 @@ private:
     MatrixNN Q; /**< Model variance matrix (n x n) */
     MatrixPP R; /**< Measurement variance (p x p) */
     MatrixNN P; /**< Error covariance matrix (n x n) */
+    MatrixNM G; /**< Input matrix (n x m) */
 
     MatrixPP S;
     MatrixNP K; /**< kalman gain */
