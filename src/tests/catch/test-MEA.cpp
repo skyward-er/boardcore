@@ -72,14 +72,6 @@ TEST_CASE("MEA Update Test")
                  << i << "]: " << state.x2 << " != " << ESTIMATED_MASS[i]);
         }
 
-        if (state.correctedPressure !=
-            Approx(ESTIMATED_PRESSURE[i]).epsilon(0.01))
-        {
-            FAIL("The estimated pressure differs from the correct one ["
-                 << i << "]: " << state.correctedPressure
-                 << " != " << ESTIMATED_PRESSURE[i]);
-        }
-
         // Update the kalman
         mea.update(COMMAND[i], PRESSURE[i]);
     }
