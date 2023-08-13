@@ -31,7 +31,7 @@ using namespace Boardcore;
 using namespace Eigen;
 
 constexpr float sensorNoiseVariance = 0.36f;
-constexpr float modelNoiseVariance  = 0.01f;
+constexpr float modelNoiseVariance  = 0.1f;
 constexpr float initialRocketMass   = 35.01f;
 
 MEA::KalmanFilter::KalmanConfig getMEAKalmanConfig()
@@ -61,8 +61,14 @@ TEST_CASE("MEA Update Test")
     MEA mea(getMEAKalmanConfig());
     MEAState state;
 
-    for (unsigned i = 0; i < PRESSURE.size(); i++)
+    std::cout << "pressure,estimatedPressure,estimatedMass,command"
+              << std::endl;
+
+    for (unsigned i = 1; i < PRESSURE.size(); i++)
     {
+        // Update the kalman
+        mea.update(COMMAND[i - 1], PRESSURE[i]);
+
         // Get the results
         state = mea.getState();
 
@@ -72,7 +78,12 @@ TEST_CASE("MEA Update Test")
                  << i << "]: " << state.x2 << " != " << ESTIMATED_MASS[i]);
         }
 
-        // Update the kalman
-        mea.update(COMMAND[i], PRESSURE[i]);
+        if (state.correctedPressure !=
+            Approx(ESTIMATED_PRESSURE[i]).epsilon(0.01))
+        {
+            FAIL("The estimated pressure differs from the correct one ["
+                 << i << "]: " << state.correctedPressure
+                 << " != " << ESTIMATED_PRESSURE[i]);
+        }
     }
 }
