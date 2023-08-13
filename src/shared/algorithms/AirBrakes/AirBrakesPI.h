@@ -85,6 +85,9 @@ private:
 private:
     PIController pi;
 
+    // Trajectory set from which the used trajectory can be choosen
+    const TrajectorySet &trajectorySet;
+
     Trajectory *chosenTrajectory = nullptr;
 };
 

@@ -40,24 +40,21 @@ class AirBrakesInterp : public AirBrakes
 {
 public:
     AirBrakesInterp(std::function<TimedTrajectoryPoint()> getCurrentPosition,
-                    const TrajectorySet &trajectorySet,
+                    const TrajectorySet &trajectoryOpenSet,
+                    const TrajectorySet &trajectoryCloseSet,
                     const AirBrakesConfig &config,
                     const AirBrakesInterpConfig &configInterp,
-                    std::function<void(float)> setActuator, float dz);
+                    std::function<void(float)> setActuator);
 
     bool init() override;
 
     /**
-     * @brief This method chooses the trajectory the rocket will follow and
-     * starts the algorithm.
+     * @brief This method chooses the trajectory set that will be used to
+     * control the algorithm and starts it.
+     *
+     * @param currentMass The current estimated rocket mass.
      */
-    void begin();
-
-    /**
-     * @brief Looks for nearest point in the current chosen trajectory and moves
-     * the airbraks according to the current rocket speed and the prediction.
-     */
-    void step() override;
+    void begin(float currentMass);
 
     /**
      * @brief registers the timestamp of liftoff
@@ -66,11 +63,27 @@ public:
 
 private:
     /**
+     * @brief Looks for nearest point in the current chosen trajectory and moves
+     * the airbrakes according to the current rocket speed and the prediction.
+     */
+    void step() override;
+
+    /**
      * @brief Calculates the percentage of aperture of the airbrakes
      * interpolating the trajectory points of the fully closed and fully opened
      * references
      */
     float controlInterp(TrajectoryPoint currentPosition);
+
+    // Trajectory sets (open and closed) from which the algorithm will choose at
+    // the beginning the tuple with which interpolate the data. The selection
+    // depends on the rocket mass.
+    const TrajectorySet &trajectoryOpenSet;
+    const TrajectorySet &trajectoryCloseSet;
+
+    // Choosen trajectories from the begin function
+    Trajectory *choosenCloseTrajectory = nullptr;
+    Trajectory *choosenOpenTrajectory  = nullptr;
 
     const AirBrakesInterpConfig &configInterp;  ///< specialized config
     uint64_t tLiftoff;                          ///< timestamp of the liftoff
@@ -79,6 +92,10 @@ private:
     float Tfilter;         ///< [s] time from liftoff when to update filter
     bool filter = false;   ///< whether to apply the filter or not
     float dz;  ///< [m] the distance between two consecutive Trajectory points
+    float dm;  ///< [kg] the distance in mass between two consecutive trajectory
+               ///< sets
+    float initialMass;  ///< [kg] the mass correspondent to the first trajectory
+                        ///< set
 };
 
 }  // namespace Boardcore
