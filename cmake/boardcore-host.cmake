@@ -34,6 +34,9 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp
 
+    # Algorithms
+    ${SBS_BASE}/src/shared/algorithms/MEA/MEA.cpp
+
     # Logger
     ${SBS_BASE}/src/shared/logger/Logger.cpp
 

@@ -55,7 +55,7 @@ void MEA::updateState()
     const auto filterOutput = filter.getOutput();
 
     state.timestamp         = TimestampTimer::getTimestamp();
-    state.correctedPressure = filterOutput(0) + filterOutput(1);
+    state.correctedPressure = filterOutput(0);
     state.x0                = filterState(0);
     state.x1                = filterState(1);
     state.x2                = filterState(2);
