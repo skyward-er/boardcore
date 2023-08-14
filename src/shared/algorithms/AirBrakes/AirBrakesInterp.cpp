@@ -41,13 +41,10 @@ AirBrakesInterp::AirBrakesInterp(
     std::function<void(float)> setActuator)
     : AirBrakes(getCurrentPosition, config, setActuator),
       trajectoryOpenSet(trajectoryOpenSet),
-      trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp),
-      tLiftoff(0), lastPercentage(0),
-      filter_coeff(configInterp.INITIAL_FILTER_COEFF),
-      Tfilter(configInterp.INITIAL_T_FILTER), filter(false),
-      dz(configInterp.DZ), dm(configInterp.DM),
-      initialMass(configInterp.INITIAL_MASS)
+      trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp)
 {
+    // Initial values to avoid UB
+    lastPercentage = 0;
 }
 
 bool AirBrakesInterp::init() { return true; }
@@ -58,7 +55,7 @@ void AirBrakesInterp::begin(float currentMass)
         return;
 
     // Choose the best trajectories depending on the mass and the delta mass
-    if (dm == 0)
+    if (configInterp.DM == 0)
     {
         // Compatibility in case the mass information is not provided
         choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[0];
@@ -66,7 +63,8 @@ void AirBrakesInterp::begin(float currentMass)
     }
     else
     {
-        int index = round((currentMass - initialMass) / dm);
+        int index =
+            round((currentMass - configInterp.INITIAL_MASS) / configInterp.DM);
 
         // Bound the index in order to have an indexable element
         index                 = std::max(index, 0);
@@ -90,46 +88,53 @@ void AirBrakesInterp::step()
 
     lastPosition = currentPosition;
 
-    // interpolation
+    // Interpolation
     float percentage = controlInterp(currentPosition);
 
-    // filter the aperture value only from the second step
-    if (filter)
-    {
-        percentage =
-            lastPercentage + (percentage - lastPercentage) * filter_coeff;
+    // The maximum altitude is the one which is registered at the last point in
+    // the trajectory
+    float maxAltitude =
+        choosenOpenTrajectory->points[choosenOpenTrajectory->size() - 1].z;
 
-        // if the time elapsed from liftoff is greater or equal than the
-        // Tfilter (converted in microseconds as for the timestamp), we
-        // update the filter
-        uint64_t currentTimestamp = TimestampTimer::getTimestamp();
-        if (currentTimestamp - tLiftoff >= Tfilter * 1e6)
-        {
-            Tfilter += configInterp.DELTA_T_FILTER;
-            filter_coeff /= configInterp.FILTER_RATIO;
-        }
+    // Filtering
+    float filterCoeff = 0;
+
+    // If the altitude is lower than the minimum one, the filter is kept at the
+    // same value, to avoid misleading filtering actions
+    if (currentPosition.z < configInterp.MINIMUM_ALTITUDE)
+    {
+        filterCoeff = configInterp.STARTING_FILTER_VALUE;
     }
     else
     {
-        TRACE("START FILTERING\n");
-        TRACE("tLiftoff: %llu\n", tLiftoff);
-        filter = true;
+        filterCoeff = configInterp.STARTING_FILTER_VALUE -
+                      (currentPosition.z - configInterp.MINIMUM_ALTITUDE) *
+                          ((configInterp.STARTING_FILTER_VALUE) /
+                           (maxAltitude - configInterp.MINIMUM_ALTITUDE));
+    }
+
+    if (currentPosition.z < maxAltitude)
+    {
+        // Compute the actual value filtered
+        percentage =
+            lastPercentage + (percentage - lastPercentage) * filterCoeff;
+    }
+    else
+    {
+        // If the height is beyond the target one, the algorithm tries to brake
+        // as much as possible
+        percentage = 1;
     }
 
     lastPercentage = percentage;
     setActuator(percentage);
 }
 
-void AirBrakesInterp::setLiftoffTimestamp()
-{
-    this->tLiftoff = TimestampTimer::getTimestamp();
-}
-
 float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
 {
     // we take the index of the current point of the trajectory and we look
     // ahead of 2 points
-    int index_z = floor(currentPosition.z / dz) + 2;
+    int index_z = floor(currentPosition.z / configInterp.DZ) + 2;
 
     // for safety we check whether the index exceeds the maximum index of the
     // trajectory sets
