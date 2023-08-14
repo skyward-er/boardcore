@@ -70,7 +70,7 @@ void AirBrakesInterp::begin(float currentMass)
 
         // Bound the index in order to have an indexable element
         index = std::max(index, static_cast<uint32_t>(0));
-        index = std::min(index, trajectoryOpenSet.length());
+        index = std::min(index, trajectoryOpenSet.length() - 1);
 
         choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[index];
         choosenCloseTrajectory = &trajectoryCloseSet.trajectories[index];
