@@ -97,16 +97,20 @@ void AirBrakesInterp::step()
         choosenOpenTrajectory->points[choosenOpenTrajectory->size() - 1].z;
 
     // Filtering
-    float filterCoeff = configInterp.STARTING_FILTER_VALUE -
-                        (currentPosition.z - configInterp.MINIMUM_ALTITUDE) *
-                            ((configInterp.STARTING_FILTER_VALUE) /
-                             (maxAltitude - configInterp.MINIMUM_ALTITUDE));
+    float filterCoeff = 0;
 
     // If the altitude is lower than the minimum one, the filter is kept at the
     // same value, to avoid misleading filtering actions
     if (currentPosition.z < configInterp.MINIMUM_ALTITUDE)
     {
         filterCoeff = configInterp.STARTING_FILTER_VALUE;
+    }
+    else
+    {
+        filterCoeff = configInterp.STARTING_FILTER_VALUE -
+                      (currentPosition.z - configInterp.MINIMUM_ALTITUDE) *
+                          ((configInterp.STARTING_FILTER_VALUE) /
+                           (maxAltitude - configInterp.MINIMUM_ALTITUDE));
     }
 
     if (currentPosition.z < maxAltitude)
