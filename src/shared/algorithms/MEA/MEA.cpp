@@ -26,6 +26,7 @@
 
 namespace Boardcore
 {
+
 MEA::MEA(const KalmanFilter::KalmanConfig kalmanConfig)
     : filter(kalmanConfig), state()
 {
@@ -60,4 +61,5 @@ void MEA::updateState()
     state.x1                = filterState(1);
     state.x2                = filterState(2);
 }
+
 }  // namespace Boardcore

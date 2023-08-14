@@ -28,11 +28,13 @@
 
 namespace Boardcore
 {
+
 /**
- * @brief MEA stands for Mass Estimation Algorithm. It represents a kalman
- * filter which by performing a prediction with the current feed valve state and
- * a correction with the pressure in combustion chamber, estimates the
- * remaining mass of the rocket.
+ * @brief MEA stands for Mass Estimation Algorithm.
+ *
+ * It represents a kalman filter which by performing a prediction with the
+ * current feed valve state and a correction with the pressure in combustion
+ * chamber, estimates the remaining mass of the rocket.
  */
 class MEA
 {

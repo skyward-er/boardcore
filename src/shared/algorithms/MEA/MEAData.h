@@ -26,6 +26,7 @@
 
 namespace Boardcore
 {
+
 struct MEAState
 {
     uint64_t timestamp;
@@ -45,4 +46,5 @@ struct MEAState
            << "," << x2 << "\n";
     }
 };
+
 }  // namespace Boardcore
