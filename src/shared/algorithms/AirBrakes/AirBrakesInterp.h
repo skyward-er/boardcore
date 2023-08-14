@@ -56,11 +56,6 @@ public:
      */
     void begin(float currentMass);
 
-    /**
-     * @brief registers the timestamp of liftoff
-     */
-    void setLiftoffTimestamp();
-
 private:
     /**
      * @brief Looks for nearest point in the current chosen trajectory and moves
@@ -86,11 +81,7 @@ private:
     Trajectory *choosenOpenTrajectory  = nullptr;
 
     const AirBrakesInterpConfig &configInterp;  ///< specialized config
-    uint64_t tLiftoff;                          ///< timestamp of the liftoff
     float lastPercentage;  ///< last opening of the airbrakes
-    float filter_coeff;    ///< how much the new aperture impacts the real one
-    float Tfilter;         ///< [s] time from liftoff when to update filter
-    bool filter = false;   ///< whether to apply the filter or not
     float dz;  ///< [m] the distance between two consecutive Trajectory points
     float dm;  ///< [kg] the distance in mass between two consecutive trajectory
                ///< sets

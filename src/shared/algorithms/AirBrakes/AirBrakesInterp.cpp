@@ -42,12 +42,11 @@ AirBrakesInterp::AirBrakesInterp(
     : AirBrakes(getCurrentPosition, config, setActuator),
       trajectoryOpenSet(trajectoryOpenSet),
       trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp),
-      tLiftoff(0), lastPercentage(0),
-      filter_coeff(configInterp.INITIAL_FILTER_COEFF),
-      Tfilter(configInterp.INITIAL_T_FILTER), filter(false),
       dz(configInterp.DZ), dm(configInterp.DM),
       initialMass(configInterp.INITIAL_MASS)
 {
+    // Initial values to avoid UB
+    lastPercentage = 0;
 }
 
 bool AirBrakesInterp::init() { return true; }
@@ -90,39 +89,29 @@ void AirBrakesInterp::step()
 
     lastPosition = currentPosition;
 
-    // interpolation
+    // Interpolation
     float percentage = controlInterp(currentPosition);
 
-    // filter the aperture value only from the second step
-    if (filter)
-    {
-        percentage =
-            lastPercentage + (percentage - lastPercentage) * filter_coeff;
+    // Filtering
+    // IMPORTANT: THESE MAGIC VALUES ARE FIT BY THE ASSUMPTION OF 3Km HEIGHT.
+    float filterCoeff = 0.9f - (currentPosition.z - 1000) * ((0.9f) / 2000);
 
-        // if the time elapsed from liftoff is greater or equal than the
-        // Tfilter (converted in microseconds as for the timestamp), we
-        // update the filter
-        uint64_t currentTimestamp = TimestampTimer::getTimestamp();
-        if (currentTimestamp - tLiftoff >= Tfilter * 1e6)
-        {
-            Tfilter += configInterp.DELTA_T_FILTER;
-            filter_coeff /= configInterp.FILTER_RATIO;
-        }
+    if (currentPosition.z <
+        choosenOpenTrajectory->points[choosenOpenTrajectory->size() - 1].z)
+    {
+        // Compute the actual value filtered
+        percentage =
+            lastPercentage + (percentage - lastPercentage) * filterCoeff;
     }
     else
     {
-        TRACE("START FILTERING\n");
-        TRACE("tLiftoff: %llu\n", tLiftoff);
-        filter = true;
+        // If the height is beyond the target one, the algorithm tries to brake
+        // as much as possible
+        percentage = 1;
     }
 
     lastPercentage = percentage;
     setActuator(percentage);
-}
-
-void AirBrakesInterp::setLiftoffTimestamp()
-{
-    this->tLiftoff = TimestampTimer::getTimestamp();
 }
 
 float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)

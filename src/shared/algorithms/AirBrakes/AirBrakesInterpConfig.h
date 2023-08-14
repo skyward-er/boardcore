@@ -28,14 +28,6 @@ namespace Boardcore
 
 struct AirBrakesInterpConfig
 {
-    // interp parameters
-    float INITIAL_FILTER_COEFF;
-    float INITIAL_T_FILTER;  ///< after how much time we change the filter
-                             ///< coefficient
-    float DELTA_T_FILTER;    ///< after how much time we change the filter
-                             ///< coefficient
-    float FILTER_RATIO;      ///< how much the filter coefficient is reduced
-
     float DZ;  /// The delta in altitude between consequent trajectory points
 
     float INITIAL_MASS;  /// The mass correspondent to the first trajectory
