@@ -41,9 +41,7 @@ AirBrakesInterp::AirBrakesInterp(
     std::function<void(float)> setActuator)
     : AirBrakes(getCurrentPosition, config, setActuator),
       trajectoryOpenSet(trajectoryOpenSet),
-      trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp),
-      dz(configInterp.DZ), dm(configInterp.DM),
-      initialMass(configInterp.INITIAL_MASS)
+      trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp)
 {
     // Initial values to avoid UB
     lastPercentage = 0;
@@ -57,7 +55,7 @@ void AirBrakesInterp::begin(float currentMass)
         return;
 
     // Choose the best trajectories depending on the mass and the delta mass
-    if (dm == 0)
+    if (configInterp.DM == 0)
     {
         // Compatibility in case the mass information is not provided
         choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[0];
@@ -65,7 +63,8 @@ void AirBrakesInterp::begin(float currentMass)
     }
     else
     {
-        int index = round((currentMass - initialMass) / dm);
+        int index =
+            round((currentMass - configInterp.INITIAL_MASS) / configInterp.DM);
 
         // Bound the index in order to have an indexable element
         index                 = std::max(index, 0);
@@ -92,12 +91,25 @@ void AirBrakesInterp::step()
     // Interpolation
     float percentage = controlInterp(currentPosition);
 
-    // Filtering
-    // IMPORTANT: THESE MAGIC VALUES ARE FIT BY THE ASSUMPTION OF 3Km HEIGHT.
-    float filterCoeff = 0.9f - (currentPosition.z - 1000) * ((0.9f) / 2000);
+    // The maximum altitude is the one which is registered at the last point in
+    // the trajectory
+    float maxAltitude =
+        choosenOpenTrajectory->points[choosenOpenTrajectory->size() - 1].z;
 
-    if (currentPosition.z <
-        choosenOpenTrajectory->points[choosenOpenTrajectory->size() - 1].z)
+    // Filtering
+    float filterCoeff = configInterp.STARTING_FILTER_VALUE -
+                        (currentPosition.z - configInterp.MINIMUM_ALTITUDE) *
+                            ((configInterp.STARTING_FILTER_VALUE) /
+                             (maxAltitude - configInterp.MINIMUM_ALTITUDE));
+
+    // If the altitude is lower than the minimum one, the filter is kept at the
+    // same value, to avoid misleading filtering actions
+    if (currentPosition.z < configInterp.MINIMUM_ALTITUDE)
+    {
+        filterCoeff = configInterp.STARTING_FILTER_VALUE;
+    }
+
+    if (currentPosition.z < maxAltitude)
     {
         // Compute the actual value filtered
         percentage =
@@ -118,7 +130,7 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
 {
     // we take the index of the current point of the trajectory and we look
     // ahead of 2 points
-    int index_z = floor(currentPosition.z / dz) + 2;
+    int index_z = floor(currentPosition.z / configInterp.DZ) + 2;
 
     // for safety we check whether the index exceeds the maximum index of the
     // trajectory sets

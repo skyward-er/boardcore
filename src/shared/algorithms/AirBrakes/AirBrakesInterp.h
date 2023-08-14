@@ -80,13 +80,8 @@ private:
     Trajectory *choosenCloseTrajectory = nullptr;
     Trajectory *choosenOpenTrajectory  = nullptr;
 
-    const AirBrakesInterpConfig &configInterp;  ///< specialized config
-    float lastPercentage;  ///< last opening of the airbrakes
-    float dz;  ///< [m] the distance between two consecutive Trajectory points
-    float dm;  ///< [kg] the distance in mass between two consecutive trajectory
-               ///< sets
-    float initialMass;  ///< [kg] the mass correspondent to the first trajectory
-                        ///< set
+    AirBrakesInterpConfig configInterp;  ///< specialized config
+    float lastPercentage;                ///< last opening of the airbrakes
 };
 
 }  // namespace Boardcore
