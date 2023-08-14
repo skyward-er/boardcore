@@ -42,7 +42,7 @@ AirBrakesInterp::AirBrakesInterp(
     : AirBrakes(getCurrentPosition, config, setActuator),
       trajectoryOpenSet(trajectoryOpenSet),
       trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp),
-      tLiftoff(-1), lastPercentage(0),
+      tLiftoff(0), lastPercentage(0),
       filter_coeff(configInterp.INITIAL_FILTER_COEFF),
       Tfilter(configInterp.INITIAL_T_FILTER), filter(false),
       dz(configInterp.DZ), dm(configInterp.DM),
@@ -57,26 +57,23 @@ void AirBrakesInterp::begin(float currentMass)
     if (running)
         return;
 
-    // Choose the trajectories depending on the distance between the current
-    // mass and the trajectories masses.
-    float minDistance      = abs(currentMass - initialMass);
-    choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[0];
-    choosenCloseTrajectory = &trajectoryCloseSet.trajectories[0];
-
-    // For every trajectory compute the delta in mass and select the best one
-    for (uint8_t trjIndex = 0; trjIndex < trajectoryOpenSet.length();
-         trjIndex++)
+    // Choose the best trajectories depending on the mass and the delta mass
+    if (dm == 0)
     {
-        float trajectoryMass = initialMass + dm * trjIndex;
-        float delta          = abs(currentMass - trajectoryMass);
+        // Compatibility in case the mass information is not provided
+        choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[0];
+        choosenCloseTrajectory = &trajectoryCloseSet.trajectories[0];
+    }
+    else
+    {
+        uint32_t index = round((currentMass - initialMass) / dm);
 
-        if (delta < minDistance)
-        {
-            // The current trajectory is better
-            minDistance            = delta;
-            choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[trjIndex];
-            choosenCloseTrajectory = &trajectoryCloseSet.trajectories[trjIndex];
-        }
+        // Bound the index in order to have an indexable element
+        index = std::max(index, static_cast<uint32_t>(0));
+        index = std::min(index, trajectoryOpenSet.length());
+
+        choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[index];
+        choosenCloseTrajectory = &trajectoryCloseSet.trajectories[index];
     }
 
     Algorithm::begin();
