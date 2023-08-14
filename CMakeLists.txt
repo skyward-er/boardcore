@@ -131,6 +131,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-sensormanager-catch.cpp
     src/tests/catch/xbee/test-xbee-parser.cpp
     src/tests/catch/test-modulemanager.cpp
+    src/tests/catch/test-MEA.cpp
 )
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
