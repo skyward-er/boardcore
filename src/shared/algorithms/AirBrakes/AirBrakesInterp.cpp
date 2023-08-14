@@ -35,22 +35,47 @@ namespace Boardcore
 
 AirBrakesInterp::AirBrakesInterp(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
-    const TrajectorySet &trajectorySet, const AirBrakesConfig &config,
+    const TrajectorySet &trajectoryOpenSet,
+    const TrajectorySet &trajectoryCloseSet, const AirBrakesConfig &config,
     const AirBrakesInterpConfig &configInterp,
-    std::function<void(float)> setActuator, float dz)
-    : AirBrakes(getCurrentPosition, trajectorySet, config, setActuator),
-      configInterp(configInterp), tLiftoff(-1), lastPercentage(0),
+    std::function<void(float)> setActuator)
+    : AirBrakes(getCurrentPosition, config, setActuator),
+      trajectoryOpenSet(trajectoryOpenSet),
+      trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp),
+      tLiftoff(0), lastPercentage(0),
       filter_coeff(configInterp.INITIAL_FILTER_COEFF),
-      Tfilter(configInterp.INITIAL_T_FILTER), filter(false), dz(dz)
+      Tfilter(configInterp.INITIAL_T_FILTER), filter(false),
+      dz(configInterp.DZ), dm(configInterp.DM),
+      initialMass(configInterp.INITIAL_MASS)
 {
 }
 
 bool AirBrakesInterp::init() { return true; }
 
-void AirBrakesInterp::begin()
+void AirBrakesInterp::begin(float currentMass)
 {
     if (running)
         return;
+
+    // Choose the best trajectories depending on the mass and the delta mass
+    if (dm == 0)
+    {
+        // Compatibility in case the mass information is not provided
+        choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[0];
+        choosenCloseTrajectory = &trajectoryCloseSet.trajectories[0];
+    }
+    else
+    {
+        int index = round((currentMass - initialMass) / dm);
+
+        // Bound the index in order to have an indexable element
+        index                 = std::max(index, 0);
+        uint32_t boundedIndex = std::min(static_cast<uint32_t>(index),
+                                         trajectoryOpenSet.length() - 1);
+
+        choosenOpenTrajectory  = &trajectoryOpenSet.trajectories[boundedIndex];
+        choosenCloseTrajectory = &trajectoryCloseSet.trajectories[boundedIndex];
+    }
 
     Algorithm::begin();
 }
@@ -106,17 +131,15 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
     // ahead of 2 points
     int index_z = floor(currentPosition.z / dz) + 2;
 
-    Boardcore::Trajectory t_closed = trajectorySet.trajectories[0];
-    Boardcore::Trajectory t_opened =
-        trajectorySet.trajectories[trajectorySet.trjSize - 1];
-
     // for safety we check whether the index exceeds the maximum index of the
     // trajectory sets
-    index_z =
-        std::min(index_z, std::min(t_closed.trjSize - 1, t_opened.trjSize - 1));
+    index_z = std::min(index_z, std::min(choosenCloseTrajectory->trjSize - 1,
+                                         choosenOpenTrajectory->trjSize - 1));
 
-    Boardcore::TrajectoryPoint trjPointClosed = t_closed.points[index_z];
-    Boardcore::TrajectoryPoint trjPointOpen   = t_opened.points[index_z];
+    Boardcore::TrajectoryPoint trjPointClosed =
+        choosenCloseTrajectory->points[index_z];
+    Boardcore::TrajectoryPoint trjPointOpen =
+        choosenOpenTrajectory->points[index_z];
 
     // TRACE("z: %+.3f, curr: %+.3f, clos: %+.3f, open: %+.3f\n",
     //       currentPosition.z, currentPosition.vz, trjPointClosed.vz,

@@ -40,7 +40,7 @@ class AirBrakes : public Algorithm
 {
 public:
     AirBrakes(std::function<TimedTrajectoryPoint()> getCurrentPosition,
-              const TrajectorySet &trajectorySet, const AirBrakesConfig &config,
+              const AirBrakesConfig &config,
               std::function<void(float)> setActuator);
 
 protected:
@@ -96,7 +96,6 @@ protected:
 
 protected:
     std::function<TimedTrajectoryPoint()> getCurrentPosition;
-    const TrajectorySet &trajectorySet;
     const AirBrakesConfig &config;
     std::function<void(float)> setActuator;
 
