@@ -26,6 +26,7 @@
 #include <iostream>
 
 #include "../algorithms/Airbrakes/test-airbrakesInterp-data.h"
+#include "../algorithms/Airbrakes/test-airbrakesInterp-references.h"
 
 using namespace Boardcore;
 
@@ -44,4 +45,11 @@ AirBrakesInterpConfig getConfig()
     config.INITIAL_MASS          = INITIAL_MASS;
     config.DM                    = DM;
     return config;
+}
+
+NASState getState()
+{
+    NASState state;
+
+    return state;
 }
