@@ -24,18 +24,23 @@
 
 #include <algorithm>
 #include <catch2/catch.hpp>
+#include <fstream>
 #include <iostream>
 
 #include "../algorithms/Airbrakes/test-airbrakesInterp-data.h"
 #include "../algorithms/Airbrakes/test-airbrakesInterp-references.h"
 
 using namespace Boardcore;
+using namespace std;
 
 constexpr float MINIMUM_ALTITUDE      = 1000;
+constexpr float MAXIMUM_ALTITUDE      = 3000;
 constexpr float STARTING_FILTER_VALUE = 0.9f;
+constexpr float ABK_CRITICAL_ALTITUDE = 2990;
 constexpr float DZ                    = 10;
 constexpr float INITIAL_MASS          = 28;
 constexpr float DM                    = 0.2f;
+constexpr uint16_t N_FORWARD          = 2;
 
 static const Boardcore::AirBrakesConfig ABK_CONFIG{
     0.4884,      -1.4391,    6.6940,
@@ -53,11 +58,14 @@ static const Boardcore::AirBrakesConfig ABK_CONFIG{
 AirBrakesInterpConfig getConfig()
 {
     AirBrakesInterpConfig config;
-    config.MINIMUM_ALTITUDE      = MINIMUM_ALTITUDE;
-    config.STARTING_FILTER_VALUE = STARTING_FILTER_VALUE;
-    config.DZ                    = DZ;
-    config.INITIAL_MASS          = INITIAL_MASS;
-    config.DM                    = DM;
+    config.FILTER_MINIMUM_ALTITUDE = MINIMUM_ALTITUDE;
+    config.FILTER_MAXIMUM_ALTITUDE = MAXIMUM_ALTITUDE;
+    config.STARTING_FILTER_VALUE   = STARTING_FILTER_VALUE;
+    config.ABK_CRITICAL_ALTITUDE   = ABK_CRITICAL_ALTITUDE;
+    config.DZ                      = DZ;
+    config.INITIAL_MASS            = INITIAL_MASS;
+    config.DM                      = DM;
+    config.N_FORWARD               = N_FORWARD;
     return config;
 }
 
@@ -67,15 +75,15 @@ NASState getState()
     static size_t i = 0;
 
     // Max out the counter
-    i = std::min(Z.size(), i);
+    i = min(Z.size() - 1, i);
 
     NASState state;
-    state.timestamp = i;
-    state.d         = -Z[i];
-    state.vd        = -Vz[i];
+    state.timestamp =
+        i + 1;         // Increasing timestamp to let the algorithm evolve
+    state.d  = -Z[i];  // Compute altitude AGL
+    state.vd = -Vz[i];
 
     i += 1;
-
     return state;
 }
 
@@ -87,13 +95,18 @@ TEST_CASE("ABK Update Test")
         [&](float position)
         {
             static int i = 0;
-            printf("%f,%f\n", position, ABK[i]);
 
-            i += 1;
+            // Check the output
+            if (position != Approx(ABK[i]).epsilon(0.01))
+            {
+                FAIL("The computed position differs from the correct one["
+                     << i << "]: " << position << " != " << ABK[i]);
+            }
+
+            i++;
         });
 
     abk.begin(28.8);
-    printf("Result,Expected\n");
 
     for (int i = 0; i < Z.size(); i++)
     {

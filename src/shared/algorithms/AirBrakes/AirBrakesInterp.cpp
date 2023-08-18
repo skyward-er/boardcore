@@ -91,29 +91,26 @@ void AirBrakesInterp::step()
     // Interpolation
     float percentage = controlInterp(currentPosition);
 
-    // The maximum altitude is the one which is registered at the last point in
-    // the trajectory
-    float maxAltitude =
-        choosenOpenTrajectory->points[choosenOpenTrajectory->size() - 1].z;
-
     // Filtering
     float filterCoeff = 0;
 
     // If the altitude is lower than the minimum one, the filter is kept at the
     // same value, to avoid misleading filtering actions
-    if (currentPosition.z < configInterp.MINIMUM_ALTITUDE)
+    if (currentPosition.z < configInterp.FILTER_MINIMUM_ALTITUDE)
     {
         filterCoeff = configInterp.STARTING_FILTER_VALUE;
     }
     else
     {
-        filterCoeff = configInterp.STARTING_FILTER_VALUE -
-                      (currentPosition.z - configInterp.MINIMUM_ALTITUDE) *
-                          ((configInterp.STARTING_FILTER_VALUE) /
-                           (maxAltitude - configInterp.MINIMUM_ALTITUDE));
+        filterCoeff =
+            configInterp.STARTING_FILTER_VALUE -
+            (currentPosition.z - configInterp.FILTER_MINIMUM_ALTITUDE) *
+                ((configInterp.STARTING_FILTER_VALUE) /
+                 (configInterp.FILTER_MAXIMUM_ALTITUDE -
+                  configInterp.FILTER_MINIMUM_ALTITUDE));
     }
 
-    if (currentPosition.z < maxAltitude)
+    if (currentPosition.z < configInterp.ABK_CRITICAL_ALTITUDE)
     {
         // Compute the actual value filtered
         percentage =
@@ -133,8 +130,11 @@ void AirBrakesInterp::step()
 float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
 {
     // we take the index of the current point of the trajectory and we look
-    // ahead of 2 points
-    int index_z = floor(currentPosition.z / configInterp.DZ) + 2;
+    // ahead of N points - 1 (conversion from matlab index to C++ index)
+    int index_z = floor((currentPosition.z / configInterp.DZ)) +
+                  configInterp.N_FORWARD - 1;
+
+    index_z = std::max(index_z, 0);
 
     // for safety we check whether the index exceeds the maximum index of the
     // trajectory sets
