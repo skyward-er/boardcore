@@ -108,7 +108,7 @@ TEST_CASE("ABK Update Test")
 
     abk.begin(28.8);
 
-    for (int i = 0; i < Z.size(); i++)
+    for (size_t i = 0; i < Z.size(); i++)
     {
         abk.update();
     }
