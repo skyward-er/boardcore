@@ -40,7 +40,7 @@ constexpr float ABK_CRITICAL_ALTITUDE = 2990;
 constexpr float DZ                    = 10;
 constexpr float INITIAL_MASS          = 28;
 constexpr float DM                    = 0.2f;
-constexpr uint16_t N_FORWARD          = 2;
+constexpr uint16_t N_FORWARD          = 1;
 
 static const Boardcore::AirBrakesConfig ABK_CONFIG{
     0.4884,      -1.4391,    6.6940,

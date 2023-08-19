@@ -130,9 +130,9 @@ void AirBrakesInterp::step()
 float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
 {
     // we take the index of the current point of the trajectory and we look
-    // ahead of N points - 1 (conversion from matlab index to C++ index)
-    int index_z = floor((currentPosition.z / configInterp.DZ)) +
-                  configInterp.N_FORWARD - 1;
+    // ahead of N points
+    int index_z =
+        floor((currentPosition.z / configInterp.DZ)) + configInterp.N_FORWARD;
 
     index_z = std::max(index_z, 0);
 
