@@ -28,12 +28,18 @@ namespace Boardcore
 
 struct AirBrakesInterpConfig
 {
-    // Minimum altitude for the algorithm to start acting
-    float MINIMUM_ALTITUDE;
+    // Minimum altitude for the filter to consider
+    float FILTER_MINIMUM_ALTITUDE;
+
+    // Maximum altitude for the filter to consider
+    float FILTER_MAXIMUM_ALTITUDE;
 
     // Normalized value [0-1] that represents the minimum filtering action that
     // the applied filter can do.
     float STARTING_FILTER_VALUE;
+
+    // Altitude after which the output should be the maximum extension
+    float ABK_CRITICAL_ALTITUDE;
 
     // The delta in altitude between consequent trajectory points
     float DZ;
@@ -43,6 +49,9 @@ struct AirBrakesInterpConfig
 
     // The delta in mass between consequent trajectory sets
     float DM;
+
+    // Number of steps to look forward into the reference trajectories
+    uint16_t N_FORWARD;
 };
 
 }  // namespace Boardcore
