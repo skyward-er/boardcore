@@ -92,7 +92,7 @@ using rxen                         = miosix::radio::rxEn;
 // #define SX1278_IS_EBYTE
 
 // Comment to use SX1278_2
-#define SX1278_1
+// #define SX1278_1
 
 #ifdef SX1278_1
 using cs   = miosix::radio1::cs;
@@ -208,11 +208,11 @@ bool initRadio()
 #elif defined SX1278_IS_SKYWARD433
     printf("[sx1278] Confuring Skyward 433 frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-              new Boardcore::Skyward433Frontend());
+        new Boardcore::Skyward433Frontend());
 #else
     printf("[sx1278] Confuring RA01 frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-         new Boardcore::RA01Frontend());
+        new Boardcore::RA01Frontend());
 #endif
 
     // Initialize actual radio driver
@@ -220,6 +220,8 @@ bool initRadio()
     // Run default configuration
     Boardcore::SX1278Lora::Config config;
     Boardcore::SX1278Lora::Error err;
+
+    config.freq_rf = 434000000;
 
     sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
                                        dio1::getPin(), dio3::getPin(),
@@ -239,6 +241,9 @@ bool initRadio()
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
 
+    config.freq_rf    = 434000000;
+    config.enable_crc = false;
+
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
                                             dio1::getPin(), dio3::getPin(),
                                             Boardcore::SPI::ClockDivider::DIV_256,
@@ -247,7 +252,7 @@ bool initRadio()
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
     {
-              // FIXME: Why does clang-format put this line up here?
+        // FIXME: Why does clang-format put this line up here?
         printf("[sx1278] sx1278->init error\n");
         return false;
     }

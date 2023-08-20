@@ -29,7 +29,8 @@
 
 #include <thread>
 
-#include "common.h"
+#include "../fsk/common.h"
+#include "pyxisRocketFlightTm.h"
 
 // Ignore warnings, as we don't want to change third party generated files to
 // fix them
@@ -157,6 +158,7 @@ struct PendingAck
     int seq;
 };
 
+bool launched = false;
 CircularBuffer<PendingAck, 10> pending_acks;
 FastMutex mutex;
 
@@ -168,6 +170,18 @@ void onReceive(Mav* channel, const mavlink_message_t& msg)
     {
         Lock<FastMutex> l(mutex);
         pending_acks.put({msg.msgid, msg.seq});
+    }
+
+    // If command is force launch, trigger the sending of launch telemetry
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_TC)
+    {
+        MavCommandList commandId = static_cast<MavCommandList>(
+            mavlink_msg_command_tc_get_command_id(&msg));
+
+        if (commandId == MAV_CMD_FORCE_LAUNCH)
+        {
+            launched = true;
+        }
     }
 }
 
@@ -183,7 +197,7 @@ void flightTmLoop()
             Lock<FastMutex> l(mutex);
             while (!pending_acks.isEmpty())
             {
-                PendingAck ack = pending_acks.pop();
+                auto ack = pending_acks.pop();
 
                 // Prepare ack message
                 mavlink_message_t msg;
@@ -197,17 +211,30 @@ void flightTmLoop()
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
 
-        tm.timestamp = TimestampTimer::getTimestamp();
-        tm.acc_x     = i;
-        tm.acc_y     = i * 2;
-        tm.acc_z     = i * 3;
+        tm.timestamp  = nasState[i].timestamp;
+        tm.nas_n      = nasState[i].n;
+        tm.nas_e      = nasState[i].e;
+        tm.nas_d      = nasState[i].d;
+        tm.nas_vn     = nasState[i].vn;
+        tm.nas_ve     = nasState[i].ve;
+        tm.nas_vd     = nasState[i].vd;
+        tm.nas_qx     = nasState[i].qx;
+        tm.nas_qy     = nasState[i].qy;
+        tm.nas_qz     = nasState[i].qz;
+        tm.nas_qw     = nasState[i].qw;
+        tm.nas_bias_x = nasState[i].bx;
+        tm.nas_bias_y = nasState[i].by;
+        tm.nas_bias_z = nasState[i].bz;
 
         mavlink_msg_rocket_flight_tm_encode(171, 96, &msg, &tm);
 
         channel->enqueueMsg(msg);
 
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
-        i += 1;
+        if (launched && i < sizeof(nasState) / sizeof(nasState[0]))
+        {
+            i++;
+        }
     }
 }
 
@@ -216,7 +243,7 @@ int main()
     initBoard();
 
     SX1278Fsk::Config config = {
-        .freq_rf    = 460000000,
+        .freq_rf    = 434000000,
         .freq_dev   = 50000,
         .bitrate    = 48000,
         .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
