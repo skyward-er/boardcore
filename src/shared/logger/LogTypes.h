@@ -38,14 +38,20 @@
 #include <scheduler/TaskSchedulerData.h>
 #include <sensors/ADS1118/ADS1118Data.h>
 #include <sensors/ADS131M04/ADS131M04Data.h>
+#include <sensors/ADS131M08/ADS131M08Data.h>
 #include <sensors/BME280/BME280Data.h>
 #include <sensors/BMP280/BMP280Data.h>
 #include <sensors/BMX160/BMX160Data.h>
 #include <sensors/BMX160/BMX160WithCorrectionData.h>
+#include <sensors/H3LIS331DL/H3LIS331DLData.h>
 #include <sensors/HX711/HX711Data.h>
 #include <sensors/L3GD20/L3GD20Data.h>
+#include <sensors/LIS2MDL/LIS2MDLData.h>
 #include <sensors/LIS3DSH/LIS3DSHData.h>
 #include <sensors/LIS3MDL/LIS3MDLData.h>
+#include <sensors/LPS22DF/LPS22DFData.h>
+#include <sensors/LPS28DFW/LPS28DFWData.h>
+#include <sensors/LSM6DSRX/LSM6DSRXData.h>
 #include <sensors/MBLoadCell/MBLoadCellData.h>
 #include <sensors/MPU9250/MPU9250Data.h>
 #include <sensors/MS5803/MS5803Data.h>
@@ -110,6 +116,12 @@ void registerTypes(Deserializer& ds)
     ds.registerType<MS5803Data>();
     ds.registerType<TemperatureData>();
     ds.registerType<UBXGPSData>();
+    ds.registerType<LIS2MDLData>();
+    ds.registerType<H3LIS331DLData>();
+    ds.registerType<LPS22DFData>();
+    ds.registerType<LSM6DSRXData>();
+    ds.registerType<LSM6DSRXData>();
+    ds.registerType<ADS131M08Data>();
     ds.registerType<VN100Data>();
     ds.registerType<AnalogLoadCellData>();
     ds.registerType<BatteryVoltageSensorData>();
