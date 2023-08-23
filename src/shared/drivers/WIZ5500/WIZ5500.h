@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <drivers/spi/SPIDriver.h>
 #include <ActiveObject.h>
+#include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
 namespace Boardcore
@@ -42,7 +42,8 @@ struct WizMac
 class WizCore : public ActiveObject
 {
 public:
-    WizCore(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn, SPI::ClockDivider clock_divider);
+    WizCore(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
+            SPI::ClockDivider clock_divider);
     ~WizCore();
 
     bool start() override;
@@ -54,21 +55,26 @@ public:
     void setSourceMac(WizMac mac);
     void setSourceIp(WizIp ip);
 
-    bool connectTcp(int sock_n, uint16_t source_port, WizIp destination_ip, uint16_t destination_port, int timeout = -1);
-    bool listenTcp(int sock_n, uint16_t source_port, int timeout = -1);
-    bool openUdp(int sock_n, uint16_t source_port, WizIp destination_ip, uint16_t destination_port, int timeout = -1);
-    bool send(int sock_n, const uint8_t *data, size_t len, int timeout = -1);
-    ssize_t recv(int sock_n, uint8_t *data, size_t len, int timeout = -1);
+    bool connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
+                    uint16_t dst_port, int timeout = -1);
+    bool listenTcp(int sock_n, uint16_t src_port, int timeout = -1);
+    bool openUdp(int sock_n, uint16_t src_port, WizIp dst_ip, uint16_t dst_port,
+                 int timeout = -1);
+    bool send(int sock_n, const uint8_t* data, size_t len, int timeout = -1);
+    ssize_t recv(int sock_n, uint8_t* data, size_t len, int timeout = -1);
+    ssize_t recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
+                     uint16_t& dst_port, int timeout = -1);
     void close(int sock_n, int timeout = -1);
 
 private:
     static constexpr int NUM_THREAD_WAIT_INFOS = 16;
-    static constexpr int NUM_SOCKETS = 8;
+    static constexpr int NUM_SOCKETS           = 8;
 
     void run() override;
 
-    void waitForINTn(miosix::Lock<miosix::FastMutex> &l);
-    int waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n, uint8_t irq_mask, int timeout);
+    void waitForINTn(miosix::Lock<miosix::FastMutex>& l);
+    int waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
+                         uint8_t irq_mask, int timeout);
 
     void spiRead(uint8_t block, uint16_t address, uint8_t* data, size_t len);
     void spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
@@ -84,18 +90,23 @@ private:
     void spiWriteIp(uint8_t block, uint16_t address, WizIp data);
     void spiWriteMac(uint8_t block, uint16_t address, WizMac data);
 
-    struct ThreadWaitInfo {
+    struct ThreadWaitInfo
+    {
         int sock_n;
         uint8_t irq_mask;
         uint8_t irq;
-        miosix::Thread *thread;
+        miosix::Thread* thread;
     };
 
-    enum class SocketMode {
-        TCP, UDP, CLOSED
+    enum class SocketMode
+    {
+        TCP,
+        UDP,
+        CLOSED
     };
 
-    struct SocketInfo {
+    struct SocketInfo
+    {
         SocketMode mode;
         int irq_mask;
     };
@@ -123,8 +134,8 @@ inline ostream& operator<<(ostream& os, const Boardcore::WizIp& ip)
 inline ostream& operator<<(ostream& os, const Boardcore::WizMac& mac)
 {
     auto old_flags = os.flags(os.hex);
-    os << (int)mac.a << ":" << (int)mac.b << ":" << (int)mac.c
-       << ":" << (int)mac.d << ":" << (int)mac.e << ":" << (int)mac.f;
+    os << (int)mac.a << ":" << (int)mac.b << ":" << (int)mac.c << ":"
+       << (int)mac.d << ":" << (int)mac.e << ":" << (int)mac.f;
     os.flags(old_flags);
     return os;
 }

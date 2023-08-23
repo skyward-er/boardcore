@@ -85,6 +85,11 @@ bool WizCore::start()
     // Enable all socket interrupts
     spiWrite8(0, Wiz::Common::REG_SIMR, 0xff);
 
+    // Reset all sockets
+    for(int i = 0; i < NUM_SOCKETS; i++) {
+        spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
+    }
+
     if (!ActiveObject::start())
     {
         return false;
@@ -130,8 +135,8 @@ void WizCore::setSourceIp(WizIp ip)
     spiWriteIp(0, Wiz::Common::REG_SIPR, ip);
 }
 
-bool WizCore::connectTcp(int sock_n, uint16_t source_port, WizIp destination_ip,
-                         uint16_t destination_port, int timeout)
+bool WizCore::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
+                         uint16_t dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -145,11 +150,11 @@ bool WizCore::connectTcp(int sock_n, uint16_t source_port, WizIp destination_ip,
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
               Wiz::Socket::buildModeTcp(false));
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT,
-               source_port);
+               src_port);
     spiWriteIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR,
-               destination_ip);
+               dst_ip);
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT,
-               destination_port);
+               dst_port);
 
     // Open the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
@@ -180,7 +185,7 @@ bool WizCore::connectTcp(int sock_n, uint16_t source_port, WizIp destination_ip,
     return true;
 }
 
-bool WizCore::listenTcp(int sock_n, uint16_t source_port, int timeout)
+bool WizCore::listenTcp(int sock_n, uint16_t src_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -194,7 +199,7 @@ bool WizCore::listenTcp(int sock_n, uint16_t source_port, int timeout)
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
               Wiz::Socket::buildModeTcp(false));
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT,
-               source_port);
+               src_port);
 
     // Open the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
@@ -228,8 +233,8 @@ bool WizCore::listenTcp(int sock_n, uint16_t source_port, int timeout)
     return true;
 }
 
-bool WizCore::openUdp(int sock_n, uint16_t source_port, WizIp destination_ip,
-                      uint16_t destination_port, int timeout)
+bool WizCore::openUdp(int sock_n, uint16_t src_port, WizIp dst_ip,
+                      uint16_t dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -243,11 +248,11 @@ bool WizCore::openUdp(int sock_n, uint16_t source_port, WizIp destination_ip,
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
               Wiz::Socket::buildModeUdp(false, false, false, false));
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT,
-               source_port);
+               src_port);
     spiWriteIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR,
-               destination_ip);
+               dst_ip);
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT,
-               destination_port);
+               dst_port);
 
     // Open the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
@@ -303,10 +308,10 @@ ssize_t WizCore::recv(int sock_n, uint8_t *data, size_t len, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
-    // We cannot receive through a closed socket
-    if (socket_infos[sock_n].mode == WizCore::SocketMode::CLOSED)
+    // This is only valid for TCP
+    if (socket_infos[sock_n].mode != WizCore::SocketMode::TCP)
     {
-        return false;
+        return -1;
     }
 
     // Wait for the device to signal that we received something, or a
@@ -321,17 +326,74 @@ ssize_t WizCore::recv(int sock_n, uint8_t *data, size_t len, int timeout)
     // Ok we received something, get the received length
     uint16_t recv_len =
         spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RSR);
-    uint16_t start_addr =
+    uint16_t addr =
         spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD);
 
     // Check if we actually have space
     if (recv_len < len)
     {
-        spiRead(Wiz::getSocketRxBlock(sock_n), start_addr, data, recv_len);
+        spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, recv_len);
     }
 
-    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD,
-               start_addr + recv_len);
+    addr += recv_len;
+    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
+
+    // Finally tell the device that we correctly received and read the data
+    spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
+              Wiz::Socket::CMD_RECV);
+
+    return recv_len < len ? recv_len : -1;
+}
+
+ssize_t WizCore::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp& dst_ip,
+                     uint16_t& dst_port, int timeout)
+{
+    Lock<FastMutex> l(mutex);
+
+    // This is only valid for UDP
+    if (socket_infos[sock_n].mode != WizCore::SocketMode::UDP)
+    {
+        return -1;
+    }
+
+    // Wait for the device to signal that we received something, or a
+    // disconnection
+    int irq = waitForSocketIrq(
+        l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, timeout);
+    if ((irq & Wiz::Socket::Irq::RECV) == 0)
+    {
+        return -1;
+    }
+
+    // Ok we received something, get the received length
+    uint16_t recv_len =
+        spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RSR);
+    uint16_t addr =
+        spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD);
+
+    // First read the internal header
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr, reinterpret_cast<uint8_t*>(&dst_ip), sizeof(WizIp));
+    addr += sizeof(WizIp);
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr, reinterpret_cast<uint8_t*>(&dst_port), sizeof(uint16_t));
+    addr += sizeof(uint16_t);
+
+    // Now, what's this?
+    uint16_t what = 0;
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr, reinterpret_cast<uint8_t*>(&what), sizeof(uint16_t));
+    addr += sizeof(uint16_t);
+
+    // Remove what we have already read.
+    recv_len -= sizeof(WizIp) + sizeof(uint16_t) + sizeof(uint16_t);
+
+    // Check if we actually have space
+    if (recv_len < len)
+    {
+        spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, recv_len);
+    }
+
+    addr += recv_len;
+    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
+
     // Finally tell the device that we correctly received and read the data
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
               Wiz::Socket::CMD_RECV);

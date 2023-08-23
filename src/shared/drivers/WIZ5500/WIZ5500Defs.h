@@ -94,7 +94,7 @@ enum Command
     CMD_SEND      = 0x20,
     CMD_SEND_MAC  = 0x21,
     CMD_SEND_KEEP = 0x22,
-    CMD_RECV      = 0x23
+    CMD_RECV      = 0x40
 };
 
 enum Status

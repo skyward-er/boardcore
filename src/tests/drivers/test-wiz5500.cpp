@@ -20,19 +20,20 @@
  * THE SOFTWARE.
  */
 
-#include <iostream>
-#include <cstring>
-
 #include <drivers/WIZ5500/WIZ5500.h>
 #include <drivers/WIZ5500/WIZ5500Defs.h>
+
+#include <cstring>
+#include <iostream>
+#include <thread>
 
 using namespace Boardcore;
 using namespace miosix;
 
 #if defined _BOARD_STM32F429ZI_STM32F4DISCOVERY
 
-using cs = Gpio<GPIOC_BASE, 13>;
-using sck = Gpio<GPIOE_BASE, 2>;
+using cs   = Gpio<GPIOC_BASE, 13>;
+using sck  = Gpio<GPIOE_BASE, 2>;
 using miso = Gpio<GPIOE_BASE, 5>;
 using mosi = Gpio<GPIOE_BASE, 6>;
 using intn = Gpio<GPIOF_BASE, 6>;
@@ -55,7 +56,8 @@ void __attribute__((used)) INTN_IRQ()
 }
 #endif
 
-void setupBoard() {
+void setupBoard()
+{
     sck::mode(Mode::ALTERNATE);
     sck::alternateFunction(5);
     miso::mode(Mode::ALTERNATE);
@@ -67,15 +69,173 @@ void setupBoard() {
     intn::mode(Mode::INPUT);
 }
 
-int main() {
+void socket0SendLoop()
+{
+    int i = 0;
+    while (true)
+    {
+        char msg[1024];
+        size_t len = sprintf(msg, "Suca palle (DIO0) (0 %d)\n", i);
+
+        printf("[wiz5500] Sending though socket 0...\n");
+        wiz->send(0, reinterpret_cast<uint8_t *>(msg), len);
+        Thread::sleep(2000);
+        i += 1;
+    }
+}
+
+void socket0RecvLoop()
+{
+    while (true)
+    {
+        char msg[1024];
+        ssize_t len =
+            wiz->recv(0, reinterpret_cast<uint8_t *>(msg), sizeof(msg));
+
+        if (len != -1)
+        {
+            msg[len] = '\0';
+            printf("[wiz5500] Received \"%s\" from socket 0\n", msg);
+        }
+        else
+        {
+            Thread::sleep(1000);
+        }
+    }
+}
+
+void socket0Start()
+{
+    printf("[wiz5500] Opening socket 0...\n");
+    bool opened = wiz->listenTcp(0, 8080);
+    if (opened)
+    {
+        std::thread t(socket0SendLoop);
+        socket0RecvLoop();
+    }
+    else
+    {
+        printf("[wiz5500] Failed to open socket 0!\n");
+    }
+}
+
+void socket1SendLoop()
+{
+    int i = 0;
+    while (true)
+    {
+        char msg[1024];
+        size_t len = sprintf(msg, "Suca palle (DIO0) (1 %d)\n", i);
+
+        printf("[wiz5500] Sending though socket 1...\n");
+        wiz->send(1, reinterpret_cast<uint8_t *>(msg), len);
+        Thread::sleep(1333);
+        i += 1;
+    }
+}
+
+void socket1RecvLoop()
+{
+    while (true)
+    {
+        char msg[1024];
+        ssize_t len =
+            wiz->recv(1, reinterpret_cast<uint8_t *>(msg), sizeof(msg));
+
+        if (len != -1)
+        {
+            msg[len] = '\0';
+            printf("[wiz5500] Received \"%s\" from socket 1\n", msg);
+        }
+        else
+        {
+            Thread::sleep(1000);
+        }
+    }
+}
+
+void socket1Start()
+{
+    printf("[wiz5500] Opening socket 1...\n");
+    bool opened = wiz->connectTcp(1, 8081, {192, 168, 1, 12}, 8080);
+    if (opened)
+    {
+        std::thread t(socket1SendLoop);
+        socket1RecvLoop();
+    }
+    else
+    {
+        printf("[wiz5500] Failed to open socket 1!\n");
+    }
+}
+
+void socket2SendLoop()
+{
+    int i = 0;
+    while (true)
+    {
+        char msg[1024];
+        size_t len = sprintf(msg, "Suca palle (DIO0) (2 %d)\n", i);
+
+        printf("[wiz5500] Sending though socket 2...\n");
+        wiz->send(2, reinterpret_cast<uint8_t *>(msg), len);
+        Thread::sleep(1666);
+        i += 1;
+    }
+}
+
+void socket2RecvLoop()
+{
+    while (true)
+    {
+        char msg[1024];
+        WizIp dst_ip;
+        uint16_t dst_port;
+        ssize_t len = wiz->recvfrom(2, reinterpret_cast<uint8_t *>(msg),
+                                    sizeof(msg), dst_ip, dst_port);
+
+        std::cout << dst_ip << " " << dst_port << std::endl;
+
+        if (len != -1)
+        {
+            msg[len] = '\0';
+            printf("[wiz5500] Received \"%s\" from socket 2\n", msg);
+        }
+        else
+        {
+            Thread::sleep(1000);
+        }
+    }
+}
+
+void socket2Start()
+{
+    printf("[wiz5500] Opening socket 2...\n");
+    bool opened = wiz->openUdp(2, 8081, {192, 168, 1, 12}, 8080);
+    if (opened)
+    {
+        std::thread t(socket2SendLoop);
+        socket2RecvLoop();
+    }
+    else
+    {
+        printf("[wiz5500] Failed to open socket 2!\n");
+    }
+}
+
+int main()
+{
     setupBoard();
 
-    wiz = new WizCore(bus, cs::getPin(), intn::getPin(), SPI::ClockDivider::DIV_64);
+    wiz = new WizCore(bus, cs::getPin(), intn::getPin(),
+                      SPI::ClockDivider::DIV_64);
 
     // Start the driver
-    if(!wiz->start()) {
+    if (!wiz->start())
+    {
         printf("[wiz5500] Wiz failed to start!\n");
-        while(1);
+        while (1)
+            ;
     }
 
     wiz->setGatewayIp({192, 168, 1, 1});
@@ -83,33 +243,11 @@ int main() {
     wiz->setSourceMac({0x00, 0x08, 0xdc, 0x01, 0x02, 0x03});
     wiz->setSourceIp({192, 168, 1, 69});
 
-    printf("[wiz5500] Connecting...\n");
-    bool opened = wiz->listenTcp(0, 8080);
+    std::thread t1(socket0Start);
+    std::thread t2(socket1Start);
+    socket2Start();
 
-    if(opened) {
-        printf("[wiz5500] Sending data...\n");
-        // Now send tha famous words
-        const char *out_msg = "Suca palle (DIO0)\n";
-        wiz->send(0, reinterpret_cast<const uint8_t*>(out_msg), strlen(out_msg));
-
-        // Try to read something back
-        char in_msg[1024];
-        ssize_t len = wiz->recv(0, reinterpret_cast<uint8_t*>(in_msg), sizeof(in_msg));
-
-        if(len != -1) {
-            in_msg[len] = '\0';
-            printf("[wiz5500] Received: %s\n", in_msg);
-        } else {
-            printf("[wiz5500] Failed to receive\n");
-        }
-
-        Thread::sleep(1000);
-        printf("[wiz5500] Closing...\n");
-        wiz->close(0);   
-    } else {
-        printf("[wiz5500] Failed to send data!\n");
-    }
-
-    while(1);
+    while (1)
+        ;
     return 0;
 }
