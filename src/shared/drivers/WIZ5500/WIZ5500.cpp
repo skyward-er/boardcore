@@ -74,8 +74,20 @@ uint8_t WizCore::spiRead8(uint8_t block, uint16_t address) {
 
 uint16_t WizCore::spiRead16(uint8_t block, uint16_t address) {
     uint16_t data;
-    spiRead(block, address, reinterpret_cast<uint8_t*>(&data), 2);
+    spiRead(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(uint16_t));
     return fromBigEndian16(data);
+}
+
+WizIp WizCore::spiReadIp(uint8_t block, uint16_t address) {
+    WizIp data;
+    spiRead(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizIp));
+    return data;
+}
+
+WizMac WizCore::spiReadMac(uint8_t block, uint16_t address) {
+    WizMac data;
+    spiRead(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizMac));
+    return data;
 }
 
 void WizCore::spiWrite8(uint8_t block, uint16_t address, uint8_t data) {
@@ -84,5 +96,13 @@ void WizCore::spiWrite8(uint8_t block, uint16_t address, uint8_t data) {
 
 void WizCore::spiWrite16(uint8_t block, uint16_t address, uint16_t data) {
     data = toBigEndian16(data);
-    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data), 2);
+    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(uint16_t));
+}
+
+void WizCore::spiWriteIp(uint8_t block, uint16_t address, WizIp data) {
+    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizIp));
+}
+
+void WizCore::spiWriteMac(uint8_t block, uint16_t address, WizMac data) {
+    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizMac));
 }

@@ -20,7 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include <iostream>
+#include <cstring>
+
 #include <drivers/WIZ5500/WIZ5500.h>
+#include <drivers/WIZ5500/WIZ5500Defs.h>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -51,16 +55,65 @@ void setupBoard() {
 
 int main() {
     setupBoard();
-    
+
     WizCore wiz = WizCore(bus, cs::getPin(), SPI::ClockDivider::DIV_64);
-
-
-    uint8_t version = wiz.spiRead8(0x00, 0x0039);
+    uint8_t version = wiz.spiRead8(0x00, Wiz::Common::REG_VERSIONR);
     printf("Version: %d\n", version);
 
-    uint16_t rtr = wiz.spiRead16(0x00, 0x0019);
+    // Quickly reset the device
+    wiz.spiWrite8(0, Wiz::Common::REG_MR, 0x00 | 1 << 7);
+    Thread::sleep(100);
+
+    uint16_t rtr = wiz.spiRead16(0x00, Wiz::Common::REG_RTR);
     printf("RTR: %x\n", rtr);
 
-    while(1);
+    std::cout << "Mac: " << wiz.spiReadMac(0, Wiz::Common::REG_GAR) << std::endl;
+
+    wiz.spiWrite8(0, Wiz::Common::REG_MR, 0x00);
+    wiz.spiWriteIp(0, Wiz::Common::REG_GAR, {192, 168, 1, 1});
+    wiz.spiWriteIp(0, Wiz::Common::REG_SUBR, {255, 255, 225, 0});
+    wiz.spiWriteMac(0, Wiz::Common::REG_SHAR, {0x00, 0x08, 0xdc, 0x01, 0x02, 0x03});
+    wiz.spiWriteIp(0, Wiz::Common::REG_SIPR, {192, 168, 1, 69});
+
+    std::cout << "Gateway: " << wiz.spiReadIp(0, Wiz::Common::REG_GAR) << std::endl;
+    std::cout << "Subnet: " << wiz.spiReadIp(0, Wiz::Common::REG_SUBR) << std::endl;
+    std::cout << "Mac: " << wiz.spiReadMac(0, Wiz::Common::REG_SHAR) << std::endl;
+    std::cout << "Ip: " << wiz.spiReadIp(0, Wiz::Common::REG_SIPR) << std::endl;
+
+    wiz.spiWrite8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_MR, 0b0001);
+
+    std::cout << "Status: " << (int)wiz.spiRead8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_SR) << std::endl;
+
+    wiz.spiWrite16(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_PORT, 13456);
+    wiz.spiWriteIp(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_DIPR, {192, 168, 1, 12});
+    wiz.spiWrite16(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_DPORT, 8080);
+
+    // First open the socket
+    wiz.spiWrite8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_CR, Wiz::Socket::CMD_OPEN);
+    Thread::sleep(200);
+    std::cout << "Status: " << (int)wiz.spiRead8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_SR) << std::endl;
+    wiz.spiWrite8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_CR, Wiz::Socket::CMD_CONNECT);
+    Thread::sleep(200);
+    std::cout << "Status: " << (int)wiz.spiRead8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_SR) << std::endl;
+    
+    // Now send tha famous words
+    uint16_t start_addr = wiz.spiRead16(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_TX_WR);
+    std::cout << "TX_WR: " << wiz.spiRead16(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_TX_WR) << std::endl;
+
+    const char *msg = "Suca palle (DIO0)";
+    wiz.spiWrite(Wiz::getSocketTxBlock(0), start_addr, reinterpret_cast<const uint8_t*>(msg), strlen(msg));
+
+    wiz.spiWrite16(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_TX_WR, start_addr + strlen(msg));
+    std::cout << "TX_WR: " << wiz.spiRead16(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_TX_WR) << std::endl;
+
+    // Ok now tell the device to send the data
+    wiz.spiWrite8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_CR, Wiz::Socket::CMD_SEND);
+    Thread::sleep(200);
+    std::cout << "Status: " << (int)wiz.spiRead8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_SR) << std::endl;
+
+    wiz.spiWrite8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_CR, Wiz::Socket::CMD_DISCON);
+    Thread::sleep(200);
+    std::cout << "Status: " << (int)wiz.spiRead8(Wiz::getSocketRegBlock(0), Wiz::Socket::REG_SR) << std::endl;
+
     return 0;
 }
