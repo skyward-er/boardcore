@@ -30,6 +30,10 @@ namespace Wiz {
 
 static constexpr uint8_t VERSION = 0x04;
 
+inline uint8_t buildControlWord(uint8_t block, bool write) {
+    return (block & 0b11111) << 3 | (write ? 1 << 2 : 0);
+}
+
 inline uint8_t getSocketRegBlock(int n) {
     return (n << 2) | 0b01;
 }

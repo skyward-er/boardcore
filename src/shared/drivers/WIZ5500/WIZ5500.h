@@ -43,6 +43,19 @@ class WizCore
 public:
     WizCore(SPIBus& bus, miosix::GpioPin cs, SPI::ClockDivider clock_divider);
 
+    bool checkVersion();
+    void softReset();
+
+    void setGatewayIp(WizIp ip);
+    void setSubnetMask(WizIp mask);
+    void setSourceMac(WizMac mac);
+    void setSourceIp(WizIp ip);
+
+    bool connectTcp(int sock_n, uint16_t source_port, WizIp destination_ip, uint16_t destination_port, int timeout = -1);
+    void send(int sock_n, const uint8_t *data, size_t len, int timeout = -1);
+    void close(int sock_n, int timeout = -1);
+
+private:
     void spiRead(uint8_t block, uint16_t address, uint8_t* data, size_t len);
     void spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
                   size_t len);
@@ -57,7 +70,6 @@ public:
     void spiWriteIp(uint8_t block, uint16_t address, WizIp data);
     void spiWriteMac(uint8_t block, uint16_t address, WizMac data);
 
-private:
     SPISlave slave;
 };
 
