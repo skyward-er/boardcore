@@ -35,11 +35,24 @@ using cs = Gpio<GPIOC_BASE, 13>;
 using sck = Gpio<GPIOE_BASE, 2>;
 using miso = Gpio<GPIOE_BASE, 5>;
 using mosi = Gpio<GPIOE_BASE, 6>;
+using intn = Gpio<GPIOF_BASE, 6>;
 
 SPIBus bus(SPI4);
 
+#define INTN_IRQ EXTI6_IRQHandlerImpl
+
 #else
 #error "Target not supported"
+#endif
+
+WizCore *wiz = nullptr;
+
+#ifdef INTN_IRQ
+void __attribute__((used)) INTN_IRQ()
+{
+    if (wiz)
+        wiz->handleINTn();
+}
 #endif
 
 void setupBoard() {
@@ -51,36 +64,51 @@ void setupBoard() {
     mosi::alternateFunction(5);
     cs::mode(Mode::OUTPUT);
     cs::high();
+    intn::mode(Mode::INPUT);
 }
 
 int main() {
     setupBoard();
 
-    WizCore wiz = WizCore(bus, cs::getPin(), SPI::ClockDivider::DIV_64);
-    if(!wiz.checkVersion()) {
-        printf("[wiz5500] Version check failed!\n");
+    wiz = new WizCore(bus, cs::getPin(), intn::getPin(), SPI::ClockDivider::DIV_64);
+
+    // Start the driver
+    if(!wiz->start()) {
+        printf("[wiz5500] Wiz failed to start!\n");
         while(1);
     }
 
-    // Do a quick software reset
-    wiz.softReset();
-
-    wiz.setGatewayIp({192, 168, 1, 1});
-    wiz.setSubnetMask({255, 255, 225, 0});
-    wiz.setSourceMac({0x00, 0x08, 0xdc, 0x01, 0x02, 0x03});
-    wiz.setSourceIp({192, 168, 1, 69});
+    wiz->setGatewayIp({192, 168, 1, 1});
+    wiz->setSubnetMask({255, 255, 225, 0});
+    wiz->setSourceMac({0x00, 0x08, 0xdc, 0x01, 0x02, 0x03});
+    wiz->setSourceIp({192, 168, 1, 69});
 
     printf("[wiz5500] Connecting...\n");
-    wiz.connectTcp(0, 13456, {192, 168, 1, 12}, 8080);
+    bool opened = wiz->listenTcp(0, 8080);
 
-    printf("[wiz5500] Sending data...\n");
-    // Now send tha famous words
-    const char *msg = "Suca palle (DIO0)";
-    wiz.send(0, reinterpret_cast<const uint8_t*>(msg), strlen(msg));
+    if(opened) {
+        printf("[wiz5500] Sending data...\n");
+        // Now send tha famous words
+        const char *out_msg = "Suca palle (DIO0)\n";
+        wiz->send(0, reinterpret_cast<const uint8_t*>(out_msg), strlen(out_msg));
 
-    Thread::sleep(1000);
-    printf("[wiz5500] Closing...\n");
-    wiz.close(0);
+        // Try to read something back
+        char in_msg[1024];
+        ssize_t len = wiz->recv(0, reinterpret_cast<uint8_t*>(in_msg), sizeof(in_msg));
+
+        if(len != -1) {
+            in_msg[len] = '\0';
+            printf("[wiz5500] Received: %s\n", in_msg);
+        } else {
+            printf("[wiz5500] Failed to receive\n");
+        }
+
+        Thread::sleep(1000);
+        printf("[wiz5500] Closing...\n");
+        wiz->close(0);   
+    } else {
+        printf("[wiz5500] Failed to send data!\n");
+    }
 
     while(1);
     return 0;

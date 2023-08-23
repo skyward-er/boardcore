@@ -24,6 +24,7 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <ActiveObject.h>
+#include <miosix.h>
 
 namespace Boardcore
 {
@@ -38,13 +39,15 @@ struct WizMac
     uint8_t a, b, c, d, e, f;
 };
 
-class WizCore
+class WizCore : public ActiveObject
 {
 public:
-    WizCore(SPIBus& bus, miosix::GpioPin cs, SPI::ClockDivider clock_divider);
+    WizCore(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn, SPI::ClockDivider clock_divider);
+    ~WizCore();
 
-    bool checkVersion();
-    void softReset();
+    bool start() override;
+
+    void handleINTn();
 
     void setGatewayIp(WizIp ip);
     void setSubnetMask(WizIp mask);
@@ -52,10 +55,21 @@ public:
     void setSourceIp(WizIp ip);
 
     bool connectTcp(int sock_n, uint16_t source_port, WizIp destination_ip, uint16_t destination_port, int timeout = -1);
-    void send(int sock_n, const uint8_t *data, size_t len, int timeout = -1);
+    bool listenTcp(int sock_n, uint16_t source_port, int timeout = -1);
+    bool openUdp(int sock_n, uint16_t source_port, WizIp destination_ip, uint16_t destination_port, int timeout = -1);
+    bool send(int sock_n, const uint8_t *data, size_t len, int timeout = -1);
+    ssize_t recv(int sock_n, uint8_t *data, size_t len, int timeout = -1);
     void close(int sock_n, int timeout = -1);
 
 private:
+    static constexpr int NUM_THREAD_WAIT_INFOS = 16;
+    static constexpr int NUM_SOCKETS = 8;
+
+    void run() override;
+
+    void waitForINTn(miosix::Lock<miosix::FastMutex> &l);
+    int waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n, uint8_t irq_mask, int timeout);
+
     void spiRead(uint8_t block, uint16_t address, uint8_t* data, size_t len);
     void spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
                   size_t len);
@@ -70,6 +84,27 @@ private:
     void spiWriteIp(uint8_t block, uint16_t address, WizIp data);
     void spiWriteMac(uint8_t block, uint16_t address, WizMac data);
 
+    struct ThreadWaitInfo {
+        int sock_n;
+        uint8_t irq_mask;
+        uint8_t irq;
+        miosix::Thread *thread;
+    };
+
+    enum class SocketMode {
+        TCP, UDP, CLOSED
+    };
+
+    struct SocketInfo {
+        SocketMode mode;
+        int irq_mask;
+    };
+
+    SocketInfo socket_infos[NUM_SOCKETS];
+    ThreadWaitInfo wait_infos[NUM_THREAD_WAIT_INFOS];
+
+    miosix::GpioPin intn;
+    miosix::FastMutex mutex;
     SPISlave slave;
 };
 
