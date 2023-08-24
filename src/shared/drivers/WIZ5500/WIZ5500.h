@@ -83,7 +83,8 @@ private:
     uint8_t spiRead8(uint8_t block, uint16_t address);
     uint16_t spiRead16(uint8_t block, uint16_t address);
     WizIp spiReadIp(uint8_t block, uint16_t address);
-    WizMac spiReadMac(uint8_t block, uint16_t address);
+    // Avoid stupid linter error
+    // WizMac spiReadMac(uint8_t block, uint16_t address);
 
     void spiWrite8(uint8_t block, uint16_t address, uint8_t data);
     void spiWrite16(uint8_t block, uint16_t address, uint16_t data);

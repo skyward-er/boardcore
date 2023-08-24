@@ -629,12 +629,12 @@ WizIp Wiz5500::spiReadIp(uint8_t block, uint16_t address)
     return data;
 }
 
-WizMac Wiz5500::spiReadMac(uint8_t block, uint16_t address)
+/*WizMac Wiz5500::spiReadMac(uint8_t block, uint16_t address)
 {
     WizMac data;
     spiRead(block, address, reinterpret_cast<uint8_t *>(&data), sizeof(WizMac));
     return data;
-}
+}*/
 
 void Wiz5500::spiWrite8(uint8_t block, uint16_t address, uint8_t data)
 {
