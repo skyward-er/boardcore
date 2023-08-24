@@ -42,6 +42,34 @@ SPIBus bus(SPI4);
 
 #define INTN_IRQ EXTI6_IRQHandlerImpl
 
+void setupBoard()
+{
+    sck::mode(Mode::ALTERNATE);
+    sck::alternateFunction(5);
+    miso::mode(Mode::ALTERNATE);
+    miso::alternateFunction(5);
+    mosi::mode(Mode::ALTERNATE);
+    mosi::alternateFunction(5);
+    cs::mode(Mode::OUTPUT);
+    cs::high();
+    intn::mode(Mode::INPUT);
+}
+
+#elif defined _BOARD_STM32F767ZI_GEMINI_GS
+#include "interfaces-impl/hwmapping.h"
+
+using cs   = ethernet::cs;
+using sck  = ethernet::spi::sck;
+using miso = ethernet::spi::miso;
+using mosi = ethernet::spi::mosi;
+using intn = ethernet::intr;
+
+SPIBus bus(MIOSIX_ETHERNET_SPI);
+
+#define INTN_IRQ MIOSIX_ETHERNET_IRQ
+
+void setupBoard() {}
+
 #else
 #error "Target not supported"
 #endif
@@ -55,19 +83,6 @@ void __attribute__((used)) INTN_IRQ()
         wiz->handleINTn();
 }
 #endif
-
-void setupBoard()
-{
-    sck::mode(Mode::ALTERNATE);
-    sck::alternateFunction(5);
-    miso::mode(Mode::ALTERNATE);
-    miso::alternateFunction(5);
-    mosi::mode(Mode::ALTERNATE);
-    mosi::alternateFunction(5);
-    cs::mode(Mode::OUTPUT);
-    cs::high();
-    intn::mode(Mode::INPUT);
-}
 
 void socket0SendLoop()
 {
@@ -106,8 +121,12 @@ void socket0RecvLoop()
 
 void socket0Start()
 {
+    WizIp dst_ip;
+    uint16_t dst_port;
+
     printf("[wiz5500] Opening socket 0...\n");
-    bool opened = wiz->listenTcp(0, 8080);
+    bool opened = wiz->listenTcp(0, 8080, dst_ip, dst_port);
+    std::cout << dst_ip << " " << dst_port << std::endl;
     if (opened)
     {
         std::thread t(socket0SendLoop);

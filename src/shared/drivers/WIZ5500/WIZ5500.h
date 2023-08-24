@@ -57,7 +57,7 @@ public:
 
     bool connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
                     uint16_t dst_port, int timeout = -1);
-    bool listenTcp(int sock_n, uint16_t src_port, int timeout = -1);
+    bool listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip, uint16_t &dst_port, int timeout = -1);
     bool openUdp(int sock_n, uint16_t src_port, WizIp dst_ip, uint16_t dst_port,
                  int timeout = -1);
     bool send(int sock_n, const uint8_t* data, size_t len, int timeout = -1);

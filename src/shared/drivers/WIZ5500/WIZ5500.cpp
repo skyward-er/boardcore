@@ -85,7 +85,7 @@ bool WizCore::start()
     // Enable all socket interrupts
     spiWrite8(0, Wiz::Common::REG_SIMR, 0xff);
 
-    // Reset all sockets
+    // Reset all socketsOSI
     for(int i = 0; i < NUM_SOCKETS; i++) {
         spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
     }
@@ -185,7 +185,7 @@ bool WizCore::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
     return true;
 }
 
-bool WizCore::listenTcp(int sock_n, uint16_t src_port, int timeout)
+bool WizCore::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip, uint16_t &dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -228,6 +228,10 @@ bool WizCore::listenTcp(int sock_n, uint16_t src_port, int timeout)
     {
         return false;
     }
+
+    // Read remote side infos
+    dst_ip = spiReadIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR);
+    dst_port = spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT);
 
     socket_infos[sock_n].mode = WizCore::SocketMode::TCP;
     return true;
