@@ -250,7 +250,7 @@ int main()
                       SPI::ClockDivider::DIV_64);
 
     // Start the driver
-    if (!wiz->start())
+    if (!wiz->reset())
     {
         printf("[wiz5500] Wiz failed to start!\n");
         while (1)

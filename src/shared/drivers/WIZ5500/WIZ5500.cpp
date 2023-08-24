@@ -70,7 +70,7 @@ Wiz5500::Wiz5500(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin intn,
 
 Wiz5500::~Wiz5500() { disableExternalInterrupt(intn); }
 
-bool Wiz5500::start()
+bool Wiz5500::reset()
 {
     Lock<FastMutex> l(mutex);
 
@@ -90,12 +90,7 @@ bool Wiz5500::start()
     {
         spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
     }
-
-    // if (!ActiveObject::start())
-    // {
-    //     return false;
-    // }
-
+    
     return true;
 }
 
