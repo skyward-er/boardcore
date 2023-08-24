@@ -39,14 +39,14 @@ struct WizMac
     uint8_t a, b, c, d, e, f;
 };
 
-class WizCore : public ActiveObject
+class WizCore
 {
 public:
     WizCore(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
             SPI::ClockDivider clock_divider);
     ~WizCore();
 
-    bool start() override;
+    bool start();
 
     void handleINTn();
 
@@ -70,11 +70,11 @@ private:
     static constexpr int NUM_THREAD_WAIT_INFOS = 16;
     static constexpr int NUM_SOCKETS           = 8;
 
-    void run() override;
-
     void waitForINTn(miosix::Lock<miosix::FastMutex>& l);
     int waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
                          uint8_t irq_mask, int timeout);
+
+    void runInterruptServiceRoutine(miosix::Lock<miosix::FastMutex>& l);
 
     void spiRead(uint8_t block, uint16_t address, uint8_t* data, size_t len);
     void spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
@@ -89,6 +89,8 @@ private:
     void spiWrite16(uint8_t block, uint16_t address, uint16_t data);
     void spiWriteIp(uint8_t block, uint16_t address, WizIp data);
     void spiWriteMac(uint8_t block, uint16_t address, WizMac data);
+
+    miosix::Thread *interrupt_service_thread = nullptr;
 
     struct ThreadWaitInfo
     {

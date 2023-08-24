@@ -47,7 +47,7 @@ SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
 
 WizCore::WizCore(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin intn,
                  SPI::ClockDivider clock_divider)
-    : ActiveObject(), intn(intn), slave(bus, cs, getSpiBusConfig(clock_divider))
+    : intn(intn), slave(bus, cs, getSpiBusConfig(clock_divider))
 {
     enableExternalInterrupt(intn, InterruptTrigger::FALLING_EDGE);
 
@@ -86,24 +86,25 @@ bool WizCore::start()
     spiWrite8(0, Wiz::Common::REG_SIMR, 0xff);
 
     // Reset all socketsOSI
-    for(int i = 0; i < NUM_SOCKETS; i++) {
+    for (int i = 0; i < NUM_SOCKETS; i++)
+    {
         spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
     }
 
-    if (!ActiveObject::start())
-    {
-        return false;
-    }
+    // if (!ActiveObject::start())
+    // {
+    //     return false;
+    // }
 
     return true;
 }
 
 void WizCore::handleINTn()
 {
-    if (thread)
+    if (interrupt_service_thread)
     {
-        thread->IRQwakeup();
-        if (thread->IRQgetPriority() >
+        interrupt_service_thread->IRQwakeup();
+        if (interrupt_service_thread->IRQgetPriority() >
             miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
         {
             miosix::Scheduler::IRQfindNextThread();
@@ -149,10 +150,8 @@ bool WizCore::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
     // Setup the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
               Wiz::Socket::buildModeTcp(false));
-    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT,
-               src_port);
-    spiWriteIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR,
-               dst_ip);
+    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT, src_port);
+    spiWriteIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR, dst_ip);
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT,
                dst_port);
 
@@ -185,7 +184,8 @@ bool WizCore::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
     return true;
 }
 
-bool WizCore::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip, uint16_t &dst_port, int timeout)
+bool WizCore::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip,
+                        uint16_t &dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -198,8 +198,7 @@ bool WizCore::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip, uint16_t &
     // Setup the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
               Wiz::Socket::buildModeTcp(false));
-    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT,
-               src_port);
+    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT, src_port);
 
     // Open the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
@@ -231,7 +230,8 @@ bool WizCore::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip, uint16_t &
 
     // Read remote side infos
     dst_ip = spiReadIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR);
-    dst_port = spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT);
+    dst_port =
+        spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT);
 
     socket_infos[sock_n].mode = WizCore::SocketMode::TCP;
     return true;
@@ -251,10 +251,8 @@ bool WizCore::openUdp(int sock_n, uint16_t src_port, WizIp dst_ip,
     // Setup the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
               Wiz::Socket::buildModeUdp(false, false, false, false));
-    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT,
-               src_port);
-    spiWriteIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR,
-               dst_ip);
+    spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_PORT, src_port);
+    spiWriteIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR, dst_ip);
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DPORT,
                dst_port);
 
@@ -349,8 +347,8 @@ ssize_t WizCore::recv(int sock_n, uint8_t *data, size_t len, int timeout)
     return recv_len < len ? recv_len : -1;
 }
 
-ssize_t WizCore::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp& dst_ip,
-                     uint16_t& dst_port, int timeout)
+ssize_t WizCore::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp &dst_ip,
+                          uint16_t &dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -376,14 +374,17 @@ ssize_t WizCore::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp& dst_ip,
         spiRead16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD);
 
     // First read the internal header
-    spiRead(Wiz::getSocketRxBlock(sock_n), addr, reinterpret_cast<uint8_t*>(&dst_ip), sizeof(WizIp));
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr,
+            reinterpret_cast<uint8_t *>(&dst_ip), sizeof(WizIp));
     addr += sizeof(WizIp);
-    spiRead(Wiz::getSocketRxBlock(sock_n), addr, reinterpret_cast<uint8_t*>(&dst_port), sizeof(uint16_t));
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr,
+            reinterpret_cast<uint8_t *>(&dst_port), sizeof(uint16_t));
     addr += sizeof(uint16_t);
 
     // Now, what's this?
     uint16_t what = 0;
-    spiRead(Wiz::getSocketRxBlock(sock_n), addr, reinterpret_cast<uint8_t*>(&what), sizeof(uint16_t));
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr,
+            reinterpret_cast<uint8_t *>(&what), sizeof(uint16_t));
     addr += sizeof(uint16_t);
 
     // Remove what we have already read.
@@ -422,54 +423,6 @@ void WizCore::close(int sock_n, int timeout)
     socket_infos[sock_n].mode = WizCore::SocketMode::CLOSED;
 }
 
-void WizCore::run()
-{
-    while (!shouldStop())
-    {
-        Lock<FastMutex> l(mutex);
-
-        // First wait for an interrupt
-        waitForINTn(l);
-
-        // Ok something happened!
-
-        // First check for general interrupts
-        uint8_t ir = spiRead8(0, Wiz::Common::REG_IR);
-        spiWrite8(0, Wiz::Common::REG_IR, ir);
-
-        uint8_t sn_ir[NUM_SOCKETS] = {0};
-
-        // Then check for interrupt on all the sockets
-        uint8_t sir = spiRead8(0, Wiz::Common::REG_SIR);
-        for (int i = 0; i < NUM_SOCKETS; i++)
-        {
-            if (sir & (1 << i))
-            {
-                sn_ir[i] =
-                    spiRead8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_IR);
-                spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_IR,
-                          sn_ir[i]);
-            }
-        }
-
-        // Ok now wake up all threads in sleep
-        for (int i = 0; i < NUM_THREAD_WAIT_INFOS; i++)
-        {
-            if (wait_infos[i].sock_n != -1)
-            {
-                int sock_n = wait_infos[i].sock_n;
-                int irq    = sn_ir[sock_n] & wait_infos[i].irq_mask;
-
-                if (irq != 0)
-                {
-                    wait_infos[i].irq = irq;
-                    wait_infos[i].thread->wakeup();
-                }
-            }
-        }
-    }
-}
-
 void WizCore::waitForINTn(Lock<FastMutex> &l)
 {
     long long start        = getTick();
@@ -497,6 +450,8 @@ int WizCore::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_IMR,
               socket_infos[sock_n].irq_mask);
 
+    Thread *this_thread = Thread::getCurrentThread();
+
     // Find a free slot in the data structure
     int i = 0;
     while (i < NUM_THREAD_WAIT_INFOS)
@@ -506,7 +461,7 @@ int WizCore::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
             wait_infos[i].sock_n   = sock_n;
             wait_infos[i].irq_mask = irq_mask;
             wait_infos[i].irq      = 0;
-            wait_infos[i].thread   = Thread::getCurrentThread();
+            wait_infos[i].thread   = this_thread;
             break;
         }
 
@@ -522,10 +477,14 @@ int WizCore::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
     long long start        = getTick();
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
+    if (interrupt_service_thread != nullptr)
     {
+        // There is already someone managing interrupts for us, just wait
+
         Unlock<FastMutex> ul(l);
         FastInterruptDisableLock il;
-        while (wait_infos[i].irq == 0 && result == TimedWaitResult::NoTimeout)
+        while (wait_infos[i].irq == 0 && result == TimedWaitResult::NoTimeout &&
+               interrupt_service_thread != this_thread)
         {
             if (timeout != -1)
             {
@@ -535,6 +494,37 @@ int WizCore::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
             else
             {
                 Thread::IRQenableIrqAndWait(il);
+            }
+        }
+    }
+    else
+    {
+        // Nobody is managing interrupts, we are doing it ourself
+        FastInterruptDisableLock il;
+        interrupt_service_thread = this_thread;
+    }
+
+    while (interrupt_service_thread == this_thread)
+    {
+        // Run a single step of the ISR
+        runInterruptServiceRoutine(l);
+
+        // Check if we woke up ourself, then we need to elect a new interrupt
+        // service thread
+        if (wait_infos[i].irq != 0)
+        {
+            for (int j = 0; j < NUM_THREAD_WAIT_INFOS; j++)
+            {
+                if (wait_infos[j].irq == 0)
+                {
+                    {
+                        FastInterruptDisableLock il;
+                        interrupt_service_thread = wait_infos[j].thread;
+                    }
+
+                    wait_infos[j].thread->wakeup();
+                    break;
+                }
             }
         }
     }
@@ -548,6 +538,47 @@ int WizCore::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
               socket_infos[sock_n].irq_mask);
 
     return wait_infos[i].irq;
+}
+
+void WizCore::runInterruptServiceRoutine(Lock<FastMutex> &l)
+{
+    // Other threads might wake us up in order to
+    waitForINTn(l);
+
+    // Ok something happened!
+
+    // First check for general interrupts
+    uint8_t ir = spiRead8(0, Wiz::Common::REG_IR);
+    spiWrite8(0, Wiz::Common::REG_IR, ir);
+
+    uint8_t sn_ir[NUM_SOCKETS] = {0};
+
+    // Then check for interrupt on all the sockets
+    uint8_t sir = spiRead8(0, Wiz::Common::REG_SIR);
+    for (int i = 0; i < NUM_SOCKETS; i++)
+    {
+        if (sir & (1 << i))
+        {
+            sn_ir[i] = spiRead8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_IR);
+            spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_IR, sn_ir[i]);
+        }
+    }
+
+    // Ok now wake up all threads in sleep
+    for (int i = 0; i < NUM_THREAD_WAIT_INFOS; i++)
+    {
+        if (wait_infos[i].sock_n != -1)
+        {
+            int sock_n = wait_infos[i].sock_n;
+            int irq    = sn_ir[sock_n] & wait_infos[i].irq_mask;
+
+            if (irq != 0)
+            {
+                wait_infos[i].irq = irq;
+                wait_infos[i].thread->wakeup();
+            }
+        }
+    }
 }
 
 void WizCore::spiRead(uint8_t block, uint16_t address, uint8_t *data,
