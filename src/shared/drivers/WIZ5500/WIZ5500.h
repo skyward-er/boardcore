@@ -39,12 +39,12 @@ struct WizMac
     uint8_t a, b, c, d, e, f;
 };
 
-class WizCore
+class Wiz5500
 {
 public:
-    WizCore(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
+    Wiz5500(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
             SPI::ClockDivider clock_divider);
-    ~WizCore();
+    ~Wiz5500();
 
     bool start();
 

@@ -74,7 +74,7 @@ void setupBoard() {}
 #error "Target not supported"
 #endif
 
-WizCore *wiz = nullptr;
+Wiz5500 *wiz = nullptr;
 
 #ifdef INTN_IRQ
 void __attribute__((used)) INTN_IRQ()
@@ -246,7 +246,7 @@ int main()
 {
     setupBoard();
 
-    wiz = new WizCore(bus, cs::getPin(), intn::getPin(),
+    wiz = new Wiz5500(bus, cs::getPin(), intn::getPin(),
                       SPI::ClockDivider::DIV_64);
 
     // Start the driver
