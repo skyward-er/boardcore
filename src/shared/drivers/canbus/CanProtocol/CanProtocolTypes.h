@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <actuators/Servo/ServoData.h>
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
@@ -91,6 +92,25 @@ inline Canbus::CanMessage toCanMessage(const CurrentData& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const ServoData& data)
+{
+    Canbus::CanMessage message;
+
+    // Denormalize the position in 8 bit
+    uint16_t position = static_cast<uint16_t>(data.position * 65535);
+
+    // The position is approximated into a 16 bit integer.
+    // Packet: TIMESTAMP (32bit) | POSITION | CHANNEL | TIMER
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.timestamp & ~0x3) << 30;
+    message.payload[0] |= static_cast<uint32_t>(position) << 16;
+    message.payload[0] |= static_cast<uint16_t>(data.channel) << 8;
+    message.payload[0] |= data.timer;
+
+    return message;
+}
+
 inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     PitotData data;
@@ -138,6 +158,18 @@ inline CurrentData currentDataFromCanMessage(const Canbus::CanMessage& msg)
     memcpy(&(data.current), &current, sizeof(data.current));
 
     data.currentTimestamp = (msg.payload[0] >> 30) & ~0x3;
+
+    return data;
+}
+
+inline ServoData servoDataFromCanMessage(const Canbus::CanMessage& msg)
+{
+    ServoData data;
+
+    data.timestamp = (msg.payload[0] >> 30) & ~0x3;
+    data.position  = static_cast<uint16_t>(msg.payload[0] >> 16) / 65535.f;
+    data.channel   = static_cast<uint8_t>(msg.payload[0] >> 8);
+    data.timer     = static_cast<uint8_t>(msg.payload[0]);
 
     return data;
 }
