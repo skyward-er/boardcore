@@ -243,9 +243,7 @@ void socket2Start()
     }
 }
 
-int genRandom(int min, int max) {
-    return (rand() % (max - min)) + min;
-}
+int genRandom(int min, int max) { return (rand() % (max - min)) + min; }
 
 WizIp genNewIp()
 {
@@ -286,7 +284,7 @@ int main()
             std::cout << ip << ":" << port << std::endl;
         });
 
-    WizIp ip = genNewIp();
+    WizIp ip   = genNewIp();
     WizMac mac = genNewMac();
 
     std::cout << "New ip: " << ip << std::endl;
@@ -309,9 +307,21 @@ int main()
 
     std::thread t1(socket0Start);
     std::thread t2(socket1Start);
-    socket2Start();
+    std::thread t3(socket2Start);
 
     while (1)
-        ;
+    {
+        Wiz5500::PhyState state = wiz->getPhyState();
+
+        printf(
+            "Current PHY state:\n"
+            "- full_duplex: %d\n"
+            "- based_100mbps: %d\n"
+            "- link_up: %d\n",
+            state.full_duplex, state.based_100mbps, state.link_up);
+
+        Thread::sleep(5000);
+    }
+
     return 0;
 }

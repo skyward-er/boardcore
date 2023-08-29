@@ -53,6 +53,14 @@ struct WizMac
 class Wiz5500
 {
 public:
+    struct PhyState
+    {
+        bool full_duplex;  //< True if full duplex is enabled, false if link is
+                           //only half duplex.
+        bool based_100mbps;  //< True if 100Mbps, false if only 10Mpbs.
+        bool link_up;        //< True if link is up, false if it is down.
+    };
+
     using OnIpConflictCb      = std::function<void()>;
     using OnDestUnreachableCb = std::function<void(WizIp, uint16_t)>;
 
@@ -101,6 +109,13 @@ public:
      * @param cb Callback to be invoked.
      */
     void setOnDestUnreachable(OnDestUnreachableCb cb);
+
+    /**
+     * @brief Get current PHY state, can be used to poll link status, and wait for link up.
+     * 
+     * @returns The current PHY state.
+    */
+    PhyState getPhyState();
 
     /**
      * @brief Resets the device.

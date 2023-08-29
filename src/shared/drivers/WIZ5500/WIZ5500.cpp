@@ -82,6 +82,18 @@ void Wiz5500::setOnDestUnreachable(OnDestUnreachableCb cb)
     on_dest_unreachable = cb;
 }
 
+Wiz5500::PhyState Wiz5500::getPhyState()
+{
+    Lock<FastMutex> l(mutex);
+    uint8_t phycfg = spiRead8(0, Wiz::Common::REG_PHYCFGR);
+
+    bool full_duplex   = (phycfg & (1 << 2)) != 0;
+    bool based_100mbps = (phycfg & (1 << 1)) != 0;
+    bool link_up       = (phycfg & (1 << 0)) != 0;
+
+    return {full_duplex, based_100mbps, link_up};
+}
+
 bool Wiz5500::reset()
 {
     Lock<FastMutex> l(mutex);
@@ -589,18 +601,22 @@ void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex> &l)
     }
 
     // Dispatch generic interurpts
-    if(ir & Wiz::Common::Irq::CONFLICT) {
+    if (ir & Wiz::Common::Irq::CONFLICT)
+    {
         auto cb = on_ip_conflict;
-        if(cb) {
+        if (cb)
+        {
             Unlock<FastMutex> ul(l);
             cb();
         }
     }
 
-    if(ir & Wiz::Common::Irq::UNREACH) {
+    if (ir & Wiz::Common::Irq::UNREACH)
+    {
         auto cb = on_dest_unreachable;
-        if(cb) {
-            WizIp ip = spiReadIp(0, Wiz::Common::REG_UIPR);
+        if (cb)
+        {
+            WizIp ip      = spiReadIp(0, Wiz::Common::REG_UIPR);
             uint16_t port = spiRead16(0, Wiz::Common::REG_UPORTR);
 
             Unlock<FastMutex> ul(l);
