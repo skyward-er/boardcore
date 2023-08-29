@@ -95,7 +95,8 @@ bool Wiz5500::reset()
     // Perform a software reset
     spiWrite8(0, Wiz::Common::REG_MR, 1 << 7);
     // Enable all socket interrupts
-    spiWrite8(0, Wiz::Common::REG_SIMR, 0xff);
+    spiWrite8(0, Wiz::Common::REG_SIMR, 0b11111111);
+    spiWrite8(0, Wiz::Common::REG_IMR, 0b11110000);
 
     // Reset all socketsOSI
     for (int i = 0; i < NUM_SOCKETS; i++)

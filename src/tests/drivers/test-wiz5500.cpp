@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <arch/common/drivers/stm32_hardware_rng.h>
 #include <drivers/WIZ5500/WIZ5500.h>
 #include <drivers/WIZ5500/WIZ5500Defs.h>
 
@@ -242,8 +243,29 @@ void socket2Start()
     }
 }
 
+int genRandom(int min, int max) {
+    return (rand() % (max - min)) + min;
+}
+
+WizIp genNewIp()
+{
+    // Generate IPs in the range 1-254
+    uint8_t d = genRandom(1, 254);
+    return {192, 168, 1, d};
+}
+
+WizMac genNewMac()
+{
+    uint8_t e = genRandom(1, 254);
+    uint8_t f = genRandom(1, 254);
+    return {0x69, 0x69, 0x69, 0x69, e, f};
+}
+
 int main()
 {
+    // Pick a random seed
+    srand(HardwareRng::instance().get());
+
     setupBoard();
 
     wiz = new Wiz5500(bus, cs::getPin(), intn::getPin(),
@@ -257,19 +279,33 @@ int main()
             ;
     }
 
-    wiz->setOnDestUnreachable([](WizIp ip, uint16_t port) {
-        printf("[wiz5500] Destination unreachable\n");
-        std::cout << ip << ":" << port << std::endl;
-    });
+    wiz->setOnDestUnreachable(
+        [](WizIp ip, uint16_t port)
+        {
+            printf("[wiz5500] Destination unreachable\n");
+            std::cout << ip << ":" << port << std::endl;
+        });
 
-    wiz->setOnIpConflict([]() {
-        printf("[wiz5500] Ip conflict\n");
-    });
+    WizIp ip = genNewIp();
+    WizMac mac = genNewMac();
+
+    std::cout << "New ip: " << ip << std::endl;
+    std::cout << "New mac: " << mac << std::endl;
+
+    // Change IP if conflict detected
+    wiz->setOnIpConflict(
+        [&ip]()
+        {
+            printf("[wiz5500] Ip conflict\n");
+            ip = genNewIp();
+            std::cout << "New ip: " << ip << std::endl;
+            wiz->setSourceIp(genNewIp());
+        });
 
     wiz->setGatewayIp({192, 168, 1, 1});
     wiz->setSubnetMask({255, 255, 225, 0});
-    wiz->setSourceMac({0x00, 0x08, 0xdc, 0x01, 0x02, 0x03});
-    wiz->setSourceIp({192, 168, 1, 69});
+    wiz->setSourceIp(ip);
+    wiz->setSourceMac(mac);
 
     std::thread t1(socket0Start);
     std::thread t2(socket1Start);
