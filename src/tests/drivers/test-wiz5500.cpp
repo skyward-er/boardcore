@@ -257,6 +257,15 @@ int main()
             ;
     }
 
+    wiz->setOnDestUnreachable([](WizIp ip, uint16_t port) {
+        printf("[wiz5500] Destination unreachable\n");
+        std::cout << ip << ":" << port << std::endl;
+    });
+
+    wiz->setOnIpConflict([]() {
+        printf("[wiz5500] Ip conflict\n");
+    });
+
     wiz->setGatewayIp({192, 168, 1, 1});
     wiz->setSubnetMask({255, 255, 225, 0});
     wiz->setSourceMac({0x00, 0x08, 0xdc, 0x01, 0x02, 0x03});

@@ -46,6 +46,14 @@ inline uint8_t getSocketRxBlock(int n) { return (n << 2) | 0b11; }
 namespace Common
 {
 
+namespace Irq
+{
+constexpr static uint8_t CONFLICT = 1 << 7;
+constexpr static uint8_t UNREACH  = 1 << 6;
+constexpr static uint8_t PPPOE    = 1 << 5;
+constexpr static uint8_t MP       = 1 << 4;
+}  // namespace Irq
+
 enum Registers
 {
     REG_MR       = 0x0000,  //< Mode Register.
@@ -70,7 +78,7 @@ enum Registers
     REG_VERSIONR = 0x0039,  //< W5500 Chip Version Register.
 };
 
-}
+}  // namespace Common
 
 namespace Socket
 {

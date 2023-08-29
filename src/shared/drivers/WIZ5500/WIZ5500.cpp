@@ -70,6 +70,18 @@ Wiz5500::Wiz5500(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin intn,
 
 Wiz5500::~Wiz5500() { disableExternalInterrupt(intn); }
 
+void Wiz5500::setOnIpConflict(OnIpConflictCb cb)
+{
+    Lock<FastMutex> l(mutex);
+    on_ip_conflict = cb;
+}
+
+void Wiz5500::setOnDestUnreachable(OnDestUnreachableCb cb)
+{
+    Lock<FastMutex> l(mutex);
+    on_dest_unreachable = cb;
+}
+
 bool Wiz5500::reset()
 {
     Lock<FastMutex> l(mutex);
@@ -90,7 +102,7 @@ bool Wiz5500::reset()
     {
         spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
     }
-    
+
     return true;
 }
 
@@ -572,6 +584,26 @@ void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex> &l)
                 wait_infos[i].irq = irq;
                 wait_infos[i].thread->wakeup();
             }
+        }
+    }
+
+    // Dispatch generic interurpts
+    if(ir & Wiz::Common::Irq::CONFLICT) {
+        auto cb = on_ip_conflict;
+        if(cb) {
+            Unlock<FastMutex> ul(l);
+            cb();
+        }
+    }
+
+    if(ir & Wiz::Common::Irq::UNREACH) {
+        auto cb = on_dest_unreachable;
+        if(cb) {
+            WizIp ip = spiReadIp(0, Wiz::Common::REG_UIPR);
+            uint16_t port = spiRead16(0, Wiz::Common::REG_UPORTR);
+
+            Unlock<FastMutex> ul(l);
+            cb(ip, port);
         }
     }
 }
