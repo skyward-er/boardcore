@@ -49,7 +49,7 @@ int main()
     dbg.mode(Mode::OUTPUT);
 
     USART usart(USART6, 115200);
-    VN300 sensor(usart, 230400, true, VN300::CRCOptions::CRC_ENABLE_8);
+    VN300 sensor(usart, 115200, true, VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -106,8 +106,8 @@ int main()
                sample.angularSpeedY, sample.angularSpeedZ);
         // printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
         //        sample.roll);
-        //// printf("gps: %.6f, %.6f, %.6f\n", sample.latitude,
-        ///sample.longitude,
+        // printf("gps: %.6f, %.6f, %.6f\n", sample.latitude,
+        // sample.longitude,
         //        sample.altitude);
         // sample.print(std::cout);
 
