@@ -447,8 +447,6 @@ bool VN300::findBaudrate()
             if (strncmp(check, recvString.data() + checkOffset,
                         strlen(check)) == 0)
             {
-                // printf("Found Baudrate: %i\n" , BaudrateList[i]); //debug
-                // purposes
                 return true;
             }
         }
@@ -488,7 +486,6 @@ bool VN300::configBaudRate(int baudRate)
     if (strncmp(command.c_str(), recvString.data() + modelNumberOffset,
                 strlen(command.c_str())) != 0)
     {
-        printf("Ciao2\n");
         LOG_WARN(logger, "The message is wrong {}", recvString.data());
         return false;
     }
