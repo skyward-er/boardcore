@@ -52,11 +52,14 @@ struct AntennaPosition
     float uncZ;
 };
 
+/**
+ * @brief Structure to handle INS data
+ */
 struct Ins_Lla
 {
     uint64_t insTimestamp;
-    uint8_t fix_gps;
-    uint8_t fix_ins;
+    uint16_t fix_gps;
+    uint16_t fix_ins;
     uint16_t status;
     float yaw;
     float pitch;
@@ -69,6 +72,12 @@ struct Ins_Lla
     float nedVelZ;
 };
 
+/**
+ * @brief Structure to handle binary message
+ *
+ * @property The struct needs the packed attribute in order to have contiguous
+ * memory allocation in order to be able to parse directly the received message
+ */
 struct __attribute__((packed)) BinaryData
 {
     uint8_t group;
