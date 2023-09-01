@@ -24,6 +24,7 @@
 
 #include <actuators/Servo/ServoData.h>
 #include <sensors/SensorData.h>
+#include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
 #include <cstring>
@@ -111,6 +112,21 @@ inline Canbus::CanMessage toCanMessage(const ServoData& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const BatteryVoltageSensorData& data)
+{
+    Canbus::CanMessage message;
+
+    uint32_t voltage;
+    memcpy(&voltage, &(data.batVoltage), sizeof(voltage));
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.voltageTimestamp & ~0x3) << 30;
+    message.payload[0] |= voltage;
+
+    return message;
+}
+
 inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     PitotData data;
@@ -170,6 +186,19 @@ inline ServoData servoDataFromCanMessage(const Canbus::CanMessage& msg)
     data.position  = static_cast<uint16_t>(msg.payload[0] >> 16) / 65535.f;
     data.channel   = static_cast<uint8_t>(msg.payload[0] >> 8);
     data.timer     = static_cast<uint8_t>(msg.payload[0]);
+
+    return data;
+}
+
+inline BatteryVoltageSensorData voltageDataFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    BatteryVoltageSensorData data;
+
+    uint32_t voltage = msg.payload[0];
+    memcpy(&(data.batVoltage), &voltage, sizeof(data.batVoltage));
+
+    data.voltageTimestamp = (msg.payload[0] >> 30) & ~0x3;
 
     return data;
 }
