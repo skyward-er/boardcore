@@ -106,10 +106,12 @@ public:
             slaveAddress;  ///< Slave address without shifts (in BIT7 addressing
                            ///< |9-bit unused|7-bit address|; in BIT10
                            ///< addressing |6-bit unused|10-bit address|).
-        I2CDriver::Addressing addressing;  ///< Addressing mode of the device.
-        I2CDriver::Speed speed;            ///< Speed mode of the communication.
-        bool MSBFirst;  ///< Registers with lower values are the MSB of
-                        ///< multi-byte registers
+        I2CDriver::Addressing addressing =
+            I2CDriver::Addressing::BIT7;  ///< Addressing mode of the device.
+        I2CDriver::Speed speed =
+            I2CDriver::Speed::MAX_SPEED;  ///< Speed mode of the communication.
+        bool MSBFirst = false;  ///< Registers with lower values are the MSB of
+                                ///< multi-byte registers
     } I2CSlaveConfig;
 
     /**
