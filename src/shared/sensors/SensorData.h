@@ -146,6 +146,50 @@ struct AccelerometerData
 };
 
 /**
+ * @brief Structure to handle quaternion data.
+ */
+struct QuaternionData
+{
+    uint64_t quaternionTimestamp = 0;
+    float quaternionX            = 0;
+    float quaternionY            = 0;
+    float quaternionZ            = 0;
+    float quaternionW            = 0;
+
+    QuaternionData() {}
+
+    QuaternionData(uint64_t timestamp, float x, float y, float z, float w)
+        : quaternionTimestamp(timestamp), quaternionX(x), quaternionY(y),
+          quaternionZ(z), quaternionW(w)
+    {
+    }
+
+    QuaternionData(const QuaternionData& data) = default;
+
+    explicit QuaternionData(const Eigen::Vector4f& quat)
+        : quaternionX(quat(0)), quaternionY(quat(1)), quaternionZ(quat(2)),
+          quaternionW(quat(3))
+    {
+    }
+
+    static std::string header()
+    {
+        return "timestamp,quaternionX,quaternionY,quaternionZ,quaterionW\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
+           << "," << quaternionZ << "," << quaternionW << "\n";
+    }
+
+    operator Eigen::Vector4f() const
+    {
+        return {quaternionX, quaternionY, quaternionZ, quaternionW};
+    }
+};
+
+/**
  * @brief Structure to handle gyroscope data.
  */
 struct GyroscopeData
