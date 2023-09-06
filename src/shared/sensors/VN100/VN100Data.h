@@ -28,18 +28,6 @@ namespace Boardcore
 {
 
 /**
- * @brief Structure to handle quaternion data
- */
-struct QuaternionData
-{
-    uint64_t quatTimestamp;
-    float quatX;
-    float quatY;
-    float quatZ;
-    float quatW;
-};
-
-/**
  * @brief data type class
  */
 struct VN100Data : public QuaternionData,
