@@ -23,6 +23,7 @@
 #pragma once
 
 #include <algorithms/ReferenceValues.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/Sensor.h>
 #include <utils/AeroUtils/AeroUtils.h>
 
@@ -36,9 +37,9 @@ namespace Boardcore
 class Pitot : public Sensor<PitotData>
 {
 public:
-    Pitot(std::function<PressureData()> getPitotPressure,
+    Pitot(std::function<float()> getTotalPressure,
           std::function<float()> getStaticPressure)
-        : getPitotPressure(getPitotPressure),
+        : getTotalPressure(getTotalPressure),
           getStaticPressure(getStaticPressure)
     {
     }
@@ -56,27 +57,24 @@ public:
 
     PitotData sampleImpl() override
     {
-        float airDensity = Aeroutils::relDensity(
-            getStaticPressure(), reference.refPressure, reference.refAltitude,
-            reference.refTemperature);
+        float totalPressure  = getTotalPressure();
+        float staticPressure = getStaticPressure();
 
-        if (airDensity != 0.0)
-        {
-            PitotData pitotSpeed;
+        // clang-format off
+        float gamma = 1.4f;
+        float c     = sqrt(gamma * Constants::R * reference.refTemperature);
+        float M     = sqrt(((pow(totalPressure / staticPressure, (gamma - 1) / gamma)) - 1) * (2 / (gamma - 1)));
+        // clang-format on
 
-            pitotSpeed.timestamp = getPitotPressure().pressureTimestamp;
-            pitotSpeed.deltaP    = getPitotPressure().pressure;
-            pitotSpeed.airspeed =
-                sqrtf(2 * fabs(pitotSpeed.deltaP) / airDensity);
+        PitotData pitotSpeed;
+        pitotSpeed.airspeed  = M * c;
+        pitotSpeed.timestamp = TimestampTimer::getTimestamp();
 
-            return pitotSpeed;
-        }
-
-        return lastSample;
+        return pitotSpeed;
     }
 
 private:
-    std::function<PressureData()> getPitotPressure;
+    std::function<float()> getTotalPressure;
     std::function<float()> getStaticPressure;
 
     ReferenceValues reference;

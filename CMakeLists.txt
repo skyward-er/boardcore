@@ -133,6 +133,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-modulemanager.cpp
     src/tests/catch/test-MEA.cpp
     src/tests/catch/test-airbrakesInterp.cpp
+    src/tests/catch/test-pitot.cpp
 )
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
