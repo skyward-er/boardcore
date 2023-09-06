@@ -78,10 +78,11 @@ struct VN100Data : public QuaternionData,
 
     void print(std::ostream& os) const
     {
-        os << quatTimestamp << "," << quatX << "," << quatY << "," << quatZ
-           << "," << quatW << "," << magneticFieldTimestamp << ","
-           << magneticFieldX << "," << magneticFieldY << "," << magneticFieldZ
-           << "," << accelerationTimestamp << "," << accelerationX << ","
+        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
+           << "," << quaternionZ << "," << quaternionW << ","
+           << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << ","
+           << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << ","

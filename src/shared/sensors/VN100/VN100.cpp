@@ -484,11 +484,11 @@ QuaternionData VN100::sampleQuaternion()
     }
 
     // Parse the data
-    data.quatTimestamp = TimestampTimer::getTimestamp();
-    data.quatX         = strtod(recvString + indexStart + 1, &nextNumber);
-    data.quatY         = strtod(nextNumber + 1, &nextNumber);
-    data.quatZ         = strtod(nextNumber + 1, &nextNumber);
-    data.quatW         = strtod(nextNumber + 1, NULL);
+    data.quaternionTimestamp = TimestampTimer::getTimestamp();
+    data.quaternionX         = strtod(recvString + indexStart + 1, &nextNumber);
+    data.quaternionY         = strtod(nextNumber + 1, &nextNumber);
+    data.quaternionZ         = strtod(nextNumber + 1, &nextNumber);
+    data.quaternionW         = strtod(nextNumber + 1, NULL);
 
     return data;
 }
