@@ -63,10 +63,10 @@ public:
         if (totalPressure > staticPressure)
         {
 
+            float gamma = 1.4f;
+            float c     = sqrt(gamma * Constants::R * reference.refTemperature);
             // clang-format off
-        float gamma = 1.4f;
-        float c     = sqrt(gamma * Constants::R * reference.refTemperature);
-        float M     = sqrt(((pow(totalPressure / staticPressure, (gamma - 1) / gamma)) - 1) * (2 / (gamma - 1)));
+            float M             = sqrt(((pow(totalPressure / staticPressure, (gamma - 1) / gamma)) - 1) * (2 / (gamma - 1)));
             // clang-format on
             pitotSpeed.airspeed = M * c;
             pitotSpeed.deltaP   = totalPressure - staticPressure;
