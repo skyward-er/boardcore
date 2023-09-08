@@ -59,15 +59,23 @@ public:
     {
         float totalPressure  = getTotalPressure();
         float staticPressure = getStaticPressure();
+        PitotData pitotSpeed;
+        if (totalPressure > staticPressure)
+        {
 
-        // clang-format off
+            // clang-format off
         float gamma = 1.4f;
         float c     = sqrt(gamma * Constants::R * reference.refTemperature);
         float M     = sqrt(((pow(totalPressure / staticPressure, (gamma - 1) / gamma)) - 1) * (2 / (gamma - 1)));
-        // clang-format on
-
-        PitotData pitotSpeed;
-        pitotSpeed.airspeed  = M * c;
+            // clang-format on
+            pitotSpeed.airspeed = M * c;
+            pitotSpeed.deltaP   = totalPressure - staticPressure;
+        }
+        else
+        {
+            pitotSpeed.airspeed = 0;
+            pitotSpeed.deltaP   = 0;
+        }
         pitotSpeed.timestamp = TimestampTimer::getTimestamp();
 
         return pitotSpeed;
