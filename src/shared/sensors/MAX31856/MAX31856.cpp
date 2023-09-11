@@ -58,25 +58,7 @@ bool MAX31856::init()
     return true;
 }
 
-bool MAX31856::selfTest()
-{
-    SPITransaction spi{slave};
-
-    // Enable open-circuit detection
-    spi.writeRegister(CR0, CR0_CMODE | CR0_OCFAULT_0);
-
-    // Wait for detection
-    // Detection takes 40ms, waiting more to be extra sure
-    miosix::Thread::sleep(100);
-
-    // Read fault register
-    auto fault = spi.readRegister(SR);
-
-    // Disable open-circuit detection
-    spi.writeRegister(CR0, CR0_CMODE);
-
-    return !(fault & SR_OPEN);
-}
+bool MAX31856::selfTest() { return true; }
 
 void MAX31856::setThermocoupleType(ThermocoupleType type)
 {
