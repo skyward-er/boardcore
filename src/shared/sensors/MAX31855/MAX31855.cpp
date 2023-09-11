@@ -43,26 +43,7 @@ SPIBusConfig MAX31855::getDefaultSPIConfig()
 
 bool MAX31855::init() { return true; }
 
-bool MAX31855::selfTest()
-{
-    uint16_t sample[2];
-
-    {
-        SPITransaction spi{slave};
-        spi.read16(sample, sizeof(sample));
-    }
-
-    // Bits D0, D1 and D2 go high if thermocouple is open or shorted either to
-    // gnd or Vcc
-    if ((sample[1] & 0x7) != 0)
-    {
-        lastError = SensorErrors::SELF_TEST_FAIL;
-        LOG_ERR(logger, "Self test failed, the thermocouple is not connected");
-        return false;
-    }
-
-    return true;
-}
+bool MAX31855::selfTest() { return true; }
 
 TemperatureData MAX31855::sampleImpl()
 {

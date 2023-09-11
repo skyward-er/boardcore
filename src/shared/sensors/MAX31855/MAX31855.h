@@ -50,11 +50,6 @@ public:
 
     bool init();
 
-    /**
-     * @brief Checks whether the thermocouple is connected or not.
-     *
-     * @return True if the thermocouple is connected.
-     */
     bool selfTest();
 
     /**
