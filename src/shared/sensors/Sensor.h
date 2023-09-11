@@ -110,7 +110,7 @@ public:
         Data d = sampleImpl();
 
         {
-            miosix::Lock<FastMutex> l(mutex);
+            miosix::Lock<miosix::FastMutex> l(mutex);
             lastSample = d;
         }
     }
@@ -120,7 +120,7 @@ public:
      */
     virtual const Data& getLastSample()
     {
-        miosix::Lock<FastMutex> l(mutex);
+        miosix::Lock<miosix::FastMutex> l(mutex);
         return lastSample;
     }
 };
