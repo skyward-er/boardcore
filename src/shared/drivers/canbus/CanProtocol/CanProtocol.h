@@ -55,7 +55,8 @@ public:
      *
      * @param can Pointer to a CanbusDriver object.
      */
-    CanProtocol(CanbusDriver* can, MsgHandler onReceive);
+    CanProtocol(CanbusDriver* can, MsgHandler onReceive,
+                miosix::Priority threadPriority);
 
     /**
      * @brief Start the receiving and sending threads.
@@ -180,6 +181,7 @@ private:
 
     miosix::Thread* sndThread = nullptr;
     miosix::Thread* rcvThread = nullptr;
+    miosix::Priority threadPriority;
 
     SyncCircularBuffer<CanMessage, 10> outQueue;
 

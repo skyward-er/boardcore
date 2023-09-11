@@ -30,8 +30,9 @@ namespace Boardcore
 namespace Canbus
 {
 
-CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive)
-    : can(can), onReceive(onReceive)
+CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
+                         miosix::Priority threadPriority)
+    : can(can), onReceive(onReceive), threadPriority(threadPriority)
 {
 }
 
@@ -46,7 +47,7 @@ bool CanProtocol::start()
     if (!sndStarted)
     {
         sndThread = miosix::Thread::create(
-            sndLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+            sndLauncher, skywardStack(4 * 1024), threadPriority,
             reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
 
         if (sndThread != nullptr)
@@ -59,7 +60,7 @@ bool CanProtocol::start()
     if (!rcvStarted)
     {
         rcvThread = miosix::Thread::create(rcvLauncher, skywardStack(4 * 1024),
-                                           miosix::MAIN_PRIORITY,
+                                           threadPriority,
                                            reinterpret_cast<void*>(this));
 
         if (rcvThread != nullptr)

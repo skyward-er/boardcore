@@ -70,7 +70,7 @@ int main()
     CanbusDriver* driver2 = new CanbusDriver(CAN2, config, bitTiming);
 
     // // Prepare the can driver
-    CanProtocol protocol(driver2, print);
+    CanProtocol protocol(driver2, print, miosix::MAIN_PRIORITY);
 
     // Add a filter to allow every message
     Mask32FilterBank f2(0, 0, 1, 1, 0, 0, 0);
