@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <miosix.h>
+
 #include <array>
 #include <type_traits>
 
