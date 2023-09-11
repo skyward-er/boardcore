@@ -600,7 +600,7 @@ void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex> &l)
         }
     }
 
-    // Dispatch generic interurpts
+    // Dispatch generic interrupts
     if (ir & Wiz::Common::Irq::CONFLICT)
     {
         auto cb = on_ip_conflict;

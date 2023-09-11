@@ -158,7 +158,7 @@ public:
      * @param sock_n Index of the socket, from 0 to 7.
      * @param src_port Local port of the TCP socket.
      * @param dst_ip Remote IP of the TCP socket.
-     * @param dst_port Remove port of the TCP socket.
+     * @param dst_port Remote port of the TCP socket.
      * @param timeout Timeout for the operation in ms (or -1 if no timeout).
      *
      * @return True in case of success, false otherwise.
@@ -172,7 +172,7 @@ public:
      * @param sock_n Index of the socket, from 0 to 7.
      * @param src_port Local port of the TCP socket.
      * @param dst_ip Remote IP of the TCP socket.
-     * @param dst_port Remove port of the TCP socket.
+     * @param dst_port Remote port of the TCP socket.
      * @param timeout Timeout for the operation in ms (or -1 if no timeout).
      *
      * @return True in case of success, false otherwise.
@@ -186,7 +186,7 @@ public:
      * @param sock_n Index of the socket, from 0 to 7.
      * @param src_port Local port of the UDP socket.
      * @param dst_ip Remote IP of the UDP socket.
-     * @param dst_port Remove port of the UDP socket.
+     * @param dst_port Remote port of the UDP socket.
      * @param timeout Timeout for the operation in ms (or -1 if no timeout).
      *
      * @return True in case of success, false otherwise.
@@ -225,7 +225,7 @@ public:
      * @param data Buffer to store the data.
      * @param len Maximum length of the data.
      * @param dst_ip Remote IP of the UDP socket.
-     * @param dst_port Remove port of the UDP socket.
+     * @param dst_port Remote port of the UDP socket.
      * @param timeout Timeout for the operation in ms (or -1 if no timeout).
      *
      * @return The length of the received data in case of success, -1 otherwise.
