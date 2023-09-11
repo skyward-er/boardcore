@@ -71,6 +71,13 @@ public:
 
     bool selfTest();
 
+    /**
+     * @brief Checks whether the thermocouple is connected or not.
+     *
+     * @return True if the thermocouple is connected.
+     */
+    bool checkConnected();
+
     void setThermocoupleType(ThermocoupleType type);
 
     void setColdJunctionOffset(float offset);
