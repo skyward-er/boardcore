@@ -203,6 +203,40 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     return passed;
 }
 
+bool testClearQueue(USART *src, USART *dst)
+{
+    char buf[128];
+    size_t nReads{0};
+    src->writeString("Transmitting useless stuff!");
+    // miosix::delayUs(1000);
+    dst->clearQueue();
+
+    // Can be commented to test without read
+    if (dst->read(buf, 128, nReads))
+    {
+        printf("### read something after the clearQueue: %s (%zu bytes)\n", buf,
+               nReads);
+        // Shouldn't read anything
+        return false;
+    }
+
+    src->writeString("Now transmitting the juicy stuff :P");
+    dst->readBlocking(buf, 128, nReads);
+
+    // After the clearQueue we should only read the things written after
+    if (strcmp(buf, "Now transmitting the juicy stuff :P") != 0)
+    {
+        printf(
+            "### read something different than the things sent: %s (%zu "
+            "bytes)\n",
+            buf, nReads);
+        return false;
+    }
+
+    printf("*** clearQueue test passed\n");
+    return true;
+}
+
 /* Available default pins:
  * - USART1: tx=PA9  rx=PA10
  * - USART2: tx=PA2  rx=PA3
@@ -242,17 +276,19 @@ int main()
             // usartx.setWordLength(USART::WordLength::BIT8);
             // usartx.setParity(USART::ParityBit::NO_PARITY);
 
-            // USART usarty(UART4, baudrate);
-            STM32SerialWrapper usarty(UART4, baudrate, u4rx2::getPin(),
-                                      u4tx2::getPin());
+            USART usarty(UART4, baudrate);
+            // STM32SerialWrapper usarty(UART4, baudrate, u4rx2::getPin(),
+            //                           u4tx2::getPin());
 
             // testing transmission (both char and binary) "serial 1 <- serial
             // 2"
             testPassed &= testCommunicationSequential(&usartx, &usarty);
+            testPassed &= testClearQueue(&usartx, &usarty);
 
             // testing transmission (both char and binary) "serial 1 -> serial
             // 2"
             testPassed &= testCommunicationSequential(&usarty, &usartx);
+            testPassed &= testClearQueue(&usarty, &usartx);
         }
 
         if (testPassed)

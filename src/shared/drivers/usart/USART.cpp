@@ -595,7 +595,14 @@ void USART::writeString(const char *buffer)
     };
 }
 
-void USART::clearQueue() { rxQueue.reset(); }
+void USART::clearQueue()
+{
+    char buf[usart_queue_default_capacity];
+    rxQueue.reset();
+    while (read(buf, usart_queue_default_capacity))
+        ;
+    rxQueue.reset();
+}
 
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
     : USARTInterface(usart, baudrate)
