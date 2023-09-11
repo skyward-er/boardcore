@@ -97,15 +97,32 @@ protected:
      */
     virtual Data sampleImpl() = 0;
 
+    // Thread safe mutex to synchronize writes and reads
+    miosix::FastMutex mutex;
+
 public:
     virtual ~Sensor() {}
 
-    void sample() override { lastSample = sampleImpl(); }
+    void sample() override
+    {
+        // Sampling outside of the protected zone ensures that the sampling
+        // action cannot cause locks or delays
+        Data d = sampleImpl();
+
+        {
+            miosix::Lock<FastMutex> l(mutex);
+            lastSample = d;
+        }
+    }
 
     /**
      * @return last available sample from this sensor
      */
-    virtual const Data& getLastSample() { return lastSample; }
+    virtual const Data& getLastSample()
+    {
+        miosix::Lock<FastMutex> l(mutex);
+        return lastSample;
+    }
 };
 
 /**
