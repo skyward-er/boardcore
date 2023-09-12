@@ -89,15 +89,21 @@ bool H3LIS331DL::init()
         spiTr.writeRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1, ctrlReg1);
 
         miosix::delayUs(10);
-        initialized &=
-            (ctrlReg1 ==
-             spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1));
 
-        LOG_DEBUG(logger,
-                  "Control Register 1 After init: {:X}, expected "
-                  "value:{:X}",
-                  spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1),
-                  ctrlReg1);
+        uint8_t ctrlReg1OnChip =
+            spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1);
+
+        initialized = (ctrlReg1 == ctrlReg1OnChip);
+
+        if (!initialized)
+        {
+
+            LOG_ERR(logger,
+                    "Control Register 1 After init: {:X}, expected "
+                    "value:{:X}",
+                    ctrlReg1OnChip, ctrlReg1);
+            return false;
+        }
     }
 
     {
@@ -111,14 +117,21 @@ bool H3LIS331DL::init()
         spiTr.writeRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4, ctrlReg4);
 
         miosix::delayUs(10);
-        initialized &=
-            (ctrlReg4 ==
-             spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4));
-        LOG_DEBUG(logger,
-                  "Control Register 4 After init: {:X}, expected "
-                  "value: {:X}",
-                  spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4),
-                  ctrlReg4);
+
+        uint8_t ctrlReg4OnChip =
+            spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4);
+
+        initialized = (ctrlReg4 == ctrlReg4OnChip);
+
+        if (!initialized)
+        {
+
+            LOG_ERR(logger,
+                    "Control Register 1 After init: {:X}, expected "
+                    "value:{:X}",
+                    ctrlReg4OnChip, ctrlReg4);
+            return false;
+        }
     }
 
     return initialized;
