@@ -51,7 +51,7 @@ int main()
 
     sensor.init();
 
-    if (!sensor.selfTest())
+    if (!sensor.checkConnected())
     {
         printf("The thermocouple is not connected\n");
     }

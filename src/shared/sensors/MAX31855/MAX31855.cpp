@@ -43,7 +43,9 @@ SPIBusConfig MAX31855::getDefaultSPIConfig()
 
 bool MAX31855::init() { return true; }
 
-bool MAX31855::selfTest()
+bool MAX31855::selfTest() { return true; }
+
+bool MAX31855::checkConnected()
 {
     uint16_t sample[2];
 

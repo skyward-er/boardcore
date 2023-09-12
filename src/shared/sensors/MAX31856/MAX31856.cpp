@@ -58,7 +58,9 @@ bool MAX31856::init()
     return true;
 }
 
-bool MAX31856::selfTest()
+bool MAX31856::selfTest() { return true; }
+
+bool MAX31856::checkConnected()
 {
     SPITransaction spi{slave};
 

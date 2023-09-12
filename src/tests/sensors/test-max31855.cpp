@@ -56,9 +56,9 @@ int main()
 
     printf("Starting process verification!\n");
 
-    if (!sensor.selfTest())
+    if (!sensor.checkConnected())
     {
-        printf("Sensor self test failed!\n");
+        printf("Sensor not connected!\n");
     }
 
     while (true)

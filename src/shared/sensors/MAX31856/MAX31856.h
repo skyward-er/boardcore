@@ -69,12 +69,14 @@ public:
 
     bool init();
 
+    bool selfTest();
+
     /**
      * @brief Checks whether the thermocouple is connected or not.
      *
      * @return True if the thermocouple is connected.
      */
-    bool selfTest();
+    bool checkConnected();
 
     void setThermocoupleType(ThermocoupleType type);
 
