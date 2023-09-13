@@ -24,8 +24,10 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
+#include <scheduler/TaskScheduler.h>
 #include <utils/collections/CircularBuffer.h>
 
+#include <random>
 #include <thread>
 
 #include "common.h"
@@ -43,11 +45,11 @@
 using namespace Boardcore;
 using namespace miosix;
 
-constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
-constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
-constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
-constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
-constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
+constexpr uint32_t RADIO_PKT_LENGTH       = SX1278Fsk::MTU;
+constexpr uint32_t RADIO_OUT_QUEUE_SIZE   = 20;
+constexpr uint32_t RADIO_MAV_MSG_LENGTH   = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
+constexpr size_t RADIO_OUT_BUFFER_MAX_AGE = 10;
+constexpr uint16_t RADIO_SLEEP_AFTER_SEND = 1;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
 using Mav =
@@ -150,63 +152,101 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 
 void initBoard() {}
 
-struct PendingAck
-{
-    int msgid;
-    int seq;
-};
-
-CircularBuffer<PendingAck, 10> pending_acks;
+int msg_queue_idx = 0;
+mavlink_message_t msg_queue[10];
 FastMutex mutex;
 
 Mav* channel;
+
+void runIdle()
+{
+    while (1)
+        Thread::wait();
+}
+
+void fillWithRand(void* data, uint8_t len)
+{
+    uint8_t* data2 = reinterpret_cast<uint8_t*>(data);
+    for (int i = 0; i < len; i++)
+    {
+        *data2 = rand();
+        data2++;
+    }
+}
+
+void enqueueMsg(const mavlink_message_t& msg)
+{
+    Lock<FastMutex> lock(mutex);
+    if (msg_queue_idx < 10)
+    {
+        msg_queue[msg_queue_idx] = msg;
+        msg_queue_idx++;
+    }
+}
+
+void sendAck(const mavlink_message_t& msg)
+{
+    mavlink_message_t ack_msg;
+    mavlink_msg_ack_tm_pack(69, 69, &ack_msg, msg.msgid, msg.seq);
+    enqueueMsg(ack_msg);
+}
+
+mavlink_message_t packStatSysTm()
+{
+    mavlink_message_t msg;
+    mavlink_rocket_stats_tm_t tm = {0};
+    fillWithRand(&tm, sizeof(tm));
+
+    mavlink_msg_rocket_stats_tm_encode(69, 69, &msg, &tm);
+    return msg;
+}
+
+mavlink_message_t packMotorSysTm()
+{
+    mavlink_message_t msg;
+    mavlink_motor_tm_t tm = {0};
+    fillWithRand(&tm, sizeof(tm));
+
+    tm.timestamp = TimestampTimer::getTimestamp();
+
+    mavlink_msg_motor_tm_encode(69, 69, &msg, &tm);
+    return msg;
+}
+
+mavlink_message_t packFlightSysTm()
+{
+    mavlink_message_t msg;
+    mavlink_rocket_flight_tm_t tm = {0};
+    fillWithRand(&tm, sizeof(tm));
+
+    tm.timestamp = TimestampTimer::getTimestamp();
+
+    mavlink_msg_rocket_flight_tm_encode(69, 69, &msg, &tm);
+    return msg;
+}
 
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
     {
-        Lock<FastMutex> l(mutex);
-        pending_acks.put({msg.msgid, msg.seq});
+        sendAck(msg);
     }
 }
 
-void flightTmLoop()
+void sendPeriodMessages()
 {
-    int i = 0;
-
-    while (1)
     {
-        long long start = miosix::getTick();
-
+        Lock<FastMutex> lock(mutex);
+        for (int i = 0; i < msg_queue_idx; i++)
         {
-            Lock<FastMutex> l(mutex);
-            while (!pending_acks.isEmpty())
-            {
-                PendingAck ack = pending_acks.pop();
-
-                // Prepare ack message
-                mavlink_message_t msg;
-                mavlink_msg_ack_tm_pack(171, 96, &msg, ack.msgid, ack.seq);
-
-                // Send the ack back to the sender
-                channel->enqueueMsg(msg);
-            }
+            channel->enqueueMsg(msg_queue[i]);
         }
 
-        mavlink_message_t msg;
-        mavlink_rocket_flight_tm_t tm = {0};
-        tm.timestamp                  = TimestampTimer::getTimestamp();
-        tm.acc_x                      = i;
-        tm.acc_y                      = i * 2;
-        tm.acc_z                      = i * 3;
-
-        mavlink_msg_rocket_flight_tm_encode(171, 96, &msg, &tm);
-
-        channel->enqueueMsg(msg);
-
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
-        i += 1;
+        msg_queue_idx = 0;
     }
+
+    channel->enqueueMsg(packMotorSysTm());
+    channel->enqueueMsg(packFlightSysTm());
 }
 
 int main()
@@ -214,7 +254,7 @@ int main()
     initBoard();
 
     SX1278Fsk::Config config = {
-        .freq_rf    = 434000000,
+        .freq_rf    = 419000000,
         .freq_dev   = 50000,
         .bitrate    = 48000,
         .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
@@ -239,17 +279,24 @@ int main()
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
     {
         printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));
-
-        while (1)
-            Thread::wait();
+        runIdle();
     }
 
     printConfig(config);
 
-    channel = new Mav(sx1278, &onReceive, 0, MAV_OUT_BUFFER_MAX_AGE);
+    channel = new Mav(sx1278, &onReceive, RADIO_SLEEP_AFTER_SEND,
+                      RADIO_OUT_BUFFER_MAX_AGE);
     channel->start();
 
-    flightTmLoop();
+    Boardcore::TaskScheduler scheduler;
 
+    scheduler.addTask([]() { enqueueMsg(packStatSysTm()); }, 500,
+                      TaskScheduler::Policy::RECOVER);
+    scheduler.addTask([]() { sendPeriodMessages(); }, 250,
+                      TaskScheduler::Policy::RECOVER);
+
+    scheduler.start();
+
+    runIdle();
     return 0;
 }
