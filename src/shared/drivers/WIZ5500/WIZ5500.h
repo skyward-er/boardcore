@@ -56,7 +56,7 @@ public:
     struct PhyState
     {
         bool full_duplex;  //< True if full duplex is enabled, false if link is
-                           //only half duplex.
+                           // only half duplex.
         bool based_100mbps;  //< True if 100Mbps, false if only 10Mpbs.
         bool link_up;        //< True if link is up, false if it is down.
     };
@@ -111,10 +111,11 @@ public:
     void setOnDestUnreachable(OnDestUnreachableCb cb);
 
     /**
-     * @brief Get current PHY state, can be used to poll link status, and wait for link up.
-     * 
+     * @brief Get current PHY state, can be used to poll link status, and wait
+     * for link up.
+     *
      * @returns The current PHY state.
-    */
+     */
     PhyState getPhyState();
 
     /**
