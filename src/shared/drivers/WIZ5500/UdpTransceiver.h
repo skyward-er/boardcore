@@ -65,7 +65,9 @@ public:
 
     ssize_t receive(uint8_t* pkt, size_t len)
     {
-        return wiz->recv(sock_n, pkt, len);
+        WizIp dst_ip;
+        uint16_t dst_port;
+        return wiz->recvfrom(sock_n, pkt, len, dst_ip, dst_port);
     }
 
 private:
