@@ -111,6 +111,15 @@ public:
     void setOnDestUnreachable(OnDestUnreachableCb cb);
 
     /**
+     * @brief Checks the VERSION register.
+     * Can be used to detect device presence.
+     *
+     * @returns False if the device is not connected properly (SPI comunication
+     * failure).
+     */
+    bool checkVersion();
+
+    /**
      * @brief Get current PHY state, can be used to poll link status, and wait
      * for link up.
      *
@@ -121,12 +130,9 @@ public:
     /**
      * @brief Resets the device.
      * Performs a software resets, resetting all registers and closing all
-     * sockets. Also checks for hardware presence.
-     *
-     * @returns False if the device is not connected properly (SPI comunication
-     * failure).
+     * sockets.
      */
-    bool reset();
+    void reset();
 
     /**
      * @brief Handle an interrupt from INTn.

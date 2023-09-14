@@ -82,6 +82,13 @@ void Wiz5500::setOnDestUnreachable(OnDestUnreachableCb cb)
     on_dest_unreachable = cb;
 }
 
+bool Wiz5500::checkVersion()
+{
+    Lock<FastMutex> l(mutex);
+
+    return spiRead8(0, Wiz::Common::REG_VERSIONR) == Wiz::VERSION;
+}
+
 Wiz5500::PhyState Wiz5500::getPhyState()
 {
     Lock<FastMutex> l(mutex);
@@ -94,15 +101,9 @@ Wiz5500::PhyState Wiz5500::getPhyState()
     return {full_duplex, based_100mbps, link_up};
 }
 
-bool Wiz5500::reset()
+void Wiz5500::reset()
 {
     Lock<FastMutex> l(mutex);
-
-    // First check that the device is actually present
-    if (spiRead8(0, Wiz::Common::REG_VERSIONR) != Wiz::VERSION)
-    {
-        return false;
-    }
 
     // Perform a software reset
     spiWrite8(0, Wiz::Common::REG_MR, 1 << 7);
@@ -115,8 +116,6 @@ bool Wiz5500::reset()
     {
         spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
     }
-
-    return true;
 }
 
 void Wiz5500::handleINTn()

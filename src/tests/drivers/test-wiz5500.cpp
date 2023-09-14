@@ -270,12 +270,14 @@ int main()
                       SPI::ClockDivider::DIV_64);
 
     // Start the driver
-    if (!wiz->reset())
+    if (!wiz->checkVersion())
     {
         printf("[wiz5500] Wiz failed to start!\n");
         while (1)
             ;
     }
+
+    wiz->reset();
 
     wiz->setOnDestUnreachable(
         [](WizIp ip, uint16_t port)
