@@ -57,7 +57,7 @@ void CountedPWM::setFrequency(unsigned int pulseFrequency)
 {
     this->pulseFrequency = pulseFrequency;
 
-    if (pulseFrequency <= 0)
+    if (pulseFrequency = 0)
         return;
 
     pulseTimer.setFrequency(pulseFrequency * dutyCycleResolution);
