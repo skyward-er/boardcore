@@ -113,7 +113,7 @@ public:
      * @return The ID of the task if it was added successfully, 0 otherwise.
      */
     size_t addTask(function_t function, uint32_t period,
-                   Policy policy     = Policy::SKIP,
+                   Policy policy     = Policy::RECOVER,
                    int64_t startTick = miosix::getTick());
 
     /**
