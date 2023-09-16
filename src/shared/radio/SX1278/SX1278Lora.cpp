@@ -420,7 +420,8 @@ void SX1278Lora::writeFifo(Lock &guard, uint8_t addr, uint8_t *src,
     spi.writeRegisters(REG_FIFO, src, size);
 }
 
-bool SX1278Lora::checkDeviceFailure(Lock &guard) { 
+bool SX1278Lora::checkDeviceFailure(Lock &guard)
+{
     // Check that this register is the same as when we configured it, otherwise
     // the device has failed.
 

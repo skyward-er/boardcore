@@ -78,8 +78,8 @@ using sck  = radio::sck;
 using miso = radio::miso;
 using mosi = radio::mosi;
 
-using txen                         = radio::txEn;
-using rxen                         = radio::rxEn;
+using txen = radio::txEn;
+using rxen = radio::rxEn;
 
 #define SX1278_SPI SPI4
 
@@ -267,22 +267,22 @@ int main()
 #else
     // Run default configuration
     Boardcore::SX1278Fsk::Config config = {
-              .freq_rf    = 434000000,
-              .freq_dev   = 50000,
-              .bitrate    = 48000,
-              .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
-              .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
-              .ocp        = 120,
-              .power      = 13,
-              .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
-              .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
-              .enable_crc = false};
+        .freq_rf    = 419000000,
+        .freq_dev   = 50000,
+        .bitrate    = 48000,
+        .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+        .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+        .ocp        = 120,
+        .power      = 13,
+        .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
+        .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
+        .enable_crc = false};
     Boardcore::SX1278Fsk::Error err;
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
-                                            dio1::getPin(), dio3::getPin(),
-                                            Boardcore::SPI::ClockDivider::DIV_256,
-                                            std::move(frontend));
+                                      dio1::getPin(), dio3::getPin(),
+                                      Boardcore::SPI::ClockDivider::DIV_256,
+                                      std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)

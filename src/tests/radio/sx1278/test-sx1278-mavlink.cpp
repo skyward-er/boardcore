@@ -79,11 +79,11 @@ using sck  = miosix::radio1::spi::sck;
 using miso = miosix::radio1::spi::miso;
 using mosi = miosix::radio1::spi::mosi;
 
-using txen                         = miosix::radio1::txen;
-using rxen                         = miosix::radio1::rxen;
+using txen = miosix::radio1::txen;
+using rxen = miosix::radio1::rxen;
 
 #define SX1278_NRST
-using rst                          = miosix::radio1::nrst;
+using rst  = miosix::radio1::nrst;
 
 #define SX1278_SPI MIOSIX_RADIO1_SPI
 
@@ -272,22 +272,22 @@ int main()
 #else
     // Run default configuration
     Boardcore::SX1278Fsk::Config config = {
-              .freq_rf    = 434000000,
-              .freq_dev   = 50000,
-              .bitrate    = 48000,
-              .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
-              .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
-              .ocp        = 120,
-              .power      = 13,
-              .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
-              .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
-              .enable_crc = false};
+        .freq_rf    = 434000000,
+        .freq_dev   = 50000,
+        .bitrate    = 48000,
+        .rx_bw      = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+        .afc_bw     = Boardcore::SX1278Fsk::Config::RxBw::HZ_125000,
+        .ocp        = 120,
+        .power      = 13,
+        .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
+        .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
+        .enable_crc = false};
     Boardcore::SX1278Fsk::Error err;
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
-                                            dio1::getPin(), dio3::getPin(),
-                                            Boardcore::SPI::ClockDivider::DIV_256,
-                                            std::move(frontend));
+                                      dio1::getPin(), dio3::getPin(),
+                                      Boardcore::SPI::ClockDivider::DIV_256,
+                                      std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
