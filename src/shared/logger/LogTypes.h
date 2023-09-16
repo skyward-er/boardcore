@@ -60,11 +60,14 @@
 #include <sensors/VN100/VN100Data.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
+#include <sensors/analog/Pitot/PitotData.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PAData.h>
+#include <sensors/analog/pressure/honeywell/HSCMRNN015PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN030PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN160KAData.h>
 #include <sensors/analog/pressure/honeywell/SSCDANN030PAAData.h>
 #include <sensors/analog/pressure/honeywell/SSCDRRN015PDAData.h>
+#include <sensors/analog/pressure/honeywell/SSCMRNN030PAData.h>
 #include <sensors/analog/pressure/nxp/MPXH6115AData.h>
 #include <sensors/analog/pressure/nxp/MPXH6400AData.h>
 #include <sensors/analog/pressure/nxp/MPXHZ6130AData.h>
@@ -134,6 +137,9 @@ void registerTypes(Deserializer& ds)
     ds.registerType<MPXH6115AData>();
     ds.registerType<MPXH6400AData>();
     ds.registerType<MPXHZ6130AData>();
+    ds.registerType<HSCMRNN015PAData>();
+    ds.registerType<SSCMRNN030PAData>();
+    ds.registerType<PitotData>();
 }
 
 }  // namespace LogTypes
