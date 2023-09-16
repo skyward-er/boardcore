@@ -25,6 +25,7 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
+#include <utils/ButtonHandler/ButtonHandler.h>
 #include <utils/collections/CircularBuffer.h>
 
 #include <thread>
@@ -158,6 +159,22 @@ struct PendingAck
     int seq;
 };
 
+void startBlinking()
+{
+    std::thread(
+        []
+        {
+            while (1)
+            {
+                ledOn();
+                Thread::sleep(100);
+                ledOff();
+                Thread::sleep(100);
+            }
+        })
+        .detach();
+}
+
 bool launched = false;
 CircularBuffer<PendingAck, 10> pending_acks;
 FastMutex mutex;
@@ -181,6 +198,7 @@ void onReceive(Mav* channel, const mavlink_message_t& msg)
         if (commandId == MAV_CMD_FORCE_LAUNCH)
         {
             launched = true;
+            startBlinking();
         }
     }
 }
@@ -231,7 +249,7 @@ void flightTmLoop()
         channel->enqueueMsg(msg);
 
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
-        if (launched && i < sizeof(nasState) / sizeof(nasState[0]))
+        if (launched && i < (sizeof(nasState) / sizeof(nasState[0])) - 1)
         {
             i++;
         }
@@ -277,6 +295,17 @@ int main()
 
     channel = new Mav(sx1278, &onReceive, 0, MAV_OUT_BUFFER_MAX_AGE);
     channel->start();
+
+    ButtonHandler::getInstance().registerButtonCallback(
+        GpioPin(GPIOA_BASE, 0),
+        [](auto event)
+        {
+            if (event == ButtonEvent::LONG_PRESS)
+            {
+                launched = true;
+                startBlinking();
+            }
+        });
 
     flightTmLoop();
 
