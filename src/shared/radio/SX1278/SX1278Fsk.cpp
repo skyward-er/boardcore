@@ -367,7 +367,7 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     {
         // The device was invalidated, just do a quick return, nothing else
         // matters
-        return -1;
+        return false;
     }
 
     // Send first segment
@@ -393,7 +393,7 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
         {
             // The device was invalidated, just do a quick return, nothing else
             // matters
-            return -1;
+            return false;
         }
 
         SPITransaction spi(getSpiSlave(guard_mode.parent()));
@@ -413,7 +413,7 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     {
         // The device was invalidated, just do a quick return, nothing else
         // matters
-        return -1;
+        return false;
     }
 
     last_tx = now();

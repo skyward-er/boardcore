@@ -117,8 +117,6 @@ SX1278Common::IrqFlags SX1278Common::waitForIrqBusy(LockMode &guard,
                                                     int timeout)
 {
     long long start  = miosix::getTick();
-    IrqFlags ret_irq = 0;
-
     while ((miosix::getTick() - start) < timeout)
     {
         // Delay between polls
@@ -128,7 +126,8 @@ SX1278Common::IrqFlags SX1278Common::waitForIrqBusy(LockMode &guard,
         for (unsigned int i = 0; i < 1000 / DELAY; i++)
         {
             // Check if some of the interrupts triggered
-            if ((ret_irq = checkForIrqAndReset(guard, set_irq, reset_irq)) != 0)
+            IrqFlags ret_irq = checkForIrqAndReset(guard, set_irq, reset_irq);
+            if (ret_irq != 0)
             {
                 return ret_irq;
             }

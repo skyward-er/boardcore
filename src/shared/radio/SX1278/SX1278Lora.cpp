@@ -356,7 +356,7 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
         {
             // The device was invalidated, just do a quick return, nothing else
             // matters
-            return -1;
+            return false;
         }
     }
 
