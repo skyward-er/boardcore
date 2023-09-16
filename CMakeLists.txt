@@ -322,7 +322,7 @@ sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)
 # sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
 
 add_executable(test-sx1278lora-bidir src/tests/radio/sx1278/lora/test-sx1278-bidir.cpp)
-sbs_target(test-sx1278lora-bidir stm32f767zi_gemini_gs)
+sbs_target(test-sx1278lora-bidir stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278lora-simple-rx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
 target_compile_definitions(test-sx1278lora-simple-rx PRIVATE ENABLE_RX)
