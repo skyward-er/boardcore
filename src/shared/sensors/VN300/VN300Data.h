@@ -28,18 +28,6 @@ namespace Boardcore
 {
 
 /**
- * @brief Structure to handle quaternion data
- */
-struct QuaternionData
-{
-    uint64_t quatTimestamp;
-    float quatX;
-    float quatY;
-    float quatZ;
-    float quatW;
-};
-
-/**
  * @brief Structure to handle antenna A position units [m]
  */
 struct AntennaPosition
@@ -128,8 +116,8 @@ struct VN300Data : public QuaternionData,
      */
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data()
-        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
-                                                                  0.0},
+        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0},
+          MagnetometerData{0, 0.0, 0.0, 0.0},
           AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
           Ins_Lla{0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
     {
@@ -151,7 +139,8 @@ struct VN300Data : public QuaternionData,
 
     static std::string header()
     {
-        return "quatTimestamp,quatX,quatY,quatZ,quatW,magneticFieldTimestamp,"
+        return "quaternionTimestamp,quaternionX,quaternionY,quaternionZ,"
+               "quaternionW,magneticFieldTimestamp,"
                "magneticFieldX,magneticFieldY,magneticFieldZ,"
                "accelerationTimestamp,accelerationX,accelerationY,"
                "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
@@ -162,10 +151,11 @@ struct VN300Data : public QuaternionData,
 
     void print(std::ostream& os) const
     {
-        os << quatTimestamp << "," << quatX << "," << quatY << "," << quatZ
-           << "," << quatW << "," << magneticFieldTimestamp << ","
-           << magneticFieldX << "," << magneticFieldY << "," << magneticFieldZ
-           << "," << accelerationTimestamp << "," << accelerationX << ","
+        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
+           << "," << quaternionZ << "," << quaternionW << ","
+           << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << ","
+           << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << "," << insTimestamp
