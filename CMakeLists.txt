@@ -57,6 +57,9 @@ sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_skyward_death_stack_x)
 
+add_executable(fft-benchmark src/entrypoints/fft-benchmark.cpp)
+sbs_target(fft-benchmark stm32f407vg_stm32f4discovery)
+
 add_executable(sx1278fsk-ra01-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-ra01-serial PRIVATE SX1278_IS_FSK)
 sbs_target(sx1278fsk-ra01-serial stm32f429zi_skyward_groundstation_v2)
