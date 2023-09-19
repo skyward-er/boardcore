@@ -44,7 +44,7 @@ int main()
 
     Vector<std::complex<float>, SAMPLES> fft_result =
         FFT<SAMPLES>::fft(signal_vector);
-    Vector<float, SAMPLES / 2> fft_freq = FFT<SAMPLES>::fftfreq(SAMPLE_RATE);
+    Vector<float, SAMPLES> fft_freq = FFT<SAMPLES>::fftfreq(SAMPLE_RATE);
 
     for (int i = 0; i < fft_result.size() / 2; i++)
     {
