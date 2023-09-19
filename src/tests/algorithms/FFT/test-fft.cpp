@@ -46,9 +46,9 @@ int main()
         FFT<SAMPLES>::fft(signal_vector);
     Vector<float, SAMPLES> fft_freq = FFT<SAMPLES>::fftfreq(SAMPLE_RATE);
 
-    for (int i = 0; i < fft_result.size() / 2; i++)
+    for (int i = 0; i < fft_result.size(); i++)
     {
-        if (std::abs(2.0 / SAMPLES * std::abs(fft_result(i)) - INTENSITY[i]) >
+        if (std::abs(1.0 / SAMPLES * std::abs(fft_result(i)) - INTENSITY[i]) >
             0.001)
         {
             printf("FFT result differs from the correct one [%d]: %f != %f\n",
