@@ -40,7 +40,6 @@ template <int N_size>
 class FFT
 {
 public:
-    using VectorHF = Eigen::Vector<float, N_size / 2>;
     using VectorF  = Eigen::Vector<float, N_size>;
     using VectorCF = Eigen::Vector<std::complex<float>, N_size>;
 
@@ -90,17 +89,20 @@ public:
 
     /**
      * @brief Get the frequency used in the FFT
-     * (only the first half, useful for real input functions)
      *
      * @param sample_rate in Hertz
      * @return Eigen::Vector<std::complex<float>, N_size>
      */
-    static const VectorHF fftfreq(float sample_rate)
+    static const VectorF fftfreq(float sample_rate)
     {
-        VectorHF bins = VectorHF::Zero();
+        VectorF bins = VectorF::Zero();
         for (int i = 0; i < N_size / 2; i++)
         {
             bins(i) = (float)i * sample_rate / (float)N_size;
+        }
+        for (int i = N_size / 2; i < N_size; i++)
+        {
+            bins(i) = (float)(i - N_size) * sample_rate / (float)N_size;
         }
         return bins;
     }
