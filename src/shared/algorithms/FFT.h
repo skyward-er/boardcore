@@ -24,6 +24,7 @@
 
 #include <complex.h>
 #include <math.h>
+
 #include <Eigen/Core>
 
 namespace Boardcore
@@ -32,22 +33,22 @@ namespace Boardcore
 /**
  * @brief Implementation of Fast Fourier Trasnform using the iterative version
  * with bit-reversal index variant of the famous Cooley-Tukey FFT algorithm.
- * 
+ *
  * NOTE: N must be a power of 2
-*/
+ */
 template <int N_size>
 class FFT
 {
 public:
     using VectorHF = Eigen::Vector<float, N_size / 2>;
-    using VectorF = Eigen::Vector<float, N_size>;
+    using VectorF  = Eigen::Vector<float, N_size>;
     using VectorCF = Eigen::Vector<std::complex<float>, N_size>;
 
     /**
      * @brief Perform the FFT on the input signal
-     * 
+     *
      * @param input_signal NOTE: MUST BE POWER OF 2
-     * @return Eigen::Vector<std::complex<float>, N_size> 
+     * @return Eigen::Vector<std::complex<float>, N_size>
      */
     static const VectorCF fft(VectorF input_signal)
     {
@@ -88,11 +89,11 @@ public:
     }
 
     /**
-     * @brief Get the frequency used in the FFT 
+     * @brief Get the frequency used in the FFT
      * (only the first half, useful for real input functions)
-     * 
+     *
      * @param sample_rate in Hertz
-     * @return Eigen::Vector<std::complex<float>, N_size> 
+     * @return Eigen::Vector<std::complex<float>, N_size>
      */
     static const VectorHF fftfreq(float sample_rate)
     {
@@ -105,16 +106,16 @@ public:
     }
 
 private:
-    static short n_bits(size_t x)
-    {
-        return (short)log2(x);
-    }
+    /**
+     * @brief Get the number of bits to differentiate x elements
+     */
+    static short n_bits(size_t x) { return (short)log2(x); }
 
     /**
      * @brief Reverse the bits of the inputted unsigned index.
      * bits used = log2(N_size)
      * e.g. 6 bits: 000110 (6) -> 011000 (24)
-    */
+     */
     static size_t reverse_bits(size_t x)
     {
         size_t rev = 0;
@@ -135,4 +136,4 @@ typedef FFT<64> FFT64;
 typedef FFT<128> FFT128;
 typedef FFT<256> FFT256;
 
-} // namespace Boardcore
+}  // namespace Boardcore
