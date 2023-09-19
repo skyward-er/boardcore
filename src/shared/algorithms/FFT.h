@@ -23,15 +23,11 @@
 #pragma once
 
 #include <complex.h>
-#include <Eigen/Dense>
+#include <math.h>
+#include <Eigen/Core>
 
 namespace Boardcore
 {
-
-typedef FFT<32> FFT32;
-typedef FFT<64> FFT64;
-typedef FFT<128> FFT128;
-typedef FFT<256> FFT256;
 
 /**
  * @brief Implementation of Fast Fourier Trasnform using the iterative version
@@ -56,9 +52,9 @@ public:
     static const VectorCF fft(VectorF input_signal)
     {
         size_t rev_i;
-        int m, omega;
-        float omega_m;
-        std::complex<float> t, u;
+        int m;
+        float phi;
+        std::complex<float> t, u, omega, omega_m;
 
         // Bit-reversal permutation
         VectorCF phasors = VectorCF::Zero();
@@ -69,11 +65,12 @@ public:
         }
 
         // Cooley-Tukey FFT algorithm
-        for (int s = 0, s <= n_bits; s++)
+        for (int s = 1; s <= n_bits(N_size); s++)
         {
             m = powl(2, s);
-            omega_m = cexpf(-2 * I / m);
-            for (int k = 0; k < n; k += m)
+            phi = -2 * EIGEN_PI / m;
+            omega_m = std::complex<float>(cos(phi), sin(phi));
+            for (int k = 0; k < N_size; k += m)
             {
                 omega = std::complex<float>(1, 0);
                 for (int j = 0; j < m / 2; j++)
@@ -94,21 +91,24 @@ public:
      * @brief Get the frequency used in the FFT 
      * (only the first half, useful for real input functions)
      * 
-     * @param input_signal 
+     * @param sample_rate in Hertz
      * @return Eigen::Vector<std::complex<float>, N_size> 
      */
-    static const VectorHF fftfreq(int sample_rate)
+    static const VectorHF fftfreq(float sample_rate)
     {
-        VectorHF bins = VectorF::Zero();
+        VectorHF bins = VectorHF::Zero();
         for (int i = 0; i < N_size / 2; i++)
         {
-            bins(i) = (float)i * (float)sample_rate / (float)N_size;
+            bins(i) = (float)i * sample_rate / (float)N_size;
         }
         return bins;
     }
 
 private:
-    static const short n_bits = log2f(N_size);
+    static short n_bits(size_t x)
+    {
+        return (short)log2(x);
+    }
 
     /**
      * @brief Reverse the bits of the inputted unsigned index.
@@ -117,14 +117,22 @@ private:
     */
     static size_t reverse_bits(size_t x)
     {
-        size_t rev = 0
-        for (int i = 0; i < n_bits; i++)
+        size_t rev = 0;
+        short bits = n_bits(N_size);
+        for (int i = 0; i < bits; i++)
         {
             if (x & (1 << i))
-                rev |= 1 << (N_size - 1 - i);
+            {
+                rev |= 1 << (bits - 1 - i);
+            }
         }
         return rev;
     }
 };
+
+typedef FFT<32> FFT32;
+typedef FFT<64> FFT64;
+typedef FFT<128> FFT128;
+typedef FFT<256> FFT256;
 
 } // namespace Boardcore
