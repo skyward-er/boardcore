@@ -180,6 +180,9 @@ sbs_target(test-nas-parafoil stm32f429zi_skyward_parafoil)
 add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
 sbs_target(test-nas stm32f429zi_skyward_death_stack_v3)
 
+add_executable(test-fft src/tests/algorithms/FFT/test-fft.cpp)
+sbs_target(test-fft stm32f407vg_stm32f4discovery)
+
 add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
 sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_x)
 
