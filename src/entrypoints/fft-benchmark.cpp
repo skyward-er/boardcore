@@ -22,36 +22,70 @@
 
 #pragma once
 
-#include <iostream>
-#include <Eigen/Dense>
-#include <miosix.h>
-#include <complex.h>
-#include <math.h>
 #include <algorithms/FFT.h>
+#include <drivers/timer/TimestampTimer.h>
+#include <utils/Stats/Stats.h>
+
+#include <Eigen/Dense>
+#include <array>
 
 using namespace Boardcore;
+using namespace std;
 
-int main(int argc, char const *argv[])
+const unsigned int TAKES  = 5000;
+const unsigned int BUFFER = 32;
+
+array<float, TAKES> data;
+
+/**
+ * @brief Prints the test results for the specified buffer size.
+ *
+ * @param bufferSize Buffer size of the benchmark.
+ * @param results Results form the benchmark.
+ */
+void printResults(size_t bufferSize, array<float, TAKES>& results);
+
+int main()
 {
-    Eigen::Vector<float, 256> input_signal = Eigen::Vector<float, 256>::Zero();
-    float f1, f2;
+    Eigen::Vector<float, BUFFER> input_signal =
+        Eigen::Vector<float, BUFFER>::Zero();
 
-    f1 = 50;
-    f2 = 25;
-
-    for (size_t i = 0; i < input_signal.size(); i++)
+    for (int i = 0; i < TAKES; i++)
     {
-        input_signal(i) = sin(2 * M_PI * i / 256 * f1) + sin(2 * M_PI * i / 256 * f2);
+        for (size_t i = 0; i < input_signal.size(); i++)
+        {
+            input_signal(i) = (float)rand() / RAND_MAX;
+        }
+
+        int64_t duration = TimestampTimer::getTimestamp();
+        FFT<BUFFER>::fft(input_signal);
+        duration = TimestampTimer::getTimestamp() - duration;
+        data[i]  = duration;
     }
 
-    Eigen::Vector<std::complex<float>, 256> fft_result = FFT<256>::fft(input_signal);
-    Eigen::Vector<float, 256> fft_freq = FFT<256>::fftfreq(1.0 / 256.0);
-
-    std::cout << "FFT result:" << std::endl;
-    for (size_t i = 0; i < fft_result.size(); i++)
-    {
-        std::cout << fft_freq(i) << ' ' << fft_result(i).real() << std::endl;
-    }
+    printResults(BUFFER, data);
 
     return 0;
+}
+
+void printResults(size_t bufferSize, array<float, TAKES>& results)
+{
+    // Compute statistics on the benchmark results
+    Stats stats;
+    for (float result : results)
+        stats.add(result);
+    StatsResult statsResults = stats.getStats();
+
+    printf("\tBuffer size: %lu\n", (unsigned long)bufferSize);
+    printf("Times:\n");
+    printf("- mean:    % 6.1f us\n", statsResults.mean);
+    printf("- std dev: % 6.1f us\n", statsResults.stdDev);
+    printf("- min:     % 6.1f us\n", statsResults.minValue);
+    printf("- max:     % 6.1f us\n", statsResults.maxValue);
+    printf("Speeds:\n");
+    printf("- mean: % 6.2f Hz\n", 1e6 / statsResults.mean);
+    printf("- min:  % 6.2f Hz\n", 1e6 / statsResults.maxValue);
+    printf("- max:  % 6.2f Hz\n", 1e6 / statsResults.minValue);
+
+    printf("\n");
 }
