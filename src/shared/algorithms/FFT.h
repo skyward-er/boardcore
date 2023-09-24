@@ -25,7 +25,7 @@
 #include <complex.h>
 #include <math.h>
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
 
 namespace Boardcore
 {
@@ -60,15 +60,15 @@ public:
         VectorCF phasors = VectorCF::Zero();
         for (int i = 0; i < N_size; i++)
         {
-            rev_i = reverse_bits(i);
+            rev_i          = reverse_bits(i);
             phasors(rev_i) = std::complex<float>(input_signal(i), 0);
         }
 
         // Cooley-Tukey FFT algorithm
         for (int s = 1; s <= n_bits(N_size); s++)
         {
-            m = powl(2, s);
-            phi = -2 * EIGEN_PI / m;
+            m       = powl(2, s);
+            phi     = -2 * EIGEN_PI / m;
             omega_m = std::complex<float>(cos(phi), sin(phi));
             for (int k = 0; k < N_size; k += m)
             {
@@ -77,8 +77,10 @@ public:
                 {
                     t = omega * phasors(k + j + m / 2);
                     u = phasors(k + j);
-                    phasors(k + j) = u + t;
+
+                    phasors(k + j)         = u + t;
                     phasors(k + j + m / 2) = u - t;
+
                     omega *= omega_m;
                 }
             }
@@ -107,6 +109,40 @@ public:
         return bins;
     }
 
+    /**
+     * @brief Perform the inverse FFT on the input signal
+     *
+     * @param fft_vector
+     * @param sample_rate in Hertz
+     * @return Eigen::Vector<std::complex<float>, N_size>
+     */
+    static const VectorF ifft(VectorCF fft_vector, float sample_rate)
+    {
+        float amplitude, alpha, phi;
+        VectorF ifft_vector = VectorF::Zero();
+        VectorF bins        = fftfreq(sample_rate);
+
+        for (int i = 0; i < N_size; i++)
+        {
+            for (int j = 0; j < N_size; j++)
+            {
+                // A = |f|
+                amplitude = std::abs(fft_vector(j));
+                // α = 2πf * t
+                alpha = 2 * EIGEN_PI * bins(j) * (float)i / sample_rate;
+                // ϕ = arg(f)
+                phi = std::arg(fft_vector(j));
+
+                // i = A * cos(α + ϕ)
+                ifft_vector(i) += amplitude * cos(alpha + phi);
+            }
+            // scale down
+            ifft_vector(i) /= N_size;
+        }
+
+        return ifft_vector;
+    }
+
 private:
     /**
      * @brief Get the number of bits to differentiate x elements
@@ -133,6 +169,8 @@ private:
     }
 };
 
+typedef FFT<8> FFT8;
+typedef FFT<16> FFT16;
 typedef FFT<32> FFT32;
 typedef FFT<64> FFT64;
 typedef FFT<128> FFT128;
