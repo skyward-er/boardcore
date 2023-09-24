@@ -31,21 +31,24 @@
 using namespace Boardcore;
 using namespace Eigen;
 
+using VectorF  = Eigen::Vector<float, SAMPLES>;
+using VectorCF = Eigen::Vector<std::complex<float>, SAMPLES>;
+
 int main()
 {
     bool failed = false;
 
-    Eigen::Vector<float, SAMPLES> signal_vector =
-        Eigen::Vector<float, SAMPLES>::Zero();
+    VectorF signal_vector = VectorF::Zero();
     for (int i = 0; i < SAMPLES; i++)
     {
         signal_vector(i) = SIGNAL[i];
     }
 
-    Vector<std::complex<float>, SAMPLES> fft_result =
-        FFT<SAMPLES>::fft(signal_vector);
-    Vector<float, SAMPLES> fft_freq = FFT<SAMPLES>::fftfreq(SAMPLE_RATE);
+    VectorCF fft_result = FFT<SAMPLES>::fft(signal_vector);
+    VectorF fft_freq    = FFT<SAMPLES>::fftfreq(SAMPLE_RATE);
+    VectorF ifft_result = FFT<SAMPLES>::ifft(fft_result, SAMPLE_RATE);
 
+    // test for fft
     for (int i = 0; i < fft_result.size(); i++)
     {
         if (std::abs(1.0 / SAMPLES * std::abs(fft_result(i)) - INTENSITY[i]) >
@@ -57,12 +60,24 @@ int main()
         }
     }
 
+    // test for fftfreq
     for (int i = 0; i < fft_freq.size(); i++)
     {
         if (fft_freq(i) != FREQUENCY[i])
         {
             printf("FFT freq differs from the correct one [%d]: %f != %f\n", i,
                    fft_freq(i), FREQUENCY[i]);
+            failed = true;
+        }
+    }
+
+    // test for ifft
+    for (int i = 0; i < ifft_result.size(); i++)
+    {
+        if (std::abs(ifft_result(i) - SIGNAL[i]) > 0.001)
+        {
+            printf("IFFT result differs from the correct one [%d]: %f != %f\n",
+                   i, ifft_result(i), SIGNAL[i]);
             failed = true;
         }
     }
