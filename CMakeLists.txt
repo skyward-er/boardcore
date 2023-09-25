@@ -316,6 +316,10 @@ add_executable(test-sx1278fsk-pyxis src/tests/radio/sx1278/nokia/test-sx1278-pyx
 sbs_target(test-sx1278fsk-pyxis stm32f429zi_skyward_groundstation_v2)
 # sbs_target(test-sx1278fsk-mavlink stm32f767zi_gemini_gs)
 
+add_executable(test-sx1278fsk-gemini src/tests/radio/sx1278/nokia/test-sx1278-gemini.cpp)
+sbs_target(test-sx1278fsk-gemini stm32f429zi_skyward_groundstation_v2)
+# sbs_target(test-sx1278fsk-mavlink stm32f767zi_gemini_gs)
+
 # add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
 # sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
 
