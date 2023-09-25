@@ -41,6 +41,8 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
         ${SBS_BASE}/src/shared/algorithms/NAS/NAS.cpp
         ${SBS_BASE}/src/shared/algorithms/NAS/StateInitializer.cpp
+        ${SBS_BASE}/src/shared/algorithms/SFD/SFDAscent.cpp
+        ${SBS_BASE}/src/shared/algorithms/SFD/SFDDescent.cpp
 
         # Debug
         ${SBS_BASE}/src/shared/utils/Debug.cpp
