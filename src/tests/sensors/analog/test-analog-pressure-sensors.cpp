@@ -73,14 +73,14 @@ int main()
     ADS1118 ads1118(spiSlave);
 
     std::function<ADCData()> getVoltageFunction =
-        std::bind(&ADS1118::getVoltage, ads1118, channel1);
+        std::bind(&ADS1118::getVoltage, std::ref(ads1118), channel1);
     HSCMAND015PA analogSensor(getVoltageFunction);
 
     analogSensor.init();
     analogSensor.selfTest();
 
     std::function<ADCData()> getVoltageFunction2 =
-        std::bind(&ADS1118::getVoltage, ads1118, channel2);
+        std::bind(&ADS1118::getVoltage, std::ref(ads1118), channel2);
     HSCMRNN030PA analogSensor2(getVoltageFunction2);
 
     analogSensor2.init();
