@@ -78,7 +78,7 @@ void StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
     m << r1, r2, r3;
 
     // Compute the rotation matrix and the corresponding quaternion
-    Matrix3f A = M * m.transpose();
+    Matrix3f A = m * M.transpose();
     Vector4f q = SkyQuaternion::rotationMatrix2quat(A);
 
     // Save the orientation in the state
