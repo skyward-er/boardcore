@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2019-2023 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -179,6 +179,34 @@ float verticalSpeed(float p, float dpDt, float pRef, float tRef);
  */
 Eigen::Vector2f geodetic2NED(const Eigen::Vector2f& position1,
                              const Eigen::Vector2f& position2);
+
+/**
+ * @brief Computes the rho (air density) of air at the given altitude.
+ *
+ * @param d Altitude agl in NED frame [m].
+ * @param t0 Temperature at ground level [K].
+ * @return The air density at the given altitude [kg/m^3].
+ */
+float computeRho(float d, float t0);
+
+/**
+ * @brief Computes the speed of sound at the given altitude.
+ *
+ * @param d Altitude agl in NED frame [m].
+ * @param t0 Temperature at ground level [K].
+ * @return The speed of sound at the given altitude [m/s].
+ */
+float computeSoundSpeed(float d, float t0);
+
+/**
+ * @brief Computes the mach relative to the speed at a certain altitude.
+ *
+ * @param d Altitude agl in NED frame [m].
+ * @param vtot Total speed [m/s].
+ * @param t0 Temperature at ground level [K].
+ * @return The mach relative to the speed at a certain altitude.
+ */
+float computeMach(float d, float vtot, float t0);
 
 }  // namespace Aeroutils
 

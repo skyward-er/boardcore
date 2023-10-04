@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2019-2023 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -81,6 +81,26 @@ Vector2f geodetic2NED(const Vector2f& gpsData, const Vector2f& offset)
         mPerDegLat * (gpsData[0] - offset[0]),
         mPerDegLon * (gpsData[1] - offset[1]),
     };
+}
+
+float computeRho(float d, float t0)
+{
+    float T = t0 + Constants::a * d;
+    return Constants::RHO_0 *
+           powf(T / Constants::MSL_TEMPERATURE,
+                Constants::g / (Constants::a * Constants::R) - 1.f);
+}
+
+float computeSoundSpeed(float d, float t0)
+{
+    float T = t0 + Constants::a * d;
+    float c = sqrt(Constants::GAMMA_AIR * Constants::R * T);
+    return c;
+}
+
+float computeMach(float d, float vtot, float t0)
+{
+    return vtot / computeSoundSpeed(d, t0);
 }
 
 }  // namespace Aeroutils

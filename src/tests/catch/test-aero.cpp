@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2019-2023 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -114,4 +114,112 @@ TEST_CASE("[AeroUtils] verticalSpeed")
 
     for (int i = 0; i < count; i++)
         REQUIRE(verticalSpeed(p[i], dpDt[i], 100129.4, 297.5) == targetVSpeed);
+}
+
+TEST_CASE("[AeroUtils] computeRho")
+{
+    {
+        // Test for same t0 of atmosisa
+        const float t0 = 288.15;
+        float d[]      = {0, -500, -1000, -1500, -2000, -2500, -3000};
+
+        float rho[] = {1.2250, 1.1673, 1.1116, 1.0581, 1.0065, 0.9569, 0.9091};
+
+        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+            REQUIRE(computeRho(d[i], t0) == Approx(rho[i]).epsilon(0.001));
+    }
+
+    {
+        // Test for a different t0 from atmosisa
+        const float t0 = 287.11;
+        float d[]      = {0,         -315.556,  -631.111,  -946.667,  -1262.222,
+                          -1577.778, -1893.333, -2208.889, -2524.444, -2840};
+
+        float rho[] = {1.2062937204963,  1.17004184985014,  1.13462949957852,
+                       1.10004288170165, 1.06626877484746,  1.03329364698175,
+                       1.0011045116218,  0.969688091422233, 0.939031634200062,
+                       0.909122116038058};
+
+        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+            REQUIRE(computeRho(d[i], t0) == Approx(rho[i]).epsilon(0.001));
+    }
+}
+
+TEST_CASE("[AeroUtils] computeSoundSpeed")
+{
+    {
+        // Test for same t0 of atmosisa
+        const float t0 = 288.15;
+        float d[]      = {0, -500, -1000, -1500, -2000, -2500, -3000};
+
+        float c[] = {340.2941, 338.3696, 336.4341, 334.4874,
+                     332.5293, 330.5596, 328.5781};
+
+        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+            REQUIRE(computeSoundSpeed(d[i], t0) == Approx(c[i]).epsilon(0.001));
+    }
+
+    {
+        // Test for a different t0 from atmosisa
+        const float t0 = 287.11;
+        float d[]      = {0,         -315.556,  -631.111,  -946.667,  -1262.222,
+                          -1577.778, -1893.333, -2208.889, -2524.444, -2840};
+
+        float c[] = {339.679469143191, 338.463959192682, 337.244072148872,
+                     336.019752566034, 334.790959617651, 333.557636034153,
+                     332.319739232958, 331.077210026372, 329.830003980861,
+                     328.578059889884};
+
+        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+            REQUIRE(computeSoundSpeed(d[i], t0) == Approx(c[i]).epsilon(0.001));
+    }
+}
+
+TEST_CASE("[AeroUtils] computeMach")
+{
+    {
+        // Test for same t0 of atmosisa
+        const float t0 = 288.15;
+        float d[]      = {0, -500, -1000, -1500, -2000, -2500, -3000, -3000};
+        float vtot[]   = {0, 100, 100, 100, 100, 100, 100, 0};
+
+        float mach[] = {0, 0.2955, 0.2972, 0.2990, 0.3007, 0.3025, 0.3043, 0};
+
+        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+            REQUIRE(computeMach(d[i], vtot[i], t0) ==
+                    Approx(mach[i]).epsilon(0.001));
+    }
+
+    {
+
+        // Test for a different t0 from atmosisa
+        const float t0 = 287.11;
+        float d[]      = {0,         -315.556,  -631.111,  -946.667,  -1262.222,
+                          -1577.778, -1893.333, -2208.889, -2524.444, -2840};
+        float vtot[]   = {0,
+                          156.25199959656,
+                          312.503999193119,
+                          468.755998789678,
+                          625.007998386238,
+                          1250.01599677248,
+                          1031.26319733729,
+                          812.510397902109,
+                          593.757598466926,
+                          375.004799031743};
+
+        float mach[] = {0,
+                        0.461650333374514,
+                        0.926640451237251,
+                        1.39502512935622,
+                        1.86686044061653,
+                        3.74752624953993,
+                        3.10322582618053,
+                        2.45414173279215,
+                        1.80019280023227,
+                        1.14129591962841};
+
+        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+            REQUIRE(computeMach(d[i], vtot[i], t0) ==
+                    Approx(mach[i]).epsilon(0.001));
+    }
 }

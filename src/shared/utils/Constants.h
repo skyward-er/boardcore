@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Alain Carlucci
+/* Copyright (c) 2015-2023 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ static constexpr float RADIANS_TO_DEGREES = 180.0f / PI;
 
 static constexpr float g = 9.80665f;  // [m^s^2]
 
+static constexpr float TROPOSPHERE_HEIGHT = 11000.f;  // Troposphere height [m]
 static constexpr float a = 0.0065f;  // Troposphere temperature gradient [deg/m]
 static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
 static constexpr float n = g / (R * a);
@@ -42,7 +43,8 @@ static constexpr float nInv = (R * a) / g;
 static constexpr float CO    = 340.3;  // Sound speed at ground altitude [m/s]
 static constexpr float ALPHA = -3.871e-3;  // Sound speed gradient [1/s]
 static constexpr float RHO_0 = 1.225;      // Air density at sea level [kg/m^3]
-static constexpr float Hn    = 10400.0;    // Scale height [m]
+static constexpr float GAMMA_AIR = 1.4f;   // Adiabatic constant for air [1]
+static constexpr float Hn        = 10400.0;  // Scale height [m]
 
 static constexpr float MSL_PRESSURE    = 101325.0f;  // [Pa]
 static constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
