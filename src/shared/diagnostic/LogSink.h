@@ -88,13 +88,10 @@ protected:
 class FileLogSinkBuffered : public FileLogSink
 {
 public:
-    FileLogSinkBuffered() : logger(Logger::getInstance()) {}
+    FileLogSinkBuffered() {}
 
 protected:
     void logImpl(const std::string& l) override;
-
-private:
-    Logger& logger;
 };
 
 }  // namespace Boardcore

@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Singleton.h>
 #include <miosix.h>
 #include <stdint.h>
 
@@ -31,6 +30,7 @@
 #include <queue>
 #include <string>
 #include <type_traits>
+#include <utils/ModuleManager/ModuleManager.hpp>
 
 #include "LoggerStats.h"
 
@@ -51,10 +51,8 @@ enum class LoggerResult
 /**
  * @brief Buffered logger. Needs to be started before it can be used.
  */
-class Logger : public Singleton<Logger>
+class Logger : public Module
 {
-    friend class Singleton<Logger>;
-
 public:
     /**
      * @brief Call this function to start the logger.
@@ -132,9 +130,9 @@ public:
         return maxFilenameNumber;
     }
 
-private:
     Logger();
 
+private:
     static std::string getFileName(int logNumber);
 
     static void packThreadLauncher(void *argv);

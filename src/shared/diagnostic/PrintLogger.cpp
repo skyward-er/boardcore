@@ -22,6 +22,8 @@
 
 #include "PrintLogger.h"
 
+#include <utils/ModuleManager/ModuleManager.hpp>
+
 using miosix::Lock;
 
 namespace Boardcore
@@ -75,7 +77,7 @@ void FileLogSinkBuffered::logImpl(const string& l)
     Lock<FastMutex> lock(mutex);
     LoggingString s;
     strncpy(s.logString, l.c_str(), MAX_LOG_STRING_SIZE - 1);
-    logger.log(s);
+    ModuleManager::getInstance().get<Logger>()->log(s);
 }
 
 PrintLogger PrintLogger::getChild(const string& name)

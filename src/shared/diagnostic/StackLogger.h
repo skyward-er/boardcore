@@ -27,6 +27,7 @@
 #include <logger/Logger.h>
 
 #include <map>
+#include <utils/ModuleManager/ModuleManager.hpp>
 
 #include "StackData.h"
 
@@ -74,7 +75,7 @@ public:
             Lock<FastMutex> l(mutex);
             for (auto it = stacks.begin(); it != stacks.end(); it++)
             {
-                Logger::getInstance().log(it->second);
+                ModuleManager::getInstance().get<Logger>()->log(it->second);
             }
         }
     }

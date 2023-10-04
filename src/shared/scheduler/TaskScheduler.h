@@ -33,6 +33,7 @@
 #include <list>
 #include <map>
 #include <queue>
+#include <utils/ModuleManager/ModuleManager.hpp>
 
 #include "TaskSchedulerData.h"
 
@@ -57,7 +58,7 @@ namespace Boardcore
  *    TaskScheduler.add(magic_std::function, 150);
  *
  */
-class TaskScheduler : public ActiveObject
+class TaskScheduler : public ActiveObject, public Module
 {
 public:
     using function_t = std::function<void()>;

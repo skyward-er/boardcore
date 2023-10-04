@@ -27,9 +27,11 @@
 #include <utils/Constants.h>
 
 #include <limits>
+#include <utils/ModuleManager/ModuleManager.hpp>
 
 #include "drivers/timer/TimestampTimer.h"
 #include "utils/Debug.h"
+
 using namespace std;
 
 namespace Boardcore
@@ -101,7 +103,8 @@ void AirBrakesPI::chooseTrajectory(TrajectoryPoint currentPosition)
 
     chosenTrajectory = &(trajectorySet.trajectories[trjIndexMin]);
 
-    Logger::getInstance().log(AirBrakesChosenTrajectory{trjIndexMin});
+    ModuleManager::getInstance().get<Logger>()->log(
+        AirBrakesChosenTrajectory{trjIndexMin});
 }
 
 TrajectoryPoint AirBrakesPI::getSetpoint(TrajectoryPoint currentPosition)
