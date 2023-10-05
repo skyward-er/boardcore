@@ -299,41 +299,22 @@ void NAS::correctAcc(const AccelerometerData& acc)
     correctAcc(accV.normalized());
 }
 
-void NAS::correctPitot(const float deltaP, const float staticP)
+void NAS::correctPitot(const float airspeed)
 {
-    if (deltaP >= 0)
-    {
-        float c      = 343;  // Speed of sound
-        Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
-        float vPitot;
+    Matrix<float, 1, 1> R(config.SIGMA_PITOT);
+    Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
 
-        if (vel.norm() / c >= 0.9419)
-        {
-            float rho = 1.225;  // Air density
-            vPitot    = -sqrtf(
-                   fabs(-2.0f * c * c +
-                        sqrtf((4.0f * powf(c, 4) + 8.0f * c * c * deltaP / rho))));
-        }
-        else
-        {
-            float gamma = 1.4;  // Heat capacity ratio of dry air
-            float p0    = staticP + deltaP;
-            vPitot =
-                -sqrtf(c * c * 2 / (gamma - 1) *
-                       fabs(powf((p0 / staticP), (gamma - 1) / gamma) - 1));
-        }
+    Matrix<float, 1, 3> H = Matrix<float, 1, 3>::Zero();
+    H.coeffRef(0, 2)      = -x[5] / airspeed;
 
-        Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
-        H.coeffRef(0, 5)      = 1;
+    Matrix<float, 3, 3> Pl = P.block<3, 3>(IDX_VEL, IDX_VEL);
+    Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
 
-        Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
-        Matrix<float, 1, 1> S =
-            H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_PITOT);
+    Matrix<float, 3, 1> K     = Pl * H.transpose() * S.inverse();
+    x.block<3, 1>(IDX_VEL, 0) = vel + K * (-airspeed - x[5]);
 
-        Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
-        x.head<6>()           = x.head<6>() + K * (vPitot - x[5]);
-        P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
-    }
+    P.block<3, 3>(IDX_VEL, IDX_VEL) =
+        (Matrix<float, 3, 3>::Identity() - K * H) * Pl;
 }
 
 NASState NAS::getState() const
