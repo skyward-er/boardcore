@@ -301,20 +301,33 @@ void NAS::correctAcc(const AccelerometerData& acc)
 
 void NAS::correctPitot(const float airspeed)
 {
-    Matrix<float, 1, 1> R(config.SIGMA_PITOT);
-    Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
+    // Correct with pitot airspeed only if the airspeed is greater than zero. Do
+    // not correct otherwise
+    if (airspeed > 0)
+    {
+        Matrix<float, 1, 1> R(config.SIGMA_PITOT);
+        // Take the already estimated velocities
+        Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
 
-    Matrix<float, 1, 3> H = Matrix<float, 1, 3>::Zero();
-    H.coeffRef(0, 2)      = -x[5] / airspeed;
+        Matrix<float, 1, 3> H = Matrix<float, 1, 3>::Zero();
+        H.coeffRef(0, 2)      = -x[5] / airspeed;
 
-    Matrix<float, 3, 3> Pl = P.block<3, 3>(IDX_VEL, IDX_VEL);
-    Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
+        // Take covariance matrix for the velocities
+        Matrix<float, 3, 3> Pl = P.block<3, 3>(IDX_VEL, IDX_VEL);
+        Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
 
-    Matrix<float, 3, 1> K     = Pl * H.transpose() * S.inverse();
-    x.block<3, 1>(IDX_VEL, 0) = vel + K * (-airspeed - x[5]);
+        // Correct with the pitot only if S is invertible
+        if (S[0] != 0)
+        {
+            // Compute the kalman Gain
+            Matrix<float, 3, 1> K = Pl * H.transpose() * S.inverse();
 
-    P.block<3, 3>(IDX_VEL, IDX_VEL) =
-        (Matrix<float, 3, 3>::Identity() - K * H) * Pl;
+            x.block<3, 1>(IDX_VEL, 0) = vel + K * (-airspeed - x[5]);
+
+            P.block<3, 3>(IDX_VEL, IDX_VEL) =
+                (Matrix<float, 3, 3>::Identity() - K * H) * Pl;
+        }
+    }
 }
 
 NASState NAS::getState() const
