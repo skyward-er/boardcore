@@ -134,10 +134,9 @@ public:
      *
      * Do not call this function after apogee!
      *
-     * @param deltaP Delta pressure measured by the differential sensor [Pa].
-     * @param staticP Static pressure [Pa].
+     * @param airspeed Speed of air calculated by the Pitot.
      */
-    void correctPitot(const float deltaP, const float staticP);
+    void correctPitot(const float airspeed);
 
     /**
      * @return EKF state.
