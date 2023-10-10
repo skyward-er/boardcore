@@ -60,7 +60,8 @@ public:
         float totalPressure  = getTotalPressure();
         float staticPressure = getStaticPressure();
         PitotData pitotSpeed;
-        if (totalPressure > staticPressure)
+        if (totalPressure > 0 && staticPressure > 0 &&
+            totalPressure > staticPressure)
         {
 
             float gamma = 1.4f;
