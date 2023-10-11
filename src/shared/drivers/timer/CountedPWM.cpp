@@ -85,8 +85,8 @@ void CountedPWM::setDutyCycleResolution(unsigned int dutyCycleResolution)
 
 void CountedPWM::generatePulses(uint16_t pulses)
 {
-    // Reset the counters
-    pulseTimer.setCounter(0);
+    // Reset only the counter timer so that the pulses are generated always with
+    // the correct frequency and duty cycle
     counterTimer.setCounter(0);
 
     // Set the capture and compare register to the number of pulses to generate
