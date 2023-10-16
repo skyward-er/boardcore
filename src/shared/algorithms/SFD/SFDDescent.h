@@ -37,13 +37,13 @@ public:
     static constexpr int numFeatures = 5;
     static constexpr int lenChunk    = 32;
 
-    using SVM         = SVM<numFeatures>;
+    using SVMn        = SVM<numFeatures>;
     using FeaturesVec = Eigen::Vector<float, numFeatures>;
     using VectorIn    = Eigen::Vector<float, lenChunk>;
 
     struct SFDDConfig
     {
-        SVM::SVMConfig modelParameters;
+        SVMn::SVMConfig modelParameters;
     };
 
     SFDDescent(const SFDDConfig& config);
@@ -51,7 +51,7 @@ public:
     bool classify(const VectorIn& input);
 
 private:
-    SVM svm;
+    SVMn svm;
 
     FeaturesVec getFeatures(const VectorIn& input);
 };

@@ -22,8 +22,6 @@
 
 // ======= Sensor Fault Detection Model (SFDAscent) =======
 
-#pragma once
-
 #include "SFDAscent.h"
 
 #include <algorithms/FFT.h>
@@ -48,17 +46,17 @@ SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
     u   = data.mean();
     x0  = data - u * VectorIn::Ones();
     var = x0.squaredNorm() / lenChunk;
-    s2  = x0.pow(2).mean();
-    m4  = x0.pow(4).mean();
+    s2  = x0.array().pow(2).mean();
+    m4  = x0.array().pow(4).mean();
 
-    rfourier = FFT32::fft(data);  // TODO: fix complex -> float
+    rfourier = FFT32::fft(data).real();  // TODO: fix complex -> float
     rfmean   = rfourier.mean();
     rfvar    = (rfourier - rfmean * VectorIn::Ones()).squaredNorm() / lenChunk;
 
     features(0) = delta;
     features(1) = var;
     features(2) = m4 / std::pow(s2, 2);
-    features(3) = data.pow(5).mean();
+    features(3) = data.array().pow(5).mean();
     features(4) = rfvar;
     features(5) = rfourier.cwiseAbs().sum();
 

@@ -22,8 +22,6 @@
 
 // ======= Sensor Fault Detection Model (SFDAscent) =======
 
-#pragma once
-
 #include "SFDDescent.h"
 
 namespace Boardcore
@@ -47,9 +45,9 @@ SFDDescent::FeaturesVec SFDDescent::getFeatures(const VectorIn& input)
         data(i) = (input(i) - min) / (std::max(delta, 1e-25f) * 2) - 1;
     u   = data.mean();
     x0  = data - u * VectorIn::Ones();
-    s2  = x0.pow(2).mean();
-    m3  = x0.pow(3).mean();
-    m4  = x0.pow(4).mean();
+    s2  = x0.array().pow(2).mean();
+    m3  = x0.array().pow(3).mean();
+    m4  = x0.array().pow(4).mean();
     rms = std::sqrt(s2);
 
     features(0) = data.cwiseAbs().maxCoeff() / rms;

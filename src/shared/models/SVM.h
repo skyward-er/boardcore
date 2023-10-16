@@ -51,7 +51,7 @@ public:
     float score(VectorD input)
     {
         VectorD x = input - mu;
-        x /= sigma;
+        x         = x.array() / sigma.array();
         return -((x / scale).dot(beta) + bias);
     }
 
