@@ -32,12 +32,12 @@ public:
      * @brief Construct a new Low Pass object
      *
      * @param gain The gain of the filter
-     * @param cutoff_freq The cutoff frequency of the filter
+     * @param cutoffFreq The cutoff frequency of the filter
      * @param lambda The lambda parameter of the filter
      *
      * @note WARNING: Initialize output at 0 at first
      */
-    LowPass(float gain, float cutoff_freq, float lambda);
+    LowPass(float gain, float cutoffFreq, float lambda);
 
     /**
      * @brief Filter the input
@@ -47,10 +47,7 @@ public:
     float filter(float input);
 
 private:
-    float cutoff_freq;
-    float lambda;
-    float gain;
-    float output;
+    float gain, cutoffFreq, lambda, output;
 };
 
 }  // namespace Boardcore
