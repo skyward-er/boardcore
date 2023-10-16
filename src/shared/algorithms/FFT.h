@@ -31,7 +31,7 @@ namespace Boardcore
 {
 
 /**
- * @brief Implementation of Fast Fourier Trasnform using the iterative version
+ * @brief Implementation of Fast Fourier Transform using the iterative version
  * with bit-reversal index variant of the famous Cooley-Tukey FFT algorithm.
  *
  * NOTE: N must be a power of 2
