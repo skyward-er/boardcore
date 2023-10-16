@@ -26,14 +26,14 @@ namespace Boardcore
 {
 
 // TODO: WARNING! initialized at 0
-LowPass::LowPass(float gain, float cutoff_freq, float lambda)
-    : gain(gain), cutoff_freq(cutoff_freq), lambda(lambda), output(0)
+LowPass::LowPass(float gain, float cutoffFreq, float lambda)
+    : gain(gain), cutoffFreq(cutoffFreq), lambda(lambda), output(0)
 {
 }
 
 float LowPass::filter(float input)
 {
-    output = lambda * output + (gain / cutoff_freq) * (1 - lambda) * input;
+    output = lambda * output + (gain / cutoffFreq) * (1 - lambda) * input;
     return output;
 }
 
