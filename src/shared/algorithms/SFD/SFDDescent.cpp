@@ -34,8 +34,8 @@ SFDDescent::SFDDescent(const SFDDConfig& config) : svm(config.modelParameters)
 SFDDescent::FeaturesVec SFDDescent::getFeatures(const VectorIn& input)
 {
     float delta, min, max, u, s2, m3, m4, rms;
-    VectorIn rfourier;
-    VectorIn data, x0 = VectorIn::Zero();
+    VectorIn rfourier, x0;
+    VectorIn data        = VectorIn::Zero();
     FeaturesVec features = FeaturesVec::Zero();
 
     min   = input.minCoeff();

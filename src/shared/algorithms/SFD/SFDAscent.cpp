@@ -34,8 +34,8 @@ SFDAscent::SFDAscent(const SFDAConfig& config) : svm(config.modelParameters) {}
 SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
 {
     float delta, min, max, u, var, s2, m4, rfmean, rfvar;
-    VectorIn rfourier;
-    VectorIn data, x0 = VectorIn::Zero();
+    VectorIn rfourier, x0;
+    VectorIn data        = VectorIn::Zero();
     FeaturesVec features = FeaturesVec::Zero();
 
     min   = input.minCoeff();

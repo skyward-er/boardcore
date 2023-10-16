@@ -46,7 +46,7 @@ public:
         SVMn::SVMConfig modelParameters;
     };
 
-    SFDDescent(const SFDDConfig& config);
+    explicit SFDDescent(const SFDDConfig& config);
 
     bool classify(const VectorIn& input);
 

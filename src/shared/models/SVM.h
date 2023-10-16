@@ -42,7 +42,7 @@ public:
         float scale;
     };
 
-    SVM(const SVMConfig& config)
+    explicit SVM(const SVMConfig& config)
         : beta(config.beta), mu(config.mu), sigma(config.sigma),
           bias(config.bias), scale(config.scale)
     {

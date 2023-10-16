@@ -46,7 +46,7 @@ public:
         SVMn::SVMConfig modelParameters;
     };
 
-    SFDAscent(const SFDAConfig& config);
+    explicit SFDAscent(const SFDAConfig& config);
 
     bool classify(const VectorIn& input);
 
