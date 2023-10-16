@@ -52,9 +52,9 @@ int main()
 
     for (int i = 0; i < TAKES; i++)
     {
-        for (size_t i = 0; i < input_signal.size(); i++)
+        for (size_t j = 0; j < input_signal.size(); j++)
         {
-            input_signal(i) = (float)rand() / RAND_MAX;
+            input_signal(j) = (float)rand() / RAND_MAX;
         }
 
         int64_t duration = TimestampTimer::getTimestamp();
