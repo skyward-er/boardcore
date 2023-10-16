@@ -43,6 +43,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/algorithms/NAS/StateInitializer.cpp
         ${SBS_BASE}/src/shared/algorithms/SFD/SFDAscent.cpp
         ${SBS_BASE}/src/shared/algorithms/SFD/SFDDescent.cpp
+        ${SBS_BASE}/src/shared/algorithms/Filters/LowPass.cpp
 
         # Debug
         ${SBS_BASE}/src/shared/utils/Debug.cpp
