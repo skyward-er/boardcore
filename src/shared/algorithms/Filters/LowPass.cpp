@@ -26,6 +26,7 @@ namespace Boardcore
 {
 
 // TODO: WARNING! initialized at 0
+// WARNING: frequency set by parameters, look for these anyway
 LowPass::LowPass(float gain, float cutoffFreq, float lambda)
     : gain(gain), cutoffFreq(cutoffFreq), lambda(lambda), output(0)
 {
