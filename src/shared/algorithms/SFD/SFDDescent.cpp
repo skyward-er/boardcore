@@ -31,11 +31,11 @@ SFDDescent::SFDDescent(const SFDDescentConfig& config) : svm(config.modelParamet
 {
 }
 
-SFDDescent::FeaturesVec SFDDescent::getFeatures(const VectorIn& input)
+SFDDescent::FeaturesVec SFDDescent::getFeatures(const SFDVectorIn& input)
 {
     float delta, min, max, u, s2, m3, m4, rms;
-    VectorIn rfourier, x0;
-    VectorIn data        = VectorIn::Zero();
+    SFDVectorIn rfourier, x0;
+    SFDVectorIn data        = SFDVectorIn::Zero();
     FeaturesVec features = FeaturesVec::Zero();
 
     min   = input.minCoeff();
@@ -44,7 +44,7 @@ SFDDescent::FeaturesVec SFDDescent::getFeatures(const VectorIn& input)
     for (int i = 0; i < LEN_CHUNK; i++)
         data(i) = (input(i) - min) / (std::max(delta, 1e-25f) * 2) - 1;
     u   = data.mean();
-    x0  = data - u * VectorIn::Ones();
+    x0  = data - u * SFDVectorIn::Ones();
     s2  = x0.array().pow(2).mean();
     m3  = x0.array().pow(3).mean();
     m4  = x0.array().pow(4).mean();
@@ -59,7 +59,7 @@ SFDDescent::FeaturesVec SFDDescent::getFeatures(const VectorIn& input)
     return features;
 }
 
-bool SFDDescent::classify(const VectorIn& input)
+bool SFDDescent::classify(const SFDVectorIn& input)
 {
     FeaturesVec features = getFeatures(input);
     float score          = svm.score(features);

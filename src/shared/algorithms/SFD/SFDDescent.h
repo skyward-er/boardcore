@@ -40,7 +40,6 @@ public:
 
     using SVMn        = SVM<NUM_FEATURES>;
     using FeaturesVec = Eigen::Vector<float, NUM_FEATURES>;
-    using VectorIn    = Eigen::Vector<float, LEN_CHUNK>;
 
     struct SFDDescentConfig
     {
@@ -49,12 +48,12 @@ public:
 
     explicit SFDDescent(const SFDDescentConfig& config);
 
-    bool classify(const VectorIn& input);
+    bool classify(const SFDVectorIn& input);
 
 private:
     SVMn svm;
 
-    FeaturesVec getFeatures(const VectorIn& input);
+    FeaturesVec getFeatures(const SFDVectorIn& input);
 };
 
 }  // namespace Boardcore

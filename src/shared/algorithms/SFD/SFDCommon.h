@@ -23,4 +23,13 @@
 
 #pragma once
 
+#include <Eigen/Core>
+
+namespace Boardcore
+{
+
 static constexpr int LEN_CHUNK = 32;
+
+using SFDVectorIn = Eigen::Vector<float, LEN_CHUNK>;
+
+}  // namespace Boardcore

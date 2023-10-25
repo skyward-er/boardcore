@@ -31,11 +31,11 @@ namespace Boardcore
 
 SFDAscent::SFDAscent(const SFDAscentConfig& config) : svm(config.modelParameters) {}
 
-SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
+SFDAscent::FeaturesVec SFDAscent::getFeatures(const SFDVectorIn& input)
 {
     float delta, min, max, u, var, s2, m4, rfmean, rfvar;
-    VectorIn rfourier, x0;
-    VectorIn data        = VectorIn::Zero();
+    SFDVectorIn rfourier, x0;
+    SFDVectorIn data        = SFDVectorIn::Zero();
     FeaturesVec features = FeaturesVec::Zero();
 
     min   = input.minCoeff();
@@ -44,14 +44,14 @@ SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
     for (int i = 0; i < LEN_CHUNK; i++)
         data(i) = (input(i) - min) / (std::max(delta, 1e-25f) * 2) - 1;
     u   = data.mean();
-    x0  = data - u * VectorIn::Ones();
+    x0  = data - u * SFDVectorIn::Ones();
     var = x0.squaredNorm() / LEN_CHUNK;
     s2  = x0.array().pow(2).mean();
     m4  = x0.array().pow(4).mean();
 
     rfourier = FFT32::fft(data).real();  // TODO: fix complex -> float
     rfmean   = rfourier.mean();
-    rfvar    = (rfourier - rfmean * VectorIn::Ones()).squaredNorm() / LEN_CHUNK;
+    rfvar    = (rfourier - rfmean * SFDVectorIn::Ones()).squaredNorm() / LEN_CHUNK;
 
     features(0) = delta;
     features(1) = var;
@@ -63,7 +63,7 @@ SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
     return features;
 }
 
-bool SFDAscent::classify(const VectorIn& input)
+bool SFDAscent::classify(const SFDVectorIn& input)
 {
     FeaturesVec features = getFeatures(input);
     float score          = svm.score(features);
