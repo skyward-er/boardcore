@@ -31,7 +31,7 @@ template <typename T, size_t D>
 class SlidingWindow
 {
 public:
-    explicit SlidingWindow() : window({}), filled(0) {}
+    explicit SlidingWindow() : window({0}), filled(0) {}
 
     void push(T value)
     {
@@ -41,6 +41,11 @@ public:
     }
 
     bool isFull() { return filled == D; }
+
+    /**
+     * @brief Get the actual number of elements in the window
+     */
+    size_t filled() { return filled; }
 
     T last() { return window[D - 1]; }
 
