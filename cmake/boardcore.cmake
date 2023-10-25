@@ -53,6 +53,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
+        ${SBS_BASE}/src/shared/drivers/dma/DMA.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/CountedPWM.cpp
