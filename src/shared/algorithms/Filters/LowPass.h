@@ -45,8 +45,8 @@ public:
      * @param cutoffFreq The cutoff frequency of the filter
      * @param lambda The lambda parameter of the filter
      *
-     * @note WARNING: Initialize output at 0 at first
-     * @note WARNING: frequency set by parameters, look for these in any case
+     * @warning Initialize output at 0 at first
+     * @warning frequency set by parameters, look for these in any case
      */
     LowPass(float gain, float cutoffFreq, float lambda);
 
@@ -55,8 +55,8 @@ public:
      *
      * @param config The configuration of the filter
      *
-     * @note WARNING: Initialize output at 0 at first
-     * @note WARNING: frequency set by parameters, look for these in any case
+     * @warning Initialize output at 0 at first
+     * @warning frequency set by parameters, look for these in any case
      */
     explicit LowPass(const LowPassConfig& config);
 
