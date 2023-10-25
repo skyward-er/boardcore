@@ -29,7 +29,7 @@
 namespace Boardcore
 {
 
-SFDAscent::SFDAscent(const SFDAConfig& config) : svm(config.modelParameters) {}
+SFDAscent::SFDAscent(const SFDAscentConfig& config) : svm(config.modelParameters) {}
 
 SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
 {
@@ -41,17 +41,17 @@ SFDAscent::FeaturesVec SFDAscent::getFeatures(const VectorIn& input)
     min   = input.minCoeff();
     max   = input.maxCoeff();
     delta = max - min;
-    for (int i = 0; i < lenChunk; i++)
+    for (int i = 0; i < LEN_CHUNK; i++)
         data(i) = (input(i) - min) / (std::max(delta, 1e-25f) * 2) - 1;
     u   = data.mean();
     x0  = data - u * VectorIn::Ones();
-    var = x0.squaredNorm() / lenChunk;
+    var = x0.squaredNorm() / LEN_CHUNK;
     s2  = x0.array().pow(2).mean();
     m4  = x0.array().pow(4).mean();
 
     rfourier = FFT32::fft(data).real();  // TODO: fix complex -> float
     rfmean   = rfourier.mean();
-    rfvar    = (rfourier - rfmean * VectorIn::Ones()).squaredNorm() / lenChunk;
+    rfvar    = (rfourier - rfmean * VectorIn::Ones()).squaredNorm() / LEN_CHUNK;
 
     features(0) = delta;
     features(1) = var;

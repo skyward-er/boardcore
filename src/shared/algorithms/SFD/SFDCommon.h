@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Federico Lolli
  *
@@ -20,41 +21,6 @@
  * THE SOFTWARE.
  */
 
-// ======= Sensor Fault Detection Model (SFDAscent) =======
-
 #pragma once
 
-#include <models/SVM.h>
-
-#include <Eigen/Core>
-
-#include "SFDCommon.h"
-
-namespace Boardcore
-{
-
-class SFDAscent
-{
-public:
-    static constexpr int NUM_FEATURES = 6;
-
-    using SVMn        = SVM<NUM_FEATURES>;
-    using FeaturesVec = Eigen::Vector<float, NUM_FEATURES>;
-    using VectorIn    = Eigen::Vector<float, LEN_CHUNK>;
-
-    struct SFDAscentConfig
-    {
-        SVMn::SVMConfig modelParameters;
-    };
-
-    explicit SFDAscent(const SFDAscentConfig& config);
-
-    bool classify(const VectorIn& input);
-
-private:
-    SVMn svm;
-
-    FeaturesVec getFeatures(const VectorIn& input);
-};
-
-}  // namespace Boardcore
+static constexpr int LEN_CHUNK = 32;

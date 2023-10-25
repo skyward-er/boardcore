@@ -48,10 +48,7 @@ public:
     float filter(float input);
 
 private:
-    float cutoffFreq;
-    float lambda;
-    float gain;
-    float output;
+    float gain, cutoffFreq, lambda, output;
 };
 
 }  // namespace Boardcore

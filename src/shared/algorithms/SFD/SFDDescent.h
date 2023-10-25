@@ -28,25 +28,26 @@
 
 #include <Eigen/Core>
 
+#include "SFDCommon.h"
+
 namespace Boardcore
 {
 
 class SFDDescent
 {
 public:
-    static constexpr int numFeatures = 5;
-    static constexpr int lenChunk    = 32;
+    static constexpr int NUM_FEATURES = 5;
 
-    using SVMn        = SVM<numFeatures>;
-    using FeaturesVec = Eigen::Vector<float, numFeatures>;
-    using VectorIn    = Eigen::Vector<float, lenChunk>;
+    using SVMn        = SVM<NUM_FEATURES>;
+    using FeaturesVec = Eigen::Vector<float, NUM_FEATURES>;
+    using VectorIn    = Eigen::Vector<float, LEN_CHUNK>;
 
-    struct SFDDConfig
+    struct SFDDescentConfig
     {
         SVMn::SVMConfig modelParameters;
     };
 
-    explicit SFDDescent(const SFDDConfig& config);
+    explicit SFDDescent(const SFDDescentConfig& config);
 
     bool classify(const VectorIn& input);
 

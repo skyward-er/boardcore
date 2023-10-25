@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-SFDDescent::SFDDescent(const SFDDConfig& config) : svm(config.modelParameters)
+SFDDescent::SFDDescent(const SFDDescentConfig& config) : svm(config.modelParameters)
 {
 }
 
@@ -41,7 +41,7 @@ SFDDescent::FeaturesVec SFDDescent::getFeatures(const VectorIn& input)
     min   = input.minCoeff();
     max   = input.maxCoeff();
     delta = max - min;
-    for (int i = 0; i < lenChunk; i++)
+    for (int i = 0; i < LEN_CHUNK; i++)
         data(i) = (input(i) - min) / (std::max(delta, 1e-25f) * 2) - 1;
     u   = data.mean();
     x0  = data - u * VectorIn::Ones();
