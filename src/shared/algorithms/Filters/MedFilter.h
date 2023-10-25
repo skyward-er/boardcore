@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <utils/SlidingWindow.h>
+
 #include <array>
 
 namespace Boardcore
@@ -30,15 +32,15 @@ namespace Boardcore
 /**
  * @brief Implementation of a Median Filter
  *
- * @tparam windowSize The size of the window
- * @note WARNING: should be noted that the first windowSize - 1 outputs will be
+ * @tparam WIN_SIZE The size of the window
+ * @note WARNING: should be noted that the first WIN_SIZE - 1 outputs will be
  * wrong because the window is not full yet (consider using a Shadow Mode)
  */
-template <size_t windowSize>
+template <size_t WIN_SIZE>
 class MedFilter
 {
-    // windowSize must be odd
-    static_assert(windowSize % 2 == 1, "windowSize must be odd");
+    // WIN_SIZE must be odd
+    static_assert(WIN_SIZE % 2 == 1, "WIN_SIZE must be odd");
 
 public:
     /**
@@ -46,49 +48,34 @@ public:
      *
      * @note WARNING: Initialize output at 0 at first
      */
-    explicit MedFilter() : window({}) {}
+    explicit MedFilter() : window() {}
 
     /**
      * @brief Filter the input
      *
      * @param input The input to filter
-     * @note WARNING: should be noted that the first windowSize - 1 outputs will
+     * @note WARNING: should be noted that the first WIN_SIZE - 1 outputs will
      * be wrong because the window is not full yet (consider using a Shadow
      * Mode)
      */
     float filter(float input)
     {
-        slideWindow(input);
+        window.push(input);
         return median();
     }
 
 private:
     /**
-     * @brief Slide the window by one position to the left and add the new input
-     * to the right
-     *
-     * @param input The input to add to the window
-     */
-    void slideWindow(float input)
-    {
-        for (size_t i = 0; i < windowSize - 1; i++)
-        {
-            window[i] = window[i + 1];
-        }
-        window[windowSize - 1] = input;
-    }
-
-    /**
      * @brief Calculate the median of the window
      */
     float median()
     {
-        std::array<float, windowSize> sortedWindow = window;
-        std::sort(sortedWindow.begin(), sortedWindow.end());
-        return sortedWindow[windowSize / 2];
+        std::array<float, WIN_SIZE> sorted_window = window.all();
+        std::sort(sorted_window.begin(), sorted_window.end());
+        return sorted_window[WIN_SIZE / 2];
     }
 
-    std::array<float, windowSize> window;
+    SlidingWindow<float, WIN_SIZE> window;
 };
 
 }  // namespace Boardcore
