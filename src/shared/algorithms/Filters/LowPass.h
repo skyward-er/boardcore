@@ -25,20 +25,40 @@
 namespace Boardcore
 {
 
+/**
+ * @brief Online Low Pass filter with frequency-aware parameters
+ */
 class LowPass
 {
 public:
+    struct LowPassConfig
+    {
+        float gain;
+        float cutoffFreq;
+        float lambda;
+    };
+
     /**
-     * @brief Construct a new Low Pass object
+     * @brief Construct an online Low Pass by providing each parameter
      *
      * @param gain The gain of the filter
      * @param cutoffFreq The cutoff frequency of the filter
      * @param lambda The lambda parameter of the filter
      *
      * @note WARNING: Initialize output at 0 at first
-     * @note WARNING: frequency set by parameters, look for these anyway
+     * @note WARNING: frequency set by parameters, look for these in any case
      */
     LowPass(float gain, float cutoffFreq, float lambda);
+
+    /**
+     * @brief Construct an online Low Pass from a configuration
+     *
+     * @param config The configuration of the filter
+     *
+     * @note WARNING: Initialize output at 0 at first
+     * @note WARNING: frequency set by parameters, look for these in any case
+     */
+    explicit LowPass(const LowPassConfig& config);
 
     /**
      * @brief Filter the input
