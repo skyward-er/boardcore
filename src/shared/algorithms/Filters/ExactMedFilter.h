@@ -30,31 +30,32 @@ namespace Boardcore
 {
 
 /**
- * @brief Implementation of a Median Filter
+ * @brief Exact Median Filter based on a fixed window size, mind that while it
+ * is not full the filtered output should not be taken into consideration
  *
- * @tparam WIN_SIZE The size of the window
- * @note WARNING: should be noted that the first WIN_SIZE - 1 outputs will be
+ * @tparam WIN_SIZE The exact size of the window
+ * @warning: should be noted that the first WIN_SIZE - 1 outputs will be
  * wrong because the window is not full yet (consider using a Shadow Mode)
  */
 template <size_t WIN_SIZE>
-class MedFilter
+class ExactMedFilter
 {
     // WIN_SIZE must be odd
     static_assert(WIN_SIZE % 2 == 1, "WIN_SIZE must be odd");
 
 public:
     /**
-     * @brief Construct a new Median Filter object
+     * @brief Construct a new Exact Median Filter object
      *
-     * @note WARNING: Initialize output at 0 at first
+     * @warning Initialize output at 0 at first
      */
-    explicit MedFilter() : window() {}
+    explicit ExactMedFilter() : window() {}
 
     /**
      * @brief Filter the input
      *
      * @param input The input to filter
-     * @note WARNING: should be noted that the first WIN_SIZE - 1 outputs will
+     * @warning should be noted that the first WIN_SIZE - 1 outputs will
      * be wrong because the window is not full yet (consider using a Shadow
      * Mode)
      */
