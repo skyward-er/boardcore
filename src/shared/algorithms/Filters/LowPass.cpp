@@ -26,9 +26,16 @@ namespace Boardcore
 {
 
 // TODO: WARNING! initialized at 0
-// WARNING: frequency set by parameters, look for these anyway
+// WARNING: frequency set by parameters, look for these in any case
 LowPass::LowPass(float gain, float cutoffFreq, float lambda)
     : gain(gain), cutoffFreq(cutoffFreq), lambda(lambda), output(0)
+{
+}
+
+// TODO: WARNING! initialized at 0
+// WARNING: frequency set by parameters, look for these in any case
+LowPass::LowPass(const LowPassConfig& config)
+    : LowPass(config.gain, config.cutoffFreq, config.lambda)
 {
 }
 
