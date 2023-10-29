@@ -27,7 +27,8 @@
 namespace Boardcore
 {
 
-SFDDescent::SFDDescent(const SFDDescentConfig& config) : svm(config.modelParameters)
+SFDDescent::SFDDescent(const SFDDescentConfig& config)
+    : svm(config.modelParameters)
 {
 }
 
@@ -35,7 +36,7 @@ SFDDescent::FeaturesVec SFDDescent::getFeatures(const SFDVectorIn& input)
 {
     float delta, min, max, u, s2, m3, m4, rms;
     SFDVectorIn rfourier, x0;
-    SFDVectorIn data        = SFDVectorIn::Zero();
+    SFDVectorIn data     = SFDVectorIn::Zero();
     FeaturesVec features = FeaturesVec::Zero();
 
     min   = input.minCoeff();

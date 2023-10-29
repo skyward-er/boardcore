@@ -29,13 +29,16 @@
 namespace Boardcore
 {
 
-SFDAscent::SFDAscent(const SFDAscentConfig& config) : svm(config.modelParameters) {}
+SFDAscent::SFDAscent(const SFDAscentConfig& config)
+    : svm(config.modelParameters)
+{
+}
 
 SFDAscent::FeaturesVec SFDAscent::getFeatures(const SFDVectorIn& input)
 {
     float delta, min, max, u, var, s2, m4, rfmean, rfvar;
     SFDVectorIn rfourier, x0;
-    SFDVectorIn data        = SFDVectorIn::Zero();
+    SFDVectorIn data     = SFDVectorIn::Zero();
     FeaturesVec features = FeaturesVec::Zero();
 
     min   = input.minCoeff();
@@ -51,7 +54,7 @@ SFDAscent::FeaturesVec SFDAscent::getFeatures(const SFDVectorIn& input)
 
     rfourier = FFT32::fft(data).real();  // TODO: fix complex -> float
     rfmean   = rfourier.mean();
-    rfvar    = (rfourier - rfmean * SFDVectorIn::Ones()).squaredNorm() / LEN_CHUNK;
+    rfvar = (rfourier - rfmean * SFDVectorIn::Ones()).squaredNorm() / LEN_CHUNK;
 
     features(0) = delta;
     features(1) = var;
