@@ -24,6 +24,7 @@
 
 #include <utils/SlidingWindow.h>
 
+#include <algorithm>
 #include <array>
 
 namespace Boardcore

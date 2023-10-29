@@ -67,6 +67,9 @@ void PressureSFD::setMode(SFDMode mode)
         case SFDMode::DESCENT:
             k = K_DESCENT;
             break;
+
+        case SFDMode::UNSET:
+            break;
     }
 }
 
@@ -167,6 +170,9 @@ void PressureSFD::setDisabledSensors()
                     skipped++;
                 }
             }
+            break;
+
+        case SFDMode::UNSET:
             break;
     }
 

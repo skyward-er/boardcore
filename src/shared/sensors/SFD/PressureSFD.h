@@ -52,6 +52,7 @@ public:
     static constexpr int WIN_LEN        = MASKED_SENSORS * LEN_CHUNK;
 
     // TODO: set these values
+    static constexpr int MED_FILTER_WIN_LEN   = 25;
     static constexpr float K_ACTIVE_ASCENT    = 0;
     static constexpr float K_PASSIVE_ASCENT   = 0;
     static constexpr float K_APOGEE_PROXIMITY = 0;
@@ -92,7 +93,7 @@ private:
     std::array<float, MASKED_SENSORS> weights;
 
     LowPass lowPassFilter;
-    AdjustableMedFilter<WIN_LEN> medianFilter;
+    AdjustableMedFilter<MED_FILTER_WIN_LEN> medianFilter;
 
     std::array<std::function<PressureData()>, MASKED_SENSORS> pressSamplers;
     std::array<bool, MASKED_SENSORS> disabledSensors;
