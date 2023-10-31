@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <array>
 
 namespace Boardcore
 {
@@ -32,12 +33,13 @@ class SVM
 {
 public:
     using VectorD = Eigen::Vector<float, D>;
+    using ArrayD  = std::array<float, D>;
 
     struct SVMConfig
     {
-        VectorD beta;
-        VectorD mu;
-        VectorD sigma;
+        ArrayD beta;
+        ArrayD mu;
+        ArrayD sigma;
         float bias;
         float scale;
     };
