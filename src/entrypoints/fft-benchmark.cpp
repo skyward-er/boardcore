@@ -20,8 +20,6 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
 #include <algorithms/FFT.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Stats/Stats.h>
@@ -50,9 +48,9 @@ int main()
     Eigen::Vector<float, BUFFER> input_signal =
         Eigen::Vector<float, BUFFER>::Zero();
 
-    for (int i = 0; i < TAKES; i++)
+    for (unsigned int i = 0; i < TAKES; i++)
     {
-        for (size_t j = 0; j < input_signal.size(); j++)
+        for (size_t j = 0; j < (size_t)input_signal.size(); j++)
         {
             input_signal(j) = (float)rand() / RAND_MAX;
         }
