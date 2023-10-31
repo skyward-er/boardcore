@@ -88,9 +88,10 @@ PressureSFDData PressureSFD::sampleImpl()
 
         // update the timestamp based on the last sample
         if (i == 0)
-            data.timestamp = sample.pressureTimestamp;
+            data.pressureTimestamp = sample.pressureTimestamp;
         else
-            data.timestamp = std::max(data.timestamp, sample.pressureTimestamp);
+            data.pressureTimestamp =
+                std::max(data.pressureTimestamp, sample.pressureTimestamp);
     }
 
     // update the sliding window
@@ -109,8 +110,8 @@ PressureSFDData PressureSFD::sampleImpl()
     processed_value = medianFilter.filter(processed_value);
     processed_value = lowPassFilter.filter(processed_value);
 
-    samples               = sampleWindow.last();
-    data.filteredPressure = processed_value;
+    samples       = sampleWindow.last();
+    data.pressure = processed_value;
 
     return data;
 }

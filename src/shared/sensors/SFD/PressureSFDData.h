@@ -26,15 +26,20 @@
 
 #include <array>
 
-struct PressureSFDData
+namespace Boardcore
 {
-    uint64_t timestamp     = 0;
-    float filteredPressure = 0;
 
-    static std::string header() { return "timestamp,filteredPressure"; }
+struct PressureSFDData : public PressureData
+{
+    static std::string header()
+    {
+        return "pressureTimestamp,filteredPressure\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << filteredPressure << "\n";
+        os << pressureTimestamp << "," << pressure << "\n";
     }
 };
+
+}  // namespace Boardcore
