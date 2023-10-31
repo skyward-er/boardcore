@@ -45,8 +45,8 @@ public:
     };
 
     explicit SVM(const SVMConfig& config)
-        : beta(config.beta), mu(config.mu), sigma(config.sigma),
-          bias(config.bias), scale(config.scale)
+        : beta(config.beta.begin()), mu(config.mu.begin()),
+          sigma(config.sigma.begin()), bias(config.bias), scale(config.scale)
     {
     }
 
