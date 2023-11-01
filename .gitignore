@@ -27,7 +27,6 @@ cmake-build-*
 
 store.json
 **/generated/
-core
 
 __pycache__
 /scripts/generators/generated
