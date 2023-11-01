@@ -255,7 +255,7 @@ struct StatusScreen
         tvRxPps.setText(strBuf);
 
         tvRxTimeSinceLastRx.setText(
-            tickToHMS(miosix::getTick() - rxd.lastPacketTimestamp));
+            tickToHMS(miosix::getTime() / 1e6 - rxd.lastPacketTimestamp));
     }
 
     VerticalLayout root{10};

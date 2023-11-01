@@ -166,7 +166,7 @@ int main()
     int fifoNum = 0;
     while (dataCounter < NUM_SAMPLES)
     {
-        long lastTick = miosix::getTick();
+        long lastTick = miosix::getTime() / 1e6;
 
         // Read the fifo
         uint64_t update = TimestampTimer::getTimestamp();
@@ -207,7 +207,7 @@ int main()
         // we have 7 samples (~ 9 ms) of wiggle room before we start losing
         // data, in case we sleep a bit too much (may happen if an higher
         // priority thread has a long task to perform)
-        Thread::sleepUntil(lastTick + 25.5 * 1000 / SAMPLE_FREQUENCY);
+        Thread::nanoSleepUntil(lastTick + 25.5 * 1000 / SAMPLE_FREQUENCY);
     }
 
     // Dump buffer content as CSV on the serial (might take a while)

@@ -53,7 +53,7 @@ constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
 using Mav =
     MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 using cs   = peripherals::ra01::pc13::cs;
@@ -176,7 +176,7 @@ void flightTmLoop()
 
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::getTime() / 1e6;
 
         {
             Lock<FastMutex> l(mutex);
@@ -204,7 +204,7 @@ void flightTmLoop()
 
         channel->enqueueMsg(msg);
 
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
+        Thread::nanoSleepUntil(start + FLIGHT_TM_PERIOD);
         i += 1;
     }
 }

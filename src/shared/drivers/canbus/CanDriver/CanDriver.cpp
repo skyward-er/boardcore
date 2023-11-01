@@ -377,7 +377,7 @@ void CanbusDriver::handleRXInterrupt(int fifo)
 
     if ((*RFR & CAN_RF0R_FMP0) > 0)
     {
-        p.timestamp = miosix::getTick();
+        p.timestamp = miosix::getTime() / 1e6;
 
         status.rxStatus     = *RFR & (CAN_RF0R_FULL0 | CAN_RF0R_FOVR0) >> 3;
         status.errCode      = (can->ESR | CAN_ESR_LEC) >> 4;

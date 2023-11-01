@@ -287,8 +287,8 @@ void Logger::writeThread()
                 return;
 
             // Write data to disk
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
@@ -301,8 +301,8 @@ void Logger::writeThread()
             else
                 stats.buffersWritten++;
 
-            timer.stop();
-            stats.averageWriteTime = timer.interval();
+            // timer.stop();
+            // stats.averageWriteTime = timer.interval();
             stats.maxWriteTime =
                 max(stats.maxWriteTime, stats.averageWriteTime);
 

@@ -78,12 +78,12 @@ constexpr const char* testHumanFriendlyDirection[]{
     "Z up", "X up", "Y up", "Z down", "X down", "Y down",
 };
 
-#if defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST_X)
+#if defined(_BOARD_STM32F429ZI_SKYWARD_DEATH_STACK_V2)
 SPIBus bus(SPI1);
 
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
-#elif defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST_V3)
+#elif defined(_BOARD_STM32F429ZI_SKYWARD_DEATH_STACK_V3)
 SPIBus bus(SPI4);
 
 void __attribute__((used)) EXTI3_IRQHandlerImpl()
@@ -105,11 +105,11 @@ void calibrateGyroscope();
 int main()
 {
 // Enable interrupt from BMX pin
-#if defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST_X)
+#if defined(_BOARD_STM32F429ZI_SKYWARD_DEATH_STACK_V2)
     enableExternalInterrupt(miosix::sensors::bmx160::intr::getPin().getPort(),
                             miosix::sensors::bmx160::intr::getPin().getNumber(),
                             InterruptTrigger::FALLING_EDGE);
-#elif defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST_V3)
+#elif defined(_BOARD_STM32F429ZI_SKYWARD_DEATH_STACK_V3)
     enableExternalInterrupt(miosix::sensors::bmx160::intr::getPin().getPort(),
                             miosix::sensors::bmx160::intr::getPin().getNumber(),
                             InterruptTrigger::FALLING_EDGE);

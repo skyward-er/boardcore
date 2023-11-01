@@ -32,7 +32,7 @@
 #include <map>
 
 using miosix::FastMutex;
-using miosix::getTick;
+using miosix::getTime;
 using miosix::Lock;
 using std::map;
 

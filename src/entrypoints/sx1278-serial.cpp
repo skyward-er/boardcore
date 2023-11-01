@@ -36,7 +36,7 @@ using namespace miosix;
 // Or use SBS to define it for you
 // #define SX1278_IS_LORA
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 // Uncomment the following line to enable Ebyte module
@@ -239,11 +239,11 @@ int main()
 #elif defined SX1278_IS_SKYWARD433
     printf("[sx1278] Confuring Skyward 433 frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-              new Boardcore::Skyward433Frontend());
+        new Boardcore::Skyward433Frontend());
 #else
     printf("[sx1278] Confuring RA01 frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-         new Boardcore::RA01Frontend());
+        new Boardcore::RA01Frontend());
 #endif
 
 #ifdef SX1278_IS_LORA
@@ -280,7 +280,7 @@ int main()
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
     {
-              // FIXME: Why does clang-format put this line up here?
+        // FIXME: Why does clang-format put this line up here?
         printf("[sx1278] sx1278->init error\n");
         return false;
     }

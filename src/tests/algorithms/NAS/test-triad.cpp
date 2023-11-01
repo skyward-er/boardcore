@@ -46,7 +46,7 @@ int main()
     imuInit();
     bmx->init();
 
-    auto lastTick = getTick();
+    auto lastTick = getTime() / 1e6;
     while (true)
     {
         bmx->sample();
@@ -72,8 +72,8 @@ int main()
             printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
                    kalmanState(7), kalmanState(8));
 
-        Thread::sleepUntil(lastTick + 20);
-        lastTick = getTick();
+        Thread::nanoSleepUntil(lastTick + 20);
+        lastTick = getTime() / 1e6;
     }
 }
 

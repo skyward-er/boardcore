@@ -444,14 +444,14 @@ void Wiz5500::close(int sock_n, int timeout)
 
 void Wiz5500::waitForINTn(Lock<FastMutex> &l)
 {
-    long long start        = getTick();
+    long long start        = getTime() / 1e6;
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
     Unlock<FastMutex> ul(l);
     FastInterruptDisableLock il;
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
     {
-        result = Thread::IRQenableIrqAndTimedWaitMs(il, start + INTN_TIMEOUT);
+        result = Thread::IRQenableIrqAndTimedWait(il, start + INTN_TIMEOUT);
     }
 }
 
@@ -493,7 +493,7 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
         return 0;
     }
 
-    long long start        = getTick();
+    long long start        = getTime() / 1e6;
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
     if (interrupt_service_thread != nullptr)
@@ -507,8 +507,7 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
         {
             if (timeout != -1)
             {
-                result =
-                    Thread::IRQenableIrqAndTimedWaitMs(il, start + timeout);
+                result = Thread::IRQenableIrqAndTimedWait(il, start + timeout);
             }
             else
             {

@@ -56,8 +56,8 @@ int main()
             while (true)
             {
                 printf("[%.2f] Counter: %d\tTarget: %ld\tIs generating: %d\n",
-                       getTick() / 1000.0, pwm.getCurrentCount(), TIM4->CCR1,
-                       pwm.isGenerating());
+                       getTime() / 1e6 / 1000.0, pwm.getCurrentCount(),
+                       TIM4->CCR1, pwm.isGenerating());
                 Thread::sleep(250);
             }
         });

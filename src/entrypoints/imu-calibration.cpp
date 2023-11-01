@@ -108,14 +108,14 @@ void calibrateMagnetometer()
     scheduler.start();
 
     // Wait and then stop the sampling
-    auto startTick = getTick();
+    auto startTick = getTime() / 1e6;
     auto lastTick  = startTick;
-    while (getTick() - startTick < MAG_CALIBRATION_DURATION * 1e3)
+    while (getTime() / 1e6 - startTick < MAG_CALIBRATION_DURATION * 1e3)
     {
         mpu.sample();
         calibration.feed(mpu.getLastSample());
-        Thread::sleepUntil(lastTick + IMU_SAMPLE_PERIOD);
-        lastTick = getTick();
+        Thread::nanoSleepUntil(lastTick + IMU_SAMPLE_PERIOD);
+        lastTick = getTime() / 1e6;
     }
 
     scheduler.stop();

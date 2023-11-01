@@ -107,10 +107,10 @@ ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
     // otherwise don't do anything with it
     (void)_guard;
 
-    long long start  = miosix::getTick();
+    long long start  = miosix::getTime() / 1e6;
     IrqFlags ret_irq = 0;
 
-    while ((miosix::getTick() - start) < timeout)
+    while ((miosix::getTime() / 1e6 - start) < timeout)
     {
         // Delay between polls
         const unsigned int DELAY = 100;
@@ -143,7 +143,7 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
         mutex.unlock();
     }
 
-    int start                      = miosix::getTick();
+    int start                      = miosix::getTime() / 1e6;
     miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
 
     {
@@ -151,7 +151,7 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
         while (state.irq_wait_thread &&
                result == miosix::TimedWaitResult::NoTimeout)
         {
-            result = miosix::Thread::IRQenableIrqAndTimedWaitMs(
+            result = miosix::Thread::IRQenableIrqAndTimedWait(
                 lock, start + IRQ_TIMEOUT);
         }
     }

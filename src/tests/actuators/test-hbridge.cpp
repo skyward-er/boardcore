@@ -45,14 +45,14 @@ long long measuredTime = 0;
 
 void wait()
 {
-    long long t  = getTick();
+    long long t  = getTime() / 1e6;
     long long t0 = t;
 
     while (t < t0 + PWM_DURATION)
     {
         Thread::sleep(50);
 
-        t = getTick();
+        t = getTime() / 1e6;
 
         if (print)
         {

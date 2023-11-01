@@ -38,7 +38,7 @@ public:
     Dummy()
     {
 #ifdef _MIOSIX
-        timestamp = miosix::getTick();
+        timestamp = miosix::getTime() / 1e6;
 #else   //_MIOSIX
         timestamp = 0;
 #endif  //_MIOSIX

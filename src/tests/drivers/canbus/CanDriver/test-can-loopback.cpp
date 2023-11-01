@@ -64,14 +64,14 @@ public:
     {
         while (!shouldStop())
         {
-            long long start                     = miosix::getTick();
+            long long start                     = miosix::getTime() / 1e6;
             BusLoadEstimation::BusLoadInfo info = ble.getLoadInfo();
             LOG_INFO(l,
                      "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, "
                      "utilization: {:.2f}%",
                      info.payloadBitRate / 1000.0f, info.totalBitRate / 1000.0f,
                      info.loadPercent);
-            Thread::sleepUntil(start + 1000);
+            Thread::nanoSleepUntil(start + 1000);
         }
     }
 
@@ -122,7 +122,7 @@ int main()
     {
 
         // printPacket("TX", p);
-        p.timestamp = miosix::getTick();
+        p.timestamp = miosix::getTime() / 1e6;
         c->send(p);
         load.addPacket(p);
         // Thread::sleep(1);

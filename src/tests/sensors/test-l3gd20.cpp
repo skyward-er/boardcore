@@ -138,7 +138,7 @@ int main()
     // Collect NUM_SAMPLE samples
     while (dataCounter < NUM_SAMPLES)
     {
-        long lastTick = miosix::getTick();
+        long lastTick = miosix::getTime() / 1e6;
 
         // Read data from the sensor
         gyro->sample();
@@ -152,7 +152,7 @@ int main()
 
         // Wait until SAMPLE_PERIOD milliseconds from the start of this
         // iteration have passed (SAMPLE_PERIOD = 1000 / SAMPLE_RATE)
-        Thread::sleepUntil(lastTick + 1000 / SAMPLE_RATE);
+        Thread::nanoSleepUntil(lastTick + 1000 / SAMPLE_RATE);
     }
 
     // Dump buffer content as CSV on the serial (might take a while)

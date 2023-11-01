@@ -61,7 +61,8 @@ static const float VBAT_DIV               = 4.0f;
 // If it is missing you need to define it, preferably in the board_settings.h
 // file in miosix. Check your board schematic to find the voltage value.
 #ifndef V_DDA_VOLTAGE
-#error Missing V_DDA_VOLTAGE definition for current target
+#warning Assuming 3.3V as V_DDA_VOLTAGE for current target
+#define V_DDA_VOLTAGE 3.3
 #endif
 
 InternalADC::InternalADC(ADC_TypeDef *adc) : adc(adc)

@@ -51,7 +51,7 @@ constexpr uint32_t STATS_TM_PERIOD      = 1000;
 using Mav =
     MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 // Uncomment the following line to enable Ebyte module
@@ -136,7 +136,7 @@ void flightTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::getTime() / 1e6;
 
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
@@ -145,7 +145,7 @@ void flightTmLoop()
         channel->enqueueMsg(msg);
         printf("Enqueued flight_tm_tm!\n");
 
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
+        Thread::nanoSleepUntil(start + FLIGHT_TM_PERIOD);
     }
 }
 
@@ -153,7 +153,7 @@ void statsTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::getTime() / 1e6;
 
         mavlink_message_t msg;
         mavlink_rocket_stats_tm_t tm = {0};
@@ -162,7 +162,7 @@ void statsTmLoop()
         channel->enqueueMsg(msg);
         printf("Enqueued stats_tm!\n");
 
-        Thread::sleepUntil(start + STATS_TM_PERIOD);
+        Thread::nanoSleepUntil(start + STATS_TM_PERIOD);
     }
 }
 

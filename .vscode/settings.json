@@ -335,5 +335,8 @@
                 "Zyxda"
         ],
         "cSpell.language": "en",
-        "cSpell.enabled": true
+        "cSpell.enabled": true,
+        "cSpell.enableFiletypes": [
+                "!cmake"
+        ]
 }

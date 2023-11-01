@@ -34,7 +34,7 @@ namespace Boardcore
 using namespace SX1278;
 using namespace SX1278::Fsk;
 
-long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
+long long now() { return miosix::getTime() / 1e6 * 1000 / 1000; }
 
 // Enable:
 // - PayloadReady, PacketSent on DIO0 (mode 00)

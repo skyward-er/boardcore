@@ -82,11 +82,11 @@ protected:
                 screens[activeScreen]->invalidateTree();
             }
 
-            long long start = miosix::getTick();
+            long long start = miosix::getTime() / 1e6;
 
             drawViewTree(screens[activeScreen], dc);
 
-            miosix::Thread::sleepUntil(start + refreshInterval);
+            miosix::Thread::nanoSleepUntil(start + refreshInterval);
         }
     }
 

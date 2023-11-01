@@ -114,7 +114,7 @@ public:
      */
     size_t addTask(function_t function, uint32_t period,
                    Policy policy     = Policy::RECOVER,
-                   int64_t startTick = miosix::getTick());
+                   int64_t startTick = miosix::getTime() / 1e6);
 
     /**
      * @brief Enables the task with the given id.

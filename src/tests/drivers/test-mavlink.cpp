@@ -54,7 +54,8 @@ int main()
 {
     STM32SerialWrapper serial(USART1, 19200);
     transceiver = new SerialTransceiver(serial);
-    mavlink = new MavDriver(transceiver, nullptr, silenceAfterSend, maxPktAge);
+    // mavlink = new MavDriver(transceiver, nullptr, silenceAfterSend,
+    // maxPktAge);
 
     mavlink->start();
 
@@ -63,7 +64,7 @@ int main()
     {
         // Create a Mavlink message
         mavlink_message_t pingMsg;
-        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
+        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTime() / 1e6);
 
         // Send the message
         mavlink->enqueueMsg(pingMsg);

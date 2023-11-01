@@ -67,10 +67,9 @@ uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
     Lock<FastMutex> lock(mtxDelayedEvents);
 
     // Delay in system ticks
-    long long delayTicks =
-        static_cast<long long>(delayMs * miosix::TICK_FREQ / 1000);
+    long long delayTicks = static_cast<long long>(delayMs * 1000 / 1000);
 
-    DelayedEvent dev{eventCounter++, ev, topic, getTick() + delayTicks};
+    DelayedEvent dev{eventCounter++, ev, topic, getTime() / 1e6 + delayTicks};
     bool added = false;
 
     // Add the new event in the list, ordered by deadline (first = nearest
@@ -141,7 +140,7 @@ void EventBroker::run()
     while (!shouldStop())
     {
         while (delayedEvents.size() > 0 &&
-               delayedEvents.front().deadline <= getTick())
+               delayedEvents.front().deadline <= getTime() / 1e6)
         {
             // Pop the first element
             DelayedEvent dev = delayedEvents.front();
@@ -156,15 +155,15 @@ void EventBroker::run()
         }
 
         // When to wakeup for the next cycle
-        long long sleepUntil =
-            getTick() + EVENT_BROKER_MIN_DELAY * miosix::TICK_FREQ / 1000;
+        long long nanoSleepUntil =
+            getTime() / 1e6 + EVENT_BROKER_MIN_DELAY * 1000 / 1000;
 
         if (delayedEvents.size() > 0)
         {
             // If a deadline expires earlier, sleep until the deadline instead
-            if (delayedEvents.front().deadline < sleepUntil)
+            if (delayedEvents.front().deadline < nanoSleepUntil)
             {
-                sleepUntil = delayedEvents.front().deadline;
+                nanoSleepUntil = delayedEvents.front().deadline;
             }
         }
 
@@ -173,7 +172,7 @@ void EventBroker::run()
             Unlock<FastMutex> unlock(lock);
             StackLogger::getInstance().updateStack(THID_EVT_BROKER);
 
-            Thread::sleepUntil(sleepUntil);
+            Thread::nanoSleepUntil(nanoSleepUntil);
         }
     }
 }

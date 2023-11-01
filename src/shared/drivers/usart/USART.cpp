@@ -46,21 +46,21 @@ void __attribute__((used)) usart1irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[0];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[0];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
 /**
  * \internal Interrupt routine for usart1.
  */
-void __attribute__((naked, used)) USART1_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z22usart1irqImplBoardcorev");
-    restoreContext();
-}
+// void __attribute__((naked, used)) USART1_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z22usart1irqImplBoardcorev");
+//     restoreContext();
+// }
 #endif
 
 #ifdef USART2
@@ -74,21 +74,21 @@ void __attribute__((used)) usart2irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[1];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[1];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
 /**
  * \internal Interrupt routine for usart2.
  */
-void __attribute__((naked, used)) USART2_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z22usart2irqImplBoardcorev");
-    restoreContext();
-}
+// void __attribute__((naked, used)) USART2_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z22usart2irqImplBoardcorev");
+//     restoreContext();
+// }
 #endif
 
 #ifdef USART3
@@ -102,21 +102,21 @@ void __attribute__((used)) usart3irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[2];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[2];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
 /**
  * \internal Interrupt routine for usart3.
  */
-void __attribute__((naked, used)) USART3_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z22usart3irqImplBoardcorev");
-    restoreContext();
-}
+// void __attribute__((naked, used)) USART3_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z22usart3irqImplBoardcorev");
+//     restoreContext();
+// }
 #endif
 
 #ifdef UART4
@@ -130,21 +130,21 @@ void __attribute__((used)) uart4irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[3];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[3];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
 /**
  * \internal Interrupt routine for uart4.
  */
-void __attribute__((naked, used)) UART4_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z21uart4irqImplBoardcorev");
-    restoreContext();
-}
+// void __attribute__((naked, used)) UART4_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z21uart4irqImplBoardcorev");
+//     restoreContext();
+// }
 #endif
 
 #ifdef UART5
@@ -158,21 +158,21 @@ void __attribute__((used)) uart5irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[4];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[4];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
 /**
  * \internal Interrupt routine for uart5.
  */
-void __attribute__((naked, used)) UART5_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z21uart5irqImplBoardcorev");
-    restoreContext();
-}
+// void __attribute__((naked, used)) UART5_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z21uart5irqImplBoardcorev");
+//     restoreContext();
+// }
 #endif
 
 #ifdef USART6
@@ -186,9 +186,9 @@ void __attribute__((used)) usart6irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[5];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[5];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
@@ -214,9 +214,9 @@ void __attribute__((used)) uart7irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[6];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[6];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 
@@ -242,9 +242,9 @@ void __attribute__((used)) uart8irqImplBoardcore()
         port_boardcore->IRQhandleInterrupt();
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[7];
-        if (port)
-            port->IRQhandleInterrupt();
+        // miosix::STM32Serial *port = miosix::STM32Serial::ports[7];
+        // if (port)
+        //     port->IRQhandleInterrupt();
     }
 }
 

@@ -33,9 +33,9 @@ void logThread(void*)
 {
     Logger& log      = Logger::getInstance();
     const int period = 5;
-    for (auto t = getTick();; t += period)
+    for (auto t = getTime() / 1e6;; t += period)
     {
-        Thread::sleepUntil(t);
+        Thread::nanoSleepUntil(t);
         for (int i = 0; i < 5; i++)
         {
             Dummy d;

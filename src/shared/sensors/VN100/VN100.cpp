@@ -128,14 +128,14 @@ void VN100::run()
 {
     while (!shouldStop())
     {
-        long long initialTime = miosix::getTick();
+        long long initialTime = miosix::getTime() / 1e6;
 
         // Sample the data locking the mutex
         miosix::Lock<FastMutex> l(mutex);
         threadSample = sampleData();
 
         // Sleep for the sampling period
-        miosix::Thread::sleepUntil(initialTime + samplePeriod);
+        miosix::Thread::nanoSleepUntil(initialTime + samplePeriod);
     }
 }
 

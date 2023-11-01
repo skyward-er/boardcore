@@ -88,7 +88,7 @@ private:
                 }
                 Boardcore::Canbus::CanPacket p = parent.txPackets.pop();
                 parent.canbus.send(p);
-                p.timestamp = miosix::getTick();
+                p.timestamp = miosix::getTime() / 1e6;
                 parent.busLoad.addPacket(p);
             }
         }

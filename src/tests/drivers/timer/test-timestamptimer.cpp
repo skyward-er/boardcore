@@ -43,7 +43,7 @@ int main()
 
     for (int i = 0; i < 10; i++)
     {
-        long long prevTick = getTick();
+        long long prevTick = getTime() / 1e6;
 
         uint64_t timestamp = TimestampTimer::getTimestamp();
 
@@ -51,7 +51,7 @@ int main()
         printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
                timestamp / 1e3, timestamp / 1e6, prevTick);
 
-        Thread::sleepUntil(prevTick + 1000);
+        Thread::nanoSleepUntil(prevTick + 1000);
     }
 
     printf("Now resetting the TimestampTimer\n");
@@ -60,7 +60,7 @@ int main()
 
     while (true)
     {
-        long long prevTick = getTick();
+        long long prevTick = getTime() / 1e6;
 
         uint64_t timestamp = TimestampTimer::getTimestamp();
 
@@ -68,7 +68,7 @@ int main()
         printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
                timestamp / 1e3, timestamp / 1e6, prevTick);
 
-        Thread::sleepUntil(prevTick + 1000);
+        Thread::nanoSleepUntil(prevTick + 1000);
     }
 }
 

@@ -105,7 +105,7 @@ protected:
 
                 gui->screenEnergy.updateScan(scan);
 
-                EnergyScanData data{getTick(), scan};
+                EnergyScanData data{getTime() / 1e6, scan};
                 logger.log(data);
             }
         }
@@ -180,7 +180,7 @@ int main()
     // Main loop: updates the information in the GUI
     for (;;)
     {
-        long long start = getTick();
+        long long start = getTime() / 1e6;
         // Update display values
         switch (gui->screenManager.getScreen())
         {
@@ -209,7 +209,7 @@ int main()
         }
 
         logger.log(logger.getStats());
-        Thread::sleepUntil(start + 500);
+        Thread::nanoSleepUntil(start + 500);
     }
 }
 
@@ -219,7 +219,7 @@ void onStartButtonClick(View* btn __attribute__((unused)), Interaction action)
     {
 
         XbeeConfig cfg = gui->screenConfig.config;
-        cfg.timestamp  = getTick();
+        cfg.timestamp  = getTime() / 1e6;
         logger.log(cfg);
 
         gui->screenConfig.btnStart.setText("Starting...");
@@ -265,7 +265,7 @@ void onMarkButtonClick(View* btn __attribute__((unused)), Interaction action)
 {
     if (action == Interaction::CLICK)
     {
-        Mark m{getTick(), markCounter++};
+        Mark m{getTime() / 1e6, markCounter++};
         logger.log(m);
 
         TextView* tvBtn = dynamic_cast<TextView*>(btn);

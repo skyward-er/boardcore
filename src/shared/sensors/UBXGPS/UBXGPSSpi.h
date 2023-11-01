@@ -141,7 +141,7 @@ private:
 
     PrintLogger logger = Logging::getLogger("ubxgps");
 
-    static constexpr float MS_TO_TICK = miosix::TICK_FREQ / 1000.f;
+    static constexpr float MS_TO_TICK = 1000 / 1000.f;
 
     static constexpr unsigned int RESET_SLEEP_TIME = 1000;  // [ms]
     static constexpr unsigned int READ_TIMEOUT     = 1;     // [ms]

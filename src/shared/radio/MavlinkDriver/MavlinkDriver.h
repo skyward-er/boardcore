@@ -42,6 +42,8 @@ implementation before including MavlinkDriver.h"
 #include <radio/Transceiver.h>
 #include <utils/collections/SyncPacketQueue.h>
 
+#include <functional>
+
 #include "MavlinkStatus.h"
 
 namespace Boardcore
@@ -357,8 +359,8 @@ void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::runReceiver()
                               msg.msgid, msg.seq, msg.compid, msg.sysid);
 
                     // ... handle the command
-                    if (onReceive != nullptr)
-                        onReceive(this, msg);
+                    // if (onReceive != nullptr)
+                    //     onReceive(this, msg);
 
                     StackLogger::getInstance().updateStack(THID_MAV_RECEIVER);
                 }
