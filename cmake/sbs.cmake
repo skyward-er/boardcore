@@ -21,19 +21,15 @@
 
 enable_language(C CXX ASM)
 
+# Load in SBS_BASE the project path
+cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
+
+# Include the Boardcore libraries
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
-get_filename_component(SBS_BASE ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
-
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL SBS_BASE)
-    add_subdirectory(${SBS_BASE} EXCLUDE_FROM_ALL)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-    include(${CMAKE_SOURCE_DIR}/cmake/dependencies.cmake OPTIONAL)
-    return()
-endif()
-
 include(boardcore)
 
-string(REPLACE ";" "\\n" BOARDS_STR "${BOARDS}")
+# Command to print all the available boards used by the sbs script
+string(REPLACE ";" "\\n" BOARDS_STR "${MIOSIX_BOARDS};${BOARDCORE_BOARDS}")
 add_custom_target(
     help-boards
     COMMAND printf ${BOARDS_STR}
@@ -41,13 +37,22 @@ add_custom_target(
     VERBATIM
 )
 
+# Function to link the Boardcore library to the target
 function(sbs_target TARGET OPT_BOARD)
     if(NOT OPT_BOARD)
         message(FATAL_ERROR "No board selected")
     endif()
+
+    # The only include directory of Boardcore is shared!
     target_include_directories(${TARGET} PRIVATE src/shared)
+
     if(CMAKE_CROSSCOMPILING)
-        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore::${OPT_BOARD})
+        # Link the embedded Boardcore library
+        target_link_libraries(${TARGET} PRIVATE Skyward::Boardcore::${OPT_BOARD})
+
+        # Linker script and linking options are eredited from the kernel library
+
+        # Add a post build command to create the hex file to flash on the board
         add_custom_command(
             TARGET ${TARGET} POST_BUILD
             COMMAND ${CMAKE_OBJCOPY} -O ihex ${TARGET} ${TARGET}.hex
@@ -56,7 +61,7 @@ function(sbs_target TARGET OPT_BOARD)
             VERBATIM
         )
     else()
-        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore::host)
+        target_link_libraries(${TARGET} PRIVATE Skyward::Boardcore::host)
     endif()
 endfunction()
 
