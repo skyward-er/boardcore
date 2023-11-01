@@ -36,7 +36,7 @@ using namespace miosix;
 // Or use SBS to define it for you
 // #define SX1278_IS_LORA
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 // Uncomment the following line to enable Ebyte module
@@ -64,7 +64,7 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
 
-#elif defined _BOARD_STM32F429ZI_SKYWARD_RIG
+#elif defined _BOARD_STM32F429ZI_RIG
 #include "interfaces-impl/hwmapping.h"
 
 #define SX1278_IS_EBYTE

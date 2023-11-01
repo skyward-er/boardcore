@@ -47,7 +47,7 @@ init_dirs() {
     source_dir="$PWD"
     build_default_dir="$source_dir/$BUILD_DEFAULT_DIRNAME"
     build_host_dir="$source_dir/$BUILD_HOST_DIRNAME"
-    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
+    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/cmake/toolchain.cmake"
 }
 
 find_deps() {
