@@ -34,7 +34,7 @@
 // Or use SBS to define it for you
 // #define SX1278_IS_LORA
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#if defined _BOARD_STM32F429ZI_NOKIA
 #include "interfaces-impl/hwmapping.h"
 
 // Uncomment the following line to enable Ebyte module
@@ -62,7 +62,7 @@ using rxen = miosix::Gpio<GPIOD_BASE, 4>;
 #define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
 
-#elif defined _BOARD_STM32F429ZI_SKYWARD_RIG
+#elif defined _BOARD_STM32F429ZI_RIG
 #include "interfaces-impl/hwmapping.h"
 
 #define SX1278_IS_EBYTE
@@ -76,8 +76,10 @@ using sck  = miosix::radio::sck;
 using miso = miosix::radio::miso;
 using mosi = miosix::radio::mosi;
 
-using txen                         = miosix::radio::txEn;
-using rxen                         = miosix::radio::rxEn;
+// clang-format off
+using txen = miosix::radio::txEn;
+using rxen = miosix::radio::rxEn;
+// clang-format on
 
 #define SX1278_SPI SPI4
 
@@ -196,23 +198,23 @@ void initBoard()
 #endif
 }
 
-Boardcore::SPIBus sx1278_bus(SX1278_SPI);
+Boardcore::SPIBus sx1278_bus{SX1278_SPI};
 
 bool initRadio()
 {
     // Initialize frontend (if any)
 #if defined SX1278_IS_EBYTE
     printf("[sx1278] Confuring Ebyte frontend...\n");
-    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-        new Boardcore::EbyteFrontend(txen::getPin(), rxen::getPin()));
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend{
+        new Boardcore::EbyteFrontend(txen::getPin(), rxen::getPin())};
 #elif defined SX1278_IS_SKYWARD433
     printf("[sx1278] Confuring Skyward 433 frontend...\n");
-    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-              new Boardcore::Skyward433Frontend());
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend{
+        new Boardcore::Skyward433Frontend()};
 #else
     printf("[sx1278] Confuring RA01 frontend...\n");
-    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
-         new Boardcore::RA01Frontend());
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend{
+        new Boardcore::RA01Frontend()};
 #endif
 
     // Initialize actual radio driver
@@ -239,18 +241,20 @@ bool initRadio()
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
 
+    // clang-format 14 messes up indentation in the following block
+    // clang-format off
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
-                                            dio1::getPin(), dio3::getPin(),
-                                            Boardcore::SPI::ClockDivider::DIV_256,
-                                            std::move(frontend));
+                                      dio1::getPin(), dio3::getPin(),
+                                      Boardcore::SPI::ClockDivider::DIV_256,
+                                      std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
     {
-              // FIXME: Why does clang-format put this line up here?
         printf("[sx1278] sx1278->init error\n");
         return false;
     }
+    // clang-format on
 
     printf("\n[sx1278] Initialization complete!\n");
 #endif

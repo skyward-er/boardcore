@@ -19,7 +19,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
+# Boardcore source files used when compiling for host
+set(BOARDCORE_HOST_SRC
     # Debug
     ${SBS_BASE}/src/shared/utils/Debug.cpp
     ${SBS_BASE}/src/shared/diagnostic/CpuMeter/CpuMeter.cpp
@@ -60,8 +61,14 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/utils/Registry/RegistryFrontend.cpp
     ${SBS_BASE}/src/shared/utils/Registry/RegistrySerializer.cpp
 )
-add_library(SkywardBoardcore::Boardcore::host ALIAS boardcore-host)
-target_include_directories(boardcore-host PUBLIC ${SBS_BASE}/src/shared)
+
+# Create a library specific for host builds
+add_library(boardcore-host STATIC EXCLUDE_FROM_ALL ${BOARDCORE_HOST_SRC})
+
+# Only one include directory for Boardcore!
+target_include_directories(boardcore-host PUBLIC ${BOARDCORE_PATH}/src/shared)
+
+# Link libraries
 target_link_libraries(boardcore-host PUBLIC
     Miosix::Miosix::host
     TSCPP::TSCPP
@@ -70,3 +77,6 @@ target_link_libraries(boardcore-host PUBLIC
     Catch2::Catch2
     Mavlink::Mavlink
 )
+
+# Create a nice alias for the library
+add_library(Skyward::Boardcore::host ALIAS boardcore-host)
