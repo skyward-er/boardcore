@@ -1,5 +1,5 @@
-/* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Author: Alvise de'Faveri Tron
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Giacomo Caironi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,26 +27,26 @@ namespace Boardcore
 {
 
 /**
- * @brief The Default implementation of MavlinkDriver
+ * @brief A MavlinkDriver which implements the slave portion of the Pigna
+ * protocol
  *
- * See `src/tests/drivers/test-mavlink-v0.cpp` for an example.
+ * See `src/tests/drivers/test-mavlink-pigna-slave.cpp` for an example.
  *
  * @tparam PktLength Maximum length in bytes of each transceiver packet.
  * @tparam OutQueueSize Max number of transceiver packets in the output queue.
  * @tparam MavMsgLength Max length of a mavlink message. By default is 255 the
- * @tparam sleepAfterSend Guaranteed sleep time after each send [ms].
  * maximum possible but can be replaces with MAVLINK_MAX_DIALECT_PAYLOAD_SIZE
  * for a specific protocol.
  */
 template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength = MAVLINK_MAX_PAYLOAD_LEN>
-class MavlinkDriverV0
+class MavlinkDriverPignaSlave
     : public MavlinkDriver<
-          MavlinkDriverV0<PktLength, OutQueueSize, MavMsgLength>, PktLength,
-          OutQueueSize, MavMsgLength>
+          MavlinkDriverPignaSlave<PktLength, OutQueueSize, MavMsgLength>,
+          PktLength, OutQueueSize, MavMsgLength>
 {
     /// Alias of the function to be executed on message reception.
-    using MavHandler = std::function<void(MavlinkDriverV0* channel,
+    using MavHandler = std::function<void(MavlinkDriverPignaSlave* channel,
                                           const mavlink_message_t& msg)>;
 
 public:
@@ -55,24 +55,15 @@ public:
      *
      * @param device Transceiver used to send and receive messages.
      * @param onReceive Function to be executed on message rcv.
-     * @param sleepAfterSend Guaranteed sleep time after each send [ms].
      * @param outBufferMaxAge Max residence time for messages in the queue:
      * after this time the message will be automatically sent [ms].
      */
-    MavlinkDriverV0(Transceiver* device, MavHandler onReceive = nullptr,
-                    size_t outBufferMaxAge = 1000, uint16_t sleepAfterSend = 0)
-        : MavlinkDriver<MavlinkDriverV0<PktLength, OutQueueSize, MavMsgLength>,
-                        PktLength, OutQueueSize, MavMsgLength>(device),
-          onReceive(onReceive), sleepAfterSend(sleepAfterSend),
-          outBufferMaxAge(outBufferMaxAge){};
-
-    /**
-     * @brief Setter for the sleep after send value.
-     */
-    void setSleepAfterSend(uint16_t newSleepTime)
-    {
-        sleepAfterSend = newSleepTime;
-    };
+    MavlinkDriverPignaSlave(Transceiver* device, MavHandler onReceive = nullptr,
+                            size_t outBufferMaxAge = 1000)
+        : MavlinkDriver<
+              MavlinkDriverPignaSlave<PktLength, OutQueueSize, MavMsgLength>,
+              PktLength, OutQueueSize, MavMsgLength>(device),
+          onReceive(onReceive), outBufferMaxAge(outBufferMaxAge){};
 
 private:
     /**
@@ -125,6 +116,12 @@ private:
                         if (onReceive != nullptr)
                             onReceive(this, msg);
 
+                        // MAVLINK_MESSAGE_ID_PING_TC
+                        if (msg.msgid == 1)
+                        {
+                            flushMessages();
+                        }
+
                         StackLogger::getInstance().updateStack(
                             THID_MAV_RECEIVER);
                     }
@@ -133,48 +130,17 @@ private:
         }
     };
 
-    /**
-     * @brief Sender Thread: Periodically flushes the message queue and sends
-     * all the enqueued messages.
-     *
-     * After every send, the thread sleeps to guarantee some silence on the
-     * channel.
-     */
-    void runSender() override
+    void flushMessages()
     {
-        LOG_DEBUG(logger, "Sender is running");
         Packet<PktLength> pkt;
-
-        while (!stopFlag)
+        while (!outQueue.isEmpty())
         {
-            outQueue.waitUntilNotEmpty();
-
-            if (!outQueue.isEmpty())
-            {
-                // Get the first packet in the queue, without removing it
-                pkt = outQueue.get();
-
-                // If the packet is ready or too old, send it
-                uint64_t age =
-                    TimestampTimer::getTimestamp() - pkt.getTimestamp();
-                if (pkt.isReady() || age >= outBufferMaxAge * 1e3)
-                {
-                    outQueue.pop();  //  Remove the packet from queue
-
-                    LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
-                              pkt.size(), age);
-
-                    bool sent = device->send(pkt.content.data(), pkt.size());
-                    updateSenderStats(pkt.getMsgCount(), sent);
-
-                    miosix::Thread::sleep(sleepAfterSend);
-                }
-                else
-                {
-                    // Wait before sending something else
-                    miosix::Thread::sleep(50);
-                }
-            }
+            pkt          = outQueue.pop();  //  Remove the packet from queue
+            uint64_t age = TimestampTimer::getTimestamp() - pkt.getTimestamp();
+            LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})", pkt.size(),
+                      age);
+            bool sent = device->send(pkt.content.data(), pkt.size());
+            updateSenderStats(pkt.getMsgCount(), sent);
         }
     };
 
@@ -196,7 +162,6 @@ private:
     MavHandler onReceive;  ///< Function executed when a message is ready.
 
     // Tweakable params
-    uint16_t sleepAfterSend;
     size_t outBufferMaxAge;
 
     // Buffers
