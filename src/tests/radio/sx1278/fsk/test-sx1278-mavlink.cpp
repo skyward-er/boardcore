@@ -38,7 +38,7 @@
 #include <mavlink_lib/gemini/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <radio/MavlinkDriver/MavlinkDriver.h>
+#include <radio/MavlinkDriver/MavlinkDriverV0.h>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -50,8 +50,8 @@ constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
 constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav =
-    MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
+using Mav = MavlinkDriverV0<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
+                            RADIO_MAV_MSG_LENGTH>;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
@@ -246,7 +246,7 @@ int main()
 
     printConfig(config);
 
-    channel = new Mav(sx1278, &onReceive, 0, MAV_OUT_BUFFER_MAX_AGE);
+    channel = new Mav(sx1278, &onReceive, MAV_OUT_BUFFER_MAX_AGE, 0);
     channel->start();
 
     flightTmLoop();

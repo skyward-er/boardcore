@@ -227,8 +227,8 @@ sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
 sbs_target(test-internal-adc stm32f767zi_compute_unit)
 
-add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
-sbs_target(test-mavlink stm32f407vg_stm32f4discovery)
+add_executable(test-mavlink-v0 src/tests/drivers/test-mavlink-v0.cpp)
+sbs_target(test-mavlink-v0 stm32f407vg_stm32f4discovery)
 
 add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
 sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
@@ -316,9 +316,6 @@ sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278fsk-mavlink src/tests/radio/sx1278/fsk/test-sx1278-mavlink.cpp)
 sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)
-
-# add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
-# sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
 
 add_executable(test-sx1278lora-bidir src/tests/radio/sx1278/lora/test-sx1278-bidir.cpp)
 sbs_target(test-sx1278lora-bidir stm32f429zi_skyward_groundstation_v2)

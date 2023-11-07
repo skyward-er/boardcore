@@ -34,7 +34,7 @@
 #include <mavlink_lib/pyxis/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <radio/MavlinkDriver/MavlinkDriver.h>
+#include <radio/MavlinkDriver/MavlinkDriverV0.h>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -48,8 +48,8 @@ constexpr uint32_t FLIGHT_TM_PERIOD     = 8000;
 constexpr uint32_t STATS_TM_PERIOD      = 1000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav =
-    MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
+using Mav = MavlinkDriverV0<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
+                            RADIO_MAV_MSG_LENGTH>;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
@@ -204,7 +204,7 @@ int main()
     printf("\n[sx1278] Initialization complete!\n");
 
     channel =
-        new Mav(sx1278, &onReceive, SLEEP_AFTER_SEND, MAV_OUT_BUFFER_MAX_AGE);
+        new Mav(sx1278, &onReceive, MAV_OUT_BUFFER_MAX_AGE, SLEEP_AFTER_SEND);
     channel->start();
 
     std::thread flight_tm_loop([]() { flightTmLoop(); });

@@ -28,7 +28,7 @@
 #include <mavlink_lib/lynx/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <radio/MavlinkDriver/MavlinkDriver.h>
+#include <radio/MavlinkDriver/MavlinkDriverV0.h>
 #include <radio/SerialTransceiver/SerialTransceiver.h>
 
 using namespace miosix;
@@ -41,7 +41,8 @@ static const unsigned int pingPeriod       = 1000;
 // Mavlink out buffer with 10 packets, 256 bytes each.
 static const unsigned int queueLen   = 10;
 static const unsigned int packetSize = 256;
-using MavDriver                      = MavlinkDriver<packetSize, queueLen>;
+using MavDriver =
+    MavlinkDriverV0<packetSize, queueLen, MAVLINK_MAX_DIALECT_PAYLOAD_SIZE>;
 
 SerialTransceiver* transceiver;
 MavDriver* mavlink;
@@ -54,7 +55,7 @@ int main()
 {
     STM32SerialWrapper serial(USART1, 19200);
     transceiver = new SerialTransceiver(serial);
-    mavlink = new MavDriver(transceiver, nullptr, silenceAfterSend, maxPktAge);
+    mavlink = new MavDriver(transceiver, nullptr, maxPktAge, silenceAfterSend);
 
     mavlink->start();
 
