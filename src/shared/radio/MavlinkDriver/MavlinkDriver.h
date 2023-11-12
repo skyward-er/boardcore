@@ -69,11 +69,9 @@ public:
      * @brief Initializes all data structures.
      *
      * @param device Transceiver used to send and receive messages.
-     * @param onReceive Function to be executed on message rcv.
-     * @param outBufferMaxAge Max residence time for messages in the queue:
      * after this time the message will be automatically sent [ms].
      */
-    MavlinkDriver(Transceiver* device, size_t outBufferMaxAge = 1000)
+    MavlinkDriver(Transceiver* device)
         : device(device)
     {
         memset(&status, 0, sizeof(MavlinkStatus));
@@ -218,7 +216,7 @@ protected:
      */
     static void rcvLauncher(void* arg)
     {
-        reinterpret_cast<MavlinkDriver*>(arg)->runReceiver();
+        reinterpret_cast<T*>(arg)->runReceiver();
     }
 
     /**
@@ -235,8 +233,7 @@ protected:
     Transceiver* device;
 
     // Function executed when a message is ready.
-    std::function<void(const MavlinkDriver*, const mavlink_message_t&)>
-        onReceive = nullptr;
+    std::function<void(const T*, const mavlink_message_t&)> onReceive = nullptr;
 
     // Buffers
     static constexpr size_t MAV_IN_BUFFER_SIZE = 256;

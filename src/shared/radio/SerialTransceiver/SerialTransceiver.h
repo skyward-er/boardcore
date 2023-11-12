@@ -51,4 +51,24 @@ private:
     USARTInterface& usart;
 };
 
+class DefaultConsoleTransceiver : public Transceiver
+{
+public:
+    DefaultConsoleTransceiver() {}
+
+    bool send(uint8_t* packet, size_t packetLength)
+    {
+        auto serial = miosix::DefaultConsole::instance().get();
+        serial->writeBlock(packet, packetLength, 0);
+        return true;
+    }
+
+    ssize_t receive(uint8_t* packet, size_t packetLength)
+    {
+        auto serial = miosix::DefaultConsole::instance().get();
+        int len     = serial->readBlock(packet, packetLength, 0);
+        return len;
+    }
+};
+
 }  // namespace Boardcore

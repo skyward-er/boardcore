@@ -25,7 +25,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-#include <mavlink_lib/lynx/mavlink.h>
+#include <mavlink_lib/gemini/mavlink.h>
 #pragma GCC diagnostic pop
 
 #include <radio/MavlinkDriver/MavlinkDriverV0.h>
@@ -35,7 +35,7 @@ using namespace miosix;
 using namespace Boardcore;
 
 static const unsigned int silenceAfterSend = 250;
-static const unsigned int maxPktAge        = 1000;
+static const unsigned int maxPktAge        = 500;
 static const unsigned int pingPeriod       = 1000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
@@ -44,8 +44,33 @@ static const unsigned int packetSize = 256;
 using MavDriver =
     MavlinkDriverV0<packetSize, queueLen, MAVLINK_MAX_DIALECT_PAYLOAD_SIZE>;
 
-SerialTransceiver* transceiver;
+DefaultConsoleTransceiver* transceiver;
 MavDriver* mavlink;
+bool state = false;
+
+void toggleLed()
+{
+    if (state)
+    {
+        ledOff();
+    }
+    else
+    {
+        ledOn();
+    }
+    state = !state;
+}
+
+void onReceive(MavDriver* channel, const mavlink_message_t& msg)
+{
+    if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
+    {
+        toggleLed();
+        mavlink_message_t ack;
+        mavlink_msg_ack_tm_pack(171, 96, &ack, msg.msgid, msg.seq);
+        channel->enqueueMsg(ack);
+    }
+}
 
 /**
  * @brief This test enqueues a ping message every second and replies to every
@@ -53,9 +78,9 @@ MavDriver* mavlink;
  */
 int main()
 {
-    STM32SerialWrapper serial(USART1, 19200);
-    transceiver = new SerialTransceiver(serial);
-    mavlink = new MavDriver(transceiver, nullptr, maxPktAge, silenceAfterSend);
+    transceiver = new DefaultConsoleTransceiver();
+    mavlink =
+        new MavDriver(transceiver, onReceive, maxPktAge, silenceAfterSend);
 
     mavlink->start();
 
@@ -70,6 +95,7 @@ int main()
         mavlink->enqueueMsg(pingMsg);
 
         miosix::Thread::sleep(pingPeriod);
+        toggleLed();
     }
 
     return 0;

@@ -63,8 +63,110 @@ public:
                     size_t outBufferMaxAge = 1000, uint16_t sleepAfterSend = 0)
         : MavlinkDriver<MavlinkDriverV0<PktLength, OutQueueSize, MavMsgLength>,
                         PktLength, OutQueueSize, MavMsgLength>(device),
-          onReceive(onReceive), sleepAfterSend(sleepAfterSend),
+          device(device), onReceive(onReceive), sleepAfterSend(sleepAfterSend),
           outBufferMaxAge(outBufferMaxAge){};
+
+    /**
+     * @brief Tells whether the driver was started.
+     */
+    bool isStarted() { return sndStarted && rcvStarted; };
+
+    /**
+     * @brief Stops sender and receiver threads.
+     */
+    void stop()
+    {
+        stopFlag = true;
+        sndThread->join();  // Wait for sender to stop
+    };
+
+    /**
+     * @brief Synchronized status getter.
+     */
+    MavlinkStatus getStatus()
+    {
+        miosix::Lock<miosix::FastMutex> l(mtxStatus);
+        status.timestamp = TimestampTimer::getTimestamp();
+        return status;
+    };
+
+    /**
+     * @brief Non-blocking send function, puts the message in a queue.
+     * Message is discarded if the queue is full.
+     *
+     * @param msg Message to send (mavlink struct).
+     * @return True if the message could be enqueued.
+     */
+    bool enqueueMsg(const mavlink_message_t& msg)
+    {
+        // Convert mavlink message to a byte array
+        uint8_t msgTempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
+        int msgLen = mavlink_msg_to_send_buffer(msgTempBuf, &msg);
+        // Append the message to the queue
+        bool appended = outQueue.put(msgTempBuf, msgLen);
+        // Update stats
+        updateQueueStats(appended);
+        // Return ok even if a packet was discarded
+        return appended;
+    };
+
+    /**
+     * @brief Enqueue a raw packet message into the sync packet queue.
+     *
+     * @param msg Message to send.
+     * @param size Length in bytes.
+     * @return True if the message was enqueued.
+     */
+    bool enqueueRaw(uint8_t* msg, size_t size)
+    {
+        // Append message to the queue
+        bool appended = outQueue.put(msg, size);
+        // Update stats
+        updateQueueStats(appended);
+        // Return ok even if a packet was discarded
+        return appended;
+    };
+
+    /**
+     * @brief  Start the receiving and sending threads.
+     *
+     * @return False if at least one could not start.
+     */
+    bool start()
+    {
+        stopFlag = false;
+
+        // Start sender (joinable thread)
+        if (!sndStarted)
+        {
+            sndThread = miosix::Thread::create(
+                sndLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+                reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
+
+            if (sndThread != nullptr)
+                sndStarted = true;
+            else
+                LOG_ERR(logger, "Could not start sender!");
+        }
+
+        // Start receiver
+        if (!rcvStarted)
+        {
+            rcvThread = miosix::Thread::create(
+                rcvLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+                reinterpret_cast<void*>(this));
+
+            if (rcvThread != nullptr)
+                rcvStarted = true;
+            else
+                LOG_ERR(logger, "Could not start receiver!");
+        }
+
+        if (sndStarted && rcvStarted)
+            LOG_DEBUG(logger, "Sender and receiver started");
+
+        return sndStarted && rcvStarted;
+    };
 
     /**
      * @brief Setter for the sleep after send value.
@@ -74,7 +176,7 @@ public:
         sleepAfterSend = newSleepTime;
     };
 
-private:
+protected:
     /**
      * @brief Receiver thread: reads one char at a time from the transceiver and
      * tries to parse a mavlink message.
@@ -82,7 +184,7 @@ private:
      * If the message is successfully parsed, the onReceive function is
      * executed.
      */
-    void runReceiver() override
+    void runReceiver()
     {
         mavlink_message_t msg;
         ssize_t rcvSize;
@@ -140,7 +242,7 @@ private:
      * After every send, the thread sleeps to guarantee some silence on the
      * channel.
      */
-    void runSender() override
+    void runSender()
     {
         LOG_DEBUG(logger, "Sender is running");
         Packet<PktLength> pkt;
@@ -178,6 +280,26 @@ private:
         }
     };
 
+    /**
+     * @brief Calls the run member function.
+     *
+     * @param arg The object pointer cast to void*.
+     */
+    static void rcvLauncher(void* arg)
+    {
+        reinterpret_cast<MavlinkDriverV0*>(arg)->runReceiver();
+    }
+
+    /**
+     * @brief Calls the run member function.
+     *
+     * @param arg The object pointer cast to void*.
+     */
+    static void sndLauncher(void* arg)
+    {
+        reinterpret_cast<MavlinkDriverV0*>(arg)->runSender();
+    }
+
     void updateSenderStats(size_t msgCount, bool sent)
     {
         {
@@ -190,6 +312,20 @@ private:
             }
         }
         StackLogger::getInstance().updateStack(THID_MAV_SENDER);
+    };
+
+    void updateQueueStats(bool appended)
+    {
+        miosix::Lock<miosix::FastMutex> l(mtxStatus);
+        if (!appended)
+        {
+            LOG_ERR(logger,
+                    "Buffer full, the oldest message has been discarded");
+            status.nDroppedPackets++;
+        }
+        status.nSendQueue++;
+        if (status.nSendQueue > status.maxSendQueue)
+            status.maxSendQueue = status.nSendQueue;
     };
 
     Transceiver* device;   ///< Transceiver used to send and receive packets.
@@ -210,7 +346,12 @@ private:
     miosix::FastMutex mtxStatus;
 
     // Threads
-    bool stopFlag = false;
+    bool stopFlag   = false;
+    bool sndStarted = false;
+    bool rcvStarted = false;
+
+    miosix::Thread* sndThread = nullptr;
+    miosix::Thread* rcvThread = nullptr;
 
     PrintLogger logger = Logging::getLogger("mavlinkdriver");
 };

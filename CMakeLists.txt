@@ -231,7 +231,7 @@ add_executable(test-mavlink-pigna-slave src/tests/drivers/test-mavlink-pigna-sla
 sbs_target(test-mavlink-pigna-slave stm32f407vg_stm32f4discovery)
 
 add_executable(test-mavlink-v0 src/tests/drivers/test-mavlink-v0.cpp)
-sbs_target(test-mavlink-v0 stm32f407vg_stm32f4discovery)
+sbs_target(test-mavlink-v0 stm32f429zi_stm32f4discovery)
 
 add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
 sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
