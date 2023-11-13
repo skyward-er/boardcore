@@ -27,87 +27,159 @@ using namespace Boardcore;
 
 namespace Boardcore
 {
-class SensorsModule : public Module
-{
-protected:
-    volatile int dummy = 0;
+class B;
 
+class A : public Module {
 public:
-    virtual int getDummy() { return dummy; };
-    virtual void toggleDummy(){};
+    A() {}
+
+    void bing_a(bool value) {
+        this->value = value;
+    }
+
+    bool bong_a() {
+        return value;
+    }
+
+    void inject(ModuleInjector &getter) {
+        b = getter.get<B>();
+    }
+
+private:
+    B *b;
+    bool value;
 };
 
-class HILSensors : public SensorsModule
-{
+class B : public Module {
 public:
-    void toggleDummy() override { dummy = dummy == 0 ? 2000 : 0; }
+    B() {}
+
+    void bing_b(bool value) {
+        this->value = value;
+    }
+
+    bool bong_b() {
+        return value;
+    }
+
+    void inject(ModuleInjector &getter) {
+        a = getter.get<A>();
+    }
+
+private:
+    A *a;
+    bool value;
 };
 
-class Sensors : public SensorsModule
-{
+class CIface : public Module {
 public:
-    void toggleDummy() override { dummy = dummy == 0 ? 1000 : 0; }
+    virtual void bing_c() = 0;
+    virtual bool bong_c() = 0;
 };
 
-class Radio : public Module
-{
-    volatile int dummy = 0;
-
+class C : public CIface {
 public:
-    void setDummy(int p) { dummy = p; }
-    int getDummy() { return dummy; }
+    void bing_c() {
+        value = a->bong_a() && b->bong_b();
+    }
+
+    bool bong_c() {
+        return value;
+    }
+
+    void inject(ModuleInjector &getter) {
+        a = getter.get<A>();
+        b = getter.get<B>();
+    }
+
+private:
+    A *a;
+    B *b;
+    bool value;
+};
+
+class D : public Module {
+public:
+    void bing_d() {
+        value = c->bong_c();
+    }
+    
+    bool bong_d() {
+        return value;
+    }
+
+    void inject(ModuleInjector &getter) {
+        c = getter.get<CIface>();
+    }
+
+private:
+    CIface *c;
+    bool value;
 };
 }  // namespace Boardcore
 
-TEST_CASE("ModuleManager - Insert module")
+TEST_CASE("ModuleManager - Circular dependencies")
 {
-    ModuleManager& modules = ModuleManager::getInstance();
-    Sensors* sensors       = new Sensors();
+    ModuleManager manager;
 
-    REQUIRE(modules.insert<SensorsModule>(sensors));
-    REQUIRE_FALSE(modules.get<SensorsModule>() == nullptr);
+    Boardcore::A *a = new Boardcore::A();
+    Boardcore::B *b = new Boardcore::B();
 
-    // Perform a toggle of the module and read according to the expected number
-    modules.get<SensorsModule>()->toggleDummy();
-    REQUIRE(modules.get<SensorsModule>()->getDummy() == 1000);
+    REQUIRE(manager.insert<Boardcore::A>(a));
+    REQUIRE(manager.insert<Boardcore::B>(b));
+    REQUIRE(manager.inject());
+
+    a->bing_a(true);
+    REQUIRE(a->bong_a());
+
+    a->bing_a(false);
+    REQUIRE(!a->bong_a());
+
+    b->bing_b(true);
+    REQUIRE(b->bong_b());
+
+    b->bing_b(false);
+    REQUIRE(!b->bong_b());
 }
 
-TEST_CASE("ModuleManager - Insert already existent module")
+TEST_CASE("ModuleManager - Virtual Dependencies")
 {
-    ModuleManager& modules = ModuleManager::getInstance();
-    Sensors* sensors       = new Sensors();
-    HILSensors* hil        = new HILSensors();
+    ModuleManager manager;
 
-    REQUIRE(modules.insert<SensorsModule>(sensors));
-    REQUIRE_FALSE(modules.insert<SensorsModule>(hil));
+    Boardcore::A *a = new Boardcore::A();
+    Boardcore::B *b = new Boardcore::B();
+    Boardcore::C *c = new Boardcore::C();
+    Boardcore::D *d = new Boardcore::D();
 
-    // Verify that the initially inserted module didn't change
-    modules.get<SensorsModule>()->toggleDummy();
-    REQUIRE(modules.get<SensorsModule>()->getDummy() == 1000);
+    REQUIRE(manager.insert<Boardcore::A>(a));
+    REQUIRE(manager.insert<Boardcore::B>(b));
+    REQUIRE(manager.insert<Boardcore::CIface>(c));
+    REQUIRE(manager.insert<Boardcore::D>(d));
+    REQUIRE(manager.inject());
+
+    a->bing_a(false);
+    b->bing_b(false);
+
+    c->bing_c();
+    REQUIRE(!c->bong_c());
+    d->bing_d();
+    REQUIRE(!d->bong_d());
+
+    a->bing_a(true);
+    b->bing_b(true);
+
+    c->bing_c();
+    REQUIRE(c->bong_c());
+    d->bing_d();
+    REQUIRE(d->bong_d());
 }
 
-TEST_CASE("ModuleManager - Get without insertion")
+TEST_CASE("ModuleManager - Inject fail")
 {
-    ModuleManager& modules = ModuleManager::getInstance();
+    ModuleManager manager;
 
-    REQUIRE(modules.get<SensorsModule>() == nullptr);
-}
+    Boardcore::A *a = new Boardcore::A();
 
-TEST_CASE("ModuleManager - Insertion after get call")
-{
-    ModuleManager& modules = ModuleManager::getInstance();
-    Sensors* sensors       = new Sensors();
-    Radio* radio           = new Radio();
-
-    REQUIRE(modules.insert<Radio>(radio));
-
-    // Trigger the inhibition of further insertions
-    REQUIRE_FALSE(modules.get<Radio>() == nullptr);
-    REQUIRE_FALSE(modules.insert<Sensors>(sensors));
-
-    REQUIRE_FALSE(modules.get<Radio>() == nullptr);
-
-    // Verify that the initially inserted module didn't change
-    modules.get<Radio>()->setDummy(345);
-    REQUIRE(modules.get<Radio>()->getDummy() == 345);
+    REQUIRE(manager.insert<Boardcore::A>(a));
+    REQUIRE_FALSE(manager.inject());
 }
