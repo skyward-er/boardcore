@@ -21,202 +21,130 @@
  */
 #pragma once
 
-#include <Singleton.h>
-#include <assert.h>
-#include <stdint.h>
-#include <utils/Debug.h>
-
-#include <array>
-#include <atomic>
+#include <typeinfo>
+#include <typeindex>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <cxxabi.h>
 
 namespace Boardcore
 {
+
+std::string type_name_demangled(const std::type_info &info) {
+    char *demangled = abi::__cxa_demangle(info.name(), nullptr, nullptr, nullptr);
+    std::string demangled2{demangled};
+    std::free(demangled);
+
+    return demangled2;
+}
+
+class ModuleInjector;
+class ModuleManager;
+
 class Module
 {
 public:
     virtual ~Module() = default;
+
+    virtual void inject(ModuleInjector &injector) = 0;
 };
 
-/**
- * @brief The module manager is a singleton object, so it can be instantiated
- * only once. It contains all the active software modules which can be
- * accessed in a centralized way.
- *
- * @note Because modules are identified by their type, only one module per type
- * can be inserted into the module manager. This means that every module
- * conceptually behaves like a singleton.
- *
- * Example:
- * @code{.cpp}
- * class SensorsModule : public Module {...};
- * class Sensors : public SensorsModule {...};
- *
- * ModuleManager::getInstance().insert<SensorsModule>(new Sensors(args..));
- *
- * // The user
- * ModuleManager::getInstance().get<SensorsModule>();
- *
- * // This way substituting the instance below, the user doesn't actually know
- * // the difference as far as the upper interface is respected.
- * @endcode
- */
-class ModuleManager : public Singleton<ModuleManager>
-{
-    friend class Singleton<ModuleManager>;
+class ModuleManager {
+    friend class ModuleInjector;
+private:
+    struct ModuleInfo {
+        Module *ptr;
+        std::string name;
+        std::string impl;
+        std::vector<std::type_index> deps;
+    };
 
 public:
     ModuleManager() {}
 
-    ~ModuleManager()
-    {
-        // Delete all the modules to avoid memory leaks
-        for (size_t i = 0; i < MODULES_NUMBER; i++)
-        {
-            // It is okay to have nullptr in delete
-            delete modules[i];
-        }
+    template<typename T>
+    [[nodiscard]] bool insert(T* module) {
+        auto idx = std::type_index{typeid(T)};
+
+        bool ok = modules.insert({idx, ModuleInfo {
+            dynamic_cast<Module*>(module),
+            type_name_demangled(typeid(T)),
+            type_name_demangled(typeid(*module)),
+            {}
+        }}).second;
+
+        return ok;
     }
 
-    /**
-     * @brief Inserts the module inside the array.
-     *
-     * @param element Module to be added. T must be subclass of Module.
-     *
-     * @returns false in case an object of the same class has already been
-     * inserted or the maximum number of modules has been reached.
-     *
-     * @note Further insertions of modules after the first 'get()' call are not
-     * allowed. Please notice also that the module manager from this point
-     * handles completely the objects. Therefore at the destruction of the
-     * module manager, all the modules will be deleted.
-     */
-    template <typename T>
-    [[nodiscard]] bool insert(T *element)
-    {
-        // Verify that T is a subclass of module
-        static_assert(std::is_base_of<Module, T>(),
-                      "Class must be subclass of Module");
-        static_assert((std::is_same<Module, T>() == false),
-                      "Class must be subclass of Module and not Module itself");
+    void graphviz() {
+        printf("digraph {\n");
 
-        if (!insertionAcceptance)
-        {
-            assert(false &&
-                   "Cannot insert any other module after first get() call");
-            return false;
+        for(auto &slot : modules) {
+            for(auto &dep : slot.second.deps) {
+                printf(
+                    "  \"%s(%s)\" -> \"%s(%s)\"\n", 
+                    slot.second.name.c_str(), 
+                    slot.second.impl.c_str(), 
+                    modules[dep].name.c_str(), 
+                    modules[dep].impl.c_str()
+                );
+            }
         }
 
-        // Take the module type id
-        size_t id = getId<T>();
-
-        // This is the case in which the last slot is being occupied, so a
-        // failure is returned
-        if (id == MODULES_NUMBER)
-        {
-            return false;
-        }
-
-        // The module is added if only a module of the same subclass hasn't
-        // already been added
-        if (modules[id] == nullptr)
-        {
-            modules[id] = element;
-            return true;
-        }
-        return false;
+        printf("}\n");
     }
 
-    /**
-     * @brief Get the Module object if present.
-     * @returns T Software module.
-     * @returns nullptr in case of a non existing software module.
-     *
-     * @note After the get call, no further insertion is allowed.
-     */
-    template <class T>
-    T *get()
-    {
-        // Verify that T is a subclass of module but not actually a strict
-        // Module
-        static_assert(std::is_base_of<Module, T>(),
-                      "Class must be subclass of Module");
-        static_assert((std::is_same<Module, T>() == false),
-                      "Class must be subclass of Module and not Module itself");
+    [[nodiscard]] bool inject();
 
-        // Inhibit further insertions
-        insertionAcceptance = false;
+private:
+    bool load_success = true;
+    std::unordered_map<std::type_index, ModuleInfo> modules;
+};
 
-        // Retrieve the module type id
-        size_t id = getId<T>();
+class ModuleInjector {
+    friend class ModuleManager;
+private:
+    ModuleInjector(
+        ModuleManager *manager,
+        ModuleManager::ModuleInfo *info
+    ) : manager(manager), info(info) {}
 
-        // If the module is actually present, returns it by downcasting the
-        // object. It can be done because at every type, a unique id is assigned
-        if (modules[id] != nullptr)
-        {
-            return dynamic_cast<T *>(modules[id]);
+public:
+    template<typename T>
+    T *get() {
+        auto idx = std::type_index{typeid(T)};
+
+        auto iter = manager->modules.find(idx);
+        if(iter == manager->modules.end()) {
+            manager->load_success = false;
+            
+            std::string name = type_name_demangled(typeid(T));
+            printf(
+                "[%s] requires [%s], but the latter is not present\n",
+                info->name.c_str(),
+                name.c_str()
+            );
+
+            return nullptr;
         }
 
-        // Fail if the module hasn't been added before
-        assert(false && "Get of a non previously inserted module");
-        return nullptr;
+        info->deps.push_back(idx);
+        return dynamic_cast<T*>(iter->second.ptr);
     }
 
 private:
-    static constexpr size_t MODULES_NUMBER = 256;
-
-    /** @brief Array that contains all the possible modules */
-    std::array<Module *, MODULES_NUMBER> modules = {nullptr};
-
-    /**
-     * @brief This boolean flag just enables the user to insert software modules
-     * at the beginning but not after the first get.
-     *
-     * @note It enforces the fact that after the first get call no further
-     * insertions are allowed.
-     */
-    std::atomic<bool> insertionAcceptance{true};
-
-    /**
-     * @brief Get the next id with respect to the current one.
-     * @returns size_t incremented currentID
-     *
-     * @note This is not a thread safe function.
-     */
-    size_t getNextId()
-    {
-        // Static variable, initialized only the first time
-        static size_t currentId = 0;
-
-        if (currentId == MODULES_NUMBER)
-        {
-            return MODULES_NUMBER;
-        }
-        currentId++;
-        return currentId;
-    }
-
-    /**
-     * @brief This function "assigns" to every type a unique sequential id
-     * based on the already assigned ones.
-     *
-     * @returns size_t A unique ID for the type T
-     *
-     * @note This is a thread safe function. It leverages on the cxa_guard of
-     * miosix around a static variable initialization that yields
-     * every thread that tries to initialize the variable concurrently. So
-     * getNextId is executed atomically.
-     *
-     * Reference of cxa_guard function:
-     * miosix/stdlib_integration/libstdcpp_integration.cpp
-     */
-    template <typename T>
-    size_t getId()
-    {
-        // This thing works because a new static variable newId is created for
-        // every type T and the initial assignment is "called" only when the
-        // static variable is created
-        static size_t newId = getNextId();
-        return newId;
-    }
+    ModuleManager *manager;
+    ModuleManager::ModuleInfo *info;
 };
+
+bool ModuleManager::inject() {
+    for(auto &slot : modules) {
+        ModuleInjector injector(this, &slot.second);
+        slot.second.ptr->inject(injector);
+    }
+
+    return load_success;
+}
+
 }  // namespace Boardcore
