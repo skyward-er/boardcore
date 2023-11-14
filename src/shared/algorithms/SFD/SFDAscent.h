@@ -48,6 +48,11 @@ public:
 
     explicit SFDAscent(const SFDAscentConfig& config);
 
+    /**
+     * @brief Classifies the input vector as faulty or not.
+     *
+     * @return true if the input is faulty, false otherwise.
+     */
     bool classify(const SFDVectorIn& input);
 
 private:

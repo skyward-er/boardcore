@@ -110,7 +110,6 @@ PressureSFDData PressureSFD::sampleImpl()
     processed_value = medianFilter.filter(processed_value);
     processed_value = lowPassFilter.filter(processed_value);
 
-    samples       = sampleWindow.last();
     data.pressure = processed_value;
 
     return data;
@@ -147,7 +146,6 @@ void PressureSFD::setDisabledSensors()
                     skipped++;
                     continue;
                 }
-                // TODO: check if the score is correct (true means faulty)
                 if (sfdAscent.classify(sensor_samples[i]))
                 {
                     disabledSensors[i] = true;
@@ -164,7 +162,6 @@ void PressureSFD::setDisabledSensors()
                     skipped++;
                     continue;
                 }
-                // TODO: check if the score is correct (true means faulty)
                 if (sfdDescent.classify(sensor_samples[i]))
                 {
                     disabledSensors[i] = true;

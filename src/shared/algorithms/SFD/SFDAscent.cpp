@@ -52,7 +52,7 @@ SFDAscent::FeaturesVec SFDAscent::getFeatures(const SFDVectorIn& input)
     s2  = x0.array().pow(2).mean();
     m4  = x0.array().pow(4).mean();
 
-    rfourier = FFT32::fft(data).real();  // TODO: fix complex -> float
+    rfourier = FFT32::fft(data).cwiseAbs();  // TODO: fix complex -> float
     rfmean   = rfourier.mean();
     rfvar = (rfourier - rfmean * SFDVectorIn::Ones()).squaredNorm() / LEN_CHUNK;
 

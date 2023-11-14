@@ -49,7 +49,7 @@ class PressureSFD : public Sensor<PressureSFDData>
 {
 public:
     static constexpr int MASKED_SENSORS = 2;
-    static constexpr int WIN_LEN        = MASKED_SENSORS * LEN_CHUNK;
+    static constexpr int WIN_LEN        = LEN_CHUNK;
 
     // TODO: set these values
     static constexpr int MED_FILTER_WIN_LEN   = 25;
