@@ -71,8 +71,7 @@ public:
      * @param device Transceiver used to send and receive messages.
      * after this time the message will be automatically sent [ms].
      */
-    MavlinkDriver(Transceiver* device)
-        : device(device)
+    MavlinkDriver(Transceiver* device) : device(device)
     {
         memset(&status, 0, sizeof(MavlinkStatus));
     };

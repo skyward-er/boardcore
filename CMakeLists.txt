@@ -227,8 +227,11 @@ sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
 sbs_target(test-internal-adc stm32f767zi_compute_unit)
 
+add_executable(test-mavlink-pigna-master src/tests/drivers/test-mavlink-pigna-master.cpp)
+sbs_target(test-mavlink-pigna-master stm32f429zi_stm32f4discovery)
+
 add_executable(test-mavlink-pigna-slave src/tests/drivers/test-mavlink-pigna-slave.cpp)
-sbs_target(test-mavlink-pigna-slave stm32f407vg_stm32f4discovery)
+sbs_target(test-mavlink-pigna-slave stm32f429zi_stm32f4discovery)
 
 add_executable(test-mavlink-v0 src/tests/drivers/test-mavlink-v0.cpp)
 sbs_target(test-mavlink-v0 stm32f429zi_stm32f4discovery)
