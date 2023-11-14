@@ -299,7 +299,7 @@ struct GPSData
 
     void print(std::ostream& os) const
     {
-        os << gpsTimestamp << "," << longitude << "," << latitude << ","
+        os << gpsTimestamp << "," << latitude << "," << longitude << ","
            << height << "," << velocityNorth << "," << velocityEast << ","
            << velocityDown << "," << speed << "," << track << "," << positionDOP
            << "," << (int)satellites << "," << (int)fix << "\n";
