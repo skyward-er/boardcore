@@ -173,12 +173,13 @@ float verticalSpeed(float p, float dpDt, float pRef, float tRef);
  * @brief Converts decimal degrees of latitude and longitude into displacement
  * in meters between two positions the with an ellipsoidal earth model.
  *
- * @param position1 Latitude and longitude of current position [lat lon][deg]
- * @param position2 Initial position used as an offset [lat lon][deg]
- * @return Distance between the two coordinates [n e][m]
+ * @param target Coordinates of target position [lat lon][deg]
+ * @param origin Coordinates of the Initial position used as the origin of the
+ * NED frame [lat lon][deg]
+ * @return Target NED position with respect to the origin coordinates [n e][m]
  */
-Eigen::Vector2f geodetic2NED(const Eigen::Vector2f& position1,
-                             const Eigen::Vector2f& position2);
+Eigen::Vector2f geodetic2NED(const Eigen::Vector2f& target,
+                             const Eigen::Vector2f& origin);
 
 /**
  * @brief Computes the rho (air density) of air at the given altitude.
