@@ -102,12 +102,8 @@ public:
         // Convert mavlink message to a byte array
         uint8_t msgTempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
         int msgLen = mavlink_msg_to_send_buffer(msgTempBuf, &msg);
-        // Append the message to the queue
-        bool appended = outQueue.put(msgTempBuf, msgLen);
-        // Update stats
-        updateQueueStats(appended);
-        // Return ok even if a packet was discarded
-        return appended;
+
+        return enqueueRaw(msgTempBuf, msgLen);
     };
 
     /**
