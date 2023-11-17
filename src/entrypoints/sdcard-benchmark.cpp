@@ -33,15 +33,15 @@
 
 using namespace Boardcore;
 using namespace miosix;
-using namespace std;
 
 ///< Number of writes to perform for each buffer size
 const unsigned int NUM_WRITES = 1000;
 
-vector<size_t> BUFFER_SIZES = {128,  256,  512,   1024,  2048,
+std::vector<size_t> BUFFER_SIZES = {128,  256,  512,   1024,  2048,
                                4096, 8192, 16348, 32768, 65536};
 
-array<float, NUM_WRITES> data;
+using result_array = std::array<float, NUM_WRITES>;
+result_array data;
 
 /**
  * @brief Fills a buffer with random bytes.
@@ -59,7 +59,7 @@ void rndFill(uint8_t* buf, size_t size);
  * @param results Array where to store the duration measured for each write.
  * @return True if no error encountered.
  */
-bool benchmark(size_t bufferSize, array<float, NUM_WRITES>& results);
+bool benchmark(size_t bufferSize, result_array& results);
 
 /**
  * @brief Prints the test results for the specified buffer size.
@@ -67,7 +67,7 @@ bool benchmark(size_t bufferSize, array<float, NUM_WRITES>& results);
  * @param bufferSize Buffer size of the benchmark.
  * @param results Results form the benchmark.
  */
-void printResults(size_t bufferSize, array<float, NUM_WRITES>& results);
+void printResults(size_t bufferSize, result_array& results);
 
 int main()
 {
@@ -94,7 +94,7 @@ void rndFill(uint8_t* buf, size_t size)
         buf[i] = rand() % 256;
 }
 
-bool benchmark(size_t bufferSize, array<float, NUM_WRITES>& results)
+bool benchmark(size_t bufferSize, result_array& results)
 {
     uint8_t* buffer = new uint8_t[bufferSize];
 
@@ -138,7 +138,7 @@ bool benchmark(size_t bufferSize, array<float, NUM_WRITES>& results)
     return true;
 }
 
-void printResults(size_t bufferSize, array<float, NUM_WRITES>& results)
+void printResults(size_t bufferSize, result_array& results)
 {
     // Compute statistics on the benchmark results
     Stats stats;

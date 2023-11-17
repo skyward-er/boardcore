@@ -144,6 +144,12 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
     set(BOARDCORE_LIB boardcore-${BOARD_NAME})
     add_library(${BOARDCORE_LIB} STATIC EXCLUDE_FROM_ALL ${BOARDCORE_SRC})
 
+    # Set the C++ standard
+    set_target_properties(${BOARDCORE_LIB} PROPERTIES
+        CXX_STANDARD ${BOARDCORE_CXX_STANDARD}
+        CXX_STANDARD_REQUIRED ON
+    )
+
     # Only one include directory for Boardcore!
     target_include_directories(${BOARDCORE_LIB} PUBLIC ${BOARDCORE_PATH}/src/shared)
 
