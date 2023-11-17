@@ -29,7 +29,7 @@
 #pragma GCC diagnostic pop
 
 #include <radio/MavlinkDriver/MavlinkDriverPigna.h>
-#include <radio/SerialTransceiver/SerialTransceiver.h>
+#include "TestTransceiver.h"
 
 using namespace miosix;
 using namespace Boardcore;

@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Authors: Giacomo Caironi
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,18 +28,21 @@
 #include <mavlink_lib/gemini/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <radio/MavlinkDriver/MavlinkDriverPigna.h>
-#include <radio/SerialTransceiver/SerialTransceiver.h>
+#include <radio/MavlinkDriver/MavlinkDriverV0.h>
+#include "TestTransceiver.h"
 
 using namespace miosix;
 using namespace Boardcore;
 
-static const unsigned int pingPeriod = 1000;
+static const unsigned int silenceAfterSend = 250;
+static const unsigned int maxPktAge        = 500;
+static const unsigned int pingPeriod       = 1000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
 static const unsigned int queueLen   = 10;
 static const unsigned int packetSize = 256;
-using MavDriver = MavlinkDriverPignaSlave<packetSize, queueLen>;
+using MavDriver =
+    MavlinkDriverV0<packetSize, queueLen, MAVLINK_MAX_DIALECT_PAYLOAD_SIZE>;
 
 DefaultConsoleTransceiver* transceiver;
 MavDriver* mavlink;
@@ -76,7 +79,8 @@ void onReceive(MavDriver* channel, const mavlink_message_t& msg)
 int main()
 {
     transceiver = new DefaultConsoleTransceiver();
-    mavlink = new MavDriver(transceiver, MAVLINK_MSG_ID_COMMAND_TC, onReceive);
+    mavlink =
+        new MavDriver(transceiver, onReceive, maxPktAge, silenceAfterSend);
 
     mavlink->start();
 
