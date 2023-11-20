@@ -52,12 +52,12 @@ public:
     static constexpr int WIN_LEN        = LEN_CHUNK;
 
     // TODO: set these values
-    static constexpr int MED_FILTER_WIN_LEN   = 25;
-    static constexpr float K_ACTIVE_ASCENT    = 0;
-    static constexpr float K_PASSIVE_ASCENT   = 0;
-    static constexpr float K_APOGEE_PROXIMITY = 0;
-    static constexpr float K_DESCENT          = 0;
-    static constexpr float MAX_WEIGHT         = 1;
+    static constexpr int MED_FILTER_WIN_LEN   = 21;
+    static constexpr float K_ACTIVE_ASCENT    = 1;
+    static constexpr float K_PASSIVE_ASCENT   = 1;
+    static constexpr float K_APOGEE_PROXIMITY = 1;
+    static constexpr float K_DESCENT          = 1;
+    static constexpr float MAX_WEIGHT         = 50;
     static constexpr float MIN_WEIGHT         = 0;
 
     using SVMAscVec  = Eigen::Vector<float, SFDAscent::NUM_FEATURES>;
