@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron, Nuno Barcellos, Davide Mor
+/* Copyright (c) 2018-2023 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos, Davide Mor, Giacomo Caironi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,10 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-#include <mavlink_lib/pyxis/mavlink.h>
+#include <mavlink_lib/gemini/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <radio/MavlinkDriver/MavlinkDriverV0.h>
+#include <radio/MavlinkDriver/MavlinkDriverPigna.h>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -42,14 +42,13 @@ using namespace miosix;
 constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Lora::MTU;
 constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
 constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
-constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 0;
-constexpr uint16_t SLEEP_AFTER_SEND     = 0;
-constexpr uint32_t FLIGHT_TM_PERIOD     = 8000;
+constexpr uint16_t SLEEP_AFTER_SEND     = 5;
+constexpr uint32_t FLIGHT_TM_PERIOD     = 1000;
 constexpr uint32_t STATS_TM_PERIOD      = 1000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav = MavlinkDriverV0<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
-                            RADIO_MAV_MSG_LENGTH>;
+using Mav = MavlinkDriverPignaMaster<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
+                                     RADIO_MAV_MSG_LENGTH>;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
@@ -113,9 +112,15 @@ void initBoard()
 
 Mav* channel;
 
+#define DLEVEL 1
+
+#if DLEVEL == 1
+int sent;
+int received;
+#endif
+
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
-    printf("Received something...\n");
 
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
     {
@@ -128,7 +133,11 @@ void onReceive(Mav* channel, const mavlink_message_t& msg)
     }
     else
     {
-        printf("Received ACK!\n");
+#if DLEVEL == 1
+        received++;
+#elif DLEVEL == 2
+        printf("Received ACK %d!\n", mavlink_msg_ack_tm_get_seq_ack(&msg));
+#endif
     }
 }
 
@@ -143,7 +152,12 @@ void flightTmLoop()
         mavlink_msg_rocket_flight_tm_encode(171, 96, &msg, &tm);
 
         channel->enqueueMsg(msg);
-        printf("Enqueued flight_tm_tm!\n");
+
+#if DLEVEL == 1
+        sent++;
+#elif DLEVEL == 2
+        printf("Enqueued flight_tm %d!\n", msg.seq);
+#endif
 
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
     }
@@ -160,7 +174,12 @@ void statsTmLoop()
         mavlink_msg_rocket_stats_tm_encode(171, 96, &msg, &tm);
 
         channel->enqueueMsg(msg);
-        printf("Enqueued stats_tm!\n");
+
+#if DLEVEL == 1
+        sent++;
+#elif DLEVEL == 2
+        printf("Enqueued stats_tm %d!\n", msg.seq);
+#endif
 
         Thread::sleepUntil(start + STATS_TM_PERIOD);
     }
@@ -203,15 +222,21 @@ int main()
 
     printf("\n[sx1278] Initialization complete!\n");
 
-    channel =
-        new Mav(sx1278, &onReceive, MAV_OUT_BUFFER_MAX_AGE, SLEEP_AFTER_SEND);
+    channel = new Mav(sx1278, MAVLINK_MSG_ID_ROCKET_STATS_TM, &onReceive,
+                      SLEEP_AFTER_SEND);
     channel->start();
 
-    std::thread flight_tm_loop([]() { flightTmLoop(); });
     std::thread stats_tm_loop([]() { statsTmLoop(); });
+    Thread::sleep(1);
+    std::thread flight_tm_loop([]() { flightTmLoop(); });
 
     while (1)
-        Thread::wait();
+    {
+        Thread::sleep(2000);
+#if DLEVEL == 1
+        printf("Dropped %d messages out of %d\n", sent - received, sent);
+#endif
+    }
 
     return 0;
 }

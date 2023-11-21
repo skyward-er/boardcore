@@ -287,6 +287,20 @@ public:
     }
 
     /**
+     * @brief Clears the current queue buffer after copying it into a
+     * destination buffer.
+     * @param newBuffer The destination buffer
+     */
+    void copyClear(CircularBuffer<Packet<pktLen>, pktNum>* newBuffer)
+    {
+        Lock<FastMutex> l(mutex);
+        while (!buffer.isEmpty())
+        {
+            newBuffer->put(buffer.pop());
+        }
+    }
+
+    /**
      * @return True if all the packets have been marked as ready.
      */
     bool isFull()

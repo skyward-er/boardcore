@@ -320,14 +320,26 @@ add_executable(test-sx1278fsk-gui-rx src/tests/radio/sx1278/test-sx1278-bench-gu
 target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
 sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278fsk-mavlink src/tests/radio/sx1278/fsk/test-sx1278-mavlink.cpp)
-sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)
+add_executable(test-sx1278fsk-mavlink-v0 src/tests/radio/sx1278/fsk/test-sx1278-mavlink-v0.cpp)
+sbs_target(test-sx1278fsk-mavlink-v0 stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278fsk-mavlink-pigna-master src/tests/radio/sx1278/fsk/test-sx1278-mavlink-pigna-master.cpp)
+sbs_target(test-sx1278fsk-mavlink-pigna-master stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278fsk-mavlink-pigna-slave src/tests/radio/sx1278/fsk/test-sx1278-mavlink-pigna-slave.cpp)
+sbs_target(test-sx1278fsk-mavlink-pigna-slave stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278lora-bidir src/tests/radio/sx1278/lora/test-sx1278-bidir.cpp)
 sbs_target(test-sx1278lora-bidir stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278lora-mavlink src/tests/radio/sx1278/lora/test-sx1278-mavlink.cpp)
-sbs_target(test-sx1278lora-mavlink stm32f429zi_skyward_groundstation_v2)
+add_executable(test-sx1278lora-mavlink-v0 src/tests/radio/sx1278/lora/test-sx1278-mavlink-v0.cpp)
+sbs_target(test-sx1278lora-mavlink-v0 stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278lora-mavlink-pigna-master src/tests/radio/sx1278/lora/test-sx1278-mavlink-pigna-master.cpp)
+sbs_target(test-sx1278lora-mavlink-pigna-master stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278lora-mavlink-pigna-slave src/tests/radio/sx1278/lora/test-sx1278-mavlink-pigna-slave.cpp)
+sbs_target(test-sx1278lora-mavlink-pigna-slave stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278lora-simple-rx src/tests/radio/sx1278/lora/test-sx1278-simple.cpp)
 target_compile_definitions(test-sx1278lora-simple-rx PRIVATE ENABLE_RX)

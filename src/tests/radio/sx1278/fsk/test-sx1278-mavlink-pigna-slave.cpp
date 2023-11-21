@@ -38,19 +38,20 @@
 #include <mavlink_lib/gemini/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <radio/MavlinkDriver/MavlinkDriverV0.h>
+#include <radio/MavlinkDriver/MavlinkDriverPigna.h>
 
 using namespace Boardcore;
 using namespace miosix;
 
-constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
-constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
-constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
-constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 10;
-constexpr uint32_t FLIGHT_TM_PERIOD     = 250;
+constexpr uint32_t RADIO_PKT_LENGTH       = SX1278Fsk::MTU;
+constexpr uint32_t RADIO_OUT_QUEUE_SIZE   = 10;
+constexpr uint32_t RADIO_MAV_MSG_LENGTH   = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
+constexpr uint16_t SLEEP_AFTER_SEND     = 5;
+constexpr uint32_t PING_TC_PERIOD       = 750;
+constexpr uint32_t FLIGHT_TM_PERIOD     = 1500;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav = MavlinkDriverV0<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
+using Mav = MavlinkDriverPignaSlave<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
                             RADIO_MAV_MSG_LENGTH>;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
@@ -148,70 +149,82 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
         sx1278->handleDioIRQ();
 }
 
-void initBoard() {}
-
-struct PendingAck
-{
-    int msgid;
-    int seq;
-};
-
-CircularBuffer<PendingAck, 10> pending_acks;
-FastMutex mutex;
-
 Mav* channel;
+
+#define DLEVEL 1
+
+#if DLEVEL == 1
+int sent;
+int received;
+#endif
 
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
+
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
     {
-        Lock<FastMutex> l(mutex);
-        pending_acks.put({msg.msgid, msg.seq});
+        // Prepare ack messages
+        mavlink_message_t ackMsg;
+        mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
+
+        // Send the ack back to the sender
+        channel->enqueueMsg(ackMsg);
+    }
+    else
+    {
+#if DLEVEL == 1
+        received++;
+#elif DLEVEL == 2
+        printf("Received ACK %d!\n", mavlink_msg_ack_tm_get_seq_ack(&msg));
+#endif
+    }
+}
+
+void pingTcLoop()
+{
+    while (1)
+    {
+        long long start = miosix::getTick();
+
+        mavlink_message_t msg;
+        mavlink_msg_ping_tc_pack(1, 1, &msg, miosix::getTick());
+
+        channel->enqueueMsg(msg);
+
+#if DLEVEL == 1
+        sent++;
+#elif DLEVEL == 2
+        printf("Enqueued ping_tc %d!\n", msg.seq);
+#endif
+
+        Thread::sleepUntil(start + PING_TC_PERIOD);
     }
 }
 
 void flightTmLoop()
 {
-    int i = 0;
-
     while (1)
     {
         long long start = miosix::getTick();
 
-        {
-            Lock<FastMutex> l(mutex);
-            while (!pending_acks.isEmpty())
-            {
-                PendingAck ack = pending_acks.pop();
-
-                // Prepare ack message
-                mavlink_message_t msg;
-                mavlink_msg_ack_tm_pack(171, 96, &msg, ack.msgid, ack.seq);
-
-                // Send the ack back to the sender
-                channel->enqueueMsg(msg);
-            }
-        }
-
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
-        tm.timestamp                  = TimestampTimer::getTimestamp();
-        tm.acc_x                      = i;
-        tm.acc_y                      = i * 2;
-        tm.acc_z                      = i * 3;
-
         mavlink_msg_rocket_flight_tm_encode(171, 96, &msg, &tm);
 
         channel->enqueueMsg(msg);
 
+#if DLEVEL == 1
+        sent++;
+#elif DLEVEL == 2
+        printf("Enqueued flight_tm %d!\n", msg.seq);
+#endif
+
         Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
-        i += 1;
     }
 }
 
 int main()
 {
-    initBoard();
 
     SX1278Fsk::Config config = {
         .freq_rf    = 434000000,
@@ -246,10 +259,21 @@ int main()
 
     printConfig(config);
 
-    channel = new Mav(sx1278, &onReceive, MAV_OUT_BUFFER_MAX_AGE, 0);
+    channel = new Mav(sx1278, MAVLINK_MSG_ID_ROCKET_STATS_TM, &onReceive,
+                      SLEEP_AFTER_SEND);
     channel->start();
 
-    flightTmLoop();
+    std::thread stats_tm_loop([]() { pingTcLoop(); });
+    Thread::sleep(1);
+    std::thread flight_tm_loop([]() { flightTmLoop(); });
+
+    while (1)
+    {
+        Thread::sleep(2000);
+#if DLEVEL == 1
+        printf("Dropped %d messages out of %d\n", sent - received, sent);
+#endif
+    }
 
     return 0;
 }

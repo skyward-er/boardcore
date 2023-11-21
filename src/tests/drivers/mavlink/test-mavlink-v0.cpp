@@ -29,6 +29,7 @@
 #pragma GCC diagnostic pop
 
 #include <radio/MavlinkDriver/MavlinkDriverV0.h>
+
 #include "TestTransceiver.h"
 
 using namespace miosix;
@@ -80,7 +81,7 @@ int main()
 {
     transceiver = new DefaultConsoleTransceiver();
     mavlink =
-        new MavDriver(transceiver, onReceive, maxPktAge, silenceAfterSend);
+        new MavDriver(transceiver, onReceive, silenceAfterSend, maxPktAge);
 
     mavlink->start();
 

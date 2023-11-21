@@ -29,6 +29,7 @@
 #pragma GCC diagnostic pop
 
 #include <radio/MavlinkDriver/MavlinkDriverPigna.h>
+
 #include "TestTransceiver.h"
 
 using namespace miosix;

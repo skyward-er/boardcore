@@ -62,11 +62,13 @@ public:
      * after this time the message will be automatically sent [ms].
      */
     MavlinkDriverPignaMaster(Transceiver* device, uint8_t pingMsgId,
-                             MavHandler onReceive = nullptr)
+                             MavHandler onReceive    = nullptr,
+                             uint16_t sleepAfterSend = 0)
         : MavlinkDriver<
               MavlinkDriverPignaMaster<PktLength, OutQueueSize, MavMsgLength>,
               PktLength, OutQueueSize, MavMsgLength>(device),
-          device(device), onReceive(onReceive), pingMsgId(pingMsgId){};
+          device(device), onReceive(onReceive), pingMsgId(pingMsgId),
+          sleepAfterSend(sleepAfterSend){};
 
     /**
      * @brief Tells whether the driver was started.
@@ -126,7 +128,7 @@ public:
         if (force_flush)
         {
             std::lock_guard<std::mutex> l(mtxFlush);
-            shouldFlush = true;
+            outQueue.copyClear(&sendQueue);
             condVarFlush.notify_one();
         }
 
@@ -246,21 +248,21 @@ protected:
         {
 
             std::unique_lock<std::mutex> l(mtxFlush);
-            while (!shouldFlush)
+            while (sendQueue.isEmpty())
                 condVarFlush.wait(l);
-            shouldFlush = false;
 
             if (stopFlag)
                 return;
 
-            while (!outQueue.isEmpty())
+            while (!sendQueue.isEmpty())
             {
+                pkt = sendQueue.pop();  //  Remove the packet from queue
                 uint64_t age =
                     TimestampTimer::getTimestamp() - pkt.getTimestamp();
-                pkt = outQueue.pop();  //  Remove the packet from queue
                 LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
                           pkt.size(), age);
                 bool sent = device->send(pkt.content.data(), pkt.size());
+                miosix::Thread::sleep(sleepAfterSend);
                 updateSenderStats(pkt.getMsgCount(), sent);
             }
         }
@@ -324,6 +326,7 @@ protected:
     static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
 
     SyncPacketQueue<PktLength, OutQueueSize> outQueue;
+    CircularBuffer<Packet<PktLength>, OutQueueSize> sendQueue;
     uint8_t rcvBuffer[MAV_IN_BUFFER_SIZE];
 
     // Status
@@ -333,7 +336,8 @@ protected:
     // Flush syncronization
     std::mutex mtxFlush;
     std::condition_variable condVarFlush;
-    bool shouldFlush = false;
+
+    uint16_t sleepAfterSend;
 
     // Threads
     bool stopFlag   = false;
@@ -379,13 +383,14 @@ public:
      * after this time the message will be automatically sent [ms].
      */
     MavlinkDriverPignaSlave(Transceiver* device, uint8_t pingMsgId,
-                            MavHandler onReceive = nullptr,
-                            int partialQueueSize = OutQueueSize)
+                            MavHandler onReceive    = nullptr,
+                            uint16_t sleepAfterSend = 0,
+                            int partialQueueSize    = OutQueueSize)
         : MavlinkDriver<
               MavlinkDriverPignaSlave<PktLength, OutQueueSize, MavMsgLength>,
               PktLength, OutQueueSize, MavMsgLength>(device),
           device(device), onReceive(onReceive), pingMsgId(pingMsgId),
-          partialQueueSize(partialQueueSize){};
+          partialQueueSize(partialQueueSize), sleepAfterSend(sleepAfterSend){};
 
     /**
      * @brief Tells whether the driver was started.
@@ -567,6 +572,7 @@ protected:
             LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})", pkt.size(),
                       age);
             bool sent = device->send(pkt.content.data(), pkt.size());
+            miosix::Thread::sleep(sleepAfterSend);
             updateSenderStats(pkt.getMsgCount(), sent);
         }
     };
@@ -637,6 +643,8 @@ protected:
     // Status
     MavlinkStatus status;
     miosix::FastMutex mtxStatus;
+
+    uint16_t sleepAfterSend;
 
     // Threads
     bool stopFlag   = false;

@@ -60,7 +60,7 @@ public:
      * after this time the message will be automatically sent [ms].
      */
     MavlinkDriverV0(Transceiver* device, MavHandler onReceive = nullptr,
-                    size_t outBufferMaxAge = 1000, uint16_t sleepAfterSend = 0)
+                    uint16_t sleepAfterSend = 0, size_t outBufferMaxAge = 1000)
         : MavlinkDriver<MavlinkDriverV0<PktLength, OutQueueSize, MavMsgLength>,
                         PktLength, OutQueueSize, MavMsgLength>(device),
           device(device), onReceive(onReceive), sleepAfterSend(sleepAfterSend),
@@ -162,14 +162,6 @@ public:
             LOG_DEBUG(logger, "Sender and receiver started");
 
         return sndStarted && rcvStarted;
-    };
-
-    /**
-     * @brief Setter for the sleep after send value.
-     */
-    void setSleepAfterSend(uint16_t newSleepTime)
-    {
-        sleepAfterSend = newSleepTime;
     };
 
 protected:
