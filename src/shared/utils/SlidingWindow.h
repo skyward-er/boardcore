@@ -31,25 +31,25 @@ template <typename T, size_t D>
 class SlidingWindow
 {
 public:
-    explicit SlidingWindow() : window({0}), filled(0) {}
+    explicit SlidingWindow() : window({0}), valuesFilled(0) {}
 
     void push(T value)
     {
         shiftWindow(1);
-        filled < D ? filled++ : filled;
+        valuesFilled < D ? valuesFilled++ : valuesFilled;
         setLast(value);
     }
 
-    bool isFull() { return filled == D; }
+    bool isFull() { return valuesFilled == D; }
 
     /**
      * @brief Get the actual number of elements in the window
      */
-    size_t filled() { return filled; }
+    size_t filled() { return valuesFilled; }
 
     T last() { return window[D - 1]; }
 
-    std::array<T, D>& all() { return &window; }
+    std::array<T, D>& all() { return window; }
 
 private:
     inline void setLast(T value) { window[D - 1] = value; }
@@ -62,14 +62,14 @@ private:
      */
     void shiftWindow(size_t n)
     {
-        for (int i = 0; i < D - n; i++)
+        for (size_t i = 0; i < D - n; i++)
         {
             window[i] = window[i + n];
         }
     }
 
     std::array<T, D> window;
-    size_t filled;
+    size_t valuesFilled;
 };
 
 }  // namespace Boardcore
