@@ -40,8 +40,8 @@ int main()
     u2tx1.alternateFunction(7);
     u2tx1.mode(Mode::ALTERNATE);
 
-    USART usart(USART1, 921600);
-    VN100 sensor{usart, 921600, VN100::CRCOptions::CRC_ENABLE_16};
+    USART usart(USART2, 115200);
+    VN100 sensor{usart, 115200, VN100::CRCOptions::CRC_ENABLE_16};
 
     // Let the sensor start up
     Thread::sleep(1000);
