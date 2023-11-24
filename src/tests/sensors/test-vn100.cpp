@@ -31,26 +31,42 @@ int main()
 {
     VN100Data sample;
     string sampleRaw;
-    VN100 sensor{USART1, 921600, VN100::CRCOptions::CRC_ENABLE_16};
+
+    GpioPin u2tx1(GPIOA_BASE, 2);
+    GpioPin u2rx1(GPIOA_BASE, 3);
+
+    u2rx1.alternateFunction(7);
+    u2rx1.mode(Mode::ALTERNATE);
+    u2tx1.alternateFunction(7);
+    u2tx1.mode(Mode::ALTERNATE);
+
+    USART usart(USART2, 115200);
+    VN100 sensor{usart, 115200, VN100::CRCOptions::CRC_ENABLE_16};
 
     // Let the sensor start up
     Thread::sleep(1000);
 
+    printf("Initializing sensor\n");
     if (!sensor.init())
     {
         printf("Error initializing the sensor!\n");
         return 0;
     }
 
-    printf("Sensor init successful!\n");
-
+    printf("Running self-test\n");
     if (!sensor.selfTest())
     {
-        printf("Error self test check!\n");
+        printf("Unable to execute self-test\n");
         return 0;
     }
 
-    printf("Sensor self test successful!\n");
+    if (!sensor.start())
+    {
+        printf("Unable to start the sampling thread\n");
+        return 0;
+    }
+
+    printf("Sensor sampling thread started!\n");
 
     // Sample and print 100 samples
     for (int i = 0; i < 100; i++)
