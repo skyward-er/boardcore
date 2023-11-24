@@ -59,7 +59,7 @@ namespace Boardcore
  * maximum possible but can be replaces with MAVLINK_MAX_DIALECT_PAYLOAD_SIZE
  * for a specific protocol.
  */
-template <class T, unsigned int PktLength, unsigned int OutQueueSize,
+template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength = MAVLINK_MAX_PAYLOAD_LEN>
 class MavlinkDriver
 {
@@ -150,7 +150,9 @@ public:
         if (!sndStarted)
         {
             sndThread = miosix::Thread::create(
-                sndLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+                [](void* arg)
+                { reinterpret_cast<MavlinkDriver*>(arg)->runSender(); },
+                skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
                 reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
 
             if (sndThread != nullptr)
@@ -163,7 +165,9 @@ public:
         if (!rcvStarted)
         {
             rcvThread = miosix::Thread::create(
-                rcvLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+                [](void* arg)
+                { reinterpret_cast<MavlinkDriver*>(arg)->runReceiver(); },
+                skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
                 reinterpret_cast<void*>(this));
 
             if (rcvThread != nullptr)
@@ -208,31 +212,22 @@ protected:
             status.maxSendQueue = status.nSendQueue;
     };
 
-    /**
-     * @brief Calls the run member function.
-     *
-     * @param arg The object pointer cast to void*.
-     */
-    static void rcvLauncher(void* arg)
+    void updateSenderStats(size_t msgCount, bool sent)
     {
-        reinterpret_cast<T*>(arg)->runReceiver();
-    }
-
-    /**
-     * @brief Calls the run member function.
-     *
-     * @param arg The object pointer cast to void*.
-     */
-    static void sndLauncher(void* arg)
-    {
-        reinterpret_cast<MavlinkDriver*>(arg)->runSender();
-    }
+        {
+            miosix::Lock<miosix::FastMutex> l(mtxStatus);
+            status.nSendQueue -= msgCount;
+            if (!sent)
+            {
+                status.nSendErrors++;
+                LOG_ERR(this->logger, "Could not send message");
+            }
+        }
+        StackLogger::getInstance().updateStack(THID_MAV_SENDER);
+    };
 
     // Transceiver used to send and receive packets.
     Transceiver* device;
-
-    // Function executed when a message is ready.
-    std::function<void(const T*, const mavlink_message_t&)> onReceive = nullptr;
 
     // Buffers
     static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
