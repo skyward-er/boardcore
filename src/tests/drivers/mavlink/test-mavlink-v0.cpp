@@ -29,6 +29,7 @@
 #pragma GCC diagnostic pop
 
 #include <radio/MavlinkDriver/MavlinkDriverV0.h>
+#include <stdio.h>
 
 #include "TestTransceiver.h"
 
@@ -85,8 +86,17 @@ int main()
 
     mavlink->start();
 
+    if (mavlink->isStarted())
+    {
+        printf("Mavlink started correctly\n");
+    }
+    else
+    {
+        printf("Error staring mavlink\n");
+    }
+
     // Send a ping every second
-    while (1)
+    for (int i = 0;; i++)
     {
         // Create a Mavlink message
         mavlink_message_t pingMsg;
@@ -96,6 +106,13 @@ int main()
         mavlink->enqueueMsg(pingMsg);
 
         miosix::Thread::sleep(pingPeriod);
+
+        if (i == 10)
+        {
+            printf("\n");
+            mavlink->getStatus().print(std::cout);
+            mavlink->stop();
+        }
         toggleLed();
     }
 

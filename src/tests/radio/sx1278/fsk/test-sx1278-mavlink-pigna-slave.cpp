@@ -43,16 +43,16 @@
 using namespace Boardcore;
 using namespace miosix;
 
-constexpr uint32_t RADIO_PKT_LENGTH       = SX1278Fsk::MTU;
-constexpr uint32_t RADIO_OUT_QUEUE_SIZE   = 10;
-constexpr uint32_t RADIO_MAV_MSG_LENGTH   = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
+constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
+constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
+constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
 constexpr uint16_t SLEEP_AFTER_SEND     = 5;
 constexpr uint32_t PING_TC_PERIOD       = 750;
 constexpr uint32_t FLIGHT_TM_PERIOD     = 1500;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
 using Mav = MavlinkDriverPignaSlave<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE,
-                            RADIO_MAV_MSG_LENGTH>;
+                                    RADIO_MAV_MSG_LENGTH>;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
