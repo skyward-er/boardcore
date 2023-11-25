@@ -87,7 +87,7 @@ protected:
             if (rcvSize > 0)
             {
                 parseResult = 0;
-                miosix::Lock<miosix::FastMutex> l(this->mtxStatus);
+                std::unique_lock<std::mutex> l(this->mtxStatus);
 
                 for (ssize_t i = 0; i < rcvSize; i++)
                 {
@@ -103,7 +103,7 @@ protected:
                     {
                         // Unlock mutex before calling the callback, no one
                         // knows what could happen.
-                        miosix::Unlock<miosix::FastMutex> unlock(l);
+                        l.unlock();
 
                         LOG_DEBUG(
                             this->logger,

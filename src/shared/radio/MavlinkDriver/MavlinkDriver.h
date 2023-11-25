@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <vector>
 
 /**
@@ -95,7 +96,7 @@ public:
      */
     MavlinkStatus getStatus()
     {
-        miosix::Lock<miosix::FastMutex> l(mtxStatus);
+        std::lock_guard<std::mutex> l(mtxStatus);
         status.timestamp = TimestampTimer::getTimestamp();
         return status;
     };
@@ -200,7 +201,7 @@ protected:
 
     void updateQueueStats(bool appended)
     {
-        miosix::Lock<miosix::FastMutex> l(mtxStatus);
+        std::lock_guard<std::mutex> l(mtxStatus);
         if (!appended)
         {
             LOG_ERR(logger,
@@ -215,7 +216,7 @@ protected:
     void updateSenderStats(size_t msgCount, bool sent)
     {
         {
-            miosix::Lock<miosix::FastMutex> l(mtxStatus);
+            std::lock_guard<std::mutex> l(mtxStatus);
             status.nSendQueue -= msgCount;
             if (!sent)
             {
@@ -237,7 +238,7 @@ protected:
 
     // Status
     MavlinkStatus status;
-    miosix::FastMutex mtxStatus;
+    std::mutex mtxStatus;
 
     // Threads
     bool stopFlag   = false;

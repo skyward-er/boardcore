@@ -78,7 +78,8 @@ void onReceive(MavDriver* channel, const mavlink_message_t& msg)
 int main()
 {
     transceiver = new DefaultConsoleTransceiver();
-    mavlink = new MavDriver(transceiver, MAVLINK_MSG_ID_COMMAND_TC, onReceive);
+    mavlink = new MavDriver(transceiver, MAVLINK_MSG_ID_COMMAND_TC, onReceive,
+                            0, 5000);
 
     mavlink->start();
 

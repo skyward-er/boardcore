@@ -132,7 +132,7 @@ protected:
             if (rcvSize > 0)
             {
                 parseResult = 0;
-                miosix::Lock<miosix::FastMutex> l(this->mtxStatus);
+                std::unique_lock<std::mutex> l(this->mtxStatus);
 
                 for (ssize_t i = 0; i < rcvSize; i++)
                 {
@@ -148,7 +148,7 @@ protected:
                     {
                         // Unlock mutex before calling the callback, no one
                         // knows what could happen.
-                        miosix::Unlock<miosix::FastMutex> unlock(l);
+                        l.unlock();
 
                         LOG_DEBUG(
                             this->logger,
@@ -252,10 +252,12 @@ public:
     MavlinkDriverPignaSlave(Transceiver* device, uint8_t pingMsgId,
                             MavHandler onReceive    = nullptr,
                             uint16_t sleepAfterSend = 0,
+                            uint16_t timeout        = 5000,
                             int partialQueueSize    = OutQueueSize)
         : MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>(device),
           onReceive(onReceive), pingMsgId(pingMsgId),
-          partialQueueSize(partialQueueSize), sleepAfterSend(sleepAfterSend){};
+          partialQueueSize(partialQueueSize), sleepAfterSend(sleepAfterSend),
+          timeout(timeout), timeout_tick(timeout){};
 
 protected:
     /**
@@ -281,7 +283,7 @@ protected:
             if (rcvSize > 0)
             {
                 parseResult = 0;
-                miosix::Lock<miosix::FastMutex> l(this->mtxStatus);
+                std::unique_lock<std::mutex> l(this->mtxStatus);
 
                 for (ssize_t i = 0; i < rcvSize; i++)
                 {
@@ -295,9 +297,13 @@ protected:
                     // When a valid message is found ...
                     if (parseResult == 1)
                     {
+
+                        // Reset the timeout
+                        timeout_tick = miosix::getTick() + timeout;
+
                         // Unlock mutex before calling the callback, no one
                         // knows what could happen.
-                        miosix::Unlock<miosix::FastMutex> unlock(l);
+                        l.unlock();
 
                         LOG_DEBUG(
                             this->logger,
@@ -309,6 +315,7 @@ protected:
                         if (onReceive != nullptr)
                             onReceive(this, msg);
 
+                        // We are allowed to talk, flush all messages
                         if (msg.msgid == pingMsgId)
                         {
                             flushMessages();
@@ -323,11 +330,36 @@ protected:
     };
 
     /**
+     * @brief Sender Thread: If we haven't received from the master for some
+     * time flush all the messages
+     */
+    void runSender() override
+    {
+        while (!this->stopFlag)
+        {
+
+            miosix::Thread::sleepUntil(timeout_tick);
+
+            // Mavlink has stopped while waiting
+            if (this->stopFlag)
+                return;
+
+            // Too much time has passed without hearing: flush now.
+            if (miosix::getTick() >= timeout_tick)
+            {
+                flushMessages();
+                timeout_tick = miosix::getTick() + timeout;
+            }
+        }
+    }
+
+    /**
      * @brief Flush the packets contained in our queue. The maximum number of
      * packets sent is controlled by partialQueueSize
      */
     void flushMessages()
     {
+        std::lock_guard<std::mutex> l(mtxFlush);
         int i = 0;
         Packet<PktLength> pkt;
         while (!this->outQueue.isEmpty() && i < partialQueueSize)
@@ -353,6 +385,11 @@ protected:
 
     // Sleep time in milliseconds after a packet is sent
     uint16_t sleepAfterSend;
+
+    // Flush syncronization
+    std::mutex mtxFlush;
+    uint16_t timeout;
+    uint16_t timeout_tick;
 };
 
 }  // namespace Boardcore
