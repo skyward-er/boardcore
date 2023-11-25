@@ -278,8 +278,7 @@ void NAS::correctAcc(const Vector3f& acc)
     Matrix<float, 3, 6> H;
     H << M, Matrix3f::Zero(3, 3);
     Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
-    // TODO: Change R_mag with R_acc
-    Matrix<float, 3, 3> S = H * Pq * H.transpose() + R_mag;
+    Matrix<float, 3, 3> S = H * Pq * H.transpose() + R_acc;
 
     Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
     Matrix<float, 6, 1> dx = K * (acc - aEst);
