@@ -99,6 +99,20 @@ public:
     bool sampleRaw();
 
     /**
+     * @brief This function sets the output binary mode for the sensor. It
+     * configures the sensor in order to read accelerometer data.
+     *
+     * @return Returns true if successful, false otherwise.
+     */
+    bool setBinaryOutput();
+
+    /**
+     * @brief Simple binary functions that polls accelerometer binary data
+     * from the sensor.
+     */
+    void simpleBinarySample();
+
+    /**
      * @brief Method to get the raw sample.
      *
      * @return String that represents the sample.

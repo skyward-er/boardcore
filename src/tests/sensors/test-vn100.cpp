@@ -24,6 +24,8 @@
 #include <inttypes.h>
 #include <sensors/VN100/VN100.h>
 
+#include <iostream>
+
 using namespace miosix;
 using namespace Boardcore;
 
@@ -41,7 +43,7 @@ int main()
     u2tx1.mode(Mode::ALTERNATE);
 
     USART usart(USART2, 115200);
-    VN100 sensor{usart, 115200, VN100::CRCOptions::CRC_ENABLE_16};
+    VN100 sensor{usart, 115200, VN100::CRCOptions::CRC_NO};
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -59,6 +61,21 @@ int main()
         printf("Unable to execute self-test\n");
         return 0;
     }
+    std::cout << "Self-test ok!\n\n";
+
+    sensor.setBinaryOutput();
+
+    // Wait to let the sensor settle
+    // TODO: verify if it is needed
+    miosix::Thread::sleep(1000);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        sensor.simpleBinarySample();
+        Thread::sleep(500);
+    }
+
+    return 0;
 
     if (!sensor.start())
     {

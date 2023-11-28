@@ -24,6 +24,8 @@
 
 #include <drivers/timer/TimestampTimer.h>
 
+#include <iostream>
+
 namespace Boardcore
 {
 
@@ -157,6 +159,69 @@ bool VN100::sampleRaw()
     }
 
     return true;
+}
+
+bool VN100::setBinaryOutput()
+{
+    // This string samples the accelerometer data with async messages
+    // disabled (if you want to read data you have to ask for it)
+    const string setBinarySampleCommand = "$VNWRG,75,0,16,01,0100*XX\n";
+
+    // Send the command
+    sendStringCommand(setBinarySampleCommand);
+    miosix::Thread::sleep(1);
+    // Verify that the command is understood by the sensor
+    if (!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Cannot set binary output");
+        return false;
+    }
+    return true;
+}
+
+void VN100::simpleBinarySample()
+{
+    // Struct used to store the binary data received by the sensor
+    struct __attribute__((packed)) outputData
+    {
+        uint8_t group;
+        uint16_t group1;
+        float accX;
+        float accY;
+        float accZ;
+        uint16_t crc;
+    };
+
+    // This is the command used to retrieve data from the sensor
+    const string askBinarySampleCommand = "$VNBOM,1*XX\n";
+    sendStringCommand(askBinarySampleCommand);
+    miosix::Thread::sleep(1);
+
+    // "wait logic": it might take some time to receive the answer
+    // from the sensor
+    const uint64_t initTime = TimestampTimer::getTimestamp();
+
+    unsigned char initByte = 0;  // Simple byte used to read from usart
+    outputData data;
+    while (TimestampTimer::getTimestamp() - initTime <= 30)
+    {
+        // The reply message starts with 0xFA
+        if (usart.read(&initByte, 1) && initByte == 0xFA)
+        {
+            // Reading all the message directly into the struct, this need to be
+            // packed in order to have contiguous memory addresses
+            if (usart.read(&data, sizeof(outputData)))
+            {
+                std::cout << "accX:\t" << data.accX << "\n"
+                          << "accY:\t" << data.accY << "\n"
+                          << "accZ:\t" << data.accZ << "\n"
+                          << "\n\n";
+                return;
+            }
+        }
+    }
+
+    std::cout << "No data received :(\n\n";
 }
 
 string VN100::getLastRawSample()
