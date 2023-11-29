@@ -103,14 +103,18 @@ public:
      * configures the sensor in order to read accelerometer data.
      *
      * @return Returns true if successful, false otherwise.
+     *
+     * TODO: make this function private and call it from init()
      */
     bool setBinaryOutput();
 
     /**
-     * @brief Simple binary functions that polls accelerometer binary data
-     * from the sensor.
+     * @brief Samples data from the sensor using binary communication.
+     *
+     * @return Returns the new sample if read is successful, lastSample
+     * otherwise.
      */
-    void simpleBinarySample();
+    VN100Data sampleBinary();
 
     /**
      * @brief Method to get the raw sample.
@@ -130,6 +134,31 @@ public:
     bool selfTest() override;
 
 private:
+    /**
+     * @brief Struct used to store the binary data received from the sensor.
+     */
+    struct __attribute__((packed)) binaryData
+    {
+        uint8_t group;
+        uint16_t group1;
+        float quaternionX;
+        float quaternionY;
+        float quaternionZ;
+        float quaternionW;
+        float angularX;
+        float angularY;
+        float angularZ;
+        float accelerationX;
+        float accelerationY;
+        float accelerationZ;
+        float magneticFieldX;
+        float magneticFieldY;
+        float magneticFieldZ;
+        float temperature;
+        float pressure;
+        uint16_t crc;
+    };
+
     /**
      * @brief Sample action implementation.
      */
@@ -198,6 +227,18 @@ private:
     TemperatureData sampleTemperature();
 
     PressureData samplePressure();
+
+    /**
+     * @brief Builds VN100Data starting from the binary data obtained by the
+     * sensor.
+     *
+     * @param data The binary data object that contains the sampled data.
+     * @param sampleTimestamp The timestamp corresponding to the sampled data.
+     *
+     * @return Returns the VN100Data object.
+     */
+    VN100Data buildBinaryData(const binaryData &data,
+                              const uint64_t sampleTimestamp);
 
     /**
      * @brief Sends the command to the sensor with the correct checksum added

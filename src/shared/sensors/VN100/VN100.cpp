@@ -163,13 +163,15 @@ bool VN100::sampleRaw()
 
 bool VN100::setBinaryOutput()
 {
-    // This string samples the accelerometer data with async messages
-    // disabled (if you want to read data you have to ask for it)
-    const string setBinarySampleCommand = "$VNWRG,75,0,16,01,0100*XX\n";
+    // This command samples quaternion data, accelerometer, angular rate,
+    // magnetometer, temperature and pressure (with async messages disabled)
+    // Checksum not calculated yet
+    const string setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*XX\n";
 
     // Send the command
     sendStringCommand(setBinarySampleCommand);
     miosix::Thread::sleep(1);
+
     // Verify that the command is understood by the sensor
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
@@ -179,49 +181,40 @@ bool VN100::setBinaryOutput()
     return true;
 }
 
-void VN100::simpleBinarySample()
+VN100Data VN100::sampleBinary()
 {
-    // Struct used to store the binary data received by the sensor
-    struct __attribute__((packed)) outputData
-    {
-        uint8_t group;
-        uint16_t group1;
-        float accX;
-        float accY;
-        float accZ;
-        uint16_t crc;
-    };
-
     // This is the command used to retrieve data from the sensor
+    // TODO: evaluate checksum8 & 16, move it outside this function
     const string askBinarySampleCommand = "$VNBOM,1*XX\n";
+
     sendStringCommand(askBinarySampleCommand);
     miosix::Thread::sleep(1);
 
     // "wait logic": it might take some time to receive the answer
     // from the sensor
+    // This timestamp is also used as timestamp for the sampled data
     const uint64_t initTime = TimestampTimer::getTimestamp();
 
-    unsigned char initByte = 0;  // Simple byte used to read from usart
-    outputData data;
+    unsigned char initByte =
+        0;            // used to look for the first byte of the answer
+    binaryData data;  // this struct will contain the data red from the sensor
     while (TimestampTimer::getTimestamp() - initTime <= 30)
     {
         // The reply message starts with 0xFA
         if (usart.read(&initByte, 1) && initByte == 0xFA)
         {
-            // Reading all the message directly into the struct, this need to be
-            // packed in order to have contiguous memory addresses
-            if (usart.read(&data, sizeof(outputData)))
+            // Reading all the message directly into the struct
+            if (usart.read(&data, sizeof(binaryData)))
             {
-                std::cout << "accX:\t" << data.accX << "\n"
-                          << "accY:\t" << data.accY << "\n"
-                          << "accZ:\t" << data.accZ << "\n"
-                          << "\n\n";
-                return;
+                VN100Data vnData = buildBinaryData(data, initTime);
+                lastSample       = vnData;
+                return vnData;
             }
         }
     }
 
-    std::cout << "No data received :(\n\n";
+    std::cout << "NO DATA RECEIVED, returning last sample\n\n";
+    return lastSample;
 }
 
 string VN100::getLastRawSample()
@@ -669,6 +662,47 @@ PressureData VN100::samplePressure()
     data.pressure          = strtod(recvString + indexStart + 1, NULL);
 
     return data;
+}
+
+VN100Data VN100::buildBinaryData(const binaryData &data,
+                                 const uint64_t sampleTimestamp)
+{
+    VN100Data vnData;
+
+    // Acceleration data
+    vnData.accelerationTimestamp = sampleTimestamp;
+    vnData.accelerationX         = data.accelerationX;
+    vnData.accelerationY         = data.accelerationY;
+    vnData.accelerationZ         = data.accelerationZ;
+
+    // Angular speed data
+    vnData.angularSpeedTimestamp = sampleTimestamp;
+    vnData.angularSpeedX         = data.angularX;
+    vnData.angularSpeedY         = data.angularY;
+    vnData.angularSpeedZ         = data.angularZ;
+
+    // Magnetometer data
+    vnData.magneticFieldTimestamp = sampleTimestamp;
+    vnData.magneticFieldX         = data.magneticFieldX;
+    vnData.magneticFieldY         = data.magneticFieldY;
+    vnData.magneticFieldZ         = data.magneticFieldZ;
+
+    // Quaternion data
+    vnData.quaternionTimestamp = sampleTimestamp;
+    vnData.quaternionX         = data.quaternionX;
+    vnData.quaternionY         = data.quaternionY;
+    vnData.quaternionZ         = data.quaternionZ;
+    vnData.quaternionW         = data.quaternionW;
+
+    // Temperature data
+    vnData.temperatureTimestamp = sampleTimestamp;
+    vnData.temperature          = data.temperature;
+
+    // Pressure data
+    vnData.pressureTimestamp = sampleTimestamp;
+    vnData.pressure          = data.pressure;
+
+    return vnData;
 }
 
 bool VN100::sendStringCommand(std::string command)

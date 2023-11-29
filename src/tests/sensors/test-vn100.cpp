@@ -69,38 +69,23 @@ int main()
     // TODO: verify if it is needed
     miosix::Thread::sleep(1000);
 
-    for (int i = 0; i < 10; ++i)
-    {
-        sensor.simpleBinarySample();
-        Thread::sleep(500);
-    }
-
-    return 0;
-
-    if (!sensor.start())
-    {
-        printf("Unable to start the sampling thread\n");
-        return 0;
-    }
-
-    printf("Sensor sampling thread started!\n");
-
     // Sample and print 100 samples
     for (int i = 0; i < 100; i++)
     {
-        sensor.sample();
-        sample = sensor.getLastSample();
+        sample = sensor.sampleBinary();
         printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
                sample.accelerationTimestamp, sample.accelerationX,
                sample.accelerationY, sample.accelerationZ);
         printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
                sample.angularSpeedY, sample.angularSpeedZ);
+        printf("magn: %.3f, %.3f, %.3f\n", sample.magneticFieldX,
+               sample.magneticFieldY, sample.magneticFieldZ);
+        printf("quat: %.3f, %.3f, %.3f, %.3f\n", sample.quaternionX,
+               sample.quaternionY, sample.quaternionZ, sample.quaternionW);
+        printf("temp: %.3f\n", sample.temperature);
+        printf("press: %.3f\n\n", sample.pressure);
 
-        sensor.sampleRaw();
-        sampleRaw = sensor.getLastRawSample();
-        printf("%s\n", sampleRaw.c_str());
-        // Thread::sleep(100);
-        printf("\n");
+        Thread::sleep(500);
     }
 
     sensor.closeAndReset();
