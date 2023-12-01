@@ -109,7 +109,7 @@ int main()
 
     for (;;)
     {
-        p.timestamp = miosix::getTick();
+        p.timestamp = miosix::getTime() / Constants::NS_IN_MS;
 
         p.id = 365854720;
         c->send(p);

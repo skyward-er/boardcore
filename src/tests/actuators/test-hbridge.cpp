@@ -22,6 +22,7 @@
 
 #include <actuators/HBridge/HBridge.h>
 #include <miosix.h>
+#include <utils/Constants.h>
 #include <utils/Debug.h>
 
 #include <iostream>
@@ -31,7 +32,7 @@ using namespace Boardcore;
 using namespace miosix;
 using namespace std;
 
-static constexpr int PWM_DURATION = 60 * 1000;
+static constexpr int PWM_DURATION = 60 * 1000;  ///< [ms]
 
 static const TimerUtils::Channel HBRIDGE_PWM_CHANNEL =
     TimerUtils::Channel::CHANNEL_1;
@@ -41,22 +42,22 @@ GpioPin hbridgeInhibit(GPIOA_BASE, 7);  // inhibit pin for the hbridge
 
 bool print = true;  // print the elapsed time or not
 
-long long measuredTime = 0;
+long long measuredTime = 0;  ///< [ns]
 
 void wait()
 {
-    long long t  = getTick();
+    long long t  = getTime();
     long long t0 = t;
 
-    while (t < t0 + PWM_DURATION)
+    while (t < t0 + PWM_DURATION * Constants::NS_IN_MS)
     {
         Thread::sleep(50);
 
-        t = getTick();
+        t = getTime();
 
         if (print)
         {
-            TRACE("Elapsed time : %.2f \n", (t - t0) / 1000.0);
+            TRACE("Elapsed time : %.2f s\n", (t - t0) / Constants::NS_IN_S);
         }
     }
 
@@ -112,7 +113,7 @@ int main()
 
         Thread::sleep(500);
 
-        TRACE("Elapsed time: %.2f s\n", (measuredTime) / 1000.0f);
+        TRACE("Elapsed time: %.2f s\n", (measuredTime) / Constants::NS_IN_S);
         TRACE("Done!\n\n");
     }
 

@@ -33,7 +33,7 @@ using miosix::Gpio;
 using miosix::Thread;
 
 // Protocol config
-//#define DATA_LEN 16384
+// #define DATA_LEN 16384
 
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;
@@ -78,7 +78,7 @@ int main()
     int state = ST_STARTING;
     bool end  = false;
 
-    uint32_t startT, endT;
+    long long startT{}, endT{};
 
     while (1)
     {
@@ -95,12 +95,12 @@ int main()
                     if (c == 255)
                     {
                         TRACE("Starting!\n", 0);
-                        startT = miosix::getTick();
+                        startT = miosix::getTime();
                         // printf("%c", c);
                         //  inputBuf[index] = c;
                         ++index;
                         state = ST_WAIT_END_FRAME;
-                        endT  = miosix::getTick();
+                        endT  = miosix::getTime();
                     }
                     break;
                 }
@@ -140,7 +140,7 @@ int main()
                         printf("Packet end %d. lost: %d\n", pktCount,
                                lostBytes);
                         ++pktCount;
-                        // endT = miosix::getTick();
+                        // endT = miosix::getTime();
                         state = ST_WAIT_START_FRAME;
                     }
 
@@ -156,7 +156,7 @@ int main()
                 }
                 case ST_SEND_DATA:
                 {
-                    endT = miosix::getTick();
+                    endT = miosix::getTime();
                     end  = true;
                     break;
                     /*  uint8_t buf[] = {0x23, 0x23, 0x23, 0x23, 0x23};
@@ -169,12 +169,10 @@ int main()
             }
         }
 
+        int time = (endT - startT) / Constants::NS_IN_MS;  // [ms]
         printf("Bytes received: %d\nDropped: %d,Time:%d ms\n", index, lostBytes,
-               // cppcheck-suppress uninitvar
-               (int)(endT - startT));
-        printf("Speed: %.3f KB/s\n",
-               // cppcheck-suppress uninitvar
-               index / ((endT - startT) / 1024.0f) / 1024.0f);
+               time);
+        printf("Speed: %.3f KB/s\n", index / (time / 1024.0f) / 1024.0f);
         /*  for (int i = 0; i < index; i++)
           {
               printf("%c", inputBuf[i]);

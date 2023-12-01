@@ -26,6 +26,7 @@
 #include <drivers/canbus/CanDriver/BusLoadEstimation.h>
 #include <drivers/canbus/CanDriver/CanDriver.h>
 #include <miosix.h>
+#include <utils/Constants.h>
 #include <utils/collections/SyncCircularBuffer.h>
 
 #include <cstdlib>
@@ -88,7 +89,8 @@ private:
                 }
                 Boardcore::Canbus::CanPacket p = parent.txPackets.pop();
                 parent.canbus.send(p);
-                p.timestamp = miosix::getTick();
+                p.timestamp =
+                    miosix::getTime() / Boardcore::Constants::NS_IN_MS;
                 parent.busLoad.addPacket(p);
             }
         }

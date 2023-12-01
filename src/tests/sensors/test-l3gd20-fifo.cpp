@@ -54,6 +54,7 @@
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/L3GD20/L3GD20.h>
+#include <utils/Constants.h>
 
 #include <array>
 
@@ -166,7 +167,7 @@ int main()
     int fifoNum = 0;
     while (dataCounter < NUM_SAMPLES)
     {
-        long lastTick = miosix::getTick();
+        long lastTime = miosix::getTime();
 
         // Read the fifo
         uint64_t update = TimestampTimer::getTimestamp();
@@ -207,7 +208,8 @@ int main()
         // we have 7 samples (~ 9 ms) of wiggle room before we start losing
         // data, in case we sleep a bit too much (may happen if an higher
         // priority thread has a long task to perform)
-        Thread::sleepUntil(lastTick + 25.5 * 1000 / SAMPLE_FREQUENCY);
+        Thread::nanoSleepUntil(lastTime + (25.5 * 1000 / SAMPLE_FREQUENCY) *
+                                              Constants::NS_IN_MS);
     }
 
     // Dump buffer content as CSV on the serial (might take a while)

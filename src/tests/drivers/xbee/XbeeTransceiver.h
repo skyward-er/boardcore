@@ -35,7 +35,6 @@
 #include "ActiveObject.h"
 #include "XbeeTestData.h"
 
-using miosix::getTick;
 using std::bind;
 using std::function;
 
@@ -66,6 +65,9 @@ void memset32(uint8_t* buf, uint32_t val, int bufSize)
 
 struct SendIntervalBase
 {
+    /**
+     * @brief Get the interval in milliseconds
+     */
     virtual unsigned int getInterval() const = 0;
 };
 
@@ -111,22 +113,22 @@ public:
 protected:
     void run() override
     {
-        long long loopStartTs = miosix::getTick();
+        long long loopStartTs = miosix::getTime();
         while (!shouldStop())
         {
-            data.timeSinceLastSend = miosix::getTick() - loopStartTs;
-            loopStartTs            = miosix::getTick();
+            data.timeSinceLastSend = miosix::getTime() - loopStartTs;
+            loopStartTs            = miosix::getTime();
 
             // Create packet
             memcpy(buf, &PACKET_FIRST_INT, sizeof(uint32_t));
             memset32(buf + sizeof(uint32_t), packetCounter++,
                      data.packetSize - sizeof(uint32_t));
 
-            long long sendStartTs = miosix::getTick();
+            long long sendStartTs = miosix::getTime();
 
             bool result = xbee.send(buf, data.packetSize);
 
-            data.timeToSend = miosix::getTick() - sendStartTs;
+            data.timeToSend = miosix::getTime() - sendStartTs;
             data.timestamp  = sendStartTs;
 
             if (result)
@@ -141,7 +143,8 @@ protected:
 
             logger.log(data);
 
-            miosix::Thread::sleepUntil(loopStartTs + interval.getInterval());
+            miosix::Thread::nanoSleepUntil(
+                loopStartTs + (interval.getInterval() * Constants::NS_IN_MS));
         }
     }
 
@@ -183,11 +186,11 @@ protected:
     {
         while (!shouldStop())
         {
-            long long start = miosix::getTick();
+            long long start = miosix::getTime();
 
             size_t len = xbee.receive(buf, RCV_BUF_SIZE);
 
-            data.lastPacketTimestamp = miosix::getTick();
+            data.lastPacketTimestamp = miosix::getTime();
             data.timestamp           = start;
 
             ++data.rcvCount;

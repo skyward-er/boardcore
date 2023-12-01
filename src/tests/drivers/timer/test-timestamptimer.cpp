@@ -23,6 +23,7 @@
 #include <drivers/timer/TimerUtils.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
+#include <utils/Constants.h>
 
 using namespace miosix;
 using namespace Boardcore;
@@ -43,15 +44,15 @@ int main()
 
     for (int i = 0; i < 10; i++)
     {
-        long long prevTick = getTick();
+        long long prevTime = getTime();
 
         uint64_t timestamp = TimestampTimer::getTimestamp();
 
         // cppcheck-suppress invalidPrintfArgType_uint
-        printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
-               timestamp / 1e3, timestamp / 1e6, prevTick);
+        printf("%12llu us, %12.3f ms, %12.6f s, %12lld time \n", timestamp,
+               timestamp / 1e3, timestamp / 1e6, prevTime);
 
-        Thread::sleepUntil(prevTick + 1000);
+        Thread::nanoSleepUntil(prevTime + 1 * Constants::NS_IN_S);
     }
 
     printf("Now resetting the TimestampTimer\n");
@@ -60,15 +61,15 @@ int main()
 
     while (true)
     {
-        long long prevTick = getTick();
+        long long prevTime = getTime();
 
         uint64_t timestamp = TimestampTimer::getTimestamp();
 
         // cppcheck-suppress invalidPrintfArgType_uint
-        printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
-               timestamp / 1e3, timestamp / 1e6, prevTick);
+        printf("%12llu us, %12.3f ms, %12.6f s, %12lld time \n", timestamp,
+               timestamp / 1e3, timestamp / 1e6, prevTime);
 
-        Thread::sleepUntil(prevTick + 1000);
+        Thread::nanoSleepUntil(prevTime + 1 * Constants::NS_IN_S);
     }
 }
 

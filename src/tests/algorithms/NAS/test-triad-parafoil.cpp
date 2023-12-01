@@ -47,7 +47,7 @@ int main()
     mpu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
     mpu->init();
 
-    auto lastTick = getTick();
+    auto lastTime = getTime();
     while (true)
     {
         mpu->sample();
@@ -73,7 +73,7 @@ int main()
             printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
                    kalmanState(7), kalmanState(8));
 
-        Thread::sleepUntil(lastTick + 20);
-        lastTick = getTick();
+        Thread::nanoSleepUntil(lastTime + 20 * Constants::NS_IN_MS);
+        lastTime = getTime();
     }
 }

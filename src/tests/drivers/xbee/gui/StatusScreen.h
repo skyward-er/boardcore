@@ -42,19 +42,20 @@ namespace Boardcore
 {
 
 /**
- * @brief Converts tick in milliseconds to the HH:MM:SS format
+ * @brief Converts nanoseconds to the HH:MM:SS format
  */
-std::string tickToHMS(long long tick)
+std::string nanosToHMS(long long nanos)
 {
-    char buf[15];
+    long long millis = nanos / Constants::NS_IN_MS;
+    char buf[20];
 
-    int h = tick / (1000 * 3600);
-    tick -= h * (1000 * 3600);
-    int m = tick / (1000 * 60);
-    tick -= m * (1000 * 60);
-    int s = tick / 1000;
+    lldiv_t hours   = std::div(millis, 3600000ll);
+    long long h     = hours.quot;
+    lldiv_t minutes = std::div(hours.rem, 60000ll);
+    long long m     = minutes.quot;
+    long long s     = (minutes.rem / 1000);
 
-    snprintf(buf, 15, "%02d:%02d:%02d", h, m, s);
+    snprintf(buf, 20, "%02lld:%02lld:%02lld", h, m, s);
 
     return string(buf);
 }
@@ -255,7 +256,7 @@ struct StatusScreen
         tvRxPps.setText(strBuf);
 
         tvRxTimeSinceLastRx.setText(
-            tickToHMS(miosix::getTick() - rxd.lastPacketTimestamp));
+            nanosToHMS(miosix::getTime() - rxd.lastPacketTimestamp));
     }
 
     VerticalLayout root{10};
