@@ -54,8 +54,9 @@ public:
      *
      * @param expectedPktInterval Expected packet delivery interval for packet
      * loss estimation
-     * @param windowDuration Duration of the observation window. Longer windows
-     * means more stable values but slow response to abrupt changes
+     * @param windowDuration Duration of the observation window in milliseconds.
+     * Longer windows means more stable values but slow response to abrupt
+     * changes
      */
     ThroughputCalculator(unsigned int expectedPktInterval,
                          unsigned int windowDuration = 2000)
@@ -74,7 +75,7 @@ public:
     {
         Lock<FastMutex> lock(mutexPkt);
 
-        long long ts = miosix::getTick();
+        long long ts = miosix::getTime();
 
         unsigned int interval = 0;
         if (packets.size() > 0)
@@ -95,7 +96,7 @@ public:
     {
         Lock<FastMutex> lock(mutexPkt);
 
-        long long ts = miosix::getTick();
+        long long ts = miosix::getTime();
         removeOldPackets(ts);
 
         float sum = 0;
@@ -113,7 +114,7 @@ public:
     float getPacketLoss()
     {
         Lock<FastMutex> lock(mutexPkt);
-        long long ts = miosix::getTick();
+        long long ts = miosix::getTime();
         removeOldPackets(ts);
 
         float avgInterval = std::numeric_limits<float>::infinity();
@@ -137,7 +138,7 @@ public:
     float getPacketsPerSecond()
     {
         Lock<FastMutex> lock(mutexPkt);
-        long long ts = miosix::getTick();
+        long long ts = miosix::getTime();
         removeOldPackets(ts);
 
         return (float)packets.size() / (windowDuration / 1000.0f);
@@ -156,22 +157,26 @@ public:
 private:
     struct Packet
     {
-        long long timestamp;
+        long long timestamp;  //!< Timestamp of the packet in nanoseconds
         size_t size;
-        unsigned int interval;
+        unsigned int interval;  //!< Time interval from the previous packet in
+                                //!< nanoseconds
     };
 
     void removeOldPackets(long long ts)
     {
         while (packets.size() > 0 &&
-               packets.front().timestamp < ts - windowDuration)
+               packets.front().timestamp <
+                   ts - (windowDuration * Constants::NS_IN_MS))
         {
             packets.pop_front();
         }
     }
 
-    unsigned int expectedPktInterval;
-    unsigned int windowDuration;
+    unsigned int expectedPktInterval;  //!< Expected packet delivery interval in
+                                       //!< nanoseconds
+    unsigned int windowDuration;  //!< Duration of the observation window in
+                                  //!< milliseconds
     deque<Packet> packets;
 
     FastMutex mutexPkt;

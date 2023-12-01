@@ -58,7 +58,7 @@ void {state_machine_name}Controller::logStatus({state_machine_name}ControllerSta
 
 void {state_machine_name}Controller::logStatus()
 {{
-    status.timestamp = miosix::getTick();
+    status.timestamp = miosix::getTime();
     logger.log(status);
     StackLogger::getInstance().updateStack(THID);
 }}

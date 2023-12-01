@@ -82,11 +82,12 @@ protected:
                 screens[activeScreen]->invalidateTree();
             }
 
-            long long start = miosix::getTick();
+            long long start = miosix::getTime();
 
             drawViewTree(screens[activeScreen], dc);
 
-            miosix::Thread::sleepUntil(start + refreshInterval);
+            miosix::Thread::nanoSleepUntil(
+                start + (refreshInterval * Constants::NS_IN_MS));
         }
     }
 
@@ -119,7 +120,7 @@ private:
 
     mxgui::DrawingContext dc;
 
-    unsigned int refreshInterval;
+    unsigned int refreshInterval;  ///< Refresh interval in ms
 
     NavController controller;
     std::map<uint8_t, View*> screens;
