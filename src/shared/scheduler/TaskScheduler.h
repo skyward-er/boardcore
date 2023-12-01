@@ -78,7 +78,7 @@ public:
      * it is supposed to (e.g. another thread occupies the CPU), the scheduler
      * doesn't recover the missed executions but instead skips those and
      * continues normally. This ensures that all the events are aligned with
-     * the original start tick. In other words, the period and the start tick of
+     * the original start time. In other words, the period and the start time of
      * a task specifies the time slots the task has to be executed. If one of
      * this time slots can't be used, that specific execution won't be
      * recovered.
@@ -91,7 +91,7 @@ public:
     {
         ONE_SHOT,  ///< Run the task one single timer.
         SKIP,      // Skips lost executions and stays aligned with the original
-                   // start tick.
+                   // start time.
         RECOVER    ///< Prioritize the number of executions over the period.
     };
 
@@ -109,12 +109,13 @@ public:
      * @param function Function to be called periodically.
      * @param period Inter call period [ms].
      * @param policy Task policy, default is SKIP.
-     * @param startTick First activation time, useful for synchronizing tasks.
+     * @param startTime Absolute system time of the first activation time,
+     * useful for synchronizing tasks [ns]
      * @return The ID of the task if it was added successfully, 0 otherwise.
      */
     size_t addTask(function_t function, uint32_t period,
                    Policy policy     = Policy::RECOVER,
-                   int64_t startTick = miosix::getTick());
+                   int64_t startTime = miosix::getTime());
 
     /**
      * @brief Enables the task with the given id.
@@ -136,13 +137,13 @@ private:
     struct Task
     {
         function_t function;
-        uint32_t period;    // [ms]
-        int64_t startTick;  ///< First activation time, useful for synchronizing
+        int64_t period;     ///< [ns]
+        int64_t startTime;  ///< First activation time, useful for synchronizing
                             ///< tasks.
         bool enabled;       ///< Whether the task should be executed.
         Policy policy;
-        int64_t lastCall;  ///< Last activation tick for statistics computation.
-        Stats activationStats;  ///< Stats about activation tick error.
+        int64_t lastCall;  ///< Last activation time for statistics computation.
+        Stats activationStats;  ///< Stats about activation time error.
         Stats periodStats;      ///< Stats about period error.
         Stats workloadStats;    ///< Stats about time the task takes to compute.
         uint32_t missedEvents;  ///< Number of events that could not be run.
@@ -157,12 +158,12 @@ private:
          * @brief Creates a task with the given parameters
          *
          * @param function The std::function to be called
-         * @param period The Period in [ms]
+         * @param period The Period in [ns]
          * @param policy The task policy in case of a miss
-         * @param startTick The first activation time
+         * @param startTime The first activation time
          */
-        explicit Task(function_t function, uint32_t period, Policy policy,
-                      int64_t startTick);
+        explicit Task(function_t function, int64_t period, Policy policy,
+                      int64_t startTime);
 
         // Delete copy constructor and copy assignment operator to avoid copying
         // and force moving
@@ -183,27 +184,27 @@ private:
     struct Event
     {
         size_t taskId;     ///< The task to execute.
-        int64_t nextTick;  ///< Tick of next activation.
+        int64_t nextTime;  ///< Absolute time of next activation.
 
-        Event(size_t taskId, int64_t nextTick)
-            : taskId(taskId), nextTick(nextTick)
+        Event(size_t taskId, int64_t nextTime)
+            : taskId(taskId), nextTime(nextTime)
         {
         }
 
         /**
-         * @brief Compare two events based on the next tick.
-         * @note This is used to have the event with the lowest tick first in
+         * @brief Compare two events based on the next time.
+         * @note This is used to have the event with the lowest time first in
          * the agenda. Newly pushed events are moved up in the queue (see
-         * heap bubble-up) until the other tick is lower.
+         * heap bubble-up) until the other time is lower.
          */
         bool operator>(const Event& other) const
         {
-            return this->nextTick > other.nextTick;
+            return this->nextTime > other.nextTime;
         }
     };
 
     // Use `std::greater` as the comparator to have elements with the lowest
-    // tick first. Requires operator `>` to be defined for Event.
+    // time first. Requires operator `>` to be defined for Event.
     using EventQueue =
         std::priority_queue<Event, std::vector<Event>, std::greater<Event>>;
 
@@ -227,13 +228,13 @@ private:
     /**
      * @brief Update task statistics (Intended for when the task is executed).
      *
-     * This function changes the task last call tick to the startTick.
+     * This function changes the task last call time to the startTime.
      *
      * \param event Current event.
-     * \param startTick Start of execution tick.
-     * \param endTick End of execution tick.
+     * \param startTime Start of execution time.
+     * \param endTime End of execution time.
      */
-    void updateStats(const Event& event, int64_t startTick, int64_t endTick);
+    void updateStats(const Event& event, int64_t startTime, int64_t endTime);
 
     /**
      * @brief (Re)Enqueue an event into the agenda based on the scheduling
@@ -242,22 +243,23 @@ private:
      * Requires the mutex to be locked!
      *
      * \param event Event to be scheduled. Note: this parameter is modified, the
-     * nextTick field is updated in order to respect the task interval.
-     * \param startTick Activation tick, needed to update the nextTick value of
+     * nextTime field is updated in order to respect the task interval.
+     * \param startTime Activation time, needed to update the nextTime value of
      * the event.
      */
-    void enqueue(Event event, int64_t startTick);
+    void enqueue(Event event, int64_t startTime);
 
     static TaskStatsResult fromTaskIdPairToStatsResult(const Task& task,
                                                        size_t id)
     {
-        return TaskStatsResult{id,
-                               task.period,
-                               task.activationStats.getStats(),
-                               task.periodStats.getStats(),
-                               task.workloadStats.getStats(),
-                               task.missedEvents,
-                               task.failedEvents};
+        return TaskStatsResult{
+            id,
+            static_cast<uint32_t>(task.period / Constants::NS_IN_MS),
+            task.activationStats.getStats(),
+            task.periodStats.getStats(),
+            task.workloadStats.getStats(),
+            task.missedEvents,
+            task.failedEvents};
     }
 
     miosix::FastMutex mutex;  ///< Mutex to protect tasks and agenda.
