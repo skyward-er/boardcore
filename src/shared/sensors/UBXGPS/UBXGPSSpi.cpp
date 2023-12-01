@@ -35,8 +35,6 @@ constexpr uint16_t UBXFrame::MAX_FRAME_LENGTH;
 constexpr uint8_t UBXFrame::PREAMBLE[];
 constexpr uint8_t UBXFrame::WAIT;
 
-constexpr float UBXGPSSpi::MS_TO_TICK;
-
 constexpr unsigned int UBXGPSSpi::RESET_SLEEP_TIME;
 constexpr unsigned int UBXGPSSpi::READ_TIMEOUT;
 constexpr unsigned int UBXGPSSpi::MAX_TRIES;
@@ -241,8 +239,8 @@ bool UBXGPSSpi::setPVTMessageRate()
 
 bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
 {
-    long long start = miosix::getTick();
-    long long end   = start + READ_TIMEOUT * MS_TO_TICK;
+    long long start = miosix::getTime();
+    long long end   = start + READ_TIMEOUT * Constants::NS_IN_MS;
 
     {
         spiSlave.bus.configure(spiSlave.config);
@@ -253,7 +251,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         bool waiting = false;
         while (i < 2)
         {
-            if (miosix::getTick() >= end)
+            if (miosix::getTime() >= end)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);
