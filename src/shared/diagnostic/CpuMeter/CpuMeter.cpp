@@ -60,12 +60,12 @@ static void cpuMeterThread(void*)
 {
     for (;;)
     {
-        long long t1 = getTick();
+        long long t1 = getTime();
         delayMs(period);
-        long long t2 = getTick();
+        long long t2 = getTime();
 
         update++;
-        float delta = t2 - t1;
+        float delta = (t2 - t1) / 1e6f;  // delta in milliseconds
         {
             Lock<FastMutex> l(utilizationMutex);
             utilization.add(100.f * (1.f - static_cast<float>(period) / delta));
