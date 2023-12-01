@@ -24,18 +24,20 @@
 
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <logger/Logger.h>
+#include <utils/Constants.h>
 
 using namespace Boardcore;
+using namespace Boardcore::Constants;
 using namespace std;
 using namespace miosix;
 
 void logThread(void*)
 {
     Logger& log      = Logger::getInstance();
-    const int period = 5;
-    for (auto t = getTick();; t += period)
+    const int period = 5 * NS_IN_MS;
+    for (auto t = getTime();; t += period)
     {
-        Thread::sleepUntil(t);
+        Thread::nanoSleepUntil(t);
         for (int i = 0; i < 5; i++)
         {
             Dummy d;

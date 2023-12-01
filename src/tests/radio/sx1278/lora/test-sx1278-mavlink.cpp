@@ -136,7 +136,7 @@ void flightTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::getTime();
 
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
@@ -145,7 +145,7 @@ void flightTmLoop()
         channel->enqueueMsg(msg);
         printf("Enqueued flight_tm_tm!\n");
 
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
+        Thread::nanoSleepUntil(start + FLIGHT_TM_PERIOD * Constants::NS_IN_MS);
     }
 }
 
@@ -153,7 +153,7 @@ void statsTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::getTime();
 
         mavlink_message_t msg;
         mavlink_rocket_stats_tm_t tm = {0};
@@ -162,7 +162,7 @@ void statsTmLoop()
         channel->enqueueMsg(msg);
         printf("Enqueued stats_tm!\n");
 
-        Thread::sleepUntil(start + STATS_TM_PERIOD);
+        Thread::nanoSleepUntil(start + STATS_TM_PERIOD * Constants::NS_IN_MS);
     }
 }
 

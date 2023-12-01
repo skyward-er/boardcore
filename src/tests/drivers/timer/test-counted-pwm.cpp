@@ -22,6 +22,7 @@
 
 #include <drivers/timer/CountedPWM.h>
 #include <miosix.h>
+#include <utils/Constants.h>
 
 #include <thread>
 
@@ -55,8 +56,9 @@ int main()
         {
             while (true)
             {
+                float time = (float)getTime() / Constants::NS_IN_S;  // [s]
                 printf("[%.2f] Counter: %d\tTarget: %ld\tIs generating: %d\n",
-                       getTick() / 1000.0, pwm.getCurrentCount(), TIM4->CCR1,
+                       time, pwm.getCurrentCount(), TIM4->CCR1,
                        pwm.isGenerating());
                 Thread::sleep(250);
             }

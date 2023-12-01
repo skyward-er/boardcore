@@ -176,7 +176,7 @@ void flightTmLoop()
 
     while (1)
     {
-        long long start = miosix::getTick;
+        long long start = miosix::getTime();
 
         {
             Lock<FastMutex> l(mutex);
@@ -204,7 +204,7 @@ void flightTmLoop()
 
         channel->enqueueMsg(msg);
 
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
+        Thread::nanoSleepUntil(start + FLIGHT_TM_PERIOD * Constants::NS_IN_MS);
         i += 1;
     }
 }

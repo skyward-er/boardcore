@@ -28,16 +28,18 @@
 #endif
 
 #include <events/EventBroker.h>
+#include <events/utils/EventCounter.h>
 #include <miosix.h>
 #include <utils/TestUtils/TestHelper.h>
 
 #include <catch2/catch.hpp>
 #include <cstdio>
 
-using miosix::getTick;
+using miosix::getTime;
 using miosix::Thread;
 
 using namespace Boardcore;
+using namespace Boardcore::Constants;
 
 // Uncertainty on the time of delivery of a delayed event, in ms
 static const unsigned int EVENT_DELAY_UNCERTAINTY = 1;
@@ -62,8 +64,8 @@ TEST_CASE("EventBroker - Posts to different topics")
     Event ev;
     EventBroker broker;
 
-    EventCounter sub1(broker);
-    EventCounter sub2(broker);
+    EventCounter sub1{broker};
+    EventCounter sub2{broker};
 
     broker.subscribe(&sub1, TOPIC_1);
     broker.subscribe(&sub2, TOPIC_2);
@@ -107,9 +109,9 @@ TEST_CASE("EventBroker - EventHandlers can unsubscribe")
     Event ev{EV_A};
     EventBroker broker;
 
-    EventCounter sub1(broker);
-    EventCounter sub2(broker);
-    EventCounter sub3(broker);
+    EventCounter sub1{broker};
+    EventCounter sub2{broker};
+    EventCounter sub3{broker};
 
     broker.subscribe(&sub1, TOPIC_1);
     broker.subscribe(&sub1, TOPIC_2);
@@ -208,21 +210,21 @@ protected:
 TEST_CASE_METHOD(EventBrokerTestFixture, "EventBroker - Events can be dalayed")
 {
     Event ev{EV_A};
-    long long start = getTick();
+    long long start = getTime();
 
     // Post delayed event by 1000 ms
     broker.postDelayed(ev, TOPIC_1, 1000);
     broker.postDelayed(ev, TOPIC_2, 3000);
 
-    REQUIRE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
-    REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
+    REQUIRE(expectEvent(EV_A, TOPIC_1, start + 1 * NS_IN_S, 2, broker));
+    REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3 * NS_IN_S, 2, broker));
 }
 
 TEST_CASE_METHOD(EventBrokerTestFixture,
                  "EventBroker - Delayed events can be removed")
 {
     Event ev{EV_A};
-    long long start = getTick();
+    long long start = getTime();
 
     // Post delayed event by 1000 ms
     uint16_t delayed = broker.postDelayed(ev, TOPIC_1, 1000);
@@ -233,8 +235,9 @@ TEST_CASE_METHOD(EventBrokerTestFixture,
         Thread::sleep(500);
         broker.removeDelayed(delayed);
 
-        REQUIRE_FALSE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
-        REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
+        REQUIRE_FALSE(
+            expectEvent(EV_A, TOPIC_1, start + 1 * NS_IN_S, 2, broker));
+        REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3 * NS_IN_S, 2, broker));
     }
 
     SECTION("All events can be removed")
@@ -242,8 +245,10 @@ TEST_CASE_METHOD(EventBrokerTestFixture,
         Thread::sleep(500);
         broker.clearDelayedEvents();
 
-        REQUIRE_FALSE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
-        REQUIRE_FALSE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
+        REQUIRE_FALSE(
+            expectEvent(EV_A, TOPIC_1, start + 1 * NS_IN_S, 2, broker));
+        REQUIRE_FALSE(
+            expectEvent(EV_A, TOPIC_2, start + 3 * NS_IN_S, 2, broker));
     }
 }
 

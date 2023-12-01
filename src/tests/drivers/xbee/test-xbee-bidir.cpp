@@ -161,7 +161,7 @@ int main()
     config.packetSize   = 256;
     config.sendInterval = 333;
     config.txEnabled    = RUN_SENDER;
-    config.timestamp    = getTick();
+    config.timestamp    = getTime();
 
     configure();
 
@@ -209,7 +209,7 @@ int main()
     // cppcheck-suppress knownConditionTrueFalse
     while (getUserBtnValue() == 0)
     {
-        long long loopStart = getTick();
+        long long loopStart = getTime();
 
         DataRateResult resRcv = trans->getReceiver().getDataRate();
         DataRateResult resSnd = trans->getSender().getDataRate();
@@ -220,10 +220,10 @@ int main()
         logger.log(xbeeDriver->getStatus());
         logger.log(logger.getStats());
 
-        long long tick = getTick();
-        unsigned int h = tick / (1000 * 3600);
-        unsigned int m = (tick - h * 1000 * 3600) / (1000 * 60);
-        float s        = (tick - h * 1000 * 3600 - m * 1000 * 60) / 1000.0f;
+        long long millis = getTime() / Constants::NS_IN_MS;
+        unsigned int h   = millis / (1000 * 3600);
+        unsigned int m   = (millis - h * 1000 * 3600) / (1000 * 60);
+        float s          = (millis - h * 1000 * 3600 - m * 1000 * 60) / 1000.0f;
 
         printf("%02u:%02u:%06.3f\n", h, m, s);
         if (RUN_SENDER)
@@ -245,7 +245,7 @@ int main()
         }
         printf("\n");
 
-        Thread::sleepUntil(loopStart + 1000);
+        Thread::nanoSleepUntil(loopStart + 1 * Constants::NS_IN_S);
     }
 
     trans->stop();
