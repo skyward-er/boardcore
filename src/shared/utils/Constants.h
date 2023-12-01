@@ -51,6 +51,9 @@ static constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
 
 static constexpr float B21_LATITUDE  = 45.501141;
 static constexpr float B21_LONGITUDE = 9.156281;
+
+static constexpr long long NS_IN_MS = 1000000ll;     // Nanoseconds in 1 ms
+static constexpr long long NS_IN_S  = 1000000000ll;  // Nanoseconds in 1 s
 }  // namespace Constants
 
 }  // namespace Boardcore
