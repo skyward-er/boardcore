@@ -24,6 +24,7 @@
 
 #ifdef DEBUG
 #include <miosix.h>
+#include <utils/Constants.h>
 
 #include <cstdarg>
 #include <cstdio>
@@ -42,14 +43,18 @@ inline void TRACE(const char* format, ...)
     va_list argptr;
     va_start(argptr, format);
 
-    printf("%.2f> ", miosix::getTick() / 1000.0f);
+    printf("%.2f> ", (float)miosix::getTime() / Boardcore::Constants::NS_IN_S);
     vprintf(format, argptr);
 
     va_end(argptr);
 }
 
-// #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f);
-// printf(__VA_ARGS__)
+/*
+#define TRACE(...)                                                    \
+    printf("%.2f> ",                                                  \
+           (float)miosix::getTime() / Boardcore::Constants::NS_IN_S); \
+    printf(__VA_ARGS__)
+*/
 
 #else
 

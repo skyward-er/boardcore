@@ -25,16 +25,7 @@
 #include <events/EventBroker.h>
 #include <events/FSM.h>
 #include <events/HSM.h>
-#include <events/utils/EventCounter.h>
 #include <miosix.h>
-
-#include <cmath>
-#include <map>
-
-using miosix::FastMutex;
-using miosix::getTick;
-using miosix::Lock;
-using std::map;
 
 namespace Boardcore
 {
@@ -44,11 +35,6 @@ namespace Boardcore
  * Value in milliseconds
  */
 static const int EVENT_TIMING_UNCERTAINTY = 1;
-
-/**
- * @brief Helper function used convert system ticks to milliseconds
- */
-long long tickToMilliseconds(long long tick);
 
 /**
  * Tests if a specific transition occurs in a Finite State Machine
@@ -176,7 +162,7 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
  *
  * @param eventId The event to be checked
  * @param topic The topic the event will be posted on
- * @param when Expected time at which the event will be posted, in system ticks
+ * @param when Absolute system time the event will be posted at [ns]
  * @param uncertainty Size of the time window
  * @param broker
  * @return True if the event is posted inside the time window

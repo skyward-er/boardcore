@@ -22,13 +22,16 @@
 
 #include "TestHelper.h"
 
+#include <events/utils/EventCounter.h>
+
+#include <cmath>
+
+using miosix::FastMutex;
+using miosix::getTime;
+using miosix::Lock;
+
 namespace Boardcore
 {
-
-long long tickToMilliseconds(long long tick)
-{
-    return tick * 1000 / miosix::TICK_FREQ;
-}
 
 bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                  long long uncertainty, EventBroker& broker)
@@ -36,23 +39,23 @@ bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
     EventCounter c{broker};
     c.subscribe(topic);
 
-    long long windowStart = when - uncertainty;
-    long long windowEnd   = when + uncertainty;
+    long long windowStart = when - uncertainty * Constants::NS_IN_MS;
+    long long windowEnd   = when + uncertainty * Constants::NS_IN_MS;
 
-    while (getTick() < windowEnd)
+    while (getTime() < windowEnd)
     {
         if (c.getCount(eventId) > 0)
         {
-            long long recvTick = getTick();
-            if (recvTick < windowStart)
+            long long recvTime = getTime();
+            if (recvTime < windowStart)
             {
                 TRACE(
                     "[expectEvent] Event %d on topic %d receveid %d ms before "
                     "the opening of "
                     "the window.\n",
                     eventId, topic,
-                    static_cast<int>(
-                        tickToMilliseconds(windowStart - recvTick)));
+                    static_cast<int>((windowStart - recvTime) /
+                                     Constants::NS_IN_MS));
                 return false;
             }
             TRACE(
@@ -60,7 +63,7 @@ bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                 "window, %d ms from "
                 "the target time.\n",
                 eventId, topic,
-                static_cast<int>(tickToMilliseconds(abs(recvTick - when))));
+                static_cast<int>(abs(recvTime - when) / Constants::NS_IN_MS));
 
             return true;
         }
@@ -80,8 +83,8 @@ bool waitForEvent(uint8_t event, uint8_t topic, long long timeout,
 {
     EventCounter c{broker};
     c.subscribe(topic);
-    long long end = getTick() + timeout;
-    while (timeout == 0 || getTick() < end)
+    long long end = getTime() + timeout * Constants::NS_IN_MS;
+    while (timeout == 0 || getTime() < end)
     {
         if (c.getCount(event) > 0)
             return true;
