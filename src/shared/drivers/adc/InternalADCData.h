@@ -34,7 +34,7 @@ struct InternalADCData
     float temperature;
     float vBat;
 
-    InternalADCData() {}
+    InternalADCData() : voltage(), temperature(), vBat() {}
 
     static std::string header()
     {
