@@ -54,7 +54,7 @@ public:
     void updateStack(uint8_t threadId)
     {
         StackData d;
-        d.timestamp    = miosix::getTick();
+        d.timestamp    = miosix::getTime();
         d.threadId     = threadId;
         d.minimumStack = miosix::MemoryProfiling::getAbsoluteFreeStack();
 

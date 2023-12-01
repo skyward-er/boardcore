@@ -51,7 +51,7 @@ void LogSink::log(const LogRecord& record)
     using namespace fmt::literals;
     if (record.level >= minimumLevel)
     {
-        float ts     = miosix::getTick() / 1000.0f;
+        float ts     = miosix::getTime() / (float)Constants::NS_IN_S;
         int min      = ts / 60;
         string tsStr = fmt::format("{:02d}:{:06.3f}", min, (ts - min * 60));
 

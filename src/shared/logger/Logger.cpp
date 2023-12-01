@@ -33,10 +33,12 @@
 #include <tscpp/buffer.h>
 #include <utils/Debug.h>
 
+#include <chrono>
 #include <fstream>
 #include <stdexcept>
 
 using namespace std;
+using namespace std::chrono;
 using namespace miosix;
 
 namespace Boardcore
@@ -287,8 +289,7 @@ void Logger::writeThread()
                 return;
 
             // Write data to disk
-            Timer timer;
-            timer.start();
+            auto start = system_clock::now();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
@@ -301,8 +302,9 @@ void Logger::writeThread()
             else
                 stats.buffersWritten++;
 
-            timer.stop();
-            stats.averageWriteTime = timer.interval();
+            stats.averageWriteTime =
+                duration_cast<milliseconds>(system_clock::now() - start)
+                    .count();
             stats.maxWriteTime =
                 max(stats.maxWriteTime, stats.averageWriteTime);
 
