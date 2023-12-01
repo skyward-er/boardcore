@@ -29,6 +29,7 @@
 #include <iostream>
 
 using namespace Boardcore;
+using namespace Boardcore::Constants;
 using namespace Eigen;
 using namespace miosix;
 
@@ -108,14 +109,14 @@ void calibrateMagnetometer()
     scheduler.start();
 
     // Wait and then stop the sampling
-    auto startTick = getTick();
-    auto lastTick  = startTick;
-    while (getTick() - startTick < MAG_CALIBRATION_DURATION * 1e3)
+    auto startTime = getTime();
+    auto lastTime  = startTime;
+    while (getTime() - startTime < MAG_CALIBRATION_DURATION * NS_IN_S)
     {
         mpu.sample();
         calibration.feed(mpu.getLastSample());
-        Thread::sleepUntil(lastTick + IMU_SAMPLE_PERIOD);
-        lastTick = getTick();
+        Thread::nanoSleepUntil(lastTime + (IMU_SAMPLE_PERIOD * NS_IN_MS));
+        lastTime = getTime();
     }
 
     scheduler.stop();
