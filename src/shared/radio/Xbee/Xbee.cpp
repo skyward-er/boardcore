@@ -64,7 +64,7 @@ bool Xbee::send(uint8_t* pkt, size_t packetLength)
                 MAX_PACKET_PAYLOAD_LENGTH);
         return false;
     }
-    long long startTick = miosix::getTick();
+    long long startTime = miosix::getTime();
 
     TXRequestFrame txReq;
     uint8_t txFrameId  = buildTXRequestFrame(txReq, pkt, packetLength);
@@ -75,9 +75,9 @@ bool Xbee::send(uint8_t* pkt, size_t packetLength)
         writeFrame(txReq);
 
         // Wait for a TX Status frame
-        long long timeoutTick = miosix::getTick() + txTimeout;
+        long long timeoutTime = miosix::getTime() + txTimeout;
 
-        while (waitForFrame(FTYPE_TX_STATUS, FRAME_POLL_INTERVAL, timeoutTick))
+        while (waitForFrame(FTYPE_TX_STATUS, FRAME_POLL_INTERVAL, timeoutTime))
         {
             TXStatusFrame* f = parsingApiFrame.toFrameType<TXStatusFrame>();
 
@@ -106,7 +106,7 @@ bool Xbee::send(uint8_t* pkt, size_t packetLength)
         ++status.txTimeoutCount;
         LOG_ERR(logger, "TX_STATUS timeout");
     }
-    timeToSendStats.add(miosix::getTick() - startTick);
+    timeToSendStats.add(miosix::getTime() - startTime);
 
     StackLogger::getInstance().updateStack(THID_XBEE);
 
@@ -160,7 +160,7 @@ ssize_t Xbee::receive(uint8_t* buf, size_t bufMaxSize)
 
 XbeeStatus Xbee::getStatus()
 {
-    status.timestamp       = miosix::getTick();
+    status.timestamp       = miosix::getTime();
     status.timeToSendStats = timeToSendStats.getStats();
     return status;
 }
@@ -178,7 +178,7 @@ void Xbee::reset()
 
     // When the xbee is ready, we should assert SSEL to tell it to use
     // SPI, and it should provide us with a modem status frame
-    long long timeout = miosix::getTick() + 1000;
+    long long timeout = miosix::getTime() + 1 * Constants::NS_IN_S;
     do
     {
         // Assert SSEL on every iteration as we don't exactly know when the
@@ -200,7 +200,7 @@ void Xbee::reset()
                 break;
         }
         miosix::Thread::sleep(5);
-    } while (miosix::getTick() < timeout);
+    } while (miosix::getTime() < timeout);
 }
 
 void Xbee::wakeReceiver(bool forceReturn)
@@ -293,7 +293,7 @@ bool Xbee::readRXFrame()
 
 void Xbee::writeFrame(APIFrame& frame)
 {
-    frame.timestamp = miosix::getTick();  // Only for logging purposes
+    frame.timestamp = miosix::getTime();  // Only for logging purposes
 
     // Serialize the frame
     uint8_t txBuf[MAX_API_FRAME_SIZE];
@@ -319,7 +319,7 @@ void Xbee::writeFrame(APIFrame& frame)
 }
 
 bool Xbee::waitForFrame(uint8_t frameType, unsigned int pollInterval,
-                        long long timeoutTick)
+                        long long timeoutTime)
 {
     do
     {
@@ -337,7 +337,7 @@ bool Xbee::waitForFrame(uint8_t frameType, unsigned int pollInterval,
         {
             miosix::Thread::sleep(pollInterval);
         }
-    } while (miosix::getTick() < timeoutTick);
+    } while (miosix::getTime() < timeoutTime);
 
     return false;
 }
@@ -380,10 +380,10 @@ bool Xbee::sendATCommand(const char* cmd, ATCommandResponseFrame* response,
 
     bool success = false;
 
-    long long timeoutTick = miosix::getTick() + timeout;
+    long long timeoutTime = miosix::getTime() + (timeout * Constants::NS_IN_MS);
 
     while (waitForFrame(FTYPE_AT_COMMAND_RESPONSE, FRAME_POLL_INTERVAL,
-                        timeoutTick))
+                        timeoutTime))
     {
         ATCommandResponseFrame* f =
             parsingApiFrame.toFrameType<ATCommandResponseFrame>();
@@ -435,7 +435,7 @@ uint8_t Xbee::sendATCommandInternal(uint8_t txFrameId, const char* cmd,
 void Xbee::handleFrame(APIFrame& frame)
 {
     // Set the timestamp to the frame
-    frame.timestamp = miosix::getTick();
+    frame.timestamp = miosix::getTime();
 
     switch (frame.frameType)
     {
