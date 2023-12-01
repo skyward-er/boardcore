@@ -61,7 +61,8 @@ static const float VBAT_DIV               = 4.0f;
 // If it is missing you need to define it, preferably in the board_settings.h
 // file in miosix. Check your board schematic to find the voltage value.
 #ifndef V_DDA_VOLTAGE
-#error Missing V_DDA_VOLTAGE definition for current target
+#warning Missing V_DDA_VOLTAGE definition for current target, using default value of 3.0V
+#define V_DDA_VOLTAGE 3.0f
 #endif
 
 InternalADC::InternalADC(ADC_TypeDef *adc) : adc(adc)
@@ -115,9 +116,7 @@ InternalADCData InternalADC::sampleImpl()
         {
             newData.voltage[i] = readChannel(static_cast<Channel>(i));
             newData.voltage[i] =
-                newData.voltage[i] *
-                V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
-                / ADC_RESOLUTION;
+                newData.voltage[i] * V_DDA_VOLTAGE / ADC_RESOLUTION;
         }
     }
 
@@ -141,9 +140,7 @@ InternalADCData InternalADC::sampleImpl()
         if (temperatureRawValue != 0)
         {
             newData.temperature =
-                temperatureRawValue *
-                V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
-                / ADC_RESOLUTION;
+                temperatureRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION;
 
 #ifdef INTERNAL_ADC_WITHOUT_CALIBRATION
             // Default conversion
@@ -168,9 +165,7 @@ InternalADCData InternalADC::sampleImpl()
         ADC->CCR &= ~ADC_CCR_VBATE;
 
         newData.vBat =
-            vbatVoltageRawValue *
-            V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
-            / ADC_RESOLUTION * VBAT_DIV;
+            vbatVoltageRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION * VBAT_DIV;
     }
 
     return newData;
