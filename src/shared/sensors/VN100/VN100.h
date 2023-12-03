@@ -306,19 +306,24 @@ private:
     /**
      * @brief IMU pre-elaborated sample string for efficiency reasons.
      */
-    string *preSampleImuString = nullptr;
+    const char *preSampleImuString = "";
 
     /**
      * @brief Temperature and pressure pre-elaborated sample string for
      * efficiency reasons.
      */
-    string *preSampleTempPressString = nullptr;
+    const char *preSampleTempPressString = "";
+
+    /**
+     * @brief Max dimension of a message from the sensor.
+     */
+    static const unsigned int recvStringMaxDimension = 200;
 
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
      * only (200 bytes).
      */
-    char *recvString = nullptr;
+    char recvString[recvStringMaxDimension] = "";
 
     /**
      * @brief Actual strlen() of the recvString.
@@ -332,7 +337,5 @@ private:
     VN100Data threadSample;
 
     PrintLogger logger = Logging::getLogger("vn100");
-
-    static const unsigned int recvStringMaxDimension = 200;
 };
 }  // namespace Boardcore

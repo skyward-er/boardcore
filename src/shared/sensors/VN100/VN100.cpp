@@ -46,30 +46,21 @@ bool VN100::init()
         return true;
     }
 
-    // Allocate the receive vector
-    recvString = new char[recvStringMaxDimension];
-
     // Allocate the pre loaded strings based on the user selected crc
     if (crc == CRCOptions::CRC_ENABLE_16)
     {
-        preSampleImuString       = new string("$VNRRG,15*92EA\n");
-        preSampleTempPressString = new string("$VNRRG,54*4E0F\n");
+        preSampleImuString       = "$VNRRG,15*92EA\n";
+        preSampleTempPressString = "$VNRRG,54*4E0F\n";
     }
     else
     {
-        preSampleImuString       = new string("$VNRRG,15*77\n");
-        preSampleTempPressString = new string("$VNRRG,54*72\n");
+        preSampleImuString       = "$VNRRG,15*77\n";
+        preSampleTempPressString = "$VNRRG,54*72\n";
     }
 
     // Set the error to init fail and if the init process goes without problem
     // i restore it to the last error
     lastError = SensorErrors::INIT_FAIL;
-
-    if (recvString == NULL)
-    {
-        LOG_ERR(logger, "Unable to initialize the receive vn100 string");
-        return false;
-    }
 
     if (!configDefaultSerialPort())
     {
@@ -145,7 +136,7 @@ bool VN100::sampleRaw()
     }
 
     // Send the IMU sampling command
-    usart.writeString(preSampleImuString->c_str());
+    usart.writeString(preSampleImuString);
 
     // Wait some time
     // TODO dimension the time
@@ -271,9 +262,6 @@ bool VN100::closeAndReset()
 
     isInit = false;
 
-    // Free the recvString memory
-    delete recvString;
-
     return true;
 }
 
@@ -312,7 +300,7 @@ VN100Data VN100::sampleData()
     }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    usart.writeString(preSampleImuString->c_str());
+    usart.writeString(preSampleImuString);
 
     // Wait some time
     // TODO dimension the time
@@ -340,7 +328,7 @@ VN100Data VN100::sampleData()
     // Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure
     // (UNCOMPENSATED) DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND
     // GYROSCOPE VALUES
-    usart.writeString(preSampleTempPressString->c_str());
+    usart.writeString(preSampleTempPressString);
 
     // Wait some time
     // TODO dimension the time
