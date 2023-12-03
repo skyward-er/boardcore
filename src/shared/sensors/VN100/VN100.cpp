@@ -165,11 +165,24 @@ bool VN100::setBinaryOutput()
 {
     // This command samples quaternion data, accelerometer, angular rate,
     // magnetometer, temperature and pressure (with async messages disabled)
-    // Checksum not calculated yet
-    const string setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*XX\n";
+    const char *setBinarySampleCommand;
+    switch (this->crc)
+    {
+        case CRCOptions::CRC_ENABLE_8:
+            setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*44\n";
+            break;
+        case CRCOptions::CRC_ENABLE_16:
+            setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*9CFA\n";
+            break;
+        default:
+            setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*XX\n";
+            break;
+    }
 
     // Send the command
-    sendStringCommand(setBinarySampleCommand);
+    usart.writeString(setBinarySampleCommand);
+
+    // TODO: dimension this wait time, is it needed?
     miosix::Thread::sleep(1);
 
     // Verify that the command is understood by the sensor
@@ -184,11 +197,21 @@ bool VN100::setBinaryOutput()
 VN100Data VN100::sampleBinary()
 {
     // This is the command used to retrieve data from the sensor
-    // TODO: evaluate checksum8 & 16, move it outside this function
-    const string askBinarySampleCommand = "$VNBOM,1*XX\n";
+    const char *askBinarySampleCommand;
+    switch (this->crc)
+    {
+        case CRCOptions::CRC_ENABLE_8:
+            askBinarySampleCommand = "$VNBOM,1*45\n";
+            break;
+        case CRCOptions::CRC_ENABLE_16:
+            askBinarySampleCommand = "$VNBOM,1*749D\n";
+            break;
+        default:
+            askBinarySampleCommand = "$VNBOM,1*XX\n";
+            break;
+    }
 
-    sendStringCommand(askBinarySampleCommand);
-    miosix::Thread::sleep(1);
+    usart.writeString(askBinarySampleCommand);
 
     // "wait logic": it might take some time to receive the answer
     // from the sensor
@@ -208,12 +231,13 @@ VN100Data VN100::sampleBinary()
             {
                 VN100Data vnData = buildBinaryData(data, initTime);
                 lastSample       = vnData;
+                lastError        = NO_ERRORS;
                 return vnData;
             }
         }
     }
 
-    std::cout << "NO DATA RECEIVED, returning last sample\n\n";
+    lastError = NO_NEW_DATA;
     return lastSample;
 }
 
