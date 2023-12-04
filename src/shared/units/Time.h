@@ -47,7 +47,7 @@ public:
 };
 
 template <class ToTime, class FromTime>
-ToTime time_cast(FromTime &from)
+ToTime time_cast(FromTime const &from)
 {
     return ToTime(from);
 }
@@ -60,7 +60,7 @@ using Minute      = Time<std::ratio<60>>;             // Time in minutes
 using Hour        = Time<std::ratio<3600>>;           // Time in hours
 using Day         = Time<std::ratio<86400>>;          // Time in days
 using Week        = Time<std::ratio<604800>>;         // Time in weeks
-using Month       = Time<std::ratio<262800>>;         // Time in months
+using Month       = Time<std::ratio<2628000>>;        // Time in months
 using Year        = Time<std::ratio<31536000>>;       // Time in years
 
 auto operator""_ns(long double n) { return Nanosecond(static_cast<float>(n)); };

@@ -53,7 +53,7 @@ public:
         const auto targetRatio = static_cast<float>(TargetRatio::num) /
                                  static_cast<float>(TargetRatio::den);
 
-        return _value / currentRatio * targetRatio;
+        return _value * currentRatio / targetRatio;
     }
 
     template <class TargetRatio = Ratio>
@@ -80,15 +80,27 @@ constexpr auto operator-(const DerivedUnit &lhs, const DerivedUnit &rhs)
 }
 
 template <class DerivedUnit>
-constexpr auto operator*(const DerivedUnit &lhs, const DerivedUnit &rhs)
+constexpr auto operator*(const DerivedUnit &lhs, float rhs)
 {
-    return DerivedUnit(lhs.template value() * rhs.template value());
+    return DerivedUnit(lhs.template value() * rhs);
 }
 
 template <class DerivedUnit>
-constexpr auto operator/(const DerivedUnit &lhs, const DerivedUnit &rhs)
+constexpr auto operator*(float lhs, const DerivedUnit &rhs)
 {
-    return DerivedUnit(lhs.template value() / rhs.template value());
+    return DerivedUnit(lhs * rhs.template value());
+}
+
+template <class DerivedUnit>
+constexpr auto operator/(const DerivedUnit &lhs, float rhs)
+{
+    return DerivedUnit(lhs.template value() / rhs);
+}
+
+template <class DerivedUnit>
+constexpr auto operator/(float lhs, const DerivedUnit &rhs)
+{
+    return DerivedUnit(lhs / rhs.template value());
 }
 
 // Comparison operators
@@ -144,14 +156,14 @@ constexpr DerivedUnit &operator-=(DerivedUnit &lhs, const DerivedUnit &rhs)
 }
 
 template <class DerivedUnit>
-constexpr DerivedUnit &operator*=(DerivedUnit &lhs, const DerivedUnit &rhs)
+constexpr DerivedUnit &operator*=(DerivedUnit &lhs, float rhs)
 {
     lhs = lhs * rhs;
     return lhs;
 }
 
 template <class DerivedUnit>
-constexpr DerivedUnit &operator/=(DerivedUnit &lhs, const DerivedUnit &rhs)
+constexpr DerivedUnit &operator/=(DerivedUnit &lhs, float rhs)
 {
     lhs = lhs / rhs;
     return lhs;

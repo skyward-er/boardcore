@@ -41,8 +41,9 @@ class Angle : public Unit<Ratio>
 
 using Degree = Angle<>;  // Angle in degrees
 using Radian =           // Angle in radians
-    Angle<std::ratio<static_cast<std::intmax_t>(3.14159265358979323846 * 1e10),
-                     static_cast<std::intmax_t>(180 * 1e10)>>;
+    Angle<
+        std::ratio<static_cast<std::intmax_t>(180 * 1e10),
+                   static_cast<std::intmax_t>(3.14159265358979323846 * 1e10)>>;
 
 auto operator""_rad(long double n) { return Radian(static_cast<float>(n)); };
 auto operator""_deg(long double n) { return Degree(static_cast<float>(n)); };
