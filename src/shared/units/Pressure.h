@@ -40,7 +40,7 @@ class Pressure : public Unit<Ratio>
 };
 
 template <class ToPressure, class FromPressure>
-ToPressure pressure_cast(FromPressure &from)
+ToPressure pressure_cast(FromPressure const &from)
 {
     return ToPressure(from);
 }
