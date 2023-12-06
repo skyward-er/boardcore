@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+ * Author: Matteo Pignataro, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@
 namespace Boardcore
 {
 
-VN100::VN100(USART &usart, int baudRate, CRCOptions crc, uint16_t samplePeriod)
-    : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc)
+VN100::VN100(USART &usart, int baudRate, CRCOptions crc)
+    : usart(usart), baudRate(baudRate), crc(crc), binData({})
 {
 }
 
@@ -47,15 +47,17 @@ bool VN100::init()
     }
 
     // Allocate the pre loaded strings based on the user selected crc
-    if (crc == CRCOptions::CRC_ENABLE_16)
+    switch (this->crc)
     {
-        preSampleImuString       = "$VNRRG,15*92EA\n";
-        preSampleTempPressString = "$VNRRG,54*4E0F\n";
-    }
-    else
-    {
-        preSampleImuString       = "$VNRRG,15*77\n";
-        preSampleTempPressString = "$VNRRG,54*72\n";
+        case CRCOptions::CRC_ENABLE_8:
+            askSampleCommand = "$VNBOM,1*45\n";
+            break;
+        case CRCOptions::CRC_ENABLE_16:
+            askSampleCommand = "$VNBOM,1*749D\n";
+            break;
+        case CRCOptions::CRC_NO:
+            askSampleCommand = "$VNBOM,1*XX\n";
+            break;
     }
 
     // Set the error to init fail and if the init process goes without problem
@@ -100,6 +102,12 @@ bool VN100::init()
         return false;
     }
 
+    if (!setBinaryOutput())
+    {
+        LOG_ERR(logger, "Unable to set the vn100 binary output");
+        return false;
+    }
+
     // Set the isInit flag true
     isInit = true;
 
@@ -109,54 +117,11 @@ bool VN100::init()
     return true;
 }
 
-void VN100::run()
-{
-    while (!shouldStop())
-    {
-        long long initialTime = miosix::getTick();
-        {
-            // Sample the data locking the mutex
-            miosix::Lock<FastMutex> l(mutex);
-            threadSample = sampleData();
-        }
-        // Sleep for the sampling period
-        miosix::Thread::sleepUntil(initialTime + samplePeriod);
-    }
-}
-
-bool VN100::sampleRaw()
-{
-    // Sensor not init
-    if (!isInit)
-    {
-        lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger,
-                 "Unable to sample due to not initialized vn100 sensor");
-        return false;
-    }
-
-    // Send the IMU sampling command
-    usart.writeString(preSampleImuString);
-
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(1);
-
-    // Receive the string
-    if (!recvStringCommand(recvString, recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
-
-    return true;
-}
-
 bool VN100::setBinaryOutput()
 {
     // This command samples quaternion data, accelerometer, angular rate,
     // magnetometer, temperature and pressure (with async messages disabled)
-    const char *setBinarySampleCommand;
+    const char *setBinarySampleCommand = "";
     switch (this->crc)
     {
         case CRCOptions::CRC_ENABLE_8:
@@ -165,16 +130,13 @@ bool VN100::setBinaryOutput()
         case CRCOptions::CRC_ENABLE_16:
             setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*9CFA\n";
             break;
-        default:
+        case CRCOptions::CRC_NO:
             setBinarySampleCommand = "$VNWRG,75,0,16,01,0530*XX\n";
             break;
     }
 
     // Send the command
     usart.writeString(setBinarySampleCommand);
-
-    // TODO: dimension this wait time, is it needed?
-    miosix::Thread::sleep(1);
 
     // Verify that the command is understood by the sensor
     if (!recvStringCommand(recvString, recvStringMaxDimension))
@@ -183,64 +145,6 @@ bool VN100::setBinaryOutput()
         return false;
     }
     return true;
-}
-
-VN100Data VN100::sampleBinary()
-{
-    // This is the command used to retrieve data from the sensor
-    const char *askBinarySampleCommand;
-    switch (this->crc)
-    {
-        case CRCOptions::CRC_ENABLE_8:
-            askBinarySampleCommand = "$VNBOM,1*45\n";
-            break;
-        case CRCOptions::CRC_ENABLE_16:
-            askBinarySampleCommand = "$VNBOM,1*749D\n";
-            break;
-        default:
-            askBinarySampleCommand = "$VNBOM,1*XX\n";
-            break;
-    }
-
-    usart.writeString(askBinarySampleCommand);
-
-    // "wait logic": it might take some time to receive the answer
-    // from the sensor
-    // This timestamp is also used as timestamp for the sampled data
-    const uint64_t initTime = TimestampTimer::getTimestamp();
-
-    unsigned char initByte =
-        0;            // used to look for the first byte of the answer
-    binaryData data;  // this struct will contain the data red from the sensor
-    while (TimestampTimer::getTimestamp() - initTime <= 30)
-    {
-        // The reply message starts with 0xFA
-        if (usart.read(&initByte, 1) && initByte == 0xFA)
-        {
-            // Reading all the message directly into the struct
-            if (usart.read(&data, sizeof(binaryData)))
-            {
-                VN100Data vnData = buildBinaryData(data, initTime);
-                lastSample       = vnData;
-                lastError        = NO_ERRORS;
-                return vnData;
-            }
-        }
-    }
-
-    lastError = NO_NEW_DATA;
-    return lastSample;
-}
-
-string VN100::getLastRawSample()
-{
-    // If not init i return the void string
-    if (!isInit)
-    {
-        return string("");
-    }
-
-    return string(recvString, recvStringLength);
 }
 
 bool VN100::closeAndReset()
@@ -279,79 +183,33 @@ bool VN100::selfTest()
 
 VN100Data VN100::sampleImpl()
 {
-    miosix::Lock<FastMutex> l(mutex);
-    return threadSample;
-}
+    usart.writeString(askSampleCommand);
 
-VN100Data VN100::sampleData()
-{
-    if (!isInit)
+    // "wait logic": it might take some time to receive the answer
+    // from the sensor
+    // This timestamp is also used as timestamp for the sampled data
+    const uint64_t initTime = TimestampTimer::getTimestamp();
+
+    unsigned char initByte =
+        0;  // used to look for the first byte of the answer
+    while (TimestampTimer::getTimestamp() - initTime <=
+           30)  // TODO: dimension the time
     {
-        lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger,
-                 "Unable to sample due to not initialized vn100 sensor");
-        return lastSample;
+        // The reply message starts with 0xFA
+        if (usart.read(&initByte, 1) && initByte == 0xFA)
+        {
+            // Reading all the message directly into the struct
+            if (usart.read(&binData, sizeof(binaryData)))
+            {
+                VN100Data vnData = buildBinaryData(initTime);
+                lastError        = NO_ERRORS;
+                return vnData;
+            }
+        }
     }
 
-    // Before sampling i check for errors
-    if (lastError != SensorErrors::NO_ERRORS)
-    {
-        return lastSample;
-    }
-
-    // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    usart.writeString(preSampleImuString);
-
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(1);
-
-    if (!recvStringCommand(recvString, recvStringMaxDimension))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
-
-    if (!verifyChecksum(recvString, recvStringLength))
-    {
-        LOG_WARN(logger, "Vn100 sampling message invalid checksum");
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
-
-    // Now i have to parse the data
-    QuaternionData quat   = sampleQuaternion();
-    MagnetometerData mag  = sampleMagnetometer();
-    AccelerometerData acc = sampleAccelerometer();
-    GyroscopeData gyro    = sampleGyroscope();
-
-    // Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure
-    // (UNCOMPENSATED) DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND
-    // GYROSCOPE VALUES
-    usart.writeString(preSampleTempPressString);
-
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(1);
-
-    if (!recvStringCommand(recvString, recvStringMaxDimension))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
-
-    if (!verifyChecksum(recvString, recvStringLength))
-    {
-        LOG_WARN(logger, "Vn100 sampling message invalid checksum");
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
-
-    // Parse the data
-    TemperatureData temp = sampleTemperature();
-    PressureData press   = samplePressure();
-
-    return VN100Data(quat, mag, acc, gyro, temp, press);
+    lastError = NO_NEW_DATA;
+    return lastSample;
 }
 
 bool VN100::disableAsyncMessages(bool waitResponse)
@@ -519,200 +377,42 @@ bool VN100::selfTestImpl()
     return true;
 }
 
-QuaternionData VN100::sampleQuaternion()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    QuaternionData data;
-
-    // Look for the second ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 2; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.quaternionTimestamp = TimestampTimer::getTimestamp();
-    data.quaternionX         = strtod(recvString + indexStart + 1, &nextNumber);
-    data.quaternionY         = strtod(nextNumber + 1, &nextNumber);
-    data.quaternionZ         = strtod(nextNumber + 1, &nextNumber);
-    data.quaternionW         = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-MagnetometerData VN100::sampleMagnetometer()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    MagnetometerData data;
-
-    // Look for the sixth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 6; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-    data.magneticFieldX = strtod(recvString + indexStart + 1, &nextNumber);
-    data.magneticFieldY = strtod(nextNumber + 1, &nextNumber);
-    data.magneticFieldZ = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-AccelerometerData VN100::sampleAccelerometer()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    AccelerometerData data;
-
-    // Look for the ninth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 9; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.accelerationTimestamp = TimestampTimer::getTimestamp();
-    data.accelerationX = strtod(recvString + indexStart + 1, &nextNumber);
-    data.accelerationY = strtod(nextNumber + 1, &nextNumber);
-    data.accelerationZ = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-GyroscopeData VN100::sampleGyroscope()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    GyroscopeData data;
-
-    // Look for the twelfth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 12; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
-    data.angularSpeedX = strtod(recvString + indexStart + 1, &nextNumber);
-    data.angularSpeedY = strtod(nextNumber + 1, &nextNumber);
-    data.angularSpeedZ = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-TemperatureData VN100::sampleTemperature()
-{
-    unsigned int indexStart = 0;
-    TemperatureData data;
-
-    // Look for the eleventh ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 11; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.temperatureTimestamp = TimestampTimer::getTimestamp();
-    data.temperature          = strtod(recvString + indexStart + 1, NULL);
-
-    return data;
-}
-
-PressureData VN100::samplePressure()
-{
-    unsigned int indexStart = 0;
-    PressureData data;
-
-    // Look for the twelfth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 12; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.pressureTimestamp = TimestampTimer::getTimestamp();
-    data.pressure          = strtod(recvString + indexStart + 1, NULL);
-
-    return data;
-}
-
-VN100Data VN100::buildBinaryData(const binaryData &data,
-                                 const uint64_t sampleTimestamp)
+VN100Data VN100::buildBinaryData(const uint64_t sampleTimestamp)
 {
     VN100Data vnData;
 
     // Acceleration data
     vnData.accelerationTimestamp = sampleTimestamp;
-    vnData.accelerationX         = data.accelerationX;
-    vnData.accelerationY         = data.accelerationY;
-    vnData.accelerationZ         = data.accelerationZ;
+    vnData.accelerationX         = binData.accelerationX;
+    vnData.accelerationY         = binData.accelerationY;
+    vnData.accelerationZ         = binData.accelerationZ;
 
     // Angular speed data
     vnData.angularSpeedTimestamp = sampleTimestamp;
-    vnData.angularSpeedX         = data.angularX;
-    vnData.angularSpeedY         = data.angularY;
-    vnData.angularSpeedZ         = data.angularZ;
+    vnData.angularSpeedX         = binData.angularX;
+    vnData.angularSpeedY         = binData.angularY;
+    vnData.angularSpeedZ         = binData.angularZ;
 
     // Magnetometer data
     vnData.magneticFieldTimestamp = sampleTimestamp;
-    vnData.magneticFieldX         = data.magneticFieldX;
-    vnData.magneticFieldY         = data.magneticFieldY;
-    vnData.magneticFieldZ         = data.magneticFieldZ;
+    vnData.magneticFieldX         = binData.magneticFieldX;
+    vnData.magneticFieldY         = binData.magneticFieldY;
+    vnData.magneticFieldZ         = binData.magneticFieldZ;
 
     // Quaternion data
     vnData.quaternionTimestamp = sampleTimestamp;
-    vnData.quaternionX         = data.quaternionX;
-    vnData.quaternionY         = data.quaternionY;
-    vnData.quaternionZ         = data.quaternionZ;
-    vnData.quaternionW         = data.quaternionW;
+    vnData.quaternionX         = binData.quaternionX;
+    vnData.quaternionY         = binData.quaternionY;
+    vnData.quaternionZ         = binData.quaternionZ;
+    vnData.quaternionW         = binData.quaternionW;
 
     // Temperature data
     vnData.temperatureTimestamp = sampleTimestamp;
-    vnData.temperature          = data.temperature;
+    vnData.temperature          = binData.temperature;
 
     // Pressure data
     vnData.pressureTimestamp = sampleTimestamp;
-    vnData.pressure          = data.pressure;
+    vnData.pressure          = binData.pressure;
 
     return vnData;
 }

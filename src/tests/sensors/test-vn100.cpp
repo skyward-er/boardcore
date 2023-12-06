@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+ * Author: Matteo Pignataro, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,15 +24,12 @@
 #include <inttypes.h>
 #include <sensors/VN100/VN100.h>
 
-#include <iostream>
-
 using namespace miosix;
 using namespace Boardcore;
 
 int main()
 {
     VN100Data sample;
-    string sampleRaw;
 
     GpioPin u2tx1(GPIOA_BASE, 2);
     GpioPin u2rx1(GPIOA_BASE, 3);
@@ -61,18 +58,18 @@ int main()
         printf("Unable to execute self-test\n");
         return 0;
     }
-    std::cout << "Self-test ok!\n\n";
-
-    sensor.setBinaryOutput();
+    printf("Self-test ok!\n\n");
 
     // Wait to let the sensor settle
     // TODO: verify if it is needed
-    miosix::Thread::sleep(1000);
+    miosix::Thread::sleep(100);
 
     // Sample and print 100 samples
     for (int i = 0; i < 100; i++)
     {
-        sample = sensor.sampleBinary();
+        sensor.sample();
+        sample = sensor.getLastSample();
+
         printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
                sample.accelerationTimestamp, sample.accelerationX,
                sample.accelerationY, sample.accelerationZ);

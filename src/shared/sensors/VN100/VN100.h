@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+ * Author: Matteo Pignataro, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +67,7 @@ namespace Boardcore
 /**
  * @brief Driver class for VN100 IMU.
  */
-class VN100 : public Sensor<VN100Data>, public ActiveObject
+class VN100 : public Sensor<VN100Data>
 {
 public:
     enum class CRCOptions : uint8_t
@@ -83,45 +83,11 @@ public:
      * @param usart Serial bus used for the sensor.
      * @param BaudRate different from the sensor's default [9600, 19200, 38400,
      * 57600, 115200, 128000, 230400, 460800, 921600].
-     * @param Redundancy check option.
-     * @param samplePeriod Sampling period in ms
+     * @param crc Checksum options.
      */
-    VN100(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod = 20);
+    VN100(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_NO);
 
     bool init() override;
-
-    /**
-     * @brief Method to sample the raw data without parsing.
-     *
-     * @return True if operation succeeded.
-     */
-    bool sampleRaw();
-
-    /**
-     * @brief This function sets the output binary mode for the sensor. It
-     * configures the sensor in order to read accelerometer data.
-     *
-     * @return Returns true if successful, false otherwise.
-     *
-     * TODO: make this function private and call it from init()
-     */
-    bool setBinaryOutput();
-
-    /**
-     * @brief Samples data from the sensor using binary communication.
-     *
-     * @return Returns the new sample if read is successful, lastSample
-     * otherwise.
-     */
-    VN100Data sampleBinary();
-
-    /**
-     * @brief Method to get the raw sample.
-     *
-     * @return String that represents the sample.
-     */
-    string getLastRawSample();
 
     /**
      * @brief Method to reset the sensor to default values and to close
@@ -165,18 +131,6 @@ private:
     VN100Data sampleImpl() override;
 
     /**
-     * @brief Active object method, about the thread execution
-     */
-    void run() override;
-
-    /**
-     * @brief Sampling method used by the thread
-     *
-     * @return VN100Data The sampled data
-     */
-    VN100Data sampleData();
-
-    /**
      * @brief Disables the async messages that the vn100 is default configured
      * to send at 40Hz on startup.
      *
@@ -210,35 +164,30 @@ private:
     bool setCrc(bool waitResponse = true);
 
     /**
+     * @brief This function sets the output binary mode for the sensor. It
+     * configures the sensor in order to read acceleration, angular speed,
+     * magnetic field, quaternion, temperature and pressure data.
+     *
+     * @return Returns true if successful, false otherwise.
+     */
+    bool setBinaryOutput();
+
+    /**
      * @brief Method implementation of self test.
      *
      * @return True if operation succeeded.
      */
     bool selfTestImpl();
 
-    QuaternionData sampleQuaternion();
-
-    MagnetometerData sampleMagnetometer();
-
-    AccelerometerData sampleAccelerometer();
-
-    GyroscopeData sampleGyroscope();
-
-    TemperatureData sampleTemperature();
-
-    PressureData samplePressure();
-
     /**
      * @brief Builds VN100Data starting from the binary data obtained by the
-     * sensor.
+     * sensor (stored in `binData`).
      *
-     * @param data The binary data object that contains the sampled data.
      * @param sampleTimestamp The timestamp corresponding to the sampled data.
      *
      * @return Returns the VN100Data object.
      */
-    VN100Data buildBinaryData(const binaryData &data,
-                              const uint64_t sampleTimestamp);
+    VN100Data buildBinaryData(const uint64_t sampleTimestamp);
 
     /**
      * @brief Sends the command to the sensor with the correct checksum added
@@ -299,20 +248,14 @@ private:
     USART &usart;
     int baudRate;
 
-    uint16_t samplePeriod;
     CRCOptions crc;
     bool isInit = false;
 
     /**
-     * @brief IMU pre-elaborated sample string for efficiency reasons.
+     * @brief This variable contains the data received from the sample, before
+     * being converted to VN100Data.
      */
-    const char *preSampleImuString = "";
-
-    /**
-     * @brief Temperature and pressure pre-elaborated sample string for
-     * efficiency reasons.
-     */
-    const char *preSampleTempPressString = "";
+    binaryData binData;
 
     /**
      * @brief Max dimension of a message from the sensor.
@@ -326,15 +269,14 @@ private:
     char recvString[recvStringMaxDimension] = "";
 
     /**
+     * @brief Pre computed command used to ask a binary sample to the sensor.
+     */
+    const char *askSampleCommand = "";
+
+    /**
      * @brief Actual strlen() of the recvString.
      */
     unsigned int recvStringLength = 0;
-
-    /**
-     * @brief Mutex to synchronize the reading and writing of the threadSample
-     */
-    mutable miosix::FastMutex mutex;
-    VN100Data threadSample;
 
     PrintLogger logger = Logging::getLogger("vn100");
 };
