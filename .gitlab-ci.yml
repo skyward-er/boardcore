@@ -43,6 +43,7 @@ docker:
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}/miosix:${CI_COMMIT_BRANCH}"
+      --destination "${CI_REGISTRY_IMAGE}/miosix:latest"
   rules:
     - changes:
         - Dockerfile
@@ -95,8 +96,8 @@ test:
 
 pages:
   stage: documentation
-  only:
-    - main
+  # only:
+  #   - main
   script:
     - doxygen doc/Doxyfile
     - mv doc/output/html public
