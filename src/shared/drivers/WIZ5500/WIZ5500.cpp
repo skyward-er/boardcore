@@ -36,11 +36,11 @@ constexpr long long INTN_TIMEOUT = 500;
 
 SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
 {
-    SPIBusConfig bus_config = {};
-    bus_config.clockDivider = clock_divider;
-    bus_config.mode         = SPI::Mode::MODE_0;
-    bus_config.bitOrder     = SPI::Order::MSB_FIRST;
-    bus_config.byteOrder    = SPI::Order::MSB_FIRST;
+    SPIBusConfig bus_config(clock_divider,
+                            SPI::Mode::MODE_0,      // mode
+                            SPI::Order::MSB_FIRST,  // bitOrder
+                            SPI::Order::MSB_FIRST   // byteOrder
+    );
 
     return bus_config;
 }

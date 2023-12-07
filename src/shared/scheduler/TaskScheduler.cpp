@@ -190,7 +190,7 @@ void TaskScheduler::populateAgenda()
 
     for (size_t id = 1; id < tasks.size(); id++)
     {
-        Task& task = tasks[id];
+        const Task& task = tasks[id];
 
         int64_t nextTick = task.startTick;
         // Normalize the tasks start time if they precede the current tick

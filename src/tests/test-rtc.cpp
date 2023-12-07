@@ -57,8 +57,8 @@ int main()
     }
 
     // Enable clock to RTC and PWR peripherals
-    ClockUtils::enablePeripheralClock((RTC_TypeDef*)RTC_BASE);
-    ClockUtils::enablePeripheralClock((PWR_TypeDef*)PWR_BASE);
+    ClockUtils::enablePeripheralClock(reinterpret_cast<PWR_TypeDef*>(RTC_BASE));
+    ClockUtils::enablePeripheralClock(reinterpret_cast<PWR_TypeDef*>(PWR_BASE));
 
     RCC_SYNC();
 

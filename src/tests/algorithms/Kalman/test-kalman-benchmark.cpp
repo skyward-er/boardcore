@@ -85,7 +85,7 @@ int main()
     uint64_t startTime  = TimestampTimer::getTimestamp();
     bool apogeeDetected = false;
 
-    printf("%d %d \n", TIME.size(), INPUT.size());
+    printf("%zu %zu \n", TIME.size(), INPUT.size());
 
     for (unsigned i = 1; i < TIME.size(); i++)
     {

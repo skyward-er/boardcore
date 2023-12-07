@@ -137,9 +137,8 @@ private:
 #ifndef COMPILE_FOR_HOST
     PWM pwm;
     TimerUtils::Channel pwmChannel;
-#else
-    float dutyCycle;
 #endif
+    float dutyCycle;
 
     float minPulse;
     float maxPulse;

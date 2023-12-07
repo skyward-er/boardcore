@@ -106,7 +106,8 @@ MPU9250Data MPU9250::sampleImpl()
 
     {
         SPITransaction transaction(spiSlave);
-        transaction.readRegisters(REG_ACCEL_XOUT_H, (uint8_t*)rawData.bytes,
+        transaction.readRegisters(REG_ACCEL_XOUT_H,
+                                  reinterpret_cast<uint8_t*>(rawData.bytes),
                                   sizeof(MPU9250RawData));
     }
 

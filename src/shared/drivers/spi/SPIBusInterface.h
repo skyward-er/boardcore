@@ -85,12 +85,13 @@ struct SPIBusConfig
     ///< How long to hold cs after the end of a tranmission (us)
     unsigned int csHoldTimeUs;
 
-    SPIBusConfig(SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256,
-                 SPI::Mode mode                 = SPI::Mode::MODE_0,
-                 SPI::Order bitOrder            = SPI::Order::MSB_FIRST,
-                 SPI::Order byteOrder           = SPI::Order::MSB_FIRST,
-                 SPI::WriteBit writeBit         = SPI::WriteBit::NORMAL,
-                 unsigned int csSetupTimeUs = 0, unsigned int csHoldTimeUs = 0)
+    explicit SPIBusConfig(
+        SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256,
+        SPI::Mode mode                 = SPI::Mode::MODE_0,
+        SPI::Order bitOrder            = SPI::Order::MSB_FIRST,
+        SPI::Order byteOrder           = SPI::Order::MSB_FIRST,
+        SPI::WriteBit writeBit         = SPI::WriteBit::NORMAL,
+        unsigned int csSetupTimeUs = 0, unsigned int csHoldTimeUs = 0)
         : clockDivider(clockDivider), mode(mode), bitOrder(bitOrder),
           byteOrder(byteOrder), writeBit(writeBit),
           csSetupTimeUs(csSetupTimeUs), csHoldTimeUs(csHoldTimeUs)
@@ -297,7 +298,8 @@ struct SPISlave
                            ///< with the slave.
     GpioType cs;           ///< Chip select pin
 
-    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
+    SPISlave(SPIBusInterface& bus, GpioType cs,
+             SPIBusConfig config = SPIBusConfig())
         : bus(bus), config(config), cs(cs)
     {
     }

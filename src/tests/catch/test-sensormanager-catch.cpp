@@ -94,40 +94,40 @@ private:
     SensorSampler* samplerSensor5;
 
     TestSensor s1;
-    SensorInfo s1_info{
+    SensorInfo s1_info = SensorInfo(
         /*ID=*/"s1",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 1!" << std::endl; },
-        /*Enabled=*/true};
+        /*Enabled=*/true);
 
     TestSensor s2;
-    SensorInfo s2_info{
+    SensorInfo s2_info = SensorInfo(
         /*ID=*/"s2",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 2!" << std::endl; },
-        /*Enabled=*/false};
+        /*Enabled=*/false);
 
     TestSensor s3;
-    SensorInfo s3_info{
+    SensorInfo s3_info = SensorInfo(
         /*ID=*/"s3",
         /*Period=*/500,
         /*Callback=*/[]() { std::cout << "Callback 3!" << std::endl; },
-        /*Enabled=*/true};
+        /*Enabled=*/true);
 
     TestSensor s4;
-    SensorInfo s4_info{
+    SensorInfo s4_info = SensorInfo(
         /*ID=*/"s4",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 4!" << std::endl; },
-        /*Enabled=*/true};
+        /*Enabled=*/true);
 
     // always failing self-test
     FailingSensorCatch s5;
-    SensorInfo s5_info{
+    SensorInfo s5_info = SensorInfo(
         /*ID=*/"s5",
         /*Period=*/2000,
         /*Callback=*/[]() { std::cout << "Callback 5!" << std::endl; },
-        /*Enabled=*/true};
+        /*Enabled=*/true);
 };
 
 TEST_CASE_METHOD(SensorManagerFixture,

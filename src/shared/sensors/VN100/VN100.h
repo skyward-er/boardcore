@@ -225,7 +225,7 @@ private:
      *
      * @return The 8 bit checksum.
      */
-    uint8_t calculateChecksum8(uint8_t *message, int length);
+    uint8_t calculateChecksum8(const char *message, int length);
 
     /**
      * @brief Calculate the 16bit array on the given array.
@@ -235,7 +235,7 @@ private:
      *
      * @return The 16 bit CRC16-CCITT error check.
      */
-    uint16_t calculateChecksum16(uint8_t *message, int length);
+    uint16_t calculateChecksum16(const char *message, int length);
 
     /**
      * @brief Serial interface that is needed to communicate

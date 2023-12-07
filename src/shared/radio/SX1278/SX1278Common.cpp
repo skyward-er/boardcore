@@ -63,7 +63,7 @@ void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
                                   InterruptTrigger dio1_trigger,
                                   bool tx_frontend, bool rx_frontend)
 {
-    miosix::Lock<miosix::FastMutex> lock(mutex);
+    miosix::Lock<miosix::FastMutex> l(mutex);
     enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
 }
 
@@ -76,7 +76,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
     {
         // An interrupt could occur and read from this variables
         {
-            miosix::FastInterruptDisableLock lock;
+            miosix::FastInterruptDisableLock l;
             state.irq_wait_thread = miosix::Thread::IRQgetCurrentThread();
         }
 
@@ -147,12 +147,12 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
     miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
 
     {
-        miosix::FastInterruptDisableLock lock;
+        miosix::FastInterruptDisableLock l;
         while (state.irq_wait_thread &&
                result == miosix::TimedWaitResult::NoTimeout)
         {
             result = miosix::Thread::IRQenableIrqAndTimedWaitMs(
-                lock, start + IRQ_TIMEOUT);
+                l, start + IRQ_TIMEOUT);
         }
     }
 

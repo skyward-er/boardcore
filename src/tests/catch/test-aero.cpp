@@ -125,7 +125,7 @@ TEST_CASE("[AeroUtils] computeRho")
 
         float rho[] = {1.2250, 1.1673, 1.1116, 1.0581, 1.0065, 0.9569, 0.9091};
 
-        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        for (int i = 0; i * sizeof(float) < sizeof(d); i++)
             REQUIRE(computeRho(d[i], t0) == Approx(rho[i]).epsilon(0.001));
     }
 
@@ -140,7 +140,7 @@ TEST_CASE("[AeroUtils] computeRho")
                        1.0011045116218,  0.969688091422233, 0.939031634200062,
                        0.909122116038058};
 
-        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        for (int i = 0; i * sizeof(float) < sizeof(d); i++)
             REQUIRE(computeRho(d[i], t0) == Approx(rho[i]).epsilon(0.001));
     }
 }
@@ -155,7 +155,7 @@ TEST_CASE("[AeroUtils] computeSoundSpeed")
         float c[] = {340.2941, 338.3696, 336.4341, 334.4874,
                      332.5293, 330.5596, 328.5781};
 
-        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        for (int i = 0; i * sizeof(float) < sizeof(d); i++)
             REQUIRE(computeSoundSpeed(d[i], t0) == Approx(c[i]).epsilon(0.001));
     }
 
@@ -170,7 +170,7 @@ TEST_CASE("[AeroUtils] computeSoundSpeed")
                      332.319739232958, 331.077210026372, 329.830003980861,
                      328.578059889884};
 
-        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        for (int i = 0; i * sizeof(float) < sizeof(d); i++)
             REQUIRE(computeSoundSpeed(d[i], t0) == Approx(c[i]).epsilon(0.001));
     }
 }
@@ -185,7 +185,7 @@ TEST_CASE("[AeroUtils] computeMach")
 
         float mach[] = {0, 0.2955, 0.2972, 0.2990, 0.3007, 0.3025, 0.3043, 0};
 
-        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        for (int i = 0; i * sizeof(float) < sizeof(d); i++)
             REQUIRE(computeMach(d[i], vtot[i], t0) ==
                     Approx(mach[i]).epsilon(0.001));
     }
@@ -218,7 +218,7 @@ TEST_CASE("[AeroUtils] computeMach")
                         1.80019280023227,
                         1.14129591962841};
 
-        for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        for (int i = 0; i * sizeof(float) < sizeof(d); i++)
             REQUIRE(computeMach(d[i], vtot[i], t0) ==
                     Approx(mach[i]).epsilon(0.001));
     }

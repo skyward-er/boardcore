@@ -612,8 +612,8 @@ bool VN100::sendStringCommand(std::string command)
     {
         char checksum[4];  // 2 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()),
-             checksum, 16);
+        itoa(calculateChecksum8((command.c_str()), command.length()), checksum,
+             16);
         checksum[2] = '\n';
         checksum[3] = '\0';
         // I concatenate
@@ -623,8 +623,8 @@ bool VN100::sendStringCommand(std::string command)
     {
         char checksum[6];  // 4 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()),
-             checksum, 16);
+        itoa(calculateChecksum16((command.c_str()), command.length()), checksum,
+             16);
         checksum[4] = '\n';
         checksum[5] = '\0';
         // I concatenate
@@ -701,7 +701,7 @@ bool VN100::verifyChecksum(char *command, int length)
         // Calculate the checksum and verify (comparison between numerical
         // checksum to avoid string bugs e.g 0856 != 865)
         if (strtol(command + checksumOffset + 1, NULL, 16) !=
-            calculateChecksum16((uint8_t *)(command + 1), checksumOffset - 1))
+            calculateChecksum16((command + 1), checksumOffset - 1))
         {
             TRACE("Different checksum: %s\n", command);
             return false;
@@ -719,7 +719,7 @@ bool VN100::verifyChecksum(char *command, int length)
         // Calculate the checksum and verify (comparison between numerical
         // checksum to avoid string bugs e.g 0856 != 865)
         if (strtol(command + checksumOffset + 1, NULL, 16) !=
-            calculateChecksum8((uint8_t *)(command + 1), checksumOffset - 1))
+            calculateChecksum8(command + 1, checksumOffset - 1))
         {
             TRACE("Different checksum: %s\n", command);
             return false;
@@ -729,7 +729,7 @@ bool VN100::verifyChecksum(char *command, int length)
     return true;
 }
 
-uint8_t VN100::calculateChecksum8(uint8_t *message, int length)
+uint8_t VN100::calculateChecksum8(const char *message, int length)
 {
     int i;
     uint8_t result = 0x00;
@@ -744,7 +744,7 @@ uint8_t VN100::calculateChecksum8(uint8_t *message, int length)
     return result;
 }
 
-uint16_t VN100::calculateChecksum16(uint8_t *message, int length)
+uint16_t VN100::calculateChecksum16(const char *message, int length)
 {
     int i;
     uint16_t result = 0x0000;

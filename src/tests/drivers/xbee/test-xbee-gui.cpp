@@ -105,7 +105,7 @@ protected:
 
                 gui->screenEnergy.updateScan(scan);
 
-                EnergyScanData data{getTick(), scan};
+                EnergyScanData data(getTick(), scan);
                 logger.log(data);
             }
         }

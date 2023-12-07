@@ -347,7 +347,7 @@ constexpr unsigned GetEXTI_IRQn(unsigned N)
            N==2? EXTI2_IRQn :
            N==3? EXTI3_IRQn :
            N==4? EXTI4_IRQn :
-           (N>=5&&N<=9)? EXTI9_5_IRQn :
+           N<=9? EXTI9_5_IRQn :
            EXTI15_10_IRQn;
 
     // clang-format on

@@ -63,8 +63,9 @@ public:
      * @param serialPortName Name of the file for the gps device.
      * @param defaultBaudrate Startup baudrate (38400 for NEO-M9N).
      */
-    UBXGPSSerial(int baudrate = 921600, uint8_t sampleRate = 10,
-                 USARTType *usartNumber = USART2, int defaultBaudrate = 38400);
+    explicit UBXGPSSerial(int baudrate = 921600, uint8_t sampleRate = 10,
+                          USARTType *usartNumber = USART2,
+                          int defaultBaudrate    = 38400);
 
     /**
      * @brief Sets up the serial port baudrate, disables the NMEA messages,

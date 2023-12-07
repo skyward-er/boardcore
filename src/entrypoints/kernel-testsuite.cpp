@@ -2146,7 +2146,7 @@ void t10_f2()
         t10_f1();
         fail("Exception not thrown (1)");
     }
-    catch (std::logic_error &e)
+    catch (const std::logic_error &e)
     {
         throw;
     }
@@ -2372,8 +2372,8 @@ void test_14()
 
     // Test 1: join on joinable, not already deleted
     void *result = 0;
-    t            = Thread::create(t14_p2, STACK_SMALL, 0, (void *)0xdeadbeef,
-                                  Thread::JOINABLE);
+    t            = Thread::create(t14_p2, STACK_SMALL, 0,
+                                  reinterpret_cast<void *>(0xdeadbeef), Thread::JOINABLE);
     Thread::yield();
     if (t->join(&result) == false)
         fail("Thread::join (1)");
@@ -2412,8 +2412,8 @@ void test_14()
 
     // Test 6: join on already deleted
     result = 0;
-    t      = Thread::create(t14_p1, STACK_SMALL, 0, (void *)0xdeadbeef,
-                            Thread::JOINABLE);
+    t      = Thread::create(t14_p1, STACK_SMALL, 0,
+                            reinterpret_cast<void *>(0xdeadbeef), Thread::JOINABLE);
     t->terminate();
     Thread::sleep(10);
     if (Thread::exists(t) == false)
@@ -2577,7 +2577,7 @@ pthread_mutex_t t16_m1 = PTHREAD_MUTEX_INITIALIZER;
 
 void *t16_p2(void *argv)
 {
-    pthread_mutex_t *mutex = (pthread_mutex_t *)argv;
+    pthread_mutex_t *mutex = reinterpret_cast<pthread_mutex_t *>(argv);
     if (pthread_mutex_lock(mutex) != 0)
         fail("mutex_lock (2)");
     t16_v1 = true;
@@ -2697,7 +2697,8 @@ static void test_16()
     //
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, STACK_SMALL);
-    if (pthread_create(&thread, &attr, t16_p1, (void *)0xdeadbeef) != 0)
+    if (pthread_create(&thread, &attr, t16_p1,
+                       reinterpret_cast<void *>(0xdeadbeef)) != 0)
         fail("pthread_create (2)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -3694,7 +3695,7 @@ static void test_22()
 
         y = 10;
         atomicAdd(&x, -5);
-        if (y != 5)
+        if (y != 5)  // cppcheck-suppress knownConditionTrueFalse
             error = true;
 
         delayMs(5);  // Wait to check that interrupts are disabled
@@ -4229,7 +4230,8 @@ void dmaMemcpy(void *dest, const void *source, int size, void *slackBeforeDest,
     DMA2_Stream1->PAR  = reinterpret_cast<unsigned int>(source);
     DMA2_Stream1->M0AR = reinterpret_cast<unsigned int>(dest);
     DMA2_Stream1->CR   = 0               // Select channel 0
-                       | DMA_SxCR_MINC   // Increment RAM pointer
+                       | DMA_SxCR_MINC   //
+                                         // Increment RAM pointer
                        | DMA_SxCR_PINC   // Increment RAM pointer
                        | DMA_SxCR_DIR_1  // Memory to memory
                        | DMA_SxCR_TCIE   // Interrupt on transfer complete
@@ -5011,9 +5013,9 @@ static void fs_test_4()
 const int nThreads = 8;
 bool flags[nThreads];
 
-static int throwable(std::vector<int> &v) __attribute__((noinline));
+static int throwable(const std::vector<int> &v) __attribute__((noinline));
 // cppcheck-suppress containerOutOfBounds
-static int throwable(std::vector<int> &v) { return v.at(10); }
+static int throwable(const std::vector<int> &v) { return v.at(10); }
 
 static void test(void *argv)
 {
@@ -5027,7 +5029,7 @@ static void test(void *argv)
             throwable(v);
             fail("Exception not thrown");
         }
-        catch (std::out_of_range &e)
+        catch (const std::out_of_range &e)
         {
             flags[n] = true;
         }
@@ -5178,7 +5180,7 @@ static void benchmark_3()
     const char FILENAME[]      = "/sd/speed.txt";
     const unsigned int BUFSIZE = 1024;
     char *buf                  = new char[BUFSIZE];
-    memset((void *)buf, '0', BUFSIZE);
+    memset(reinterpret_cast<void *>(buf), '0', BUFSIZE);
     FILE *f;
     if ((f = fopen(FILENAME, "w")) == NULL)
     {
@@ -5417,7 +5419,7 @@ bool isSignaled(int exit_code)
 void mpuTest1()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64100000;
+    unsigned int *addr = reinterpret_cast<unsigned int *>(0x64100000);
     iprintf("Executing MPU Test 1...\n");
     ec = runProgram(test1_elf, test1_elf_len);
     if (isSignaled(ec))
@@ -5440,7 +5442,7 @@ void mpuTest1()
 void mpuTest2()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64100200;
+    unsigned int *addr = reinterpret_cast<unsigned int *>(0x64100200);
     iprintf("Executing MPU Test 2...\n");
     ec = runProgram(test2_elf, test2_elf_len);
     if (isSignaled(ec))
@@ -5459,7 +5461,7 @@ void mpuTest2()
 void mpuTest3()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64100200;
+    unsigned int *addr = reinterpret_cast<unsigned int *>(0x64100200);
     iprintf("Executing MPU Test 3...\n");
     ec = runProgram(test3_elf, test3_elf_len);
     if (isSignaled(ec))
@@ -5495,7 +5497,7 @@ void mpuTest4()
 void mpuTest5()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64101000;
+    unsigned int *addr = reinterpret_cast<unsigned int *>(0x64101000);
     iprintf("Executing MPU Test 5...\n");
     ec = runProgram(test5_elf, test5_elf_len);
     if (isSignaled(ec))
@@ -5516,7 +5518,7 @@ void mpuTest5()
 void mpuTest6()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64101404;
+    unsigned int *addr = reinterpret_cast<unsigned int *>(0x64101404);
     iprintf("Executing MPU Test 6...\n");
     ec = runProgram(test6_elf, test6_elf_len);
     if (isSignaled(ec))
@@ -5567,7 +5569,7 @@ void mpuTest8()
     // We create two processes. The first goes to sleep for 2 seconds,
     // while the second process tries to access the data region of the
     // first.
-    unsigned int *addr = (unsigned int *)0x64104004;
+    unsigned int *addr = reinterpret_cast<unsigned int *>(0x64104004);
     iprintf("Executing MPU Test 8...\n");
     ElfProgram prog1(reinterpret_cast<const unsigned int *>(test8_1_elf),
                      test8_1_elf_len);

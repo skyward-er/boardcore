@@ -204,28 +204,29 @@ int main()
 
     FailingSensor failigS;  // must not be initialized and not sampled
 
-    SensorManager sm({{/*Sensor=*/&s1,
-                       {/*ID=*/"s1",
-                        /*Freq=*/1000,
-                        /*Callback=*/[]() { cout << "Callback s1!" << endl; },
-                        /*Enabled=*/true}},
-                      {/*Sensor=*/&s2,
-                       {/*ID=*/"s2",
-                        /*Freq=*/1000,
-                        /*Callback=*/[]() { cout << "Callback s2!" << endl; },
-                        /*Enabled=*/true}},
-                      {/*Sensor=*/&filter,
-                       {/*ID=*/"filter",
-                        /*Freq=*/2000,
-                        /*Callback=*/
-                        []() { cout << "Callback filter!" << endl; },
-                        /*Enabled=*/true}},
-                      {/*Sensor=*/&failigS,
-                       {/*ID=*/"failing",
-                        /*Freq=*/3000,
-                        /*Callback=*/
-                        []() { cout << "Callback failing sensor!" << endl; },
-                        /*Enabled=*/true}}});
+    SensorManager sm(
+        {{/*Sensor=*/&s1,
+          SensorInfo(/*ID=*/"s1",
+                     /*Period=*/1000,
+                     /*Callback=*/[]() { cout << "Callback s1!" << endl; },
+                     /*Enabled=*/true)},
+         {/*Sensor=*/&s2,
+          SensorInfo(/*ID=*/"s2",
+                     /*Period=*/1000,
+                     /*Callback=*/[]() { cout << "Callback s2!" << endl; },
+                     /*Enabled=*/true)},
+         {/*Sensor=*/&filter,
+          SensorInfo(/*ID=*/"filter",
+                     /*Period=*/2000,
+                     /*Callback=*/
+                     []() { cout << "Callback filter!" << endl; },
+                     /*Enabled=*/true)},
+         {/*Sensor=*/&failigS,
+          SensorInfo(/*ID=*/"failing",
+                     /*Period=*/3000,
+                     /*Callback=*/
+                     []() { cout << "Callback failing sensor!" << endl; },
+                     /*Enabled=*/true)}});
 
     sm.start();
 

@@ -120,9 +120,7 @@ struct EnergyScanData
     long long timestamp;
     int channelData[30];
 
-    EnergyScanData() = default;
-
-    EnergyScanData(long long ts, const array<int, 30> scan)
+    explicit EnergyScanData(long long ts, const array<int, 30> scan)
     {
         for (int i = 0; i < 30; i++)
         {

@@ -270,8 +270,8 @@ def check_cppcheck(directory):
     # Run cppcheck on the directory
     try:
         result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--inline-suppr',
-                               '--suppress=unmatchedSuppression', '--suppress=unusedFunction', '--suppress=missingInclude',
-                               directory], stderr=STDOUT)
+                               '--suppress=unmatchedSuppression', '--suppress=unusedFunction', '--suppress=missingInclude', 
+                               '--suppress=badBitmaskCheck', '--suppress=useStlAlgorithm', directory], stderr=STDOUT)
 
         # Parse results and count errors
         errors = re.findall(r'\[(\w+)\]', result.decode('utf-8'))

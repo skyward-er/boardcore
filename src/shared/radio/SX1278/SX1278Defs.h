@@ -44,13 +44,15 @@ constexpr float FSTEP = 61.03515625;
 
 inline SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
 {
-    SPIBusConfig bus_config = {};
-    bus_config.clockDivider = clock_divider;
-    bus_config.mode         = SPI::Mode::MODE_0;
-    bus_config.bitOrder     = SPI::Order::MSB_FIRST;
-    bus_config.byteOrder    = SPI::Order::MSB_FIRST;
-    bus_config.writeBit     = SPI::WriteBit::INVERTED;
-    bus_config.csHoldTimeUs = 3;
+
+    SPIBusConfig bus_config(clock_divider,
+                            SPI::Mode::MODE_0,        // mode
+                            SPI::Order::MSB_FIRST,    // bitOrder
+                            SPI::Order::MSB_FIRST,    // byteOrder
+                            SPI::WriteBit::INVERTED,  // writeBit
+                            0,                        // csSetupTimeUs
+                            3                         // csHoldTimeUs
+    );
 
     return bus_config;
 }

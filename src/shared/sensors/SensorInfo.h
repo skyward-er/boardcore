@@ -43,7 +43,7 @@ struct SensorInfo
     bool isEnabled;
     bool isInitialized;
 
-    SensorInfo(
+    explicit SensorInfo(
         const std::string id = "", uint32_t period = 0,
         std::function<void()> callback = []() {}, bool isEnabled = true);
 

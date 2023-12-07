@@ -71,12 +71,10 @@ void Servo::setPosition(float position, bool limited)
 
     float pulse = minPulse + (maxPulse - minPulse) * position;
 
-    float dutyCycle = pulse * frequency / 1000000.0f;
+    dutyCycle = pulse * frequency / 1000000.0f;
 
 #ifndef COMPILE_FOR_HOST
     pwm.setDutyCycle(pwmChannel, dutyCycle);
-#else
-    this->dutyCycle = dutyCycle;
 #endif
 }
 
@@ -91,9 +89,7 @@ void Servo::setPosition360Deg(float degrees) { setPosition(degrees / 360); }
 float Servo::getPosition()
 {
 #ifndef COMPILE_FOR_HOST
-    float dutyCycle = pwm.getDutyCycle(pwmChannel);
-#else
-    float dutyCycle = this->dutyCycle;
+    dutyCycle = pwm.getDutyCycle(pwmChannel);
 #endif
 
     float pulse = dutyCycle * 1000000.0f / frequency;

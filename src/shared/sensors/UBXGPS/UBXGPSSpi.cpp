@@ -276,12 +276,12 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             }
             else if (c == UBXFrame::WAIT)
             {
-                i = 0;
                 if (!waiting)
                 {
-                    waiting = true;
-                    // LOG_DEBUG(logger, "Device is waiting...");
+                    //  LOG_DEBUG(logger, "Device is waiting...");
                 }
+                i       = 0;
+                waiting = true;
             }
             else
             {

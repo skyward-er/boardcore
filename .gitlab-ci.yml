@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-image: registry.skywarder.eu/avn/swd/skyward-boardcore/miosix:main
+image: registry.skywarder.eu/avn/swd/skyward-boardcore/miosix:dev-ci-update
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive

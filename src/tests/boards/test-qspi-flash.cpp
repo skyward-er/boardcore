@@ -74,7 +74,8 @@ int main()
     flash_io3.alternateFunction(9);
     flash_io3.speed(Speed::_100MHz);
 
-    ClockUtils::enablePeripheralClock((QUADSPI_TypeDef*)QSPI_BASE);
+    ClockUtils::enablePeripheralClock(
+        reinterpret_cast<QUADSPI_TypeDef*>(QSPI_BASE));
 
     RCC_SYNC();
 

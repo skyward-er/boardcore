@@ -66,11 +66,7 @@ int main()
 
     {
         scanf("%c", &c);
-        c = 'c';
 
-        test.moveDown();
-        test.selectSetting();
-        test.openMenu();
         if (c == 'd')
         {
             test.moveDown();
