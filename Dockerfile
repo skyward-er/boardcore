@@ -15,6 +15,7 @@ RUN apt-get install -y ninja-build
 RUN apt-get install -y ccache
 RUN apt-get install -y clang-format
 RUN apt-get install -y cppcheck
+RUN apt-get install -y doxygen
 
 # Setup Miosix
 ADD https://miosix.org/toolchain/MiosixToolchainInstaller.run MiosixToolchainInstaller.run
