@@ -24,8 +24,6 @@
 
 #include <drivers/timer/TimestampTimer.h>
 
-#include <iostream>
-
 namespace Boardcore
 {
 
@@ -42,7 +40,7 @@ bool VN100::init()
     if (isInit)
     {
         lastError = SensorErrors::ALREADY_INIT;
-        LOG_WARN(logger, "Sensor vn100 already initilized");
+        LOG_WARN(logger, "Sensor vn100 already initialized");
         return true;
     }
 
@@ -153,7 +151,7 @@ bool VN100::closeAndReset()
     if (!isInit)
     {
         lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger, "Sensor vn100 already not initilized");
+        LOG_WARN(logger, "Sensor vn100 already not initialized");
         return true;
     }
 
@@ -183,6 +181,14 @@ bool VN100::selfTest()
 
 VN100Data VN100::sampleImpl()
 {
+    // Sensor not init
+    if (!isInit)
+    {
+        lastError = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Sensor vn100 not initialized");
+        return VN100Data{};
+    }
+
     usart.writeString(askSampleCommand);
 
     // "wait logic": it might take some time to receive the answer
@@ -199,7 +205,7 @@ VN100Data VN100::sampleImpl()
         if (usart.read(&initByte, 1) && initByte == 0xFA)
         {
             // Reading all the message directly into the struct
-            if (usart.read(&binData, sizeof(binaryData)))
+            if (usart.read(&binData, sizeof(BinaryData)))
             {
                 VN100Data vnData = buildBinaryData(initTime);
                 lastError        = NO_ERRORS;
@@ -326,7 +332,7 @@ bool VN100::setCrc(bool waitResponse)
 
 bool VN100::selfTestImpl()
 {
-    char modelNumber[]          = "VN-100";
+    const char modelNumber[]    = "VN-100";
     const int modelNumberOffset = 10;
 
     // Check the init status
@@ -476,13 +482,13 @@ bool VN100::recvStringCommand(char *command, int maxLength)
     // Terminate the string
     command[i] = '\0';
 
-    // Assing the length
+    // Assign the length
     recvStringLength = i - 1;
 
     return true;
 }
 
-bool VN100::verifyChecksum(char *command, int length)
+bool VN100::verifyChecksum(const char *command, const int length)
 {
     int checksumOffset = 0;
 
@@ -540,7 +546,7 @@ bool VN100::verifyChecksum(char *command, int length)
     return true;
 }
 
-uint8_t VN100::calculateChecksum8(uint8_t *message, int length)
+uint8_t VN100::calculateChecksum8(const uint8_t *message, const int length)
 {
     int i;
     uint8_t result = 0x00;
@@ -555,7 +561,7 @@ uint8_t VN100::calculateChecksum8(uint8_t *message, int length)
     return result;
 }
 
-uint16_t VN100::calculateChecksum16(uint8_t *message, int length)
+uint16_t VN100::calculateChecksum16(const uint8_t *message, const int length)
 {
     int i;
     uint16_t result = 0x0000;

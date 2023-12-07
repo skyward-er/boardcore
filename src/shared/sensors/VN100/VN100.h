@@ -103,7 +103,7 @@ private:
     /**
      * @brief Struct used to store the binary data received from the sensor.
      */
-    struct __attribute__((packed)) binaryData
+    struct __attribute__((packed)) BinaryData
     {
         uint8_t group;
         uint16_t group1;
@@ -219,7 +219,7 @@ private:
      *
      * @return True if operation succeeded.
      */
-    bool verifyChecksum(char *command, int maxLength);
+    bool verifyChecksum(const char *command, const int maxLength);
 
     /**
      * @brief Calculate the 8bit checksum on the given array.
@@ -229,7 +229,7 @@ private:
      *
      * @return The 8 bit checksum.
      */
-    uint8_t calculateChecksum8(uint8_t *message, int length);
+    uint8_t calculateChecksum8(const uint8_t *message, const int length);
 
     /**
      * @brief Calculate the 16bit array on the given array.
@@ -239,14 +239,14 @@ private:
      *
      * @return The 16 bit CRC16-CCITT error check.
      */
-    uint16_t calculateChecksum16(uint8_t *message, int length);
+    uint16_t calculateChecksum16(const uint8_t *message, const int length);
 
     /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
     USART &usart;
-    int baudRate;
+    const int baudRate;
 
     CRCOptions crc;
     bool isInit = false;
@@ -255,12 +255,12 @@ private:
      * @brief This variable contains the data received from the sample, before
      * being converted to VN100Data.
      */
-    binaryData binData;
+    BinaryData binData;
 
     /**
      * @brief Max dimension of a message from the sensor.
      */
-    static const unsigned int recvStringMaxDimension = 200;
+    static const uint8_t recvStringMaxDimension = 200;
 
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
@@ -269,14 +269,14 @@ private:
     char recvString[recvStringMaxDimension] = "";
 
     /**
+     * @brief Actual strlen() of the recvString.
+     */
+    uint8_t recvStringLength = 0;
+
+    /**
      * @brief Pre computed command used to ask a binary sample to the sensor.
      */
     const char *askSampleCommand = "";
-
-    /**
-     * @brief Actual strlen() of the recvString.
-     */
-    unsigned int recvStringLength = 0;
 
     PrintLogger logger = Logging::getLogger("vn100");
 };
