@@ -106,19 +106,17 @@ bool InternalADC::selfTest() { return true; }
 
 InternalADCData InternalADC::sampleImpl()
 {
-    InternalADCData newData;
-    newData.timestamp = TimestampTimer::getTimestamp();
+    InternalADCData newData(TimestampTimer::getTimestamp());
 
     for (int i = 0; i < CH16; i++)
     {
+        float voltage = 0;
         if (channelsEnabled[i])
         {
-            newData.voltage[i] = readChannel(static_cast<Channel>(i));
-            newData.voltage[i] =
-                newData.voltage[i] *
-                V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
-                / ADC_RESOLUTION;
+            voltage = readChannel(static_cast<Channel>(i)) * V_DDA_VOLTAGE /
+                      ADC_RESOLUTION;
         }
+        newData.voltage[i] = voltage;
     }
 
     /**

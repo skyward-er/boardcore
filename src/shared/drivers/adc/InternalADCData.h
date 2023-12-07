@@ -34,7 +34,13 @@ struct InternalADCData
     float temperature;
     float vBat;
 
-    InternalADCData() {}
+    explicit InternalADCData(uint64_t timestamp = 0, float* voltage = nullptr,
+                             float temperature = 0, float vBat = 0)
+        : timestamp(timestamp), temperature(temperature), vBat(vBat)
+    {
+        if (voltage != nullptr)
+            memcpy(this->voltage, voltage, 16);
+    }
 
     static std::string header()
     {

@@ -55,11 +55,11 @@ struct UBXFrame
     static constexpr uint8_t PREAMBLE[]          = {0xb5, 0x62};
     static constexpr uint8_t WAIT                = 0xff;
 
-    uint8_t preamble[2]                 = {0, 0};
+    uint8_t preamble[2]                 = {0};
     uint16_t message                    = 0;
     uint16_t payloadLength              = 0;
-    uint8_t payload[MAX_PAYLOAD_LENGTH] = {};
-    uint8_t checksum[2]                 = {0, 0};
+    uint8_t payload[MAX_PAYLOAD_LENGTH] = {0};
+    uint8_t checksum[2]                 = {0};
 
     UBXFrame() = default;
 

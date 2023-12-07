@@ -42,7 +42,7 @@ namespace Xbee
 
 Xbee::Xbee(SPIBusInterface& bus, GpioType cs, GpioType attn, GpioType rst,
            long long txTimeout)
-    : Xbee(bus, {}, cs, attn, rst, txTimeout)
+    : Xbee(bus, SPIBusConfig(), cs, attn, rst, txTimeout)
 {
     spiXbee.config.clockDivider = SPI::ClockDivider::DIV_128;
 }

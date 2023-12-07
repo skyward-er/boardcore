@@ -325,7 +325,8 @@ BME280I2C::BME280Config BME280I2C::readConfiguration()
 {
     BME280Config tmp;
 
-    if (bus.readFromRegister(slaveConfig, REG_CTRL_HUM, (uint8_t *)&tmp, 4))
+    if (bus.readFromRegister(slaveConfig, REG_CTRL_HUM,
+                             reinterpret_cast<uint8_t *>(&tmp), 4))
     {
         return tmp;
     }
@@ -339,16 +340,17 @@ BME280I2C::BME280Config BME280I2C::readConfiguration()
 void BME280I2C::loadCompensationParameters()
 {
     // Read first batch of compensation parameters
-    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0, (uint8_t *)&compParams,
-                              25))
+    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0,
+                              reinterpret_cast<uint8_t *>(&compParams), 25))
     {
         lastError = SensorErrors::BUS_FAULT;
         return;
     }
 
     // Read second batch of compensation parameters
-    if (!bus.readFromRegister(slaveConfig, REG_CALIB_26,
-                              (uint8_t *)&compParams.bits.dig_H2, 7))
+    if (!bus.readFromRegister(
+            slaveConfig, REG_CALIB_26,
+            reinterpret_cast<uint8_t *>(&compParams.bits.dig_H2), 7))
     {
         lastError = SensorErrors::BUS_FAULT;
         return;

@@ -253,7 +253,7 @@ BMP280::BMP280Config BMP280::readConfiguration()
     BMP280Config tmp;
     SPITransaction transaction(spiSlave);
 
-    transaction.readRegisters(REG_STATUS, (uint8_t *)&tmp, 3);
+    transaction.readRegisters(REG_STATUS, reinterpret_cast<uint8_t*>(&tmp), 3);
 
     return tmp;
 }
@@ -264,7 +264,8 @@ void BMP280::loadCompensationParameters()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.readRegisters(REG_CALIB_0, (uint8_t *)&compParams, 25);
+        transaction.readRegisters(REG_CALIB_0,
+                                  reinterpret_cast<uint8_t*>(&compParams), 25);
     }
 }
 

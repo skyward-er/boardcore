@@ -61,7 +61,7 @@ TEST_CASE("Pitot Test")
 
     pitot.setReferenceValues(references);
 
-    for (int i = 0; i < SAMPLES_N; i++)
+    for (unsigned int i = 0; i < SAMPLES_N; i++)
     {
         pitot.sample();
         if (pitot.getLastSample().airspeed != Approx(results[i]).epsilon(0.01))

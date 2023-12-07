@@ -38,7 +38,7 @@ H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
                        H3LIS331DLDefs::OutputDataRate odr,
                        H3LIS331DLDefs::BlockDataUpdate bdu,
                        H3LIS331DLDefs::FullScaleRange fs)
-    : H3LIS331DL(spiBus, cs, {}, odr, bdu, fs)
+    : H3LIS331DL(spiBus, cs, SPIBusConfig(), odr, bdu, fs)
 {
 }
 

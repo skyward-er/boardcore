@@ -278,7 +278,8 @@ BMP280I2C::BMP280Config BMP280I2C::readConfiguration()
 {
     BMP280Config tmp;
 
-    if (bus.readFromRegister(slaveConfig, REG_STATUS, (uint8_t *)&tmp, 3))
+    if (bus.readFromRegister(slaveConfig, REG_STATUS,
+                             reinterpret_cast<uint8_t *>(&tmp), 3))
     {
         return tmp;
     }
@@ -292,8 +293,8 @@ BMP280I2C::BMP280Config BMP280I2C::readConfiguration()
 void BMP280I2C::loadCompensationParameters()
 {
     // Read first batch of compensation parameters
-    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0, (uint8_t *)&compParams,
-                              25))
+    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0,
+                              reinterpret_cast<uint8_t *>(&compParams), 25))
     {
         lastError = SensorErrors::BUS_FAULT;
         return;

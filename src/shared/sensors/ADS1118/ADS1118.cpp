@@ -216,7 +216,8 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     transferData = writeData;
     {
         SPITransaction transaction(spiSlave);
-        transaction.transfer((uint8_t *)&transferData, configCheck ? 4 : 2);
+        transaction.transfer(reinterpret_cast<uint8_t *>(&transferData),
+                             configCheck ? 4 : 2);
     }
 
     // If enabled and a valid configuration has just been written, check the

@@ -69,7 +69,7 @@ public:
            FullScaleRange range = FullScaleRange::FS_250,
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
            uint8_t cutoffFreq   = 0x03)
-        : L3GD20(bus, cs, {}, range, odr, cutoffFreq)
+        : L3GD20(bus, cs, SPIBusConfig(), range, odr, cutoffFreq)
     {
         // Configure SPI
         spislave.config.clockDivider = SPI::ClockDivider::DIV_32;

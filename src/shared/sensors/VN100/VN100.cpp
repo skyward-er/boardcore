@@ -69,8 +69,10 @@ bool VN100::init()
         return false;
     }
 
+    // cppcheck-suppress knownConditionTrueFalse
     if (!configDefaultSerialPort())
     {
+        // TODO: We can't know if the config was successful or not
         LOG_ERR(logger, "Unable to config the default vn100 serial port");
         return false;
     }
@@ -608,11 +610,18 @@ PressureData VN100::samplePressure()
 
 bool VN100::sendStringCommand(std::string command)
 {
+    // TODO: made to silence cppcheck as we have no way to know if a message has
+    // been really sent using the uart interface
+    if (!isInit)
+    {
+        return false;
+    }
+
     if (crc == CRCOptions::CRC_ENABLE_8)
     {
         char checksum[4];  // 2 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum8((command.c_str()), command.length()), checksum,
+        itoa(calculateChecksum8(command.c_str(), command.length()), checksum,
              16);
         checksum[2] = '\n';
         checksum[3] = '\0';
@@ -623,7 +632,7 @@ bool VN100::sendStringCommand(std::string command)
     {
         char checksum[6];  // 4 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum16((command.c_str()), command.length()), checksum,
+        itoa(calculateChecksum16(command.c_str(), command.length()), checksum,
              16);
         checksum[4] = '\n';
         checksum[5] = '\0';

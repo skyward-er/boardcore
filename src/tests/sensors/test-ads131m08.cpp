@@ -59,7 +59,7 @@ int main()
 
     // Device initialization
     SPIBus spiBus(SPI4);
-    ADS131M08 ads131(spiBus, csPin, {}, config);
+    ADS131M08 ads131(spiBus, csPin, SPIBusConfig(), config);
 
     ads131.init();
 

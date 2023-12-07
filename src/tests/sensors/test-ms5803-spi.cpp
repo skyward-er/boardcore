@@ -39,7 +39,8 @@ int main()
     SPIBus spiBus(SPI1);
     SPIBusConfig config;
     config.clockDivider = SPI::ClockDivider::DIV_32;
-    MS5803 sensor(spiBus, miosix::sensors::ms5803::cs::getPin(), {}, 10);
+    MS5803 sensor(spiBus, miosix::sensors::ms5803::cs::getPin(), SPIBusConfig(),
+                  10);
 
     Thread::sleep(100);
 

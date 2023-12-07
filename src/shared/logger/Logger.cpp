@@ -163,7 +163,7 @@ bool Logger::isStarted() const { return started; }
 
 void Logger::logStats()
 {
-    log(getStats());
+    log(getStats());  // cppcheck-suppress ignoredReturnValue
     resetStats();
 }
 

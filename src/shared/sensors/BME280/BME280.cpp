@@ -289,7 +289,8 @@ BME280::BME280Config BME280::readConfiguration()
     BME280Config tmp;
     SPITransaction transaction(spiSlave);
 
-    transaction.readRegisters(REG_CTRL_HUM, (uint8_t *)&tmp, 4);
+    transaction.readRegisters(REG_CTRL_HUM, reinterpret_cast<uint8_t*>(&tmp),
+                              4);
 
     return tmp;
 }
@@ -300,15 +301,17 @@ void BME280::loadCompensationParameters()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.readRegisters(REG_CALIB_0, (uint8_t *)&compParams, 25);
+        transaction.readRegisters(REG_CALIB_0,
+                                  reinterpret_cast<uint8_t*>(&compParams), 25);
     }
 
     // Read second batch of compensation parameters
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.readRegisters(REG_CALIB_26,
-                                  (uint8_t *)&compParams.bits.dig_H2, 7);
+        transaction.readRegisters(
+            REG_CALIB_26, reinterpret_cast<uint8_t*>(&compParams.bits.dig_H2),
+            7);
     }
 
     // Adjust unaligned data

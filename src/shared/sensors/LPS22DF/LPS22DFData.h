@@ -32,8 +32,8 @@ struct LPS22DFData : public PressureData, public TemperatureData
     LPS22DFData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
     LPS22DFData(uint64_t timestamp, float pressure, float temperature)
-        : PressureData{timestamp, pressure}, TemperatureData{timestamp,
-                                                             temperature}
+        : PressureData{timestamp, pressure},
+          TemperatureData{timestamp, temperature}
     {
     }
 

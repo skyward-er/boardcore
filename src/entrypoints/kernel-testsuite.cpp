@@ -265,9 +265,9 @@ int main()
                 process_test_process_ret();
                 process_test_file_concurrency();
                 ledOff();
-#else   //#ifdef WITH_PROCESSES
+#else   // #ifdef WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
-#endif  //#ifdef WITH_PROCESSES
+#endif  // #ifdef WITH_PROCESSES
                 break;
             case 'y':
                 ledOn();
@@ -337,9 +337,9 @@ int main()
                 mpuTest9();
                 mpuTest10();
                 ProcessPool::instance().deallocate(m);
-#else   //#ifdef WITH_PROCESSES
+#else   // #ifdef WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
-#endif  //#ifdef WITH_PROCESSES
+#endif  // #ifdef WITH_PROCESSES
                 ledOff();
                 Thread::setPriority(0);
                 break;
@@ -2738,7 +2738,8 @@ static void test_16()
     if (pthread_mutex_lock(&t16_m1) != 0)
         fail("mutex lock");
     t16_v1 = false;
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&t16_m1) != 0)
+    if (pthread_create(&thread, NULL, t16_p2,
+                       reinterpret_cast<void *>(&t16_m1)) != 0)
         fail("pthread_create (4)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -2757,7 +2758,8 @@ static void test_16()
     Thread::sleep(10);
     // testing trylock, after the thread is created it will lock the mutex
     // for 50ms
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&t16_m1) != 0)
+    if (pthread_create(&thread, NULL, t16_p2,
+                       reinterpret_cast<void *>(&t16_m1)) != 0)
         fail("pthread_create (5)");
     Thread::sleep(10);
     if (pthread_mutex_trylock(&t16_m1) == 0)
@@ -2775,7 +2777,8 @@ static void test_16()
     if (pthread_mutex_lock(&mutex) != 0)
         fail("mutex lock (4)");
     t16_v1 = false;
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&mutex) != 0)
+    if (pthread_create(&thread, NULL, t16_p2,
+                       reinterpret_cast<void *>(&mutex)) != 0)
         fail("pthread_create (6)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -2793,7 +2796,8 @@ static void test_16()
     pthread_join(thread, NULL);
     Thread::sleep(10);
     // testing pthread_mutex_destroy
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&mutex) != 0)
+    if (pthread_create(&thread, NULL, t16_p2,
+                       reinterpret_cast<void *>(&mutex)) != 0)
         fail("pthread_create (7)");
     t = toThread(thread);
     if (Thread::exists(t) == false)

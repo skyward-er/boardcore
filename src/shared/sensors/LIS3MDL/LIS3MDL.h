@@ -123,7 +123,7 @@ public:
     };
 
     LIS3MDL(SPIBusInterface& bus, miosix::GpioPin pin,
-            SPIBusConfig spiConfig = {}, Config config = {});
+            SPIBusConfig spiConfig = SPIBusConfig(), Config config = {});
 
     bool init() override;
 

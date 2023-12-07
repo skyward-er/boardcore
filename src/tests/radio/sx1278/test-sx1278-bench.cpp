@@ -113,7 +113,7 @@ void recvLoop()
     {
         TestMsg msg = {};
 
-        sx1278->receive((uint8_t *)&msg, sizeof(msg));
+        sx1278->receive(reinterpret_cast<uint8_t *>(&msg), sizeof(msg));
         if (msg.validate())
         {
             stats.recv_count++;
@@ -142,7 +142,7 @@ void sendLoop()
         TestMsg msg = {};
         msg.generate();
 
-        sx1278->send((uint8_t *)&msg, sizeof(msg));
+        sx1278->send(reinterpret_cast<uint8_t *>(&msg), sizeof(msg));
         stats.sent_count++;
 
         uint32_t cur = TimestampTimer::getTimestamp();

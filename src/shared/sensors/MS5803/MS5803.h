@@ -73,7 +73,8 @@ public:
     static constexpr uint8_t TIMEOUT = 5;
 
     MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
-           SPIBusConfig spiConfig = {}, uint16_t temperatureDivider = 1);
+           SPIBusConfig spiConfig      = SPIBusConfig(),
+           uint16_t temperatureDivider = 1);
 
     bool init() override;
 
