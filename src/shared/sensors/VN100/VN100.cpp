@@ -136,12 +136,20 @@ bool VN100::setBinaryOutput()
     // Send the command
     usart.writeString(setBinarySampleCommand);
 
-    // Verify that the command is understood by the sensor
+    // Get the response from the sensor
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
         LOG_WARN(logger, "Cannot set binary output");
         return false;
     }
+
+    // Verify if the sensor replied with an error
+    if (strncmp(recvString, errorString.c_str(), errorString.length()) == 0)
+    {
+        LOG_WARN(logger, "Cannot set binary output");
+        return false;
+    }
+
     return true;
 }
 
@@ -207,6 +215,16 @@ VN100Data VN100::sampleImpl()
             // Reading all the message directly into the struct
             if (usart.read(&binData, sizeof(BinaryData)))
             {
+                if (crc != CRCOptions::CRC_NO &&
+                    calculateChecksum16(reinterpret_cast<uint8_t *>(&binData),
+                                        sizeof(BinaryData)) != 0)
+                {
+                    // Data received from the sensor has an invalid checksum
+                    // Discard data
+                    lastError = SensorErrors::BUS_FAULT;
+                    return lastSample;
+                }
+
                 VN100Data vnData = buildBinaryData(initTime);
                 lastError        = NO_ERRORS;
                 return vnData;

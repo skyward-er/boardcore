@@ -278,6 +278,11 @@ private:
      */
     const char *askSampleCommand = "";
 
+    /**
+     * @brief The prefix of an error response from the sensor.
+     */
+    const std::string errorString = "$VNERR";
+
     PrintLogger logger = Logging::getLogger("vn100");
 };
 }  // namespace Boardcore
