@@ -34,10 +34,7 @@ namespace Pressure
 {
 
 template <class Ratio = std::ratio<1>>
-class Pressure : public Unit<Ratio>
-{
-    using Unit<Ratio>::Unit;
-};
+using Pressure = Unit<UnitKind::Pressure, Ratio>;
 
 template <class ToPressure, class FromPressure>
 ToPressure pressure_cast(FromPressure const &from)

@@ -34,10 +34,7 @@ namespace Length
 {
 
 template <class Ratio = std::ratio<1>>
-class Length : public Unit<Ratio>
-{
-    using Unit<Ratio>::Unit;
-};
+using Length = Unit<UnitKind::Length, Ratio>;
 
 template <class ToLength, class FromLength>
 ToLength length_cast(FromLength const &from)
