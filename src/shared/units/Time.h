@@ -35,9 +35,9 @@ namespace Time
 {
 
 template <class Ratio = std::ratio<1>>
-class Time : public Unit<Ratio>
+class Time : public Unit<UnitKind::Time, Ratio>
 {
-    using Unit<Ratio>::Unit;
+    using Unit<UnitKind::Time, Ratio>::Unit;
 
 public:
     std::chrono::duration<float> chrono() const
