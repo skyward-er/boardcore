@@ -19,10 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #pragma once
-#include <utils/Registry/RegistryFrontend.h>
 namespace Boardcore
 {
 
-}
+/**
+ * This is an empty structure from which the datatype structures inherit from.
+ * It does define getting and setting methods for exploring its state.
+ * This methods will be redefined by the actual data struct.
+ */
+template <typename VAL_T, typename ENUM>
+struct RootTypeStructure
+{
+    VAL_T value;
+    ENUM index;
+};
+
+/**
+ * The struct for data type of floats
+ */
+template <typename ENUM>
+struct FloatType : RootTypeStructure<float, ENUM>
+{
+};
+
+};  // namespace Boardcore
