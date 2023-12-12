@@ -32,14 +32,20 @@ namespace Boardcore
 namespace Units
 {
 
-template <class Ratio = std::ratio<1>>
+enum class UnitKind
+{
+    Angle,
+    Length
+};
+
+template <UnitKind Kind, class Ratio = std::ratio<1>>
 // Base class to implement custom measurement units logic.
 class Unit
 {
 public:
     Unit(float val) : _value(val){};
     template <class FromRatio>
-    constexpr explicit Unit(Unit<FromRatio> const &from)
+    constexpr explicit Unit(Unit<Kind, FromRatio> const &from)
         : _value(from.template value<Ratio>())
     {
     }
@@ -67,10 +73,11 @@ private:
 };
 
 // Sum, Subtraction, Multiplication, Division
-template <class DerivedUnit>
-constexpr auto operator+(const DerivedUnit &lhs, const DerivedUnit &rhs)
+template <UnitKind Kind, class Ratio>
+constexpr auto operator+(const Unit<Kind, Ratio> &lhs,
+                         const Unit<Kind, Ratio> &rhs)
 {
-    return DerivedUnit(lhs.template value() + rhs.template value());
+    return Unit(lhs.template value() + rhs.template value());
 }
 
 template <class DerivedUnit>

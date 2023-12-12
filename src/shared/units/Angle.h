@@ -34,10 +34,7 @@ namespace Angle
 {
 
 template <class Ratio = std::ratio<1>>
-class Angle : public Unit<Ratio>
-{
-    using Unit<Ratio>::Unit;
-};
+using Angle = Unit<UnitKind::Angle, Ratio>;
 
 using Degree = Angle<>;  // Angle in degrees
 using Radian =           // Angle in radians
