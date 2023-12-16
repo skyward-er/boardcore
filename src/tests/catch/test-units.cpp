@@ -20,9 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include <units/Acceleration.h>
 #include <units/Angle.h>
 #include <units/Length.h>
 #include <units/Pressure.h>
+#include <units/Speed.h>
 #include <units/Time.h>
 #include <utils/Debug.h>
 
@@ -45,6 +47,10 @@ TEST_CASE("Units Test")
     using namespace Units::Length;
     using namespace Units::Pressure;
     using namespace Units::Time;
+    using namespace Units::Speed;
+    using namespace Units::Acceleration;
+
+    Meter len = 1_m;
 
     // Verify ratios
     REQUIRE(Radian(PI) == angle_cast<Radian>(Degree(180)));
@@ -62,10 +68,12 @@ TEST_CASE("Units Test")
     REQUIRE(Millisecond(1000) == time_cast<Millisecond>(Second(1)));
     REQUIRE(Minute(1) == time_cast<Minute>(Second(60)));
     REQUIRE(Hour(1) == time_cast<Hour>(Second(3600)));
-    REQUIRE(Day(1) == time_cast<Day>(Second(86400)));
-    REQUIRE(Week(1) == time_cast<Week>(Second(604800)));
-    REQUIRE(Month(1) == time_cast<Month>(Second(2628000)));
-    REQUIRE(Year(1) == time_cast<Year>(Second(31536000)));
+
+    REQUIRE(MeterPerSecond(1) ==
+            speed_cast<MeterPerSecond>(KilometerPerHour(3.6)));
+
+    REQUIRE(MeterPerSecondSquared(9.81) ==
+            acceleration_cast<MeterPerSecondSquared>(G(1)));
 
     // Test operators
     REQUIRE(eq(Radian(2 * PI), Radian(PI) + Radian(PI)));

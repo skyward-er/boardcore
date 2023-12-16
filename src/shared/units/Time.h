@@ -35,21 +35,17 @@ namespace Time
 {
 
 template <class Ratio = std::ratio<1>>
-class Time : public Unit<UnitKind::Time, Ratio>
-{
-    using Unit<UnitKind::Time, Ratio>::Unit;
-
-public:
-    std::chrono::duration<float> chrono() const
-    {
-        return std::chrono::duration<float, Ratio>(this->value());
-    }
-};
+using Time = Unit<UnitKind::Time, Ratio>;
 
 template <class ToTime, class FromTime>
 ToTime time_cast(FromTime const &from)
 {
     return ToTime(from);
+}
+
+std::chrono::duration<float> to_chrono(Time<> const &from)
+{
+    return std::chrono::duration<float>(from.value());
 }
 
 using Nanosecond  = Time<std::ratio<1, 1000000000>>;  // Time in nanoseconds
@@ -58,27 +54,57 @@ using Millisecond = Time<std::ratio<1, 1000>>;        // Time in milliseconds
 using Second      = Time<>;                           // Time in seconds
 using Minute      = Time<std::ratio<60>>;             // Time in minutes
 using Hour        = Time<std::ratio<3600>>;           // Time in hours
-using Day         = Time<std::ratio<86400>>;          // Time in days
-using Week        = Time<std::ratio<604800>>;         // Time in weeks
-using Month       = Time<std::ratio<2628000>>;        // Time in months
-using Year        = Time<std::ratio<31536000>>;       // Time in years
 
-auto operator""_ns(long double n) { return Nanosecond(static_cast<float>(n)); };
-auto operator""_us(long double n)
+// Floats
+constexpr auto operator""_ns(long double n)
+{
+    return Nanosecond(static_cast<float>(n));
+};
+constexpr auto operator""_us(long double n)
 {
     return Microsecond(static_cast<float>(n));
 };
-auto operator""_ms(long double n)
+constexpr auto operator""_ms(long double n)
 {
     return Millisecond(static_cast<float>(n));
 };
-auto operator""_s(long double n) { return Second(static_cast<float>(n)); };
-auto operator""_min(long double n) { return Minute(static_cast<float>(n)); };
-auto operator""_h(long double n) { return Hour(static_cast<float>(n)); };
-auto operator""_d(long double n) { return Day(static_cast<float>(n)); };
-auto operator""_w(long double n) { return Week(static_cast<float>(n)); };
-auto operator""_mo(long double n) { return Month(static_cast<float>(n)); };
-auto operator""_y(long double n) { return Year(static_cast<float>(n)); };
+constexpr auto operator""_s(long double n)
+{
+    return Second(static_cast<float>(n));
+};
+constexpr auto operator""_min(long double n)
+{
+    return Minute(static_cast<float>(n));
+};
+constexpr auto operator""_h(long double n)
+{
+    return Hour(static_cast<float>(n));
+};
+// Integers
+constexpr auto operator""_ns(unsigned long long n)
+{
+    return Nanosecond(static_cast<float>(n));
+};
+constexpr auto operator""_us(unsigned long long n)
+{
+    return Microsecond(static_cast<float>(n));
+};
+constexpr auto operator""_ms(unsigned long long n)
+{
+    return Millisecond(static_cast<float>(n));
+};
+constexpr auto operator""_s(unsigned long long n)
+{
+    return Second(static_cast<float>(n));
+};
+constexpr auto operator""_min(unsigned long long n)
+{
+    return Minute(static_cast<float>(n));
+};
+constexpr auto operator""_h(unsigned long long n)
+{
+    return Hour(static_cast<float>(n));
+};
 
 }  // namespace Time
 }  // namespace Units
