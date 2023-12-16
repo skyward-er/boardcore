@@ -37,7 +37,9 @@ enum class UnitKind
     Angle,
     Length,
     Pressure,
-    Time
+    Time,
+    Speed,
+    Acceleration,
 };
 
 // Base class to implement custom measurement units logic.
@@ -45,7 +47,8 @@ template <UnitKind Kind, class Ratio = std::ratio<1>>
 class Unit
 {
 public:
-    Unit(float val) : _value(val){};
+    constexpr explicit Unit(float val) : _value(val) {}
+
     template <UnitKind FromKind, class FromRatio>
     constexpr explicit Unit(Unit<FromKind, FromRatio> const &from)
         : _value(from.template value<Ratio>())
@@ -54,7 +57,7 @@ public:
 
     // Get the value of the unit in the specified ratio.
     template <class TargetRatio = Ratio>
-    float value() const
+    constexpr float value() const
     {
         constexpr auto currentRatio =
             static_cast<float>(Ratio::num) / static_cast<float>(Ratio::den);

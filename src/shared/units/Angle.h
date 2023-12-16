@@ -36,20 +36,35 @@ namespace Angle
 template <class Ratio = std::ratio<1>>
 using Angle = Unit<UnitKind::Angle, Ratio>;
 
-using Degree = Angle<>;  // Angle in degrees
-using Radian =           // Angle in radians
-    Angle<
-        std::ratio<static_cast<std::intmax_t>(180 * 1e10),
-                   static_cast<std::intmax_t>(3.14159265358979323846 * 1e10)>>;
-
-auto operator""_rad(long double n) { return Radian(static_cast<float>(n)); };
-auto operator""_deg(long double n) { return Degree(static_cast<float>(n)); };
-
 template <class ToAngle, class FromAngle>
 ToAngle angle_cast(FromAngle const &from)
 {
     return ToAngle(from);
 }
+
+using Degree = Angle<>;  // Angle in degrees
+using Radian =           // Angle in radians
+    Angle<
+        std::ratio<static_cast<std::intmax_t>(180 * 1e10),
+                   static_cast<std::intmax_t>(3.14159265358979323846 * 1e10)>>;
+// Floats
+constexpr auto operator""_rad(long double n)
+{
+    return Radian(static_cast<float>(n));
+};
+constexpr auto operator""_deg(long double n)
+{
+    return Degree(static_cast<float>(n));
+};
+// Integers
+constexpr auto operator""_rad(unsigned long long n)
+{
+    return Radian(static_cast<float>(n));
+};
+constexpr auto operator""_deg(unsigned long long n)
+{
+    return Degree(static_cast<float>(n));
+};
 
 }  // namespace Angle
 }  // namespace Units

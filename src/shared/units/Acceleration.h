@@ -30,49 +30,37 @@ namespace Boardcore
 {
 namespace Units
 {
-namespace Pressure
+namespace Acceleration
 {
 
 template <class Ratio = std::ratio<1>>
-using Pressure = Unit<UnitKind::Pressure, Ratio>;
+using Acceleration = Unit<UnitKind::Acceleration, Ratio>;
 
-template <class ToPressure, class FromPressure>
-ToPressure pressure_cast(FromPressure const &from)
+template <class ToAcceleration, class FromAcceleration>
+ToAcceleration acceleration_cast(FromAcceleration const &from)
 {
-    return ToPressure(from);
+    return ToAcceleration(from);
 }
 
-using Pascal = Pressure<>;                    // Pressure in Pascals
-using Bar    = Pressure<std::ratio<100000>>;  // Pressure in Bars
-using Atm    = Pressure<std::ratio<101325>>;  // Pressure in Atmospheres
+using MeterPerSecondSquared = Acceleration<>;  // Acceleration in m/s^2
+using G = Acceleration<std::ratio<981, 100>>;  // Acceleration in Gs
 
 // Floats
-constexpr auto operator""_pa(long double n)
+constexpr auto operator""_mps2(long double n)
 {
-    return Pascal(static_cast<float>(n));
+    return MeterPerSecondSquared(static_cast<float>(n));
 };
-constexpr auto operator""_bar(long double n)
-{
-    return Bar(static_cast<float>(n));
-};
-constexpr auto operator""_atm(long double n)
-{
-    return Atm(static_cast<float>(n));
-};
+constexpr auto operator""_g(long double n) { return G(static_cast<float>(n)); };
 // Integers
-constexpr auto operator""_pa(unsigned long long n)
+constexpr auto operator""_mps2(unsigned long long n)
 {
-    return Pascal(static_cast<float>(n));
+    return MeterPerSecondSquared(static_cast<float>(n));
 };
-constexpr auto operator""_bar(unsigned long long n)
+constexpr auto operator""_g(unsigned long long n)
 {
-    return Bar(static_cast<float>(n));
-};
-constexpr auto operator""_atm(unsigned long long n)
-{
-    return Atm(static_cast<float>(n));
+    return G(static_cast<float>(n));
 };
 
-}  // namespace Pressure
+}  // namespace Acceleration
 }  // namespace Units
 }  // namespace Boardcore

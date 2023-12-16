@@ -48,11 +48,48 @@ using Decimeter  = Length<std::deci>;   // Length in decimeters
 using Meter      = Length<>;            // Length in meters
 using Kilometer  = Length<std::kilo>;   // Length in kilometers
 
-auto operator""_mm(long double n) { return Millimeter(static_cast<float>(n)); };
-auto operator""_cm(long double n) { return Centimeter(static_cast<float>(n)); };
-auto operator""_dm(long double n) { return Decimeter(static_cast<float>(n)); };
-auto operator""_m(long double n) { return Meter(static_cast<float>(n)); };
-auto operator""_km(long double n) { return Kilometer(static_cast<float>(n)); };
+// Floats
+constexpr auto operator""_mm(long double n)
+{
+    return Millimeter(static_cast<float>(n));
+};
+constexpr auto operator""_cm(long double n)
+{
+    return Centimeter(static_cast<float>(n));
+};
+constexpr auto operator""_dm(long double n)
+{
+    return Decimeter(static_cast<float>(n));
+};
+constexpr auto operator""_m(long double n)
+{
+    return Meter(static_cast<float>(n));
+};
+constexpr auto operator""_km(long double n)
+{
+    return Kilometer(static_cast<float>(n));
+};
+// Integers
+constexpr auto operator""_mm(unsigned long long n)
+{
+    return Millimeter(static_cast<float>(n));
+};
+constexpr auto operator""_cm(unsigned long long n)
+{
+    return Centimeter(static_cast<float>(n));
+};
+constexpr auto operator""_dm(unsigned long long n)
+{
+    return Decimeter(static_cast<float>(n));
+};
+constexpr auto operator""_m(unsigned long long n)
+{
+    return Meter(static_cast<float>(n));
+};
+constexpr auto operator""_km(unsigned long long n)
+{
+    return Kilometer(static_cast<float>(n));
+};
 
 }  // namespace Length
 }  // namespace Units
