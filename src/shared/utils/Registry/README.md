@@ -15,25 +15,98 @@ Therefore, it is of the utmost importance to save the configuration and avoid de
 
 ## The front-end
 
-### Invocation example
+### Invocation examples
 In this case we take as example a ficticious configuration entry (NAME which has as value datatype a float)
-#### Set
+#### setConfiguration
+```cpp
 float value = 1.3;
 
-if(set(Configurations::NAME_CONF, value))
+if(frontEnd.set(ConfigurationEnum::NAME_CONF, value))
  { /*! correctly set */
 }
 
-if(set(NAME(value))) {/*! correctly set */}
-
-#### Get
+if(frontEnd.set(NAME(value))) {
+    /*! correctly set */
+    }
+```
+#### getConfiguration
+```cpp
 float value;
 
 float default = 1.35;
 
-if(get(Configurations::NAME_CONF, &value)) {/*! Getted the value */}
+if(frontEnd.get(ConfigurationEnum::NAME_CONF, &value)) {
+    /*! Getted the value */
+    }
 
-value = getOrSetDefault(Configurations::NAME_CONF, default);
+value = frontEnd.getOrSetDefaultConfiguration(ConfigurationEnum::NAME_CONF, default);
+```
+#### setConfigurationSafe
+```cpp
+Ignition ignitionTime{2.0};
+frontEnd.setConfigurationSafe(ignitionTime);
+```
+#### getConfigurationSafe
+```cpp
+Ignition ignitionTime;
+if(!frontEnd.getConfigurationSafe(&ignitionTime)){
+    /*! Error getting the configuration value */
+}
+```
+
+#### getConfigurationOrDefaultSafe
+```cpp
+Ignition ignitionTime, ignitionDefault{2.0};
+ignitionTime = frontEnd.getConfigurationOrDefaultSafe(ignitionDefault);
+```
+
+#### arm
+```cpp
+frontEnd.arm()
+```
+
+#### disarm
+```cpp
+frontEnd.disarm()
+```
+
+#### getConfiguredEntries
+```cpp
+std::unordered_set<ConfigurationEnum> configuratedIndex;
+configuratedIndex = frontEnd.getConfiguredEntries();
+```
+
+#### isConfigured
+```cpp
+if(frontEnd.isConfigured())
+{
+    /*! The front end registry configuration has a configuration set */
+}
+```
+
+#### isConfigured
+```cpp
+if(frontEnd.isEntryConfigured(ConfigurationEnum::NAME_CONF))
+{
+    /*! The front end configuration has such entry */
+}
+```
+
+#### isConfigurationEmpty
+```cpp
+if(frontEnd.isConfigurationEmpty())
+{
+    /*! The front end configuration is empty */
+}
+```
+
+#### isConfigurationCorrupted
+```cpp
+if(frontEnd.isConfigurationEmpty())
+{
+    /*! The front end configuration is corrupted */
+}
+```
 
 ### Goals
 
@@ -82,11 +155,13 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 |R10 | The FE should be able to control the configuration state via the back-ends (existing, corrupted, non existing)|
 
 ### Interface methods
-- set:  A setter method is in need to ensure R1. This method should allow 
+- setConfiguration:  A setter method is in need to ensure R1. This method should allow 
     insert a value for a specific configuration entry while guarantee the different data types for the values (R3).
     
-- get:  A getter method is in need to ensure the visibility of the configuration. 
-    Such method should get a value for a specified configuration entry
+- getConfiguration:  A getter method is in need to ensure the visibility of the configuration. 
+    Such method should get a value for a specified configuration entry and changes the value to passed by reference value parameter.
+
+- getOrSetDefaultConfiguration: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
 
  - arm:  An "arm" method which guarantees no memory allocations and no changes to the configuration are in place
     until a "disarm" method. It is an important functionality to ensure a "safe" memory configuration during flight.

@@ -24,5 +24,4 @@
 #include <utils/Registry/RegistryFrontend.h>
 namespace Boardcore
 {
-
 }

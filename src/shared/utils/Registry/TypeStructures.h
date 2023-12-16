@@ -33,6 +33,9 @@ struct RootTypeStructure
 {
     VAL_T value;
     ENUM index;
+    RootTypeStructure(VAL_T setValue){
+        value = setValue;
+    }
 };
 
 /**
