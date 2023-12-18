@@ -45,11 +45,41 @@ enum ConfigurationEnum
     IGNITION,
 };
 
+union TypeUnion
+{
+    float float_type;
+};
+
+/*! Could be done using an "using type = ... and the var is type..."*/
+template <typename T>
+struct UnionWrapFloatType : FloatType<T>
+{
+    static float getFromUnion(TypeUnion union) { return union.float; }
+    static TypeUnion setUnion(float valueToSet)
+    {
+        TypeUnion toReturn;
+        toReturn.float_type = valueToSet;
+        return toReturn;
+    }
+    TypeUnion setUnion()
+    {
+        TypeUnion toReturn;
+        toReturn.float_type = value;
+        return toReturn;
+    }
+    UnionWrapFloatType getUnion()
+    {
+        TypeUnion toReturn;
+        toReturn.float_type = value;
+        return toReturn;
+    }
+};
+
 /**
  * Ignition struct
  * Struct for the ignition timing parameter
  */
-struct Ignition : FloatType<ConfigurationEnum>
+struct Ignition : UnionWrapFloatType<ConfigurationEnum>
 {
     const static ConfigurationEnum index = ConfigurationEnum::IGNITION;
 };
@@ -135,8 +165,8 @@ public:
     bool getConfiguration(const ConfigurationEnum configurationIndex,
                           typename T::type* value);
     /**
-     * @brief Gets the value for a specified configuration entry. Otherwise returns and
-     * try to set the default value
+     * @brief Gets the value for a specified configuration entry. Otherwise
+     * returns and try to set the default value
      * @tparam T The value data type to be returned and eventually set.
      * @param configurationIndex Identifies the configuration entry with its
      * enumeration value
@@ -150,7 +180,8 @@ public:
                                    T defaultValue);
 
     /**
-     * @brief Sets the specified configuration entry using its specific data structure
+     * @brief Sets the specified configuration entry using its specific data
+     * structure
      * @tparam T The particular configuration struct for such
      * configuration entry
      * @param configurationEntry The initialized configuration structure to be
