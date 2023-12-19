@@ -77,6 +77,14 @@ add_executable(sx1278fsk-ebyterig-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-ebyterig-serial PRIVATE SX1278_IS_FSK)
 sbs_target(sx1278fsk-ebyterig-serial stm32f429zi_skyward_rig)
 
+add_executable(sx1278fsk-s-mav-raw src/entrypoints/sx1278-mav-raw.cpp)
+target_compile_definitions(sx1278fsk-s-mav-raw PRIVATE SX1278_IS_FSK SX1278_IS_SENDER)
+sbs_target(sx1278fsk-s-mav-raw stm32f429zi_skyward_groundstation_v2)
+
+add_executable(sx1278fsk-r-mav-raw src/entrypoints/sx1278-mav-raw.cpp)
+target_compile_definitions(sx1278fsk-r-mav-raw PRIVATE SX1278_IS_FSK SX1278_IS_RECEIVER)
+sbs_target(sx1278fsk-r-mav-raw stm32f429zi_skyward_groundstation_v2)
+
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
