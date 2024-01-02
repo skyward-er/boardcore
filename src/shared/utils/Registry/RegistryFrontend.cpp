@@ -22,6 +22,8 @@
 
 #pragma once
 #include <utils/Registry/RegistryFrontend.h>
+#include <utils/Registry/RegistryStructures.h>
+#include <utils/Registry/TypeStructures.h>
 
 #include <condition_variable>
 #include <mutex>
@@ -31,7 +33,7 @@ namespace Boardcore
  * Union data struct to be stored in the map. It does contain the enumeration
  * index and the value of such configuration entry
  */
-union EntryStructsUnion
+struct EntryStructsUnion
 {
     TypeUnion value;
     ConfigurationEnum enumVal;
@@ -57,7 +59,82 @@ private:
     std::unordered_map<ConfigurationEnum, EntryStructsUnion> configuration;
     std::mutex mutexForRegistry;
     std::condition_variable conditionVariable;
+    std::unordered_set<ConfigurationEnum> setConfigurations;
     bool isArmed = false;
+
+    /*! HELPER FUNCTIONS TO SET/GET UNION TYPE */
+
+    /**
+     * @brief Gets from the TypeUnion the float value and returns it.
+     */
+    void getFromUnion(TypeUnion unionValue, float* value)
+    {
+        *value = unionValue.float_type;
+    }
+
+    /**
+     * @brief Get from Union object the unsigned integer 8b  value.
+     *
+     * @param unionType the union value from which take the integer.
+     * @param value the uint8_t value saved into the union type
+     */
+    void getFromUnion(TypeUnion unionValue, uint8_t* value)
+    {
+        *value = unionValue.uint8_type;
+    }
+
+    /**
+     * @brief Get from Union object the unsigned integer 32b value.
+     *
+     * @param unionType the union value from which take the integer.
+     * @return uint32_t value saved into the union type
+     */
+    void getFromUnion(TypeUnion unionValue, uint32_t* value)
+    {
+        *value = unionValue.uint32_type;
+    }
+
+    /**
+     * @brief Set the Union object with its float value
+     *
+     * @param value The value to be set into the union type
+     * @return TypeUnion the returned created typeunion with its float value
+     * set.
+     */
+    TypeUnion setUnion(const float value)
+    {
+        TypeUnion returnValue;
+        returnValue.float_type = value;
+        return returnValue;
+    }
+
+    /**
+     * @brief Set the Union object with its unsigned 8bit integer value
+     *
+     * @param value The value to be set into the union type
+     * @return TypeUnion the returned created typeunion with its int value
+     * set.
+     */
+    TypeUnion setUnion(const uint8_t value)
+    {
+        TypeUnion returnValue;
+        returnValue.uint8_type = value;
+        return returnValue;
+    }
+
+    /**
+     * @brief Set the Union object with its unsigned 32bit integer value
+     *
+     * @param value The value to be set into the union type
+     * @return TypeUnion the returned created typeunion with its int value
+     * set.
+     */
+    TypeUnion setUnion(const uint32_t value)
+    {
+        TypeUnion returnValue;
+        returnValue.uint32_type = value;
+        return returnValue;
+    }
 
 public:
     /**
@@ -89,7 +166,13 @@ public:
      * @return Returns an unorder set with the indexes of the configuration
      * entries.
      */
-    std::unordered_set<ConfigurationEnum> getConfiguredEntries();
+    std::unordered_set<ConfigurationEnum> getConfiguredEntries()
+    {
+        std::unordered_set<ConfigurationEnum> configurationSetToReturn;
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        configurationSetToReturn = setConfigurations;
+        return configurationSetToReturn;
+    }
 
     /**
      * @brief Verify if the configuration exists already in memory
@@ -105,7 +188,6 @@ public:
      */
     bool isEntryConfigured(const ConfigurationEnum configurationIndex)
     {
-
         std::lock_guard<std::mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
         if (iterator == configuration.end())
@@ -136,7 +218,7 @@ public:
     /**
      * Method to get the value for a given configuration entry.
      * It does change the given variable with the correct value if existing
-     * @tparam T The configuration struct for such configuration entry
+     * @tparam T The value to be get from the configuration for such entry.
      * @param configurationIndex Identifies the configuration entry with its
      * enumeration value
      * @param value The value to be insert for the specified configuration entry
@@ -144,8 +226,18 @@ public:
      * limits or "armed" memory)
      */
     template <typename T>
-    bool getConfiguration(const ConfigurationEnum configurationIndex,
-                          typename T::type* value);
+    // TODO: Does the const implies no changes? In that case could be better use
+    // it...
+    bool const getConfigurationUnsafe(
+        const ConfigurationEnum configurationIndex, T* value)
+    {
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        auto iterator = configuration.find(configurationIndex);
+        if (iterator == configuration.end)
+            return false;
+        // TODO: Does this do bad things due to the conversions???
+        getFromUnion(iterator->second, value);
+    }
     /**
      * @brief Gets the value for a specified configuration entry. Otherwise
      * returns and try to set the default value
@@ -158,8 +250,19 @@ public:
      * or the default value if there is no such entry in the configuration
      */
     template <typename T>
-    T getOrSetDefaultConfiguration(const ConfigurationEnum configurationIndex,
-                                   T defaultValue);
+    T getOrSetDefaultConfigurationUnsafe(
+        const ConfigurationEnum configurationIndex, T defaultValue)
+    {
+        // TODO: Is lock_guard exent from deadlocking from itself?
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        T returnValue;
+        if (getConfigurationUnsafe(configurationIndex, &returnValue))
+            return returnValue;
+        // TODO: Is it ok to have the non-force setConfiguration which can fail?
+        setConfigurationUnsafe(configurationIndex, defaultValue);
+        setConfigurations.inser(configurationIndex);
+        return defaultValue;
+    }
 
     /**
      * @brief Sets the specified configuration entry using its specific data
@@ -172,13 +275,15 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfiguration(const T configurationEntry)
+    bool setConfigurationUnsafe(const T configurationEntry)
     {
         std::lock_guard<std::mutex> lock(mutexForRegistry);
         EntryStructsUnion entry;
-        entry.value                  = configurationEntry.setUnion();
+        entry.value = configurationEntry.getUnion(
+            configurationEntry);  //< Gets the value from the union
         entry.enumVal                = configuration.index;
         configuration[entry.enumVal] = entry;
+        setConfigurations.inser(configurationEntry.index);
     }
 
     /**
@@ -191,7 +296,16 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfiguration(const ConfigurationEnum configurationIndex, T value);
+    bool setConfigurationUnsafe(const ConfigurationEnum configurationIndex,
+                                T value)
+    {
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        EntryStructsUnion entry;
+        entry.value                  = createUnion(value);
+        entry.enumVal                = configurationIndex;
+        configuration[entry.enumVal] = entry;
+        setConfigurations.inser(configurationIndex);
+    }
 
     /*! TYPE SAFE INTERFACE METHODS */
 
@@ -208,7 +322,18 @@ public:
      * otherwise.
      */
     template <typename T>
-    bool getConfigurationSafe(T* value);
+    bool getConfiguration(T value)
+    {
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        auto iterator = configuration.find(T.index);
+        if (iterator == configuration.end())
+        {
+            TRACE("Get configuration not found");
+            return false;
+        }
+        value.value = iterator->second;
+        return true;
+    };
 
     /**
      * @brief Gets the saved configuration entry for such index type-safely.
@@ -221,7 +346,19 @@ public:
      * default one.
      */
     template <typename T>
-    T getConfigurationOrDefaultSafe(const T defaultValueStruct);
+    T getConfigurationOrDefault(const T defaultValueStruct)
+    {
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        auto iterator = configuration.find(T.index);
+        if (iterator == configuration.end())
+        {
+            TRACE("Get configuration not found, setting a default one");
+            EntryStructsUnion entryToAdd;
+            entryToAdd return defaultValueStruct;
+        }
+        value.value = iterator->second;
+        return true;
+    }
 
     /**
      * @brief Sets the configuration entry in the registry configuration using
@@ -234,6 +371,12 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfigurationSafe(const T configurationEntry);
+    bool setConfiguration(const T configurationEntry)
+    {
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        Entry entryToSet                = configurationEntry;
+        configuration[entryToSet.index] = entryToSet;
+        setConfigurations.inser(configurationEntry.index);
+    }
 };
 }  // namespace Boardcore

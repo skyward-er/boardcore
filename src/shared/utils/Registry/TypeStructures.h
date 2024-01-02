@@ -24,23 +24,48 @@ namespace Boardcore
 {
 
 /**
- * This is an empty structure from which the datatype structures inherit from.
- * It does define getting and setting methods for exploring its state.
+ * @brief This is an empty structure from which the datatype structures inherit
+ * from. It does define getting and setting methods for exploring its state.
  * This methods will be redefined by the actual data struct.
+ * @tparam T_VAL Datatype for the values stored in the data structure.
+ * @tparam T_ENUM Enumerator used as index for such data structure if any is
+ * used.
  */
-template <typename VAL_T, typename ENUM>
+template <typename T_VAL, typename T_ENUM>
 struct RootTypeStructure
 {
-    VAL_T value;
-    ENUM index;
-    RootTypeStructure(VAL_T setValue) { value = setValue; }
+    T_VAL value;
+    T_ENUM index;
+    RootTypeStructure(T_VAL setValue) { value = setValue; }
 };
 
 /**
- * The struct for data type of floats
+ * @brief Struct for store values with data type of floats
+ * @tparam T_ENUM Enumerator used as index for such data structure if any is
+ * used.
  */
-template <typename ENUM>
-struct FloatType : RootTypeStructure<float, ENUM>
+template <typename T_ENUM>
+struct FloatType : RootTypeStructure<float, T_ENUM>
+{
+};
+
+/**
+ * @brief Struct for store values with data type of uint32_t
+ * @tparam T_ENUM Enumerator used as index for such data structure if any is
+ * used.
+ */
+template <typename T_ENUM>
+struct UInt32Type : RootTypeStructure<uint32_t, T_ENUM>
+{
+};
+
+/**
+ * @brief Struct for store values with data type of uint8_t
+ * @tparam T_ENUM Enumerator used as index for such data structure if any is
+ * used.
+ */
+template <typename T_ENUM>
+struct UInt8Type : RootTypeStructure<uint8_t, T_ENUM>
 {
 };
 
