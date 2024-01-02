@@ -33,56 +33,6 @@
 
 namespace Boardcore
 {
-/**
- * Configuration enum, includes all the possible configurations accepted by the
- * front-end for saving.
- * Each own has its data structure, that inherits from a datatype structure,
- * in the case of the type safe interface
- * In the type unsafe interface it just refers to the index into the map.
- * */
-enum ConfigurationEnum
-{
-    IGNITION,
-};
-
-union TypeUnion
-{
-    float float_type;
-};
-
-/*! Could be done using an "using type = ... and the var is type..."*/
-template <typename T>
-struct UnionWrapFloatType : FloatType<T>
-{
-    static float getFromUnion(TypeUnion union) { return union.float; }
-    static TypeUnion setUnion(float valueToSet)
-    {
-        TypeUnion toReturn;
-        toReturn.float_type = valueToSet;
-        return toReturn;
-    }
-    TypeUnion setUnion()
-    {
-        TypeUnion toReturn;
-        toReturn.float_type = value;
-        return toReturn;
-    }
-    UnionWrapFloatType getUnion()
-    {
-        TypeUnion toReturn;
-        toReturn.float_type = value;
-        return toReturn;
-    }
-};
-
-/**
- * Ignition struct
- * Struct for the ignition timing parameter
- */
-struct Ignition : UnionWrapFloatType<ConfigurationEnum>
-{
-    const static ConfigurationEnum index = ConfigurationEnum::IGNITION;
-};
 
 /**
  * This is the front-end interface for the registry in case of
@@ -176,8 +126,8 @@ public:
      * or the default value if there is no such entry in the configuration
      */
     template <typename T>
-    T getOrSetDefaultConfiguration(const ConfigurationEnum configurationIndex,
-                                   T defaultValue);
+    T getOrSetDefaultConfigurationUnsafe(
+        const ConfigurationEnum configurationIndex, T defaultValue);
 
     /**
      * @brief Sets the specified configuration entry using its specific data
@@ -190,7 +140,7 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfiguration(const T configurationEntry);
+    bool setConfigurationUnsafe(const T configurationEntry);
 
     /**
      * @brief Sets the value for the configuration entry with the specified enum
@@ -202,8 +152,8 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfiguration(const ConfigurationEnum configurationIndex,
-                          typename T::type value);
+    bool setConfigurationUnsafe(const ConfigurationEnum configurationIndex,
+                                typename T::type value);
 
     /*! TYPE SAFE INTERFACE METHODS */
 
@@ -220,7 +170,7 @@ public:
      * otherwise.
      */
     template <typename T>
-    bool getConfigurationSafe(T* value);
+    bool getConfiguration(T value);
 
     /**
      * @brief Gets the saved configuration entry for such index type-safely.
@@ -233,7 +183,7 @@ public:
      * default one.
      */
     template <typename T>
-    T getConfigurationOrDefaultSafe(const T defaultValueStruct);
+    T getConfigurationOrDefault(const T defaultValueStruct);
 
     /**
      * @brief Sets the configuration entry in the registry configuration using
@@ -246,7 +196,7 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfigurationSafe(const T configurationEntry);
+    bool setConfiguration(const T configurationEntry);
 };
 
 }  // namespace Boardcore
