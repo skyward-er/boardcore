@@ -36,7 +36,10 @@ struct RootTypeStructure
 {
     T_VAL value;
     T_ENUM index;
-    RootTypeStructure(T_VAL setValue) { value = setValue; }
+    RootTypeStructure(T_VAL setValue, T_ENUM enumIndex) : index(enumIndex)
+    {
+        value = setValue;
+    }
 };
 
 /**
