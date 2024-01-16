@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 #pragma once
+#include <utils/Registry/TypeStructures.h>
 namespace Boardcore
 {
 
@@ -32,7 +33,7 @@ namespace Boardcore
 enum ConfigurationEnum
 {
     IGNITION,
-    DEPLOYEMENT_ALTITUDE
+    DEPLOYMENT_ALTITUDE
 };
 
 /**
@@ -56,13 +57,17 @@ union TypeUnion
 template <typename T>
 struct UnionWrapFloatType : FloatType<T>
 {
+    UnionWrapFloatType() {}
     /**
      * @brief  Get the the correct float value from an Union object
      *
      * @param unionValue the union object from which get the union
      * @return float the value to be returned from such union
      */
-    static float getFromUnion(TypeUnion unionValue) { return unionValue.float; }
+    static float getFromUnion(TypeUnion unionValue)
+    {
+        return unionValue.float_type;
+    }
     /**
      * @brief Creates an Union object from the float type value
      *
@@ -100,7 +105,7 @@ struct UnionWrapUInt8Type : UInt8Type<T>
      * @brief Get the the correct value from an Union object
      *
      * @param unionValue the union object from which get the union
-     * @return uint8_t the value gett from such union
+     * @return uint8_t the value get from such union
      */
     static uint8_t getFromUnion(TypeUnion unionValue)
     {
@@ -139,11 +144,12 @@ struct UnionWrapUInt8Type : UInt8Type<T>
 template <typename T>
 struct UnionWrapUInt32Type : UInt8Type<T>
 {
+    UnionWrapUInt32Type() {}
     /**
      * @brief Get the the correct uint32_t value from an Union object
      *
      * @param unionValue the union object from which get the union
-     * @return uint32_t the value gett from such union
+     * @return uint32_t the value get from such union
      */
     static uint32_t getFromUnion(TypeUnion unionValue)
     {
@@ -180,19 +186,27 @@ struct UnionWrapUInt32Type : UInt8Type<T>
  * @brief Ignition struct,
  * Struct for the ignition timing parameter
  */
-struct Ingition : UnionWrapUInt32Type<ConfigurationEnum>
+struct Ignition : UnionWrapUInt32Type<ConfigurationEnum>
 {
-    const static ConfigurationEnum index = ConfigurationEnum::IGNITION;
+    // const static ConfigurationEnum
+    Ignition() : UnionWrapUInt32Type<ConfigurationEnum>()
+    {
+        index = ConfigurationEnum::IGNITION;
+    }
 };
 
 /**
- * @brief Deployement altitude sturct
- * Struct for the deployement altitude
+ * @brief Deployment altitude stuct
+ * Struct for the deployment altitude
  */
-struct DeployementAlitude : UnionWrapFloatType<ConfigurationEnum>
+struct DeploymentAltitude : UnionWrapFloatType<ConfigurationEnum>
 {
-    const static ConfigurationEnum index =
-        ConfigurationEnum::DEPLOYEMENT_ALTITUDE;
+    // const static ConfigurationEnum index =
+    //     ConfigurationEnum::DEPLOYMENT_ALTITUDE;
+    DeploymentAltitude() : UnionWrapFloatType<ConfigurationEnum>()
+    {
+        index = ConfigurationEnum::DEPLOYMENT_ALTITUDE;
+    }
 };
 
 };  // namespace Boardcore

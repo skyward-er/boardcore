@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <utils/Registry/RegistryStructures.h>
 #include <utils/Registry/TypeStructures.h>
 
 namespace Boardcore
@@ -46,22 +47,21 @@ namespace Boardcore
 class RegistryFrontEndInterface
 {
 public:
-    virtual ~RegistryFrontEndInterface(){};
+    RegistryFrontEndInterface();
+    virtual ~RegistryFrontEndInterface();
 
     /**
      * @brief Disables the memory registry set and allocations.
      * To be use when the rocket itself is armed and during flight.
-     * @return True if the memory is "armed" correctly. False otherwise.
      */
-    bool arm();
+    void arm();
 
     /**
      * @brief Enable set methods and memory allocations.
      * To be used when the rocket is NOT in an "armed" state and while on
      * ground.
-     * @return True if the memory is "disarmed" correctly. False otherwise.
      */
-    bool disarm();
+    void disarm();
 
     /**
      * @brief Returns the already existing entries of the configurations as a
