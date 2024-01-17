@@ -183,7 +183,7 @@ public:
      * default one.
      */
     template <typename T>
-    T getConfigurationOrDefault(const T defaultValueStruct);
+    T getOrSetDefaultConfiguration(const T defaultValueStruct);
 
     /**
      * @brief Sets the configuration entry in the registry configuration using

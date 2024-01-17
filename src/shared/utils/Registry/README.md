@@ -16,48 +16,60 @@ Therefore, it is of the utmost importance to save the configuration and avoid de
 ## The front-end
 
 ### Invocation examples
-In this case we take as example a ficticious configuration entry (NAME which has as value datatype a float)
-#### setConfiguration
+In this case we take as example a ficticius configuration entry (NAME which has as value datatype a float)
+
+Type-unsafe interface methods:
+
+#### setConfigurationUnsafe
 ```cpp
 float value = 1.3;
 
-if(frontEnd.set(ConfigurationEnum::NAME_CONF, value))
+if(frontEnd.setUnsafe(ConfigurationEnum::NAME_CONF, value))
  { /*! correctly set */
 }
 
-if(frontEnd.set(NAME(value))) {
+if(frontEnd.setUnsafe(NAME(value))) {
     /*! correctly set */
     }
 ```
-#### getConfiguration
+#### getConfigurationUnsafe
 ```cpp
 float value;
 
 float default = 1.35;
 
-if(frontEnd.get(ConfigurationEnum::NAME_CONF, &value)) {
+if(frontEnd.getConfigurationUnsafe(ConfigurationEnum::NAME_CONF, &value)) {
     /*! Getted the value */
     }
 
-value = frontEnd.getOrSetDefaultConfiguration(ConfigurationEnum::NAME_CONF, default);
+value = frontEnd.getOrSetDefaultConfigurationUnsafe(ConfigurationEnum::NAME_CONF, default);
 ```
-#### setConfigurationSafe
+
+#### getConfigurationOrDefaultUnsafe
 ```cpp
-Ignition ignitionTime{2.0};
-frontEnd.setConfigurationSafe(ignitionTime);
+float ignitionTime, ignitionDefault = 2.0;
+ignitionTime = frontEnd.getConfigurationOrDefaultUnsafe(ignitionDefault);
 ```
-#### getConfigurationSafe
+
+Type-safe interface methods:
+
+#### setConfiguration
+```cpp
+Ignition ignitionTime(2.0);
+frontEnd.setConfiguration(ignitionTime);
+```
+#### getConfiguration
 ```cpp
 Ignition ignitionTime;
-if(!frontEnd.getConfigurationSafe(&ignitionTime)){
+if(!frontEnd.getConfiguration(&ignitionTime)){
     /*! Error getting the configuration value */
 }
 ```
 
-#### getConfigurationOrDefaultSafe
+#### getConfigurationOrDefault
 ```cpp
-Ignition ignitionTime, ignitionDefault{2.0};
-ignitionTime = frontEnd.getConfigurationOrDefaultSafe(ignitionDefault);
+Ignition ignitionTime, ignitionDefault(2.0);
+ignitionTime = frontEnd.getConfigurationOrDefault(ignitionDefault);
 ```
 
 #### arm
@@ -141,7 +153,7 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 
 ### Requirements
 
-| Requirments |  Description  |
+| Requirements |  Description  |
 |:-----|:--------:|
 |R1 | The interface must allow setting a value for the specific configuration entries |
 |R2 | The interface must allow getting a specified value for a   configuration entries |
@@ -155,24 +167,58 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 |R10 | The FE should be able to control the configuration state via the back-ends (existing, corrupted, non existing)|
 
 ### Interface methods
-- setConfiguration:  A setter method is in need to ensure R1. This method should allow 
+
+The unsafe (type-unsafe) methods does not use the proper data structure for the set and get but instead just pass a parameter value for a specific registry entry enumerator index (e.g. ignition time)
+
+- **setConfiguration[Unsafe]**:  A setter method is in need to ensure R1. This method should allow 
     insert a value for a specific configuration entry while guarantee the different data types for the values (R3).
     
-- getConfiguration:  A getter method is in need to ensure the visibility of the configuration. 
+- **getConfiguration[Unsafe]**:  A getter method is in need to ensure the visibility of the configuration. 
     Such method should get a value for a specified configuration entry and changes the value to passed by reference value parameter.
 
-- getOrSetDefaultConfiguration: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
+- **getOrSetDefaultConfiguration[Unsafe]**: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
 
- - arm:  An "arm" method which guarantees no memory allocations and no changes to the configuration are in place
+ - **arm**:  An "arm" method which guarantees no memory allocations and no changes to the configuration are in place
     until a "disarm" method. It is an important functionality to ensure a "safe" memory configuration during flight.
 
- - disarm: A "disarm" method, to disable the stable and "safe" configuration mode of the registry to allow again 
+ - **disarm**: A "disarm" method, to disable the stable and "safe" configuration mode of the registry to allow again 
     allocations and settings on the configuration.
 
- - isConfigured: A method to explore the actual status of the configuration, if there is an existing one in memory or not.
+ - **isConfigured**: A method to explore the actual status of the configuration, if there is an existing one in memory or not.
 
- - isConfigurationEmpty: A method to know if there is an existing configuration or if it is empty
+ - **isConfigurationEmpty**: A method to know if there is an existing configuration or if it is empty
 
- - isConfigurationCorrupted: A method to know if there is an existing configuration in the registry but corrupted memory.
+ - **isConfigurationCorrupted**: A method to know if there is an existing configuration in the registry but corrupted memory.
 
-- configuredEntries: A method which returns the already existing entries of the configuration as a set.
+- **configuredEntries**: A method which returns the already existing entries of the configuration as a set.
+
+### Data structures
+The data structures are managed in 2 main header files.
+#### TypeStructures.h
+Type structures have:
+
+- **RootTypeStructure**: A root type, with just 2 template attributes: value and index
+
+- **[Float|UInt32|...]Type**: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
+
+### RegistryStructures.h
+Registry structures contains:
+
+- **ConfigurationEnum**: The enumerator with the possible configurations entries for the registry
+
+- **TypeUnion**: The union type for saving the values of the different configuration entries
+
+- **UnionWrap[Float|UInt32|...]Type**: The structures inheriting from [Float|UInt32|...]Type that includes methods to consistently manage the unionType variables to set them or get their correct type field.
+
+- **[Ignition|DeploymentAltitude|...]**: All the specific data structures for the configuration entries. They does specify the correct enum index and inherit correctly from the union wrapper.
+
+## How to add structs
+The correct flow to add new types/configuration entries is:
+
+- **TypeStructure.h**: If not exist, create a new struct for the type that we will use for the configuration entry value
+
+- **RegistryStructures.h**: If not exists, add the type to the TypeUnion struct. If not exists, add the struct for wrapping the struct above and make the methods to set/get the correct type from/to the union type.
+At last, create the final data structures for the specific configuration entry.
+
+- **RegistryFrontend.cpp**: Remember to modify the private methods for the unsafe methods such that there are methods for get/set the unionType for the new data type.
+
