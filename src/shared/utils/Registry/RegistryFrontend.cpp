@@ -383,7 +383,7 @@ public:
      * default one.
      */
     template <typename T>
-    T getConfigurationOrDefault(const T defaultValueStruct)
+    T getOrSetDefaultConfiguration(const T defaultValueStruct)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(defaultValueStruct.index);
