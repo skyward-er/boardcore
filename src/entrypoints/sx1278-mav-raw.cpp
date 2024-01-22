@@ -61,8 +61,8 @@ constexpr size_t PACKET_SIZE       = MAVLINK_MSG_ID_PAYLOAD_FLIGHT_TM_LEN;
 /** @brief Number of packets to send */
 constexpr size_t MSG_NUM = 580;
 
-/** @brief End of transmission byte. Used to signal the end of a packet. */
-constexpr uint8_t EOT = 0x04;
+/** @brief End of transmission character */
+constexpr uint8_t ACK = 0x06;
 
 static const Boardcore::SX1278Fsk::Config RADIO_CONFIG = {
     .freq_rf    = 434000000,
@@ -150,13 +150,14 @@ void recvLoop()
         {
             mavlink_payload_flight_tm_t tm;
             memcpy(&tm, msg, PACKET_SIZE);
-            auto serial = miosix::DefaultConsole::instance().get();
-            // serial->writeBlock(msg, len, 0);
-            // std::cout << "[sx1278] Received packet - time: " << tm.timestamp
-            //           << std::endl;
 
-            std::cout << "[sx1278] tm.timestamp: " << tm.timestamp << std::endl;
-            // std::cout << "[sx1278] tm.pressure_digi: " << tm.pressure_digi
+            // auto serial = miosix::DefaultConsole::instance().get();
+            // serial->writeBlock(msg, len, 0);
+            std::cout << "[sx1278] Received packet - time: " << tm.timestamp
+                      << std::endl;
+            // std::cout << "[sx1278] tm.timestamp: " << tm.timestamp <<
+            // std::endl; std::cout << "[sx1278] tm.pressure_digi: " <<
+            // tm.pressure_digi
             //           << std::endl;
             // std::cout << "[sx1278] tm.pressure_static: " <<
             // tm.pressure_static
@@ -221,10 +222,10 @@ void recvLoop()
 void sendLoop()
 {
     uint8_t msg[SX1278_MTU];
-    for (size_t i = 0; i < MSG_NUM; i++)
+    while (1)
     {
         mavlink_payload_flight_tm_t tm = readPacketFromSerial();
-        std::cout << "[sx1278] Sending packet " << i << std::endl;
+        // std::cout << "[sx1278] Sending packet" << std::endl;
         memcpy(msg, &tm, PACKET_SIZE);
         sx1278->send(msg, PACKET_SIZE);
     }
@@ -243,8 +244,8 @@ mavlink_payload_flight_tm_t readPacketFromSerial()
     uint8_t serial_buffer[PACKET_SIZE];
 
     auto serial = DefaultConsole::instance().get();
-    serial->writeBlock(&EOT, 1, 0);
     serial->readBlock(serial_buffer, PACKET_SIZE, 0);
+    serial->writeBlock(&ACK, 1, 0);
 
     // this may be shrunk to the above statement (needs further testing)
     memcpy(ptr_to_tm, serial_buffer, PACKET_SIZE);
