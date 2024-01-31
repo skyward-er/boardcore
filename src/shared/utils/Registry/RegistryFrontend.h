@@ -47,8 +47,8 @@ namespace Boardcore
 class RegistryFrontEndInterface
 {
 public:
-    RegistryFrontEndInterface();
-    virtual ~RegistryFrontEndInterface();
+    RegistryFrontEndInterface(){};
+    ~RegistryFrontEndInterface(){};
 
     /**
      * @brief Disables the memory registry set and allocations.
@@ -90,7 +90,7 @@ public:
      * entries
      * @return True if the configuration has no entries. False otherwise
      */
-    bool isConfigurationEmpty();
+    const bool isConfigurationEmpty();
 
     /**
      * @brief Verifies the integrity of the configuration saved.
@@ -112,8 +112,8 @@ public:
      * limits or "armed" memory)
      */
     template <typename T>
-    bool getConfiguration(const ConfigurationEnum configurationIndex,
-                          typename T::type* value);
+    bool getConfigurationUnsafe(const ConfigurationEnum configurationIndex,
+                                T* value);
     /**
      * @brief Gets the value for a specified configuration entry. Otherwise
      * returns and try to set the default value
@@ -153,13 +153,9 @@ public:
      */
     template <typename T>
     bool setConfigurationUnsafe(const ConfigurationEnum configurationIndex,
-                                typename T::type value);
+                                T value);
 
     /*! TYPE SAFE INTERFACE METHODS */
-
-    /**
-     *  TODO: NOTE - the configuration in case of no entry configured what
-     * returns? An empty datastructure? A struct not enabled? */
 
     /**
      * @brief Gets the saved configuration entry for such index type-safely.
@@ -198,5 +194,12 @@ public:
     template <typename T>
     bool setConfiguration(const T configurationEntry);
 };
+
+/*class RegistryFrontEnd : public RegistryFrontEndInterface
+{
+public:
+    RegistryFrontEnd();
+    ~RegistryFrontEnd();
+};*/
 
 }  // namespace Boardcore

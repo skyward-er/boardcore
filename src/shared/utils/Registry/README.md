@@ -114,11 +114,22 @@ if(frontEnd.isConfigurationEmpty())
 
 #### isConfigurationCorrupted
 ```cpp
-if(frontEnd.isConfigurationEmpty())
+if(frontEnd.isConfigurationCorrupted())
 {
     /*! The front end configuration is corrupted */
 }
 ```
+
+### How to add new structs
+The correct flow to add new types/configuration entries is:
+
+- **TypeStructure.h**: If not exist, create a new struct for the type that we will use for the configuration entry value
+
+- **RegistryStructures.h**: If not exists, add the type to the TypeUnion struct. If not exists, add the struct for wrapping the struct above and make the methods to set/get the correct type from/to the union type.
+At last, create the final data structures for the specific configuration entry.
+
+- **RegistryFrontend.cpp**: Remember to modify the private methods for the unsafe methods such that there are methods for get/set the unionType for the new data type.
+
 
 ### Goals
 
@@ -199,26 +210,16 @@ Type structures have:
 
 - **RootTypeStructure**: A root type, with just 2 template attributes: value and index
 
-- **[Float|UInt32|...]Type**: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
+- **(Float|UInt32|...)Type**: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
 
-### RegistryStructures.h
+#### RegistryStructures.h
 Registry structures contains:
 
 - **ConfigurationEnum**: The enumerator with the possible configurations entries for the registry
 
 - **TypeUnion**: The union type for saving the values of the different configuration entries
 
-- **UnionWrap[Float|UInt32|...]Type**: The structures inheriting from [Float|UInt32|...]Type that includes methods to consistently manage the unionType variables to set them or get their correct type field.
+- **UnionWrap(Float|UInt32|...)Type**: The structures inheriting from (Float|UInt32|...)Type that includes methods to consistently manage the unionType variables to set them or get their correct type field.
 
-- **[Ignition|DeploymentAltitude|...]**: All the specific data structures for the configuration entries. They does specify the correct enum index and inherit correctly from the union wrapper.
-
-## How to add structs
-The correct flow to add new types/configuration entries is:
-
-- **TypeStructure.h**: If not exist, create a new struct for the type that we will use for the configuration entry value
-
-- **RegistryStructures.h**: If not exists, add the type to the TypeUnion struct. If not exists, add the struct for wrapping the struct above and make the methods to set/get the correct type from/to the union type.
-At last, create the final data structures for the specific configuration entry.
-
-- **RegistryFrontend.cpp**: Remember to modify the private methods for the unsafe methods such that there are methods for get/set the unionType for the new data type.
+- **(Ignition|DeploymentAltitude|...)**: All the specific data structures for the configuration entries. They does specify the correct enum index and inherit correctly from the union wrapper.
 

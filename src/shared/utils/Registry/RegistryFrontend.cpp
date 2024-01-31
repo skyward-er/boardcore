@@ -44,10 +44,9 @@ struct EntryStructsUnion
      * struct for such entry configuration
      */
     template <typename T>
-    EntryStructsUnion(T configurationStruct,
+    EntryStructsUnion(T configurationStructUnion,
                       ConfigurationEnum configurationEnumIndex)
-        : EntryStructsUnion{configurationStruct.getUnion(),
-                            configurationEnumIndex}
+        : value(configurationStructUnion), enumVal(configurationEnumIndex)
     {
     }
 };
@@ -57,7 +56,7 @@ struct EntryStructsUnion
  * its saved configuration.
  */
 
-class RegistryFrontEnd : RegistryFrontEndInterface
+class RegistryFrontEnd : public RegistryFrontEndInterface
 {
 private:
     std::unordered_map<ConfigurationEnum, EntryStructsUnion> configuration;
@@ -90,12 +89,39 @@ private:
      * @brief Get from Union object the unsigned integer 32b value.
      *
      * @param unionType the union value from which take the integer.
-     * @return uint32_t value saved into the union type
+     * @param value the uint8_t value saved into the union type
+
      */
     void getFromUnion(TypeUnion unionValue, uint32_t* value)
     {
         *value = unionValue.uint32_type;
     }
+
+    /**
+    * @brief Get from Union object the coordinates value.
+    *
+    * @param unionType the union value from which take the integer.
+    * @param value the coordinates value saved into the union type
+
+    */
+    void getFromUnion(TypeUnion unionValue, Coordinates* value)
+    {
+        *value = unionValue.coordinates_type;
+    }
+
+    // TODO: SEE IF CORRECT
+    /**
+     * @brief Get from Union object the pair of unsigned integers 32b values.
+     *
+     * @param unionType the union value from which take the integer.
+     * @param value the pair of uint32_t values saved into the union type
+
+     */
+    /*void getFromUnion(TypeUnion unionValue,
+                       std::pair<uint32_t, uint32_t>* value)
+     {
+         *value = unionValue.uint32_pair_type;
+     }*/
 
     /**
      * @brief Set the Union object with its float value
@@ -144,7 +170,7 @@ public:
      * @brief Registry front end constructor. Initializes the configuration from
      * the backend.
      */
-    RegistryFrontEnd()
+    RegistryFrontEnd() : RegistryFrontEndInterface()
     {
         /**
          * TODO: The registry will get from the backend the saved configuration
@@ -152,9 +178,21 @@ public:
     }
 
     /**
+     * @brief Registry front end destructor. Saves configuration to
+     * the backend.
+     */
+    ~RegistryFrontEnd()
+    {
+        /**
+         * TODO: The registry will save the configurations and also use the
+         * proper destructors */
+    }
+
+    /**
      * @brief Disables the memory registry set and allocations.
      * To be use when the rocket itself is armed and during flight.
      */
+    using RegistryFrontEndInterface::arm;
     void arm()
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
@@ -212,7 +250,7 @@ public:
      * entries
      * @return True if the configuration has no entries. False otherwise
      */
-    bool isConfigurationEmpty()
+    const bool isConfigurationEmpty()
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         return configuration.empty();
@@ -243,9 +281,9 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
-        if (iterator == configuration.end)
+        if (iterator == configuration.end())
             return false;
-        getFromUnion(iterator->second, value);
+        getFromUnion(iterator->second.value, value);
         return true;
     }
     /**
@@ -292,18 +330,18 @@ public:
          * modified */
         if (isArmed)
             return false;
-        EntryStructsUnion entry(configurationEntry.getUnion(configurationEntry),
-                                configurationEntry.index);
-        const auto [_, success] = configuration.insert(entry.enumVal, entry);
+        EntryStructsUnion entry =
+            EntryStructsUnion(configurationEntry, configurationEntry.index);
+        bool success =
+            configuration.insert(std::make_pair(entry.enumVal, entry)).second;
         if (!success)
         {
             TRACE(
                 "Registry - setConfigurationUnsafe - Could not insert the "
-                "configuration entry")
+                "configuration entry");
             return false;
         }
-        const auto [_, success] =
-            setConfigurations.insert(configurationEntry.index);
+        success = setConfigurations.insert(configurationEntry.index).second;
         if (success)
             return true;
         TRACE(
@@ -330,8 +368,9 @@ public:
          * modified */
         if (isArmed)
             return false;
-        EntryStructsUnion entry(createUnion(value), configurationIndex);
-        auto const [_, success] = configuration.insert(entry.enumVal, entry);
+        EntryStructsUnion entry(setUnion(value), configurationIndex);
+        bool success =
+            configuration.insert(std::make_pair(entry.enumVal, entry)).second;
         if (!success)
         {
             TRACE(
@@ -339,7 +378,7 @@ public:
                 "configuration entry");
             return false;
         }
-        auto const [_, success] = setConfigurations.insert(configurationIndex);
+        success = setConfigurations.insert(configurationIndex).second;
         if (success)
             return true;
         TRACE(
@@ -392,7 +431,7 @@ public:
             TRACE(
                 "Registry - getConfigurationOrDefault - Get configuration not "
                 "found, setting a default one");
-            if (armed)
+            if (isArmed)
             {
                 TRACE(
                     "Registry - getConfigurationOrDefault - "
@@ -402,7 +441,9 @@ public:
             }
             EntryStructsUnion entryToAdd =
                 EntryStructsUnion(defaultValueStruct);
-            configuration.insert(entryToAdd);
+            configuration.insert(
+                std::make_pair(entryToAdd.enumVal, entryToAdd));
+            setConfiguration<T>.insert(entryToAdd.enumVal);
             return defaultValueStruct;
         }
         EntryStructsUnion entryToReturn = EntryStructsUnion(iterator->second);
@@ -425,19 +466,21 @@ public:
         std::lock_guard<std::mutex> lock(mutexForRegistry);
         EntryStructsUnion entryToSet =
             EntryStructsUnion(configurationEntry, configurationEntry.enumVal);
-        auto const [_, success] =
-            configuration.insert(entryToSet.enumVal, entryToSet);
+        bool success =
+            configuration.insert(std::make_pair(entryToSet.enumVal, entryToSet))
+                .second;
         if (!success)
         {
             TRACE(
                 "Registry - setConfiguration - Could not insert the "
-                "configuration entry")
+                "configuration entry");
             return false;
         }
-        auto const [_, success] =
-            setConfigurations.insert(configurationEntry.index);
+        success = setConfigurations.insert(configurationEntry.index).second;
         if (success)
+        {
             return true;
+        }
         return false;
     }
 };
