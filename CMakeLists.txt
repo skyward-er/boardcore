@@ -471,3 +471,6 @@ sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
 
 add_executable(test-syncpacketqueue src/tests/utils/test-syncpacketqueue.cpp)
 sbs_target(test-syncpacketqueue stm32f407vg_stm32f4discovery)
+
+add_executable(test-xram src/tests/utils/test-xram.cpp)
+sbs_target(test-xram stm32f767zi_compute_unit_v2)
