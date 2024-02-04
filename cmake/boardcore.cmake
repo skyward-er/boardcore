@@ -131,7 +131,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
         ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
         ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
-        ${SBS_BASE}/src/shared/utils/Registry/RegistryFrontEnd.cpp
+        ${SBS_BASE}/src/shared/utils/Registry/RegistryFrontend.cpp
     )
     add_library(SkywardBoardcore::Boardcore::${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)

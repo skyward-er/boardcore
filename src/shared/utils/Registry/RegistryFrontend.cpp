@@ -69,7 +69,7 @@ private:
     /**
      * @brief Gets from the TypeUnion the float value and returns it.
      */
-    void getFromUnion(TypeUnion unionValue, float* value)
+    static void getFromUnion(const TypeUnion unionValue, float* value)
     {
         *value = unionValue.float_type;
     }
@@ -80,19 +80,20 @@ private:
      * @param unionType the union value from which take the integer.
      * @param value the uint8_t value saved into the union type
      */
-    void getFromUnion(TypeUnion unionValue, uint8_t* value)
+    static void getFromUnion(const TypeUnion unionValue, uint8_t* value)
     {
-        *value = unionValue.uint8_type;
+        // TODO: Just check is all correct...
+        *value = static_cast<uint8_t>(unionValue.uint32_type);
     }
 
     /**
      * @brief Get from Union object the unsigned integer 32b value.
      *
      * @param unionType the union value from which take the integer.
-     * @param value the uint8_t value saved into the union type
+     * @param value the uint32_t value saved into the union type
 
      */
-    void getFromUnion(TypeUnion unionValue, uint32_t* value)
+    static void getFromUnion(const TypeUnion unionValue, uint32_t* value)
     {
         *value = unionValue.uint32_type;
     }
@@ -104,24 +105,10 @@ private:
     * @param value the coordinates value saved into the union type
 
     */
-    void getFromUnion(TypeUnion unionValue, Coordinates* value)
+    static void getFromUnion(const TypeUnion unionValue, Coordinates* value)
     {
         *value = unionValue.coordinates_type;
     }
-
-    // TODO: SEE IF CORRECT
-    /**
-     * @brief Get from Union object the pair of unsigned integers 32b values.
-     *
-     * @param unionType the union value from which take the integer.
-     * @param value the pair of uint32_t values saved into the union type
-
-     */
-    /*void getFromUnion(TypeUnion unionValue,
-                       std::pair<uint32_t, uint32_t>* value)
-     {
-         *value = unionValue.uint32_pair_type;
-     }*/
 
     /**
      * @brief Set the Union object with its float value
@@ -130,7 +117,7 @@ private:
      * @return TypeUnion the returned created type union with its float value
      * set.
      */
-    TypeUnion setUnion(const float value)
+    static TypeUnion setUnion(const float value)
     {
         TypeUnion returnValue;
         returnValue.float_type = value;
@@ -144,10 +131,10 @@ private:
      * @return TypeUnion the returned created type union with its int value
      * set.
      */
-    TypeUnion setUnion(const uint8_t value)
+    static TypeUnion setUnion(const uint8_t value)
     {
         TypeUnion returnValue;
-        returnValue.uint8_type = value;
+        returnValue.uint32_type = static_cast<uint32_t>(value);
         return returnValue;
     }
 
@@ -158,7 +145,7 @@ private:
      * @return TypeUnion the returned created type union with its int value
      * set.
      */
-    TypeUnion setUnion(const uint32_t value)
+    static TypeUnion setUnion(const uint32_t value)
     {
         TypeUnion returnValue;
         returnValue.uint32_type = value;

@@ -37,8 +37,8 @@ enum ConfigurationEnum
 {
     REFERENCE_ALTITUDE,
     REFERENCE_TEMPERATURE,
-    ORIENTATION,
-    COORDINATES,
+    CURRENT_ORIENTATION,  // TODO: keep it?
+    CURRENT_COORDINATES,  // TODO: keep it?
     DEPLOYMENT_ALTITUDE,
     TARGET_COORDINATES,
     ALGORITHM,
@@ -51,28 +51,28 @@ enum ConfigurationEnum
     RELEASE_VALVE_MAX_APERTURE,
     FILLING_VALVE_MAX_APERTURE,
     IGNITION_TIME,
-    AIR_BRAKES_SERVO,
-    EXPULSION_SERVO,
-    PARAFOIL_LEFT_SERVO,
-    PARAFOIL_RIGHT_SERVO,
-    MAIN_VALVE_SERVO,
-    VENTING_VALVE_SERVO,
-    RELEASE_VALVE_SERVO,
-    FILLING_VALVE_SERVO,
-    DISCONNECT_SERVO,
+    AIR_BRAKES_SERVO_ANGLE,
+    EXPULSION_SERVO_ANGLE,
+    PARAFOIL_LEFT_SERVO_ANGLE,
+    PARAFOIL_RIGHT_SERVO_ANGLE,
+    MAIN_VALVE_SERVO_ANGLE,
+    VENTING_VALVE_SERVO_ANGLE,
+    RELEASE_VALVE_SERVO_ANGLE,
+    FILLING_VALVE_SERVO_ANGLE,
+    // DISCONNECT_SERVO_ANGLE, // TODO: is it just a command?
 };
 
 /**
- * @brief Coordinates struct.
- *
+ * @brief Coordinates struct with latitude [degree], longitude [degree]
  */
 struct Coordinates
 {
-    uint32_t x;
-    uint32_t y;
+    uint32_t latitude;
+    uint32_t longitude;
 
-    explicit Coordinates(const uint32_t setX, const uint32_t setY)
-        : x(setX), y(setY)
+    explicit Coordinates(const uint32_t setLatitude,
+                         const uint32_t setLongitude)
+        : latitude(setLatitude), longitude(setLongitude)
     {
     }
     Coordinates() {}
@@ -85,8 +85,8 @@ struct Coordinates
 union TypeUnion
 {
     float float_type;
-    uint32_t uint32_type;
-    uint8_t uint8_type;
+    uint32_t
+        uint32_type;  //< used for both uint32_t and uint8_t type with upcast
     Coordinates coordinates_type;
 
     TypeUnion() {}
@@ -142,54 +142,6 @@ struct UnionWrapFloatType : FloatType<T>
 };
 
 /**
- * @brief Struct to "wrap" the correct union type used by the uint8_t data
- * structures. The data structures using the TypeUnion union and the float type
- * will inherit from this.
- */
-template <typename T>
-struct UnionWrapUInt8Type : UInt8Type<T>
-{
-    UnionWrapUInt8Type(const uint8_t val, const T index)
-        : UInt8Type<T>(val, index)
-    {
-    }
-    /**
-     * @brief Get the the correct value from an Union object
-     *
-     * @param unionValue the union object from which get the union
-     * @return uint8_t the value get from such union
-     */
-    static uint8_t getFromUnion(TypeUnion unionValue)
-    {
-        return unionValue.uint8_type;
-    }
-    /**
-     * @brief Creates an Union object from the float type value
-     *
-     * @param valueToSet The value to be set into the returned union
-     * @return TypeUnion the created union type.
-     */
-    static TypeUnion createUnion(uint8_t valueToSet)
-    {
-        TypeUnion toReturn;
-        toReturn.uint8_type = valueToSet;
-        return toReturn;
-    }
-    /**
-     * @brief Get the Union object with the correct float value of the instance
-     *
-     * @return TypeUnion the union with the value for such uint8_t type
-     * structure
-     */
-    TypeUnion getUnion()
-    {
-        TypeUnion toReturn;
-        toReturn.uint8_type = this->value;
-        return toReturn;
-    }
-};
-
-/**
  * @brief Struct to "wrap" the correct union type used by the uint32_t data
  * structures. The data structures using the TypeUnion union and the float type
  * will inherit from this.
@@ -224,6 +176,18 @@ struct UnionWrapUInt32Type : UInt32Type<T>
         return toReturn;
     }
     /**
+     * @brief Creates an Union object from the float type value
+     *
+     * @param valueToSet The value to be set into the returned union
+     * @return TypeUnion the created union type.
+     */
+    static TypeUnion createUnion(uint8_t valueToSet)
+    {
+        TypeUnion toReturn;
+        toReturn.uint32_type = static_cast<uint32_t>(valueToSet);
+        return toReturn;
+    }
+    /**
      * @brief Get the Union object with the correct float value of the instance
      *
      * @return TypeUnion the union with the value for such uint32_t type
@@ -237,56 +201,61 @@ struct UnionWrapUInt32Type : UInt32Type<T>
     }
 };
 
-// TODO: CHANGE COMMENTS!
 /**
- * @brief Struct to "wrap" the correct union type used by the pair uint32_t data
- * structures. The data structures using the TypeUnion union and the float type
- * will inherit from this.
+ * @brief Struct to "wrap" the correct union type used by the coordinates
+ * latitude, longitude uint32_t data structures. The data structures using the
+ * TypeUnion union and the float type will inherit from this.
  */
 template <typename T>
 struct UnionWrapUInt32Coordinates : RootTypeStructure<Coordinates, T>
 {
-    UnionWrapUInt32Coordinates(const int32_t x, const int32_t y, const T index)
-        : RootTypeStructure<Coordinates, T>(Coordinates(x, y), index)
+    UnionWrapUInt32Coordinates(const int32_t latitude, const int32_t longitude,
+                               const T index)
+        : RootTypeStructure<Coordinates, T>(Coordinates(latitude, longitude),
+                                            index)
     {
     }
     /**
-     * @brief Get the the uint32_t x value from an Union object
+     * @brief Get the the uint32_t latitude value from an Union object
      *
      * @param unionValue the union object from which get the union
-     * @return the x value get from such union
+     * @return the latitude value get from such union
      */
-    static uint32_t getXFromUnion(TypeUnion unionValue)
+    static uint32_t getLatitudeFromUnion(TypeUnion unionValue)
     {
-        return unionValue.coordinates_type.x;
+        return unionValue.coordinates_type.latitude;
     }
     /**
-     * @brief Get the the uint32_t y value from an Union object
+     * @brief Get the the uint32_t longitude value from an Union object
      *
      * @param unionValue the union object from which get the union
-     * @return uint32_t the y value get from such union
+     * @return uint32_t the longitude value get from such union
      */
-    static uint32_t getYFromUnion(TypeUnion unionValue)
+    static uint32_t getLongitudeFromUnion(TypeUnion unionValue)
     {
-        return unionValue.coordinates_type.y;
+        return unionValue.coordinates_type.longitude;
     }
     /**
-     * @brief Creates an Union object from the x,y uint32_t type values
+     * @brief Creates an Union object from the latitude, longitude uint32_t type
+     * values
      *
      * @param valueToSet The value to be set into the returned union
      * @return TypeUnion the created union type.
      */
-    static TypeUnion createUnion(uint32_t xToSet, uint32_t yToSet)
+    static TypeUnion createUnion(uint32_t latitudeToSet,
+                                 uint32_t longitudeToSet)
     {
         TypeUnion toReturn;
-        toReturn.coordinates_type.x = xToSet;
-        toReturn.coordinates_type.y = yToSet;
+        toReturn.coordinates_type.latitude  = latitudeToSet;
+        toReturn.coordinates_type.longitude = longitudeToSet;
         return toReturn;
     }
     /**
-     * @brief Get the Union object with the correct float value of the instance
+     * @brief Get the Union object with the correct coordinates value of the
+     * instance
      *
-     * @return TypeUnion the union with the value for such Float type structure
+     * @return TypeUnion the union with the value for such Coordinates type
+     * structure
      */
     TypeUnion getUnion()
     {
@@ -312,6 +281,24 @@ struct IgnitionTime : UnionWrapUInt32Type<ConfigurationEnum>
 };
 
 /**
+ * @brief Algorithm struct for set the parafoil, Guidance and GSE tars algorithm
+ */
+struct Algorithm : UnionWrapUInt32Type<ConfigurationEnum>
+{
+    explicit Algorithm(const uint32_t val)
+        : UnionWrapUInt32Type<ConfigurationEnum>(val,
+                                                 ConfigurationEnum::ALGORITHM)
+    {
+    }
+
+    explicit Algorithm(const uint8_t val)
+        : UnionWrapUInt32Type<ConfigurationEnum>(static_cast<uint32_t>(val),
+                                                 ConfigurationEnum::ALGORITHM)
+    {
+    }
+};
+
+/**
  * @brief Deployment altitude stuct
  * Struct for the deployment altitude
  */
@@ -326,27 +313,14 @@ struct DeploymentAltitude : UnionWrapFloatType<ConfigurationEnum>
 
 /**
  * @brief Target coordinates struct
- * Struct for the x,y target coordinates
+ * Struct for the latitude, longitude target coordinates
  */
 struct TargetCoordinates : UnionWrapUInt32Coordinates<ConfigurationEnum>
 {
-    explicit TargetCoordinates(const uint32_t x, const uint32_t y)
+    explicit TargetCoordinates(const uint32_t latitude,
+                               const uint32_t longitude)
         : UnionWrapUInt32Coordinates<ConfigurationEnum>(
-              x, y, ConfigurationEnum::TARGET_COORDINATES)
-    {
-    }
-};
-
-/**
- * @brief Algorithm registry struct for the algorithm number for parafoil
- * guidance and GSE tars
- *
- */
-struct Algorithm : UnionWrapUInt8Type<ConfigurationEnum>
-{
-    explicit Algorithm(const uint8_t val)
-        : UnionWrapUInt8Type<ConfigurationEnum>(val,
-                                                ConfigurationEnum::ALGORITHM)
+              latitude, longitude, ConfigurationEnum::TARGET_COORDINATES)
     {
     }
 };
@@ -354,7 +328,6 @@ struct Algorithm : UnionWrapUInt8Type<ConfigurationEnum>
 /**
  * @brief Main valve atomic timing registry struct for the [ms] timing of main
  * valve
- *
  */
 struct MainValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 {
@@ -368,7 +341,6 @@ struct MainValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 /**
  * @brief Venting valve atomic timing registry struct for the [ms] timing of
  * venting valve
- *
  */
 struct VentingValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 {
@@ -382,7 +354,6 @@ struct VentingValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 /**
  * @brief Release valve atomic timing registry struct for the [ms] timing of
  * release valve
- *
  */
 struct ReleaseValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 {
@@ -396,7 +367,6 @@ struct ReleaseValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 /**
  * @brief Filling valve atomic timing registry struct for the [ms] timing of
  * filling valve
- *
  */
 struct FillingValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 {
@@ -410,7 +380,6 @@ struct FillingValveAtomicTiming : UnionWrapUInt32Type<ConfigurationEnum>
 /**
  * @brief Main valve atomic timing registry struct for the float maximum
  * aperture of main value
- *
  */
 struct MainValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 {
@@ -424,7 +393,6 @@ struct MainValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 /**
  * @brief Venting valve maximum aperture registry struct for the float maximum
  * venting aperture value
- *
  */
 struct VentingValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 {
@@ -438,7 +406,6 @@ struct VentingValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 /**
  * @brief Release valve maximum aperture registry struct for the float maximum
  * aperture value
- *
  */
 struct ReleaseValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 {
@@ -452,7 +419,6 @@ struct ReleaseValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 /**
  * @brief Filling valve maximum aperture registry struct for the float maximum
  * aperture value
- *
  */
 struct FillingValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
 {
@@ -463,29 +429,128 @@ struct FillingValveMaxAperture : UnionWrapFloatType<ConfigurationEnum>
     }
 };
 
-/** TODO:
- * REFERENCE_ALTITUDE,
-    REFERENCE_TEMPERATURE,
-    ORIENTATION,
-    COORDINATES,
-    DEPLOYMENT_ALTITUDE,
-    TARGET_COORDINATES
-
-    And... ALSO
-    SET_SERVO_ANGLES from:
-    typedef enum ServosList
+/**
+ * @brief Reference altitude with [m] value
+ *
+ */
+struct ReferenceAltitude : UnionWrapFloatType<ConfigurationEnum>
 {
-AIR_BRAKES_SERVO=1,
-EXPULSION_SERVO=2,
-PARAFOIL_LEFT_SERVO=3,
-PARAFOIL_RIGHT_SERVO=4,
-MAIN_VALVE=5,
-VENTING_VALVE=6,
-RELEASE_VALVE=7,
-FILLING_VALVE=8,
-DISCONNECT_SERVO=9,
-ServosList_ENUM_END=10,
-} ServosList;
-*/
+    explicit ReferenceAltitude(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::REFERENCE_ALTITUDE)
+    {
+    }
+};
+
+/**
+ * @brief Reference temperature with [degC] value
+ */
+struct ReferenceTemperature : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit ReferenceTemperature(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::REFERENCE_TEMPERATURE)
+    {
+    }
+};
+
+/*! SERVO ANGLES CONFIGURATION STRUCTS */
+// TODO: Angles... Yes but which measure unit?
+
+/**
+ * @brief Expulsion servo angle with its normalized [0,1] value
+ */
+struct AirBrakesServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit AirBrakesServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::AIR_BRAKES_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Expulsion servo angle with its normalized [0,1] value
+ */
+struct ExpulsionServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit ExpulsionServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::EXPULSION_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Parafoil left servo angle with its normalized [0,1] value
+ */
+struct ParafoilLeftServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit ParafoilLeftServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::PARAFOIL_LEFT_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Parafoil right servo angle with its normalized [0,1] value
+ */
+struct ParafoilRightServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit ParafoilRightServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::PARAFOIL_RIGHT_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Venting valve servo angle with its normalized [0,1] value
+ */
+struct MainValveServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit MainValveServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::MAIN_VALVE_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Venting valve servo angle with its normalized [0,1] value
+ */
+struct VentingValveServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit VentingValveServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::VENTING_VALVE_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Release valve servo angle with its normalized [0,1] value
+ */
+struct ReleaseValveServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit ReleaseValveServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::RELEASE_VALVE_SERVO_ANGLE)
+    {
+    }
+};
+
+/**
+ * @brief Filling valve servo angle with its normalized [0,1] value
+ */
+struct FillingValveServoAngle : UnionWrapFloatType<ConfigurationEnum>
+{
+    explicit FillingValveServoAngle(const float val)
+        : UnionWrapFloatType<ConfigurationEnum>(
+              val, ConfigurationEnum::FILLING_VALVE_SERVO_ANGLE)
+    {
+    }
+};
 
 };  // namespace Boardcore
