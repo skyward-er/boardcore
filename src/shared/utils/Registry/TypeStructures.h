@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 #pragma once
+
+#include <stdint.h>
+
 namespace Boardcore
 {
 
