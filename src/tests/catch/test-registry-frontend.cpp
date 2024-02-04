@@ -22,6 +22,7 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
+#include <stdint.h>
 #include <utils/Registry/RegistryFrontend.h>
 
 #include <catch2/catch.hpp>
@@ -46,8 +47,9 @@ TEST_CASE("Registry frontend test")
      */
     REQUIRE(registry.getConfigurationUnsafe(
                 ConfigurationEnum::DEPLOYMENT_ALTITUDE, &floatValue) == false);
-    REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::TARGET_COORDINATES,
-                                            &coordinatesValue) == false);
+    REQUIRE(registry.getConfigurationUnsafe(
+                ConfigurationEnum::TARGET_COORDINATES, &coordinatesValue) ==
+            false);
     REQUIRE(registry.getConfigurationUnsafe(
                 ConfigurationEnum::VENTING_VALVE_ATOMIC_TIMING, &uint32Value) ==
             false);

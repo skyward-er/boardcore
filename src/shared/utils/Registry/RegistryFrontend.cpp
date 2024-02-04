@@ -23,6 +23,7 @@
 #pragma once
 #include "RegistryFrontend.h"
 
+#include <stdint.h>
 #include <utils/Debug.h>
 
 #include <mutex>

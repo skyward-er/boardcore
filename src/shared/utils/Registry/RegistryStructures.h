@@ -21,6 +21,7 @@
  */
 #pragma once
 #include <memory.h>
+#include <stdint.h>
 #include <utils/Registry/TypeStructures.h>
 namespace Boardcore
 {
