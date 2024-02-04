@@ -36,7 +36,7 @@ struct RootTypeStructure
 {
     T_VAL value;
     T_ENUM index;
-    RootTypeStructure(T_VAL setValue, T_ENUM enumIndex)
+    explicit RootTypeStructure(T_VAL setValue, T_ENUM enumIndex)
         : index(enumIndex), value(setValue)
     {
     }
@@ -50,51 +50,22 @@ struct RootTypeStructure
 template <typename T_ENUM>
 struct FloatType : RootTypeStructure<float, T_ENUM>
 {
-    FloatType(const float val, const T_ENUM index)
+    explicit FloatType(const float val, const T_ENUM index)
         : RootTypeStructure<float, T_ENUM>(val, index)
     {
     }
 };
 
 /**
- * @brief Struct for store values with data type of uint32_t
+ * @brief Struct for store values with data type of uint32_t and upcasts uint8_t
  * @tparam T_ENUM Enumerator used as index for such data structure if any is
  * used.
  */
 template <typename T_ENUM>
 struct UInt32Type : RootTypeStructure<uint32_t, T_ENUM>
 {
-    UInt32Type(const uint32_t val, const T_ENUM index)
+    explicit UInt32Type(const uint32_t val, const T_ENUM index)
         : RootTypeStructure<uint32_t, T_ENUM>(val, index)
-    {
-    }
-};
-
-/**
- * @brief Struct for store two values of type uint32_t (presumably x, y)
- * @tparam T_ENUM Enumerator used as index for such data structure if any is
- * used.
- */
-/*template <typename T_ENUM>
-struct UInt32PairType : RootTypeStructure<std::pair<uint32_t, uint32_t>, T_ENUM>
-{
-    UInt32PairType(const uint32_t x, const uint32_t y, const T_ENUM index)
-        : RootTypeStructure<std::pair<uint32_t, uint32_t>,
-T_ENUM>(std::make_pair(x, y), index)
-    {
-    }
-};*/
-
-/**
- * @brief Struct for store values with data type of uint8_t
- * @tparam T_ENUM Enumerator used as index for such data structure if any is
- * used.
- */
-template <typename T_ENUM>
-struct UInt8Type : RootTypeStructure<uint8_t, T_ENUM>
-{
-    UInt8Type(const uint8_t val, const T_ENUM index)
-        : RootTypeStructure<uint8_t, T_ENUM>(val, index)
     {
     }
 };

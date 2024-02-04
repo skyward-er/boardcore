@@ -46,7 +46,7 @@ TEST_CASE("Registry frontend test")
      */
     REQUIRE(registry.getConfigurationUnsafe(
                 ConfigurationEnum::DEPLOYMENT_ALTITUDE, &floatValue) == false);
-    REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::COORDINATES,
+    REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::TARGET_COORDINATES,
                                             &coordinatesValue) == false);
     REQUIRE(registry.getConfigurationUnsafe(
                 ConfigurationEnum::VENTING_VALVE_ATOMIC_TIMING, &uint32Value) ==
