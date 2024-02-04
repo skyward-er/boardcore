@@ -48,8 +48,11 @@ sbs_target(imu-calibration stm32f429zi_skyward_parafoil)
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
+add_executable(compute-unit-v2-testsuite src/entrypoints/compute-unit-v2-testsuite.cpp)
+sbs_target(compute-unit-v2-testsuite stm32f767zi_compute_unit_v2_no_xram)
+
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
-sbs_target(kernel-testsuite stm32f767zi_compute_unit)
+sbs_target(kernel-testsuite stm32f767zi_compute_unit_v2)
 
 add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
 sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
@@ -106,7 +109,7 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f756zg_nucleo)
+sbs_target(test-serial stm32f767zi_compute_unit_v2_no_xram)
 
 add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
