@@ -34,9 +34,9 @@ static constexpr uint8_t testValueUint8   = 20;
 static constexpr uint32_t testValueUint32 = 30;
 static constexpr float testValueFloat     = 1.45;
 
-TEST_CASE("Registry frontend test")
+TEST_CASE("RegistryFrontend test - Set and get configuration entries")
 {
-    RegistryFrontEnd registry;
+    RegistryFrontend registry;
     float floatValue;
     uint32_t uint32Value;
     uint8_t uint8Value;
@@ -46,18 +46,22 @@ TEST_CASE("Registry frontend test")
     /*! Checks that there are effectively non-initialized entry configurations
      */
     REQUIRE(registry.getConfigurationUnsafe(
-                ConfigurationEnum::DEPLOYMENT_ALTITUDE, &floatValue) == false);
+                static_cast<uint32_t>(ConfigurationEnum::DEPLOYMENT_ALTITUDE),
+                &floatValue) == false);
     REQUIRE(registry.getConfigurationUnsafe(
-                ConfigurationEnum::TARGET_COORDINATES, &coordinatesValue) ==
-            false);
+                static_cast<uint32_t>(ConfigurationEnum::TARGET_COORDINATES),
+                &coordinatesValue) == false);
     REQUIRE(registry.getConfigurationUnsafe(
-                ConfigurationEnum::VENTING_VALVE_ATOMIC_TIMING, &uint32Value) ==
-            false);
-    REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::ALGORITHM,
-                                            &uint8Value) == false);
+                static_cast<uint32_t>(
+                    ConfigurationEnum::VENTING_VALVE_ATOMIC_TIMING),
+                &uint32Value) == false);
+    REQUIRE(registry.getConfigurationUnsafe(
+                static_cast<uint32_t>(ConfigurationEnum::ALGORITHM),
+                &uint8Value) == false);
     /*! Check set configuration results in right get */
-    REQUIRE(registry.setConfigurationUnsafe(ConfigurationEnum::ALGORITHM,
-                                            testValueUint8) == true);
+    REQUIRE(registry.setConfigurationUnsafe(
+                static_cast<uint32_t>(ConfigurationEnum::ALGORITHM),
+                testValueUint8) == true);
     REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::ALGORITHM,
                                             &uint8Value) == true);
     REQUIRE(uint8Value == testValueUint8);
