@@ -75,18 +75,18 @@ LIS331HHData LIS331HH::sampleImpl()
     int16_t val;
     LIS331HHData data;
 
-    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+    data.accelerationTimestamp = Microsecond(TimestampTimer::getTimestamp());
 
     SPITransaction spi(slave);
 
     spi.readRegisters(0x40 | OUT_X_L, reinterpret_cast<uint8_t*>(&val), 2);
-    data.accelerationX = sensitivity * val;
+    data.accelerationX = MeterPerSecondSquared(sensitivity * val);
 
     spi.readRegisters(0x40 | OUT_Y_L, reinterpret_cast<uint8_t*>(&val), 2);
-    data.accelerationY = sensitivity * val;
+    data.accelerationY = MeterPerSecondSquared(sensitivity * val);
 
     spi.readRegisters(0x40 | OUT_Z_L, reinterpret_cast<uint8_t*>(&val), 2);
-    data.accelerationZ = sensitivity * val;
+    data.accelerationZ = MeterPerSecondSquared(sensitivity * val);
 
     return data;
 }

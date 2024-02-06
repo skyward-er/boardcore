@@ -123,8 +123,9 @@ void NAS::predictAcc(const Vector3f& acceleration)
 
 void NAS::predictAcc(const AccelerometerData& acceleration)
 {
-    predictAcc(Vector3f{acceleration.accelerationX, acceleration.accelerationY,
-                        acceleration.accelerationZ});
+    predictAcc(Vector3f{acceleration.accelerationX.value(),
+                        acceleration.accelerationY.value(),
+                        acceleration.accelerationZ.value()});
 }
 
 void NAS::predictGyro(const Vector3f& angularSpeed)
@@ -295,7 +296,8 @@ void NAS::correctAcc(const Vector3f& acc)
 
 void NAS::correctAcc(const AccelerometerData& acc)
 {
-    Vector3f accV = {acc.accelerationX, acc.accelerationY, acc.accelerationZ};
+    Vector3f accV = {acc.accelerationX.value(), acc.accelerationY.value(),
+                     acc.accelerationZ.value()};
     correctAcc(accV.normalized());
 }
 

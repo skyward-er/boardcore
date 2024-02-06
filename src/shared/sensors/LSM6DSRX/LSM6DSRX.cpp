@@ -329,12 +329,15 @@ bool LSM6DSRX::selfTestAcc()
         }
 
         // read data
-        averageNormal.accelerationX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, 0.061));
-        averageNormal.accelerationY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, 0.061));
-        averageNormal.accelerationZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, 0.061));
+        averageNormal.accelerationX += MeterPerSecondSquared(
+            static_cast<float>(getAxisData(LSM6DSRXDefs::REG_OUTX_L_A,
+                                           LSM6DSRXDefs::REG_OUTX_H_A, 0.061)));
+        averageNormal.accelerationY += MeterPerSecondSquared(
+            static_cast<float>(getAxisData(LSM6DSRXDefs::REG_OUTY_L_A,
+                                           LSM6DSRXDefs::REG_OUTY_H_A, 0.061)));
+        averageNormal.accelerationZ += MeterPerSecondSquared(
+            static_cast<float>(getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A,
+                                           LSM6DSRXDefs::REG_OUTZ_H_A, 0.061)));
     }
     averageNormal.accelerationX /= SIZE_DATA;
     averageNormal.accelerationY /= SIZE_DATA;
@@ -375,28 +378,37 @@ bool LSM6DSRX::selfTestAcc()
         }
 
         // read data
-        averageSF.accelerationX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, 0.061));
-        averageSF.accelerationY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, 0.061));
-        averageSF.accelerationZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, 0.061));
+        averageSF.accelerationX += MeterPerSecondSquared(
+            static_cast<float>(getAxisData(LSM6DSRXDefs::REG_OUTX_L_A,
+                                           LSM6DSRXDefs::REG_OUTX_H_A, 0.061)));
+        averageSF.accelerationY += MeterPerSecondSquared(
+            static_cast<float>(getAxisData(LSM6DSRXDefs::REG_OUTY_L_A,
+                                           LSM6DSRXDefs::REG_OUTY_H_A, 0.061)));
+        averageSF.accelerationZ += MeterPerSecondSquared(
+            static_cast<float>(getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A,
+                                           LSM6DSRXDefs::REG_OUTZ_H_A, 0.061)));
     }
     averageSF.accelerationX /= SIZE_DATA;
     averageSF.accelerationY /= SIZE_DATA;
     averageSF.accelerationZ /= SIZE_DATA;
 
     if (LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
-            std::abs(averageSF.accelerationX - averageNormal.accelerationX) &&
-        std::abs(averageSF.accelerationX - averageNormal.accelerationX) <=
+            std::abs(averageSF.accelerationX.value() -
+                     averageNormal.accelerationX.value()) &&
+        std::abs(averageSF.accelerationX.value() -
+                 averageNormal.accelerationX.value()) <=
             LSM6DSRXDefs::ACC_SELF_TEST_MAX &&
         LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
-            std::abs(averageSF.accelerationY - averageNormal.accelerationY) &&
-        std::abs(averageSF.accelerationY - averageNormal.accelerationY) <=
+            std::abs(averageSF.accelerationY.value() -
+                     averageNormal.accelerationY.value()) &&
+        std::abs(averageSF.accelerationY.value() -
+                 averageNormal.accelerationY.value()) <=
             LSM6DSRXDefs::ACC_SELF_TEST_MAX &&
         LSM6DSRXDefs::ACC_SELF_TEST_MIN <=
-            std::abs(averageSF.accelerationZ - averageNormal.accelerationZ) &&
-        std::abs(averageSF.accelerationZ - averageNormal.accelerationZ) <=
+            std::abs(averageSF.accelerationZ.value() -
+                     averageNormal.accelerationZ.value()) &&
+        std::abs(averageSF.accelerationZ.value() -
+                 averageNormal.accelerationZ.value()) <=
             LSM6DSRXDefs::ACC_SELF_TEST_MAX)
     {
         returnValue = true;
@@ -612,14 +624,17 @@ uint16_t LSM6DSRX::combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
 
 void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
-    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+    data.accelerationTimestamp = Microsecond(TimestampTimer::getTimestamp());
 
-    data.accelerationX = getAxisData(
-        LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, sensitivityAcc);
-    data.accelerationY = getAxisData(
-        LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, sensitivityAcc);
-    data.accelerationZ = getAxisData(
-        LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, sensitivityAcc);
+    data.accelerationX = MeterPerSecondSquared(
+        getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
+                    sensitivityAcc));
+    data.accelerationY = MeterPerSecondSquared(
+        getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A,
+                    sensitivityAcc));
+    data.accelerationZ = MeterPerSecondSquared(
+        getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A,
+                    sensitivityAcc));
 }
 
 void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
@@ -839,14 +854,17 @@ void LSM6DSRX::readFromFifo()
             case 0x02:
                 // Accelerometer data
                 timestamps[timeslotTag].data.accelerationX =
-                    static_cast<float>(combineHighLowBits(xl, xh)) *
-                    sensitivityAcc;
+                    MeterPerSecondSquared(
+                        static_cast<float>(combineHighLowBits(xl, xh)) *
+                        sensitivityAcc);
                 timestamps[timeslotTag].data.accelerationY =
-                    static_cast<float>(combineHighLowBits(yl, yh)) *
-                    sensitivityAcc;
+                    MeterPerSecondSquared(
+                        static_cast<float>(combineHighLowBits(yl, yh)) *
+                        sensitivityAcc);
                 timestamps[timeslotTag].data.accelerationZ =
-                    static_cast<float>(combineHighLowBits(zl, zh)) *
-                    sensitivityAcc;
+                    MeterPerSecondSquared(
+                        static_cast<float>(combineHighLowBits(zl, zh)) *
+                        sensitivityAcc);
 
                 timestamps[timeslotTag].accPresent = true;
 
@@ -867,9 +885,9 @@ void LSM6DSRX::readFromFifo()
 
                 // Set new data
                 timestamps[timeslotTag].data.accelerationTimestamp =
-                    convertTimestamp(static_cast<uint64_t>(t));
+                    Microsecond(convertTimestamp(static_cast<uint64_t>(t)));
                 timestamps[timeslotTag].data.angularSpeedTimestamp =
-                    timestamps[timeslotTag].data.accelerationTimestamp;
+                    timestamps[timeslotTag].data.accelerationTimestamp.value();
 
                 timestamps[timeslotTag].accPresent = false;
                 timestamps[timeslotTag].gyrPresent = false;
@@ -894,7 +912,7 @@ void LSM6DSRX::pushIntoFifo(LSM6DSRXDefs::FifoTimeslotData& timeslot,
     // check if data can be pushed
     if ((fifoIdx > 0 && timeslot.data.accelerationTimestamp ==
                             lastFifo[fifoIdx - 1].accelerationTimestamp) ||
-        timeslot.data.accelerationTimestamp == 0)
+        timeslot.data.accelerationTimestamp.value() == 0)
     {
         // the new sample has the same timestamp of the previous one or
         // timestamp is 0 --> discarded

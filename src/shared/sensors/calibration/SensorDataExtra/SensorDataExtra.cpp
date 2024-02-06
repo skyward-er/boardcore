@@ -29,16 +29,16 @@ namespace Boardcore
 
 void operator<<(AccelerometerData& lhs, const Vector3f& rhs)
 {
-    lhs.accelerationX = rhs[0];
-    lhs.accelerationY = rhs[1];
-    lhs.accelerationZ = rhs[2];
+    lhs.accelerationX = MeterPerSecondSquared(rhs[0]);
+    lhs.accelerationY = MeterPerSecondSquared(rhs[1]);
+    lhs.accelerationZ = MeterPerSecondSquared(rhs[2]);
 }
 
 void operator<<(Eigen::Vector3f& lhs, const AccelerometerData& rhs)
 {
-    lhs[0] = rhs.accelerationX;
-    lhs[1] = rhs.accelerationY;
-    lhs[2] = rhs.accelerationZ;
+    lhs[0] = rhs.accelerationX.value();
+    lhs[1] = rhs.accelerationY.value();
+    lhs[2] = rhs.accelerationZ.value();
 }
 
 void operator<<(GyroscopeData& lhs, const Vector3f& rhs)

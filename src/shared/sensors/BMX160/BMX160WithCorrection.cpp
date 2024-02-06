@@ -115,9 +115,9 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 
     result.accelerationTimestamp = fifoElement.accelerationTimestamp;
     static_cast<AccelerometerData&>(result) << avgAccel;
-    result.magneticFieldTimestamp = fifoElement.accelerationTimestamp;
+    result.magneticFieldTimestamp = fifoElement.accelerationTimestamp.value();
     static_cast<MagnetometerData&>(result) << avgMag;
-    result.angularSpeedTimestamp = fifoElement.accelerationTimestamp;
+    result.angularSpeedTimestamp = fifoElement.accelerationTimestamp.value();
     static_cast<GyroscopeData&>(result) << (avgGyro - gyroscopeBias);
 
     if (calibrating)

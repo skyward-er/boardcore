@@ -30,10 +30,15 @@ namespace Boardcore
 struct H3LIS331DLData : public AccelerometerData
 {
 
-    H3LIS331DLData() : AccelerometerData(0, 0, 0, 0){};
+    H3LIS331DLData()
+        : AccelerometerData(Microsecond(0), MeterPerSecondSquared(0),
+                            MeterPerSecondSquared(0),
+                            MeterPerSecondSquared(0)){};
 
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)
-        : AccelerometerData(ts, aX, aY, aZ){};
+        : AccelerometerData(Microsecond(0), MeterPerSecondSquared(aX),
+                            MeterPerSecondSquared(aY),
+                            MeterPerSecondSquared(aZ)){};
 
     explicit H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
 
@@ -44,8 +49,9 @@ struct H3LIS331DLData : public AccelerometerData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << "\n";
+        os << accelerationTimestamp.value() << "," << accelerationX.value()
+           << "," << accelerationY.value() << "," << accelerationZ.value()
+           << "\n";
     }
 };
 

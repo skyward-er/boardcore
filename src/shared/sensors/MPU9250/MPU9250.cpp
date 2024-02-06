@@ -112,18 +112,18 @@ MPU9250Data MPU9250::sampleImpl()
 
     // Save timestamps
     uint64_t timestamp          = TimestampTimer::getTimestamp();
-    data.accelerationTimestamp  = timestamp;
+    data.accelerationTimestamp  = Microsecond(timestamp);
     data.temperatureTimestamp   = timestamp;
     data.angularSpeedTimestamp  = timestamp;
     data.magneticFieldTimestamp = timestamp;
 
     // Save data
-    data.accelerationX =
-        normalizeAcceleration(swapBytes16(rawData.bits.accelX));
-    data.accelerationY =
-        normalizeAcceleration(swapBytes16(rawData.bits.accelY));
-    data.accelerationZ =
-        normalizeAcceleration(swapBytes16(rawData.bits.accelZ));
+    data.accelerationX = MeterPerSecondSquared(
+        normalizeAcceleration(swapBytes16(rawData.bits.accelX)));
+    data.accelerationY = MeterPerSecondSquared(
+        normalizeAcceleration(swapBytes16(rawData.bits.accelY)));
+    data.accelerationZ = MeterPerSecondSquared(
+        normalizeAcceleration(swapBytes16(rawData.bits.accelZ)));
     data.temperature   = normalizeTemperature(swapBytes16(rawData.bits.temp));
     data.angularSpeedX = normalizeGyroscope(swapBytes16(rawData.bits.gyroX));
     data.angularSpeedY = normalizeGyroscope(swapBytes16(rawData.bits.gyroY));

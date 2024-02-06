@@ -33,8 +33,10 @@ struct MPU9250Data : public AccelerometerData,
                      public TemperatureData
 {
     MPU9250Data()
-        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
-          MagnetometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
+        : AccelerometerData{Microsecond(0), MeterPerSecondSquared(0),
+                            MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
+          GyroscopeData{0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0, 0.0},
+          TemperatureData{0, 0.0}
     {
     }
 
@@ -54,9 +56,9 @@ struct MPU9250Data : public AccelerometerData,
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
+        os << accelerationTimestamp.value() << "," << accelerationX.value()
+           << "," << accelerationY.value() << "," << accelerationZ.value()
+           << "," << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << ","

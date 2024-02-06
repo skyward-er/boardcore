@@ -76,9 +76,9 @@ struct BMX160WithCorrectionData : public BMX160Data
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
+        os << accelerationTimestamp.value() << "," << accelerationX.value()
+           << "," << accelerationY.value() << "," << accelerationZ.value()
+           << "," << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << "\n";

@@ -34,7 +34,7 @@ BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config)
     spiSlave.config.clockDivider  = SPI::ClockDivider::DIV_32;
     oldMag.magneticFieldTimestamp = 0.0f;
     oldGyr.angularSpeedTimestamp  = 0.0f;
-    oldAcc.accelerationTimestamp  = 0.0f;
+    oldAcc.accelerationTimestamp  = Microsecond(0);
 }
 
 BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
@@ -43,7 +43,7 @@ BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
 {
     oldMag.magneticFieldTimestamp = 0.0f;
     oldGyr.angularSpeedTimestamp  = 0.0f;
-    oldAcc.accelerationTimestamp  = 0.0f;
+    oldAcc.accelerationTimestamp  = Microsecond(0);
 }
 
 bool BMX160::init()
@@ -608,9 +608,11 @@ AccelerometerData BMX160::buildAccData(BMX160Defs::AccRaw data,
 {
     using namespace Constants;
 
-    return AccelerometerData{timestamp, data.x * accSensibility * g,
-                             data.y * accSensibility * g,
-                             data.z * accSensibility * g};
+    return AccelerometerData{
+        Microsecond(timestamp),
+        MeterPerSecondSquared(data.x * accSensibility * g),
+        MeterPerSecondSquared(data.y * accSensibility * g),
+        MeterPerSecondSquared(data.z * accSensibility * g)};
 }
 
 GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
@@ -734,8 +736,8 @@ void BMX160::readFifo(bool headerless)
         oldMag.magneticFieldTimestamp -= interruptTimestampDelta;
     if (oldGyr.angularSpeedTimestamp != 0)
         oldGyr.angularSpeedTimestamp -= interruptTimestampDelta;
-    if (oldAcc.accelerationTimestamp != 0)
-        oldAcc.accelerationTimestamp -= interruptTimestampDelta;
+    if (oldAcc.accelerationTimestamp.value() != 0)
+        oldAcc.accelerationTimestamp -= Microsecond(interruptTimestampDelta);
 
     // Calculate time offset
     uint64_t timeOffset = std::min({
@@ -864,7 +866,7 @@ void BMX160::readFifo(bool headerless)
     for (int i = 0; i < lastFifoLevel; i++)
     {
         lastFifo[i].accelerationTimestamp +=
-            lastInterruptTimestamp - watermarkTimestamp;
+            Microsecond(lastInterruptTimestamp - watermarkTimestamp);
         lastFifo[i].angularSpeedTimestamp +=
             lastInterruptTimestamp - watermarkTimestamp;
         lastFifo[i].magneticFieldTimestamp +=

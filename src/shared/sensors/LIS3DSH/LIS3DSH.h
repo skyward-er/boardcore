@@ -187,9 +187,9 @@ public:
         for (uint8_t i = 0; i < numSamples; i++)
         {
             AccelerometerData accelData = readAccelData();
-            X_ST[i]                     = accelData.accelerationX;
-            Y_ST[i]                     = accelData.accelerationY;
-            Z_ST[i]                     = accelData.accelerationZ;
+            X_ST[i]                     = accelData.accelerationX.value();
+            Y_ST[i]                     = accelData.accelerationY.value();
+            Z_ST[i]                     = accelData.accelerationZ.value();
             miosix::Thread::sleep(10);
         }
         // reset the self-test bits
@@ -206,9 +206,9 @@ public:
         for (uint8_t i = 0; i < numSamples; i++)
         {
             AccelerometerData accelData = readAccelData();
-            X_NO_ST[i]                  = accelData.accelerationX;
-            Y_NO_ST[i]                  = accelData.accelerationY;
-            Z_NO_ST[i]                  = accelData.accelerationZ;
+            X_NO_ST[i]                  = accelData.accelerationX.value();
+            Y_NO_ST[i]                  = accelData.accelerationY.value();
+            Z_NO_ST[i]                  = accelData.accelerationZ.value();
             miosix::Thread::sleep(10);
         }
         // compute averages vectors:
@@ -365,25 +365,28 @@ private:
             {  // bit 7 of status set to 1 (some data overwritten)
 
                 accelData.accelerationTimestamp =
-                    TimestampTimer::getTimestamp();
+                    Microsecond(TimestampTimer::getTimestamp());
 
                 // read acceleration on X
-                int8_t accel_L = spi.readRegister(OUT_X_L);
-                int8_t accel_H = spi.readRegister(OUT_X_H);
-                accelData.accelerationX =
-                    static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
+                int8_t accel_L          = spi.readRegister(OUT_X_L);
+                int8_t accel_H          = spi.readRegister(OUT_X_H);
+                accelData.accelerationX = MeterPerSecondSquared(
+                    static_cast<float>(combine(accel_H, accel_L)) *
+                    sensitivity);
 
                 // read acceleration on Y
-                accel_L = spi.readRegister(OUT_Y_L);
-                accel_H = spi.readRegister(OUT_Y_H);
-                accelData.accelerationY =
-                    static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
+                accel_L                 = spi.readRegister(OUT_Y_L);
+                accel_H                 = spi.readRegister(OUT_Y_H);
+                accelData.accelerationY = MeterPerSecondSquared(
+                    static_cast<float>(combine(accel_H, accel_L)) *
+                    sensitivity);
 
                 // read acceleration on Z
-                accel_L = spi.readRegister(OUT_Z_L);
-                accel_H = spi.readRegister(OUT_Z_H);
-                accelData.accelerationZ =
-                    static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
+                accel_L                 = spi.readRegister(OUT_Z_L);
+                accel_H                 = spi.readRegister(OUT_Z_H);
+                accelData.accelerationZ = MeterPerSecondSquared(
+                    static_cast<float>(combine(accel_H, accel_L)) *
+                    sensitivity);
 
                 lastError = SensorErrors::NO_ERRORS;
             }

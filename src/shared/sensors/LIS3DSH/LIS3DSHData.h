@@ -26,15 +26,21 @@
 
 namespace Boardcore
 {
+using namespace Units::Acceleration;
+using namespace Units::Time;
 
 struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {
-    LIS3DSHData() : AccelerometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
+    LIS3DSHData()
+        : AccelerometerData{Microsecond(0), MeterPerSecondSquared(0),
+                            MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
+          TemperatureData{0, 0.0}
     {
     }
 
-    LIS3DSHData(uint64_t t, float x, float y, float z, float temp)
-        : AccelerometerData{t, x, y, z}, TemperatureData{t, temp}
+    LIS3DSHData(Microsecond t, MeterPerSecondSquared x, MeterPerSecondSquared y,
+                MeterPerSecondSquared z, float temp)
+        : AccelerometerData{t, x, y, z}, TemperatureData{t.value(), temp}
     {
     }
 
@@ -55,9 +61,9 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        os << accelerationTimestamp.value() << "," << accelerationX.value()
+           << "," << accelerationY.value() << "," << accelerationZ.value()
+           << "," << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 

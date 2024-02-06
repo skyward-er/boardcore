@@ -32,8 +32,9 @@ struct BMX160Data : public AccelerometerData,
                     public MagnetometerData
 {
     BMX160Data()
-        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
-          MagnetometerData{0, 0.0, 0.0, 0.0}
+        : AccelerometerData{Microsecond(0), MeterPerSecondSquared(0),
+                            MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
+          GyroscopeData{0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0, 0.0}
     {
     }
 
@@ -52,9 +53,9 @@ struct BMX160Data : public AccelerometerData,
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
+        os << accelerationTimestamp.value() << "," << accelerationX.value()
+           << "," << accelerationY.value() << "," << accelerationZ.value()
+           << "," << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << "\n";

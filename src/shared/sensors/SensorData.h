@@ -22,11 +22,16 @@
 
 #pragma once
 
+#include <units/Acceleration.h>
+#include <units/Time.h>
+
 #include <Eigen/Core>
 #include <ostream>
 
 namespace Boardcore
 {
+using namespace Units::Acceleration;
+using namespace Units::Time;
 
 /**
  * @brief Generic error codes that a sensor can generate.
@@ -108,14 +113,15 @@ struct HumidityData
  */
 struct AccelerometerData
 {
-    uint64_t accelerationTimestamp = 0;
-    float accelerationX            = 0;
-    float accelerationY            = 0;
-    float accelerationZ            = 0;
+    Microsecond accelerationTimestamp   = Microsecond(0);
+    MeterPerSecondSquared accelerationX = MeterPerSecondSquared(0);
+    MeterPerSecondSquared accelerationY = MeterPerSecondSquared(0);
+    MeterPerSecondSquared accelerationZ = MeterPerSecondSquared(0);
 
     AccelerometerData() {}
 
-    AccelerometerData(uint64_t timestamp, float x, float y, float z)
+    AccelerometerData(Microsecond timestamp, MeterPerSecondSquared x,
+                      MeterPerSecondSquared y, MeterPerSecondSquared z)
         : accelerationTimestamp(timestamp), accelerationX(x), accelerationY(y),
           accelerationZ(z)
     {
@@ -135,13 +141,15 @@ struct AccelerometerData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << "\n";
+        os << accelerationTimestamp.value() << "," << accelerationX.value()
+           << "," << accelerationY.value() << "," << accelerationZ.value()
+           << "\n";
     }
 
     operator Eigen::Vector3f() const
     {
-        return {accelerationX, accelerationY, accelerationZ};
+        return {accelerationX.value(), accelerationY.value(),
+                accelerationZ.value()};
     }
 };
 

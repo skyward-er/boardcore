@@ -43,11 +43,6 @@ ToTime time_cast(FromTime const &from)
     return ToTime(from);
 }
 
-std::chrono::duration<float> to_chrono(Time<> const &from)
-{
-    return std::chrono::duration<float>(from.value());
-}
-
 using Nanosecond  = Time<std::ratio<1, 1000000000>>;  // Time in nanoseconds
 using Microsecond = Time<std::ratio<1, 1000000>>;     // Time in microseconds
 using Millisecond = Time<std::ratio<1, 1000>>;        // Time in milliseconds
