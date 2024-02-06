@@ -47,27 +47,27 @@ TEST_CASE("RegistryFrontend test - Set and get configuration entries")
      */
     REQUIRE(registry.getConfigurationUnsafe(
                 static_cast<uint32_t>(ConfigurationEnum::DEPLOYMENT_ALTITUDE),
-                &floatValue) == false);
+                floatValue) == false);
     REQUIRE(registry.getConfigurationUnsafe(
                 static_cast<uint32_t>(ConfigurationEnum::TARGET_COORDINATES),
-                &coordinatesValue) == false);
+                coordinatesValue) == false);
     REQUIRE(registry.getConfigurationUnsafe(
                 static_cast<uint32_t>(
                     ConfigurationEnum::VENTING_VALVE_ATOMIC_TIMING),
-                &uint32Value) == false);
+                uint32Value) == false);
     REQUIRE(registry.getConfigurationUnsafe(
                 static_cast<uint32_t>(ConfigurationEnum::ALGORITHM),
-                &uint8Value) == false);
+                uint8Value) == false);
     /*! Check set configuration results in right get */
     REQUIRE(registry.setConfigurationUnsafe(
                 static_cast<uint32_t>(ConfigurationEnum::ALGORITHM),
                 testValueUint8) == true);
     uint8Value = 0;
     REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::ALGORITHM,
-                                            &uint8Value) == true);
+                                            uint8Value) == true);
     REQUIRE(uint8Value == testValueUint8);
     uint32Value = 0;
     REQUIRE(registry.setConfigurationUnsafe(100, testValueUint32) == true);
-    REQUIRE(registry.getConfigurationUnsafe(100, &uint32Value) == true);
+    REQUIRE(registry.getConfigurationUnsafe(100, uint32Value) == true);
     REQUIRE(uint32Value == testValueUint32);
 }
