@@ -91,39 +91,6 @@ struct UnionWrapFloatType : FloatType<T>
         : FloatType<T>(val, index)
     {
     }
-    /**
-     * @brief  Get the the correct float value from an Union object
-     *
-     * @param unionValue the union object from which get the union
-     * @return float the value to be returned from such union
-     */
-    static float getFromUnion(TypeUnion unionValue)
-    {
-        return unionValue.float_type;
-    }
-    /**
-     * @brief Creates an Union object from the float type value
-     *
-     * @param valueToSet The value to be set into the returned union
-     * @return TypeUnion the created union type.
-     */
-    static TypeUnion createUnion(float valueToSet)
-    {
-        TypeUnion toReturn;
-        toReturn.float_type = valueToSet;
-        return toReturn;
-    }
-    /**
-     * @brief Get the Union object with the correct float value of the instance
-     *
-     * @return TypeUnion the union with the value for such Float type structure
-     */
-    TypeUnion getUnion()
-    {
-        TypeUnion toReturn;
-        toReturn.float_type = this->value;
-        return toReturn;
-    }
 };
 
 /**
@@ -137,52 +104,6 @@ struct UnionWrapUInt32Type : UInt32Type<T>
     UnionWrapUInt32Type(const int32_t val, const T index)
         : UInt32Type<T>(val, index)
     {
-    }
-    /**
-     * @brief Get the the correct uint32_t value from an Union object
-     *
-     * @param unionValue the union object from which get the union
-     * @return uint32_t the value get from such union
-     */
-    static uint32_t getFromUnion(TypeUnion unionValue)
-    {
-        return unionValue.uint32_type;
-    }
-    /**
-     * @brief Creates an Union object from the float type value
-     *
-     * @param valueToSet The value to be set into the returned union
-     * @return TypeUnion the created union type.
-     */
-    static TypeUnion createUnion(uint32_t valueToSet)
-    {
-        TypeUnion toReturn;
-        toReturn.uint32_type = valueToSet;
-        return toReturn;
-    }
-    /**
-     * @brief Creates an Union object from the float type value
-     *
-     * @param valueToSet The value to be set into the returned union
-     * @return TypeUnion the created union type.
-     */
-    static TypeUnion createUnion(uint8_t valueToSet)
-    {
-        TypeUnion toReturn;
-        toReturn.uint32_type = static_cast<uint32_t>(valueToSet);
-        return toReturn;
-    }
-    /**
-     * @brief Get the Union object with the correct float value of the instance
-     *
-     * @return TypeUnion the union with the value for such uint32_t type
-     * structure
-     */
-    TypeUnion getUnion()
-    {
-        TypeUnion toReturn;
-        toReturn.uint32_type = this->value;
-        return toReturn;
     }
 };
 
@@ -198,54 +119,6 @@ struct UnionWrapUInt32Coordinates : CoordinatesType<T>
                                const T index)
         : CoordinatesType<T>(latitude, longitude, index)
     {
-    }
-    /**
-     * @brief Get the the uint32_t latitude value from an Union object
-     *
-     * @param unionValue the union object from which get the union
-     * @return the latitude value get from such union
-     */
-    static uint32_t getLatitudeFromUnion(TypeUnion unionValue)
-    {
-        return unionValue.coordinates_type.latitude;
-    }
-    /**
-     * @brief Get the the uint32_t longitude value from an Union object
-     *
-     * @param unionValue the union object from which get the union
-     * @return uint32_t the longitude value get from such union
-     */
-    static uint32_t getLongitudeFromUnion(TypeUnion unionValue)
-    {
-        return unionValue.coordinates_type.longitude;
-    }
-    /**
-     * @brief Creates an Union object from the latitude, longitude uint32_t type
-     * values
-     *
-     * @param valueToSet The value to be set into the returned union
-     * @return TypeUnion the created union type.
-     */
-    static TypeUnion createUnion(uint32_t latitudeToSet,
-                                 uint32_t longitudeToSet)
-    {
-        TypeUnion toReturn;
-        toReturn.coordinates_type.latitude  = latitudeToSet;
-        toReturn.coordinates_type.longitude = longitudeToSet;
-        return toReturn;
-    }
-    /**
-     * @brief Get the Union object with the correct coordinates value of the
-     * instance
-     *
-     * @return TypeUnion the union with the value for such Coordinates type
-     * structure
-     */
-    TypeUnion getUnion()
-    {
-        TypeUnion toReturn;
-        toReturn.coordinates_type = this->value;
-        return toReturn;
     }
 };
 

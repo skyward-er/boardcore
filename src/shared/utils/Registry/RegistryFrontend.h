@@ -68,9 +68,9 @@ struct EntryStructsUnion
     /**
      * @brief Gets from the TypeUnion the float value and returns it.
      */
-    static void getFromUnion(const TypeUnion unionValue, float* value)
+    static void getFromUnion(const TypeUnion unionValue, float& value)
     {
-        *value = unionValue.float_type;
+        value = unionValue.float_type;
     }
 
     /**
@@ -79,10 +79,10 @@ struct EntryStructsUnion
      * @param unionType the union value from which take the integer.
      * @param value the uint8_t value saved into the union type
      */
-    static void getFromUnion(const TypeUnion unionValue, uint8_t* value)
+    static void getFromUnion(const TypeUnion unionValue, uint8_t& value)
     {
         // TODO: Just check is all correct...
-        *value = static_cast<uint8_t>(unionValue.uint32_type);
+        value = static_cast<uint8_t>(unionValue.uint32_type);
     }
 
     /**
@@ -92,9 +92,9 @@ struct EntryStructsUnion
      * @param value the uint32_t value saved into the union type
 
      */
-    static void getFromUnion(const TypeUnion unionValue, uint32_t* value)
+    static void getFromUnion(const TypeUnion unionValue, uint32_t& value)
     {
-        *value = unionValue.uint32_type;
+        value = unionValue.uint32_type;
     }
 
     /**
@@ -104,9 +104,9 @@ struct EntryStructsUnion
     * @param value the coordinates value saved into the union type
 
     */
-    static void getFromUnion(const TypeUnion unionValue, Coordinates* value)
+    static void getFromUnion(const TypeUnion unionValue, Coordinates& value)
     {
-        *value = unionValue.coordinates_type;
+        value = unionValue.coordinates_type;
     }
 
     /**
@@ -161,10 +161,7 @@ struct EntryStructsUnion
         return TypesEnum::UINT32_T;
     }
 
-    static TypesEnum getTypeIndex(float value)
-    {
-        return TypesEnum::FLOAT;
-    }
+    static TypesEnum getTypeIndex(float value) { return TypesEnum::FLOAT; }
 
     static TypesEnum getTypeIndex(Coordinates value)
     {
@@ -257,7 +254,7 @@ public:
      */
     template <typename T>
     auto getConfigurationUnsafe(const ConfigurationId configurationIndex,
-                                T* value) -> bool
+                                T& value) -> bool
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
@@ -303,8 +300,8 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    auto setConfigurationUnsafe(ConfigurationId configurationIndex,
-                                T value) -> bool
+    auto setConfigurationUnsafe(ConfigurationId configurationIndex, T value)
+        -> bool
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         /*! In case that the configuration is in an armed state it cannot be
@@ -343,10 +340,10 @@ public:
      * otherwise.
      */
     template <typename T>
-    auto getConfiguration(T* value) -> bool
+    auto getConfiguration(T& value) -> bool
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        auto iterator = configuration.find((*value).index);
+        auto iterator = configuration.find(value.index);
         if (iterator == configuration.end())
         {
             TRACE("Registry - getConfiguration - Get configuration not found");
