@@ -67,110 +67,139 @@ struct EntryStructsUnion
     }
     /**
      * @brief Gets from the TypeUnion the float value and returns it.
+     *
+     * @param unionType the union value from which take the integer.
+     * @param valueToGet the uint8_t value saved into the union type
+     *
+     * @return True if the type is correct w.r.t. the saved one
      */
-    static void getFromUnion(const TypeUnion unionValue, float& value)
+    bool getFromUnion(TypeUnion unionValue, float& valueToGet)
     {
-        value = unionValue.float_type;
+        if (type != TypesEnum::FLOAT)
+            return false;
+        valueToGet = unionValue.float_type;
+        return true;
     }
 
     /**
      * @brief Get from Union object the unsigned integer 8b  value.
      *
      * @param unionType the union value from which take the integer.
-     * @param value the uint8_t value saved into the union type
+     * @param valueToGet the uint8_t value saved into the union type
      */
-    static void getFromUnion(const TypeUnion unionValue, uint8_t& value)
+    bool getFromUnion(TypeUnion unionValue, uint8_t& valueToGet)
     {
+        if (type != TypesEnum::UINT32_T)
+            return false;
         // TODO: Just check is all correct...
-        value = static_cast<uint8_t>(unionValue.uint32_type);
+        valueToGet = static_cast<uint8_t>(unionValue.uint32_type);
+        return true;
     }
 
     /**
      * @brief Get from Union object the unsigned integer 32b value.
      *
      * @param unionType the union value from which take the integer.
-     * @param value the uint32_t value saved into the union type
+     * @param valueToGet the uint32_t value saved into the union type
 
      */
-    static void getFromUnion(const TypeUnion unionValue, uint32_t& value)
+    bool getFromUnion(uint32_t& valueToGet)
     {
-        value = unionValue.uint32_type;
+        if (type != TypesEnum::UINT32_T)
+            return false;
+        valueToGet = value.uint32_type;
+        return true;
     }
 
     /**
-    * @brief Get from Union object the coordinates value.
-    *
-    * @param unionType the union value from which take the integer.
-    * @param value the coordinates value saved into the union type
+     * @brief Get from Union object the unsigned integer 32b value.
+     *
+     * @param unionType the union value from which take the integer.
+     * @param valueToGet the uint32_t value saved into the union type
 
-    */
-    static void getFromUnion(const TypeUnion unionValue, Coordinates& value)
+     */
+    bool getFromUnion(uint8_t& valueToGet)
     {
-        value = unionValue.coordinates_type;
+        if (type != TypesEnum::UINT32_T)
+            return false;
+        valueToGet = static_cast<uint8_t>(value.uint32_type);
+        return true;
+    }
+
+    /**
+     * @brief Get from Union object the coordinates value.
+     *
+     * @param unionType the union value from which take the integer.
+     * @param valueToGet the coordinates value saved into the union type
+     *
+     * @return True if the type is coherent with the one saved into the
+     * EntryStructUnion
+     */
+    bool getFromUnion(Coordinates& valueToGet)
+    {
+        if (type != TypesEnum::COORDINATES)
+            return false;
+        valueToGet = value.coordinates_type;
+        return true;
+    }
+
+    /**
+     * @brief Get from Union object the float value.
+     *
+     * @param unionType the union value from which take the integer.
+     * @param valueToGet the float value saved into the union type
+     *
+     * @return True if the type is coherent with the one saved into the
+     * EntryStructUnion
+     */
+    bool getFromUnion(float& valueToGet)
+    {
+        if (type != TypesEnum::FLOAT)
+            return false;
+        valueToGet = value.float_type;
+        return true;
     }
 
     /**
      * @brief Set the Union object with its float value
      *
-     * @param value The value to be set into the union type
+     * @param valueToSet The value to be set into the union type
      * @return TypeUnion the returned created type union with its float value
      * set.
      */
-    static TypeUnion setUnion(float value)
+    static EntryStructsUnion setUnion(float valueToSet)
     {
         TypeUnion returnValue;
-        returnValue.float_type = value;
-        return returnValue;
+        returnValue.float_type = valueToSet;
+        return EntryStructsUnion(returnValue, TypesEnum::FLOAT);
     }
 
     /**
      * @brief Set the Union object with its unsigned 8bit integer value
      *
-     * @param value The value to be set into the union type
+     * @param valueToSet The value to be set into the union type
      * @return TypeUnion the returned created type union with its int value
      * set.
      */
-    static TypeUnion setUnion(uint8_t value)
+    static EntryStructsUnion setUnion(uint8_t valueToSet)
     {
         TypeUnion returnValue;
-        returnValue.uint32_type = static_cast<uint32_t>(value);
-        return returnValue;
+        returnValue.uint32_type = static_cast<uint32_t>(valueToSet);
+        return EntryStructsUnion(returnValue, TypesEnum::UINT32_T);
     }
 
     /**
      * @brief Set the Union object with its unsigned 32bit integer value
      *
-     * @param value The value to be set into the union type
+     * @param valueToSet The value to be set into the union type
      * @return TypeUnion the returned created type union with its int value
      * set.
      */
-    static TypeUnion setUnion(uint32_t value)
+    static EntryStructsUnion setUnion(uint32_t valueToSet)
     {
         TypeUnion returnValue;
-        returnValue.uint32_type = value;
-        return returnValue;
-    }
-
-    /**
-     * @brief Get the enumeration index
-     *
-     * @param value the coordinates value saved into the union type
-     */
-    static TypesEnum getTypeIndex(uint32_t value)
-    {
-        return TypesEnum::UINT32_T;
-    }
-
-    static TypesEnum getTypeIndex(float value) { return TypesEnum::FLOAT; }
-
-    static TypesEnum getTypeIndex(Coordinates value)
-    {
-        return TypesEnum::COORDINATES;
-    }
-
-    static TypesEnum getTypeIndex(uint8_t value)
-    {
-        return TypesEnum::UINT32_T;  //< Since static conversion to uint32_t
+        returnValue.uint32_type = valueToSet;
+        return EntryStructsUnion(returnValue, TypesEnum::UINT32_T);
     }
 };
 
@@ -190,8 +219,6 @@ private:
     std::recursive_mutex mutexForRegistry;
     std::unordered_set<ConfigurationId> setConfigurations;
     bool isArmed = false;
-
-    /*! HELPER FUNCTIONS TO SET/GET UNION TYPE */
 
 public:
     RegistryFrontend();
@@ -258,22 +285,22 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
-        if (iterator == configuration.end())
-            return false;
-        EntryStructsUnion::getFromUnion(iterator->second.value, value);
-        // TODO: Check type enum and real type?
-        return true;
-    };
+        /** Checks that the value type corresponds to the set type and finds the
+         * entry*/
+        return !(iterator == configuration.end()) &&
+               (iterator->second.getFromUnion(value));
+    }
     /**
      * @brief Gets the value for a specified configuration entry. Otherwise
      * returns and try to set the default value
      * @tparam T The value data type to be returned and eventually set.
      * @param configurationIndex Identifies the configuration entry with its
      * enumeration value
-     * @param defaultValue The default value to be returned and set (eventually)
-     * in case of non-existing configuration entry
-     * @return The value saved for the configuration entry in the configuration
-     * or the default value if there is no such entry in the configuration
+     * @param defaultValue The default value to be returned and set
+     * (eventually) in case of non-existing configuration entry
+     * @return The value saved for the configuration entry in the
+     * configuration or the default value if there is no such entry in the
+     * configuration
      */
     template <typename T>
     auto getOrSetDefaultConfigurationUnsafe(
@@ -291,11 +318,13 @@ public:
     }
 
     /**
-     * @brief Sets the value for the configuration entry with the specified enum
+     * @brief Sets the value for the configuration entry with the specified
+     * enum
      * @tparam T The configuration struct datatype
-     * @param configurationIndex The initialized configuration structure to be
-     * set as configuration entry
-     * @param value The value to be set for the specified configuration entry
+     * @param configurationIndex The initialized configuration structure to
+     * be set as configuration entry
+     * @param value The value to be set for the specified configuration
+     * entry
      * @return True if it was possible to set the configurationEntry. False
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
@@ -308,8 +337,7 @@ public:
          * modified */
         if (isArmed)
             return false;
-        EntryStructsUnion entry(EntryStructsUnion::setUnion(value),
-                                EntryStructsUnion::getTypeIndex(value));
+        EntryStructsUnion entry(EntryStructsUnion::setUnion(value));
         bool success =
             configuration.insert(std::make_pair(configurationIndex, entry))
                 .second;
@@ -346,17 +374,18 @@ public:
         auto iterator = configuration.find(value.index);
         if (iterator == configuration.end())
         {
-            TRACE("Registry - getConfiguration - Get configuration not found");
+            TRACE(
+                "Registry - getConfiguration - Get configuration not "
+                "found");
             return false;
         }
-        // TODO: Check type enum and real type?
-        (*value).value = iterator->second.value;
+        value.value = iterator->second.value;
         return true;
     };
 
     /**
-     * @brief Sets the configuration entry in the registry configuration using
-     * the given configuration entry struct.
+     * @brief Sets the configuration entry in the registry configuration
+     * using the given configuration entry struct.
      *
      * @tparam T The configuration entry struct
      * @param configurationEntry The configuration entry initialized and set
@@ -368,10 +397,8 @@ public:
     auto setConfiguration(T configurationEntry) -> bool
     {
         std::lock_guard<std::mutex> lock(mutexForRegistry);
-        EntryStructsUnion entryToSet = EntryStructsUnion(
-            configurationEntry,
-            EntryStructsUnion::getTypeIndex(configurationEntry.val));
-        bool success = configuration
+        EntryStructsUnion entryToSet = EntryStructsUnion(configurationEntry);
+        bool success                 = configuration
                            .insert(std::make_pair(configurationEntry.enumVal,
                                                   entryToSet.value))
                            .second;

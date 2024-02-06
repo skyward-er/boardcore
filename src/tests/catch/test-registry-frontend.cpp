@@ -70,4 +70,7 @@ TEST_CASE("RegistryFrontend test - Set and get configuration entries")
     REQUIRE(registry.setConfigurationUnsafe(100, testValueUint32) == true);
     REQUIRE(registry.getConfigurationUnsafe(100, uint32Value) == true);
     REQUIRE(uint32Value == testValueUint32);
+    /*! Checks that get configuration is false if the type is incorrect w.r.t.
+     * the type of the set type */
+    REQUIRE(registry.getConfigurationUnsafe(100, floatValue) == false);
 }
