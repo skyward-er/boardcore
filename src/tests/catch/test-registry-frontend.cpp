@@ -62,7 +62,12 @@ TEST_CASE("RegistryFrontend test - Set and get configuration entries")
     REQUIRE(registry.setConfigurationUnsafe(
                 static_cast<uint32_t>(ConfigurationEnum::ALGORITHM),
                 testValueUint8) == true);
+    uint8Value = 0;
     REQUIRE(registry.getConfigurationUnsafe(ConfigurationEnum::ALGORITHM,
                                             &uint8Value) == true);
     REQUIRE(uint8Value == testValueUint8);
+    uint32Value = 0;
+    REQUIRE(registry.setConfigurationUnsafe(100, testValueUint32) == true);
+    REQUIRE(registry.getConfigurationUnsafe(100, &uint32Value) == true);
+    REQUIRE(uint32Value == testValueUint32);
 }

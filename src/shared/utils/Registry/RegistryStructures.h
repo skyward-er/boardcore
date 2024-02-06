@@ -64,22 +64,6 @@ enum ConfigurationEnum
 };
 
 /**
- * @brief Coordinates struct with latitude [degree], longitude [degree]
- */
-struct Coordinates
-{
-    uint32_t latitude;
-    uint32_t longitude;
-
-    explicit Coordinates(const uint32_t setLatitude,
-                         const uint32_t setLongitude)
-        : latitude(setLatitude), longitude(setLongitude)
-    {
-    }
-    Coordinates() {}
-};
-
-/**
  * @brief Union type used for the underlying saving mechanism for the
  * configuration values
  */
@@ -208,12 +192,11 @@ struct UnionWrapUInt32Type : UInt32Type<T>
  * TypeUnion union and the float type will inherit from this.
  */
 template <typename T>
-struct UnionWrapUInt32Coordinates : RootTypeStructure<Coordinates, T>
+struct UnionWrapUInt32Coordinates : CoordinatesType<T>
 {
     UnionWrapUInt32Coordinates(const int32_t latitude, const int32_t longitude,
                                const T index)
-        : RootTypeStructure<Coordinates, T>(Coordinates(latitude, longitude),
-                                            index)
+        : CoordinatesType<T>(latitude, longitude, index)
     {
     }
     /**
