@@ -73,4 +73,36 @@ struct UInt32Type : RootTypeStructure<uint32_t, T_ENUM>
     }
 };
 
+/**
+ * @brief Coordinates struct with latitude [degree], longitude [degree]
+ */
+struct Coordinates
+{
+    uint32_t latitude;
+    uint32_t longitude;
+
+    explicit Coordinates(const uint32_t setLatitude,
+                         const uint32_t setLongitude)
+        : latitude(setLatitude), longitude(setLongitude)
+    {
+    }
+    Coordinates() {}
+};
+
+/**
+ * @brief Struct for store values with data type of uint32_t and upcasts uint8_t
+ * @tparam T_ENUM Enumerator used as index for such data structure if any is
+ * used.
+ */
+template <typename T_ENUM>
+struct CoordinatesType : RootTypeStructure<Coordinates, T_ENUM>
+{
+    explicit CoordinatesType(const uint32_t latitude, const uint32_t longitude,
+                             const T_ENUM index)
+        : RootTypeStructure<Coordinates, T_ENUM>(
+              Coordinates(latitude, longitude), index)
+    {
+    }
+};
+
 };  // namespace Boardcore

@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 #include <utils/Debug.h>
+#include <utils/Registry/RegistryStructures.h>
+#include <utils/Registry/TypeStructures.h>
 
 #include <mutex>
 #include <unordered_map>
@@ -32,16 +34,19 @@
 #include "RegistryStructures.h"
 #include "TypeStructures.h"
 
-#pragma once
-
-#include <utils/Registry/RegistryStructures.h>
-#include <utils/Registry/TypeStructures.h>
-
 namespace Boardcore
 {
 
 /*! The Configuration ID for the configuration entries */
 typedef uint32_t ConfigurationId;
+
+/*! Types used for the union */
+enum TypesEnum
+{
+    UINT32_T,
+    FLOAT,
+    COORDINATES
+};
 
 /**
  * Union data struct to be stored in the map. It does contain the enumeration
@@ -50,38 +55,16 @@ typedef uint32_t ConfigurationId;
 struct EntryStructsUnion
 {
     TypeUnion value;
-    ConfigurationId enumVal;
+    TypesEnum type;
     /**
      * @brief Constructor for the struct. It does take the right configuration
      * struct for such entry configuration
      */
     template <typename T>
-    EntryStructsUnion(T configurationStructUnion,
-                      ConfigurationId configurationEnumIndex)
-        : value(configurationStructUnion), enumVal(configurationEnumIndex)
+    EntryStructsUnion(T configurationStructUnion, TypesEnum typeIndexToSet)
+        : value(configurationStructUnion), type(typeIndexToSet)
     {
     }
-};
-
-/**
- * This is the front-end for the registry in case of
- * type unsafe and safe methods for type safeness.
- * It does check the data types but its job is mainly the one of
- * getting and setting given the uint32_t or ConfigurationEnum parameter, the
- * value for such configuration entry. Also it does expose methods for change
- * into a "safe" state the registry during flight as for methods for exploring
- * the current configuration
- */
-class RegistryFrontend
-{
-private:
-    std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
-    std::recursive_mutex mutexForRegistry;
-    std::unordered_set<ConfigurationId> setConfigurations;
-    bool isArmed = false;
-
-    /*! HELPER FUNCTIONS TO SET/GET UNION TYPE */
-
     /**
      * @brief Gets from the TypeUnion the float value and returns it.
      */
@@ -133,7 +116,7 @@ private:
      * @return TypeUnion the returned created type union with its float value
      * set.
      */
-    static TypeUnion setUnion(const float value)
+    static TypeUnion setUnion(float value)
     {
         TypeUnion returnValue;
         returnValue.float_type = value;
@@ -147,7 +130,7 @@ private:
      * @return TypeUnion the returned created type union with its int value
      * set.
      */
-    static TypeUnion setUnion(const uint8_t value)
+    static TypeUnion setUnion(uint8_t value)
     {
         TypeUnion returnValue;
         returnValue.uint32_type = static_cast<uint32_t>(value);
@@ -161,12 +144,57 @@ private:
      * @return TypeUnion the returned created type union with its int value
      * set.
      */
-    static TypeUnion setUnion(const uint32_t value)
+    static TypeUnion setUnion(uint32_t value)
     {
         TypeUnion returnValue;
         returnValue.uint32_type = value;
         return returnValue;
     }
+
+    /**
+     * @brief Get the enumeration index
+     *
+     * @param value the coordinates value saved into the union type
+     */
+    static TypesEnum getTypeIndex(uint32_t value)
+    {
+        return TypesEnum::UINT32_T;
+    }
+
+    static TypesEnum getTypeIndex(float value)
+    {
+        return TypesEnum::FLOAT;
+    }
+
+    static TypesEnum getTypeIndex(Coordinates value)
+    {
+        return TypesEnum::COORDINATES;
+    }
+
+    static TypesEnum getTypeIndex(uint8_t value)
+    {
+        return TypesEnum::UINT32_T;  //< Since static conversion to uint32_t
+    }
+};
+
+/**
+ * This is the front-end for the registry in case of
+ * type unsafe and safe methods for type safeness.
+ * It does check the data types but its job is mainly the one of
+ * getting and setting given the uint32_t or ConfigurationEnum parameter, the
+ * value for such configuration entry. Also it does expose methods for change
+ * into a "safe" state the registry during flight as for methods for exploring
+ * the current configuration
+ */
+class RegistryFrontend
+{
+private:
+    std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
+    std::recursive_mutex mutexForRegistry;
+    std::unordered_set<ConfigurationId> setConfigurations;
+    bool isArmed = false;
+
+    /*! HELPER FUNCTIONS TO SET/GET UNION TYPE */
 
 public:
     RegistryFrontend();
@@ -194,10 +222,11 @@ public:
     std::unordered_set<ConfigurationId> getConfiguredEntries();
 
     /**
-     * @brief Verify if the configuration exists already in memory
-     * @return True if the configuration exists in memory, False if not.
+     * @brief Loads from the backend the configuration
+     * @return True if the configuration exists in memory and is not corrupted,
+     * False if not.
      */
-    auto isConfigured() -> bool;
+    auto loadConfiguration() -> bool;
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
@@ -214,13 +243,6 @@ public:
      */
     auto isConfigurationEmpty() -> bool;
 
-    /**
-     * @brief Verifies the integrity of the configuration saved.
-     * @returns True if the configuration saved in memory has corrupted data.
-     * False otherwise.
-     */
-    auto isConfigurationCorrupted() -> bool;
-
     /*! TYPE UNSAFE INTERFACE METHODS */
 
     /**
@@ -234,14 +256,15 @@ public:
      * limits or "armed" memory)
      */
     template <typename T>
-    auto const getConfigurationUnsafe(const ConfigurationId configurationIndex,
-                                      T* value) -> bool
+    auto getConfigurationUnsafe(const ConfigurationId configurationIndex,
+                                T* value) -> bool
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
         if (iterator == configuration.end())
             return false;
-        getFromUnion(iterator->second.value, value);
+        EntryStructsUnion::getFromUnion(iterator->second.value, value);
+        // TODO: Check type enum and real type?
         return true;
     };
     /**
@@ -271,44 +294,6 @@ public:
     }
 
     /**
-     * @brief Sets the specified configuration entry using its specific data
-     * structure
-     * @tparam T The particular configuration struct for such
-     * configuration entry
-     * @param configurationEntry The initialized configuration structure to be
-     * set as configuration entry
-     * @return True if it was possible to set the configurationEntry. False
-     * otherwise, e.g. in case of allocation issues or "armed" memory
-     */
-    template <typename T>
-    auto setConfigurationUnsafe(const T configurationEntry) -> bool
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        /*! In case that the configuration is in an armed state it cannot be
-         * modified */
-        if (isArmed)
-            return false;
-        EntryStructsUnion entry =
-            EntryStructsUnion(configurationEntry, configurationEntry.index);
-        bool success =
-            configuration.insert(std::make_pair(entry.enumVal, entry)).second;
-        if (!success)
-        {
-            TRACE(
-                "Registry - setConfigurationUnsafe - Could not insert the "
-                "configuration entry");
-            return false;
-        }
-        success = setConfigurations.insert(configurationEntry.index).second;
-        if (success)
-            return true;
-        TRACE(
-            "Registry - setConfigurationUnsafe - Could not insert the "
-            "configuration entry");
-        return false;
-    }
-
-    /**
      * @brief Sets the value for the configuration entry with the specified enum
      * @tparam T The configuration struct datatype
      * @param configurationIndex The initialized configuration structure to be
@@ -318,7 +303,7 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    auto setConfigurationUnsafe(const ConfigurationId configurationIndex,
+    auto setConfigurationUnsafe(ConfigurationId configurationIndex,
                                 T value) -> bool
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
@@ -326,9 +311,11 @@ public:
          * modified */
         if (isArmed)
             return false;
-        EntryStructsUnion entry(setUnion(value), configurationIndex);
+        EntryStructsUnion entry(EntryStructsUnion::setUnion(value),
+                                EntryStructsUnion::getTypeIndex(value));
         bool success =
-            configuration.insert(std::make_pair(entry.enumVal, entry)).second;
+            configuration.insert(std::make_pair(configurationIndex, entry))
+                .second;
         if (!success)
         {
             TRACE(
@@ -365,48 +352,10 @@ public:
             TRACE("Registry - getConfiguration - Get configuration not found");
             return false;
         }
-        (*value).value = iterator->second;
+        // TODO: Check type enum and real type?
+        (*value).value = iterator->second.value;
         return true;
     };
-
-    /**
-     * @brief Gets the saved configuration entry for such index type-safely.
-     * If such element does not exists in the configuration, returns the default
-     * value given as parameter
-     *
-     * @tparam T The configuration entry value data type.
-     * @param defaultValue The struct for such entry with the default value set.
-     * @return The configuration structure from the current configuration or the
-     * default one.
-     */
-    template <typename T>
-    auto getOrSetDefaultConfiguration(const T defaultValueStruct) -> T
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        auto iterator = configuration.find(defaultValueStruct.index);
-        if (iterator == configuration.end())
-        {
-            TRACE(
-                "Registry - getConfigurationOrDefault - Get configuration not "
-                "found, setting a default one");
-            if (isArmed)
-            {
-                TRACE(
-                    "Registry - getConfigurationOrDefault - "
-                    "Could not configure the default value due to armed "
-                    "registry");
-                return defaultValueStruct;
-            }
-            EntryStructsUnion entryToAdd =
-                EntryStructsUnion(defaultValueStruct);
-            configuration.insert(
-                std::make_pair(entryToAdd.enumVal, entryToAdd));
-            setConfiguration<T>.insert(entryToAdd.enumVal);
-            return defaultValueStruct;
-        }
-        EntryStructsUnion entryToReturn = EntryStructsUnion(iterator->second);
-        return entryToReturn;
-    }
 
     /**
      * @brief Sets the configuration entry in the registry configuration using
@@ -419,14 +368,16 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    auto setConfiguration(const T configurationEntry) -> bool
+    auto setConfiguration(T configurationEntry) -> bool
     {
         std::lock_guard<std::mutex> lock(mutexForRegistry);
-        EntryStructsUnion entryToSet =
-            EntryStructsUnion(configurationEntry, configurationEntry.enumVal);
-        bool success =
-            configuration.insert(std::make_pair(entryToSet.enumVal, entryToSet))
-                .second;
+        EntryStructsUnion entryToSet = EntryStructsUnion(
+            configurationEntry,
+            EntryStructsUnion::getTypeIndex(configurationEntry.val));
+        bool success = configuration
+                           .insert(std::make_pair(configurationEntry.enumVal,
+                                                  entryToSet.value))
+                           .second;
         if (!success)
         {
             TRACE(
@@ -434,12 +385,7 @@ public:
                 "configuration entry");
             return false;
         }
-        success = setConfigurations.insert(configurationEntry.index).second;
-        if (success)
-        {
-            return true;
-        }
-        return false;
+        return setConfigurations.insert(configurationEntry.index).second;
     }
 };
 

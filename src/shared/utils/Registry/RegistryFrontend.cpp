@@ -92,12 +92,13 @@ auto RegistryFrontend::getConfiguredEntries()
 }
 
 /**
- * @brief Verify if the configuration exists already in memory
- * @return True if the configuration exists in memory, False if not.
+ * @brief Loads from the backend the configuration
+ * @return True if the configuration exists in memory and is not corrupted,
+ * False if not.
  */
-auto RegistryFrontend::isConfigured() -> bool
+auto RegistryFrontend::loadConfiguration() -> bool
 {
-    // TODO: Return if there is a valid configuration
+    // TODO: Return if there is a valid configuration loaded from the backend
     return true;
 }
 
@@ -112,9 +113,7 @@ auto RegistryFrontend::isEntryConfigured(
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     auto iterator = configuration.find(configurationIndex);
-    if (iterator == configuration.end())
-        return false;
-    return true;
+    return !(iterator == configuration.end());
 }
 
 /**
@@ -128,14 +127,4 @@ auto RegistryFrontend::isConfigurationEmpty() -> bool
     return configuration.empty();
 };
 
-/**
- * @brief Verifies the integrity of the configuration saved.
- * @returns True if the configuration saved in memory has corrupted data.
- * False otherwise.
- */
-auto RegistryFrontend::isConfigurationCorrupted() -> bool
-{
-    // TODO: Check that the configuration is corrupted
-    return false;
-}
 };  // namespace Boardcore
