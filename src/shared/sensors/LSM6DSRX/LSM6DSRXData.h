@@ -30,7 +30,7 @@ namespace Boardcore
 struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
 {
     LSM6DSRXData()
-        : AccelerometerData{Microsecond(0), MeterPerSecondSquared(0),
+        : AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
           GyroscopeData{0, 0.0, 0.0, 0.0}
     {
@@ -45,9 +45,9 @@ struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp.value() << "," << accelerationX.value()
-           << "," << accelerationY.value() << "," << accelerationZ.value()
-           << "," << angularSpeedTimestamp << "," << angularSpeedX << ","
+        os << accelerationTimestamp << "," << accelerationX.value() << ","
+           << accelerationY.value() << "," << accelerationZ.value() << ","
+           << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << "\n";
     }
 };

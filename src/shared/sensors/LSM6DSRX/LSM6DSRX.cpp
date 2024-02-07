@@ -624,7 +624,7 @@ uint16_t LSM6DSRX::combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
 
 void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
-    data.accelerationTimestamp = Microsecond(TimestampTimer::getTimestamp());
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
     data.accelerationX = MeterPerSecondSquared(
         getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A,
@@ -885,9 +885,9 @@ void LSM6DSRX::readFromFifo()
 
                 // Set new data
                 timestamps[timeslotTag].data.accelerationTimestamp =
-                    Microsecond(convertTimestamp(static_cast<uint64_t>(t)));
+                    convertTimestamp(static_cast<uint64_t>(t));
                 timestamps[timeslotTag].data.angularSpeedTimestamp =
-                    timestamps[timeslotTag].data.accelerationTimestamp.value();
+                    timestamps[timeslotTag].data.accelerationTimestamp;
 
                 timestamps[timeslotTag].accPresent = false;
                 timestamps[timeslotTag].gyrPresent = false;
@@ -912,7 +912,7 @@ void LSM6DSRX::pushIntoFifo(LSM6DSRXDefs::FifoTimeslotData& timeslot,
     // check if data can be pushed
     if ((fifoIdx > 0 && timeslot.data.accelerationTimestamp ==
                             lastFifo[fifoIdx - 1].accelerationTimestamp) ||
-        timeslot.data.accelerationTimestamp.value() == 0)
+        timeslot.data.accelerationTimestamp == 0)
     {
         // the new sample has the same timestamp of the previous one or
         // timestamp is 0 --> discarded

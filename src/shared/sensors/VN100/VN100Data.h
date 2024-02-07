@@ -47,7 +47,7 @@ struct VN100Data : public QuaternionData,
     VN100Data()
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
-          AccelerometerData{Microsecond(0), MeterPerSecondSquared(0),
+          AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
           GyroscopeData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0},
           PressureData{0, 0.0}
@@ -86,9 +86,9 @@ struct VN100Data : public QuaternionData,
            << "," << quaternionZ << "," << quaternionW << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << ","
-           << accelerationTimestamp.value() << "," << accelerationX.value()
-           << "," << accelerationY.value() << "," << accelerationZ.value()
-           << "," << angularSpeedTimestamp << "," << angularSpeedX << ","
+           << accelerationTimestamp << "," << accelerationX.value() << ","
+           << accelerationY.value() << "," << accelerationZ.value() << ","
+           << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << ","
            << temperatureTimestamp << "," << temperature << ","
            << pressureTimestamp << "," << pressure << "\n";

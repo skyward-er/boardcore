@@ -32,15 +32,15 @@ using namespace Units::Time;
 struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {
     LIS3DSHData()
-        : AccelerometerData{Microsecond(0), MeterPerSecondSquared(0),
+        : AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
           TemperatureData{0, 0.0}
     {
     }
 
-    LIS3DSHData(Microsecond t, MeterPerSecondSquared x, MeterPerSecondSquared y,
+    LIS3DSHData(uint64_t t, MeterPerSecondSquared x, MeterPerSecondSquared y,
                 MeterPerSecondSquared z, float temp)
-        : AccelerometerData{t, x, y, z}, TemperatureData{t.value(), temp}
+        : AccelerometerData{t, x, y, z}, TemperatureData{t, temp}
     {
     }
 
@@ -61,9 +61,9 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp.value() << "," << accelerationX.value()
-           << "," << accelerationY.value() << "," << accelerationZ.value()
-           << "," << temperatureTimestamp << "," << temperature << "\n";
+        os << accelerationTimestamp << "," << accelerationX.value() << ","
+           << accelerationY.value() << "," << accelerationZ.value() << ","
+           << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 

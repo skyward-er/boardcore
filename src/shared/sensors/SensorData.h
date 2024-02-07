@@ -31,7 +31,6 @@
 namespace Boardcore
 {
 using namespace Units::Acceleration;
-using namespace Units::Time;
 
 /**
  * @brief Generic error codes that a sensor can generate.
@@ -113,16 +112,16 @@ struct HumidityData
  */
 struct AccelerometerData
 {
-    Microsecond accelerationTimestamp   = Microsecond(0);
+    uint64_t accelerationTimestamp      = 0;
     MeterPerSecondSquared accelerationX = MeterPerSecondSquared(0);
     MeterPerSecondSquared accelerationY = MeterPerSecondSquared(0);
     MeterPerSecondSquared accelerationZ = MeterPerSecondSquared(0);
 
     AccelerometerData() {}
 
-    AccelerometerData(Microsecond timestamp, MeterPerSecondSquared x,
+    AccelerometerData(uint64_t timestamp, MeterPerSecondSquared x,
                       MeterPerSecondSquared y, MeterPerSecondSquared z)
-        : accelerationTimestamp(timestamp), accelerationX(x), accelerationY(y),
+        : accelerationTimestamp(0), accelerationX(x), accelerationY(y),
           accelerationZ(z)
     {
     }
@@ -141,9 +140,8 @@ struct AccelerometerData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp.value() << "," << accelerationX.value()
-           << "," << accelerationY.value() << "," << accelerationZ.value()
-           << "\n";
+        os << accelerationTimestamp << "," << accelerationX.value() << ","
+           << accelerationY.value() << "," << accelerationZ.value() << "\n";
     }
 
     operator Eigen::Vector3f() const

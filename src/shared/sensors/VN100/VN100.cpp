@@ -523,7 +523,7 @@ AccelerometerData VN100::sampleAccelerometer()
     }
 
     // Parse the data
-    data.accelerationTimestamp = Microsecond(TimestampTimer::getTimestamp());
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
     data.accelerationX =
         MeterPerSecondSquared(strtod(recvString + indexStart + 1, &nextNumber));
     data.accelerationY =

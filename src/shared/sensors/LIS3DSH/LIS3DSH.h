@@ -365,7 +365,7 @@ private:
             {  // bit 7 of status set to 1 (some data overwritten)
 
                 accelData.accelerationTimestamp =
-                    Microsecond(TimestampTimer::getTimestamp());
+                    TimestampTimer::getTimestamp();
 
                 // read acceleration on X
                 int8_t accel_L          = spi.readRegister(OUT_X_L);

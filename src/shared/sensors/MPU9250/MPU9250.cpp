@@ -112,7 +112,7 @@ MPU9250Data MPU9250::sampleImpl()
 
     // Save timestamps
     uint64_t timestamp          = TimestampTimer::getTimestamp();
-    data.accelerationTimestamp  = Microsecond(timestamp);
+    data.accelerationTimestamp  = timestamp;
     data.temperatureTimestamp   = timestamp;
     data.angularSpeedTimestamp  = timestamp;
     data.magneticFieldTimestamp = timestamp;

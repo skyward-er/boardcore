@@ -75,7 +75,7 @@ LIS331HHData LIS331HH::sampleImpl()
     int16_t val;
     LIS331HHData data;
 
-    data.accelerationTimestamp = Microsecond(TimestampTimer::getTimestamp());
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
     SPITransaction spi(slave);
 

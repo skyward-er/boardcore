@@ -31,12 +31,12 @@ struct H3LIS331DLData : public AccelerometerData
 {
 
     H3LIS331DLData()
-        : AccelerometerData(Microsecond(0), MeterPerSecondSquared(0),
+        : AccelerometerData(0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0)){};
 
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)
-        : AccelerometerData(Microsecond(0), MeterPerSecondSquared(aX),
+        : AccelerometerData(0, MeterPerSecondSquared(aX),
                             MeterPerSecondSquared(aY),
                             MeterPerSecondSquared(aZ)){};
 
@@ -49,9 +49,8 @@ struct H3LIS331DLData : public AccelerometerData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp.value() << "," << accelerationX.value()
-           << "," << accelerationY.value() << "," << accelerationZ.value()
-           << "\n";
+        os << accelerationTimestamp << "," << accelerationX.value() << ","
+           << accelerationY.value() << "," << accelerationZ.value() << "\n";
     }
 };
 
