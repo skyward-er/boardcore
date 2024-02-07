@@ -56,8 +56,8 @@ struct MPU9250Data : public AccelerometerData,
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX.value() << ","
-           << accelerationY.value() << "," << accelerationZ.value() << ","
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","

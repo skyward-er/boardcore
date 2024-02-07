@@ -22,8 +22,7 @@
 
 #pragma once
 
-#include <utils/Debug.h>
-
+#include <ostream>
 #include <ratio>
 #include <typeinfo>
 
@@ -76,6 +75,14 @@ public:
 private:
     float _value;
 };
+
+// Logging
+template <UnitKind Kind, class Ratio>
+std::ostream &operator<<(std::ostream &os, const Unit<Kind, Ratio> &unit)
+{
+    os << unit.template value<Ratio>();
+    return os;
+}
 
 // Sum, Subtraction, Multiplication, Division
 template <UnitKind Kind, class Ratio>

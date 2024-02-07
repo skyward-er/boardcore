@@ -49,8 +49,8 @@ struct H3LIS331DLData : public AccelerometerData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX.value() << ","
-           << accelerationY.value() << "," << accelerationZ.value() << "\n";
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << "\n";
     }
 };
 

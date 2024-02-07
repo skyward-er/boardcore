@@ -60,8 +60,8 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX.value() << ","
-           << accelerationY.value() << "," << accelerationZ.value() << ","
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
            << temperatureTimestamp << "," << temperature << "\n";
     }
 };

@@ -45,8 +45,8 @@ struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
 
     void print(std::ostream& os) const
     {
-        os << accelerationTimestamp << "," << accelerationX.value() << ","
-           << accelerationY.value() << "," << accelerationZ.value() << ","
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << "\n";
     }
