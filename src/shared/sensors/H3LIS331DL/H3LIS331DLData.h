@@ -36,7 +36,7 @@ struct H3LIS331DLData : public AccelerometerData
                             MeterPerSecondSquared(0)){};
 
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)
-        : AccelerometerData(0, MeterPerSecondSquared(aX),
+        : AccelerometerData(ts, MeterPerSecondSquared(aX),
                             MeterPerSecondSquared(aY),
                             MeterPerSecondSquared(aZ)){};
 

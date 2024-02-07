@@ -27,7 +27,6 @@
 namespace Boardcore
 {
 using namespace Units::Acceleration;
-using namespace Units::Time;
 
 struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {

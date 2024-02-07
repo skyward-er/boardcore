@@ -23,7 +23,6 @@
 #pragma once
 
 #include <units/Acceleration.h>
-#include <units/Time.h>
 
 #include <Eigen/Core>
 #include <ostream>
@@ -121,7 +120,7 @@ struct AccelerometerData
 
     AccelerometerData(uint64_t timestamp, MeterPerSecondSquared x,
                       MeterPerSecondSquared y, MeterPerSecondSquared z)
-        : accelerationTimestamp(0), accelerationX(x), accelerationY(y),
+        : accelerationTimestamp(timestamp), accelerationX(x), accelerationY(y),
           accelerationZ(z)
     {
     }
