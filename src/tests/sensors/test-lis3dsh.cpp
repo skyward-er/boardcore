@@ -97,9 +97,9 @@ int main()
 
         data = sensor.getLastSample();
 
-        printf("\nTimestamp: %llu \n", data.accelerationTimestamp);
-        printf("Acc: x: %f | y: %f | z: %f \n", data.accelerationX,
-               data.accelerationY, data.accelerationZ);
+        printf("\nTimestamp: %llu \n", data.accelerationTimestamp.value());
+        printf("Acc: x: %f | y: %f | z: %f \n", data.accelerationX.value(),
+               data.accelerationY.value(), data.accelerationZ.value());
         printf("Temp: %.2f C \n", data.temperature);
 
         Thread::sleep(200);
