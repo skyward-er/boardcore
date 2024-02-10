@@ -78,11 +78,10 @@ struct UInt32Type : RootTypeStructure<uint32_t, T_ENUM>
  */
 struct Coordinates
 {
-    uint32_t latitude;
-    uint32_t longitude;
+    float latitude;
+    float longitude;
 
-    explicit Coordinates(const uint32_t setLatitude,
-                         const uint32_t setLongitude)
+    explicit Coordinates(const float setLatitude, const float setLongitude)
         : latitude(setLatitude), longitude(setLongitude)
     {
     }
