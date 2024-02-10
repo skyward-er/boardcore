@@ -24,14 +24,13 @@
 
 #include <stdint.h>
 #include <utils/Debug.h>
-#include <utils/Registry/RegistryStructures.h>
 #include <utils/Registry/TypeStructures.h>
 
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
-#include "RegistryStructures.h"
 #include "TypeStructures.h"
 
 namespace Boardcore
@@ -46,6 +45,20 @@ enum TypesEnum
     UINT32_T,
     FLOAT,
     COORDINATES
+};
+
+/**
+ * @brief Union type used for the underlying saving mechanism for the
+ * configuration values
+ */
+union TypeUnion
+{
+    float float_type;
+    uint32_t
+        uint32_type;  //< used for both uint32_t and uint8_t type with upcast
+    Coordinates coordinates_type;
+
+    TypeUnion() {}
 };
 
 /**
@@ -91,7 +104,6 @@ struct EntryStructsUnion
     {
         if (type != TypesEnum::UINT32_T)
             return false;
-        // TODO: Just check is all correct...
         valueToGet = static_cast<uint8_t>(unionValue.uint32_type);
         return true;
     }
@@ -201,6 +213,138 @@ struct EntryStructsUnion
         returnValue.uint32_type = valueToSet;
         return EntryStructsUnion(returnValue, TypesEnum::UINT32_T);
     }
+
+    /**
+     * @brief Set the Union object with its Coordinates value
+     *
+     * @param valueToSet The value to be set into the union type
+     * @return TypeUnion the returned created type union with its int value
+     * set.
+     */
+    static EntryStructsUnion setUnion(Coordinates valueToSet)
+    {
+        TypeUnion returnValue;
+        returnValue.coordinates_type = valueToSet;
+        return EntryStructsUnion(returnValue, TypesEnum::COORDINATES);
+    }
+
+    /**
+     * @brief Inserts into the vector the uint32_t data as serialized data of
+     * uint8_t elements, without touching the previous part of the vector
+     *
+     * @param serializationVector the vector where to insert the serialized data
+     */
+    static void insertUint32ToVector(uint32_t tempUint32,
+                                     std::vector<uint8_t>& serializationVector)
+    {
+        serializationVector.insert(serializationVector.end(),
+                                   static_cast<uint8_t>(tempUint32 >> 24));
+        serializationVector.insert(serializationVector.end(),
+                                   static_cast<uint8_t>(tempUint32 >> 16));
+        serializationVector.insert(serializationVector.end(),
+                                   static_cast<uint8_t>(tempUint32 >> 8));
+        serializationVector.insert(serializationVector.end(),
+                                   static_cast<uint8_t>(tempUint32));
+    }
+
+    /**
+     * @brief Get the value From Vector object with the serialized value and
+     * advances the iterator to the next field after the value
+     *
+     * @param iterator the iterator at the current vector position where the
+     * value is.
+     * @param end the end of the vector, to check not to exceed vector.
+     */
+    static void getFromSerializedVector(
+        uint32_t& value, std::vector<uint8_t>::iterator& iterator,
+        std::vector<uint8_t>::iterator end)
+    {
+        value    = 0;
+        int step = 3;
+        while (iterator != end && step >= 0)
+        {
+            value |= (*iterator) << (8 * step);
+            iterator++;
+            step--;
+        }
+    }
+
+    static void getFromSerializedVector(
+        float& value, std::vector<uint8_t>::iterator& iterator,
+        std::vector<uint8_t>::iterator end)
+    {
+        uint32_t valueFromVector;
+        EntryStructsUnion::getFromSerializedVector(valueFromVector, iterator,
+                                                   end);
+        /*! Needed cast for bitwise conversion for serialization */
+        // cppcheck-suppress invalidPointerCast
+        value = *(reinterpret_cast<float*>(&valueFromVector));
+    }
+
+    static void getFromSerializedVector(
+        Coordinates& value, std::vector<uint8_t>::iterator& iterator,
+        std::vector<uint8_t>::iterator end)
+    {
+        getFromSerializedVector(value.latitude, iterator, end);
+        getFromSerializedVector(value.longitude, iterator, end);
+    }
+
+    /**
+     * @brief Appends to the vector its value serialized, without touching the
+     * previous part of the vector
+     *
+     * @param serializationVector The vector to which append the serialized
+     * value
+     * @return True if the append and serialization process went correctly,
+     * False otherwise
+     */
+    // TODO: Can be templated this?
+    bool appendSerializedFromUnion(std::vector<uint8_t>& serializationVector)
+    {
+        uint32_t tempUint32;
+        switch (this->type)
+        {
+            case TypesEnum::UINT32_T:
+                if (this->getFromUnion(tempUint32))
+                {
+                    insertUint32ToVector(tempUint32, serializationVector);
+                    return true;
+                }
+                break;
+            case TypesEnum::FLOAT:
+                float tempFloat;
+                if (this->getFromUnion(tempFloat))
+                {
+                    /*! Needed cast for bitwise conversion for serialization */
+                    // cppcheck-suppress invalidPointerCast
+                    tempUint32 = *(reinterpret_cast<uint32_t*>(&tempFloat));
+
+                    insertUint32ToVector(tempUint32, serializationVector);
+                    return true;
+                }
+                break;
+            case TypesEnum::COORDINATES:
+                Coordinates tempCoordinates;
+                if (this->getFromUnion(tempCoordinates))
+                {
+                    tempUint32 = *(
+                        // cppcheck-suppress invalidPointerCast
+                        reinterpret_cast<uint32_t*>(&tempCoordinates.latitude));
+
+                    insertUint32ToVector(tempUint32, serializationVector);
+
+                    tempUint32 = *(
+                        // cppcheck-suppress invalidPointerCast
+                        reinterpret_cast<uint32_t*>(
+                            &tempCoordinates.longitude));
+
+                    insertUint32ToVector(tempUint32, serializationVector);
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
 };
 
 /**
@@ -219,6 +363,8 @@ private:
     std::recursive_mutex mutexForRegistry;
     std::unordered_set<ConfigurationId> setConfigurations;
     bool isArmed = false;
+    std::vector<uint8_t> serializationVector;
+    std::vector<uint8_t> elementVector;
 
 public:
     RegistryFrontend();
@@ -250,7 +396,15 @@ public:
      * @return True if the configuration exists in memory and is not corrupted,
      * False if not.
      */
-    auto loadConfiguration() -> bool;
+    bool loadConfiguration();
+
+    /**
+     * @brief Saves the configuration to the backend
+     *
+     * @return true If the saving was successful
+     * @return false Otherwise
+     */
+    bool saveConfiguration();
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
@@ -337,7 +491,7 @@ public:
          * modified */
         if (isArmed)
             return false;
-        EntryStructsUnion entry(EntryStructsUnion::setUnion(value));
+        EntryStructsUnion entry = EntryStructsUnion::setUnion(value);
         bool success =
             configuration.insert(std::make_pair(configurationIndex, entry))
                 .second;
@@ -397,6 +551,10 @@ public:
     auto setConfiguration(T configurationEntry) -> bool
     {
         std::lock_guard<std::mutex> lock(mutexForRegistry);
+        /*! In case that the configuration is in an armed state it cannot be
+         * modified */
+        if (isArmed)
+            return false;
         EntryStructsUnion entryToSet = EntryStructsUnion(configurationEntry);
         bool success                 = configuration
                            .insert(std::make_pair(configurationEntry.enumVal,
@@ -411,6 +569,15 @@ public:
         }
         return setConfigurations.insert(configurationEntry.index).second;
     }
-};
 
+    /*! DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE */
+
+    /**
+     * @brief Get the Serialized bytes vector of the configuration actually
+     * saved in the frontend
+     *
+     * @return std::vector<uint8_t> The serialized data of the configuration
+     */
+    std::vector<uint8_t>& getSerializedConfiguration();
+};
 }  // namespace Boardcore
