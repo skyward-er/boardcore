@@ -30,17 +30,20 @@
 
 using namespace Boardcore;
 
-/*! Magic numbers for testing the set/get for each data type */
-static constexpr uint8_t testValueUint8            = 20;
-static constexpr uint32_t testValueUint32          = 30;
-static constexpr float testValueFloat              = 1.45;
-static constexpr float testValueLatitude           = 45.50109;
-static constexpr float testValueLongitude          = 9.15633;
-static constexpr uint32_t coordinateId             = 8;
-static constexpr uint32_t deploymentAltitudeId     = 50;
-static constexpr uint32_t targetCoordinatesId      = 1;
-static constexpr uint32_t ventingValveAtomicTiming = 49;
-static constexpr uint32_t algorithmId              = 128;
+/** Magic numbers for testing the set/get for each data type, they do not
+ * reflect the reals configuration ids and values in use! */
+static constexpr uint8_t testValueUint8              = 20;
+static constexpr uint32_t testValueUint32            = 30;
+static constexpr float testValueFloat                = 1.45;
+static constexpr float testValueLatitude             = 45.50109;
+static constexpr float testValueLongitude            = 9.15633;
+static constexpr uint32_t coordinateId               = 8;
+static constexpr uint32_t deploymentAltitudeId       = 50;
+static constexpr uint32_t targetCoordinatesId        = 1;
+static constexpr uint32_t ventingValveAtomicTimingId = 49;
+static constexpr uint32_t algorithmId                = 128;
+static constexpr uint32_t ignitionTimeId             = 3;
+static constexpr uint32_t aFloatValueId              = 13;
 
 TEST_CASE(
     "RegistryFrontend test - Set and get type Unsafe configuration entries")
@@ -61,8 +64,8 @@ TEST_CASE(
                 static_cast<uint32_t>(targetCoordinatesId), coordinatesValue) ==
             false);
     REQUIRE(registry.getConfigurationUnsafe(
-                static_cast<uint32_t>(ventingValveAtomicTiming), uint32Value) ==
-            false);
+                static_cast<uint32_t>(ventingValveAtomicTimingId),
+                uint32Value) == false);
     REQUIRE(registry.getConfigurationUnsafe(static_cast<uint32_t>(algorithmId),
                                             uint8Value) == false);
     /*! Check set configuration results in right get */
@@ -98,6 +101,9 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
             true);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
+
+    /*! DISARM AND SET NEW ENTRIES */
+
     registry.disarm();
     REQUIRE(registry.setConfigurationUnsafe(algorithmId, testValueUint8) ==
             true);
@@ -108,12 +114,15 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
 {
     RegistryFrontend registry;
     Coordinates coordinatesValue(testValueLatitude, testValueLongitude),
-        coordinateGet;
+        coordinateGet(0, 0);
+    uint32_t valueInt = 0;
+    float valueFloat  = 0;
+
     REQUIRE(registry.setConfigurationUnsafe(coordinateId, coordinatesValue) ==
             true);
+    /*! TODO: This will change to true when there is an actual backend */
     REQUIRE(registry.saveConfiguration() == false);
     {
-        uint32_t valueInt;
         std::vector<uint8_t>& vector = registry.getSerializedConfiguration();
         for (int i = 0; i < 8; i++)
             REQUIRE(vector.at(i) == 0);
@@ -149,9 +158,59 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
         REQUIRE(static_cast<int>(vector.at(28)) == 128);
         REQUIRE(static_cast<int>(vector.at(29)) == 84);
     }
+
+    /*! LOAD AND CHECK CONFIGURATION */
+
     REQUIRE(registry.loadConfiguration() == true);
     REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet) ==
             true);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
+
+    /*! SET OTHER DATA TYPES CONFIGURATIONS ENTRIES*/
+
+    REQUIRE(registry.setConfigurationUnsafe((ventingValveAtomicTimingId),
+                                            testValueUint32) == true);
+    valueInt = 0;
+    REQUIRE(registry.getConfigurationUnsafe(ventingValveAtomicTimingId,
+                                            valueInt) == true);
+    REQUIRE(valueInt == testValueUint32);
+    REQUIRE(registry.setConfigurationUnsafe(aFloatValueId, testValueFloat) ==
+            true);
+    valueFloat = 0;
+    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat) == true);
+    REQUIRE(valueFloat == testValueFloat);
+
+    /*! SAVE AGAIN WITH ALL TYPES INSIDE CONFIGURATION */
+
+    /*! TODO: This will change to true when there is an actual backend */
+    REQUIRE(registry.saveConfiguration() == false);
+    REQUIRE(registry.loadConfiguration() == true);
+
+    /*! CHECK AFTER RELOAD */
+
+    coordinateGet.latitude  = 0;
+    coordinateGet.longitude = 0;
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet) ==
+            true);
+    REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
+    REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
+
+    valueInt = 0;
+    REQUIRE(registry.getConfigurationUnsafe(ventingValveAtomicTimingId,
+                                            valueInt) == true);
+    REQUIRE(valueInt == testValueUint32);
+
+    valueFloat = 0;
+    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat) == true);
+    REQUIRE(valueFloat == testValueFloat);
+
+    /*! CANCEL CONFIGURATION */
+
+    registry.clear();
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet) ==
+            false);
+    REQUIRE(registry.getConfigurationUnsafe(ventingValveAtomicTimingId,
+                                            valueInt) == false);
+    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat) == false);
 }
