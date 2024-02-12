@@ -64,6 +64,8 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f7.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2C.cpp
         ${SBS_BASE}/src/shared/drivers/WIZ5500/WIZ5500.cpp
+        
+        ${SBS_BASE}/src/tests/drivers/QuadSpi-flash/qspi-flash.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
