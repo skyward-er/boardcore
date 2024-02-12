@@ -212,5 +212,6 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
             false);
     REQUIRE(registry.getConfigurationUnsafe(ventingValveAtomicTimingId,
                                             valueInt) == false);
-    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat) == false);
+    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat) ==
+            false);
 }
