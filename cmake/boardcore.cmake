@@ -65,6 +65,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f7.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2C.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/WIZ5500/WIZ5500.cpp
+    ${SBS_BASE}/src/tests/drivers/QuadSpi-flash/qspi-flash.cpp
 
     # Events
     ${BOARDCORE_PATH}/src/shared/events/EventBroker.cpp

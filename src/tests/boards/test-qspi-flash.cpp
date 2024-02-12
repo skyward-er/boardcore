@@ -25,6 +25,16 @@
  * proper driver for the flash will need to be developed!
  */
 
+/**
+ * A tiny look at the protocol
+ * QUADSPI is a protocol to manage the communication between MCU and a flash memory. 
+ * The peripheral takes care of all the pins involved, so you don't even need to toggle
+ * the slave-select pin. In indirect mode every communication is handled by the firmware  
+ * and registers, also every communication is triggered as soon as the peripheral has  
+ * enough information to perform a command. 
+ * Other two modes are available: polling mode and mapped mode.   
+*/
+
 #include <miosix.h>
 #include <utils/ClockUtils.h>
 
@@ -48,10 +58,6 @@ GpioPin flash_io0(GPIOF_BASE, 8);
 GpioPin flash_io1(GPIOF_BASE, 9);
 GpioPin flash_io2(GPIOF_BASE, 7);
 GpioPin flash_io3(GPIOF_BASE, 6);
-
-#include <miosix.h>
-
-using namespace miosix;
 
 int main()
 {
@@ -79,7 +85,7 @@ int main()
     RCC_SYNC();
 
     delayMs(2 * 1000);
-    printf("Starting\n");
+    printf("Starting!\n");
 
     QUADSPI->CR |= QUADSPI_CR_ABORT;  // Abort ongoing commands
 
@@ -91,17 +97,15 @@ int main()
     QUADSPI->CR  = 0;
     QUADSPI->DCR = 0;
     QUADSPI->CCR = 0;
+    QUADSPI->DLR = 0;
 
     // QSPI peripheral initialization
     QUADSPI->CR |=
         QUADSPI_CR_SSHIFT |             // Wait a full cycle to read
-        3 << QUADSPI_CR_PRESCALER_Pos;  // QSPI clock = 216MHz / 3 = 72MHz
+        3 << QUADSPI_CR_PRESCALER_Pos;  // QSPI clock = 216MHz / 4 = 54MHz
     // QUADSPI->DCR |=
     //     21 << QUADSPI_DCR_FSIZE_Pos;  // Flash size 32Mb = 4MB = 2^(21+1)
     //     bytes
-
-    // Enable the peripheral
-    QUADSPI->CR |= QUADSPI_CR_EN;
 
     // Send read ID command - 0x9Fcl
     {
@@ -111,22 +115,32 @@ int main()
                         0 << QUADSPI_CCR_ADMODE_Pos |  // No address
                         1 << QUADSPI_CCR_IMODE_Pos;    // Instruction on 1-wire
 
-        QUADSPI->DLR = 23;  // Expect to receive 24 bytes
+        // Enable the peripheral (IT HAS TO BE DONE AFTER SETTING CCR REGISTER)
+        QUADSPI->CR |= QUADSPI_CR_EN;
 
-        printf("CCR: %lx\n", QUADSPI->CCR);
+        QUADSPI->DLR = 2;  // Expect to receive 3 bytes regarding ID of the flash 
 
         // Trigger communication start by writing the instruction
         QUADSPI->CCR |= 0x9F << QUADSPI_CCR_INSTRUCTION_Pos;
 
-        // Wait for the transaction to complete, and disable the peripheral.
-        int count = 0;
-        while (QUADSPI->SR & QUADSPI_SR_BUSY)
-            count++;
+        // wait till the end of the communication
+        while (!(QUADSPI->SR & (1 << QUADSPI_SR_TCF_Pos)))
+            ;
+
+        // reset transfer complete flag (TCF)
+        QUADSPI->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos); 
+
+        // until there are some bytes in the quadspi buffer (FIFO) keep reading them
+        while (QUADSPI->SR & (63 << QUADSPI_SR_FLEVEL_Pos))
+        {
+            printf("Data: 0x%lx\n", QUADSPI->DR);
+        }
 
         // Disable the peripheral
         QUADSPI->CR &= ~QUADSPI_CR_EN;
 
-        printf("Data: 0x%lx %d\n", QUADSPI->DR, count);
+        printf("QUADSPI disabled.\n");
+        printf("end!\n"); 
     }
 
     while (true)
