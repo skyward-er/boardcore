@@ -579,5 +579,12 @@ public:
      * @return std::vector<uint8_t> The serialized data of the configuration
      */
     std::vector<uint8_t>& getSerializedConfiguration();
+
+    /**
+     * @brief Clear the configuration actually saved, resetting to empty
+     * configuration. Does affect also the underlying backend.
+     * @attention It does delete also the backend saved copies
+     */
+    void clear();
 };
 }  // namespace Boardcore

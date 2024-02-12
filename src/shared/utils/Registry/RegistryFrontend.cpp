@@ -263,4 +263,19 @@ bool RegistryFrontend::saveConfiguration()
     getSerializedConfiguration();
     return false;
 }
+
+/**
+ * @brief Clear the configuration actually saved, resetting to empty
+ * configuration. Does affect also the underlying backend.
+ * @attention It does delete also the backend saved copies
+ */
+void RegistryFrontend::clear()
+{
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    serializationVector.clear();
+    configuration.clear();
+    setConfigurations.clear();
+    /*!TODO: Clear the backend */
+}
+
 };  // namespace Boardcore

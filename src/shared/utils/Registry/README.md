@@ -18,56 +18,62 @@ Therefore, it is of the utmost importance to save the configuration and avoid de
 ### Invocation examples
 In this case we take as example a ficticius configuration entry (NAME which has as value datatype a float)
 
-Type-unsafe interface methods:
+Type-unsafe interface methods (the one for now tested and considered as most used):
 
 #### setConfigurationUnsafe
 ```cpp
 float value = 1.3;
+/*! The id could also be a specific enum (will be casted to uint32_t)*/
+uint32_t id = 10;
 
-if(frontEnd.setUnsafe(ConfigurationEnum::NAME_CONF, value))
+if(frontEnd.setUnsafe(id, value))
  { /*! correctly set */
 }
 
-if(frontEnd.setUnsafe(NAME(value))) {
-    /*! correctly set */
-    }
 ```
 #### getConfigurationUnsafe
 ```cpp
 float value;
+/*! The id could also be a specific enum (will be casted to uint32_t)*/
+uint32_t id;
 
-float default = 1.35;
 
-if(frontEnd.getConfigurationUnsafe(ConfigurationEnum::NAME_CONF, &value)) {
+if(frontEnd.getConfigurationUnsafe(id, value)) {
     /*! Getted the value */
     }
-
-value = frontEnd.getOrSetDefaultConfigurationUnsafe(ConfigurationEnum::NAME_CONF, default);
 ```
 
 #### getConfigurationOrDefaultUnsafe
 ```cpp
-float ignitionTime, ignitionDefault = 2.0;
-ignitionTime = frontEnd.getConfigurationOrDefaultUnsafe(ignitionDefault);
+uint32_t ignitionTime, ignitionDefault = 200;
+/*! The id could also be a specific enum (will be casted to uint32_t)*/
+uint32_t id = 0;
+/*! Default value that will be get (and possibly set) if cannot get an already initialized value*/
+uint32_t default = 400;
+
+ignitionTime = frontEnd.getConfigurationOrDefaultUnsafe(id, ignitionDefault);
 ```
 
 Type-safe interface methods:
 
 #### setConfiguration
 ```cpp
+/*! Structure from the OBSW structures*/
 Ignition ignitionTime(2.0);
 frontEnd.setConfiguration(ignitionTime);
 ```
 #### getConfiguration
 ```cpp
+/*! Structure from the OBSW structures*/
 Ignition ignitionTime;
-if(!frontEnd.getConfiguration(&ignitionTime)){
+if(!frontEnd.getConfiguration(ignitionTime)){
     /*! Error getting the configuration value */
 }
 ```
 
 #### getConfigurationOrDefault
 ```cpp
+/*! Structure from the OBSW structures*/
 Ignition ignitionTime, ignitionDefault(2.0);
 ignitionTime = frontEnd.getConfigurationOrDefault(ignitionDefault);
 ```
@@ -88,22 +94,6 @@ std::unordered_set<ConfigurationEnum> configuratedIndex;
 configuratedIndex = frontEnd.getConfiguredEntries();
 ```
 
-#### isConfigured
-```cpp
-if(frontEnd.isConfigured())
-{
-    /*! The front end registry configuration has a configuration set */
-}
-```
-
-#### isConfigured
-```cpp
-if(frontEnd.isEntryConfigured(ConfigurationEnum::NAME_CONF))
-{
-    /*! The front end configuration has such entry */
-}
-```
-
 #### isConfigurationEmpty
 ```cpp
 if(frontEnd.isConfigurationEmpty())
@@ -112,23 +102,32 @@ if(frontEnd.isConfigurationEmpty())
 }
 ```
 
-#### isConfigurationCorrupted
+#### save
 ```cpp
-if(frontEnd.isConfigurationCorrupted())
-{
-    /*! The front end configuration is corrupted */
-}
+frontEnd.save();
+```
+
+#### load
+```cpp
+frontEnd.load();
+```
+
+#### clear
+```cpp
+frontEnd.clear();
 ```
 
 ### How to add new structs
 The correct flow to add new types/configuration entries is:
 
-- **TypeStructure.h**: If not exist, create a new struct for the type that we will use for the configuration entry value
+- **TypeStructure.h**: If not exist, create a new struct for the type that we will use for the configuration entry value. The structures in OBSW will refer to these structures. 
 
-- **RegistryStructures.h**: If not exists, add the type to the TypeUnion struct. If not exists, add the struct for wrapping the struct above and make the methods to set/get the correct type from/to the union type.
-At last, create the final data structures for the specific configuration entry.
-
-- **RegistryFrontend.cpp**: Remember to modify the private methods for the unsafe methods such that there are methods for get/set the unionType for the new data type.
+- **RegistryFrontend.h**: Remember to update:
+The type enum; 
+The TypeUnion fields;
+Add in EntryStructsUnion the getFromUnion, setUnion and getFromSerializedVector overloads;
+Modify the and appendSerializedFromUnion for the serialization also of such new type.
+ 
 
 
 ### Goals
@@ -145,7 +144,8 @@ At last, create the final data structures for the specific configuration entry.
 |G8 | The registry will offer a persistent configuration saving |
 |G9 | It will be possible to verify the integrity of the configuration|
 |G10 | It will be possible to explore the current configuration |
-|G11 | Type safeness and thread safeness is guaranteed |
+|G11 | Thread safeness is guaranteed |
+|G12| Some methods also guarantees type safeness|
 
 ### Assumptions
 The front-end, FE, considers some important assumptions about the usage of such sw component.
@@ -155,12 +155,14 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 | Assumption |  Description  |
 |:-----|:--------:|
 |A1 | The FE is constructed and instantiated once, a single time|
-|A2 | The FE does saves and retrieves a single configuration from the registry |
-|A3 | The FE is called before the flight for instantiation and registry check |
+|A2 | The FE does saves and retrieves a single configuration from the registry and no multiple versions|
+|A3 | The FE is called before the flight phase for instantiation and registry check |
 |A4 | The FE is correctly armed before the flight |
-|A5 | The FE disarming is not used during flight |
+|A5 | The FE disarming is not used during flight phase |
 |A6 | The caller considers the return of the get and set methods|
 |A7 | Configuration entries does not have pointers as datatype |
+|A8| The backend does not modify the vector to be saved.|
+|A9| Other methods not modify the vector through getSerializedConfiguration|
 
 ### Requirements
 
@@ -168,24 +170,24 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 |:-----|:--------:|
 |R1 | The interface must allow setting a value for the specific configuration entries |
 |R2 | The interface must allow getting a specified value for a   configuration entries |
-|R3 | The interface must allow the correct data types for the   specifics entries |
+|R3 | The interface must perform some type check for the   specifics entries to get |
 |R4 | The interface must not allocate memory during the  flight phase |
 |R5 | The interface must not change the configuration entries during flight phase |
 |R6 | The interface does save the configuration entries using the back-end components |
 |R7 | The FE must manage concurrent get/set by multiple threads (Thread safety)|
 |R8 | The FE must manage concurrent arm/disarm by multiple threads  (Thread safety)|
 |R9 | The FE must allow exploration of the actual configuration|
-|R10 | The FE should be able to control the configuration state via the back-ends (existing, corrupted, non existing)|
+|R10 | The FE should be able to control the configuration state (empty or has elements)|
 
 ### Interface methods
 
-The unsafe (type-unsafe) methods does not use the proper data structure for the set and get but instead just pass a parameter value for a specific registry entry enumerator index (e.g. ignition time)
+The unsafe (type-unsafe) methods does not use the proper data structure for the set and get but instead just pass a parameter value for a specific registry entry uint32_t index identifier (could be a casted enumerator from OBSW structures)
 
 - **setConfiguration[Unsafe]**:  A setter method is in need to ensure R1. This method should allow 
     insert a value for a specific configuration entry while guarantee the different data types for the values (R3).
     
 - **getConfiguration[Unsafe]**:  A getter method is in need to ensure the visibility of the configuration. 
-    Such method should get a value for a specified configuration entry and changes the value to passed by reference value parameter.
+    Such method should get a value for a specified configuration entry and changes the value to passed by reference value parameter. It does check that the type is consistent with the saved one.
 
 - **getOrSetDefaultConfiguration[Unsafe]**: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
 
@@ -195,13 +197,15 @@ The unsafe (type-unsafe) methods does not use the proper data structure for the 
  - **disarm**: A "disarm" method, to disable the stable and "safe" configuration mode of the registry to allow again 
     allocations and settings on the configuration.
 
- - **isConfigured**: A method to explore the actual status of the configuration, if there is an existing one in memory or not.
-
  - **isConfigurationEmpty**: A method to know if there is an existing configuration or if it is empty
 
- - **isConfigurationCorrupted**: A method to know if there is an existing configuration in the registry but corrupted memory.
-
 - **configuredEntries**: A method which returns the already existing entries of the configuration as a set.
+
+- **load**: Loads from the backend the configuration. If no backend, it loads it from its own vector. 
+
+- **save**: Saves the configuration to the backend.
+
+- **clear**: Clears the configuration both in frontend and backend components, starting with an empty configuration.
 
 ### Data structures
 The data structures are managed in 2 main header files.
@@ -212,14 +216,22 @@ Type structures have:
 
 - **(Float|UInt32|...)Type**: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
 
-#### RegistryStructures.h
-Registry structures contains:
-
-- **ConfigurationEnum**: The enumerator with the possible configurations entries for the registry
+#### RegistryFrontend.h
 
 - **TypeUnion**: The union type for saving the values of the different configuration entries
 
-- **UnionWrap(Float|UInt32|...)Type**: The structures inheriting from (Float|UInt32|...)Type that includes methods to consistently manage the unionType variables to set them or get their correct type field.
+- **EntryStructsUnion**: The structure actually saved into the configuration, with the value and type attributes. Also, it does expose all the useful operations for get/set the value from/to union, append to the serialize vector a value, get a value from the serialized vector.
 
-- **(Ignition|DeploymentAltitude|...)**: All the specific data structures for the configuration entries. They does specify the correct enum index and inherit correctly from the union wrapper.
+#### Data saving serialization
+serializationVector is a vector that after getSerializedVector will contain:
+||||||||
+|:-----|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
+|8B zero| Nr. entries | Length vector | ID_0 | TypeID_0 | Value_0| ... |
+
+The vector will contain only the set configurations. After the header, there will be all the configured entries with configuration ID, Type ID, Value(s).
+
+In case of multiple values, they are one after the other 
+e.g.: | ID: 2 | TypeID: 1 | Val: 45.50109 | Val: 9.15633 | 
+
+Where TypeID in this example is a coordinates type and therefore 45.50109 is the latitude and 9.15633 the longitude
 
