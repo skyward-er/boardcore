@@ -68,7 +68,7 @@ void banner() {
 void led_task() {
     ledOff();
     
-    const unsigned int DELAY = 300;
+    const unsigned int DELAY = 200;
     while(1) {
         led2Off();
         led1On();
@@ -95,11 +95,10 @@ void xram_test() {
     volatile uint16_t* const START = (volatile uint16_t*)0xd0000000;
     volatile uint16_t* const END = START + (16 * 1024 * 1024);
 
-    volatile uint16_t *iter = START;
+    
     // First clear the whole RAM
-    while(iter != END) {
+    for(volatile uint16_t *iter = START; iter != END; iter++) {
         *iter = 0;
-        iter++;
     }
 
     __DMB(); // Flush cache
@@ -107,8 +106,7 @@ void xram_test() {
     printf("*** Starting basic XRAM test...\n");
     bool ok = true;
 
-    iter = START;
-    while(iter != END) {
+    for(volatile uint16_t *iter = START; iter != END; iter++) {
         // Set a marker value at this address
         *iter = 0xffff;
         __DMB(); // Flush cache
@@ -121,8 +119,6 @@ void xram_test() {
         // Reset the value back to 0
         *iter = 0;
         __DMB(); // Flush cache
-
-        iter++;
     } 
 
     if(ok) {
@@ -134,37 +130,30 @@ void xram_test() {
     printf("*** Starting XRAM mirroring test...\n");
     ok = true;
 
-    // Then check for mirroring for every short
-    iter = START;
-    while(iter != END) {
-        // Set a marker value at this address
-        *iter = 0xdead;
+    // Generate addresses to test every line
+    for(int i = 1; i < 25; i++) {
+        volatile uint16_t *other = (volatile uint16_t*)((size_t)START | (1 << i));
+
+        // Write something
+        *other = 0xdead;
         __DMB(); // Flush cache
 
-        // Generate possible alias addresses
-        for(size_t i = 1; i < sizeof(iter); i++) {
-            // Change just one bit, and see if it alias
-            volatile uint16_t *other = (volatile uint16_t *)((size_t)iter ^ (1 << i));
-
-            // Skip invalid addresses
-            if(other < START || other >= END) {
+        for(volatile uint16_t *iter = START; iter != END; iter++) {
+            // Skip the written address
+            if(iter == other) {
                 continue;
             }
 
-            // Check if they somehow alias
-            if(*iter == *other) {
+            // Check for mirroring
+            if(*iter == 0xdead) {
+                printf("Mirroring %p -> %p\n", other, iter);
                 ok = false;
-                printf("Alias: %p -> %p\n", iter, other);
             }
-            
-            __DMB(); // Flush cache
         }
 
-        // Reset the value back to 0
-        *iter = 0;
+        // Reset the value
+        *other = 0;
         __DMB(); // Flush cache
-        
-        iter++;
     }
 
     if(ok) {
@@ -183,11 +172,10 @@ int main() {
     while(1) {
         printf(
             "\nSelect test to run:\n"
-            "- 1 Single pin test\n"
-            "- 2 Automatic SD test\n"
-            "- 3 Automatic RAM test\n"
-            "- 4 Automatic ELC guys can't properly solder(tm) test\n"
-            "- 5 Semi-automatic pin test\n"
+            "- 1 Automatic SD test\n"
+            "- 2 Automatic RAM test\n"
+            "- 3 Automatic ELC guys can't properly solder(tm) test\n"
+            "- 4 Semi-automatic pin test\n"
             "\n"
             "Command: "
         );
