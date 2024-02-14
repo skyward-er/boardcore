@@ -55,10 +55,9 @@ RegistryFrontend::RegistryFrontend()
     serializationVector.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
     elementVector.reserve(nrBytesEntryId + nrBytesPerEntry + sizeof(TypeUnion));
     configuration.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
-    setConfigurations.reserve(vectorNrEntriesReserve);
     /**
-     * TODO: The registry will get from the backend the saved configuration
-     * and initialize configuration and setConfigurations */
+     * TODO: The registry will load from the backend the saved configuration
+     * and initialize configuration */
 }
 
 /**
@@ -94,18 +93,18 @@ void RegistryFrontend::disarm()
 }
 
 /**
- * @brief Returns the already existing entries of the configurations as a
- * set.
- * @return Returns an un-order set with the indexes of the configuration
- * entries.
+ * @brief Visits the configuration applying the callback with the id and
+ * EntryStructsUnion union as parameter for each configured entry in the
+ * configuration.
  */
-auto RegistryFrontend::getConfiguredEntries()
-    -> std::unordered_set<ConfigurationId>
+void RegistryFrontend::visitConfiguration(
+    std::function<void(ConfigurationId, EntryStructsUnion&)> callback)
 {
-    std::unordered_set<ConfigurationId> configurationSetToReturn;
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    configurationSetToReturn = setConfigurations;
-    return configurationSetToReturn;
+    for (auto it = configuration.begin(); it != configuration.end(); it++)
+    {
+        callback(it->first, it->second);
+    }
 }
 
 /**
@@ -128,7 +127,6 @@ bool RegistryFrontend::loadConfiguration()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
 
     configuration.clear();
-    setConfigurations.clear();
     //[8 0s | nr | len | s_c | s_c | s_c | s_c]
     nrEntries = serializationVector.at(vectorZeroOffset);
     len       = serializationVector.at(vectorZeroOffset + 1);
@@ -189,8 +187,8 @@ bool RegistryFrontend::loadConfiguration()
  * @return True if such configuration entry exists in the configuration
  * otherwise False.
  */
-auto RegistryFrontend::isEntryConfigured(
-    const ConfigurationId configurationIndex) -> bool
+bool RegistryFrontend::isEntryConfigured(
+    const ConfigurationId configurationIndex)
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     auto iterator = configuration.find(configurationIndex);
@@ -202,7 +200,7 @@ auto RegistryFrontend::isEntryConfigured(
  * entries
  * @return True if the configuration has no entries. False otherwise
  */
-auto RegistryFrontend::isConfigurationEmpty() -> bool
+bool RegistryFrontend::isConfigurationEmpty()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     return configuration.empty();
@@ -274,7 +272,6 @@ void RegistryFrontend::clear()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     serializationVector.clear();
     configuration.clear();
-    setConfigurations.clear();
     /*!TODO: Clear the backend */
 }
 
