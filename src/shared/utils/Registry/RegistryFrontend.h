@@ -26,9 +26,9 @@
 #include <utils/Debug.h>
 #include <utils/Registry/TypeStructures.h>
 
+#include <functional>
 #include <mutex>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "TypeStructures.h"
@@ -257,7 +257,7 @@ struct EntryStructsUnion
      */
     static void getFromSerializedVector(
         uint32_t& value, std::vector<uint8_t>::iterator& iterator,
-        std::vector<uint8_t>::iterator end)
+        const std::vector<uint8_t>::iterator end)
     {
         value    = 0;
         int step = 3;
@@ -271,7 +271,7 @@ struct EntryStructsUnion
 
     static void getFromSerializedVector(
         float& value, std::vector<uint8_t>::iterator& iterator,
-        std::vector<uint8_t>::iterator end)
+        const std::vector<uint8_t>::iterator end)
     {
         uint32_t valueFromVector;
         EntryStructsUnion::getFromSerializedVector(valueFromVector, iterator,
@@ -283,7 +283,7 @@ struct EntryStructsUnion
 
     static void getFromSerializedVector(
         Coordinates& value, std::vector<uint8_t>::iterator& iterator,
-        std::vector<uint8_t>::iterator end)
+        const std::vector<uint8_t>::iterator end)
     {
         getFromSerializedVector(value.latitude, iterator, end);
         getFromSerializedVector(value.longitude, iterator, end);
@@ -361,7 +361,6 @@ class RegistryFrontend
 private:
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     std::recursive_mutex mutexForRegistry;
-    std::unordered_set<ConfigurationId> setConfigurations;
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
     std::vector<uint8_t> elementVector;
@@ -384,12 +383,12 @@ public:
     void disarm();
 
     /**
-     * @brief Returns the already existing entries of the configurations as a
-     * set.
-     * @return Returns an unorder set with the indexes of the configuration
-     * entries.
+     * @brief Visits the configuration applying the callback with the id and
+     * EntryStructsUnion union as parameter for each configured entry in the
+     * configuration.
      */
-    std::unordered_set<ConfigurationId> getConfiguredEntries();
+    void visitConfiguration(
+        std::function<void(ConfigurationId, EntryStructsUnion&)> callback);
 
     /**
      * @brief Loads from the backend the configuration
@@ -412,14 +411,14 @@ public:
      * @return True if such configuration entry exists in the configuration
      * otherwise False.
      */
-    auto isEntryConfigured(const ConfigurationId configurationIndex) -> bool;
+    bool isEntryConfigured(const ConfigurationId configurationIndex);
 
     /**
      * @brief Verify that the configuration is empty or exists some setted
      * entries
      * @return True if the configuration has no entries. False otherwise
      */
-    auto isConfigurationEmpty() -> bool;
+    bool isConfigurationEmpty();
 
     /*! TYPE UNSAFE INTERFACE METHODS */
 
@@ -434,8 +433,8 @@ public:
      * limits or "armed" memory)
      */
     template <typename T>
-    auto getConfigurationUnsafe(const ConfigurationId configurationIndex,
-                                T& value) -> bool
+    bool getConfigurationUnsafe(const ConfigurationId configurationIndex,
+                                T& value)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
@@ -457,8 +456,8 @@ public:
      * configuration
      */
     template <typename T>
-    auto getOrSetDefaultConfigurationUnsafe(
-        const ConfigurationId configurationIndex, T defaultValue) -> T
+    T getOrSetDefaultConfigurationUnsafe(
+        const ConfigurationId configurationIndex, T defaultValue)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         T returnValue;
@@ -483,8 +482,7 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    auto setConfigurationUnsafe(ConfigurationId configurationIndex, T value)
-        -> bool
+    bool setConfigurationUnsafe(ConfigurationId configurationIndex, T value)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         /*! In case that the configuration is in an armed state it cannot be
@@ -502,13 +500,7 @@ public:
                 "configuration entry");
             return false;
         }
-        success = setConfigurations.insert(configurationIndex).second;
-        if (success)
-            return true;
-        TRACE(
-            "Registry - setConfigurationUnsafe - Could not insert the "
-            "configuration entry");
-        return false;
+        return success;
     }
 
     /*! TYPE SAFE INTERFACE METHODS */
@@ -522,7 +514,7 @@ public:
      * otherwise.
      */
     template <typename T>
-    auto getConfiguration(T& value) -> bool
+    bool getConfiguration(T& value)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(value.index);
@@ -548,7 +540,7 @@ public:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    auto setConfiguration(T configurationEntry) -> bool
+    bool setConfiguration(T configurationEntry)
     {
         std::lock_guard<std::mutex> lock(mutexForRegistry);
         /*! In case that the configuration is in an armed state it cannot be
@@ -567,7 +559,7 @@ public:
                 "configuration entry");
             return false;
         }
-        return setConfigurations.insert(configurationEntry.index).second;
+        return success;
     }
 
     /*! DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE */

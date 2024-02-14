@@ -88,12 +88,6 @@ frontEnd.arm()
 frontEnd.disarm()
 ```
 
-#### getConfiguredEntries
-```cpp
-std::unordered_set<ConfigurationEnum> configuratedIndex;
-configuratedIndex = frontEnd.getConfiguredEntries();
-```
-
 #### isConfigurationEmpty
 ```cpp
 if(frontEnd.isConfigurationEmpty())
@@ -206,6 +200,8 @@ The unsafe (type-unsafe) methods does not use the proper data structure for the 
 - **save**: Saves the configuration to the backend.
 
 - **clear**: Clears the configuration both in frontend and backend components, starting with an empty configuration.
+
+- **visitConfiguration**: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
 
 ### Data structures
 The data structures are managed in 2 main header files.
