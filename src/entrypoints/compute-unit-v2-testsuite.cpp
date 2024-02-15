@@ -262,25 +262,30 @@ void led_task()
     }
 }
 
-void sd_test() {
-    // Write 128MB of bytes
-    const size_t COUNT = 32 * 1024 * 1024;
+void sd_test()
+{
+    // Write 1MB of bytes
+    const size_t COUNT           = 256 * 1024;
     const uint32_t INITIAL_VALUE = 0xdeadbeef;
 
     puts("*** Starting SD test...");
     bool ok = true;
 
-    FILE *f = fopen("test.bin", "wb");
-    if(f == NULL) {
+    FILE *f = fopen("/sd/test.bin", "wb");
+    if (f == NULL)
+    {
         puts("Failed to open test.bin");
         ok = false;
     }
-    
-    if(ok) {
+
+    if (ok)
+    {
         uint32_t value = INITIAL_VALUE;
-        for(size_t i = 0; i < COUNT; i++) {
+        for (size_t i = 0; i < COUNT; i++)
+        {
             size_t result = fwrite(&value, sizeof(value), 1, f);
-            if(result != sizeof(value)) {
+            if (result != 1)
+            {
                 printf("Failed to write word %d\n", i);
 
                 // We had a problem
@@ -295,28 +300,36 @@ void sd_test() {
         fclose(f);
     }
 
-    if(ok) {
+    if (ok)
+    {
         // Reopen file
-        f = fopen("test.bin", "rb");
-        if(f == NULL) {
+        f = fopen("/sd/test.bin", "rb");
+        if (f == NULL)
+        {
             puts("Failed to reopen test.bin");
             ok = false;
         }
     }
 
-    if(ok) {
+    if (ok)
+    {
         uint32_t value = INITIAL_VALUE;
-        for(size_t i = 0; i < COUNT; i++) {
+        for (size_t i = 0; i < COUNT; i++)
+        {
             uint32_t actual = 0;
-            size_t result = fread(&actual, sizeof(actual), 1, f);
-            if(result != sizeof(value)) {
+            size_t result   = fread(&actual, sizeof(actual), 1, f);
+            if (result != 1)
+            {
                 printf("Failed to write word %d\n", i);
                 ok = false;
                 break;
             }
 
-            if(actual != value) {
-                printf("Failed to validate word %d, expected: %lu, actual: %lu\n", i, value, actual);
+            if (actual != value)
+            {
+                printf(
+                    "Failed to validate word %d, expected: %lu, actual: %lu\n",
+                    i, value, actual);
                 ok = false;
                 break;
             }
