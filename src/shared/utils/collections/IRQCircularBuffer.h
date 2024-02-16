@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Davide Mor
+ * Authors: Luca Erbetta, Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
