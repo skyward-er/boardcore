@@ -46,7 +46,10 @@ set(BOARD_MXGUI_SETTINGS_PATH ${BOARD_PATH})
 # -Og Optimize debugging experience, enables optimizations that do not
 # interfere with debugging
 # -Os Optimize for size with -O2 optimizations that do not increase code size
-set(OPT_OPTIMIZATION -O2)
+set(OPT_OPTIMIZATION
+    $<$<CONFIG:Debug>:-O2>
+    $<$<CONFIG:Release>:-O2>
+)
 
 # Boot file and linker script
 set(BOOT_FILE ${BOARD_PATH}/core/stage_1_boot.cpp)

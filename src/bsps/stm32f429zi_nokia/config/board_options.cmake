@@ -49,7 +49,10 @@ set(BOARD_MXGUI_SETTINGS_PATH ${BOARD_PATH})
 # -Og Optimize debugging experience, enables optimizations that do not
 # interfere with debugging
 # -Os Optimize for size with -O2 optimizations that do not increase code size
-set(OPT_OPTIMIZATION -O2)
+set(OPT_OPTIMIZATION
+    $<$<CONFIG:Debug>:-O2>
+    $<$<CONFIG:Release>:-O2>
+)
 
 # Boot file
 set(BOOT_FILE ${BOARD_PATH}/core/stage_1_boot.cpp)
@@ -101,7 +104,7 @@ set(LFLAGS_BASE ${FLAGS_BASE} -Wl,--gc-sections,-Map,main.map -Wl,-T${LINKER_SCR
 # Flags for C/C++
 string(TOUPPER ${BOARD_NAME} BOARD_UPPER)
 set(CFLAGS_BASE
-    -D_BOARD_STM32F429ZI_NOKIA -D_MIOSIX_BOARDNAME=\"${BOARD_NAME}\"
+    -D_BOARD_${BOARD_NAME} -D_MIOSIX_BOARDNAME=\"${BOARD_NAME}\"
     -D_DEFAULT_SOURCE=1 -ffunction-sections -Wall -Werror=return-type -g
     -D_ARCH_CORTEXM4_STM32F4
     ${CLOCK_FREQ} ${XRAM} ${SRAM_BOOT} ${FLAGS_BASE} ${OPT_OPTIMIZATION} -c
