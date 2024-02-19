@@ -276,9 +276,11 @@ WriteBuffer& RegistryFrontend::updateBuffer(WriteBuffer& bufferToUpdate)
                                static_cast<uint8_t>(checksum >> 16));
     serializationVector.insert(serializationVector.begin(),
                                static_cast<uint8_t>(checksum >> 24));
+    /*! Insert configuration size (actual vector + 2 elements + offset )*/
     serializationVector.insert(
         serializationVector.begin(),
         serializationVector.size() + 2 + vectorZeroOffset);
+    /*! Insert the size of the saved configuration*/
     serializationVector.insert(serializationVector.begin(),
                                configuration.size());
     /*! Adds at the beginning 8 zeros bytes*/
@@ -289,17 +291,20 @@ WriteBuffer& RegistryFrontend::updateBuffer(WriteBuffer& bufferToUpdate)
 
 bool RegistryFrontend::saveConfiguration()
 {
-    /*! Condition variable? */
+
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     WriteBuffer& buffer = getSerializedConfiguration();
-    /*! Critical section with buffersMutex that blocks R/W of which buffer need
-     * to be used*/
+    /** Critical section with buffersMutex that blocks R/W of the buffer
+     * that will be used to write in backend, while the other remains
+     * unlocked */
     {
         const std::lock_guard<std::recursive_mutex> lockChangeBuffer(
             buffersMutex);
         /*! Changes the vector to be used for writes */
         bufferMainToWrite = !bufferMainToWrite;
     }
+    lock.~lock_guard();
+    /*! Locks the buffer used for backend writes and then write to backend. */
     const std::lock_guard<std::recursive_mutex> lockBuffer(buffer.mutex);
     /*! In case the buffer does not needs a write, means that it is all already
      * written */
