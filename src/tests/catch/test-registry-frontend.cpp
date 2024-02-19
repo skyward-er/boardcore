@@ -114,7 +114,8 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     /*! TODO: This will change to true when there is an actual backend */
     REQUIRE_FALSE(registry.saveConfiguration());
     {
-        std::vector<uint8_t>& vector = registry.getSerializedConfiguration();
+        WriteBuffer& buffer         = registry.getSerializedConfiguration();
+        std::vector<uint8_t> vector = buffer.vector;
         for (int i = 0; i < 8; i++)
             REQUIRE(vector.at(i) == 0);
         REQUIRE(static_cast<int>(vector.at(8)) == 1);
