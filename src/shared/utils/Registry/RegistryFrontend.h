@@ -348,6 +348,17 @@ struct EntryStructsUnion
 };
 
 /**
+ * @brief Write buffer structs wraps an std::vector<uint8_t> with also its mutex
+ * and a flag for specify if it changed from last write.
+ */
+struct WriteBuffer
+{
+    std::vector<uint8_t> vector; /*< vector with serialized data*/
+    std::recursive_mutex mutex;
+    bool needsWrite; /*< True if it is needed a write to the backend */
+};
+
+/**
  * This is the front-end for the registry in case of
  * type unsafe and safe methods for type safeness.
  * It does check the data types but its job is mainly the one of
@@ -362,8 +373,21 @@ private:
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     std::recursive_mutex mutexForRegistry;
     bool isArmed = false;
-    std::vector<uint8_t> serializationVector;
+    WriteBuffer mainBuffer;
+    WriteBuffer secondaryBuffer; /*< Used in case the main one is locked */
     std::vector<uint8_t> elementVector;
+    std::recursive_mutex buffersMutex;
+    bool bufferMainToWrite; /*< 0: write main, modify secondary, 1: write
+                               secondary modify main*/
+
+    /**
+     * @brief Given a buffer, it updates it with the serialized vector of the
+     * current configuration.
+     *
+     * @param bufferToUpdate The buffer it needs to update
+     * @return WriteBuffer& The buffer now updated
+     */
+    WriteBuffer& updateBuffer(WriteBuffer& bufferToUpdate);
 
 public:
     RegistryFrontend();
@@ -500,6 +524,10 @@ public:
                 "configuration entry");
             return false;
         }
+        else
+        {
+            getSerializedConfiguration();
+        }
         return success;
     }
 
@@ -542,7 +570,7 @@ public:
     template <typename T>
     bool setConfiguration(T configurationEntry)
     {
-        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         /*! In case that the configuration is in an armed state it cannot be
          * modified */
         if (isArmed)
@@ -559,6 +587,10 @@ public:
                 "configuration entry");
             return false;
         }
+        else
+        {
+            getSerializedConfiguration();
+        }
         return success;
     }
 
@@ -568,9 +600,10 @@ public:
      * @brief Get the Serialized bytes vector of the configuration actually
      * saved in the frontend
      *
-     * @return std::vector<uint8_t> The serialized data of the configuration
+     * @return WriteBuffer The write buffer wrapping the vector of the
+     * configuration
      */
-    std::vector<uint8_t>& getSerializedConfiguration();
+    WriteBuffer& getSerializedConfiguration();
 
     /**
      * @brief Clear the configuration actually saved, resetting to empty
