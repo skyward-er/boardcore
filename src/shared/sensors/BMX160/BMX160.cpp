@@ -607,6 +607,7 @@ AccelerometerData BMX160::buildAccData(BMX160Defs::AccRaw data,
                                        uint64_t timestamp)
 {
     using namespace Constants;
+    using namespace Units::Acceleration;
 
     return AccelerometerData{
         timestamp, MeterPerSecondSquared(data.x * accSensibility * g),
@@ -617,15 +618,17 @@ AccelerometerData BMX160::buildAccData(BMX160Defs::AccRaw data,
 GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
 {
     using namespace Constants;
+    using namespace Units::Angle;
 
     if (config.gyroscopeUnit == BMX160Config::GyroscopeMeasureUnit::DEG)
-        return GyroscopeData{timestamp, data.x * gyrSensibility,
-                             data.y * gyrSensibility, data.z * gyrSensibility};
+        return GyroscopeData{timestamp, Degree(data.x * gyrSensibility),
+                             Degree(data.y * gyrSensibility),
+                             Degree(data.z * gyrSensibility)};
     else
-        return GyroscopeData{timestamp,
-                             data.x * gyrSensibility * DEGREES_TO_RADIANS,
-                             data.y * gyrSensibility * DEGREES_TO_RADIANS,
-                             data.z * gyrSensibility * DEGREES_TO_RADIANS};
+        return GyroscopeData{
+            timestamp, Degree(data.x * gyrSensibility * DEGREES_TO_RADIANS),
+            Degree(data.y * gyrSensibility * DEGREES_TO_RADIANS),
+            Degree(data.z * gyrSensibility * DEGREES_TO_RADIANS)};
 }
 
 const char* BMX160::debugErr(SPITransaction& spi)

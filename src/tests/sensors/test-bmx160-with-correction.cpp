@@ -302,8 +302,9 @@ SixParametersCorrector calibrateGyroscope(SixParametersCorrector corr)
                 auto data = fifo.at(i);
                 Logger::getInstance().log(data);
 
-                Vector3f gyro = {data.angularSpeedX, data.angularSpeedY,
-                                 data.angularSpeedZ};
+                Vector3f gyro = {data.angularSpeedX.value(),
+                                 data.angularSpeedY.value(),
+                                 data.angularSpeedZ.value()};
 
                 avgGyro = (avgGyro * count + gyro) / (count + 1);
                 count++;

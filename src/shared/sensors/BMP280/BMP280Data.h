@@ -29,9 +29,9 @@ namespace Boardcore
 
 struct BMP280Data : public TemperatureData, public PressureData
 {
-    BMP280Data() : TemperatureData{0, 0.0}, PressureData{0, 0.0} {}
+    BMP280Data() : TemperatureData{0, 0.0}, PressureData{0, Pascal(0)} {}
 
-    BMP280Data(uint64_t timestamp, float temperature, float pressure,
+    BMP280Data(uint64_t timestamp, float temperature, Pascal pressure,
                float humidity)
         : TemperatureData{timestamp, temperature}, PressureData{timestamp,
                                                                 pressure}

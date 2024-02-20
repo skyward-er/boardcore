@@ -48,15 +48,15 @@ int main()
      */
     spiSck.mode(miosix::Mode::ALTERNATE);
     spiSck.alternateFunction(5);
-    spiSck.speed(Speed::_100MHz);
+    spiSck.speed(miosix::Speed::_100MHz);
 
     spiMiso.mode(miosix::Mode::ALTERNATE);
     spiMiso.alternateFunction(5);
-    spiMiso.speed(Speed::_100MHz);
+    spiMiso.speed(miosix::Speed::_100MHz);
 
     spiMosi.mode(miosix::Mode::ALTERNATE);
     spiMosi.alternateFunction(5);
-    spiMosi.speed(Speed::_100MHz);
+    spiMosi.speed(miosix::Speed::_100MHz);
 
     cs.mode(miosix::Mode::OUTPUT);
     cs.high();
@@ -93,7 +93,8 @@ int main()
         data = sensor.getLastSample();
 
         printf("%llu,%f,%f,%f\n", data.accelerationTimestamp,
-               data.accelerationX, data.accelerationY, data.accelerationZ);
+               data.accelerationX.value(), data.accelerationY.value(),
+               data.accelerationZ.value());
 
         Thread::sleep(100);
     }

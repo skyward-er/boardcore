@@ -120,16 +120,21 @@ void bmxInit()
 
 void bmxCallback()
 {
+    using namespace Units::Acceleration;
+    using namespace Units::Angle;
+
     static int meanCount    = 0;
     static bool calibrating = true;
     static Vector3f accMean = Vector3f::Zero();
     static Vector3f magMean = Vector3f::Zero();
 
     auto data = bmx160->getLastSample();
-    Vector3f acceleration(data.accelerationX, data.accelerationY,
-                          data.accelerationZ);
-    Vector3f angularSpeed(data.angularSpeedX, data.angularSpeedY,
-                          data.angularSpeedZ);
+    Vector3f acceleration(data.accelerationX.value(),
+                          data.accelerationY.value(),
+                          data.accelerationZ.value());
+    Vector3f angularSpeed(data.angularSpeedX.value(),
+                          data.angularSpeedY.value(),
+                          data.angularSpeedZ.value());
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 
@@ -164,9 +169,9 @@ void bmxCallback()
 
             // Save the state and the IMU data
             // Logger::getInstance().log(nas->getState());
-            data.accelerationX  = accMean[0];
-            data.accelerationY  = accMean[1];
-            data.accelerationZ  = accMean[2];
+            data.accelerationX  = MeterPerSecondSquared(accMean[0]);
+            data.accelerationY  = MeterPerSecondSquared(accMean[1]);
+            data.accelerationZ  = MeterPerSecondSquared(accMean[2]);
             data.magneticFieldX = magMean[0];
             data.magneticFieldY = magMean[1];
             data.magneticFieldZ = magMean[2];
@@ -184,9 +189,9 @@ void bmxCallback()
             // nas->predictAcc(acceleration);
             nas->predictGyro(angularSpeed);
 
-            data.angularSpeedX = angularSpeed[0];
-            data.angularSpeedY = angularSpeed[1];
-            data.angularSpeedZ = angularSpeed[2];
+            data.angularSpeedX = Degree(angularSpeed[0]);
+            data.angularSpeedY = Degree(angularSpeed[1]);
+            data.angularSpeedZ = Degree(angularSpeed[2]);
         }
 
         // Correct step

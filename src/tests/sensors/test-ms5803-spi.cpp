@@ -56,8 +56,9 @@ int main()
         sensor.sample();
 
         MS5803Data data = sensor.getLastSample();
-        printf("%llu,%f,%llu,%f\n", data.pressureTimestamp, data.pressure,
-               data.temperatureTimestamp, data.temperature);
+        printf("%llu,%f,%llu,%f\n", data.pressureTimestamp,
+               data.pressure.value(), data.temperatureTimestamp,
+               data.temperature);
 
         Thread::sleep(20);
     }

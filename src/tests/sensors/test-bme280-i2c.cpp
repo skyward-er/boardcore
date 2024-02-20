@@ -63,7 +63,7 @@ int main()
 
         printf("temp: %.2f DegC\tpress: %.2f Pa\thumid: %.2f %%RH\n",
                bme280.getLastSample().temperature,
-               bme280.getLastSample().pressure,
+               bme280.getLastSample().pressure.value(),
                bme280.getLastSample().humidity);
 
         Thread::sleep(50);  // 25Hz

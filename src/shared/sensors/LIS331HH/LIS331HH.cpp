@@ -72,6 +72,8 @@ void LIS331HH::setFullScaleRange(FullScaleRange fs)
 
 LIS331HHData LIS331HH::sampleImpl()
 {
+    using namespace Units::Acceleration;
+
     int16_t val;
     LIS331HHData data;
 

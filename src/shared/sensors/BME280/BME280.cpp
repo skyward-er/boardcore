@@ -157,6 +157,8 @@ HumidityData BME280::readHumidity()
 
 PressureData BME280::readPressure()
 {
+    using namespace Units::Pressure;
+
     uint8_t buffer[3];
     {
         SPITransaction transaction(spiSlave);
@@ -170,7 +172,7 @@ PressureData BME280::readPressure()
 
     PressureData data;
     data.pressureTimestamp = TimestampTimer::getTimestamp();
-    data.pressure          = compensatePressure(adc_P);
+    data.pressure          = Pascal(compensatePressure(adc_P));
     data.pressure /= 256;  // Convert to Pa
 
     return data;
@@ -215,6 +217,8 @@ bool BME280::selfTest() { return checkWhoAmI(); }
 
 BME280Data BME280::sampleImpl()
 {
+    using namespace Units::Pressure;
+
     // TODO: implement selective read!
 
     uint8_t buffer[8];
@@ -245,7 +249,7 @@ BME280Data BME280::sampleImpl()
 
     // Compensate pressure
     data.pressureTimestamp = TimestampTimer::getTimestamp();
-    data.pressure          = compensatePressure(adc_P);
+    data.pressure          = Pascal(compensatePressure(adc_P));
     data.pressure /= 256;  // Convert to Pa
 
     // Compensate humidity

@@ -74,10 +74,10 @@ int main()
         sensor.sample();
         sample = sensor.getLastSample();
         printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
-               sample.accelerationTimestamp, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
-        printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
-               sample.angularSpeedY, sample.angularSpeedZ);
+               sample.accelerationTimestamp, sample.accelerationX.value(),
+               sample.accelerationY.value(), sample.accelerationZ.value());
+        printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX.value(),
+               sample.angularSpeedY.value(), sample.angularSpeedZ.value());
 
         sensor.sampleRaw();
         sampleRaw = sensor.getLastRawSample();

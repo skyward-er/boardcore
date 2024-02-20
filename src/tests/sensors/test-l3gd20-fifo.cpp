@@ -223,9 +223,9 @@ int main()
                 data[i].wtmDelta,
                 data[i].update,
                 (data[i].gyro.angularSpeedTimestamp - data[i - 1].gyro.angularSpeedTimestamp),
-                data[i].gyro.angularSpeedX,
-                data[i].gyro.angularSpeedY,
-                data[i].gyro.angularSpeedZ,
+                data[i].gyro.angularSpeedX.value(),
+                data[i].gyro.angularSpeedY.value(),
+                data[i].gyro.angularSpeedZ.value(),
                 data[i].cpu);
         // clang-format on
     }

@@ -138,6 +138,8 @@ void LPS22DF::setOutputDataRate(ODR odr)
 
 LPS22DFData LPS22DF::sampleImpl()
 {
+    using namespace Units::Pressure;
+
     SPITransaction spi(slave);
 
     if (!isInitialized)
@@ -176,7 +178,7 @@ LPS22DFData LPS22DF::sampleImpl()
     if (statusValue & STATUS::P_DA)
     {
         data.pressureTimestamp = ts;
-        data.pressure          = spi.readRegister24(PRESS_OUT_XL) / PRES_SENS;
+        data.pressure = Pascal(spi.readRegister24(PRESS_OUT_XL) / PRES_SENS);
     }
     else
     {

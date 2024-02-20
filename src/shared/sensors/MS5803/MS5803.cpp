@@ -127,6 +127,8 @@ MS5803Data MS5803::sampleImpl()
 
 MS5803Data MS5803::updateData()
 {
+    using namespace Units::Pressure;
+
     // First order compensation
     int32_t dt   = rawTemperature - (((uint32_t)calibrationData.tref) << 8);
     int32_t temp = 2000 + (((uint64_t)dt * calibrationData.tempsens) >> 23);
@@ -161,7 +163,7 @@ MS5803Data MS5803::updateData()
         (((((int64_t)rawPressure) * sens) / 2097152.0) - offs) / 32786.0;
 
     // Pressure in Pascal
-    return MS5803Data(TimestampTimer::getTimestamp(), pressure,
+    return MS5803Data(TimestampTimer::getTimestamp(), Pascal(pressure),
                       lastTemperatureTimestamp, temp / 100.0f);
 }
 

@@ -417,8 +417,9 @@ void calibrateGyroscope()
                 auto data = fifo.at(i);
                 Logger::getInstance().log(data);
 
-                calibrationModel.feed({data.angularSpeedX, data.angularSpeedY,
-                                       data.angularSpeedZ});
+                calibrationModel.feed({data.angularSpeedX.value(),
+                                       data.angularSpeedY.value(),
+                                       data.angularSpeedZ.value()});
                 count++;
             }
         },

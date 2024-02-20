@@ -248,6 +248,8 @@ void LSM6DSRX::initInterrupts()
 
 bool LSM6DSRX::selfTestAcc()
 {
+    using namespace Units::Acceleration;
+
     bool returnValue        = false;
     uint8_t byteValue       = 0;  // used to read and write in registers
     uint8_t idx             = 0;
@@ -429,6 +431,8 @@ bool LSM6DSRX::selfTestAcc()
 
 bool LSM6DSRX::selfTestGyr()
 {
+    using namespace Units::Angle;
+
     bool returnValue        = true;
     uint8_t byteValue       = 0;
     uint8_t idx             = 0;
@@ -510,12 +514,12 @@ bool LSM6DSRX::selfTestGyr()
         }
 
         // read data
-        averageNormal.angularSpeedX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070));
-        averageNormal.angularSpeedY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070));
-        averageNormal.angularSpeedZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070));
+        averageNormal.angularSpeedX += Degree(static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070)));
+        averageNormal.angularSpeedY += Degree(static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070)));
+        averageNormal.angularSpeedZ += Degree(static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070)));
     }
     averageNormal.angularSpeedX /= SIZE_DATA;
     averageNormal.angularSpeedY /= SIZE_DATA;
@@ -555,28 +559,34 @@ bool LSM6DSRX::selfTestGyr()
         }
 
         // read data
-        averageSF.angularSpeedX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070));
-        averageSF.angularSpeedY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070));
-        averageSF.angularSpeedZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070));
+        averageSF.angularSpeedX += Degree(static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070)));
+        averageSF.angularSpeedY += Degree(static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070)));
+        averageSF.angularSpeedZ += Degree(static_cast<float>(getAxisData(
+            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070)));
     }
     averageSF.angularSpeedX /= SIZE_DATA;
     averageSF.angularSpeedY /= SIZE_DATA;
     averageSF.angularSpeedZ /= SIZE_DATA;
 
     if (LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
-            std::abs(averageSF.angularSpeedX - averageNormal.angularSpeedX) &&
-        std::abs(averageSF.angularSpeedX - averageNormal.angularSpeedX) <=
+            std::abs((averageSF.angularSpeedX - averageNormal.angularSpeedX)
+                         .value()) &&
+        std::abs(
+            (averageSF.angularSpeedX - averageNormal.angularSpeedX).value()) <=
             LSM6DSRXDefs::GYR_SELF_TEST_MAX &&
         LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
-            std::abs(averageSF.angularSpeedY - averageNormal.angularSpeedY) &&
-        std::abs(averageSF.angularSpeedY - averageNormal.angularSpeedY) <=
+            std::abs((averageSF.angularSpeedY - averageNormal.angularSpeedY)
+                         .value()) &&
+        std::abs(
+            (averageSF.angularSpeedY - averageNormal.angularSpeedY).value()) <=
             LSM6DSRXDefs::GYR_SELF_TEST_MAX &&
         LSM6DSRXDefs::GYR_SELF_TEST_MIN <=
-            std::abs(averageSF.angularSpeedZ - averageNormal.angularSpeedZ) &&
-        std::abs(averageSF.angularSpeedZ - averageNormal.angularSpeedZ) <=
+            std::abs((averageSF.angularSpeedZ - averageNormal.angularSpeedZ)
+                         .value()) &&
+        std::abs(
+            (averageSF.angularSpeedZ - averageNormal.angularSpeedZ).value()) <=
             LSM6DSRXDefs::GYR_SELF_TEST_MAX)
     {
         returnValue = true;
@@ -624,6 +634,8 @@ uint16_t LSM6DSRX::combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
 
 void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
+    using namespace Units::Acceleration;
+
     data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
     data.accelerationX = MeterPerSecondSquared(
@@ -639,14 +651,19 @@ void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 
 void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
+    using namespace Units::Angle;
+
     data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
 
-    data.angularSpeedX = getAxisData(
-        LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, sensitivityGyr);
-    data.angularSpeedY = getAxisData(
-        LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, sensitivityGyr);
-    data.angularSpeedZ = getAxisData(
-        LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, sensitivityGyr);
+    data.angularSpeedX =
+        Degree(getAxisData(LSM6DSRXDefs::REG_OUTX_L_G,
+                           LSM6DSRXDefs::REG_OUTX_H_G, sensitivityGyr));
+    data.angularSpeedY =
+        Degree(getAxisData(LSM6DSRXDefs::REG_OUTY_L_G,
+                           LSM6DSRXDefs::REG_OUTY_H_G, sensitivityGyr));
+    data.angularSpeedZ =
+        Degree(getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G,
+                           LSM6DSRXDefs::REG_OUTZ_H_G, sensitivityGyr));
 }
 
 uint32_t LSM6DSRX::getSensorTimestamp()
@@ -784,6 +801,9 @@ float LSM6DSRX::getSensorTimestampResolution()
 
 void LSM6DSRX::readFromFifo()
 {
+    using namespace Units::Acceleration;
+    using namespace Units::Angle;
+
     SPITransaction spi{spiSlave};
 
     // get number of sample to read
@@ -832,14 +852,14 @@ void LSM6DSRX::readFromFifo()
 
                 // Set data
                 timestamps[timeslotTag].data.angularSpeedX =
-                    static_cast<float>(combineHighLowBits(xl, xh)) *
-                    sensitivityGyr;
+                    Degree(static_cast<float>(combineHighLowBits(xl, xh)) *
+                           sensitivityGyr);
                 timestamps[timeslotTag].data.angularSpeedY =
-                    static_cast<float>(combineHighLowBits(yl, yh)) *
-                    sensitivityGyr;
+                    Degree(static_cast<float>(combineHighLowBits(yl, yh)) *
+                           sensitivityGyr);
                 timestamps[timeslotTag].data.angularSpeedZ =
-                    static_cast<float>(combineHighLowBits(zl, zh)) *
-                    sensitivityGyr;
+                    Degree(static_cast<float>(combineHighLowBits(zl, zh)) *
+                           sensitivityGyr);
 
                 // Set flag
                 timestamps[timeslotTag].gyrPresent = true;

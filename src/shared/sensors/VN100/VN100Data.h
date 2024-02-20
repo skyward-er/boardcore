@@ -49,8 +49,8 @@ struct VN100Data : public QuaternionData,
                                                                   0.0},
           AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
-          GyroscopeData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0},
-          PressureData{0, 0.0}
+          GyroscopeData{0, Degree(0), Degree(0), Degree(0)},
+          TemperatureData{0, 0.0}, PressureData{0, Pascal(0)}
     {
     }
 

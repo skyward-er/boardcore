@@ -184,12 +184,14 @@ int main()
                     sensor.sample();
                     auto data = sensor.getLastSample();
 
-                    xAxis[selected].add(data.accelerationX);
-                    yAxis[selected].add(data.accelerationY);
-                    zAxis[selected].add(data.accelerationZ);
+                    xAxis[selected].add(data.accelerationX.value());
+                    yAxis[selected].add(data.accelerationY.value());
+                    zAxis[selected].add(data.accelerationZ.value());
 
-                    printf("Added sample: %f, %f, %f\n", data.accelerationX,
-                           data.accelerationY, data.accelerationZ);
+                    printf("Added sample: %f, %f, %f\n",
+                           data.accelerationX.value(),
+                           data.accelerationY.value(),
+                           data.accelerationZ.value());
 
                     if (sleepTime > 0)
                     {

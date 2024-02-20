@@ -41,9 +41,9 @@ using namespace std;
 struct MySensorData : public PressureData, public TemperatureData
 {
 
-    MySensorData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
+    MySensorData() : PressureData{0, Pascal(0)}, TemperatureData{0, 0.0} {}
 
-    MySensorData(float p, float t)
+    MySensorData(Pascal p, float t)
         : PressureData{TimestampTimer::getTimestamp(), p},
           TemperatureData{TimestampTimer::getTimestamp(), t}
     {
@@ -56,7 +56,9 @@ class MySensor : public Sensor<MySensorData>
 public:
     virtual MySensorData sampleImpl() override
     {
-        return MySensorData(rand() % 100, rand() % 100);
+        using namespace Units::Pressure;
+
+        return MySensorData(Pascal(rand() % 100), rand() % 100);
     }
 
     bool init() override { return true; };
@@ -83,8 +85,10 @@ public:
 
     const SensorData& getLastSample() override
     {
+        using namespace Units::Pressure;
+
         this->lastSample = originalSensor->getLastSample();
-        this->lastSample.pressure += offset;
+        this->lastSample.pressure += Pascal(offset);
         return this->lastSample;
     }
 
@@ -97,8 +101,11 @@ struct MySensorDataFIFO : public AccelerometerData, public GyroscopeData
 {
 
     MySensorDataFIFO()
-        : AccelerometerData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0},
-          GyroscopeData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0}
+        : AccelerometerData{TimestampTimer::getTimestamp(),
+                            MeterPerSecondSquared(0), MeterPerSecondSquared(0),
+                            MeterPerSecondSquared(0)},
+          GyroscopeData{TimestampTimer::getTimestamp(), Degree(0), Degree(0),
+                        Degree(0)}
     {
     }
 
@@ -121,18 +128,25 @@ public:
     // return last sample
     virtual MySensorDataFIFO sampleImpl() override
     {
+        using namespace Units::Acceleration;
+        using namespace Units::Angle;
+
         for (uint32_t i = 0; i < fifoSize; i++)
         {
-            AccelerometerData acc{TimestampTimer::getTimestamp(), 0.5, 0.5,
-                                  0.5};
-            GyroscopeData gyro{TimestampTimer::getTimestamp(), 0.5, 0.5, 0.5};
+            AccelerometerData acc{
+                TimestampTimer::getTimestamp(), MeterPerSecondSquared(0.5),
+                MeterPerSecondSquared(0.5), MeterPerSecondSquared(0.5)};
+            GyroscopeData gyro{TimestampTimer::getTimestamp(), Degree(0.5),
+                               Degree(0.5), Degree(0.5)};
 
             lastFifo[i] = MySensorDataFIFO{acc, gyro};
 
             TRACE("Accel : %llu %f %f %f \n", acc.accelerationTimestamp,
-                  acc.accelerationX, acc.accelerationY, acc.accelerationZ);
+                  acc.accelerationX.value(), acc.accelerationY.value(),
+                  acc.accelerationZ.value());
             TRACE("Gyro : %llu %f %f %f \n", gyro.angularSpeedTimestamp,
-                  gyro.angularSpeedX, gyro.angularSpeedY, gyro.angularSpeedZ);
+                  gyro.angularSpeedX.value(), gyro.angularSpeedY.value(),
+                  gyro.angularSpeedZ.value());
 
             Thread::sleep(5);
         }
@@ -242,11 +256,11 @@ int main()
     for (int i = 0; i < 3; i++)
     {
         TRACE("S1 : %llu %f %llu %f \n", s1.getLastSample().pressureTimestamp,
-              s1.getLastSample().pressure,
+              s1.getLastSample().pressure.value(),
               s1.getLastSample().temperatureTimestamp,
               s1.getLastSample().temperature);
         TRACE("Filter : %llu %f \n", filter.getLastSample().pressureTimestamp,
-              filter.getLastSample().pressure);
+              filter.getLastSample().pressure.value());
 
         Thread::sleep(1000);
     }
@@ -267,9 +281,11 @@ int main()
             fifoProxy.getLastSample();
 
         TRACE("AccelProxy : %llu %f %f %f \n", data.accelerationTimestamp,
-              data.accelerationX, data.accelerationY, data.accelerationZ);
+              data.accelerationX.value(), data.accelerationY.value(),
+              data.accelerationZ.value());
         TRACE("GyroProxy : %llu %f %f %f \n", data.angularSpeedTimestamp,
-              data.angularSpeedX, data.angularSpeedY, data.angularSpeedZ);
+              data.angularSpeedX.value(), data.angularSpeedY.value(),
+              data.angularSpeedZ.value());
 
         Thread::sleep(1000);
     }

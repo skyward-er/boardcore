@@ -109,10 +109,12 @@ void imuStep()
 {
     imu->sample();
     auto data = imu->getLastSample();
-    Vector3f acceleration(data.accelerationX, data.accelerationY,
-                          data.accelerationZ);
-    Vector3f angularSpeed(data.angularSpeedX, data.angularSpeedY,
-                          data.angularSpeedZ);
+    Vector3f acceleration(data.accelerationX.value(),
+                          data.accelerationY.value(),
+                          data.accelerationZ.value());
+    Vector3f angularSpeed(data.angularSpeedX.value(),
+                          data.angularSpeedY.value(),
+                          data.angularSpeedZ.value());
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 

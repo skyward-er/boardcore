@@ -506,6 +506,8 @@ MagnetometerData VN100::sampleMagnetometer()
 
 AccelerometerData VN100::sampleAccelerometer()
 {
+    using namespace Units::Acceleration;
+
     unsigned int indexStart = 0;
     char *nextNumber;
     AccelerometerData data;
@@ -535,6 +537,8 @@ AccelerometerData VN100::sampleAccelerometer()
 
 GyroscopeData VN100::sampleGyroscope()
 {
+    using namespace Units::Angle;
+
     unsigned int indexStart = 0;
     char *nextNumber;
     GyroscopeData data;
@@ -553,9 +557,10 @@ GyroscopeData VN100::sampleGyroscope()
 
     // Parse the data
     data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
-    data.angularSpeedX = strtod(recvString + indexStart + 1, &nextNumber);
-    data.angularSpeedY = strtod(nextNumber + 1, &nextNumber);
-    data.angularSpeedZ = strtod(nextNumber + 1, NULL);
+    data.angularSpeedX =
+        Degree(strtod(recvString + indexStart + 1, &nextNumber));
+    data.angularSpeedY = Degree(strtod(nextNumber + 1, &nextNumber));
+    data.angularSpeedZ = Degree(strtod(nextNumber + 1, NULL));
 
     return data;
 }
@@ -586,6 +591,8 @@ TemperatureData VN100::sampleTemperature()
 
 PressureData VN100::samplePressure()
 {
+    using namespace Units::Pressure;
+
     unsigned int indexStart = 0;
     PressureData data;
 
@@ -603,7 +610,7 @@ PressureData VN100::samplePressure()
 
     // Parse the data
     data.pressureTimestamp = TimestampTimer::getTimestamp();
-    data.pressure          = strtod(recvString + indexStart + 1, NULL);
+    data.pressure          = Pascal(strtod(recvString + indexStart + 1, NULL));
 
     return data;
 }

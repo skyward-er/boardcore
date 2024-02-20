@@ -225,6 +225,8 @@ float LPS28DFW::convertTemperature(uint8_t tempL, uint8_t tempH)
 
 LPS28DFWData LPS28DFW::sampleImpl()
 {
+    using namespace Units::Pressure;
+
     uint8_t statusValue{0};
     uint8_t val[5] = {0};
     LPS28DFWData data;
@@ -280,7 +282,7 @@ LPS28DFWData LPS28DFW::sampleImpl()
     if (statusValue & STATUS::P_DA)
     {
         data.pressureTimestamp = ts;
-        data.pressure          = convertPressure(val[0], val[1], val[2]);
+        data.pressure = Pascal(convertPressure(val[0], val[1], val[2]));
     }
     else
     {

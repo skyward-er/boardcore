@@ -346,6 +346,10 @@ bool UBXGPSSerial::safeWriteUBXFrame(const UBXFrame& frame)
 
 void UBXGPSSerial::run()
 {
+    using namespace Units::Length;
+    using namespace Units::Angle;
+    using namespace Units::Speed;
+
     while (!shouldStop())
     {
         UBXPvtFrame pvt;
@@ -362,14 +366,14 @@ void UBXGPSSerial::run()
         // Lock the mutex
         Lock<FastMutex> l(mutex);
         threadSample.gpsTimestamp  = TimestampTimer::getTimestamp();
-        threadSample.latitude      = (float)pvtP.lat / 1e7;
-        threadSample.longitude     = (float)pvtP.lon / 1e7;
-        threadSample.height        = (float)pvtP.height / 1e3;
-        threadSample.velocityNorth = (float)pvtP.velN / 1e3;
-        threadSample.velocityEast  = (float)pvtP.velE / 1e3;
-        threadSample.velocityDown  = (float)pvtP.velD / 1e3;
-        threadSample.speed         = (float)pvtP.gSpeed / 1e3;
-        threadSample.track         = (float)pvtP.headMot / 1e5;
+        threadSample.latitude      = Degree(pvtP.lat / 1e7);
+        threadSample.longitude     = Degree(pvtP.lon / 1e7);
+        threadSample.height        = Meter(pvtP.height / 1e3);
+        threadSample.velocityNorth = MeterPerSecond(pvtP.velN / 1e3);
+        threadSample.velocityEast  = MeterPerSecond(pvtP.velE / 1e3);
+        threadSample.velocityDown  = MeterPerSecond(pvtP.velD / 1e3);
+        threadSample.speed         = MeterPerSecond(pvtP.gSpeed / 1e3);
+        threadSample.track         = Degree(pvtP.headMot / 1e5);
         threadSample.positionDOP   = (float)pvtP.pDOP / 1e2;
         threadSample.satellites    = pvtP.numSV;
         threadSample.fix           = pvtP.fixType;

@@ -110,6 +110,10 @@ bool UBXGPSSpi::selfTest() { return true; }
 
 UBXGPSData UBXGPSSpi::sampleImpl()
 {
+    using namespace Units::Angle;
+    using namespace Units::Length;
+    using namespace Units::Speed;
+
     UBXPvtFrame pvt;
 
     if (!readUBXFrame(pvt))
@@ -119,14 +123,14 @@ UBXGPSData UBXGPSSpi::sampleImpl()
 
     UBXGPSData sample;
     sample.gpsTimestamp  = TimestampTimer::getTimestamp();
-    sample.latitude      = (float)pvtP.lat / 1e7;
-    sample.longitude     = (float)pvtP.lon / 1e7;
-    sample.height        = (float)pvtP.height / 1e3;
-    sample.velocityNorth = (float)pvtP.velN / 1e3;
-    sample.velocityEast  = (float)pvtP.velE / 1e3;
-    sample.velocityDown  = (float)pvtP.velD / 1e3;
-    sample.speed         = (float)pvtP.gSpeed / 1e3;
-    sample.track         = (float)pvtP.headMot / 1e5;
+    sample.latitude      = Degree(pvtP.lat / 1e7);
+    sample.longitude     = Degree(pvtP.lon / 1e7);
+    sample.height        = Meter(pvtP.height / 1e3);
+    sample.velocityNorth = MeterPerSecond(pvtP.velN / 1e3);
+    sample.velocityEast  = MeterPerSecond(pvtP.velE / 1e3);
+    sample.velocityDown  = MeterPerSecond(pvtP.velD / 1e3);
+    sample.speed         = MeterPerSecond(pvtP.gSpeed / 1e3);
+    sample.track         = Degree(pvtP.headMot / 1e5);
     sample.positionDOP   = (float)pvtP.pDOP / 1e2;
     sample.satellites    = pvtP.numSV;
     sample.fix           = pvtP.fixType;

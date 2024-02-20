@@ -29,6 +29,8 @@ namespace Boardcore
 
 void operator<<(AccelerometerData& lhs, const Vector3f& rhs)
 {
+    using namespace Units::Acceleration;
+
     lhs.accelerationX = MeterPerSecondSquared(rhs[0]);
     lhs.accelerationY = MeterPerSecondSquared(rhs[1]);
     lhs.accelerationZ = MeterPerSecondSquared(rhs[2]);
@@ -43,16 +45,18 @@ void operator<<(Eigen::Vector3f& lhs, const AccelerometerData& rhs)
 
 void operator<<(GyroscopeData& lhs, const Vector3f& rhs)
 {
-    lhs.angularSpeedX = rhs[0];
-    lhs.angularSpeedY = rhs[1];
-    lhs.angularSpeedZ = rhs[2];
+    using namespace Units::Angle;
+
+    lhs.angularSpeedX = Degree(rhs[0]);
+    lhs.angularSpeedY = Degree(rhs[1]);
+    lhs.angularSpeedZ = Degree(rhs[2]);
 }
 
 void operator<<(Eigen::Vector3f& lhs, const GyroscopeData& rhs)
 {
-    lhs[0] = rhs.angularSpeedX;
-    lhs[1] = rhs.angularSpeedY;
-    lhs[2] = rhs.angularSpeedZ;
+    lhs[0] = rhs.angularSpeedX.value();
+    lhs[1] = rhs.angularSpeedY.value();
+    lhs[2] = rhs.angularSpeedZ.value();
 }
 
 void operator<<(MagnetometerData& lhs, const Vector3f& rhs)

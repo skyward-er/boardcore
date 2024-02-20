@@ -143,10 +143,14 @@ inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 
 inline PressureData pressureDataFromCanMessage(const Canbus::CanMessage& msg)
 {
+    using namespace Units::Pressure;
+
     PressureData data;
 
     uint32_t pressure = msg.payload[0];
-    memcpy(&(data.pressure), &pressure, sizeof(data.pressure));
+    uint32_t dest;
+    memcpy(&dest, &pressure, sizeof(data.pressure));
+    data.pressure = Pascal(static_cast<float>(dest));
 
     data.pressureTimestamp = (msg.payload[0] >> 30) & ~0x3;
 

@@ -23,13 +23,16 @@
 #pragma once
 
 #include <units/Acceleration.h>
+#include <units/Angle.h>
+#include <units/Length.h>
+#include <units/Pressure.h>
+#include <units/Speed.h>
 
 #include <Eigen/Core>
 #include <ostream>
 
 namespace Boardcore
 {
-using namespace Units::Acceleration;
 
 /**
  * @brief Generic error codes that a sensor can generate.
@@ -86,8 +89,10 @@ struct TemperatureData
 
 struct PressureData
 {
+    using Pascal = Units::Pressure::Pascal;
+
     uint64_t pressureTimestamp = 0;
-    float pressure             = 0;
+    Pascal pressure            = Pascal(0);
 
     static std::string header() { return "timestamp,pressure\n"; }
 
@@ -111,6 +116,8 @@ struct HumidityData
  */
 struct AccelerometerData
 {
+    using MeterPerSecondSquared = Units::Acceleration::MeterPerSecondSquared;
+
     uint64_t accelerationTimestamp      = 0;
     MeterPerSecondSquared accelerationX = MeterPerSecondSquared(0);
     MeterPerSecondSquared accelerationY = MeterPerSecondSquared(0);
@@ -199,14 +206,16 @@ struct QuaternionData
  */
 struct GyroscopeData
 {
+    using Degree = Units::Angle::Degree;
+
     uint64_t angularSpeedTimestamp = 0;
-    float angularSpeedX            = 0;
-    float angularSpeedY            = 0;
-    float angularSpeedZ            = 0;
+    Degree angularSpeedX           = Degree(0);
+    Degree angularSpeedY           = Degree(0);
+    Degree angularSpeedZ           = Degree(0);
 
     GyroscopeData() {}
 
-    GyroscopeData(uint64_t timestamp, float x, float y, float z)
+    GyroscopeData(uint64_t timestamp, Degree x, Degree y, Degree z)
         : angularSpeedTimestamp(timestamp), angularSpeedX(x), angularSpeedY(y),
           angularSpeedZ(z)
     {
@@ -232,7 +241,8 @@ struct GyroscopeData
 
     operator Eigen::Vector3f() const
     {
-        return {angularSpeedX, angularSpeedY, angularSpeedZ};
+        return {angularSpeedX.value(), angularSpeedY.value(),
+                angularSpeedZ.value()};
     }
 };
 
@@ -283,18 +293,22 @@ struct MagnetometerData
  */
 struct GPSData
 {
-    uint64_t gpsTimestamp = 0;
-    float latitude        = 0;  // [deg]
-    float longitude       = 0;  // [deg]
-    float height          = 0;  // [m]
-    float velocityNorth   = 0;  // [m/s]
-    float velocityEast    = 0;  // [m/s]
-    float velocityDown    = 0;  // [m/s]w
-    float speed           = 0;  // [m/s]
-    float track           = 0;  // [deg]
-    float positionDOP     = 0;  // [?]
-    uint8_t satellites    = 0;  // [1]
-    uint8_t fix           = 0;  // 0 = no fix
+    using Degree         = Units::Angle::Degree;
+    using Meter          = Units::Length::Meter;
+    using MeterPerSecond = Units::Speed::MeterPerSecond;
+
+    uint64_t gpsTimestamp        = 0;
+    Degree latitude              = Degree(0);          // [deg]
+    Degree longitude             = Degree(0);          // [deg]
+    Meter height                 = Meter(0);           // [m]
+    MeterPerSecond velocityNorth = MeterPerSecond(0);  // [m/s]
+    MeterPerSecond velocityEast  = MeterPerSecond(0);  // [m/s]
+    MeterPerSecond velocityDown  = MeterPerSecond(0);  // [m/s]w
+    MeterPerSecond speed         = MeterPerSecond(0);  // [m/s]
+    Degree track                 = Degree(0);          // [deg]
+    float positionDOP            = 0;                  // [?]
+    uint8_t satellites           = 0;                  // [1]
+    uint8_t fix                  = 0;                  // 0 = no fix
 
     static std::string header()
     {

@@ -30,9 +30,9 @@ namespace Boardcore
 
 struct L3GD20Data : public GyroscopeData
 {
-    L3GD20Data() : GyroscopeData{0, 0.0, 0.0, 0.0} {}
+    L3GD20Data() : GyroscopeData{0, Degree(0), Degree(0), Degree(0)} {}
 
-    L3GD20Data(uint64_t t, float x, float y, float z)
+    L3GD20Data(uint64_t t, Degree x, Degree y, Degree z)
         : GyroscopeData{t, x, y, z}
     {
     }

@@ -101,6 +101,9 @@ bool MPU9250::init()
 
 MPU9250Data MPU9250::sampleImpl()
 {
+    using namespace Units::Acceleration;
+    using namespace Units::Angle;
+
     MPU9250RawData rawData;
     MPU9250Data data;
 
@@ -124,10 +127,13 @@ MPU9250Data MPU9250::sampleImpl()
         normalizeAcceleration(swapBytes16(rawData.bits.accelY)));
     data.accelerationZ = MeterPerSecondSquared(
         normalizeAcceleration(swapBytes16(rawData.bits.accelZ)));
-    data.temperature   = normalizeTemperature(swapBytes16(rawData.bits.temp));
-    data.angularSpeedX = normalizeGyroscope(swapBytes16(rawData.bits.gyroX));
-    data.angularSpeedY = normalizeGyroscope(swapBytes16(rawData.bits.gyroY));
-    data.angularSpeedZ = normalizeGyroscope(swapBytes16(rawData.bits.gyroZ));
+    data.temperature = normalizeTemperature(swapBytes16(rawData.bits.temp));
+    data.angularSpeedX =
+        Degree(normalizeGyroscope(swapBytes16(rawData.bits.gyroX)));
+    data.angularSpeedY =
+        Degree(normalizeGyroscope(swapBytes16(rawData.bits.gyroY)));
+    data.angularSpeedZ =
+        Degree(normalizeGyroscope(swapBytes16(rawData.bits.gyroZ)));
     data.magneticFieldX =
         normalizeMagnetometer(rawData.bits.magX, magSensAdjCoeff[0]);
     data.magneticFieldY =

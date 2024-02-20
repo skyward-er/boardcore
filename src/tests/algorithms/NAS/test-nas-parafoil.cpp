@@ -126,16 +126,19 @@ void step()
     auto imuData = imu->getLastSample();
     auto gpsData = gps->getLastSample();
 
-    Vector3f acceleration(imuData.accelerationX, imuData.accelerationY,
-                          imuData.accelerationZ);
-    Vector3f angularSpeed(imuData.angularSpeedX, imuData.angularSpeedY,
-                          imuData.angularSpeedZ);
+    Vector3f acceleration(imuData.accelerationX.value(),
+                          imuData.accelerationY.value(),
+                          imuData.accelerationZ.value());
+    Vector3f angularSpeed(imuData.angularSpeedX.value(),
+                          imuData.angularSpeedY.value(),
+                          imuData.angularSpeedZ.value());
     Vector3f magneticField(imuData.magneticFieldX, imuData.magneticFieldY,
                            imuData.magneticFieldZ);
 
-    Vector2f gpsPos(gpsData.latitude, gpsData.longitude);
+    Vector2f gpsPos(gpsData.latitude.value(), gpsData.longitude.value());
     gpsPos = Aeroutils::geodetic2NED(gpsPos, startPos);
-    Vector2f gpsVel(gpsData.velocityNorth, gpsData.velocityNorth);
+    Vector2f gpsVel(gpsData.velocityNorth.value(),
+                    gpsData.velocityNorth.value());
     Vector4f gpsCorrection;
     // cppcheck-suppress constStatement
     gpsCorrection << gpsPos, gpsVel;
@@ -177,7 +180,7 @@ void print()
     auto gpsData  = gps->getLastSample();
     auto nasState = nas->getState();
 
-    Vector2f gpsPos(gpsData.latitude, gpsData.longitude);
+    Vector2f gpsPos(gpsData.latitude.value(), gpsData.longitude.value());
     gpsPos = Aeroutils::geodetic2NED(gpsPos, startPos);
 
     printf("%d, %f, %f, %f, %f, %f, %f\n", gpsData.fix, gpsPos[0], gpsPos[1],

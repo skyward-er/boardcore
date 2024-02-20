@@ -32,11 +32,12 @@ struct BME280Data : public TemperatureData,
                     public HumidityData
 {
     BME280Data()
-        : TemperatureData{0, 0.0}, PressureData{0, 0.0}, HumidityData{0, 0.0}
+        : TemperatureData{0, 0.0}, PressureData{0, Pascal(0)}, HumidityData{0,
+                                                                            0.0}
     {
     }
 
-    BME280Data(uint64_t timestamp, float temperature, float pressure,
+    BME280Data(uint64_t timestamp, float temperature, Pascal pressure,
                float humidity)
         : TemperatureData{timestamp, temperature},
           PressureData{timestamp, pressure}, HumidityData{timestamp, humidity}

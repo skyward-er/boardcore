@@ -166,9 +166,9 @@ int main()
                 TimerUtils::toIntMicroSeconds(
                     TimestampTimer::timestampTimer.getTimer(), data[i].sampleDelta),
                 (data[i].timestamp - data[i - 1].timestamp),
-                data[i].data.angularSpeedX,
-                data[i].data.angularSpeedY,
-                data[i].data.angularSpeedZ,
+                data[i].data.angularSpeedX.value(),
+                data[i].data.angularSpeedY.value(),
+                data[i].data.angularSpeedZ.value(),
                 data[i].cpu);
         // clang-format on
     }

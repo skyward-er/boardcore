@@ -70,10 +70,12 @@ int main()
     {
         mpu9250.sample();
         MPU9250Data data = mpu9250.getLastSample();
-        printf("%lld,%f,%f,%f;", data.accelerationTimestamp, data.accelerationX,
-               data.accelerationY, data.accelerationZ);
-        printf("%lld,%f,%f,%f;", data.angularSpeedTimestamp, data.angularSpeedX,
-               data.angularSpeedY, data.angularSpeedZ);
+        printf("%lld,%f,%f,%f;", data.accelerationTimestamp,
+               data.accelerationX.value(), data.accelerationY.value(),
+               data.accelerationZ.value());
+        printf("%lld,%f,%f,%f;", data.angularSpeedTimestamp,
+               data.angularSpeedX.value(), data.angularSpeedY.value(),
+               data.angularSpeedZ.value());
         printf("%lld,%f,%f,%f\n", data.magneticFieldTimestamp,
                data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
 

@@ -32,7 +32,7 @@ struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
     LSM6DSRXData()
         : AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
-          GyroscopeData{0, 0.0, 0.0, 0.0}
+          GyroscopeData{0, Degree(0), Degree(0), Degree(0)}
     {
     }
 

@@ -53,8 +53,9 @@ int main()
         mpu->sample();
         auto data = mpu->getLastSample();
 
-        Vector3f acceleration(data.accelerationX, data.accelerationY,
-                              data.accelerationZ);
+        Vector3f acceleration(data.accelerationX.value(),
+                              data.accelerationY.value(),
+                              data.accelerationZ.value());
 
         Vector3f offset(15.9850903462129, -15.6775071377074, -33.8438469147423);
         Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,

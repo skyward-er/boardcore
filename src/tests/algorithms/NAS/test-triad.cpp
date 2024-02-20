@@ -52,8 +52,9 @@ int main()
         bmx->sample();
         auto data = bmx->getLastSample();
 
-        Vector3f acceleration(data.accelerationX, data.accelerationY,
-                              data.accelerationZ);
+        Vector3f acceleration(data.accelerationX.value(),
+                              data.accelerationY.value(),
+                              data.accelerationZ.value());
         Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                                data.magneticFieldZ);
 

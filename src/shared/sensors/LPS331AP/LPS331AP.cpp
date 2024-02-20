@@ -64,6 +64,8 @@ bool LPS331AP::selfTest() { return checkWhoAmI(); }
 
 LPS331APData LPS331AP::sampleImpl()
 {
+    using namespace Units::Pressure;
+
     uint8_t buffer[5];
     if (bus.readFromRegister(slaveConfig, REG_PRESS_XLSB, buffer, 5))
     {
@@ -80,7 +82,7 @@ LPS331APData LPS331AP::sampleImpl()
 
         data.pressureTimestamp    = TimestampTimer::getTimestamp();
         data.temperatureTimestamp = TimestampTimer::getTimestamp();
-        data.pressure             = pressure / 4096.0f;
+        data.pressure             = Pascal(pressure / 4096.0f);
         data.temperature          = temperature / 480.0f + 42.5f;
 
         return data;

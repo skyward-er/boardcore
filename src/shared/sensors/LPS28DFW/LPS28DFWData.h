@@ -34,9 +34,9 @@ namespace Boardcore
 struct LPS28DFWData : public PressureData, TemperatureData
 {
 
-    LPS28DFWData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
+    LPS28DFWData() : PressureData{0, Pascal(0)}, TemperatureData{0, 0.0} {}
 
-    LPS28DFWData(uint64_t pressT, float pressure, uint64_t tempT,
+    LPS28DFWData(uint64_t pressT, Pascal pressure, uint64_t tempT,
                  float temperature)
         : PressureData{pressT, pressure}, TemperatureData{tempT, temperature}
     {

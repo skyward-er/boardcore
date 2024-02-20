@@ -94,9 +94,12 @@ int main()
         auto tmp = corrector.correct(
             static_cast<AccelerometerData>(sensor.getLastSample()));
 
-        testData.accelerationX = tmp(0);
-        testData.accelerationY = tmp(1);
-        testData.accelerationZ = tmp(2);
+        const_cast<MeterPerSecondSquared&>(testData.accelerationX) =
+            MeterPerSecondSquared(tmp(0));
+        const_cast<MeterPerSecondSquared&>(testData.accelerationY) =
+            MeterPerSecondSquared(tmp(1));
+        const_cast<MeterPerSecondSquared&>(testData.accelerationZ) =
+            MeterPerSecondSquared(tmp(2));
 
         if (elapsed > 500)
         {

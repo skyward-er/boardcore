@@ -35,8 +35,8 @@ struct MPU9250Data : public AccelerometerData,
     MPU9250Data()
         : AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
-          GyroscopeData{0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0, 0.0},
-          TemperatureData{0, 0.0}
+          GyroscopeData{0, Degree(0), Degree(0), Degree(0)},
+          MagnetometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
     {
     }
 

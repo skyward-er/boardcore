@@ -45,14 +45,14 @@ public:
     {
         timestamp = timestamp % dataDuration;
         if (data[currentIndex].pressureTimestamp + timestampOffset > timestamp)
-            return data[currentIndex].pressure + pressureOffset;
+            return data[currentIndex].pressure.value() + pressureOffset;
 
         for (; currentIndex < length; currentIndex++)
             if (data[currentIndex + 1].pressureTimestamp + timestampOffset >
                 timestamp)
-                return data[currentIndex].pressure + pressureOffset;
+                return data[currentIndex].pressure.value() + pressureOffset;
 
-        return data[length - 1].pressure + pressureOffset;
+        return data[length - 1].pressure.value() + pressureOffset;
     }
 
     size_t getSize() { return length; }

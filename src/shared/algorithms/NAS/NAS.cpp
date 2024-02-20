@@ -159,8 +159,9 @@ void NAS::predictGyro(const Vector3f& angularSpeed)
 
 void NAS::predictGyro(const GyroscopeData& angularSpeed)
 {
-    predictGyro(Vector3f{angularSpeed.angularSpeedX, angularSpeed.angularSpeedY,
-                         angularSpeed.angularSpeedZ});
+    predictGyro(Vector3f{angularSpeed.angularSpeedX.value(),
+                         angularSpeed.angularSpeedY.value(),
+                         angularSpeed.angularSpeedZ.value()});
 }
 
 void NAS::correctBaro(const float pressure)
@@ -211,11 +212,11 @@ void NAS::correctGPS(const GPSData& gps)
         return;
 
     auto gpsPos = Aeroutils::geodetic2NED(
-        {gps.latitude, gps.longitude},
+        {gps.latitude.value(), gps.longitude.value()},
         {reference.refLatitude, reference.refLongitude});
 
-    correctGPS(
-        Vector4f{gpsPos(0), gpsPos(1), gps.velocityNorth, gps.velocityEast});
+    correctGPS(Vector4f{gpsPos(0), gpsPos(1), gps.velocityNorth.value(),
+                        gps.velocityEast.value()});
 }
 
 void NAS::correctMag(const Vector3f& mag)

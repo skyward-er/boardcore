@@ -197,6 +197,8 @@ public:
 
     L3GD20Data sampleImpl()
     {
+        using namespace Units::Angle;
+
         if (!fifoEnabled)  // FIFO not enabled
         {
             // Timestamp of the last sample
@@ -221,7 +223,10 @@ public:
             int16_t z = buf[4] | buf[5] << 8;
 
             Eigen::Vector3f rads = toRadiansPerSecond(x, y, z);
-            lastFifo[0] = {lastSampleTimestamp, rads(0), rads(1), rads(2)};
+            lastFifo[0]          = {lastSampleTimestamp,
+                                    angle_cast<Degree>(Radian(rads(0))),
+                                    angle_cast<Degree>(Radian(rads(1))),
+                                    angle_cast<Degree>(Radian(rads(2)))};
         }
 
         else  // FIFO is enabled
@@ -283,7 +288,9 @@ public:
                 lastFifo[i - duplicates] = L3GD20Data{
                     lastInterruptTimestamp +
                         ((int)i - (int)fifoWatermark - (int)duplicates) * dt,
-                    rads(0), rads(1), rads(2)};
+                    angle_cast<Degree>(Radian(rads(0))),
+                    angle_cast<Degree>(Radian(rads(1))),
+                    angle_cast<Degree>(Radian(rads(2)))};
             }
 
             lastFifoLevel = fifoLevel - duplicates;

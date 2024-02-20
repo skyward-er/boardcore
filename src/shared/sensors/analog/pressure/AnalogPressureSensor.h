@@ -61,6 +61,8 @@ public:
 
     AnalogPressureData sampleImpl() override
     {
+        using namespace Units::Pressure;
+
         AnalogPressureData pressure;
 
         // Retrieve the voltage
@@ -68,15 +70,15 @@ public:
 
         // Save the timestamp and convert the voltage
         pressure.pressureTimestamp = voltage.voltageTimestamp;
-        pressure.pressure          = voltageToPressure(voltage.voltage);
+        pressure.pressure          = Pascal(voltageToPressure(voltage.voltage));
 
         // Check if the pressure is in range
-        if (pressure.pressure < minPressure)
-            pressure.pressure = minPressure;
-        else if (pressure.pressure > maxPressure)
-            pressure.pressure = maxPressure;
+        if (pressure.pressure < Pascal(minPressure))
+            pressure.pressure = Pascal(minPressure);
+        else if (pressure.pressure > Pascal(maxPressure))
+            pressure.pressure = Pascal(maxPressure);
 
-        pressure.pressure -= offset;
+        pressure.pressure -= Pascal(offset);
 
         return pressure;
     }

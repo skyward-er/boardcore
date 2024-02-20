@@ -38,7 +38,7 @@ int main()
 {
     clk.mode(Mode::ALTERNATE);
     clk.alternateFunction(5);
-    clk.speed(Speed::_100MHz);
+    clk.speed(miosix::Speed::_100MHz);
     miso.mode(Mode::ALTERNATE);
     miso.alternateFunction(5);
     mosi.mode(Mode::ALTERNATE);

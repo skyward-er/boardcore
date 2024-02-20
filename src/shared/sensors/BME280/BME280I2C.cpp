@@ -163,6 +163,8 @@ HumidityData BME280I2C::readHumidity()
 
 PressureData BME280I2C::readPressure()
 {
+    using namespace Units::Pressure;
+
     uint8_t buffer[3];
     if (bus.readFromRegister(slaveConfig, REG_PRESS_MSB, buffer, 3))
     {
@@ -173,7 +175,7 @@ PressureData BME280I2C::readPressure()
 
         PressureData data;
         data.pressureTimestamp = TimestampTimer::getTimestamp();
-        data.pressure          = compensatePressure(adc_P);
+        data.pressure          = Pascal(compensatePressure(adc_P));
         data.pressure /= 256;  // Convert to Pa
 
         return data;
@@ -226,6 +228,8 @@ bool BME280I2C::selfTest() { return checkWhoAmI(); }
 
 BME280Data BME280I2C::sampleImpl()
 {
+    using namespace Units::Pressure;
+
     // TODO: implement selective read!
 
     uint8_t buffer[8];
@@ -252,7 +256,7 @@ BME280Data BME280I2C::sampleImpl()
 
         // Compensate pressure
         data.pressureTimestamp = TimestampTimer::getTimestamp();
-        data.pressure          = compensatePressure(adc_P);
+        data.pressure          = Pascal(compensatePressure(adc_P));
         data.pressure /= 256;  // Convert to Pa
 
         // Compensate humidity
