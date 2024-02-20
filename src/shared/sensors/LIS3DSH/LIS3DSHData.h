@@ -26,10 +26,11 @@
 
 namespace Boardcore
 {
-using namespace Units::Acceleration;
 
 struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {
+    using MeterPerSecondSquared = Units::Acceleration::MeterPerSecondSquared;
+
     LIS3DSHData()
         : AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},

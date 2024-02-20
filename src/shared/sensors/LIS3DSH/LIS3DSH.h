@@ -352,6 +352,8 @@ private:
      */
     AccelerometerData readAccelData()
     {
+        using namespace Units::Acceleration;
+
         AccelerometerData accelData;
 
         SPITransaction spi(spiSlave);

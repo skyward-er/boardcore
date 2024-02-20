@@ -39,6 +39,7 @@
 
 using namespace Boardcore;
 using namespace miosix;
+using namespace Units::Acceleration;
 
 /* using volatile so that the compiler won't optimize out the variable */
 volatile AccelerometerData testData;
