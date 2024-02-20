@@ -48,6 +48,9 @@ sbs_target(imu-calibration stm32f429zi_parafoil)
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
+add_executable(compute-unit-v2-testsuite src/entrypoints/compute-unit-v2-testsuite.cpp)
+sbs_target(compute-unit-v2-testsuite stm32f767zi_compute_unit_v2_no_xram)
+
 # add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
 # sbs_target(kernel-testsuite stm32f767zi_compute_unit)
 

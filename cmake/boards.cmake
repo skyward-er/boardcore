@@ -31,6 +31,8 @@ set(BOARDCORE_BOARDS_OPTIONS_FILES
     ${BOARDCORE_PATH}/src/bsps/stm32f756zg_nucleo/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_automated_antennas/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit/config/board_options.cmake
+    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit_v2/config/board_options.cmake
+    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit_v2/config/board_options_no_xram.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_gemini_gs/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_gemini_motor/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_death_stack_v4/config/board_options.cmake
