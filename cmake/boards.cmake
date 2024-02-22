@@ -28,6 +28,7 @@ set(BOARDCORE_BOARDS_OPTIONS_FILES
     ${BOARDCORE_PATH}/src/bsps/stm32f429zi_death_stack_v3/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f429zi_pyxis_auxiliary/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f429zi_rig/config/board_options.cmake
+    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_con_rig/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f756zg_nucleo/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_automated_antennas/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit/config/board_options.cmake
