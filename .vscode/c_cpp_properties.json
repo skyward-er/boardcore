@@ -205,6 +205,29 @@
             ]
         },
         {
+            "name": "stm32f429zi_con_rig",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "${defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_con_rig",
+                "_BOARD_STM32F429ZI_CON_RIG",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/src/bsps/stm32f429zi_con_rig/config",
+                "${workspaceFolder}/src/bsps/stm32f429zi_con_rig"
+            ]
+        },
+        {
             "name": "stm32f756zg_nucleo",
             "cStandard": "c11",
             "cppStandard": "c++14",
