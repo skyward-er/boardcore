@@ -77,8 +77,11 @@ public:
     {
         CRC_ENABLE_8  = 0x08,
         CRC_ENABLE_16 = 0x10
+        // TODO: add CRC_NO (handled by adding XX at the end of a command inside
+        // sendStringCommand())
     };
 
+    // TODO: can be moved inside findBaudrate()? why is it public?
     std::array<uint32_t, 9> BaudrateList = {
         9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
 
@@ -92,8 +95,10 @@ public:
      * @param samplePeriod Sampling period in ms
      * @param antPos antenna A position
      */
-    VN300(USART &usart, int userBaudRate, bool isBinary = true,
-          CRCOptions crc = CRCOptions::CRC_ENABLE_8, uint16_t samplePeriod = 15,
+    VN300(USART &usart, int userBaudRate,
+          bool isBinary           = true,  // TODO: are textual readings needed?
+          CRCOptions crc          = CRCOptions::CRC_ENABLE_8,
+          uint16_t samplePeriod   = 15,  // TODO: why 15?
           AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           Eigen::Matrix3f rotMat  = Eigen::Matrix3f::Identity());
@@ -107,6 +112,7 @@ public:
      * @return True if operation succeeded.
      */
     bool closeAndReset();
+    // TODO: move to common files
 
     bool selfTest() override;
 
@@ -122,6 +128,7 @@ private:
      * @return True if operation succeeded.
      */
     bool findBaudrate();
+    // TODO: should we keep it? maybe in common files?
 
     /**
      * @brief pause asynchronous messages
@@ -129,6 +136,7 @@ private:
      * @return True if operation succeeded.
      */
     bool asyncPause();
+    // TODO: should we keep it? not needed with vn100... with vn300?
 
     /**
      * @brief Disables the async messages that the VN300 is default configured
@@ -139,6 +147,7 @@ private:
      * @return True if operation succeeded.
      */
     bool disableAsyncMessages(bool waitResponse = true);
+    // TODO: move to common files
 
     /**
      * @brief Configures the user defined serial communication.
@@ -146,6 +155,7 @@ private:
      * @return True if operation succeeded.
      */
     bool configBaudRate(int baud);
+    // TODO: move to common files
 
     /**
      * @brief reset to factory settings.
@@ -153,6 +163,7 @@ private:
      * @return True if operation succeeded.
      */
     bool resetFactorySettings();
+    // TODO: [[maybe_unused]] ... remove
 
     /**
      * @brief Sets the user selected crc method.
@@ -162,6 +173,7 @@ private:
      * @return True if operation succeeded.
      */
     bool setCrc(bool waitResponse = true);
+    // TODO: move to common files
 
     /**
      * @brief Write the settings on the non volatile-memory.
@@ -169,6 +181,7 @@ private:
      * @return True if operation succeeded.
      */
     bool writeSettingsCommand();
+    // TODO: is it used? maybe can be placed in common files?
 
     /**
      * @brief Sets the antenna A offset.
@@ -207,6 +220,8 @@ private:
      * @return True if operation succeeded.
      */
     bool setBinaryOutput();
+    // TODO: refactor
+
     /**
      * @brief Method implementation of self test.
      *
@@ -214,19 +229,24 @@ private:
      */
     bool selfTestImpl();
 
-    QuaternionData sampleQuaternion();
+    QuaternionData
+    sampleQuaternion();  // TODO: can be removed, not needed with binary output
 
-    MagnetometerData sampleMagnetometer();
+    MagnetometerData sampleMagnetometer();  // TODO: can be removed, not needed
+                                            // with binary output
 
-    AccelerometerData sampleAccelerometer();
+    AccelerometerData sampleAccelerometer();  // TODO: can be removed, not
+                                              // needed with binary output
 
-    GyroscopeData sampleGyroscope();
+    GyroscopeData
+    sampleGyroscope();  // TODO: can be removed, not needed with binary output
 
-    Ins_Lla sampleIns();
+    Ins_Lla sampleIns();  // TODO: can be removed, not needed with binary output
 
     VN300Data sampleBinary();
 
-    VN300Data sampleASCII();
+    VN300Data
+    sampleASCII();  // TODO: can be removed, not needed with binary output
 
     /**
      * @brief Sends the command to the sensor with the correct checksum added
@@ -238,6 +258,7 @@ private:
      * @return True if operation succeeded.
      */
     bool sendStringCommand(std::string command);
+    // TODO: put in common files
 
     /**
      * @brief Receives a command from the VN300 serialInterface->recv() but
@@ -249,6 +270,7 @@ private:
      * @return True if operation succeeded.
      */
     bool recvStringCommand(char *command, int maxLength);
+    // TODO: put in common files
 
     /**
      * @brief Receives binary data and parse directly into BinaryData struct
@@ -260,6 +282,7 @@ private:
      *
      */
     bool sampleBin(BinaryData &bindata);
+    // TODO: can be removed and placed inside sampleBinary()
 
     /**
      * @brief Receives binary data and it parses it in a generic buffer
@@ -269,6 +292,7 @@ private:
      * @return The length of the message in bytes
      */
     int recvBinaryCommand(uint8_t *command);
+    // TODO: [[maybe_unused]] ... remove
 
     /**
      * @brief check if the VN-300 returned an error and differentiate between
@@ -281,6 +305,8 @@ private:
      * @return error code.
      */
     uint8_t checkErrorVN(const char *message);
+    // TODO: used only 1 time to infer the type of error, all other times is
+    // "check if ==VNERR" ... can be replaced with a function in common files?
 
     /**
      * @brief Method to verify the crc validity of a command.
@@ -291,6 +317,7 @@ private:
      * @return True if operation succeeded.
      */
     bool verifyChecksum(char *command, int maxLength);
+    // TODO: put in common files
 
     /**
      * @brief Calculate the 8bit checksum on the given array.
@@ -301,6 +328,7 @@ private:
      * @return The 8 bit checksum.
      */
     uint8_t calculateChecksum8(uint8_t *message, int length);
+    // TODO: put in common files
 
     /**
      * @brief Calculate the 16bit array on the given array.
@@ -311,6 +339,7 @@ private:
      * @return The 16 bit CRC16-CCITT error check.
      */
     uint16_t calculateChecksum16(uint8_t *message, int length);
+    // TODO: put in common files
 
     /**
      * @brief Clear the buffer of the serial interface.
@@ -319,6 +348,7 @@ private:
      * When the usart driver is corrected this must be changed.
      */
     void clearBuffer();
+    // TODO: remove and use usart
 
     /**
      * @brief Serial interface that is needed to communicate
@@ -328,8 +358,8 @@ private:
     int userBaudRate;
     const int defaultBaudRate = 115200;
 
-    bool isBinary;
-    uint16_t samplePeriod;
+    bool isBinary;          // TODO: are textual readings needed?
+    uint16_t samplePeriod;  // TODO: is this actually used? seems not...
     CRCOptions crc;
     bool isInit = false;
 
@@ -341,23 +371,28 @@ private:
      * @brief IMU pre-elaborated sample string for efficiency reasons.
      */
     string *preSampleImuString = nullptr;
+    // TODO: this should not be a pointer
 
     /**
      * @brief Temperature and pressure pre-elaborated sample string for
      * efficiency reasons.
      */
     string *preSampleINSlla = nullptr;
+    // TODO: this should not be a pointer
 
     /**
      * @brief Binary output polling command
      */
     string *preSampleBin1 = nullptr;
+    // TODO: this should not be a pointer
+
+    static const unsigned int recvStringMaxDimension = 200;
 
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
      * only (200 bytes).
      */
-    std::array<char, 200> recvString;
+    std::array<char, recvStringMaxDimension> recvString;
 
     /**
      * @brief Actual strlen() of the recvString.
@@ -365,7 +400,5 @@ private:
     unsigned int recvStringLength = 0;
 
     PrintLogger logger = Logging::getLogger("VN300");
-
-    static const unsigned int recvStringMaxDimension = 200;
 };
 }  // namespace Boardcore

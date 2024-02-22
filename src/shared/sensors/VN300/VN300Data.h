@@ -30,7 +30,7 @@ namespace Boardcore
 /**
  * @brief Structure to handle antenna A position units [m]
  */
-struct AntennaPosition
+struct AntennaPosition  // TODO: move inside defs
 {
     float posX;
     float posY;
@@ -43,7 +43,7 @@ struct AntennaPosition
 /**
  * @brief Structure to handle INS data
  */
-struct Ins_Lla
+struct Ins_Lla  // TODO: move inside defs, should this go inside SensorData.h?
 {
     uint64_t insTimestamp;
     uint16_t fix_gps;
@@ -66,7 +66,7 @@ struct Ins_Lla
  * @property The struct needs the packed attribute in order to have contiguous
  * memory allocation in order to be able to parse directly the received message
  */
-struct __attribute__((packed)) BinaryData
+struct __attribute__((packed)) BinaryData  // TODO: move inside defs
 {
     uint8_t group;
     uint16_t common;
