@@ -23,7 +23,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>
 
-set(BOARD_NAME stm32f767zi_compute_unit_v2)
+set(BOARD_NAME stm32f767zi_rig_v2)
 set(ARCH_NAME cortexM7_stm32f7)
 
 # Base directories with header files for this board
