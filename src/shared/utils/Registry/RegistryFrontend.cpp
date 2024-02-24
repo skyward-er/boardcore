@@ -57,6 +57,7 @@ RegistryFrontend::RegistryFrontend()
     elementVector.reserve(nrBytesEntryId + nrBytesPerEntry + sizeof(TypeUnion));
     configuration.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
     // middleware.init(); /*!< Initializes with the backend */
+    middleware.start();
     /**
      * TODO: The registry will load from the backend the saved configuration
      * and initialize configuration, after initialize properly the middleware
@@ -282,7 +283,7 @@ void RegistryFrontend::clear()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     serializationVector.clear();
     configuration.clear();
-    /*! TODO: Clear the backend also? */
+    middleware.clear();
 }
 
 };  // namespace Boardcore

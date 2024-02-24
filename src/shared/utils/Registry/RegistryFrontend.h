@@ -296,7 +296,6 @@ struct EntryStructsUnion
      * @return True if the append and serialization process went correctly,
      * False otherwise
      */
-    // TODO: Can be templated this?
     bool appendSerializedFromUnion(std::vector<uint8_t>& serializationVector)
     {
         uint32_t tempUint32;

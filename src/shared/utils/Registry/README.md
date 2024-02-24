@@ -227,7 +227,17 @@ serializationVector is a vector that after getSerializedVector will contain:
 The vector will contain only the set configurations. After the header, there will be all the configured entries with configuration ID, Type ID, Value(s).
 
 In case of multiple values, they are one after the other 
-e.g.: | ID: 2 | TypeID: 1 | Val: 45.50109 | Val: 9.15633 | 
+e.g.: 
+|||||
+|:-----|:--------:|:--------:|--------:|
+| ID: 2 | TypeID: 1 | Val: 45.50109 | Val: 9.15633 | 
 
 Where TypeID in this example is a coordinates type and therefore 45.50109 is the latitude and 9.15633 the longitude
 
+### Saving
+The save of the configuration is done at each new entry configured, each set will held to a save of the configuration, mediated by the middleware which might lead to discard late writes.
+
+## The middleware
+Another part of the Registry is the middleware which decouples the registry front-end and the backend. This aims to avoid the block given by waiting the SD or underlying saving backend for write the serialized configuration.
+
+This component avoid this by using a buffer for the write to backend and another, at disposal for writes from the front-end.
