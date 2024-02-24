@@ -240,4 +240,11 @@ The save of the configuration is done at each new entry configured, each set wil
 ## The middleware
 Another part of the Registry is the middleware which decouples the registry front-end and the backend. This aims to avoid the block given by waiting the SD or underlying saving backend for write the serialized configuration.
 
-This component avoid this by using a buffer for the write to backend and another, at disposal for writes from the front-end.
+This component avoid this by using a buffer for the write to backend and another, at disposal for writes from the front-end. It is an active object which waits for new data to write it to backend.
+
+### Methods
+- **write**: Writes to the backend the given configuration. The real write is done by the run() method executed by the
+registry middleware's thread, while in reality write just writes to the buffer the serialized configuration that will
+be then written by the thread.
+- **load**: Loads into the vector the saved configuration from the backend. Returns false if none is saved.
+- **clear**: Clears/deletes the configuration in buffers and underlying backend
