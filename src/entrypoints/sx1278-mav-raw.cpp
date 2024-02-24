@@ -146,7 +146,7 @@ void recvLoop()
     while (1)
     {
         int len = sx1278->receive(msg, sizeof(msg));
-        if (len > 0)
+        if (len == PACKET_SIZE)
         {
             mavlink_payload_flight_tm_t tm;
             memcpy(&tm, msg, PACKET_SIZE);
