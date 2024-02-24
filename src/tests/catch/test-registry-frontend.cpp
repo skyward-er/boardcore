@@ -24,9 +24,11 @@
 #endif
 #include <stdint.h>
 #include <utils/Registry/RegistryFrontend.h>
+#include <utils/Registry/RegistryMiddleware.h>
 
 #include <catch2/catch.hpp>
 #include <utils/Registry/RegistryFrontend.cpp>
+#include <utils/Registry/RegistryMiddleware.cpp>
 
 using namespace Boardcore;
 
@@ -102,6 +104,7 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
     REQUIRE(registry.getConfigurationUnsafe(algorithmId, uint8Value));
     REQUIRE(uint8Value == testValueUint8);
 }
+
 TEST_CASE("RegistryFrontend test - serialization/deserialization test")
 {
     RegistryFrontend registry;
@@ -110,49 +113,15 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     uint32_t valueInt = 0;
     float valueFloat  = 0;
 
+    registry.clear();
+    /*! FIRST SET OF THE CONFIGURATION */
     REQUIRE(registry.setConfigurationUnsafe(coordinateId, coordinatesValue));
-    /*! TODO: This will change to true when there is an actual backend */
-    REQUIRE_FALSE(registry.saveConfiguration());
-    {
-        WriteBuffer& buffer         = registry.getSerializedConfiguration();
-        std::vector<uint8_t> vector = buffer.vector;
-        for (int i = 0; i < 8; i++)
-            REQUIRE(vector.at(i) == 0);
-        REQUIRE(static_cast<int>(vector.at(8)) == 1);
-        REQUIRE(static_cast<int>(vector.at(9)) == 30);
-        /*! Checksum */
-        // REQUIRE(static_cast<int>(vector.at(10)) == boh);
-        // REQUIRE(static_cast<int>(vector.at(11)) == boh);
-        // REQUIRE(static_cast<int>(vector.at(12) == boh);
-        // REQUIRE(static_cast<int>(vector.at(13) == boh);
-        /*! ID 8*/
-        REQUIRE(static_cast<int>(vector.at(14)) == 0);
-        REQUIRE(static_cast<int>(vector.at(15)) == 0);
-        REQUIRE(static_cast<int>(vector.at(16)) == 0);
-        REQUIRE(static_cast<int>(vector.at(17)) == 8);
-        auto it = vector.begin() + 14;
-        EntryStructsUnion::getFromSerializedVector(valueInt, it, vector.end());
-        REQUIRE(valueInt == 8);
-        /*! ID TYPE 2:coordinates*/
-        REQUIRE(static_cast<int>(vector.at(18)) == 0);
-        REQUIRE(static_cast<int>(vector.at(19)) == 0);
-        REQUIRE(static_cast<int>(vector.at(20)) == 0);
-        REQUIRE(static_cast<int>(vector.at(21)) == 2);
-        /*! LATITUDE 01000010 00110110 00000001 00011110 */
-        REQUIRE(static_cast<int>(vector.at(22)) == 66);
-        REQUIRE(static_cast<int>(vector.at(23)) == 54);
-        REQUIRE(static_cast<int>(vector.at(24)) == 1);
-        REQUIRE(static_cast<int>(vector.at(25)) == 30);
-
-        /*! LONGITUDE 01000001 00010010 10000000 01010100 */
-        REQUIRE(static_cast<int>(vector.at(26)) == 65);
-        REQUIRE(static_cast<int>(vector.at(27)) == 18);
-        REQUIRE(static_cast<int>(vector.at(28)) == 128);
-        REQUIRE(static_cast<int>(vector.at(29)) == 84);
-    }
+    registry.saveConfiguration();
 
     /*! LOAD AND CHECK CONFIGURATION */
-
+    registry.saveConfiguration();
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.loadConfiguration());
     REQUIRE(registry.loadConfiguration());
     REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
@@ -162,20 +131,55 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
 
     REQUIRE(registry.setConfigurationUnsafe((ventingValveAtomicTimingId),
                                             testValueUint32));
+    registry.saveConfiguration();
+
     valueInt = 0;
+    registry.saveConfiguration();
     REQUIRE(
         registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
     REQUIRE(valueInt == testValueUint32);
+    registry.saveConfiguration();
+
     REQUIRE(registry.setConfigurationUnsafe(aFloatValueId, testValueFloat));
+    registry.saveConfiguration();
     valueFloat = 0;
+    registry.saveConfiguration();
+
+    REQUIRE(
+        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
+    REQUIRE(valueInt == testValueUint32);
     REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat));
     REQUIRE(valueFloat == testValueFloat);
 
     /*! SAVE AGAIN WITH ALL TYPES INSIDE CONFIGURATION */
 
-    /*! TODO: This will change to true when there is an actual backend */
-    REQUIRE_FALSE(registry.saveConfiguration());
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+
+    registry.saveConfiguration();
+    registry.saveConfiguration();
+    registry.saveConfiguration();
+    registry.saveConfiguration();
+    registry.saveConfiguration();
+    registry.saveConfiguration();
+    registry.loadConfiguration();
+
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+
+    registry.saveConfiguration();
     REQUIRE(registry.loadConfiguration());
+    registry.saveConfiguration();
+    REQUIRE(registry.loadConfiguration());
+    registry.saveConfiguration();
+    REQUIRE(registry.loadConfiguration());
+    REQUIRE(registry.loadConfiguration());
+    REQUIRE(registry.loadConfiguration());
+    REQUIRE(registry.loadConfiguration());
+
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(
+        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
+    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat));
+    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
 
     /*! CHECK AFTER RELOAD */
 

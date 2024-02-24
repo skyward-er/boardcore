@@ -43,6 +43,7 @@ constexpr uint32_t configurationsStartOffset =
     vectorZeroOffset +
     6; /*< Nr. bytes from start to the base where
        configuration starts (zero B, Nr. entries, Len_vector, checksum)*/
+constexpr uint32_t waitForWrite = 100;
 namespace Boardcore
 {
 
@@ -52,17 +53,15 @@ namespace Boardcore
  */
 RegistryFrontend::RegistryFrontend()
 {
-    mainBuffer.vector.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
-    secondaryBuffer.vector.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
+    serializationVector.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
     elementVector.reserve(nrBytesEntryId + nrBytesPerEntry + sizeof(TypeUnion));
     configuration.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
-    mainBuffer.needsWrite      = false;
-    secondaryBuffer.needsWrite = false;
-    bufferMainToWrite          = true;
+    // middleware.init(); /*!< Initializes with the backend */
     /**
      * TODO: The registry will load from the backend the saved configuration
-     * and initialize configuration */
-}
+     * and initialize configuration, after initialize properly the middleware
+     * and backend */
+};
 
 /**
  * @brief Registry front end destructor. Saves configuration to
@@ -72,7 +71,8 @@ RegistryFrontend::~RegistryFrontend()
 {
     /**
      * TODO: The registry will save the configurations and also use the
-     * proper destructors */
+     * proper destructors if needed*/
+    saveConfiguration();
 }
 
 /**
@@ -122,26 +122,27 @@ bool RegistryFrontend::loadConfiguration()
      * entry
      */
     /*! TODO: Method that will call the backend and initializes the vector */
+    // TODO: if(!middleware.load(serializationVector)) return false;
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     uint32_t id = 0, typeId, checksum = 0, savedChecksum = 0, len = 0,
              uint32Value;
     Coordinates coordinate;
     float floatValue;
     uint8_t nrEntries, counter = 0;
     bool success = true;
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    const std::lock_guard<std::recursive_mutex> lockBufs(buffersMutex);
-    const std::lock_guard<std::recursive_mutex> lockBuffer(mainBuffer.mutex);
     configuration.clear();
     //[8 0s | nr | len | s_c | s_c | s_c | s_c]
-    nrEntries = mainBuffer.vector.at(vectorZeroOffset);
-    len       = mainBuffer.vector.at(vectorZeroOffset + 1);
-    savedChecksum |= mainBuffer.vector.at(vectorZeroOffset + 2) << 24;
-    savedChecksum |= mainBuffer.vector.at(vectorZeroOffset + 3) << 16;
-    savedChecksum |= mainBuffer.vector.at(vectorZeroOffset + 4) << 8;
-    savedChecksum |= mainBuffer.vector.at(vectorZeroOffset + 5);
+    nrEntries = serializationVector.at(vectorZeroOffset);
+    len       = serializationVector.at(vectorZeroOffset + 1);
+    savedChecksum |= serializationVector.at(vectorZeroOffset + 2) << 24;
+    savedChecksum |= serializationVector.at(vectorZeroOffset + 3) << 16;
+    savedChecksum |= serializationVector.at(vectorZeroOffset + 4) << 8;
+    savedChecksum |= serializationVector.at(vectorZeroOffset + 5);
+    assert(len == serializationVector.size());
 
-    for (auto iterator = mainBuffer.vector.begin() + configurationsStartOffset;
-         iterator != mainBuffer.vector.end(); iterator++)
+    for (auto iterator =
+             serializationVector.begin() + configurationsStartOffset;
+         iterator != serializationVector.end(); iterator++)
     {
         checksum ^= *iterator << (3 - (counter % 4)) * 8;
         counter++;
@@ -151,36 +152,38 @@ bool RegistryFrontend::loadConfiguration()
     {
         return false;
     }
-    auto iterator = mainBuffer.vector.begin() + configurationsStartOffset;
-    while (iterator != mainBuffer.vector.end() && success)
+    auto it = serializationVector.begin() + configurationsStartOffset;
+    counter = 0;
+    while (it != serializationVector.end() && success && counter < nrEntries)
     {
         /*! Gets the ID of the entry, the ID of the data type, the value*/
-        EntryStructsUnion::getFromSerializedVector(id, iterator,
-                                                   mainBuffer.vector.end());
-        EntryStructsUnion::getFromSerializedVector(typeId, iterator,
-                                                   mainBuffer.vector.end());
+        EntryStructsUnion::getFromSerializedVector(id, it,
+                                                   serializationVector.end());
+        EntryStructsUnion::getFromSerializedVector(typeId, it,
+                                                   serializationVector.end());
         TypesEnum type = static_cast<TypesEnum>(typeId);
         switch (type)
         {
             case TypesEnum::COORDINATES:
                 EntryStructsUnion::getFromSerializedVector(
-                    coordinate, iterator, mainBuffer.vector.end());
-                success &= setConfigurationUnsafe(id, coordinate);
+                    coordinate, it, serializationVector.end());
+                success &= setInternallyConfigurationUnsafe(id, coordinate);
                 break;
             case TypesEnum::FLOAT:
                 EntryStructsUnion::getFromSerializedVector(
-                    floatValue, iterator, mainBuffer.vector.end());
-                success &= setConfigurationUnsafe(id, floatValue);
+                    floatValue, it, serializationVector.end());
+                success &= setInternallyConfigurationUnsafe(id, floatValue);
                 break;
             case TypesEnum::UINT32_T:
                 EntryStructsUnion::getFromSerializedVector(
-                    uint32Value, iterator, mainBuffer.vector.end());
-                success &= setConfigurationUnsafe(id, uint32Value);
+                    uint32Value, it, serializationVector.end());
+                success &= setInternallyConfigurationUnsafe(id, uint32Value);
                 break;
             default:
                 success = false;
                 break;
         }
+        counter++;
     }
     return success;
 }
@@ -214,42 +217,16 @@ bool RegistryFrontend::isConfigurationEmpty()
  * @brief Get the Serialized bytes vector of the configuration actually
  * saved in the frontend
  *
- * @return WriteBuffer The write buffer wrapping the vector of the configuration
+ * @return std::vector<uint8_t>& The write vector of the configuration
  */
-WriteBuffer& RegistryFrontend::getSerializedConfiguration()
+void RegistryFrontend::updateSerializedConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     /*! We assume one of the 2 try_lock will succeed */
     /*! BUT LIKE THIS IT IS LOCKED ALL... BLOCKING */
-    std::lock_guard<std::recursive_mutex> lockVector(buffersMutex);
-    /*! If buffer main in write, modify the secondary one and other way round */
-    if (!bufferMainToWrite)
-    {
-        return updateBuffer(mainBuffer);
-    }
-    else
-    {
-        return updateBuffer(secondaryBuffer);
-    }
-}
-
-/**
- * @brief Given a buffer, it updates it with the serialized vector of the
- * current configuration.
- *
- * @param bufferToUpdate The buffer it needs to update
- * @return WriteBuffer& The buffer now updated
- */
-WriteBuffer& RegistryFrontend::updateBuffer(WriteBuffer& bufferToUpdate)
-{
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    const std::lock_guard<std::recursive_mutex> lockBuffer(
-        bufferToUpdate.mutex);
-    bufferToUpdate.needsWrite = true;
-    bufferToUpdate.vector.clear();
-    std::vector<uint8_t>& serializationVector = bufferToUpdate.vector;
-    uint32_t checksum                         = 0;
-    int counter                               = 0;
+    uint32_t checksum = 0;
+    int counter       = 0;
+    serializationVector.clear();
     for (auto it = configuration.begin(); it != configuration.end(); it++)
     {
         /*! Insert configurationID, TypeID, value for each entry */
@@ -286,32 +263,13 @@ WriteBuffer& RegistryFrontend::updateBuffer(WriteBuffer& bufferToUpdate)
     /*! Adds at the beginning 8 zeros bytes*/
     serializationVector.insert(serializationVector.begin(), vectorZeroOffset,
                                0);
-    return bufferToUpdate;
 }
 
-bool RegistryFrontend::saveConfiguration()
+void RegistryFrontend::saveConfiguration()
 {
-
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    WriteBuffer& buffer = getSerializedConfiguration();
-    /** Critical section with buffersMutex that blocks R/W of the buffer
-     * that will be used to write in backend, while the other remains
-     * unlocked */
-    {
-        const std::lock_guard<std::recursive_mutex> lockChangeBuffer(
-            buffersMutex);
-        /*! Changes the vector to be used for writes */
-        bufferMainToWrite = !bufferMainToWrite;
-    }
-    lock.~lock_guard();
-    /*! Locks the buffer used for backend writes and then write to backend. */
-    const std::lock_guard<std::recursive_mutex> lockBuffer(buffer.mutex);
-    /*! In case the buffer does not needs a write, means that it is all already
-     * written */
-    if (!buffer.needsWrite)
-        return true;
-    /*! TODO: Will trigger the saving / send the vector to the backend.*/
-    return false;
+    updateSerializedConfiguration();
+    middleware.write(serializationVector);
 }
 
 /**
@@ -322,10 +280,9 @@ bool RegistryFrontend::saveConfiguration()
 void RegistryFrontend::clear()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    mainBuffer.vector.clear();
-    secondaryBuffer.vector.clear();
+    serializationVector.clear();
     configuration.clear();
-    /*!TODO: Clear the backend */
+    /*! TODO: Clear the backend also? */
 }
 
 };  // namespace Boardcore

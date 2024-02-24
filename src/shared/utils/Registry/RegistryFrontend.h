@@ -26,11 +26,13 @@
 #include <utils/Debug.h>
 #include <utils/Registry/TypeStructures.h>
 
+#include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
 
+#include "RegistryMiddleware.h"
 #include "TypeStructures.h"
 
 namespace Boardcore
@@ -237,14 +239,10 @@ struct EntryStructsUnion
     static void insertUint32ToVector(uint32_t tempUint32,
                                      std::vector<uint8_t>& serializationVector)
     {
-        serializationVector.insert(serializationVector.end(),
-                                   static_cast<uint8_t>(tempUint32 >> 24));
-        serializationVector.insert(serializationVector.end(),
-                                   static_cast<uint8_t>(tempUint32 >> 16));
-        serializationVector.insert(serializationVector.end(),
-                                   static_cast<uint8_t>(tempUint32 >> 8));
-        serializationVector.insert(serializationVector.end(),
-                                   static_cast<uint8_t>(tempUint32));
+        serializationVector.push_back(static_cast<uint8_t>(tempUint32 >> 24));
+        serializationVector.push_back(static_cast<uint8_t>(tempUint32 >> 16));
+        serializationVector.push_back(static_cast<uint8_t>(tempUint32 >> 8));
+        serializationVector.push_back(static_cast<uint8_t>(tempUint32));
     }
 
     /**
@@ -324,19 +322,18 @@ struct EntryStructsUnion
                 }
                 break;
             case TypesEnum::COORDINATES:
-                Coordinates tempCoordinates;
-                if (this->getFromUnion(tempCoordinates))
+                Coordinates tempCoord;
+                if (this->getFromUnion(tempCoord))
                 {
                     tempUint32 = *(
                         // cppcheck-suppress invalidPointerCast
-                        reinterpret_cast<uint32_t*>(&tempCoordinates.latitude));
+                        reinterpret_cast<uint32_t*>(&tempCoord.latitude));
 
                     insertUint32ToVector(tempUint32, serializationVector);
 
                     tempUint32 = *(
                         // cppcheck-suppress invalidPointerCast
-                        reinterpret_cast<uint32_t*>(
-                            &tempCoordinates.longitude));
+                        reinterpret_cast<uint32_t*>(&tempCoord.longitude));
 
                     insertUint32ToVector(tempUint32, serializationVector);
                     return true;
@@ -345,17 +342,6 @@ struct EntryStructsUnion
         }
         return false;
     }
-};
-
-/**
- * @brief Write buffer structs wraps an std::vector<uint8_t> with also its mutex
- * and a flag for specify if it changed from last write.
- */
-struct WriteBuffer
-{
-    std::vector<uint8_t> vector; /*< vector with serialized data*/
-    std::recursive_mutex mutex;
-    bool needsWrite; /*< True if it is needed a write to the backend */
 };
 
 /**
@@ -371,25 +357,86 @@ class RegistryFrontend
 {
 private:
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
-    std::recursive_mutex mutexForRegistry;
     bool isArmed = false;
-    WriteBuffer mainBuffer;
-    WriteBuffer secondaryBuffer; /*< Used in case the main one is locked */
+    std::vector<uint8_t> serializationVector;
     std::vector<uint8_t> elementVector;
-    std::recursive_mutex buffersMutex;
-    bool bufferMainToWrite; /*< 0: write main, modify secondary, 1: write
-                               secondary modify main*/
+    RegistryMiddlewareFlash middleware;
 
     /**
-     * @brief Given a buffer, it updates it with the serialized vector of the
-     * current configuration.
-     *
-     * @param bufferToUpdate The buffer it needs to update
-     * @return WriteBuffer& The buffer now updated
+     * @brief Sets the value for the configuration entry with the specified
+     * enum. This method is internally used both by the public method and from
+     * the load.
+     * @tparam T The configuration struct datatype
+     * @param configurationIndex The initialized configuration structure to
+     * be set as configuration entry
+     * @param value The value to be set for the specified configuration
+     * entry
+     * @return True if it was possible to set the configurationEntry. False
+     * otherwise, e.g. in case of allocation issues or "armed" memory
      */
-    WriteBuffer& updateBuffer(WriteBuffer& bufferToUpdate);
+    template <typename T>
+    bool setInternallyConfigurationUnsafe(ConfigurationId configurationIndex,
+                                          T value)
+    {
+        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+        /*! In case that the configuration is in an armed state it cannot be
+         * modified */
+        {
+            if (isArmed)
+                return false;
+            EntryStructsUnion entry = EntryStructsUnion::setUnion(value);
+            bool success =
+                configuration.insert(std::make_pair(configurationIndex, entry))
+                    .second;
+            if (!success)
+            {
+                TRACE(
+                    "Registry - setConfigurationUnsafe - Could not insert the "
+                    "configuration entry");
+                return false;
+            }
+            return true;
+        }
+    }
+
+    /**
+     * @brief Sets the configuration entry in the registry configuration
+     * using the given configuration entry struct. This method is internally
+     * used both by the public method and from the load
+     *
+     * @tparam T The configuration entry struct
+     * @param configurationEntry The configuration entry initialized and set
+     * struct to be saved in the configuration.
+     * @return True if the entry is correctly saved in the registry. False
+     * otherwise, e.g. in case of allocation issues or "armed" memory
+     */
+    template <typename T>
+    bool setInternallyConfiguration(T configurationEntry)
+    {
+        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+        /*! In case that the configuration is in an armed state it cannot be
+         * modified */
+        if (isArmed)
+            return false;
+        EntryStructsUnion entryToSet = EntryStructsUnion(configurationEntry);
+        bool success                 = configuration
+                           .insert(std::make_pair(configurationEntry.enumVal,
+                                                  entryToSet.value))
+                           .second;
+        if (!success)
+        {
+            TRACE(
+                "Registry - setConfiguration - Could not insert the "
+                "configuration entry");
+            return false;
+        }
+        saveConfiguration();
+        return success;
+    }
 
 public:
+    std::recursive_mutex mutexForRegistry;
+
     RegistryFrontend();
     ~RegistryFrontend();
 
@@ -416,8 +463,8 @@ public:
 
     /**
      * @brief Loads from the backend the configuration
-     * @return True if the configuration exists in memory and is not corrupted,
-     * False if not.
+     * @return True if the configuration exists in memory and is not
+     * corrupted, False if not.
      */
     bool loadConfiguration();
 
@@ -427,7 +474,7 @@ public:
      * @return true If the saving was successful
      * @return false Otherwise
      */
-    bool saveConfiguration();
+    void saveConfiguration();
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
@@ -452,7 +499,8 @@ public:
      * @tparam T The configuration struct for such configuration entry
      * @param configurationIndex Identifies the configuration entry with its
      * enumeration value
-     * @param value The value to be insert for the specified configuration entry
+     * @param value The value to be insert for the specified configuration
+     * entry
      * @return True in case of successful insertion. False otherwise (memory
      * limits or "armed" memory)
      */
@@ -462,8 +510,8 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
-        /** Checks that the value type corresponds to the set type and finds the
-         * entry*/
+        /** Checks that the value type corresponds to the set type and finds
+         * the entry*/
         return !(iterator == configuration.end()) &&
                (iterator->second.getFromUnion(value));
     }
@@ -497,6 +545,9 @@ public:
     /**
      * @brief Sets the value for the configuration entry with the specified
      * enum
+     * This method calls the underlying internal method and also saves the
+     * configuration
+     *
      * @tparam T The configuration struct datatype
      * @param configurationIndex The initialized configuration structure to
      * be set as configuration entry
@@ -509,26 +560,12 @@ public:
     bool setConfigurationUnsafe(ConfigurationId configurationIndex, T value)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        /*! In case that the configuration is in an armed state it cannot be
-         * modified */
-        if (isArmed)
-            return false;
-        EntryStructsUnion entry = EntryStructsUnion::setUnion(value);
-        bool success =
-            configuration.insert(std::make_pair(configurationIndex, entry))
-                .second;
-        if (!success)
+        if (setInternallyConfigurationUnsafe(configurationIndex, value))
         {
-            TRACE(
-                "Registry - setConfigurationUnsafe - Could not insert the "
-                "configuration entry");
-            return false;
+            saveConfiguration();
+            return true;
         }
-        else
-        {
-            getSerializedConfiguration();
-        }
-        return success;
+        return false;
     }
 
     /*! TYPE SAFE INTERFACE METHODS */
@@ -560,6 +597,8 @@ public:
     /**
      * @brief Sets the configuration entry in the registry configuration
      * using the given configuration entry struct.
+     * This method calls the underlying internal method and also saves the
+     * configuration
      *
      * @tparam T The configuration entry struct
      * @param configurationEntry The configuration entry initialized and set
@@ -571,27 +610,12 @@ public:
     bool setConfiguration(T configurationEntry)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        /*! In case that the configuration is in an armed state it cannot be
-         * modified */
-        if (isArmed)
-            return false;
-        EntryStructsUnion entryToSet = EntryStructsUnion(configurationEntry);
-        bool success                 = configuration
-                           .insert(std::make_pair(configurationEntry.enumVal,
-                                                  entryToSet.value))
-                           .second;
-        if (!success)
+        if (setInternallyConfiguration(configurationEntry))
         {
-            TRACE(
-                "Registry - setConfiguration - Could not insert the "
-                "configuration entry");
-            return false;
+            saveConfiguration();
+            return true;
         }
-        else
-        {
-            getSerializedConfiguration();
-        }
-        return success;
+        return false;
     }
 
     /*! DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE */
@@ -603,7 +627,7 @@ public:
      * @return WriteBuffer The write buffer wrapping the vector of the
      * configuration
      */
-    WriteBuffer& getSerializedConfiguration();
+    void updateSerializedConfiguration();
 
     /**
      * @brief Clear the configuration actually saved, resetting to empty
