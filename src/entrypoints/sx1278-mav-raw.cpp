@@ -74,7 +74,7 @@ static const Boardcore::SX1278Fsk::Config RADIO_CONFIG = {
     .power      = 13,
     .shaping    = Boardcore::SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
     .dc_free    = Boardcore::SX1278Fsk::Config::DcFree::WHITENING,
-    .enable_crc = false};
+    .enable_crc = true};
 
 // === GLOBALS ===
 Boardcore::SX1278Fsk* sx1278 = nullptr;
