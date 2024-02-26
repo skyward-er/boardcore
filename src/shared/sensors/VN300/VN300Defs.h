@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Lorenzo Cucchi
+ * Author: Lorenzo Cucchi, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,15 @@ enum BinaryGroup
     BINARYGROUP_ATTITUDE = 0x10,  ///< Attitude group.
     BINARYGROUP_INS      = 0x20,  ///< INS group.
     BINARYGROUP_GPS2     = 0x40   ///< GPS2 group.
+};
+
+/**
+ * @brief Defines how the samples are extracted from the sensor.
+ */
+enum class SamplingMethod
+{
+    BINARY,   ///< Binary messages are used.
+    TEXTUAL,  ///< Textual messages are used.
 };
 
 /// \brief Flags for the binary group 1 'Common' in the binary output registers.
@@ -160,6 +169,80 @@ const unsigned char
         {2, 24, 24, 12, 12, 12, 12, 12, 12, 4, 4, 68, 64, 0, 0},    // Group 6
         {8, 8, 2, 1, 1, 24, 24, 12, 12, 12, 4, 4, 2, 28, 0},        // Group 7
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}  // Invalid group
+};
+
+/**
+ * @brief Structure to handle antenna A position units [m]
+ */
+struct AntennaPosition
+{
+    float posX;
+    float posY;
+    float posZ;
+    float uncX;
+    float uncY;
+    float uncZ;
+};
+
+/**
+ * @brief Structure to handle INS data
+ */
+struct Ins_Lla
+{
+    uint64_t insTimestamp;
+    uint16_t fix_gps;
+    uint16_t fix_ins;
+    uint16_t status;
+    float yaw;
+    float pitch;
+    float roll;
+    float latitude;
+    float longitude;
+    float altitude;
+    float nedVelX;
+    float nedVelY;
+    float nedVelZ;
+};
+
+/**
+ * @brief Structure to handle binary message
+ *
+ * @property The struct needs the packed attribute in order to have contiguous
+ * memory allocation in order to be able to parse directly the received message
+ */
+struct __attribute__((packed)) BinaryData
+{
+    uint8_t group;
+    uint16_t common;
+    uint16_t gnss;
+    float yaw_bin;
+    float pitch_bin;
+    float roll_bin;
+    float quatX_bin;
+    float quatY_bin;
+    float quatZ_bin;
+    float quatW_bin;
+    float angx;
+    float angy;
+    float angz;
+    float velx;
+    float vely;
+    float velz;
+    float accx;
+    float accy;
+    float accz;
+    float magx;
+    float magy;
+    float magz;
+    float temp;
+    float pres;
+    uint16_t ins_status;
+    uint8_t numsats;
+    uint8_t fix;
+    double latitude_bin;
+    double longitude_bin;
+    double altitude_bin;
+    uint16_t checksum;
 };
 
 }  // namespace VN300Defs

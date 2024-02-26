@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Lorenzo Cucchi
+ * Author: Lorenzo Cucchi, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,13 @@
 namespace Boardcore
 {
 
-VN300::VN300(USART &usart, int userBaudRate, bool isBinary, CRCOptions crc,
-             uint16_t samplePeriod, const AntennaPosition antPosA,
-             const AntennaPosition antPosB, const Eigen::Matrix3f rotMat)
-    : usart(usart), userBaudRate(userBaudRate), isBinary(isBinary),
-      samplePeriod(samplePeriod), crc(crc), antPosA(antPosA), antPosB(antPosB),
-      rotMat(rotMat)
+VN300::VN300(USART &usart, int userBaudRate,
+             VN300Defs::SamplingMethod samplingMethod, CRCOptions crc,
+             const VN300Defs::AntennaPosition antPosA,
+             const VN300Defs::AntennaPosition antPosB,
+             const Eigen::Matrix3f rotMat)
+    : usart(usart), userBaudRate(userBaudRate), samplingMethod(samplingMethod),
+      crc(crc), antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
 {
 }
 
@@ -53,15 +54,15 @@ bool VN300::init()
     // Allocate the pre loaded strings based on the user selected crc
     if (crc == CRCOptions::CRC_ENABLE_16)
     {
-        preSampleImuString = new string("$VNRRG,15*92EA\n");
-        preSampleINSlla    = new string("$VNRRG,63*6BBB\n");
-        preSampleBin1      = new string("$VNBOM,1*749D\n");
+        preSampleImuString = "$VNRRG,15*92EA\n";
+        preSampleINSlla    = "$VNRRG,63*6BBB\n";
+        preSampleBin1      = "$VNBOM,1*749D\n";
     }
     else
     {
-        preSampleImuString = new string("$VNRRG,15*77\n");
-        preSampleINSlla    = new string("$VNRRG,63*76\n");
-        preSampleBin1      = new string("$VNBOM,1*45\n");
+        preSampleImuString = "$VNRRG,15*77\n";
+        preSampleINSlla    = "$VNRRG,63*76\n";
+        preSampleBin1      = "$VNBOM,1*45\n";
     }
 
     // Set the error to init fail and if the init process goes without problem
@@ -261,7 +262,7 @@ VN300Data VN300::sampleImpl()
     // This condition is needed to discern between ASCII and Binary sampling.
     // If true the binary sampling is used increasing sampling speed.
     // else the ascii setup is used, both return VN300Data
-    if (isBinary == true)
+    if (samplingMethod == VN300Defs::SamplingMethod::BINARY)
     {
         data = sampleBinary();
     }
@@ -284,11 +285,11 @@ VN300Data VN300::sampleBinary()
 
     // The sample command is sent to the VN300
     // TODO: this or sendStringCommand()?
-    usart.writeString(preSampleBin1->c_str());
+    usart.writeString(preSampleBin1.c_str());
 
     // A BinaryData variable is created and it will be passed to the sampleBin()
     // function as a reference
-    BinaryData bindata;
+    VN300Defs::BinaryData bindata;
 
     // This sleep of 2 ms is used to wait for the reply of the VN300 taking into
     // account standard reply times, this free the thread waiting the message
@@ -318,7 +319,7 @@ VN300Data VN300::sampleBinary()
         // The static_cast is necessary to cast the double variables into a
         // float, this cause less problem with floating point precision errors
         // and it's lighter on memory11
-        Ins_Lla ins{
+        VN300Defs::Ins_Lla ins{
             TimestampTimer::getTimestamp(),
             bindata.fix,
             bindata.fix,  // add function to extract ins_fix from ins_status
@@ -333,11 +334,12 @@ VN300Data VN300::sampleBinary()
             bindata.vely,
             bindata.velz};
 
+        lastError = NO_ERRORS;
         return VN300Data(quat, mag, acc, gyro, ins);
     }
     else
     {
-        // TODO: set lastError to no new data
+        lastError = NO_NEW_DATA;
         return lastSample;
     }
 }
@@ -346,7 +348,7 @@ VN300Data VN300::sampleASCII()
 {
     clearBuffer();
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    usart.writeString(preSampleImuString->c_str());
+    usart.writeString(preSampleImuString.c_str());
 
     // Wait some time
 
@@ -372,7 +374,7 @@ VN300Data VN300::sampleASCII()
 
     clearBuffer();
     // Returns INS LLA message
-    usart.writeString(preSampleINSlla->c_str());
+    usart.writeString(preSampleINSlla.c_str());
 
     // Wait some time
 
@@ -389,7 +391,7 @@ VN300Data VN300::sampleASCII()
         return lastSample;
     }
 
-    Ins_Lla ins = sampleIns();
+    VN300Defs::Ins_Lla ins = sampleIns();
 
     return VN300Data(quat, mag, acc, gyro, ins);
 }
@@ -428,17 +430,19 @@ bool VN300::disableAsyncMessages(bool waitResponse)
 
 bool VN300::findBaudrate()
 {
-    char check[]          = "VN";
-    const int checkOffset = 1;
+    char check[]                         = "VN";
+    const int checkOffset                = 1;
+    std::array<uint32_t, 9> baudrateList = {
+        9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
 
     // The for loop change at every iteration the baudrate of the usart
     // and sends a message to the VN300, then if the baudrate is correct the VN
     // reply and the loop terminates. In this way at the end of the loop the
     // correct baudrate is set.
-    for (uint32_t i = 0; i < BaudrateList.size(); i++)
+    for (uint32_t i = 0; i < baudrateList.size(); i++)
     {
 
-        usart.setBaudrate(BaudrateList[i]);
+        usart.setBaudrate(baudrateList[i]);
 
         miosix::Thread::sleep(50);
         // I pause the async messages, we don't know if they are present.
@@ -623,7 +627,7 @@ bool VN300::setCrc(bool waitResponse)
     return true;
 }
 
-bool VN300::setAntennaA(AntennaPosition antPos)
+bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
 {
     std::string command;
 
@@ -647,7 +651,7 @@ bool VN300::setAntennaA(AntennaPosition antPos)
     return true;
 }
 
-bool VN300::setCompassBaseline(AntennaPosition antPos)
+bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
 {
     std::string command;
 
@@ -933,11 +937,11 @@ GyroscopeData VN300::sampleGyroscope()
     return data;
 }
 
-Ins_Lla VN300::sampleIns()
+VN300Defs::Ins_Lla VN300::sampleIns()
 {
     unsigned int indexStart = 0;
     char *nextNumber;
-    Ins_Lla data;
+    VN300Defs::Ins_Lla data;
 
     // Look for the second ',' in the string
     // I can avoid the string control because it has already been done in
@@ -973,7 +977,7 @@ Ins_Lla VN300::sampleIns()
     return data;
 }
 
-bool VN300::sampleBin(BinaryData &bindata)
+bool VN300::sampleBin(VN300Defs::BinaryData &bindata)
 {
     // This variable is used as an initial time reference for the while loop
     uint64_t initTime = TimestampTimer::getTimestamp();
@@ -989,7 +993,7 @@ bool VN300::sampleBin(BinaryData &bindata)
         {
             // Reading all the message directly into the struct, this need to be
             // packed in order to have contiguous memory addresses
-            if (usart.read(&bindata, sizeof(BinaryData)))
+            if (usart.read(&bindata, sizeof(VN300Defs::BinaryData)))
             {
                 return true;
             }
