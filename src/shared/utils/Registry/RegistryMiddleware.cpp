@@ -91,6 +91,20 @@ void RegistryMiddlewareFlash::run()
             /*! Inverts the usable and writing buffer */
             updateMainBuffer = !updateMainBuffer;
         }
+        /*! In case the buffer needs to write, needsToWrite = true */
+        if (updateMainBuffer)
+        {
+            std::unique_lock<std::recursive_mutex> lockSec2(
+                secondaryBuffer.mutex);
+            if (secondaryBuffer.needsWrite)
+                needsToWrite = true;
+        }
+        else
+        {
+            std::unique_lock<std::recursive_mutex> lockMain2(mainBuffer.mutex);
+            if (mainBuffer.needsWrite)
+                needsToWrite = true;
+        }
     }
 };
 
