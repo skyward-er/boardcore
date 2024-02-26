@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2021-2024 Skyward Experimental Rocketry
  * Authors: Luca Conterio, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,46 +23,106 @@
 #pragma once
 
 #include <Singleton.h>
+#include <diagnostic/SkywardStack.h>
 
 #include <utils/ModuleManager/ModuleManager.hpp>
 
-#include "HILConfig.h"
-#include "HILFlightPhasesManager.h"
+#include "HILPhasesManager.h"
 #include "HILTransceiver.h"
 
 /**
  * @brief Single interface to the hardware-in-the-loop framework.
  */
-class HIL : public Boardcore::Module
+template <class FlightPhases, class SimulatorData, class ActuatorData>
+class HIL : public Boardcore::Module, public Boardcore::ActiveObject
 {
 public:
-    HIL(Boardcore::USART &hilSerial,
-        HILFlightPhasesManager *flightPhasesManager)
-        : flightPhasesManager(flightPhasesManager)
+    HIL(HILTransceiver<FlightPhases, SimulatorData, ActuatorData>
+            *hilTransceiver,
+        HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
+            *hilPhasesManager,
+        std::function<ActuatorData()> updateActuatorData, int updatePeriod)
+        : Boardcore::ActiveObject(Boardcore::STACK_MIN_FOR_SKYWARD,
+                                  miosix::PRIORITY_MAX - 1),
+          hilTransceiver(hilTransceiver), hilPhasesManager(hilPhasesManager),
+          updateActuatorData(updateActuatorData), updatePeriod(updatePeriod)
     {
-        simulator = new HILTransceiver(hilSerial);
-    }
+        if (!Boardcore::ModuleManager::getInstance().insert<HILTransceiverBase>(
+                hilTransceiver))
+        {
+            LOG_ERR(logger, "HILTransceiver not inserted correctly");
+        }
 
-    HILTransceiver *simulator;
-    HILFlightPhasesManager *flightPhasesManager;
+        if (!Boardcore::ModuleManager::getInstance()
+                 .insert<HILPhasesManagerBase>(hilPhasesManager))
+        {
+            LOG_ERR(logger, "HILPhasesManager not inserted correctly");
+        }
+    }
 
     /**
      * @brief Start the needed hardware-in-the-loop components.
      */
-    [[nodiscard]] bool start()
+    [[nodiscard]] bool start() override
     {
-        return simulator->start() && flightPhasesManager->start();
+        bool initOk = true;
+
+        if (!hilTransceiver->start())
+        {
+            LOG_ERR(logger, "hilTransceiver started with errors");
+            initOk = false;
+        }
+
+        if (!hilPhasesManager->start())
+        {
+            LOG_ERR(logger, "hilPhasesManager started with errors");
+            initOk = false;
+        }
+
+        if (!Boardcore::ActiveObject::start())
+        {
+            LOG_ERR(logger, "hil started with errors");
+            initOk = false;
+        }
+
+        return initOk;
     }
 
-    void stop() { simulator->stop(); }
-
-    void send(HILConfig::ActuatorData actuatorData)
+    void stop()
     {
-        simulator->setActuatorData(actuatorData);
+        hilTransceiver->stop();
+        hilPhasesManager->stop();
+        Boardcore::ActiveObject::stop();
+        LOG_INFO(logger, "HIL framework stopped");
     }
 
-    /**
-     * @brief Returns if all the schedulers are up and running
-     */
-    bool isStarted();
+    void waitStartSimulation()
+    {
+        LOG_INFO(logger, "Waiting for simulation to start...");
+        while (!hilPhasesManager->isSimulationRunning())
+        {
+            Thread::sleep(updatePeriod);
+        }
+    }
+
+    HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
+    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
+        *hilPhasesManager;
+
+private:
+    void run() override
+    {
+        while (!shouldStop())
+        {
+            if (hilPhasesManager->isSimulationRunning())
+            {
+                hilTransceiver->setActuatorData(updateActuatorData());
+            }
+            Thread::sleep(updatePeriod);
+        }
+    }
+
+    Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("HIL");
+    std::function<ActuatorData()> updateActuatorData;
+    int updatePeriod;
 };

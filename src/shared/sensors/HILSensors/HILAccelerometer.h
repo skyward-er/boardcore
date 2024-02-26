@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,12 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct AccelerometerSimulatorData
+{
+    float measures[N_DATA][3];
+};
+
 /**
  * @brief fake accelerometer sensor used for the simulation.
  *
@@ -33,11 +39,19 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-class HILAccelerometer : public HILSensor<HILAccelerometerData>
+template <int N_DATA>
+class HILAccelerometer
+    : public HILSensor<HILAccelerometerData, AccelerometerSimulatorData<N_DATA>,
+                       N_DATA>
 {
+    using Base = HILSensor<HILAccelerometerData,
+                           AccelerometerSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILAccelerometer(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILAccelerometer(
+        const AccelerometerSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILAccelerometerData, AccelerometerSimulatorData<N_DATA>,
+                    N_DATA>(sensorData)
     {
     }
 
@@ -45,17 +59,16 @@ protected:
     HILAccelerometerData updateData() override
     {
         HILAccelerometerData tempData;
-
-        miosix::PauseKernelLock pkLock;
-        HILConfig::SimulatorData::Accelerometer *accelerometer =
-            reinterpret_cast<HILConfig::SimulatorData::Accelerometer *>(
-                sensorData);
-
-        tempData.accelerationX = accelerometer->measures[sampleCounter][0];
-        tempData.accelerationY = accelerometer->measures[sampleCounter][1];
-        tempData.accelerationZ = accelerometer->measures[sampleCounter][2];
-        tempData.accelerationTimestamp = updateTimestamp();
-
+        {
+            miosix::PauseKernelLock pkLock;
+            tempData.accelerationX =
+                Base::sensorData->measures[Base::sampleCounter][0];
+            tempData.accelerationY =
+                Base::sensorData->measures[Base::sampleCounter][1];
+            tempData.accelerationZ =
+                Base::sensorData->measures[Base::sampleCounter][2];
+            tempData.accelerationTimestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,6 +28,15 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct GPSSimulatorData
+{
+    float positionMeasures[N_DATA][3];
+    float velocityMeasures[N_DATA][3];
+    float fix;
+    float num_satellites;
+};
+
 /**
  * @brief fake gps sensor used for the HILulation.
  *
@@ -35,11 +44,14 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a HILulator.
  */
-class HILGps : public HILSensor<HILGpsData>
+template <int N_DATA>
+class HILGps : public HILSensor<HILGpsData, GPSSimulatorData<N_DATA>, N_DATA>
 {
+    using Base = HILSensor<HILGpsData, GPSSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILGps(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILGps(const GPSSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILGpsData, GPSSimulatorData<N_DATA>, N_DATA>(sensorData)
     {
     }
 
@@ -47,28 +59,34 @@ protected:
     HILGpsData updateData() override
     {
         HILGpsData tempData;
+        {
+            miosix::PauseKernelLock pkLock;
 
-        miosix::PauseKernelLock pkLock;
-        HILConfig::SimulatorData::Gps *gps =
-            reinterpret_cast<HILConfig::SimulatorData::Gps *>(sensorData);
+            tempData.latitude =
+                Base::sensorData->positionMeasures[Base::sampleCounter][0];
+            tempData.longitude =
+                Base::sensorData->positionMeasures[Base::sampleCounter][1];
+            tempData.height =
+                Base::sensorData->positionMeasures[Base::sampleCounter][2];
 
-        tempData.latitude =
-            gps->positionMeasures[sampleCounter][0];  // divide by earth radius
-        tempData.longitude = gps->positionMeasures[sampleCounter][1];
-        tempData.height    = gps->positionMeasures[sampleCounter][2];
+            tempData.velocityNorth =
+                Base::sensorData->velocityMeasures[Base::sampleCounter][0];
+            tempData.velocityEast =
+                Base::sensorData->velocityMeasures[Base::sampleCounter][1];
+            tempData.velocityDown =
+                Base::sensorData->velocityMeasures[Base::sampleCounter][2];
+            tempData.speed =
+                sqrtf(tempData.velocityNorth * tempData.velocityNorth +
+                      tempData.velocityEast * tempData.velocityEast +
+                      tempData.velocityDown * tempData.velocityDown);
+            tempData.positionDOP = 0;
 
-        tempData.velocityNorth = gps->velocityMeasures[sampleCounter][0];
-        tempData.velocityEast  = gps->velocityMeasures[sampleCounter][1];
-        tempData.velocityDown  = gps->velocityMeasures[sampleCounter][2];
-        tempData.speed = sqrtf(tempData.velocityNorth * tempData.velocityNorth +
-                               tempData.velocityDown * tempData.velocityDown);
-        tempData.positionDOP = 0;
+            tempData.fix = static_cast<uint8_t>(Base::sensorData->fix);
+            tempData.satellites =
+                static_cast<uint8_t>(Base::sensorData->num_satellites);
 
-        tempData.fix        = static_cast<uint8_t>(gps->fix);
-        tempData.satellites = static_cast<uint8_t>(gps->num_satellites);
-
-        tempData.gpsTimestamp = updateTimestamp();
-
+            tempData.gpsTimestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;

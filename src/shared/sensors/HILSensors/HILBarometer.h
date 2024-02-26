@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,12 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct BarometerSimulatorData
+{
+    float measures[N_DATA];
+};
+
 /**
  * @brief fake barometer sensor used for the simulation.
  *
@@ -33,11 +39,17 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-class HILBarometer : public HILSensor<HILBarometerData>
+template <int N_DATA>
+class HILBarometer
+    : public HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>
 {
+    using Base =
+        HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILBarometer(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILBarometer(const BarometerSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>(
+              sensorData)
     {
     }
 
@@ -45,14 +57,11 @@ protected:
     HILBarometerData updateData() override
     {
         HILBarometerData tempData;
-
-        miosix::PauseKernelLock pkLock;
-        HILConfig::SimulatorData::Barometer *barometer =
-            reinterpret_cast<HILConfig::SimulatorData::Barometer *>(sensorData);
-
-        tempData.pressure          = barometer->measures[sampleCounter];
-        tempData.pressureTimestamp = updateTimestamp();
-
+        {
+            miosix::PauseKernelLock pkLock;
+            tempData.pressure = Base::sensorData->measures[Base::sampleCounter];
+            tempData.pressureTimestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;

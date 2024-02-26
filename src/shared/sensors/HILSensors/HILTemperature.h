@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,12 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct TemperatureSimulatorData
+{
+    float measures[N_DATA];
+};
+
 /**
  * @brief fake barometer sensor used for the simulation.
  *
@@ -33,11 +39,17 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-class HILTemperature : public HILSensor<HILTempData>
+template <int N_DATA>
+class HILTemperature
+    : public HILSensor<HILTempData, TemperatureSimulatorData<N_DATA>, N_DATA>
 {
+    using Base =
+        HILSensor<HILTempData, TemperatureSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILTemperature(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILTemperature(const TemperatureSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILTempData, TemperatureSimulatorData<N_DATA>, N_DATA>(
+              sensorData)
     {
     }
 
@@ -45,13 +57,12 @@ protected:
     HILTempData updateData() override
     {
         HILTempData tempData;
-
-        tempData.temperature =
-            reinterpret_cast<HILConfig::SimulatorData::Temperature *>(
-                sensorData)
-                ->measure;
-        tempData.temperatureTimestamp = updateTimestamp();
-
+        {
+            miosix::PauseKernelLock pkLock;
+            tempData.temperature =
+                Base::sensorData->measures[Base::sampleCounter];
+            tempData.temperatureTimestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;

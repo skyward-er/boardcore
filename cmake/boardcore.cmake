@@ -68,10 +68,6 @@ foreach(OPT_BOARD ${BOARDS})
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
 
-        # HIL
-        ${SBS_BASE}/src/shared/hil/HILFlightPhasesManager.cpp
-        ${SBS_BASE}/src/shared/hil/HILTransceiver.cpp
-
         # Logger
         ${SBS_BASE}/src/shared/logger/Logger.cpp
 

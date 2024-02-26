@@ -28,6 +28,13 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct PitotSimulatorData
+{
+    float deltaP[N_DATA];
+    float airspeed[N_DATA];
+};
+
 /**
  * @brief fake pitot (differential pressure) sensor used for the simulation.
  *
@@ -35,27 +42,29 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-class HILPitot : public HILSensor<HILPitotData>
+template <int N_DATA>
+class HILPitot
+    : public HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>
 {
+    using Base = HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILPitot(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILPitot(const PitotSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>(
+              sensorData)
     {
     }
 
 protected:
     HILPitotData updateData() override
     {
-        miosix::PauseKernelLock pkLock;
-
-        auto *pitotData =
-            reinterpret_cast<HILConfig::SimulatorData::Pitot *>(sensorData);
-
         HILPitotData tempData;
-        tempData.deltaP    = pitotData->deltaP[sampleCounter];
-        tempData.airspeed  = pitotData->airspeed[sampleCounter];
-        tempData.timestamp = updateTimestamp();
-
+        {
+            miosix::PauseKernelLock pkLock;
+            tempData.deltaP   = Base::sensorData->deltaP[Base::sampleCounter];
+            tempData.airspeed = Base::sensorData->airspeed[Base::sampleCounter];
+            tempData.timestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;
