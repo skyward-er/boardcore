@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Lorenzo Cucchi
+ * Author: Lorenzo Cucchi, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -81,10 +81,6 @@ public:
         // sendStringCommand())
     };
 
-    // TODO: can be moved inside findBaudrate()? why is it public?
-    std::array<uint32_t, 9> BaudrateList = {
-        9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
-
     /**
      * @brief Constructor.
      *
@@ -96,12 +92,12 @@ public:
      * @param antPos antenna A position
      */
     VN300(USART &usart, int userBaudRate,
-          bool isBinary           = true,  // TODO: are textual readings needed?
-          CRCOptions crc          = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod   = 15,  // TODO: why 15?
-          AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-          AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-          Eigen::Matrix3f rotMat  = Eigen::Matrix3f::Identity());
+          VN300Defs::SamplingMethod samplingMethod =
+              VN300Defs::SamplingMethod::BINARY,
+          CRCOptions crc                     = CRCOptions::CRC_ENABLE_8,
+          VN300Defs::AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+          VN300Defs::AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+          Eigen::Matrix3f rotMat             = Eigen::Matrix3f::Identity());
 
     bool init() override;
 
@@ -190,7 +186,7 @@ private:
      *
      * @return True if operation succeeded.
      */
-    bool setAntennaA(AntennaPosition antPos);
+    bool setAntennaA(VN300Defs::AntennaPosition antPos);
 
     /**
      * @brief Sets the compass baseline, position offset of antenna B respect to
@@ -202,7 +198,7 @@ private:
      *
      * @return True if operation succeeded.
      */
-    bool setCompassBaseline(AntennaPosition antPos);
+    bool setCompassBaseline(VN300Defs::AntennaPosition antPos);
 
     /**
      * @brief Set the reference frame rotation of the sensor in order to have
@@ -229,24 +225,19 @@ private:
      */
     bool selfTestImpl();
 
-    QuaternionData
-    sampleQuaternion();  // TODO: can be removed, not needed with binary output
+    QuaternionData sampleQuaternion();
 
-    MagnetometerData sampleMagnetometer();  // TODO: can be removed, not needed
-                                            // with binary output
+    MagnetometerData sampleMagnetometer();
 
-    AccelerometerData sampleAccelerometer();  // TODO: can be removed, not
-                                              // needed with binary output
+    AccelerometerData sampleAccelerometer();
 
-    GyroscopeData
-    sampleGyroscope();  // TODO: can be removed, not needed with binary output
+    GyroscopeData sampleGyroscope();
 
-    Ins_Lla sampleIns();  // TODO: can be removed, not needed with binary output
+    VN300Defs::Ins_Lla sampleIns();
 
     VN300Data sampleBinary();
 
-    VN300Data
-    sampleASCII();  // TODO: can be removed, not needed with binary output
+    VN300Data sampleASCII();
 
     /**
      * @brief Sends the command to the sensor with the correct checksum added
@@ -281,7 +272,7 @@ private:
      * @return true if operation succeeded
      *
      */
-    bool sampleBin(BinaryData &bindata);
+    bool sampleBin(VN300Defs::BinaryData &bindata);
     // TODO: can be removed and placed inside sampleBinary()
 
     /**
@@ -356,48 +347,46 @@ private:
      */
     USART &usart;
     int userBaudRate;
-    const int defaultBaudRate = 115200;
+    static const int defaultBaudRate = 115200;
 
-    bool isBinary;          // TODO: are textual readings needed?
-    uint16_t samplePeriod;  // TODO: is this actually used? seems not...
+    VN300Defs::SamplingMethod samplingMethod;
     CRCOptions crc;
     bool isInit = false;
 
-    AntennaPosition antPosA;
-    AntennaPosition antPosB;
+    VN300Defs::AntennaPosition antPosA;
+    VN300Defs::AntennaPosition antPosB;
     Eigen::Matrix3f rotMat;
 
     /**
      * @brief IMU pre-elaborated sample string for efficiency reasons.
      */
-    string *preSampleImuString = nullptr;
-    // TODO: this should not be a pointer
+    string preSampleImuString = "";
 
     /**
      * @brief Temperature and pressure pre-elaborated sample string for
      * efficiency reasons.
      */
-    string *preSampleINSlla = nullptr;
-    // TODO: this should not be a pointer
+    string preSampleINSlla = "";
 
     /**
      * @brief Binary output polling command
      */
-    string *preSampleBin1 = nullptr;
-    // TODO: this should not be a pointer
-
-    static const unsigned int recvStringMaxDimension = 200;
+    string preSampleBin1 = "";
 
     /**
-     * @brief Pointer to the received string by the sensor. Allocated 1 time
-     * only (200 bytes).
+     * @brief Maximum size of the receiving string.
+     */
+    static const uint8_t recvStringMaxDimension = 200;
+
+    /**
+     * @brief Buffer used to store the string received from the sensor.
      */
     std::array<char, recvStringMaxDimension> recvString;
 
     /**
      * @brief Actual strlen() of the recvString.
      */
-    unsigned int recvStringLength = 0;
+    uint8_t recvStringLength = 0;
 
     PrintLogger logger = Logging::getLogger("VN300");
 };
