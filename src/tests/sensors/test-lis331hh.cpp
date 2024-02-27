@@ -44,8 +44,8 @@ int main()
         auto sample = lis.getLastSample();
 
         printf("[%.2f] x: % 5.2f, y: % 5.2f, z: % 5.2f\n",
-               sample.accelerationTimestamp / 1e6, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
+               sample.accelerationTimestamp / 1e6, sample.accelerationX.value(),
+               sample.accelerationY.value(), sample.accelerationZ.value());
 
         Thread::sleep(100);
     }

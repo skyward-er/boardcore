@@ -72,7 +72,7 @@ int main()
         sensor.sample();
         LPS22DFData data = sensor.getLastSample();
 
-        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure);
+        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure.value());
 
         miosix::Thread::sleep(100);
     }
@@ -84,7 +84,7 @@ int main()
         sensor.sample();
         LPS22DFData data = sensor.getLastSample();
 
-        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure);
+        printf("%.2f C | %.2f Pa\n", data.temperature, data.pressure.value());
 
         miosix::Thread::sleep(100);
     }

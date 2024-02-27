@@ -49,7 +49,7 @@ int main()
 
         auto data = ms5803.getLastSample();
         printf("[%.2f]: %.2fPa %.2f°\n", data.pressureTimestamp / 1e6,
-               data.pressure, data.temperature);
+               data.pressure.value(), data.temperature);
 
         Thread::sleep(50);  // 25Hz
     }

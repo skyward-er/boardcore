@@ -114,12 +114,14 @@ int main()
                    data.magneticFieldZ);
 
             printf("Gyr [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.angularSpeedTimestamp / 1000000.0f, data.angularSpeedX,
-                   data.angularSpeedY, data.angularSpeedZ);
+                   data.angularSpeedTimestamp / 1000000.0f,
+                   data.angularSpeedX.value(), data.angularSpeedY.value(),
+                   data.angularSpeedZ.value());
 
             printf("Acc [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.accelerationTimestamp / 1000000.0f, data.accelerationX,
-                   data.accelerationY, data.accelerationZ);
+                   data.accelerationTimestamp / 1000000.0f,
+                   data.accelerationX.value(), data.accelerationY.value(),
+                   data.accelerationZ.value());
         }
     }
 

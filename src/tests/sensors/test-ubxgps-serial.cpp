@@ -82,11 +82,11 @@ int main()
             "height: %4.1f nsat: %2d speed: %3.2f velN: % 3.2f velE: % 3.2f "
             "track %3.1f utc: %04u:%02u:%02u:%02u:%02u:%02u:%09ld\n",
             (float)dataGPS.gpsTimestamp / 1000000, dataGPS.fix,
-            dataGPS.latitude, dataGPS.longitude, dataGPS.height,
-            dataGPS.satellites, dataGPS.speed, dataGPS.velocityNorth,
-            dataGPS.velocityEast, dataGPS.track, dataGPS.ubxTime.year,
-            dataGPS.ubxTime.month, dataGPS.ubxTime.day, dataGPS.ubxTime.hour,
-            dataGPS.ubxTime.minute, dataGPS.ubxTime.second,
-            dataGPS.ubxTime.nanosecond);
+            dataGPS.latitude.value(), dataGPS.longitude.value(),
+            dataGPS.height.value(), dataGPS.satellites, dataGPS.speed.value(),
+            dataGPS.velocityNorth.value(), dataGPS.velocityEast.value(),
+            dataGPS.track.value(), dataGPS.ubxTime.year, dataGPS.ubxTime.month,
+            dataGPS.ubxTime.day, dataGPS.ubxTime.hour, dataGPS.ubxTime.minute,
+            dataGPS.ubxTime.second, dataGPS.ubxTime.nanosecond);
     }
 }
