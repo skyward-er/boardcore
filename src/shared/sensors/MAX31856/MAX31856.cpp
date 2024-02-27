@@ -44,7 +44,6 @@ SPIBusConfig MAX31856::getDefaultSPIConfig()
 
 bool MAX31856::init()
 {
-    SPITransaction spi{slave};
 
     // Set thermocouple type
     setThermocoupleType(type);
@@ -52,8 +51,12 @@ bool MAX31856::init()
     // Reset the cold junction offset
     setColdJunctionOffset(0);
 
-    // Enable continuous conversion mode
-    spi.writeRegister(CR0, CR0_CMODE);
+    {
+        SPITransaction spi{slave};
+
+        // Enable continuous conversion mode
+        spi.writeRegister(CR0, CR0_CMODE);
+    }
 
     return true;
 }
