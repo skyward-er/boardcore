@@ -132,6 +132,8 @@ public:
 
     void waitPeripheral();
 
+    void flushRxBuffer();
+
     /**
      * @brief Configures and enables the bus with the provided configuration.
      *
@@ -402,6 +404,12 @@ inline void SPIBus::waitPeripheral()
         ;
 }
 
+inline void SPIBus::flushRxBuffer()
+{
+    while ((spi->SR & SPI_SR_RXNE) != 0)
+        *(volatile uint8_t*)&spi->DR;
+}
+
 inline void SPIBus::configure(SPIBusConfig newConfig)
 {
     // Do not reconfigure if already in the correct configuration.
@@ -435,6 +443,9 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
 
         // Enable the peripheral
         enable();
+
+        // Finally flush the peripheral
+        flushRxBuffer();
     }
 }
 
@@ -541,7 +552,7 @@ inline uint8_t SPIBus::transfer(uint8_t data)
         ;
 
     // Read the received data item
-    return static_cast<uint8_t>(spi->DR);
+    return *(volatile uint8_t*)&spi->DR;
 }
 
 inline uint16_t SPIBus::transfer16(uint16_t data)
