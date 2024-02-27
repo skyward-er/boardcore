@@ -55,6 +55,7 @@
 #include <diagnostic/PrintLogger.h>
 #include <fmt/format.h>
 #include <sensors/Sensor.h>
+#include <sensors/Vectornav/VNCommonSerial.h>
 #include <string.h>
 #include <utils/Debug.h>
 
@@ -70,7 +71,7 @@ namespace Boardcore
 /**
  * @brief Driver class for VN300 IMU.
  */
-class VN300 : public Sensor<VN300Data>
+class VN300 : public Sensor<VN300Data>, public VNCommonSerial
 {
 public:
     enum class CRCOptions : uint8_t
@@ -311,42 +312,8 @@ private:
     // TODO: put in common files
 
     /**
-     * @brief Calculate the 8bit checksum on the given array.
-     *
-     * @param command Command on which compute the crc.
-     * @param length Array length.
-     *
-     * @return The 8 bit checksum.
+     * @brief Default baudrate value for the usart communication.
      */
-    uint8_t calculateChecksum8(uint8_t *message, int length);
-    // TODO: put in common files
-
-    /**
-     * @brief Calculate the 16bit array on the given array.
-     *
-     * @param command Command on which compute the crc.
-     * @param length Array length.
-     *
-     * @return The 16 bit CRC16-CCITT error check.
-     */
-    uint16_t calculateChecksum16(uint8_t *message, int length);
-    // TODO: put in common files
-
-    /**
-     * @brief Clear the buffer of the serial interface.
-     *
-     * This is a placeholder function for the serial interface.
-     * When the usart driver is corrected this must be changed.
-     */
-    void clearBuffer();
-    // TODO: remove and use usart
-
-    /**
-     * @brief Serial interface that is needed to communicate
-     * with the sensor via ASCII codes.
-     */
-    USART &usart;
-    int userBaudRate;
     static const int defaultBaudRate = 115200;
 
     VN300Defs::SamplingMethod samplingMethod;
@@ -387,7 +354,5 @@ private:
      * @brief Actual strlen() of the recvString.
      */
     uint8_t recvStringLength = 0;
-
-    PrintLogger logger = Logging::getLogger("VN300");
 };
 }  // namespace Boardcore
