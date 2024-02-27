@@ -277,8 +277,6 @@ VN300Data VN300::sampleImpl()
 
 VN300Data VN300::sampleBinary()
 {
-    // TODO: rewrite completely
-
     // This function is used to clear the usart buffer, it needs to be replaced
     // with the function from usart class
     // TODO
@@ -820,118 +818,6 @@ bool VN300::selfTestImpl()
     }
 
     return true;
-}
-
-QuaternionData VN300::sampleQuaternion()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    QuaternionData data;
-
-    // Look for the second ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 2; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.quaternionTimestamp = TimestampTimer::getTimestamp();
-    data.quaternionX = strtod(recvString.data() + indexStart + 1, &nextNumber);
-    data.quaternionY = strtod(nextNumber + 1, &nextNumber);
-    data.quaternionZ = strtod(nextNumber + 1, &nextNumber);
-    data.quaternionW = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-MagnetometerData VN300::sampleMagnetometer()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    MagnetometerData data;
-
-    // Look for the sixth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 6; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-    data.magneticFieldX =
-        strtod(recvString.data() + indexStart + 1, &nextNumber);
-    data.magneticFieldY = strtod(nextNumber + 1, &nextNumber);
-    data.magneticFieldZ = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-AccelerometerData VN300::sampleAccelerometer()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    AccelerometerData data;
-
-    // Look for the ninth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 9; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.accelerationTimestamp = TimestampTimer::getTimestamp();
-    data.accelerationX =
-        strtod(recvString.data() + indexStart + 1, &nextNumber);
-    data.accelerationY = strtod(nextNumber + 1, &nextNumber);
-    data.accelerationZ = strtod(nextNumber + 1, NULL);
-
-    return data;
-}
-
-GyroscopeData VN300::sampleGyroscope()
-{
-    unsigned int indexStart = 0;
-    char *nextNumber;
-    GyroscopeData data;
-
-    // Look for the twelfth ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 12; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Parse the data
-    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
-    data.angularSpeedX =
-        strtod(recvString.data() + indexStart + 1, &nextNumber);
-    data.angularSpeedY = strtod(nextNumber + 1, &nextNumber);
-    data.angularSpeedZ = strtod(nextNumber + 1, NULL);
-
-    return data;
 }
 
 VN300Defs::Ins_Lla VN300::sampleIns()

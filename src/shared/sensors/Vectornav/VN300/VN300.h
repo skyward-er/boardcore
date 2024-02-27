@@ -210,14 +210,6 @@ private:
      */
     bool selfTestImpl();
 
-    QuaternionData sampleQuaternion();
-
-    MagnetometerData sampleMagnetometer();
-
-    AccelerometerData sampleAccelerometer();
-
-    GyroscopeData sampleGyroscope();
-
     VN300Defs::Ins_Lla sampleIns();
 
     VN300Data sampleBinary();
@@ -311,20 +303,5 @@ private:
      * @brief Binary output polling command
      */
     string preSampleBin1 = "";
-
-    /**
-     * @brief Maximum size of the receiving string.
-     */
-    static const uint8_t recvStringMaxDimension = 200;
-
-    /**
-     * @brief Buffer used to store the string received from the sensor.
-     */
-    std::array<char, recvStringMaxDimension> recvString;
-
-    /**
-     * @brief Actual strlen() of the recvString.
-     */
-    uint8_t recvStringLength = 0;
 };
 }  // namespace Boardcore
