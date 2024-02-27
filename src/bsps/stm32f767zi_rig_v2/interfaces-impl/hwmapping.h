@@ -152,7 +152,7 @@ using relay1 = Gpio<GPIOG_BASE, 3>;
 using relay2 = Gpio<GPIOG_BASE, 6>;
 using relay3 = Gpio<GPIOG_BASE, 7>;
 using relay4 = Gpio<GPIOA_BASE, 15>;
-}
+}  // namespace relays
 
 }  // namespace interfaces
 
@@ -279,5 +279,12 @@ using umbilicalCur = miosix::interfaces::adcs::adc123in11;
 using servoCur     = miosix::interfaces::adcs::adc12in9;
 using batteryVolt  = miosix::interfaces::adcs::adc12in14;
 }  // namespace adcs
+
+namespace relays
+{
+using ignition = miosix::interfaces::relays::relay1;
+using nitrogen = miosix::interfaces::relays::relay2;
+using armLight = miosix::interfaces::relays::relay3;
+}  // namespace relays
 
 }  // namespace miosix
