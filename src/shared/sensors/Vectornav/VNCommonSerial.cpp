@@ -22,6 +22,7 @@
 
 #include "VNCommonSerial.h"
 
+#include <drivers/timer/TimestampTimer.h>
 #include <utils/Debug.h>
 
 namespace Boardcore
@@ -139,6 +140,118 @@ bool VNCommonSerial::asyncPause()
 {
     usart.writeString("$VNASY,0*XX\n");
     return true;
+}
+
+QuaternionData VNCommonSerial::sampleQuaternion()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    QuaternionData data;
+
+    // Look for the second ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 2; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.quaternionTimestamp = TimestampTimer::getTimestamp();
+    data.quaternionX = strtod(recvString.data() + indexStart + 1, &nextNumber);
+    data.quaternionY = strtod(nextNumber + 1, &nextNumber);
+    data.quaternionZ = strtod(nextNumber + 1, &nextNumber);
+    data.quaternionW = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+MagnetometerData VNCommonSerial::sampleMagnetometer()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    MagnetometerData data;
+
+    // Look for the sixth ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 6; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.magneticFieldTimestamp = TimestampTimer::getTimestamp();
+    data.magneticFieldX =
+        strtod(recvString.data() + indexStart + 1, &nextNumber);
+    data.magneticFieldY = strtod(nextNumber + 1, &nextNumber);
+    data.magneticFieldZ = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+AccelerometerData VNCommonSerial::sampleAccelerometer()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    AccelerometerData data;
+
+    // Look for the ninth ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 9; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+    data.accelerationX =
+        strtod(recvString.data() + indexStart + 1, &nextNumber);
+    data.accelerationY = strtod(nextNumber + 1, &nextNumber);
+    data.accelerationZ = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+GyroscopeData VNCommonSerial::sampleGyroscope()
+{
+    unsigned int indexStart = 0;
+    char *nextNumber;
+    GyroscopeData data;
+
+    // Look for the twelfth ',' in the string
+    // I can avoid the string control because it has already been done in
+    // sampleImpl
+    for (int i = 0; i < 12; i++)
+    {
+        while (indexStart < recvStringLength && recvString[indexStart] != ',')
+        {
+            indexStart++;
+        }
+        indexStart++;
+    }
+
+    // Parse the data
+    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
+    data.angularSpeedX =
+        strtod(recvString.data() + indexStart + 1, &nextNumber);
+    data.angularSpeedY = strtod(nextNumber + 1, &nextNumber);
+    data.angularSpeedZ = strtod(nextNumber + 1, NULL);
+
+    return data;
 }
 
 }  // namespace Boardcore
