@@ -57,7 +57,7 @@
 #include <sensors/MS5803/MS5803Data.h>
 #include <sensors/SensorData.h>
 #include <sensors/UBXGPS/UBXGPSData.h>
-#include <sensors/VN100/VN100Data.h>
+#include <sensors/Vectornav/VN100/VN100Data.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
