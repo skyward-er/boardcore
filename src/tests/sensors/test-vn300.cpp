@@ -22,7 +22,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <inttypes.h>
-#include <sensors/VN300/VN300.h>
+#include <sensors/Vectornav/VN300/VN300.h>
 #include <utils/Stats/Stats.h>
 
 #include <iostream>
