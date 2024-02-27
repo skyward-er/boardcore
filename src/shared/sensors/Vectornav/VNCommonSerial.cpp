@@ -28,8 +28,8 @@ namespace Boardcore
 {
 
 VNCommonSerial::VNCommonSerial(USART &usart, int baudrate,
-                               const std::string &sensorName)
-    : sensorName(sensorName), usart(usart), baudRate(baudrate),
+                               const std::string &sensorName, CRCOptions crc)
+    : sensorName(sensorName), usart(usart), baudRate(baudrate), crc(crc),
       logger(Logging::getLogger(sensorName))
 {
 }
@@ -69,12 +69,76 @@ uint16_t VNCommonSerial::calculateChecksum16(const uint8_t *message, int length)
     return result;
 }
 
+bool VNCommonSerial::verifyChecksum(char *command, int length)
+{
+    int checksumOffset = 0;
+
+    // I look for the checksum position
+    while (checksumOffset < length && command[checksumOffset] != '*')
+    {
+        checksumOffset++;
+    }
+
+    if (checksumOffset == length)
+    {
+        // The command doesn't have any checksum
+        TRACE("No checksum in the command!\n");
+        return false;
+    }
+
+    // Check based on the user selected crc type
+    if (crc == CRCOptions::CRC_ENABLE_16)
+    {
+        if (length != checksumOffset + 5)  // 4 hex chars + 1 of position
+        {
+            TRACE("16 bit Checksum wrong length: %d != %d --> %s\n", length,
+                  checksumOffset + 5, command);
+            return false;
+        }
+
+        // Calculate the checksum and verify (comparison between numerical
+        // checksum to avoid string bugs e.g 0856 != 865)
+        if (strtol(command + checksumOffset + 1, NULL, 16) !=
+            calculateChecksum16((uint8_t *)(command + 1), checksumOffset - 1))
+        {
+            TRACE("Different checksum: %s\n", command);
+            return false;
+        }
+    }
+    else if (crc == CRCOptions::CRC_ENABLE_8)
+    {
+        if (length != checksumOffset + 3)  // 2 hex chars + 1 of position
+        {
+            TRACE("8 bit Checksum wrong length: %d != %d --> %s\n", length,
+                  checksumOffset + 3, command);
+            return false;
+        }
+
+        // Calculate the checksum and verify (comparison between numerical
+        // checksum to avoid string bugs e.g 0856 != 865)
+        if (strtol(command + checksumOffset + 1, NULL, 16) !=
+            calculateChecksum8((uint8_t *)(command + 1), checksumOffset - 1))
+        {
+            TRACE("Different checksum: %s\n", command);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void VNCommonSerial::clearBuffer()
 {
     char c;
     while (usart.read(&c, 1))
     {
     }
+}
+
+bool VNCommonSerial::asyncPause()
+{
+    usart.writeString("$VNASY,0*XX\n");
+    return true;
 }
 
 }  // namespace Boardcore
