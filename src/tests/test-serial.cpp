@@ -20,19 +20,20 @@
  * THE SOFTWARE.
  */
 
+#include <filesystem/console/console_device.h>
 #include <miosix.h>
 
 using namespace miosix;
 
 int main()
 {
+    auto serial = DefaultConsole::instance().get();
+
     while (true)
     {
-        ledOn();
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
-        ledOff();
-        Thread::sleep(1000);
+        float buffer[1] = {0};
+        serial->readBlock(buffer, sizeof(buffer), 0);
+        serial->writeBlock(buffer, sizeof(buffer), 0);
     }
 
     return 0;
