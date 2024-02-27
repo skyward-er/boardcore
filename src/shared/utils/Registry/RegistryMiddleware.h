@@ -65,7 +65,8 @@ protected:
     std::condition_variable writeCondition;
 
 public:
-    RegistryMiddleware() : ActiveObject()
+    RegistryMiddleware()
+        : ActiveObject(Boardcore::STACK_MIN_FOR_SKYWARD, miosix::MAIN_PRIORITY)
     {
         mainBuffer.needsWrite      = false;
         secondaryBuffer.needsWrite = false;

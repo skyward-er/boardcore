@@ -41,11 +41,13 @@ void RegistryMiddlewareFlash::write(std::vector<uint8_t>& vector)
     std::lock_guard<std::mutex> lockBuffers(mutexBuffers);
     if (updateMainBuffer)
     {
+        std::unique_lock<std::recursive_mutex> lockMain(mainBuffer.mutex);
         mainBuffer.vector     = vector;
         mainBuffer.needsWrite = true;
     }
     else
     {
+        std::unique_lock<std::recursive_mutex> lockSec(secondaryBuffer.mutex);
         secondaryBuffer.vector     = vector;
         secondaryBuffer.needsWrite = true;
     }
@@ -90,20 +92,22 @@ void RegistryMiddlewareFlash::run()
             std::lock_guard<std::mutex> lockBuffers2(mutexBuffers);
             /*! Inverts the usable and writing buffer */
             updateMainBuffer = !updateMainBuffer;
-        }
-        /*! In case the buffer needs to write, needsToWrite = true */
-        if (updateMainBuffer)
-        {
-            std::unique_lock<std::recursive_mutex> lockSec2(
-                secondaryBuffer.mutex);
-            if (secondaryBuffer.needsWrite)
-                needsToWrite = true;
-        }
-        else
-        {
-            std::unique_lock<std::recursive_mutex> lockMain2(mainBuffer.mutex);
-            if (mainBuffer.needsWrite)
-                needsToWrite = true;
+
+            /*! In case the buffer needs to write, needsToWrite = true */
+            if (updateMainBuffer)
+            {
+                std::unique_lock<std::recursive_mutex> lockSec2(
+                    secondaryBuffer.mutex);
+                if (secondaryBuffer.needsWrite)
+                    needsToWrite = true;
+            }
+            else
+            {
+                std::unique_lock<std::recursive_mutex> lockMain2(
+                    mainBuffer.mutex);
+                if (mainBuffer.needsWrite)
+                    needsToWrite = true;
+            }
         }
     }
 };
