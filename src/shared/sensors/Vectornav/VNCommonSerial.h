@@ -124,6 +124,16 @@ protected:
     GyroscopeData sampleGyroscope();
 
     /**
+     * @brief Check if the message received from the sensor contains an error.
+     *
+     * @param message The message to be checked.
+     *
+     * @return Returns 0 if no error was found, else returns the actual error
+     * code.
+     */
+    uint8_t checkErrorVN(const char *message);
+
+    /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
