@@ -254,4 +254,16 @@ GyroscopeData VNCommonSerial::sampleGyroscope()
     return data;
 }
 
+uint8_t VNCommonSerial::checkErrorVN(const char *message)
+{
+    if (strncmp(message, "$VNERR,", 7) == 0)
+    {
+        // Extract the error code
+        int errorCode = atoi(&message[7]);
+        return errorCode;  // Error detected
+    }
+
+    return 0;  // No error detected
+}
+
 }  // namespace Boardcore
