@@ -139,14 +139,6 @@ private:
     // TODO: move to common files
 
     /**
-     * @brief reset to factory settings.
-     *
-     * @return True if operation succeeded.
-     */
-    bool resetFactorySettings();
-    // TODO: [[maybe_unused]] ... remove
-
-    /**
      * @brief Sets the user selected crc method.
      *
      * @param waitResponse If true wait for a serial response.
@@ -251,30 +243,6 @@ private:
      */
     bool sampleBin(VN300Defs::BinaryData &bindata);
     // TODO: can be removed and placed inside sampleBinary()
-
-    /**
-     * @brief Receives binary data and it parses it in a generic buffer
-     *
-     * @param command which will be filled with the message
-     *
-     * @return The length of the message in bytes
-     */
-    int recvBinaryCommand(uint8_t *command);
-    // TODO: [[maybe_unused]] ... remove
-
-    /**
-     * @brief check if the VN-300 returned an error and differentiate between
-     * them. The error is formatted as $VNERR,xx*XX
-     *
-     * xx can go from 01 to 12 and 255 and XX is the checksum.
-     *
-     * @param message to be checked.
-     *
-     * @return error code.
-     */
-    uint8_t checkErrorVN(const char *message);
-    // TODO: used only 1 time to infer the type of error, all other times is
-    // "check if ==VNERR" ... can be replaced with a function in common files?
 
     /**
      * @brief Default baudrate value for the usart communication.
