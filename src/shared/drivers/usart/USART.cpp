@@ -37,18 +37,23 @@ Boardcore::USART *ports[N_USART_PORTS];
 
 #ifdef USART1
 /**
+ * \internal interrupt routine for usart1 miosix implementation
+ */
+void usart1irqImpl();
+
+/**
  * \internal Interrupt routine for usart1 actual implementation.
  */
 void __attribute__((used)) usart1irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[0];
     if (port_boardcore)
+    {
         port_boardcore->IRQhandleInterrupt();
+    }
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[0];
-        if (port)
-            port->IRQhandleInterrupt();
+        usart1irqImpl();
     }
 }
 
@@ -65,18 +70,23 @@ void __attribute__((naked, used)) USART1_IRQHandler()
 
 #ifdef USART2
 /**
+ * \internal interrupt routine for usart2 miosix implementation
+ */
+void usart2irqImpl();
+
+/**
  * \internal Interrupt routine for usart2 actual implementation.
  */
 void __attribute__((used)) usart2irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[1];
     if (port_boardcore)
+    {
         port_boardcore->IRQhandleInterrupt();
+    }
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[1];
-        if (port)
-            port->IRQhandleInterrupt();
+        usart2irqImpl();
     }
 }
 
@@ -93,18 +103,23 @@ void __attribute__((naked, used)) USART2_IRQHandler()
 
 #ifdef USART3
 /**
+ * \internal interrupt routine for usart3 miosix implementation
+ */
+void usart3irqImpl();
+
+/**
  * \internal Interrupt routine for usart3 actual implementation.
  */
 void __attribute__((used)) usart3irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[2];
     if (port_boardcore)
+    {
         port_boardcore->IRQhandleInterrupt();
+    }
     else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[2];
-        if (port)
-            port->IRQhandleInterrupt();
+        usart3irqImpl();
     }
 }
 
@@ -127,12 +142,8 @@ void __attribute__((used)) uart4irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[3];
     if (port_boardcore)
-        port_boardcore->IRQhandleInterrupt();
-    else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[3];
-        if (port)
-            port->IRQhandleInterrupt();
+        port_boardcore->IRQhandleInterrupt();
     }
 }
 
@@ -155,12 +166,8 @@ void __attribute__((used)) uart5irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[4];
     if (port_boardcore)
-        port_boardcore->IRQhandleInterrupt();
-    else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[4];
-        if (port)
-            port->IRQhandleInterrupt();
+        port_boardcore->IRQhandleInterrupt();
     }
 }
 
@@ -183,12 +190,8 @@ void __attribute__((used)) usart6irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[5];
     if (port_boardcore)
-        port_boardcore->IRQhandleInterrupt();
-    else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[5];
-        if (port)
-            port->IRQhandleInterrupt();
+        port_boardcore->IRQhandleInterrupt();
     }
 }
 
@@ -211,12 +214,8 @@ void __attribute__((used)) uart7irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[6];
     if (port_boardcore)
-        port_boardcore->IRQhandleInterrupt();
-    else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[6];
-        if (port)
-            port->IRQhandleInterrupt();
+        port_boardcore->IRQhandleInterrupt();
     }
 }
 
@@ -239,12 +238,8 @@ void __attribute__((used)) uart8irqImplBoardcore()
 {
     Boardcore::USART *port_boardcore = ports[7];
     if (port_boardcore)
-        port_boardcore->IRQhandleInterrupt();
-    else
     {
-        miosix::STM32Serial *port = miosix::STM32Serial::ports[7];
-        if (port)
-            port->IRQhandleInterrupt();
+        port_boardcore->IRQhandleInterrupt();
     }
 }
 
