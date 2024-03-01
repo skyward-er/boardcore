@@ -42,12 +42,15 @@ static const uint32_t MEMORY_SIZE = BLOCK64_SIZE * BLOCK64_NUM;  // about 4 MB
 // QUADSPI peripheral utility-stuff
 namespace QSPI {
 
-    // enable/ disbale quadspi
+    // enable/disable quadspi
     void enable(); 
     void disable(); 
     
     // init peripheral clock and GPIO 
     void init(); 
+
+    // abort any operation and reset configuration register (CCR)
+    void abort_reset(); 
 
     // wait till the current operation is ended
     void waitBusy(); 
@@ -65,19 +68,52 @@ public:
     // constructor 
     qspi_flash();
 
-    // enable writing on memory 
-    void write_enable(); 
+    // init qspi peripheral and check ID flash 
+    bool init();
 
-    // read unique device ID
-    uint32_t readID();
+    // enable writing  
+    void write_enable();
 
-private:  
-    
-    // disable writing on memory 
+    // disable writing 
     void write_disable(); 
 
+    // read unique device ID
+    uint32_t readID(); 
+
+    // erase the entire memory chip - THIS OPERATION MIGHT TAKE A WHILE!!  
+    bool chip_erase(); 
+
+    // erase the sector which contains the address (24 bit) specified 
+    bool sector_erase(uint32_t address); 
+
+    // erase block (32K) which contains the address (24 bit) specified
+    bool block32_erase(uint32_t address); 
+
+    // read a byte at a specific address (24 bit) in memory  
+    uint8_t read_byte(uint32_t address); 
+
+    // write a byte at a specific address (24 bit) in memory 
+    bool byte_program(uint8_t data, uint32_t address); 
+
+    // check if flash is executing some operation (program/erase or write registers)
+    bool isInProgress();
+
+    // read security register of the flash 
+    uint8_t read_security_reg();
+
     // read status register of the flash memory 
-    uint8_t read_status_reg();  
+    uint8_t read_status_reg();
+
+private: 
+
+    // check last erase operation result 
+    bool check_erase(); 
+
+    // check last program operation result 
+    bool check_program();     
+
+    // wait till flash has executed the current operation 
+    void waitProgress(); 
     
     // most important flash memory commands 
     enum Commands
@@ -86,16 +122,19 @@ private:
         READ_ID = 0x9F,
 
         // write enable, needs to be executed before modify any data 
-        WRITE_ENABLE  = 0x06,
+        WRITE_ENABLE  = 0x06, 
         
         // write disable
-        WRITE_DISABLE = 0x04,
+        WRITE_DISABLE = 0x04, 
 
         // read status register 
-        READ_STATUS_REG = 0x05,
+        READ_STATUS_REG = 0x05, 
 
         // write status register 
-		WRITE_STATUS_REG = 0x01,
+		WRITE_STATUS_REG = 0x01, 
+
+        // read secutity register
+        READ_SECURITY_REG = 0x2B, 
 
         // read configuration register 
         READ_CONFIG_REGISTER = 0x15,
@@ -104,10 +143,13 @@ private:
         READ = 0x03,
 
         // write a page on memory.
-        PROGRAM_PAGE = 0x02,
+        PAGE_PROGRAM = 0x02,
 
         // erase a specific sector of the memory 
         SECTOR_ERASE = 0x20, 
+
+        // erase a specific block of 32K of the memory 
+        BLOCK_32_ERASE = 0x52, 
 
         // erase all data on the chip - THIS COULD TAKE A LONG TIME !
         ERASE_CHIP = 0xC7,
@@ -117,12 +159,6 @@ private:
 
         // reset memory, reset enable command should be executed first
         RESET_MEMORY = 0x99
-    };
-
-    // important bits to be checked in the memory status register 
-    enum bits_status_reg {
-        WEL_POS = 1, 
-        WIP_POS = 0
     };
 
 };
