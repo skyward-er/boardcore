@@ -187,7 +187,7 @@ add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.
 sbs_target(test-triad-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
-sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
+sbs_target(test-ada stm32f767zi_nucleo)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Boards                                #

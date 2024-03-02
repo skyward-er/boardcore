@@ -131,6 +131,10 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
         ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
         ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
+
+        # ADA
+        ${SBS_BASE}/src/shared/algorithms/ADA/ADA_Algorithm0_ert_rtw/ADA_Algorithm0_data.cpp
+        ${SBS_BASE}/src/shared/algorithms/ADA/ADA_Algorithm0_ert_rtw/ADA_Algorithm0.cpp
     )
     add_library(SkywardBoardcore::Boardcore::${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
@@ -141,6 +145,7 @@ foreach(OPT_BOARD ${BOARDS})
         fmt::fmt-header-only
         Catch2::Catch2
         Mavlink::Mavlink
+        $<LINK_GROUP:RESCAN,Miosix::Miosix::${OPT_BOARD},stdc++,c,m,gcc,atomic>
     )
 
     # Link MxGui only if supported by the target

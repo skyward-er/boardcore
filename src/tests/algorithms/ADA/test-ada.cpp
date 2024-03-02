@@ -21,8 +21,12 @@
  */
 
 #include <algorithms/ADA/ADA.h>
+#include <algorithms/ADA/ADA_Algorithm0_ert_rtw/ADA_Algorithm0.h>
+#include <algorithms/ReferenceValues.h>
 #include <miosix.h>
 #include <scheduler/TaskScheduler.h>
+
+#include <cmath>
 
 #include "EuRoC-pressure-logs.h"
 #include "ValueFollower.h"
@@ -41,14 +45,15 @@ uint64_t currentTimestamp       = 0;
 constexpr uint64_t DELTA_T      = 50 * 1e3;  // 50ms = 20Hz
 constexpr float SAMPLING_PERIOD = 0.05;
 
-ADA *ada;
+ADA_Algorithm0 *ada;
 
 void step()
 {
     currentTimestamp += DELTA_T;
     auto currentPressure = reference.findNext(currentTimestamp);
-
-    ada->update(currentPressure);
+    ADA_Algorithm0::ExtU_ADA_Algorithm0_T in{currentPressure};
+    ada->setExternalInputs(&in);
+    ada->step();
 }
 
 ReferenceValues getADAReferenceValues()
@@ -57,34 +62,10 @@ ReferenceValues getADAReferenceValues()
             DEFAULT_REFERENCE_TEMPERATURE};
 }
 
-ADA::KalmanFilter::KalmanConfig getADAKalmanConfig()
-{
-    ADA::KalmanFilter::MatrixNN F_INIT;
-    F_INIT << 1.0, SAMPLING_PERIOD, 0.5f * SAMPLING_PERIOD * SAMPLING_PERIOD,
-        // cppcheck-suppress constStatement
-        0.0, 1.0, SAMPLING_PERIOD, 0.0, 0.0, 1.0;
-    ADA::KalmanFilter::MatrixPN H_INIT{1.0, 0.0, 0.0};
-    ADA::KalmanFilter::MatrixNN P_INIT;
-    // cppcheck-suppress constStatement
-    P_INIT << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
-    ADA::KalmanFilter::MatrixNN Q_INIT;
-    // cppcheck-suppress constStatement
-    Q_INIT << 30.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 2.5f;
-    ADA::KalmanFilter::MatrixPP R_INIT{4000.0f};
-
-    return {F_INIT,
-            H_INIT,
-            Q_INIT,
-            R_INIT,
-            P_INIT,
-            ADA::KalmanFilter::CVectorN(DEFAULT_REFERENCE_PRESSURE, 0,
-                                        KALMAN_INITIAL_ACCELERATION)};
-}
-
 int main()
 {
-    ada = new ADA(getADAKalmanConfig());
-    ada->setReferenceValues(getADAReferenceValues());
+    ada = new ADA_Algorithm0();
+    ada->initialize();
 
     printf("Starting, data duration: %f\n", reference.getDataDuration() / 1e6);
 
@@ -92,7 +73,8 @@ int main()
     {
         step();
 
-        printf("%f, %f\n", currentTimestamp / 1e6, ada->getState().aglAltitude);
+        printf("%f, %f\n", currentTimestamp / 1e6,
+               ada->getExternalOutputs().ADAState_d.verticalSpeed);
     }
 
     while (true)
