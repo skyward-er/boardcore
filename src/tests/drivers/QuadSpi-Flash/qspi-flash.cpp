@@ -428,7 +428,7 @@ bool qspi_flash::sector_erase(uint32_t address) {
 // erase block (32K) which contains the address (24 bit) specified
 bool qspi_flash::block32_erase(uint32_t address) {
 
-    // erase a 32K block of data, any ddress of the block is valid 
+    // erase a 32K block of data, any address of the block is valid 
     // 1 wait until the memory has finished any operation in progress  
     // 2 write_enable command 
     // 3 erase block_32 command 
@@ -465,6 +465,49 @@ bool qspi_flash::block32_erase(uint32_t address) {
     write_disable(); 
 
     return check_erase(); 
+}
+
+
+// erase a block (32K) which contains the address (24 bit) specified
+bool qspi_flash::block64_erase(uint32_t address) {
+
+    // erase a 64K block of data, any address of the block is valid 
+    // 1 wait until the memory has finished any operation in progress  
+    // 2 write_enable command 
+    // 3 erase block_64 command 
+    // 4 wait till flash has completed the operation
+    // 5 write_disable command, just to be sure 
+    // 6 check the result (flasg E_FAIL)
+
+    waitProgress();  
+
+    write_enable(); 
+
+    QSPI::abort_reset(); 
+
+    // set quadspi CCR register 
+    // indirect write mode, 3-byte address, no data. all on one wire. 
+    QUADSPI->CCR |=  QUADSPI_CCR_IMODE_0  | // istruction on one wire 
+                     QUADSPI_CCR_ADSIZE_1 | // 3-byte address 
+                     QUADSPI_CCR_ADMODE_0;  // address on a single line
+
+    QSPI::enable(); 
+
+    // add instruction  
+    QUADSPI->CCR |= Commands::BLOCK_64_ERASE; 
+
+    // start communication by writing the address in QUADSPI->AR
+    QUADSPI->AR = address;
+
+    QSPI::waitBusy(); 
+
+    QSPI::disable(); 
+
+    waitProgress(); 
+
+    write_disable(); 
+
+    return check_erase();
 }
 
 
@@ -542,6 +585,55 @@ uint8_t qspi_flash::read_security_reg() {
 
     return value; 
 } 
+
+
+void qspi_flash::software_reset() { 
+
+    // if software reset is performed at the same time of another programe/erase operation, 
+    // that current operation will not be executed correctly, and data could be lost. 
+
+    // this functionality combines two commands, RSTEN and RST,  
+    // they need to be sent according to this order:   
+    // 1 - RSTEN instruction (reset enable)
+    // 2 - RST   instruction (software reset) 
+    // if any operation is executed before the RST instruction, the reset enable (RSTEN) is 
+    // invalid. 
+
+    // commands sequence: RSTEN>>wait 1ms>>RST>>wait 1ms
+    // -------------------- send RSTEN command -------------------------
+    waitProgress(); 
+
+    QSPI::abort_reset();
+
+    // indirect write mode, no data, no address, instruction on a single line
+    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0; 
+
+    QSPI::enable(); 
+
+    // start the communication by writing the reset enable instruction 
+    QUADSPI->CCR |= Commands::RESET_ENABLE;
+
+    QSPI::waitBusy(); 
+
+    QSPI::disable();  
+
+    Thread::sleep(1); // wait 1 ms 
+
+    // ------------------- send RST command --------------------------
+    QSPI::abort_reset(); 
+    
+    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0; 
+    
+    QSPI::enable(); 
+    
+    QUADSPI->CCR |= Commands::RESET_MEMORY;
+    
+    QSPI::waitBusy(); 
+
+    QSPI::disable(); 
+
+    Thread::sleep(1); 
+}
 
 
 
