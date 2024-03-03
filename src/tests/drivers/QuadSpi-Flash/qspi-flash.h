@@ -86,14 +86,20 @@ public:
     // erase the sector which contains the address (24 bit) specified 
     bool sector_erase(uint32_t address); 
 
-    // erase block (32K) which contains the address (24 bit) specified
+    // erase a block (32K) which contains the address (24 bit) specified
     bool block32_erase(uint32_t address); 
+
+    // erase a block (32K) which contains the address (24 bit) specified
+    bool block64_erase(uint32_t address); 
 
     // read a byte at a specific address (24 bit) in memory  
     uint8_t read_byte(uint32_t address); 
 
     // write a byte at a specific address (24 bit) in memory 
     bool byte_program(uint8_t data, uint32_t address); 
+
+    // ATTENTION it may take a while! - makes the flash return to power-on default status. 
+    void software_reset(); 
 
     // check if flash is executing some operation (program/erase or write registers)
     bool isInProgress();
@@ -148,8 +154,11 @@ private:
         // erase a specific sector of the memory 
         SECTOR_ERASE = 0x20, 
 
-        // erase a specific block of 32K of the memory 
+        // erase a specific block of 32KB of the memory 
         BLOCK_32_ERASE = 0x52, 
+
+        // erase a specific block of 64KB of the memory 
+        BLOCK_64_ERASE = 0xD8, 
 
         // erase all data on the chip - THIS COULD TAKE A LONG TIME !
         ERASE_CHIP = 0xC7,

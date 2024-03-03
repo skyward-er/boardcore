@@ -70,14 +70,31 @@ int main() {
     // test funzione read_byte(): OCCHIO IMPOSTA SEMPRE LA DIMENSIONE DELLA FLASH 
     printf("\ntest funzione read_byte()\n");
 
-    // test block32_erase: FUNZIONA 
-    printf("valore block32_erase(): %d\n", mymemory.block32_erase(0x3FFFFF));  
+    // test block32_erase(): FUNZIONA 
+    printf("valore block32_erase(): %d\n", mymemory.block32_erase(0x3FFFFF)); 
+
+    // test block64_erase(): FUNZIONA 
+    printf("valore block64_erase(): %d\n", mymemory.block64_erase(0x3fffff)); 
     
     printf("valore read_byte: %d\n", mymemory.read_byte(0));
 
     printf("----- end read_byte() test\n"); 
 
-    // test erase chip function() SEMBRA FUNZIONARE TUTTO FINO AD ORA !!!!!!
+    // test funzione reset(): FUNZIONA 
+    /*
+    printf("\n------- start test funzione reset() ----------\n"); 
+
+    Thread::sleep(100); 
+    mymemory.write_enable(); 
+    printf("status reg prima : %d\n", mymemory.read_status_reg()); 
+    //mymemory.software_reset(); 
+    printf("status reg dopo: %d\n", mymemory.read_status_reg()); 
+
+    printf("------- end test funzione reset() ----------\n"); 
+    */
+
+
+    // test erase chip function(): FUNZIONA
     /*
     printf("\nstart TEST erase chip function\n"); 
 
