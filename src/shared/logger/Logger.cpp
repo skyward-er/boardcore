@@ -33,6 +33,7 @@
 #include <tscpp/buffer.h>
 #include <utils/Debug.h>
 
+#include <chrono>
 #include <fstream>
 #include <stdexcept>
 
@@ -287,8 +288,8 @@ void Logger::writeThread()
                 return;
 
             // Write data to disk
-            Timer timer;
-            timer.start();
+            using namespace std::chrono;
+            auto start = system_clock::now();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
@@ -301,8 +302,9 @@ void Logger::writeThread()
             else
                 stats.buffersWritten++;
 
-            timer.stop();
-            stats.averageWriteTime = timer.interval();
+            auto interval = system_clock::now() - start;
+            stats.averageWriteTime =
+                duration_cast<milliseconds>(interval).count();
             stats.maxWriteTime =
                 max(stats.maxWriteTime, stats.averageWriteTime);
 

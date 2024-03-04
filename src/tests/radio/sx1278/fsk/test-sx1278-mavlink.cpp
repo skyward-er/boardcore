@@ -24,6 +24,7 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
+#include <utils/KernelTime.h>
 #include <utils/collections/CircularBuffer.h>
 
 #include <thread>
@@ -176,7 +177,7 @@ void flightTmLoop()
 
     while (1)
     {
-        long long start = miosix::getTick;
+        long long start = Kernel::getOldTick();
 
         {
             Lock<FastMutex> l(mutex);
@@ -204,7 +205,7 @@ void flightTmLoop()
 
         channel->enqueueMsg(msg);
 
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
+        Kernel::Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
         i += 1;
     }
 }

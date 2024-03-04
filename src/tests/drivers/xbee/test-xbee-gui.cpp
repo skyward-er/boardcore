@@ -28,6 +28,7 @@
 #include <radio/Xbee/ATCommands.h>
 #include <radio/Xbee/Xbee.h>
 #include <utils/ButtonHandler/ButtonHandler.h>
+#include <utils/KernelTime.h>
 
 #include <array>
 #include <cstdio>
@@ -105,7 +106,7 @@ protected:
 
                 gui->screenEnergy.updateScan(scan);
 
-                EnergyScanData data{getTick(), scan};
+                EnergyScanData data{Kernel::getOldTick(), scan};
                 logger.log(data);
             }
         }
@@ -180,7 +181,7 @@ int main()
     // Main loop: updates the information in the GUI
     for (;;)
     {
-        long long start = getTick();
+        long long start = Kernel::getOldTick();
         // Update display values
         switch (gui->screenManager.getScreen())
         {
@@ -209,7 +210,7 @@ int main()
         }
 
         logger.log(logger.getStats());
-        Thread::sleepUntil(start + 500);
+        Kernel::Thread::sleepUntil(start + 500);
     }
 }
 
@@ -219,7 +220,7 @@ void onStartButtonClick(View* btn __attribute__((unused)), Interaction action)
     {
 
         XbeeConfig cfg = gui->screenConfig.config;
-        cfg.timestamp  = getTick();
+        cfg.timestamp  = Kernel::getOldTick();
         logger.log(cfg);
 
         gui->screenConfig.btnStart.setText("Starting...");
@@ -265,7 +266,7 @@ void onMarkButtonClick(View* btn __attribute__((unused)), Interaction action)
 {
     if (action == Interaction::CLICK)
     {
-        Mark m{getTick(), markCounter++};
+        Mark m{Kernel::getOldTick(), markCounter++};
         logger.log(m);
 
         TextView* tvBtn = dynamic_cast<TextView*>(btn);

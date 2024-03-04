@@ -23,6 +23,7 @@
 #pragma once
 
 #include <miosix.h>
+#include <utils/KernelTime.h>
 
 #include <deque>
 #include <limits>
@@ -53,9 +54,10 @@ public:
      * @brief Creates a new ThroughputCalculator
      *
      * @param expectedPktInterval Expected packet delivery interval for packet
-     * loss estimation
-     * @param windowDuration Duration of the observation window. Longer windows
-     * means more stable values but slow response to abrupt changes
+     * loss estimation in milliseconds
+     * @param windowDuration Duration of the observation window in milliseconds.
+     * Longer windows means more stable values but slow response to abrupt
+     * changes
      */
     ThroughputCalculator(unsigned int expectedPktInterval,
                          unsigned int windowDuration = 2000)
@@ -74,7 +76,7 @@ public:
     {
         Lock<FastMutex> lock(mutexPkt);
 
-        long long ts = miosix::getTick();
+        long long ts = Kernel::getOldTick();
 
         unsigned int interval = 0;
         if (packets.size() > 0)
@@ -95,7 +97,7 @@ public:
     {
         Lock<FastMutex> lock(mutexPkt);
 
-        long long ts = miosix::getTick();
+        long long ts = Kernel::getOldTick();
         removeOldPackets(ts);
 
         float sum = 0;
@@ -113,7 +115,7 @@ public:
     float getPacketLoss()
     {
         Lock<FastMutex> lock(mutexPkt);
-        long long ts = miosix::getTick();
+        long long ts = Kernel::getOldTick();
         removeOldPackets(ts);
 
         float avgInterval = std::numeric_limits<float>::infinity();
@@ -137,7 +139,7 @@ public:
     float getPacketsPerSecond()
     {
         Lock<FastMutex> lock(mutexPkt);
-        long long ts = miosix::getTick();
+        long long ts = Kernel::getOldTick();
         removeOldPackets(ts);
 
         return (float)packets.size() / (windowDuration / 1000.0f);
@@ -170,8 +172,10 @@ private:
         }
     }
 
-    unsigned int expectedPktInterval;
-    unsigned int windowDuration;
+    unsigned int expectedPktInterval;  //!< Expected packet delivery interval in
+                                       //!< milliseconds
+    unsigned int windowDuration;  //!< Duration of the observation window in
+                                  //!< milliseconds
     deque<Packet> packets;
 
     FastMutex mutexPkt;

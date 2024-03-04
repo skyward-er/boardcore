@@ -23,6 +23,7 @@
 #include <actuators/HBridge/HBridge.h>
 #include <miosix.h>
 #include <utils/Debug.h>
+#include <utils/KernelTime.h>
 
 #include <iostream>
 #include <sstream>
@@ -45,14 +46,14 @@ long long measuredTime = 0;
 
 void wait()
 {
-    long long t  = getTick();
+    long long t  = Kernel::getOldTick();
     long long t0 = t;
 
     while (t < t0 + PWM_DURATION)
     {
         Thread::sleep(50);
 
-        t = getTick();
+        t = Kernel::getOldTick();
 
         if (print)
         {

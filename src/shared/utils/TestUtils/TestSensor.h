@@ -26,6 +26,7 @@
 #include <sensors/Sensor.h>
 #include <utils/Constants.h>
 #include <utils/Debug.h>
+#include <utils/KernelTime.h>
 
 #include <cmath>
 
@@ -37,12 +38,12 @@ struct TestData : public TimestampData
     float value;
 
     TestData(float v)
-        : TimestampData{static_cast<uint64_t>(miosix::getTick())}, value(v)
+        : TimestampData{static_cast<uint64_t>(Kernel::getOldTick())}, value(v)
     {
     }
 
     TestData()
-        : TimestampData{static_cast<uint64_t>(miosix::getTick())}, value(0.0)
+        : TimestampData{static_cast<uint64_t>(Kernel::getOldTick())}, value(0.0)
     {
     }
 };
@@ -60,9 +61,8 @@ public:
     TestData sampleImpl() override
     {
         TRACE("[TestSensor] sampleImpl() \n");
-        return TestData(
-            10 * sin(Constants::PI * static_cast<float>(miosix::getTick()) /
-                     static_cast<float>(miosix::TICK_FREQ)));
+        return TestData(10 *
+                        sin(Constants::PI * (Kernel::getOldTick() / 1000.f)));
     }
 };
 

@@ -39,7 +39,6 @@ using std::map;
 using std::vector;
 
 using miosix::FastMutex;
-using miosix::getTick;
 using miosix::Lock;
 using miosix::Thread;
 using miosix::Unlock;

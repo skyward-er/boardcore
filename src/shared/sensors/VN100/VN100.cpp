@@ -23,6 +23,7 @@
 #include "VN100.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <utils/KernelTime.h>
 
 namespace Boardcore
 {
@@ -120,14 +121,14 @@ void VN100::run()
 {
     while (!shouldStop())
     {
-        long long initialTime = miosix::getTick();
+        long long initialTime = Kernel::getOldTick();
         {
             // Sample the data locking the mutex
             miosix::Lock<FastMutex> l(mutex);
             threadSample = sampleData();
         }
         // Sleep for the sampling period
-        miosix::Thread::sleepUntil(initialTime + samplePeriod);
+        Kernel::Thread::sleepUntil(initialTime + samplePeriod);
     }
 }
 

@@ -24,6 +24,7 @@
 #include <diagnostic/PrintLogger.h>
 #include <drivers/canbus/CanDriver/BusLoadEstimation.h>
 #include <drivers/canbus/CanDriver/CanDriver.h>
+#include <utils/KernelTime.h>
 
 #include <string>
 
@@ -109,7 +110,7 @@ int main()
 
     for (;;)
     {
-        p.timestamp = miosix::getTick();
+        p.timestamp = Kernel::getOldTick();
 
         p.id = 365854720;
         c->send(p);

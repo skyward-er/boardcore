@@ -24,6 +24,7 @@
 
 #include <kernel/scheduler/scheduler.h>
 #include <utils/ClockUtils.h>
+#include <utils/KernelTime.h>
 
 #include <algorithm>
 #include <cmath>
@@ -377,7 +378,7 @@ void CanbusDriver::handleRXInterrupt(int fifo)
 
     if ((*RFR & CAN_RF0R_FMP0) > 0)
     {
-        p.timestamp = miosix::getTick();
+        p.timestamp = Kernel::IRQgetOldTick();
 
         status.rxStatus     = *RFR & (CAN_RF0R_FULL0 | CAN_RF0R_FOVR0) >> 3;
         status.errCode      = (can->ESR | CAN_ESR_LEC) >> 4;

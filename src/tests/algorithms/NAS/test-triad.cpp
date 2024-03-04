@@ -26,6 +26,7 @@
 #include <sensors/SensorManager.h>
 #include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
 #include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
+#include <utils/KernelTime.h>
 
 #include <cmath>
 #include <iostream>
@@ -46,7 +47,7 @@ int main()
     imuInit();
     bmx->init();
 
-    auto lastTick = getTick();
+    auto lastTick = Kernel::getOldTick();
     while (true)
     {
         bmx->sample();
@@ -72,8 +73,8 @@ int main()
             printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
                    kalmanState(7), kalmanState(8));
 
-        Thread::sleepUntil(lastTick + 20);
-        lastTick = getTick();
+        Kernel::Thread::sleepUntil(lastTick + 20);
+        lastTick = Kernel::getOldTick();
     }
 }
 

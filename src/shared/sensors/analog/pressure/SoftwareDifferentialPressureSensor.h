@@ -23,6 +23,7 @@
 #pragma once
 
 #include <sensors/Sensor.h>
+#include <utils/KernelTime.h>
 
 namespace Boardcore
 {
@@ -67,7 +68,7 @@ public:
         float p1 = first_pressure_sensor->getLastSample().pressure;
         float p2 = second_pressure_sensor->getLastSample().pressure;
 
-        return PressureData{miosix::getTick(), p1 - p2};
+        return PressureData{Kernel::getOldTick(), p1 - p2};
     }
 
 private:

@@ -26,6 +26,7 @@
 #include <Singleton.h>
 #include <debug/debug.h>
 #include <diagnostic/PrintLogger.h>
+#include <utils/KernelTime.h>
 #include <utils/Stats/Stats.h>
 
 #include <cstdint>
@@ -114,7 +115,7 @@ public:
      */
     size_t addTask(function_t function, uint32_t period,
                    Policy policy     = Policy::RECOVER,
-                   int64_t startTick = miosix::getTick());
+                   int64_t startTick = Kernel::getOldTick());
 
     /**
      * @brief Enables the task with the given id.

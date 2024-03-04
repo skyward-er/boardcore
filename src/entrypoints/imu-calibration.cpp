@@ -25,6 +25,7 @@
 #include <sensors/calibration/AxisOrientation.h>
 #include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 #include <utils/Debug.h>
+#include <utils/KernelTime.h>
 
 #include <iostream>
 
@@ -108,14 +109,14 @@ void calibrateMagnetometer()
     scheduler.start();
 
     // Wait and then stop the sampling
-    auto startTick = getTick();
+    auto startTick = Kernel::getOldTick();
     auto lastTick  = startTick;
-    while (getTick() - startTick < MAG_CALIBRATION_DURATION * 1e3)
+    while (Kernel::getOldTick() - startTick < MAG_CALIBRATION_DURATION * 1e3)
     {
         mpu.sample();
         calibration.feed(mpu.getLastSample());
-        Thread::sleepUntil(lastTick + IMU_SAMPLE_PERIOD);
-        lastTick = getTick();
+        Kernel::Thread::sleepUntil(lastTick + IMU_SAMPLE_PERIOD);
+        lastTick = Kernel::getOldTick();
     }
 
     scheduler.stop();

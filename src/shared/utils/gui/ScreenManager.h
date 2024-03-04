@@ -23,6 +23,7 @@
 #pragma once
 
 #include <miosix.h>
+#include <utils/KernelTime.h>
 
 #include <deque>
 #include <map>
@@ -82,11 +83,11 @@ protected:
                 screens[activeScreen]->invalidateTree();
             }
 
-            long long start = miosix::getTick();
+            long long start = Kernel::getOldTick();
 
             drawViewTree(screens[activeScreen], dc);
 
-            miosix::Thread::sleepUntil(start + refreshInterval);
+            Kernel::Thread::sleepUntil(start + refreshInterval);
         }
     }
 
@@ -119,7 +120,7 @@ private:
 
     mxgui::DrawingContext dc;
 
-    unsigned int refreshInterval;
+    unsigned int refreshInterval;  ///< Refresh interval in ms
 
     NavController controller;
     std::map<uint8_t, View*> screens;

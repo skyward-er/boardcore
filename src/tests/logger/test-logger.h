@@ -27,6 +27,7 @@
 
 #ifdef _MIOSIX
 #include <miosix.h>
+#include <utils/KernelTime.h>
 #endif  //_MIOSIX
 
 namespace Boardcore
@@ -38,7 +39,7 @@ public:
     Dummy()
     {
 #ifdef _MIOSIX
-        timestamp = miosix::getTick();
+        timestamp = Kernel::getOldTick();
 #else   //_MIOSIX
         timestamp = 0;
 #endif  //_MIOSIX

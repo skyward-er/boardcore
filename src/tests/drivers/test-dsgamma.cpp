@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <utils/Debug.h>
+#include <utils/KernelTime.h>
 
 using namespace Boardcore;
 using namespace std;
@@ -95,12 +96,12 @@ int main()
                     if (c == 255)
                     {
                         TRACE("Starting!\n", 0);
-                        startT = miosix::getTick();
+                        startT = Kernel::getOldTick();
                         // printf("%c", c);
                         //  inputBuf[index] = c;
                         ++index;
                         state = ST_WAIT_END_FRAME;
-                        endT  = miosix::getTick();
+                        endT  = Kernel::getOldTick();
                     }
                     break;
                 }
@@ -140,7 +141,7 @@ int main()
                         printf("Packet end %d. lost: %d\n", pktCount,
                                lostBytes);
                         ++pktCount;
-                        // endT = miosix::getTick();
+                        // endT = Kernel::getOldTick();
                         state = ST_WAIT_START_FRAME;
                     }
 
@@ -156,7 +157,7 @@ int main()
                 }
                 case ST_SEND_DATA:
                 {
-                    endT = miosix::getTick();
+                    endT = Kernel::getOldTick();
                     end  = true;
                     break;
                     /*  uint8_t buf[] = {0x23, 0x23, 0x23, 0x23, 0x23};

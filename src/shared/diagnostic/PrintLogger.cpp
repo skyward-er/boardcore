@@ -22,6 +22,8 @@
 
 #include "PrintLogger.h"
 
+#include <utils/KernelTime.h>
+
 using miosix::Lock;
 
 namespace Boardcore
@@ -68,7 +70,7 @@ void LogSink::log(const LogRecord& record)
     using namespace fmt::literals;
     if (record.level >= minimumLevel)
     {
-        float ts     = miosix::getTick() / 1000.0f;
+        float ts     = Kernel::getOldTick() / 1000.0f;
         int min      = ts / 60;
         string tsStr = fmt::format("{:02d}:{:06.3f}", min, (ts - min * 60));
 

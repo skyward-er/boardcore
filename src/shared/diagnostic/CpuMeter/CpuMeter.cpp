@@ -60,9 +60,9 @@ static void cpuMeterThread(void*)
 {
     for (;;)
     {
-        long long t1 = getTick();
+        long long t1 = Kernel::getOldTick();
         delayMs(period);
-        long long t2 = getTick();
+        long long t2 = Kernel::getOldTick();
 
         update++;
         float delta = t2 - t1;
