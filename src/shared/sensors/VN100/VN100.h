@@ -166,7 +166,8 @@ private:
     /**
      * @brief This function sets the output binary mode for the sensor. It
      * configures the sensor in order to read acceleration, angular speed,
-     * magnetic field, quaternion, temperature and pressure data.
+     * magnetic field, quaternion, temperature and pressure data. It also
+     * evaluates the `sampleWaitTime` needed to obtain data from the sensor.
      *
      * @return Returns true if successful, false otherwise.
      */
@@ -277,6 +278,13 @@ private:
      * @brief Pre computed command used to ask a binary sample to the sensor.
      */
     const char *askSampleCommand = "";
+
+    /**
+     * @brief This is the wait time needed after requesting data with the
+     * `askSampleCommand`. It takes into account the time needed to send the
+     * command to the sensor and the time needed to receive the binary packet.
+     */
+    int sampleWaitTime = 0;
 
     /**
      * @brief The prefix of an error response from the sensor.

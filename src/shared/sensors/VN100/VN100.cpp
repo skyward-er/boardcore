@@ -150,6 +150,15 @@ bool VN100::setBinaryOutput()
         return false;
     }
 
+    // Evaluate wait time when sampling
+    // It is multiplied by 8000: 1000 in order to obtain milliseconds, 8 because
+    // the baudrate is in bit per second
+    float fWaitTime = (strlen(askSampleCommand) + sizeof(BinaryData)) * 8000;
+    fWaitTime /= baudRate;
+    fWaitTime = ceil(fWaitTime);
+    fWaitTime += 1;  // +1ms for safety
+    sampleWaitTime = (int)fWaitTime;
+
     return true;
 }
 
@@ -198,6 +207,8 @@ VN100Data VN100::sampleImpl()
     }
 
     usart.writeString(askSampleCommand);
+
+    miosix::Thread::sleep(sampleWaitTime);
 
     // "wait logic": it might take some time to receive the answer
     // from the sensor
@@ -475,9 +486,19 @@ bool VN100::sendStringCommand(std::string command)
     // I send the final command
     usart.writeString(command.c_str());
 
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(500);
+    /**
+     * Wait enough to let the message reach the sensor. The wait time is
+     * expressed in milliseconds. The baudrate is expressed in bps.
+     * As a safety measure 10ms are added to the wait time.
+     *
+     * Thus the command size is multiplied by 1000 to obtain milliseconds and by
+     * 8 because the baudrate is expressed in bit per second.
+     */
+    float waitTime = command.size() * 8000;
+    waitTime /= baudRate;
+    waitTime = ceil(waitTime);
+    waitTime += 10;
+    miosix::Thread::sleep(waitTime);
 
     return true;
 }
