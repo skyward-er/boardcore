@@ -42,6 +42,8 @@ implementation before including MavlinkDriver.h"
 #include <radio/Transceiver.h>
 #include <utils/collections/SyncPacketQueue.h>
 
+#include <functional>
+
 #include "MavlinkStatus.h"
 
 namespace Boardcore

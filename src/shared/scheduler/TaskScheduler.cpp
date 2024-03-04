@@ -32,14 +32,6 @@ using namespace miosix;
 namespace Boardcore
 {
 
-namespace Constants
-{
-static constexpr unsigned int TICKS_PER_MS =
-    miosix::TICK_FREQ / 1000;  // Number of ticks in a millisecond
-static constexpr unsigned int MS_PER_TICK =
-    1000 / miosix::TICK_FREQ;  // Number of milliseconds in a tick
-}  // namespace Constants
-
 TaskScheduler::EventQueue TaskScheduler::makeAgenda()
 {
     std::vector<Event> agendaStorage{};
@@ -122,7 +114,7 @@ void TaskScheduler::enableTask(size_t id)
     }
 
     task.enabled = true;
-    agenda.emplace(id, getTick() + task.period * Constants::TICKS_PER_MS);
+    agenda.emplace(id, Kernel::getOldTick() + task.period);
     mutex.unlock();
 }
 
@@ -186,7 +178,7 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
 void TaskScheduler::populateAgenda()
 {
-    int64_t currentTick = getTick();
+    int64_t currentTick = Kernel::getOldTick();
 
     for (size_t id = 1; id < tasks.size(); id++)
     {
@@ -221,7 +213,7 @@ void TaskScheduler::run()
             return;
         }
 
-        int64_t startTick = getTick();
+        int64_t startTick = Kernel::getOldTick();
         Event nextEvent   = agenda.top();
         Task& nextTask    = tasks[nextEvent.taskId];
 
@@ -254,7 +246,7 @@ void TaskScheduler::run()
                 }
 
                 // Enqueue only on a valid task
-                updateStats(nextEvent, startTick, getTick());
+                updateStats(nextEvent, startTick, Kernel::getOldTick());
                 enqueue(nextEvent, startTick);
             }
         }
@@ -262,7 +254,7 @@ void TaskScheduler::run()
         {
             Unlock<FastMutex> unlock(lock);
 
-            Thread::sleepUntil(nextEvent.nextTick);
+            Kernel::Thread::sleepUntil(nextEvent.nextTick);
         }
     }
 }
@@ -274,12 +266,12 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTick,
 
     // Activation stats
     float activationError = startTick - event.nextTick;
-    task.activationStats.add(activationError * Constants::MS_PER_TICK);
+    task.activationStats.add(activationError);
 
     // Period stats
     int64_t lastCall = task.lastCall;
     if (lastCall >= 0)
-        task.periodStats.add((startTick - lastCall) * Constants::MS_PER_TICK);
+        task.periodStats.add((startTick - lastCall));
 
     // Update the last call tick to the current start tick for the next
     // iteration
@@ -314,7 +306,7 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
                 ((startTick - event.nextTick) / task.period + 1) * task.period;
             break;
         case Policy::RECOVER:
-            event.nextTick += task.period * Constants::TICKS_PER_MS;
+            event.nextTick += task.period;
             break;
     }
 

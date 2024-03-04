@@ -24,6 +24,7 @@
 
 #ifdef DEBUG
 #include <miosix.h>
+#include <utils/KernelTime.h>
 
 #include <cstdarg>
 #include <cstdio>
@@ -42,13 +43,13 @@ inline void TRACE(const char* format, ...)
     va_list argptr;
     va_start(argptr, format);
 
-    printf("%.2f> ", miosix::getTick() / 1000.0f);
+    printf("%.2f> ", Boardcore::Kernel::getOldTick() / 1000.0f);
     vprintf(format, argptr);
 
     va_end(argptr);
 }
 
-// #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f);
+// #define TRACE(...) printf("%.2f> ", Boardcore::Kernel::getOldTick()/1000.0f);
 // printf(__VA_ARGS__)
 
 #else

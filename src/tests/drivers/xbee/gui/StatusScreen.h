@@ -24,6 +24,7 @@
 
 #include <logger/Logger.h>
 #include <mxgui/display.h>
+#include <utils/KernelTime.h>
 #include <utils/TestUtils/ThroughputCalculator.h>
 #include <utils/gui/GridLayout.h>
 #include <utils/gui/OptionView.h>
@@ -255,7 +256,7 @@ struct StatusScreen
         tvRxPps.setText(strBuf);
 
         tvRxTimeSinceLastRx.setText(
-            tickToHMS(miosix::getTick() - rxd.lastPacketTimestamp));
+            tickToHMS(Kernel::getOldTick() - rxd.lastPacketTimestamp));
     }
 
     VerticalLayout root{10};

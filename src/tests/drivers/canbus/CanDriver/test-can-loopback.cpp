@@ -24,6 +24,7 @@
 #include <diagnostic/PrintLogger.h>
 #include <drivers/canbus/CanDriver/BusLoadEstimation.h>
 #include <drivers/canbus/CanDriver/CanDriver.h>
+#include <utils/KernelTime.h>
 
 #include <string>
 
@@ -64,14 +65,14 @@ public:
     {
         while (!shouldStop())
         {
-            long long start                     = miosix::getTick();
+            long long start                     = Kernel::getOldTick();
             BusLoadEstimation::BusLoadInfo info = ble.getLoadInfo();
             LOG_INFO(l,
                      "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, "
                      "utilization: {:.2f}%",
                      info.payloadBitRate / 1000.0f, info.totalBitRate / 1000.0f,
                      info.loadPercent);
-            Thread::sleepUntil(start + 1000);
+            Kernel::Thread::sleepUntil(start + 1000);
         }
     }
 
@@ -122,7 +123,7 @@ int main()
     {
 
         // printPacket("TX", p);
-        p.timestamp = miosix::getTick();
+        p.timestamp = Kernel::getOldTick();
         c->send(p);
         load.addPacket(p);
         // Thread::sleep(1);

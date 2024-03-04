@@ -24,6 +24,7 @@
 
 #include <kernel/scheduler/scheduler.h>
 #include <utils/Debug.h>
+#include <utils/KernelTime.h>
 
 #include <cassert>
 #include <cmath>
@@ -34,7 +35,7 @@ namespace Boardcore
 using namespace SX1278;
 using namespace SX1278::Fsk;
 
-long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
+long long now() { return Kernel::getOldTick(); }
 
 // Enable:
 // - PayloadReady, PacketSent on DIO0 (mode 00)

@@ -23,6 +23,7 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Lora.h>
+#include <utils/KernelTime.h>
 
 #include <thread>
 
@@ -136,7 +137,7 @@ void flightTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = Kernel::getOldTick();
 
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
@@ -145,7 +146,7 @@ void flightTmLoop()
         channel->enqueueMsg(msg);
         printf("Enqueued flight_tm_tm!\n");
 
-        Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
+        Kernel::Thread::sleepUntil(start + FLIGHT_TM_PERIOD);
     }
 }
 
@@ -153,7 +154,7 @@ void statsTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = Kernel::getOldTick();
 
         mavlink_message_t msg;
         mavlink_rocket_stats_tm_t tm = {0};
@@ -162,7 +163,7 @@ void statsTmLoop()
         channel->enqueueMsg(msg);
         printf("Enqueued stats_tm!\n");
 
-        Thread::sleepUntil(start + STATS_TM_PERIOD);
+        Kernel::Thread::sleepUntil(start + STATS_TM_PERIOD);
     }
 }
 

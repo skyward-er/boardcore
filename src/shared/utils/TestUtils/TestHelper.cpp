@@ -22,13 +22,17 @@
 
 #include "TestHelper.h"
 
+#include <events/utils/EventCounter.h>
+#include <utils/KernelTime.h>
+
+#include <cmath>
+
+using miosix::FastMutex;
+using miosix::getTime;
+using miosix::Lock;
+
 namespace Boardcore
 {
-
-long long tickToMilliseconds(long long tick)
-{
-    return tick * 1000 / miosix::TICK_FREQ;
-}
 
 bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                  long long uncertainty, EventBroker& broker)
@@ -39,28 +43,25 @@ bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
     long long windowStart = when - uncertainty;
     long long windowEnd   = when + uncertainty;
 
-    while (getTick() < windowEnd)
+    while (Kernel::getOldTick() < windowEnd)
     {
         if (c.getCount(eventId) > 0)
         {
-            long long recvTick = getTick();
+            long long recvTick = Kernel::getOldTick();
             if (recvTick < windowStart)
             {
                 TRACE(
                     "[expectEvent] Event %d on topic %d receveid %d ms before "
                     "the opening of "
                     "the window.\n",
-                    eventId, topic,
-                    static_cast<int>(
-                        tickToMilliseconds(windowStart - recvTick)));
+                    eventId, topic, static_cast<int>(windowStart - recvTick));
                 return false;
             }
             TRACE(
                 "[expectEvent] Event %d on topic %d received inside the "
                 "window, %d ms from "
                 "the target time.\n",
-                eventId, topic,
-                static_cast<int>(tickToMilliseconds(abs(recvTick - when))));
+                eventId, topic, static_cast<int>(abs(recvTick - when)));
 
             return true;
         }
@@ -80,8 +81,8 @@ bool waitForEvent(uint8_t event, uint8_t topic, long long timeout,
 {
     EventCounter c{broker};
     c.subscribe(topic);
-    long long end = getTick() + timeout;
-    while (timeout == 0 || getTick() < end)
+    long long end = Kernel::getOldTick() + timeout;
+    while (timeout == 0 || Kernel::getOldTick() < end)
     {
         if (c.getCount(event) > 0)
             return true;

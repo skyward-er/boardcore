@@ -84,7 +84,7 @@ void handleCanMessage(Canbus::CanRXPacket packet)
             if (msg.id == packet.packet.id)
             {
                 msg.id = 0;
-                msg.ts = getTick() - msg.ts;
+                msg.ts = Kernel::getOldTick() - msg.ts;
                 break;
             }
         }
@@ -114,7 +114,7 @@ void sendNewRequest()
 
     {
         Lock<FastMutex> l(mutexMsgs);
-        msgs.put({packet.id, (uint32_t)getTick()});
+        msgs.put({packet.id, (uint32_t)Kernel::getOldTick()});
     }
 
     canManager->send(packet);
@@ -128,7 +128,7 @@ public:
         unsigned int c = 0;
         while (!shouldStop())
         {
-            uint32_t tick = (uint32_t)getTick();
+            uint32_t tick = (uint32_t)Kernel::getOldTick();
             {
                 Lock<FastMutex> l(mutexMsgs);
                 if (msgs.isFull())
@@ -184,7 +184,7 @@ public:
                     info.loadPercent);
             }
             ++c;
-            Thread::sleepUntil(tick + MSG_DEADLINE);
+            Kernel::Thread::sleepUntil(tick + MSG_DEADLINE);
         }
     }
 

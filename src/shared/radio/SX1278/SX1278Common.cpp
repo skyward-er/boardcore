@@ -23,6 +23,7 @@
 #include "SX1278Common.h"
 
 #include <kernel/scheduler/scheduler.h>
+#include <utils/KernelTime.h>
 
 namespace Boardcore
 {
@@ -107,10 +108,10 @@ ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
     // otherwise don't do anything with it
     (void)_guard;
 
-    long long start  = miosix::getTick();
+    long long start  = Kernel::getOldTick();
     IrqFlags ret_irq = 0;
 
-    while ((miosix::getTick() - start) < timeout)
+    while ((Kernel::getOldTick() - start) < timeout)
     {
         // Delay between polls
         const unsigned int DELAY = 100;
@@ -143,7 +144,7 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
         mutex.unlock();
     }
 
-    int start                      = miosix::getTick();
+    int start                      = Kernel::getOldTick();
     miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
 
     {
@@ -151,7 +152,7 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
         while (state.irq_wait_thread &&
                result == miosix::TimedWaitResult::NoTimeout)
         {
-            result = miosix::Thread::IRQenableIrqAndTimedWaitMs(
+            result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(
                 lock, start + IRQ_TIMEOUT);
         }
     }

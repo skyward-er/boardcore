@@ -33,6 +33,7 @@
 #include <radio/Xbee/APIFramesLog.h>
 #include <radio/Xbee/ATCommands.h>
 #include <radio/Xbee/Xbee.h>
+#include <utils/KernelTime.h>
 
 #include <cstdio>
 #include <stdexcept>
@@ -161,7 +162,7 @@ int main()
     config.packetSize   = 256;
     config.sendInterval = 333;
     config.txEnabled    = RUN_SENDER;
-    config.timestamp    = getTick();
+    config.timestamp    = Kernel::getOldTick();
 
     configure();
 
@@ -209,7 +210,7 @@ int main()
     // cppcheck-suppress knownConditionTrueFalse
     while (getUserBtnValue() == 0)
     {
-        long long loopStart = getTick();
+        long long loopStart = Kernel::getOldTick();
 
         DataRateResult resRcv = trans->getReceiver().getDataRate();
         DataRateResult resSnd = trans->getSender().getDataRate();
@@ -220,7 +221,7 @@ int main()
         logger.log(xbeeDriver->getStatus());
         logger.log(logger.getStats());
 
-        long long tick = getTick();
+        long long tick = Kernel::getOldTick();
         unsigned int h = tick / (1000 * 3600);
         unsigned int m = (tick - h * 1000 * 3600) / (1000 * 60);
         float s        = (tick - h * 1000 * 3600 - m * 1000 * 60) / 1000.0f;
@@ -245,7 +246,7 @@ int main()
         }
         printf("\n");
 
-        Thread::sleepUntil(loopStart + 1000);
+        Kernel::Thread::sleepUntil(loopStart + 1000);
     }
 
     trans->stop();

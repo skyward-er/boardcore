@@ -25,6 +25,7 @@
 #include <ActiveObject.h>
 #include <Singleton.h>
 #include <logger/Logger.h>
+#include <utils/KernelTime.h>
 
 #include <map>
 
@@ -54,7 +55,7 @@ public:
     void updateStack(uint8_t threadId)
     {
         StackData d;
-        d.timestamp    = miosix::getTick();
+        d.timestamp    = Kernel::getOldTick();
         d.threadId     = threadId;
         d.minimumStack = miosix::MemoryProfiling::getAbsoluteFreeStack();
 

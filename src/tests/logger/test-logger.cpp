@@ -24,6 +24,7 @@
 
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <logger/Logger.h>
+#include <utils/KernelTime.h>
 
 using namespace Boardcore;
 using namespace std;
@@ -33,9 +34,9 @@ void logThread(void*)
 {
     Logger& log      = Logger::getInstance();
     const int period = 5;
-    for (auto t = getTick();; t += period)
+    for (auto t = Kernel::getOldTick();; t += period)
     {
-        Thread::sleepUntil(t);
+        Kernel::Thread::sleepUntil(t);
         for (int i = 0; i < 5; i++)
         {
             Dummy d;

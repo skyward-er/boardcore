@@ -67,10 +67,10 @@ uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
     Lock<FastMutex> lock(mtxDelayedEvents);
 
     // Delay in system ticks
-    long long delayTicks =
-        static_cast<long long>(delayMs * miosix::TICK_FREQ / 1000);
+    long long delayTicks = static_cast<long long>(delayMs);
 
-    DelayedEvent dev{eventCounter++, ev, topic, getTick() + delayTicks};
+    DelayedEvent dev{eventCounter++, ev, topic,
+                     Kernel::getOldTick() + delayTicks};
     bool added = false;
 
     // Add the new event in the list, ordered by deadline (first = nearest
@@ -141,7 +141,7 @@ void EventBroker::run()
     while (!shouldStop())
     {
         while (delayedEvents.size() > 0 &&
-               delayedEvents.front().deadline <= getTick())
+               delayedEvents.front().deadline <= Kernel::getOldTick())
         {
             // Pop the first element
             DelayedEvent dev = delayedEvents.front();
@@ -156,8 +156,7 @@ void EventBroker::run()
         }
 
         // When to wakeup for the next cycle
-        long long sleepUntil =
-            getTick() + EVENT_BROKER_MIN_DELAY * miosix::TICK_FREQ / 1000;
+        long long sleepUntil = Kernel::getOldTick() + EVENT_BROKER_MIN_DELAY;
 
         if (delayedEvents.size() > 0)
         {
@@ -173,7 +172,7 @@ void EventBroker::run()
             Unlock<FastMutex> unlock(lock);
             StackLogger::getInstance().updateStack(THID_EVT_BROKER);
 
-            Thread::sleepUntil(sleepUntil);
+            Kernel::Thread::sleepUntil(sleepUntil);
         }
     }
 }

@@ -35,7 +35,6 @@
 #include "ActiveObject.h"
 #include "XbeeTestData.h"
 
-using miosix::getTick;
 using std::bind;
 using std::function;
 
@@ -111,22 +110,22 @@ public:
 protected:
     void run() override
     {
-        long long loopStartTs = miosix::getTick();
+        long long loopStartTs = Kernel::getOldTick();
         while (!shouldStop())
         {
-            data.timeSinceLastSend = miosix::getTick() - loopStartTs;
-            loopStartTs            = miosix::getTick();
+            data.timeSinceLastSend = Kernel::getOldTick() - loopStartTs;
+            loopStartTs            = Kernel::getOldTick();
 
             // Create packet
             memcpy(buf, &PACKET_FIRST_INT, sizeof(uint32_t));
             memset32(buf + sizeof(uint32_t), packetCounter++,
                      data.packetSize - sizeof(uint32_t));
 
-            long long sendStartTs = miosix::getTick();
+            long long sendStartTs = Kernel::getOldTick();
 
             bool result = xbee.send(buf, data.packetSize);
 
-            data.timeToSend = miosix::getTick() - sendStartTs;
+            data.timeToSend = Kernel::getOldTick() - sendStartTs;
             data.timestamp  = sendStartTs;
 
             if (result)
@@ -141,7 +140,7 @@ protected:
 
             logger.log(data);
 
-            miosix::Thread::sleepUntil(loopStartTs + interval.getInterval());
+            Kernel::Thread::sleepUntil(loopStartTs + interval.getInterval());
         }
     }
 
@@ -183,11 +182,11 @@ protected:
     {
         while (!shouldStop())
         {
-            long long start = miosix::getTick();
+            long long start = Kernel::getOldTick();
 
             size_t len = xbee.receive(buf, RCV_BUF_SIZE);
 
-            data.lastPacketTimestamp = miosix::getTick();
+            data.lastPacketTimestamp = Kernel::getOldTick();
             data.timestamp           = start;
 
             ++data.rcvCount;
