@@ -43,7 +43,6 @@ constexpr uint32_t configurationsStartOffset =
     vectorZeroOffset +
     6; /*< Nr. bytes from start to the base where
        configuration starts (zero B, Nr. entries, Len_vector, checksum)*/
-constexpr uint32_t waitForWrite = 100;
 namespace Boardcore
 {
 
@@ -132,7 +131,7 @@ bool RegistryFrontend::loadConfiguration()
     uint8_t nrEntries, counter = 0;
     bool success = true;
     configuration.clear();
-    //[8 0s | nr | len | s_c | s_c | s_c | s_c]
+    //[ 0|0|0|0|0|0|0|0 | nr | len | s_c 31-24 | s_c 23-16 | s_c 15-8 | s_c 7-0]
     nrEntries = serializationVector.at(vectorZeroOffset);
     len       = serializationVector.at(vectorZeroOffset + 1);
     savedChecksum |= serializationVector.at(vectorZeroOffset + 2) << 24;
@@ -148,7 +147,6 @@ bool RegistryFrontend::loadConfiguration()
         checksum ^= *iterator << (3 - (counter % 4)) * 8;
         counter++;
     }
-    /*! There is an issue with the checksum!!*/
     if (checksum != savedChecksum)
     {
         return false;
@@ -191,7 +189,8 @@ bool RegistryFrontend::loadConfiguration()
 
 /**
  * @brief Verify if there is an existing entry given its enum entry.
- * @param configurationIndex The configuration entry to verify.
+ * @param configurationIndex The configuration entry ID for which we verify
+ * the entry is configured.
  * @return True if such configuration entry exists in the configuration
  * otherwise False.
  */
@@ -215,16 +214,13 @@ bool RegistryFrontend::isConfigurationEmpty()
 };
 
 /**
- * @brief Get the Serialized bytes vector of the configuration actually
- * saved in the frontend
+ * @brief Updates the Serialized bytes vector of the configuration actually
+ * saved in the frontend with the actual configuration
  *
- * @return std::vector<uint8_t>& The write vector of the configuration
  */
 void RegistryFrontend::updateSerializedConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    /*! We assume one of the 2 try_lock will succeed */
-    /*! BUT LIKE THIS IT IS LOCKED ALL... BLOCKING */
     uint32_t checksum = 0;
     int counter       = 0;
     serializationVector.clear();
@@ -243,7 +239,7 @@ void RegistryFrontend::updateSerializedConfiguration()
         checksum ^= *iterator << (3 - (counter % 4)) * 8;
         counter++;
     }
-    //[8 0s | nr | len | s_c 31-24 | s_c 23-16 | s_c 15-8 | s_c 7-0]
+    //[ 0|0|0|0|0|0|0|0 | nr | len | s_c 31-24 | s_c 23-16 | s_c 15-8 | s_c 7-0]
     /*! Inserts nr. configurations, length vector, checksum and then the count
      * of elements after the 8B zeroed*/
     serializationVector.insert(serializationVector.begin(),

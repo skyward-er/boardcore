@@ -33,8 +33,6 @@ namespace Boardcore
  * @brief Copies the vector to the buffer for write to the backend
  *
  * @param vector The vector to be written to backend
- * @return true If the copy was successful
- * @return false Otherwise
  */
 void RegistryMiddlewareFlash::write(std::vector<uint8_t>& vector)
 {
