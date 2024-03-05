@@ -80,9 +80,7 @@ int main()
                sample.angularSpeedZ);
         printf("magn: %f, %f, %f\n", sample.magneticFieldX,
                sample.magneticFieldY, sample.magneticFieldZ);
-        printf("latitude: %f\n", sample.latitude);
-        printf("longitude: %f\n", sample.longitude);
-        printf("altitude: %f\n", sample.altitude);
+        printf("attitude: %f, %f, %f\n", sample.yaw, sample.pitch, sample.roll);
 
         Thread::sleep(500);
     }

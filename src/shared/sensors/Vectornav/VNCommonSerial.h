@@ -134,6 +134,28 @@ protected:
     uint8_t checkErrorVN(const char *message);
 
     /**
+     * @brief Sends the command to the sensor with the correct checksum added
+     * so '*' symbol is not needed at the end of the string as well as the '$'
+     * at the beginning of the command.
+     *
+     * @param command Command to send.
+     *
+     * @return True if operation succeeded.
+     */
+    bool sendStringCommand(std::string command);
+
+    /**
+     * @brief Receives a command from the VN100 serialInterface->recv() but
+     * swaps the first \n with a \0 to close the message.
+     *
+     * @param command The char array which will be filled with the command.
+     * @param maxLength Maximum length for the command array.
+     *
+     * @return True if operation succeeded.
+     */
+    bool recvStringCommand(char *command, int maxLength);
+
+    /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */

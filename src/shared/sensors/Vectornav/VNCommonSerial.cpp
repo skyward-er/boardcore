@@ -266,4 +266,70 @@ uint8_t VNCommonSerial::checkErrorVN(const char *message)
     return 0;  // No error detected
 }
 
+bool VNCommonSerial::sendStringCommand(std::string command)
+{
+    if (crc == CRCOptions::CRC_ENABLE_8)
+    {
+        char checksum[4];  // 2 hex + \n + \0
+        // I convert the calculated checksum in hex using itoa
+        itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()),
+             checksum, 16);
+        checksum[2] = '\n';
+        checksum[3] = '\0';
+        // I concatenate
+        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
+    }
+    else if (crc == CRCOptions::CRC_ENABLE_16)
+    {
+        char checksum[6];  // 4 hex + \n + \0
+        // I convert the calculated checksum in hex using itoa
+        itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()),
+             checksum, 16);
+        checksum[4] = '\n';
+        checksum[5] = '\0';
+        // I concatenate
+        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
+    }
+    else
+    {
+        // No checksum, i add only 'XX' at the end and not 'XXXX' because
+        // in cas of CRC_NO the enabled crc is 8 bit
+        command = fmt::format("{}{}{}", "$", command, "*XX\n");
+    }
+
+    // I send the final command
+    usart.writeString(command.c_str());
+
+    // Wait some time
+    // TODO dimension the time
+    miosix::Thread::sleep(500);
+
+    return true;
+}
+
+bool VNCommonSerial::recvStringCommand(char *command, int maxLength)
+{
+    // TODO: REMOVE READ-BLOCKING
+    int i = 0;
+    // Read the buffer
+    if (!usart.readBlocking(command, maxLength))
+    {
+        return false;
+    }
+
+    // Iterate until i reach the end or i find \n then i substitute it with a \0
+    while (i < maxLength && command[i] != '\n')
+    {
+        i++;
+    }
+
+    // Terminate the string
+    command[i] = '\0';
+
+    // Assing the length
+    recvStringLength = i - 1;
+
+    return true;
+}
+
 }  // namespace Boardcore

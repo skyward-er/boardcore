@@ -215,30 +215,6 @@ private:
     VN300Data sampleASCII();
 
     /**
-     * @brief Sends the command to the sensor with the correct checksum added
-     * so '*' symbol is not needed at the end of the string as well as the '$'
-     * at the beginning of the command.
-     *
-     * @param command Command to send.
-     *
-     * @return True if operation succeeded.
-     */
-    bool sendStringCommand(std::string command);
-    // TODO: put in common files
-
-    /**
-     * @brief Receives a command from the VN300 serialInterface->recv() but
-     * swaps the first \n with a \0 to close the message.
-     *
-     * @param command The char array which will be filled with the command.
-     * @param maxLength Maximum length for the command array.
-     *
-     * @return True if operation succeeded.
-     */
-    bool recvStringCommand(char* command, int maxLength);
-    // TODO: put in common files
-
-    /**
      * @brief Receives binary data and parse directly into BinaryData struct
      * which has the __attribute__(packed)
      *
