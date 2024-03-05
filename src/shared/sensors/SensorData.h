@@ -332,4 +332,20 @@ struct CurrentData
     }
 };
 
+/**
+ * @brief Structure to handle voltage data.
+ */
+struct VoltageData
+{
+    uint64_t voltageTimestamp = 0;
+    float voltage             = 0;
+
+    static std::string header() { return "timestamp,voltage\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << voltageTimestamp << "," << voltage << "\n";
+    }
+};
+
 }  // namespace Boardcore
