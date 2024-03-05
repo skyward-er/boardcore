@@ -38,7 +38,7 @@ struct InternalADCData
 
     static std::string header()
     {
-        return "timestamp,,voltage_0,voltage_1,voltage_2,voltage_3,voltage_4,"
+        return "timestamp,voltage_0,voltage_1,voltage_2,voltage_3,voltage_4,"
                "voltage_5,voltage_6,voltage_7,voltage_8,voltage_9,voltage_10,"
                "voltage_11,voltage_12,voltage_13,voltage_14,voltage_15,"
                "temperature,vBat,voltage\n";
