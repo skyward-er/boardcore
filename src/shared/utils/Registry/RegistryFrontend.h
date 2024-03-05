@@ -366,16 +366,15 @@ private:
      * enum. This method is internally used both by the public method and from
      * the load.
      * @tparam T The configuration struct datatype
-     * @param configurationIndex The initialized configuration structure to
-     * be set as configuration entry
+     * @param configurationIndex The configuration entry ID
      * @param value The value to be set for the specified configuration
      * entry
      * @return True if it was possible to set the configurationEntry. False
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setInternallyConfigurationUnsafe(ConfigurationId configurationIndex,
-                                          T value)
+    bool setInternallyConfigurationUnsafe(
+        const ConfigurationId configurationIndex, T value)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         /*! In case that the configuration is in an armed state it cannot be
@@ -477,7 +476,8 @@ public:
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
-     * @param configurationIndex The configuration entry to verify.
+     * @param configurationIndex The configuration entry ID for which we verify
+     * the entry is configured.
      * @return True if such configuration entry exists in the configuration
      * otherwise False.
      */
@@ -548,8 +548,7 @@ public:
      * configuration
      *
      * @tparam T The configuration struct datatype
-     * @param configurationIndex The initialized configuration structure to
-     * be set as configuration entry
+     * @param configurationIndex The ID of the configuration entry to set
      * @param value The value to be set for the specified configuration
      * entry
      * @return True if it was possible to set the configurationEntry. False
@@ -620,11 +619,9 @@ public:
     /*! DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE */
 
     /**
-     * @brief Get the Serialized bytes vector of the configuration actually
-     * saved in the frontend
+     * @brief Updates the Serialized bytes vector of the configuration actually
+     * saved in the frontend with the actual configuration
      *
-     * @return WriteBuffer The write buffer wrapping the vector of the
-     * configuration
      */
     void updateSerializedConfiguration();
 
