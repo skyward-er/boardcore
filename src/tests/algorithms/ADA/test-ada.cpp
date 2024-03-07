@@ -24,8 +24,8 @@
 #include <miosix.h>
 #include <scheduler/TaskScheduler.h>
 
-#include "EuRoC-pressure-logs.h"
 #include "ValueFollower.h"
+#include "logs/EuRoC.h"
 
 using namespace miosix;
 using namespace Boardcore;
@@ -85,6 +85,8 @@ int main()
 {
     ada = new ADA(getADAKalmanConfig());
     ada->setReferenceValues(getADAReferenceValues());
+
+    initEuRoCPressureLogs();
 
     printf("Starting, data duration: %f\n", reference.getDataDuration() / 1e6);
 

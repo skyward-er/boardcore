@@ -96,11 +96,6 @@ struct PressureData
 
     static std::string header() { return "timestamp,pressure\n"; }
 
-    PressureData(uint64_t timestamp, float pascal)
-        : pressureTimestamp(timestamp), pressure(Pascal(pascal))
-    {
-    }
-
     void print(std::ostream& os) const
     {
         os << pressureTimestamp << "," << pressure << "\n";
