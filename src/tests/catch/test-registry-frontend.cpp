@@ -24,11 +24,13 @@
 #endif
 #include <stdint.h>
 #include <utils/Registry/RegistryFrontend.h>
-#include <utils/Registry/RegistryMiddleware.h>
+/*! TODO: Re-add it when the middleware is integrated again */
+// #include <utils/Registry/RegistryMiddleware.h>
 
 #include <catch2/catch.hpp>
 #include <utils/Registry/RegistryFrontend.cpp>
-#include <utils/Registry/RegistryMiddleware.cpp>
+/*! TODO: Re-add it when the middleware is integrated again */
+// #include <utils/Registry/RegistryMiddleware.cpp>
 
 using namespace Boardcore;
 
