@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <stdint.h>
 #include <utils/Debug.h>
 #include <utils/Registry/TypeStructures.h>
@@ -32,7 +33,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "RegistryMiddleware.h"
+/*! TODO: Re-add it when the middleware is integrated again */
+// #include "RegistryMiddleware.h"
 #include "TypeStructures.h"
 
 namespace Boardcore
@@ -359,7 +361,9 @@ private:
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
     std::vector<uint8_t> elementVector;
-    RegistryMiddlewareFlash middleware;
+    /*! TODO: Re-add it when the middleware is integrated again */
+    // RegistryMiddlewareFlash middleware;
+    PrintLogger logger = Logging::getLogger("registry-frontend");
 
     /**
      * @brief Sets the value for the configuration entry with the specified
@@ -391,6 +395,7 @@ private:
                 TRACE(
                     "Registry - setConfigurationUnsafe - Could not insert the "
                     "configuration entry");
+                LOG_ERR(logger, "Could not insert the entry");
                 return false;
             }
             return true;
@@ -426,6 +431,7 @@ private:
             TRACE(
                 "Registry - setConfiguration - Could not insert the "
                 "configuration entry");
+            LOG_ERR(logger, "Could not insert the entry");
             return false;
         }
         saveConfiguration();

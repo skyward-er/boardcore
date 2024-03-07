@@ -56,7 +56,8 @@ RegistryFrontend::RegistryFrontend()
     elementVector.reserve(nrBytesEntryId + nrBytesPerEntry + sizeof(TypeUnion));
     configuration.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
     // middleware.init(); /*!< Initializes with the backend */
-    middleware.start();
+    /*! TODO: Re-add it when the middleware is integrated again */
+    // middleware.start();
     /**
      * TODO: The registry will load from the backend the saved configuration
      * and initialize configuration, after initialize properly the middleware
@@ -149,6 +150,7 @@ bool RegistryFrontend::loadConfiguration()
     }
     if (checksum != savedChecksum)
     {
+        LOG_ERR(logger, "Corrupted saved configuration");
         return false;
     }
     auto it = serializationVector.begin() + configurationsStartOffset;
@@ -266,7 +268,8 @@ void RegistryFrontend::saveConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     updateSerializedConfiguration();
-    middleware.write(serializationVector);
+    /*! TODO: Re-add it when the middleware is integrated again */
+    // middleware.write(serializationVector);
 }
 
 /**
@@ -279,7 +282,8 @@ void RegistryFrontend::clear()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     serializationVector.clear();
     configuration.clear();
-    middleware.clear();
+    /*! TODO: Re-add it when the middleware is integrated again */
+    // middleware.clear();
 }
 
 };  // namespace Boardcore
