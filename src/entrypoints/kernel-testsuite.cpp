@@ -265,9 +265,9 @@ int main()
                 process_test_process_ret();
                 process_test_file_concurrency();
                 ledOff();
-#else   //#ifdef WITH_PROCESSES
+#else   // #ifdef WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
-#endif  //#ifdef WITH_PROCESSES
+#endif  // #ifdef WITH_PROCESSES
                 break;
             case 'y':
                 ledOn();
@@ -337,9 +337,9 @@ int main()
                 mpuTest9();
                 mpuTest10();
                 ProcessPool::instance().deallocate(m);
-#else   //#ifdef WITH_PROCESSES
+#else   // #ifdef WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
-#endif  //#ifdef WITH_PROCESSES
+#endif  // #ifdef WITH_PROCESSES
                 ledOff();
                 Thread::setPriority(0);
                 break;

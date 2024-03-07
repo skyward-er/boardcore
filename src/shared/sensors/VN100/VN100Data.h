@@ -45,8 +45,8 @@ struct VN100Data : public QuaternionData,
      */
     // cppcheck-suppress uninitDerivedMemberVar
     VN100Data()
-        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
-                                                                  0.0},
+        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0},
+          MagnetometerData{0, 0.0, 0.0, 0.0},
           AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
           GyroscopeData{0, Degree(0), Degree(0), Degree(0)},

@@ -33,7 +33,7 @@ using miosix::Gpio;
 using miosix::Thread;
 
 // Protocol config
-//#define DATA_LEN 16384
+// #define DATA_LEN 16384
 
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;

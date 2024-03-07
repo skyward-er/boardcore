@@ -34,9 +34,8 @@ struct BMX160Data : public AccelerometerData,
     BMX160Data()
         : AccelerometerData{0, MeterPerSecondSquared(0),
                             MeterPerSecondSquared(0), MeterPerSecondSquared(0)},
-          GyroscopeData{0, Degree(0), Degree(0), Degree(0)}, MagnetometerData{
-                                                                 0, 0.0, 0.0,
-                                                                 0.0}
+          GyroscopeData{0, Degree(0), Degree(0), Degree(0)},
+          MagnetometerData{0, 0.0, 0.0, 0.0}
     {
     }
 
