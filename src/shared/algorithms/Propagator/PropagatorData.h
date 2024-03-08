@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <algorithms/NAS/NASState.h>
+
+#include <Eigen/Core>
 #include <ostream>
 
 namespace Boardcore
@@ -31,10 +34,10 @@ struct PropagatorState
 {
     uint64_t timestamp;
     uint32_t nPropagations;  ///< Predictions from last received NAS state
-    Vector3f x_prop;         ///< Position propagation state ENU [m]
-    Vector3f v_prop;         ///< Speed propagation state ENU [m]
-    Vector4f q_prop;         ///< Quaternion propagation (scalar last)
-    Vector3f b_prop;         ///< Gyroscope bias propagation
+    Eigen::Vector3f x_prop;  ///< Position propagation state ENU [m]
+    Eigen::Vector3f v_prop;  ///< Speed propagation state ENU [m]
+    Eigen::Vector4f q_prop;  ///< Quaternion propagation (scalar last)
+    Eigen::Vector3f b_prop;  ///< Gyroscope bias propagation
 
     PropagatorState()
         : timestamp(0), nPropagations(0), x_prop(0, 0, 0), v_prop(0, 0, 0),
@@ -42,8 +45,9 @@ struct PropagatorState
     {
     }
 
-    PropagatorState(uint64_t timestamp, uint32_t nPropagations, Vector3f x_prop,
-                    Vector3f v_prop, Vector4f q_prop, Vector3f b_prop)
+    PropagatorState(uint64_t timestamp, uint32_t nPropagations,
+                    Eigen::Vector3f x_prop, Eigen::Vector3f v_prop,
+                    Eigen::Vector4f q_prop, Eigen::Vector3f b_prop)
         : timestamp(timestamp), nPropagations(nPropagations), x_prop(x_prop),
           v_prop(v_prop), q_prop(q_prop), b_prop(b_prop)
     {
@@ -53,10 +57,11 @@ struct PropagatorState
                     NASState nasState)
         : timestamp(timestamp), nPropagations(nPropagations)
     {
-        x_prop = Vector3f(nasState.n, nasState.e, nasState.d);
-        v_prop = Vector3f(nasState.vn, nasState.ve, nasState.vd);
-        q_prop = Vector3f(nasState.qx, nasState.qy, nasState.qz, nasState.qw);
-        b_prop = Vector3f(nasState.bx, nasState.by, nasState.bz);
+        x_prop = Eigen::Vector3f(nasState.n, nasState.e, nasState.d);
+        v_prop = Eigen::Vector3f(nasState.vn, nasState.ve, nasState.vd);
+        q_prop =
+            Eigen::Vector4f(nasState.qx, nasState.qy, nasState.qz, nasState.qw);
+        b_prop = Eigen::Vector3f(nasState.bx, nasState.by, nasState.bz);
     }
 
     static std::string header() { return "timestamp,nPropagations\n"; }
@@ -71,6 +76,18 @@ struct PropagatorState
         Eigen::Matrix<float, 13, 1> nasState;
         nasState << x_prop, v_prop, q_prop, b_prop;
         return NASState(timestamp, nasState);
+    }
+
+    bool operator==(const PropagatorState& other) const
+    {
+        return nPropagations == other.nPropagations && x_prop == other.x_prop &&
+               v_prop == other.v_prop && q_prop == other.q_prop &&
+               b_prop == other.b_prop;
+    }
+
+    bool operator!=(const PropagatorState& other) const
+    {
+        return !(*this == other);
     }
 };
 
