@@ -105,6 +105,17 @@ public:
      */
     bool testState(StateHandler testState) { return this->state == testState; }
 
+    /**
+     * @brief Forces the state machine to the specified state.
+     *
+     * @param newState New state.
+     */
+    void forceState(StateHandler newState)
+    {
+        this->state = newState;
+        this->temp  = newState;
+    }
+
     // Internal pointers representing the state o the HSM. If state == temp,
     // then "the configuration is stable".
     StateHandler state;
