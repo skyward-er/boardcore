@@ -114,9 +114,9 @@ frontEnd.clear();
 ### How to add new structs
 The correct flow to add new types/configuration entries is:
 
-- **TypeStructure.h**: If not exist, create a new struct for the type that we will use for the configuration entry value. The structures in OBSW will refer to these structures. 
+- `TypeStructure.h`: If not exist, create a new struct for the type that we will use for the configuration entry value. The structures in OBSW will refer to these structures. 
 
-- **RegistryFrontend.h**: Remember to update:
+- `RegistryFrontend.h`: Remember to update:
 The type enum; 
 The TypeUnion fields;
 Add in EntryStructsUnion the getFromUnion, setUnion and getFromSerializedVector overloads;
@@ -177,60 +177,61 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 
 The unsafe (type-unsafe) methods does not use the proper data structure for the set and get but instead just pass a parameter value for a specific registry entry uint32_t index identifier (could be a casted enumerator from OBSW structures)
 
-- **setConfiguration[Unsafe]**:  A setter method is in need to ensure R1. This method should allow 
+- `setConfiguration[Unsafe]`:  A setter method is in need to ensure R1. This method should allow 
     insert a value for a specific configuration entry while guarantee the different data types for the values (R3).
     
-- **getConfiguration[Unsafe]**:  A getter method is in need to ensure the visibility of the configuration. 
+- `getConfiguration[Unsafe]`:  A getter method is in need to ensure the visibility of the configuration. 
     Such method should get a value for a specified configuration entry and changes the value to passed by reference value parameter. It does check that the type is consistent with the saved one.
 
-- **getOrSetDefaultConfiguration[Unsafe]**: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
+- `getOrSetDefaultConfiguration[Unsafe]`: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
 
- - **arm**:  An "arm" method which guarantees no memory allocations and no changes to the configuration are in place
+ - `arm`:  An "arm" method which guarantees no memory allocations and no changes to the configuration are in place
     until a "disarm" method. It is an important functionality to ensure a "safe" memory configuration during flight.
 
- - **disarm**: A "disarm" method, to disable the stable and "safe" configuration mode of the registry to allow again 
+ - `disarm`: A "disarm" method, to disable the stable and "safe" configuration mode of the registry to allow again 
     allocations and settings on the configuration.
 
- - **isConfigurationEmpty**: A method to know if there is an existing configuration or if it is empty
+ - `isConfigurationEmpty`: A method to know if there is an existing configuration or if it is empty
 
-- **configuredEntries**: A method which returns the already existing entries of the configuration as a set.
+- `configuredEntries`: A method which returns the already existing entries of the configuration as a set.
 
-- **load**: Loads from the backend the configuration. If no backend, it loads it from its own vector. 
+- `load`: Loads from the backend the configuration. If no backend, it loads it from its own vector. 
 
-- **save**: Saves the configuration to the backend.
+- `save`: Saves the configuration to the backend.
 
-- **clear**: Clears the configuration both in frontend and backend components, starting with an empty configuration.
+- `clear`: Clears the configuration both in frontend and backend components, starting with an empty configuration.
 
-- **visitConfiguration**: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
+- `visitConfiguration`: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
 
 ### Data structures
 The data structures are managed in 2 main header files.
 #### TypeStructures.h
 Type structures have:
 
-- **RootTypeStructure**: A root type, with just 2 template attributes: value and index
+- `RootTypeStructure`: A root type, with just 2 template attributes: value and index
 
-- **(Float|UInt32|...)Type**: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
+- `(Float|UInt32|...)Type`: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
 
 #### RegistryFrontend.h
 
-- **TypeUnion**: The union type for saving the values of the different configuration entries
+- `TypeUnion`: The union type for saving the values of the different configuration entries
 
-- **EntryStructsUnion**: The structure actually saved into the configuration, with the value and type attributes. Also, it does expose all the useful operations for get/set the value from/to union, append to the serialize vector a value, get a value from the serialized vector.
+- `EntryStructsUnion`: The structure actually saved into the configuration, with the value and type attributes. Also, it does expose all the useful operations for get/set the value from/to union, append to the serialize vector a value, get a value from the serialized vector.
 
 #### Data saving serialization
 serializationVector is a vector that after getSerializedVector will contain:
-||||||||
-|:-----|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
-|8B zero| Nr. entries | Length vector | ID_0 | TypeID_0 | Value_0| ... |
+|||||||||
+|:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
+|8B zero| Nr. entries | Length vector | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
 
 The vector will contain only the set configurations. After the header, there will be all the configured entries with configuration ID, Type ID, Value(s).
 
 In case of multiple values, they are one after the other 
-e.g.: 
+
+e.g. for a Coordinate: 
 |||||
 |:-----|:--------:|:--------:|--------:|
-| ID: 2 | TypeID: 1 | Val: 45.50109 | Val: 9.15633 | 
+| ID: 2 | TypeID: 1 | Val_1: 45.50109 | Val_2: 9.15633 | 
 
 Where TypeID in this example is a coordinates type and therefore 45.50109 is the latitude and 9.15633 the longitude
 
@@ -243,8 +244,8 @@ Another part of the Registry is the middleware which decouples the registry fron
 This component avoid this by using a buffer for the write to backend and another, at disposal for writes from the front-end. It is an active object which waits for new data to write it to backend.
 
 ### Methods
-- **write**: Writes to the backend the given configuration. The real write is done by the run() method executed by the
+- `write`: Writes to the backend the given configuration. The real write is done by the run() method executed by the
 registry middleware's thread, while in reality write just writes to the buffer the serialized configuration that will
 be then written by the thread.
-- **load**: Loads into the vector the saved configuration from the backend. Returns false if none is saved.
-- **clear**: Clears/deletes the configuration in buffers and underlying backend
+- `load`: Loads into the vector the saved configuration from the backend. Returns false if none is saved.
+- `clear`: Clears/deletes the configuration in buffers and underlying backend
