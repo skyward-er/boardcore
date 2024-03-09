@@ -339,8 +339,8 @@ private:
 
     int tempCounter = 0;
 
-    // Sometimes the buffer gets over 1000
-    static constexpr unsigned int FIFO_BUF_SIZE = 1100;
+    // Sometimes the buffer gets over 1000 and the fifo's size assertion fails.
+    static constexpr unsigned int FIFO_BUF_SIZE = 2100;
 
     /**
      * Sometimes the sensor pulls down the interrupt pin while reading data.
