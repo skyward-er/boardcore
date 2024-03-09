@@ -1,3 +1,24 @@
+/* Copyright (c) 2024 Skyward Experimental Rocketry
+ * Author: Valerio Flamminii
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #include <miosix.h>
 #include <utils/ClockUtils.h>
 
@@ -6,17 +27,18 @@
 using namespace miosix;
 using namespace Boardcore;
 
-
-/*  model of flash memory on compute unit: MX25R3235FM1IL0 4MB
+/* driver for MX25R3235FM1IL0 flash memory chip
+ *  model of flash memory on compute unit: MX25R3235FM1IL0 4MB
  *   FLASH memory space organisation:
  *   - number of byte in the memory: 4.194.304 >> about 4 MB
  *   - "pages"   of 256 Byte each   - number of pages:   16.384
  *   - "sector"  of about 4  KByte  - number of sector:   1.024
  *   - "block32" of about 32 KByte  - number of block32:    128
  *   - "block64" of about 64 KByte  - number of block64:     64
-*/
+ */
 
-namespace FlashMemory {
+namespace FlashMemory
+{
 
 static const uint32_t PAGES_PER_SECTOR    = 16;
 static const uint32_t SECTORS_PER_BLOCK32 = 8;
@@ -36,129 +58,129 @@ static const uint32_t BLOCK64_SIZE = BLOCK32_SIZE * 2;
 // memory size in byte
 static const uint32_t MEMORY_SIZE = BLOCK64_SIZE * BLOCK64_NUM;  // about 4 MB
 
-};
-
+};  // namespace FlashMemory
 
 // QUADSPI peripheral utility-stuff
-namespace QSPI {
+namespace QSPI
+{
 
-    // enable/disable quadspi
-    void enable(); 
-    void disable(); 
-    
-    // init peripheral clock and GPIO 
-    void init(); 
+// enable/disable quadspi
+void enable();
+void disable();
 
-    // abort any operation and reset configuration register (CCR)
-    void abort_reset(); 
+// init peripheral clock and GPIO
+void init();
 
-    // wait till the current operation is ended
-    void waitBusy(); 
-    
-    // wait till all the expected bytes have been transferred 
-    void waitTransfer(); 
+// abort any operation and reset configuration register (CCR)
+void abort_reset();
 
-}
+// wait till the current operation is ended
+void waitBusy();
 
+// wait till all the expected bytes have been transferred
+void waitTransfer();
 
-class qspi_flash {
+}  // namespace QSPI
+
+class qspi_flash
+{
 
 public:
-
-    // constructor 
+    // constructor
     qspi_flash();
 
-    // init qspi peripheral and check ID flash 
-    bool init();
-
-    // enable writing  
-    void write_enable();
-
-    // disable writing 
-    void write_disable(); 
+    // init qspi peripheral which is connected to the flash
+    void init();
 
     // read unique device ID
-    uint32_t readID(); 
+    uint32_t readID();
 
-    // erase the entire memory chip - THIS OPERATION MIGHT TAKE A WHILE!!  
-    bool chip_erase(); 
+    // erase the entire memory chip - THIS OPERATION MIGHT TAKE A WHILE!!
+    bool chip_erase();
 
-    // erase the sector which contains the address (24 bit) specified 
-    bool sector_erase(uint32_t address); 
-
-    // erase a block (32K) which contains the address (24 bit) specified
-    bool block32_erase(uint32_t address); 
+    // erase the sector which contains the address (24 bit) specified
+    bool sector_erase(uint32_t address);
 
     // erase a block (32K) which contains the address (24 bit) specified
-    bool block64_erase(uint32_t address); 
+    bool block32_erase(uint32_t address);
 
-    // read a byte at a specific address (24 bit) in memory  
-    uint8_t read_byte(uint32_t address); 
+    // erase a block (32K) which contains the address (24 bit) specified
+    bool block64_erase(uint32_t address);
 
-    // write a byte at a specific address (24 bit) in memory 
-    bool byte_program(uint8_t data, uint32_t address); 
+    // read a byte at a specific address (24 bit) in memory
+    uint8_t read_byte(uint32_t address);
 
-    // ATTENTION it may take a while! - makes the flash return to power-on default status. 
-    void software_reset(); 
+    // write a byte at a specific address (24 bit) in memory
+    bool byte_program(uint8_t data, uint32_t address);
 
-    // check if flash is executing some operation (program/erase or write registers)
+    // ATTENTION it may take a while! - makes the flash return to power-on
+    // default status.
+    void software_reset();
+
+    // check last erase operation result
+    bool check_erase();
+
+    // check last program operation result
+    bool check_program();
+
+private:
+    // enable writing
+    void write_enable();
+
+    // disable writing
+    void write_disable();
+
+    // wait till flash has executed the current operation
+    void waitProgress();
+
+    // check if flash is executing some operation (program/erase or write
+    // registers)
     bool isInProgress();
 
-    // read security register of the flash 
+    // read security register of the flash
     uint8_t read_security_reg();
 
-    // read status register of the flash memory 
+    // read status register of the flash memory
     uint8_t read_status_reg();
 
-private: 
-
-    // check last erase operation result 
-    bool check_erase(); 
-
-    // check last program operation result 
-    bool check_program();     
-
-    // wait till flash has executed the current operation 
-    void waitProgress(); 
-    
-    // most important flash memory commands 
+    // most important flash memory commands
     enum Commands
     {
-        // read unique ID of the memory 
+        // read unique ID of the memory
         READ_ID = 0x9F,
 
-        // write enable, needs to be executed before modify any data 
-        WRITE_ENABLE  = 0x06, 
-        
+        // write enable, needs to be executed before modify any data
+        WRITE_ENABLE = 0x06,
+
         // write disable
-        WRITE_DISABLE = 0x04, 
+        WRITE_DISABLE = 0x04,
 
-        // read status register 
-        READ_STATUS_REG = 0x05, 
+        // read status register
+        READ_STATUS_REG = 0x05,
 
-        // write status register 
-		WRITE_STATUS_REG = 0x01, 
+        // write status register
+        WRITE_STATUS_REG = 0x01,
 
         // read secutity register
-        READ_SECURITY_REG = 0x2B, 
+        READ_SECURITY_REG = 0x2B,
 
-        // read configuration register 
+        // read configuration register
         READ_CONFIG_REGISTER = 0x15,
 
-        // read data from memory  
+        // read data from memory
         READ = 0x03,
 
         // write a page on memory.
         PAGE_PROGRAM = 0x02,
 
-        // erase a specific sector of the memory 
-        SECTOR_ERASE = 0x20, 
+        // erase a specific sector of the memory
+        SECTOR_ERASE = 0x20,
 
-        // erase a specific block of 32KB of the memory 
-        BLOCK_32_ERASE = 0x52, 
+        // erase a specific block of 32KB of the memory
+        BLOCK_32_ERASE = 0x52,
 
-        // erase a specific block of 64KB of the memory 
-        BLOCK_64_ERASE = 0xD8, 
+        // erase a specific block of 64KB of the memory
+        BLOCK_64_ERASE = 0xD8,
 
         // erase all data on the chip - THIS COULD TAKE A LONG TIME !
         ERASE_CHIP = 0xC7,
@@ -169,5 +191,4 @@ private:
         // reset memory, reset enable command should be executed first
         RESET_MEMORY = 0x99
     };
-
 };
