@@ -19,16 +19,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-image: registry.skywarder.eu/avn/swd/skyward-boardcore/miosix:latest
+image: registry.skywarder.eu/avn/swd/skyward-boardcore/miosix:dev-ci
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
+  - docker
   - lint
   - build
   - test
   - documentation
+
+# Stage docker
+
+docker:
+  stage: docker
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/miosix:${CI_COMMIT_BRANCH}"
+  rules:
+    - changes:
+        - Dockerfile
+    - if: $BUILD_DOCKER == "true"
 
 # Stage lint
 
@@ -79,8 +97,6 @@ pages:
   stage: documentation
   only:
     - main
-  before_script:
-    - apt update && apt install -y doxygen
   script:
     - doxygen doc/Doxyfile
     - mv doc/output/html public
