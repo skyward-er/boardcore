@@ -41,16 +41,12 @@ stages:
 
 cppcheck:
   stage: lint
-  tags:
-    - miosix
   script:
     - cppcheck --version
     - ./scripts/linter.py --cppcheck src
 
 format:
   stage: lint
-  tags:
-    - miosix
   script:
     - clang-tidy --version
     - clang-format --version
@@ -58,16 +54,12 @@ format:
 
 copyright:
   stage: lint
-  tags:
-    - miosix
   script:
     - /usr/bin/python3 --version
     - ./scripts/linter.py --copyright src
 
 find:
   stage: lint
-  tags:
-    - miosix
   script:
     - /usr/bin/python3 --version
     - ./scripts/linter.py --find src
@@ -112,7 +104,6 @@ pages:
   stage: documentation
   only:
     - main
-    - dev-ci
   script:
     - doxygen --version
     - doxygen doc/Doxyfile
