@@ -222,7 +222,13 @@ Type structures have:
 serializationVector is a vector that after getSerializedVector will contain:
 |||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
-|8B zero| Nr. entries | Length vector | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
+|8B zero| 4B Length vector | 4B Nr. entries | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
+
+Header closeup (0bit as rightmost one / big endian):
+
+|||||||||||||||||||||
+|:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
+|0|0|0|0|0|0|0|0|v_len 31-24|v_len 23-16|v_len 15-8|v_len 7-0|nr_en 31-24|nr_en 23-16|nr_en 15-8|nr_en 7-0|crc 31-24|crc 23-16|crc 15-8|crc 7-0|
 
 The vector will contain only the set configurations. After the header, there will be all the configured entries with configuration ID, Type ID, Value(s).
 
