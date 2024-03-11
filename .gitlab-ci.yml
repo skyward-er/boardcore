@@ -51,10 +51,6 @@ lint:
 
 build-debug:
   stage: build
-  cache:
-    - key: "ninja_cache-debug"
-      paths:
-        - build
   script:
     - cmake --version
     - ccache --version
@@ -63,10 +59,6 @@ build-debug:
 
 build-release:
   stage: build
-  cache:
-    - key: "ninja_cache-release"
-      paths:
-        - build
   script:
     - cmake --version
     - ccache --version
