@@ -27,6 +27,10 @@ default:
   tags:
     - docker
 
+cache:
+  paths:
+    - .cache/ccache
+
 stages:
   - lint
   - build
