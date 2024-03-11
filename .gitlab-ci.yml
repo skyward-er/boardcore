@@ -39,16 +39,37 @@ stages:
 
 # Stage lint
 
-lint:
+cppcheck:
   stage: lint
+  tags:
+    - miosix
   script:
-    - /usr/bin/python3 --version
     - cppcheck --version
+    - ./scripts/linter.py --cppcheck src
+
+format:
+  stage: lint
+  tags:
+    - miosix
+  script:
     - clang-tidy --version
     - clang-format --version
-    - ./scripts/linter.py --cppcheck src
     - ./scripts/linter.py --format src
+
+copyright:
+  stage: lint
+  tags:
+    - miosix
+  script:
+    - /usr/bin/python3 --version
     - ./scripts/linter.py --copyright src
+
+find:
+  stage: lint
+  tags:
+    - miosix
+  script:
+    - /usr/bin/python3 --version
     - ./scripts/linter.py --find src
 
 # Stage build
