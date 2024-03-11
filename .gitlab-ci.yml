@@ -55,6 +55,7 @@ lint:
 
 build-debug:
   stage: build
+  resource_group: build
   script:
     - cmake --version
     - ccache --version
@@ -63,6 +64,7 @@ build-debug:
 
 build-release:
   stage: build
+  resource_group: build
   script:
     - cmake --version
     - ccache --version
