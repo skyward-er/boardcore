@@ -308,6 +308,9 @@ void RegistryFrontend::updateSerializedConfiguration()
 void RegistryFrontend::saveConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    /*! In case the registry is armed inhibit the saving */
+    if (isArmed)
+        return;
     updateSerializedConfiguration();
     /*! TODO: Re-add it when the middleware is integrated again */
     // middleware.write(serializationVector);
