@@ -22,33 +22,21 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
+default:
+  image: registry.skywarder.eu/avn/swd/miosix-docker:latest
+  tags:
+    - docker
+
 stages:
-  - docker
   - lint
   - build
   - test
   - documentation
 
-# Stage docker
-
-docker:
-  stage: docker
-  tags:
-    - docker-builds
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:latest
-  rules:
-    - changes:
-        - Dockerfile
-
 # Stage lint
 
 lint:
   stage: lint
-  tags:
-    - miosix
   script:
     - /usr/bin/python3 --version
     - cppcheck --version
@@ -63,8 +51,6 @@ lint:
 
 build-debug:
   stage: build
-  tags:
-    - miosix
   cache:
     - key: "ninja_cache-debug"
       paths:
@@ -77,8 +63,6 @@ build-debug:
 
 build-release:
   stage: build
-  tags:
-    - miosix
   cache:
     - key: "ninja_cache-release"
       paths:
@@ -107,10 +91,9 @@ test:
 
 pages:
   stage: documentation
-  tags:
-    - doxygen
   only:
     - main
+    - dev-ci
   script:
     - doxygen --version
     - doxygen doc/Doxyfile
