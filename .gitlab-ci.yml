@@ -19,12 +19,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-image: registry.skywarder.eu/avn/swd/skyward-boardcore/miosix:main
-
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  FF_USE_FASTZIP: "true"
-  CACHE_COMPRESSION_LEVEL: "fastest"
 
 stages:
   - docker
@@ -39,20 +35,10 @@ docker:
   stage: docker
   tags:
     - docker-builds
-  image:
-    name: gcr.io/kaniko-project/executor:v1.14.0-debug
-    entrypoint: [""]
   script:
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/miosix:${CI_COMMIT_BRANCH}"
-      --destination "${CI_REGISTRY_IMAGE}/miosix:latest"
-  rules:
-    - if: $BUILD_DOCKER == "true"
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      changes:
-        - Dockerfile
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:latest
 
 # Stage lint
 
