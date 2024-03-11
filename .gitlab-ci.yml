@@ -37,6 +37,8 @@ stages:
 
 docker:
   stage: docker
+  tags:
+    - docker-builds
   image:
     name: gcr.io/kaniko-project/executor:v1.14.0-debug
     entrypoint: [""]
@@ -66,6 +68,8 @@ lint:
 
 build-debug:
   stage: build
+  tags:
+    - miosix
   cache:
     - key: "ninja_cache-debug"
       paths:
@@ -75,6 +79,8 @@ build-debug:
 
 build-release:
   stage: build
+  tags:
+    - miosix
   cache:
     - key: "ninja_cache-release"
       paths:
@@ -99,6 +105,8 @@ test:
 
 pages:
   stage: documentation
+  tags:
+    - doxygen
   only:
     - main
   script:

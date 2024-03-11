@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM gitlab/gitlab-runner:latest
 
 # Configure timezone
 ENV TZ=Europe/Rome
