@@ -1,5 +1,5 @@
-# Copyright (c) 2021 Skyward Experimental Rocketry
-# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio, Damiano Amatruda
+# Copyright (c) 2023 Skyward Experimental Rocketry
+# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio, Damiano Amatruda, Giacomo Caironi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,49 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+image: registry.skywarder.eu/avn/swd/skyward-boardcore/miosix:latest
+
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
+  - lint
   - build
   - test
-  - lint
   - documentation
+
+# Stage lint
+
+lint:
+  stage: lint
+  script:
+    - ./scripts/linter.py --cppcheck src
+    - ./scripts/linter.py --format src
+    - ./scripts/linter.py --copyright src
+    - ./scripts/linter.py --find src
 
 # Stage build
 
-release:
+build-debug:
   stage: build
-  tags:
-    - miosix
-  script:
-    - ./sbs
-
-debug:
-  stage: build
-  tags:
-    - miosix
+  cache:
+    - key: "ninja_cache-debug"
+      paths:
+        - build
   script:
     - ./sbs --debug
 
+build-release:
+  stage: build
+  cache:
+    - key: "ninja_cache-release"
+      paths:
+        - build
+  script:
+    - ./sbs
+
 logdecoder:
   stage: build
-  tags:
-    - miosix
   script:
     - cd scripts/logdecoder
     - make
@@ -56,40 +70,8 @@ logdecoder:
 
 test:
   stage: test
-  tags:
-    - miosix
   script:
     - ./sbs --test catch-tests-boardcore
-
-# Stage lint
-
-cppcheck:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --cppcheck src
-
-format:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --format src
-
-copyright:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --copyright src
-
-find:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --find src
 
 # Stage documentation
 
@@ -97,8 +79,8 @@ pages:
   stage: documentation
   only:
     - main
-  tags:
-    - doxygen
+  before_script:
+    - apt update && apt install -y doxygen
   script:
     - doxygen doc/Doxyfile
     - mv doc/output/html public
