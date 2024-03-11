@@ -15,8 +15,10 @@ RUN apt-get install -y ninja-build
 RUN apt-get install -y ccache
 RUN apt-get install -y clang-tidy
 RUN apt-get install -y clang-format
-RUN apt-get install -y cppcheck
 RUN apt-get install -y doxygen
+
+# RUN apt-get install -y cppcheck
+RUN git clone --depth 1 --branch 2.7 https://github.com/danmar/cppcheck.git && cd cppcheck && make install FILESDIR=/usr/share/cppcheck
 
 # Setup Miosix
 ADD https://miosix.org/toolchain/MiosixToolchainInstaller.run MiosixToolchainInstaller.run
