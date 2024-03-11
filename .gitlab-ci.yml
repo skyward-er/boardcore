@@ -50,6 +50,10 @@ lint:
   tags:
     - miosix
   script:
+    - /usr/bin/python3 --version
+    - cppcheck --version
+    - clang-tidy --version
+    - clang-format --version
     - ./scripts/linter.py --cppcheck src
     - ./scripts/linter.py --format src
     - ./scripts/linter.py --copyright src
@@ -66,6 +70,9 @@ build-debug:
       paths:
         - build
   script:
+    - cmake --version
+    - ccache --version
+    - ninja --version
     - ./sbs --debug
 
 build-release:
@@ -77,11 +84,15 @@ build-release:
       paths:
         - build
   script:
+    - cmake --version
+    - ccache --version
+    - ninja --version
     - ./sbs
 
 logdecoder:
   stage: build
   script:
+    - g++ --version
     - cd scripts/logdecoder
     - make
 
@@ -101,6 +112,7 @@ pages:
   only:
     - main
   script:
+    - doxygen --version
     - doxygen doc/Doxyfile
     - mv doc/output/html public
   artifacts:

@@ -20,6 +20,7 @@ RUN apt-get install -y doxygen
 # Fix version of cmake
 RUN git clone --depth 1 --branch v3.28.0 https://gitlab.kitware.com/cmake/cmake.git
 RUN cd cmake && ./bootstrap && make install
+RUN rm -rf cmake
 
 # Fix version of clang-format
 RUN wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
@@ -30,6 +31,7 @@ RUN ln -s /usr/bin/clang-format-14 /usr/bin/clang-format
 # Fix version of cppcheck
 RUN git clone --depth 1 --branch 2.7 https://github.com/danmar/cppcheck.git
 RUN cd cppcheck && make install FILESDIR=/usr/share/cppcheck
+RUN rm -rf cppcheck
 
 # Setup Miosix
 ADD https://miosix.org/toolchain/MiosixToolchainInstaller.run MiosixToolchainInstaller.run
