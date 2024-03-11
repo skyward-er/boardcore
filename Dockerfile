@@ -13,6 +13,7 @@ RUN apt-get install -y build-essential
 RUN apt-get install -y cmake 
 RUN apt-get install -y ninja-build 
 RUN apt-get install -y ccache
+RUN apt-get install -y clang-tidy
 RUN apt-get install -y clang-format
 RUN apt-get install -y cppcheck
 RUN apt-get install -y doxygen
