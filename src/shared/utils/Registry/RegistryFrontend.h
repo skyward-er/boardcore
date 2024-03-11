@@ -438,6 +438,13 @@ private:
         return success;
     }
 
+    /**
+     * @brief Updates the Serialized bytes vector of the configuration actually
+     * saved in the frontend with the actual configuration
+     *
+     */
+    void updateSerializedConfiguration();
+
 public:
     std::recursive_mutex mutexForRegistry;
 
@@ -464,21 +471,6 @@ public:
      */
     void visitConfiguration(
         std::function<void(ConfigurationId, EntryStructsUnion&)> callback);
-
-    /**
-     * @brief Loads from the backend the configuration
-     * @return True if the configuration exists in memory and is not
-     * corrupted, False if not.
-     */
-    bool loadConfiguration();
-
-    /**
-     * @brief Saves the configuration to the backend
-     *
-     * @return true If the saving was successful
-     * @return false Otherwise
-     */
-    void saveConfiguration();
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
@@ -625,11 +617,22 @@ public:
     /*! DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE */
 
     /**
-     * @brief Updates the Serialized bytes vector of the configuration actually
-     * saved in the frontend with the actual configuration
-     *
+     * @brief Loads from the backend the configuration
+     * @return True if the configuration exists in memory and is not
+     * corrupted, False if not.
      */
-    void updateSerializedConfiguration();
+    bool loadConfiguration();
+
+    /**
+     * @brief Saves the configuration to the backend
+     *
+     * @attention: The save will be inhibited in case of "armed" state in order
+     * to avoid unwanted allocations to the serializationVector during flight.
+     *
+     * @return true If the saving was successful
+     * @return false Otherwise
+     */
+    void saveConfiguration();
 
     /**
      * @brief Clear the configuration actually saved, resetting to empty
