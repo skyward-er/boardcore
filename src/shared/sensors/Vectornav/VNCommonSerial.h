@@ -136,7 +136,10 @@ protected:
     /**
      * @brief Sends the command to the sensor with the correct checksum added
      * so '*' symbol is not needed at the end of the string as well as the '$'
-     * at the beginning of the command.
+     * at the beginning of the command. This function takes into account the
+     * time needed for the command to reach the sensor. DO NOT USE THIS FUNCTION
+     * IF LOW EXECUTION TIME IS NEEDED (for example when sending the sample
+     * command).
      *
      * @param command Command to send.
      *
