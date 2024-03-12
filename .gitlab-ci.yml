@@ -24,8 +24,6 @@ variables:
 
 default:
   image: registry.skywarder.eu/avn/swd/miosix-docker:latest
-  tags:
-    - docker
 
 stages:
   - lint
