@@ -33,8 +33,8 @@ struct BMP280Data : public TemperatureData, public PressureData
 
     BMP280Data(uint64_t timestamp, float temperature, Pascal pressure,
                float humidity)
-        : TemperatureData{timestamp, temperature},
-          PressureData{timestamp, pressure}
+        : TemperatureData{timestamp, temperature}, PressureData{timestamp,
+                                                                pressure}
 
     {
     }

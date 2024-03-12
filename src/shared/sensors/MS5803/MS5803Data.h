@@ -47,8 +47,9 @@ struct MS5803Data : public PressureData, TemperatureData
 
     MS5803Data(uint64_t pressureTimestamp, Pascal pressure,
                uint64_t temperatureTimestamp, float temperature)
-        : PressureData{pressureTimestamp, pressure},
-          TemperatureData{temperatureTimestamp, temperature}
+        : PressureData{pressureTimestamp, pressure}, TemperatureData{
+                                                         temperatureTimestamp,
+                                                         temperature}
     {
     }
 

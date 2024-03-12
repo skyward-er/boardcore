@@ -32,8 +32,8 @@ struct BME280Data : public TemperatureData,
                     public HumidityData
 {
     BME280Data()
-        : TemperatureData{0, 0.0}, PressureData{0, Pascal(0)},
-          HumidityData{0, 0.0}
+        : TemperatureData{0, 0.0}, PressureData{0, Pascal(0)}, HumidityData{0,
+                                                                            0.0}
     {
     }
 
