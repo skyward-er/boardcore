@@ -23,7 +23,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 default:
-  image: registry.skywarder.eu/avn/swd/miosix-docker:latest
+  image: registry.skywarder.eu/avn/swd/docker/miosix:latest
 
 stages:
   - lint
