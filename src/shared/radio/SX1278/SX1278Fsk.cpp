@@ -34,6 +34,10 @@ namespace Boardcore
 using namespace SX1278;
 using namespace SX1278::Fsk;
 
+// Value used as a magic value in the packet to check that the packet does
+// indeed come from us. This is implemented in hardware by the SX1278. This
+// value is also used to check if the device has been resetted or not, as we
+// this custom value is different from the default one at reset.
 static constexpr uint16_t FSK_SYNC_VALUE = 0x12ad;
 
 long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
@@ -63,6 +67,8 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
 
     assert(config.power >= min_power && config.power <= max_power &&
            "[sx1278] Configured power invalid for given frontend!");
+    // OCP values range from 0 to 240, with ranges from 120 to 130 being
+    // unusable
     assert(((config.ocp >= 0 && config.ocp <= 120) ||
             (config.ocp >= 130 && config.ocp <= 240)) &&
            "[sx1278] Invalid ocp!");
