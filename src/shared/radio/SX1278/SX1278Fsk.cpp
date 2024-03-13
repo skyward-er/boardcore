@@ -63,9 +63,15 @@ bool SX1278Fsk::checkVersion()
     SPITransaction spi(getSpiSlave());
 
     uint8_t version = spi.readRegister(REG_VERSION);
-    TRACE("[sx1278] Chip id: %d\n", version);
-
-    return version == 0x12;
+    if (version == 0x12)
+    {
+        return true;
+    }
+    else
+    {
+        LOG_ERR(logger, "Wrong chip id: {}", version);
+        return false;
+    }
 }
 
 SX1278Fsk::Error SX1278Fsk::configure(const Config &config)

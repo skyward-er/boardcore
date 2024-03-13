@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
 #include "SX1278Common.h"
 #include "SX1278LoraTimings.h"
 
@@ -203,9 +205,8 @@ private:
     void setMode(Mode mode) override;
     void setMapping(SX1278::DioMapping mapping) override;
 
-    void setFreqRF(int freq_rf);
-
     bool crc_enabled;
+    PrintLogger logger = Logging::getLogger("sx1278-lora");
 };
 
 }  // namespace Boardcore

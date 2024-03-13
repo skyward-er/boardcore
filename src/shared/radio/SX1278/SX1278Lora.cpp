@@ -135,7 +135,6 @@ SX1278Lora::Error SX1278Lora::init(const Config &config)
     // First probe for the device
     if (!checkVersion())
     {
-        TRACE("[sx1278] Wrong chipid\n");
         return Error::BAD_VALUE;
     }
 
@@ -152,9 +151,15 @@ bool SX1278Lora::checkVersion()
     SPITransaction spi(getSpiSlave());
 
     uint8_t version = spi.readRegister(REG_VERSION);
-    TRACE("[sx1278] Chip id: %d\n", version);
-
-    return version == 0x12;
+    if (version == 0x12)
+    {
+        return true;
+    }
+    else
+    {
+        LOG_ERR(logger, "Wrong chip id: {}", version);
+        return false;
+    }
 }
 
 SX1278Lora::Error SX1278Lora::configure(const Config &config)

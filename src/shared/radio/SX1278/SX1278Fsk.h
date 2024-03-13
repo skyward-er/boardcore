@@ -212,7 +212,7 @@ private:
     bool crc_enabled;
     long long last_tx  = 0;
     float last_rx_rssi = 0.0f;
-    PrintLogger logger = Logging::getLogger("sx1278");
+    PrintLogger logger = Logging::getLogger("sx1278-fsk");
 };
 
 }  // namespace Boardcore
