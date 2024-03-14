@@ -56,11 +56,6 @@ using arm      = Gpio<GPIOE_BASE, 2>;
 
 namespace radio
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi1;
-}
-
 using cs   = Gpio<GPIOF_BASE, 6>;
 using dio0 = Gpio<GPIOB_BASE, 1>;
 using dio1 = Gpio<GPIOD_BASE, 12>;
