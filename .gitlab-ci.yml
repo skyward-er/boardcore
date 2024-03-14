@@ -1,5 +1,5 @@
-# Copyright (c) 2021 Skyward Experimental Rocketry
-# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio, Damiano Amatruda
+# Copyright (c) 2024 Skyward Experimental Rocketry
+# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio, Damiano Amatruda, Giacomo Caironi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,64 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
+default:
+  image: registry.skywarder.eu/avn/swd/docker/miosix:latest
+
 stages:
+  - lint
   - build
   - test
-  - lint
   - documentation
+
+# Stage lint
+
+cppcheck:
+  stage: lint
+  script:
+    - cppcheck --version
+    - ./scripts/linter.py --cppcheck src
+
+format:
+  stage: lint
+  script:
+    - clang-tidy --version
+    - clang-format --version
+    - ./scripts/linter.py --format src
+
+copyright:
+  stage: lint
+  script:
+    - /usr/bin/python3 --version
+    - ./scripts/linter.py --copyright src
+
+find:
+  stage: lint
+  script:
+    - /usr/bin/python3 --version
+    - ./scripts/linter.py --find src
 
 # Stage build
 
-release:
+build-debug:
   stage: build
-  tags:
-    - miosix
   script:
-    - ./sbs
-
-debug:
-  stage: build
-  tags:
-    - miosix
-  script:
+    - cmake --version
+    - ccache --version
+    - ninja --version
     - ./sbs --debug
+
+build-release:
+  stage: build
+  script:
+    - cmake --version
+    - ccache --version
+    - ninja --version
+    - ./sbs
 
 logdecoder:
   stage: build
-  tags:
-    - miosix
   script:
+    - g++ --version
     - cd scripts/logdecoder
     - make
 
@@ -56,40 +87,8 @@ logdecoder:
 
 test:
   stage: test
-  tags:
-    - miosix
   script:
     - ./sbs --test catch-tests-boardcore
-
-# Stage lint
-
-cppcheck:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --cppcheck src
-
-format:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --format src
-
-copyright:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --copyright src
-
-find:
-  stage: lint
-  tags:
-    - miosix
-  script:
-    - ./scripts/linter.py --find src
 
 # Stage documentation
 
@@ -97,9 +96,8 @@ pages:
   stage: documentation
   only:
     - main
-  tags:
-    - doxygen
   script:
+    - doxygen --version
     - doxygen doc/Doxyfile
     - mv doc/output/html public
   artifacts:
