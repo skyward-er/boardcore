@@ -286,7 +286,7 @@ void sd_test()
             size_t result = fwrite(&value, sizeof(value), 1, f);
             if (result != 1)
             {
-                printf("Failed to write word %d\n", i);
+                printf("Failed to write word %zu\n", i);
 
                 // We had a problem
                 ok = false;
@@ -296,7 +296,10 @@ void sd_test()
             // Update value with xorshift
             value = (value << 8) ^ (value >> 8);
         }
+    }
 
+    if (f != NULL)
+    {
         fclose(f);
     }
 
@@ -320,7 +323,7 @@ void sd_test()
             size_t result   = fread(&actual, sizeof(actual), 1, f);
             if (result != 1)
             {
-                printf("Failed to write word %d\n", i);
+                printf("Failed to write word %zu\n", i);
                 ok = false;
                 break;
             }
@@ -328,7 +331,7 @@ void sd_test()
             if (actual != value)
             {
                 printf(
-                    "Failed to validate word %d, expected: %lu, actual: %lu\n",
+                    "Failed to validate word %zu, expected: %u, actual: %u\n",
                     i, value, actual);
                 ok = false;
                 break;
@@ -337,7 +340,10 @@ void sd_test()
             // Update value with xorshift
             value = (value << 8) ^ (value >> 8);
         }
+    }
 
+    if (f != NULL)
+    {
         fclose(f);
     }
 
@@ -516,7 +522,7 @@ void pin_semi_test()
 
     for (size_t i = 0; i < PIN_DEFS.size(); i++)
     {
-        auto &a = PIN_DEFS[i];
+        PinDef &a = PIN_DEFS[i];
 
         // Pause waiting for keys
         while (getchar() != '\n')

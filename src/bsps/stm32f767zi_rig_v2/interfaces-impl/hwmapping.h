@@ -161,84 +161,44 @@ namespace sensors
 // Flavio, why?
 namespace H3LIS
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi4;
-}
-
 using cs = Gpio<GPIOB_BASE, 2>;
 }  // namespace H3LIS
 
 // Flavio, why?
 namespace LPS22
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi4;
-}
-
 using cs = Gpio<GPIOB_BASE, 11>;
 }  // namespace LPS22
 
 // Flavio, why?
 namespace LSM6
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi4;
-}
-
 using cs = Gpio<GPIOD_BASE, 13>;
 }  // namespace LSM6
 
 // Flavio, why?
 namespace LIS2MDL
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi4;
-}
-
 using cs = Gpio<GPIOA_BASE, 4>;
 }  // namespace LIS2MDL
 
 namespace ADS131_1
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi1;
-}
-
 using cs = Gpio<GPIOC_BASE, 5>;
 }  // namespace ADS131_1
 
 namespace ADS131_2
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi3;
-}
-
 using cs = Gpio<GPIOD_BASE, 4>;
 }  // namespace ADS131_2
 
 namespace MAX31856_1
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi3;
-}
-
 using cs = Gpio<GPIOG_BASE, 10>;
 }  // namespace MAX31856_1
 
 namespace MAX31856_2
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi1;
-}
-
 using cs = Gpio<GPIOD_BASE, 7>;
 }  // namespace MAX31856_2
 
@@ -246,11 +206,6 @@ using cs = Gpio<GPIOD_BASE, 7>;
 
 namespace radio
 {
-namespace spi
-{
-using namespace miosix::interfaces::spi6;
-}
-
 using cs   = Gpio<GPIOB_BASE, 7>;
 using txEn = Gpio<GPIOG_BASE, 11>;
 using rxEn = Gpio<GPIOD_BASE, 5>;
