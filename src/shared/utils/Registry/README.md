@@ -16,39 +16,39 @@ Therefore, it is of the utmost importance to save the configuration and avoid de
 ## The front-end
 
 ### Invocation examples
-In this case we take as example a ficticius configuration entry (NAME which has as value datatype a float)
+In this case we take as example a fictitious configuration entry (NAME which has as value datatype a float)
 
 Type-unsafe interface methods (the one for now tested and considered as most used):
 
 #### setConfigurationUnsafe
 ```cpp
 float value = 1.3;
-/*! The id could also be a specific enum (will be casted to uint32_t)*/
+/* The id could also be a specific enum (will be casted to uint32_t)*/
 uint32_t id = 10;
 
 if(frontEnd.setUnsafe(id, value))
- { /*! correctly set */
+ { /* correctly set */
 }
 
 ```
 #### getConfigurationUnsafe
 ```cpp
 float value;
-/*! The id could also be a specific enum (will be casted to uint32_t)*/
+/* The id could also be a specific enum (will be casted to uint32_t)*/
 uint32_t id;
 
 
 if(frontEnd.getConfigurationUnsafe(id, value)) {
-    /*! Getted the value */
+    /* Getted the value */
     }
 ```
 
 #### getConfigurationOrDefaultUnsafe
 ```cpp
 uint32_t ignitionTime, ignitionDefault = 200;
-/*! The id could also be a specific enum (will be casted to uint32_t)*/
+/* The id could also be a specific enum (will be casted to uint32_t)*/
 uint32_t id = 0;
-/*! Default value that will be get (and possibly set) if cannot get an already initialized value*/
+/* Default value that will be get (and possibly set) if cannot get an already initialized value*/
 uint32_t default = 400;
 
 ignitionTime = frontEnd.getConfigurationOrDefaultUnsafe(id, ignitionDefault);
@@ -58,22 +58,22 @@ Type-safe interface methods:
 
 #### setConfiguration
 ```cpp
-/*! Structure from the OBSW structures*/
+/* Structure from the OBSW structures*/
 Ignition ignitionTime(2.0);
 frontEnd.setConfiguration(ignitionTime);
 ```
 #### getConfiguration
 ```cpp
-/*! Structure from the OBSW structures*/
+/* Structure from the OBSW structures*/
 Ignition ignitionTime;
 if(!frontEnd.getConfiguration(ignitionTime)){
-    /*! Error getting the configuration value */
+    /* Error getting the configuration value */
 }
 ```
 
 #### getConfigurationOrDefault
 ```cpp
-/*! Structure from the OBSW structures*/
+/* Structure from the OBSW structures*/
 Ignition ignitionTime, ignitionDefault(2.0);
 ignitionTime = frontEnd.getConfigurationOrDefault(ignitionDefault);
 ```
@@ -92,7 +92,7 @@ frontEnd.disarm()
 ```cpp
 if(frontEnd.isConfigurationEmpty())
 {
-    /*! The front end configuration is empty */
+    /* The front end configuration is empty */
 }
 ```
 
@@ -119,7 +119,7 @@ The correct flow to add new types/configuration entries is:
 - `RegistryFrontend.h`: Remember to update:
 The type enum; 
 The TypeUnion fields;
-Add in EntryStructsUnion the getFromUnion, setUnion and getFromSerializedVector overloads;
+Add in EntryStructsUnion the getFromUnion, make and getFromSerializedVector overloads;
 Modify the and appendSerializedFromUnion for the serialization also of such new type.
  
 

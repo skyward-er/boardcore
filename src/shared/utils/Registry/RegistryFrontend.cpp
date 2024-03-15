@@ -30,19 +30,22 @@
 
 #include "TypeStructures.h"
 
-constexpr uint32_t vectorNrEntriesReserve = 40;
-constexpr uint32_t nrBytesEntryId =
-    1;  //< Nr. bytes allocated in the vector for the entryId
-constexpr uint32_t nrBytesTypeId =
-    1;  //< Nr. bytes allocated in the vector for the typeid
-constexpr uint32_t nrBytesPerEntry =
+namespace
+{
+constexpr uint32_t VECTOR_NR_ENTRIES_RESERVE = 40;
+constexpr uint32_t NR_BYTES_ENTRY_ID =
+    4;  //< Nr. bytes allocated in the vector for the entryId
+constexpr uint32_t NR_BYTES_TYPE_ID =
+    4;  //< Nr. bytes allocated in the vector for the typeid
+constexpr uint32_t NR_BYTES_PER_ENTRY =
     6;  //< For now assuming 1B ID, 1B type ID, 4B values
-constexpr uint32_t vectorZeroOffset =
+constexpr uint32_t VECTOR_ZERO_OFFSET =
     8;  //< 8 zeroed bytes offset before real vector data
-constexpr uint32_t configurationsStartOffset =
-    vectorZeroOffset + 12; /*< Nr. bytes from start to the base where
+constexpr uint32_t CONFIGURATIONS_START_OFFSET =
+    VECTOR_ZERO_OFFSET + 12; /*< Nr. bytes from start to the base where
                           configuration starts (zero B, Nr. entries (4B),
                           Len_vector (4B), checksum (4B))*/
+}  // namespace
 namespace Boardcore
 {
 
@@ -52,11 +55,12 @@ namespace Boardcore
  */
 RegistryFrontend::RegistryFrontend()
 {
-    serializationVector.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
-    elementVector.reserve(nrBytesEntryId + nrBytesPerEntry + sizeof(TypeUnion));
-    configuration.reserve(vectorNrEntriesReserve * nrBytesPerEntry);
-    // middleware.init(); /*!< Initializes with the backend */
-    /*! TODO: Re-add it when the middleware is integrated again */
+    serializationVector.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY);
+    elementVector.reserve(NR_BYTES_ENTRY_ID + NR_BYTES_PER_ENTRY +
+                          sizeof(TypeUnion));
+    configuration.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY);
+    // middleware.init(); /*< Initializes with the backend */
+    /* TODO: Re-add it when the middleware is integrated again */
     // middleware.start();
     /**
      * TODO: The registry will load from the backend the saved configuration
@@ -106,9 +110,9 @@ void RegistryFrontend::visitConfiguration(
     std::function<void(ConfigurationId, EntryStructsUnion&)> callback)
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    for (auto it = configuration.begin(); it != configuration.end(); it++)
+    for (auto& it : configuration)
     {
-        callback(it->first, it->second);
+        callback(it.first, it.second);
     }
 }
 
@@ -122,7 +126,7 @@ bool RegistryFrontend::loadConfiguration()
     /**TODO: get from the backend the vector, verify the checksum, load entry by
      * entry
      */
-    /*! TODO: Method that will call the backend and initializes the vector */
+    /* TODO: Method that will call the backend and initializes the vector */
     // TODO: if(!middleware.load(serializationVector)) return false;
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     uint32_t id = 0, typeId, checksum = 0, savedChecksum = 0, nrEntries = 0,
@@ -145,20 +149,20 @@ bool RegistryFrontend::loadConfiguration()
      * | Value(s) ...
      */
 
-    auto it = serializationVector.begin() + vectorZeroOffset;
+    auto it = serializationVector.begin() + VECTOR_ZERO_OFFSET;
     EntryStructsUnion::getFromSerializedVector(vectorLen, it,
                                                serializationVector.end());
-    it = serializationVector.begin() + vectorZeroOffset + 4;
+    it = serializationVector.begin() + VECTOR_ZERO_OFFSET + 4;
     EntryStructsUnion::getFromSerializedVector(nrEntries, it,
                                                serializationVector.end());
-    savedChecksum |= serializationVector.at(vectorZeroOffset + 8) << 24;
-    savedChecksum |= serializationVector.at(vectorZeroOffset + 9) << 16;
-    savedChecksum |= serializationVector.at(vectorZeroOffset + 10) << 8;
-    savedChecksum |= serializationVector.at(vectorZeroOffset + 11);
+    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 8) << 24;
+    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 9) << 16;
+    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 10) << 8;
+    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 11);
     assert(vectorLen == serializationVector.size());
 
     for (auto iterator =
-             serializationVector.begin() + configurationsStartOffset;
+             serializationVector.begin() + CONFIGURATIONS_START_OFFSET;
          iterator != serializationVector.end(); iterator++)
     {
         checksum ^= *iterator << (3 - (counter % 4)) * 8;
@@ -169,11 +173,11 @@ bool RegistryFrontend::loadConfiguration()
         LOG_ERR(logger, "Corrupted saved configuration");
         return false;
     }
-    it      = serializationVector.begin() + configurationsStartOffset;
+    it      = serializationVector.begin() + CONFIGURATIONS_START_OFFSET;
     counter = 0;
     while (it != serializationVector.end() && success && counter < nrEntries)
     {
-        /*! Gets the ID of the entry, the ID of the data type, the value*/
+        /* Gets the ID of the entry, the ID of the data type, the value*/
         EntryStructsUnion::getFromSerializedVector(id, it,
                                                    serializationVector.end());
         EntryStructsUnion::getFromSerializedVector(typeId, it,
@@ -184,17 +188,17 @@ bool RegistryFrontend::loadConfiguration()
             case TypesEnum::COORDINATES:
                 EntryStructsUnion::getFromSerializedVector(
                     coordinate, it, serializationVector.end());
-                success &= setInternallyConfigurationUnsafe(id, coordinate);
+                success &= setConfigurationUnsafeInternal(id, coordinate);
                 break;
             case TypesEnum::FLOAT:
                 EntryStructsUnion::getFromSerializedVector(
                     floatValue, it, serializationVector.end());
-                success &= setInternallyConfigurationUnsafe(id, floatValue);
+                success &= setConfigurationUnsafeInternal(id, floatValue);
                 break;
-            case TypesEnum::UINT32_T:
+            case TypesEnum::UINT32:
                 EntryStructsUnion::getFromSerializedVector(
                     uint32Value, it, serializationVector.end());
-                success &= setInternallyConfigurationUnsafe(id, uint32Value);
+                success &= setConfigurationUnsafeInternal(id, uint32Value);
                 break;
             default:
                 success = false;
@@ -243,19 +247,18 @@ void RegistryFrontend::updateSerializedConfiguration()
     int counter       = 0;
     uint32_t len      = 0;
     serializationVector.clear();
-    for (auto it = configuration.begin(); it != configuration.end(); it++)
+    for (auto& it : configuration)
     {
-        /*! Insert configurationID, TypeID, value for each entry */
-        EntryStructsUnion::insertUint32ToVector(
-            static_cast<uint32_t>(it->first), serializationVector);
-        EntryStructsUnion::insertUint32ToVector(it->second.type,
+        /* Insert configurationID, TypeID, value for each entry */
+        EntryStructsUnion::insertUint32ToVector(static_cast<uint32_t>(it.first),
                                                 serializationVector);
-        it->second.appendSerializedFromUnion(serializationVector);
+        EntryStructsUnion::insertUint32ToVector(it.second.type,
+                                                serializationVector);
+        it.second.appendSerializedFromUnion(serializationVector);
     }
-    for (auto iterator = serializationVector.begin();
-         iterator != serializationVector.end(); iterator++)
+    for (auto& it : serializationVector)
     {
-        checksum ^= *iterator << (3 - (counter % 4)) * 8;
+        checksum ^= it << (3 - (counter % 4)) * 8;
         counter++;
     }
     /**
@@ -270,7 +273,7 @@ void RegistryFrontend::updateSerializedConfiguration()
      * | Value(s) ...
      */
 
-    /*! Inserts nr. configurations, length vector, checksum and then the count
+    /* Inserts nr. configurations, length vector, checksum and then the count
      * of elements after the 8B zeroed*/
     serializationVector.insert(serializationVector.begin(),
                                static_cast<uint8_t>(checksum));
@@ -281,7 +284,7 @@ void RegistryFrontend::updateSerializedConfiguration()
     serializationVector.insert(serializationVector.begin(),
                                static_cast<uint8_t>(checksum >> 24));
 
-    /*! Insert the size of the saved configuration as 4B UINT32*/
+    /* Insert the size of the saved configuration as 4B UINT32*/
     serializationVector.insert(serializationVector.begin(),
                                (configuration.size()));
     serializationVector.insert(serializationVector.begin(),
@@ -291,13 +294,13 @@ void RegistryFrontend::updateSerializedConfiguration()
     serializationVector.insert(serializationVector.begin(),
                                (configuration.size() >> 24));
 
-    /*! Insert 4B size placeholder for size attribute*/
+    /* Insert 4B size placeholder for size attribute*/
     serializationVector.insert(serializationVector.begin(), 4, 0);
 
-    /*! Adds at the beginning 8 zeros bytes*/
-    serializationVector.insert(serializationVector.begin(), vectorZeroOffset,
+    /* Adds at the beginning 8 zeros bytes*/
+    serializationVector.insert(serializationVector.begin(), VECTOR_ZERO_OFFSET,
                                0);
-    /*! Write the actual vector size */
+    /* Write the actual vector size */
     len                        = serializationVector.size();
     serializationVector.at(8)  = static_cast<uint8_t>(len >> 24);
     serializationVector.at(9)  = static_cast<uint8_t>(len >> 16);
@@ -308,11 +311,11 @@ void RegistryFrontend::updateSerializedConfiguration()
 void RegistryFrontend::saveConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    /*! In case the registry is armed inhibit the saving */
+    /* In case the registry is armed inhibit the saving */
     if (isArmed)
         return;
     updateSerializedConfiguration();
-    /*! TODO: Re-add it when the middleware is integrated again */
+    /* TODO: Re-add it when the middleware is integrated again */
     // middleware.write(serializationVector);
 }
 
@@ -326,7 +329,7 @@ void RegistryFrontend::clear()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     serializationVector.clear();
     configuration.clear();
-    /*! TODO: Re-add it when the middleware is integrated again */
+    /* TODO: Re-add it when the middleware is integrated again */
     // middleware.clear();
 }
 
