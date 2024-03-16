@@ -33,17 +33,17 @@
 #include <unordered_map>
 #include <vector>
 
-/* TODO: Re-add it when the middleware is integrated again */
+// TODO: Re-add it when the middleware is integrated again
 // #include "RegistryMiddleware.h"
 #include "TypeStructures.h"
 
 namespace Boardcore
 {
 
-/* The Configuration ID for the configuration entries */
+// The Configuration ID for the configuration entries
 using ConfigurationId = uint32_t;
 
-/* Types used for the union */
+// Types used for the union
 enum TypesEnum
 {
     UINT32,
@@ -276,7 +276,7 @@ struct EntryStructsUnion
         uint32_t valueFromVector;
         EntryStructsUnion::getFromSerializedVector(valueFromVector, iterator,
                                                    end);
-        /* Needed cast for bitwise conversion for serialization */
+        // Needed cast for bitwise conversion for serialization
         // cppcheck-suppress invalidPointerCast
         value = *(reinterpret_cast<float*>(&valueFromVector));
     }
@@ -314,7 +314,7 @@ struct EntryStructsUnion
                 float tempFloat;
                 if (this->getFromUnion(tempFloat))
                 {
-                    /* Needed cast for bitwise conversion for serialization */
+                    // Needed cast for bitwise conversion for serialization
                     // cppcheck-suppress invalidPointerCast
                     tempUint32 = *(reinterpret_cast<uint32_t*>(&tempFloat));
 
@@ -399,7 +399,7 @@ public:
      */
     bool isConfigurationEmpty();
 
-    /* TYPE UNSAFE INTERFACE METHODS */
+    // TYPE UNSAFE INTERFACE METHODS
 
     /**
      * Method to get the value for a given configuration entry.
@@ -476,7 +476,7 @@ public:
         return false;
     }
 
-    /* TYPE SAFE INTERFACE METHODS */
+    // TYPE SAFE INTERFACE METHODS
 
     /**
      * @brief Gets the saved configuration entry for such index type-safely.
@@ -526,7 +526,7 @@ public:
         return false;
     }
 
-    /* DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE */
+    // DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE
 
     /**
      * @brief Loads from the backend the configuration
@@ -558,7 +558,7 @@ private:
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
     std::vector<uint8_t> elementVector;
-    /* TODO: Re-add it when the middleware is integrated again */
+    // TODO: Re-add it when the middleware is integrated again
     // RegistryMiddlewareFlash middleware;
     PrintLogger logger = Logging::getLogger("registry-frontend");
 
