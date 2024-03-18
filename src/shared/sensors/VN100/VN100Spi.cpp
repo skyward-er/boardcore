@@ -104,7 +104,13 @@ void VN100Spi::sendDummyPacket()
 
 bool VN100Spi::selfTest()
 {
-    // TODO
+    D(assert(isInit && "init() was not called"));
+
+    if (!checkModelNumber())
+    {
+        lastError = SensorErrors::SELF_TEST_FAIL;
+        return false;
+    }
 
     return true;
 }
