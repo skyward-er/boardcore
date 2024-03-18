@@ -22,6 +22,10 @@
 
 #include "VN100Spi.h"
 
+#include <drivers/timer/TimestampTimer.h>
+#include <interfaces/endianness.h>
+#include <utils/Debug.h>
+
 #include "VN100SpiDefs.h"
 
 namespace Boardcore
@@ -86,7 +90,8 @@ bool VN100Spi::checkModelNumber()
         spiSlave.bus.select(spiSlave.cs);
 
         // Discard the first 3 bytes of the response
-        spiSlave.bus.read24();
+        spiSlave.bus
+            .read24();  // TODO: should I verify also the command and register?
 
         err = spiSlave.bus.read();
 
@@ -119,6 +124,80 @@ VN100Data VN100Spi::sampleImpl()
     // TODO
 
     return VN100Data();
+}
+
+AccelerometerData VN100Spi::readAcc()
+{
+    // Low level spi is needed in order to read multiple data
+    // without raising the chip select pin
+
+    AccelerometerData data;
+
+    // Variables used to store raw data extracted from the sensor
+    uint32_t rawDataX = 0;
+    uint32_t rawDataY = 0;
+    uint32_t rawDataZ = 0;
+
+    constexpr uint32_t requestPacket =
+        (VN100SpiDefs::READ_REG << 24) |  // Read register command
+        (18 << 16);                       // Id of the register
+
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+
+    // Send request packet
+    spiSlave.bus.select(spiSlave.cs);
+    spiSlave.bus.write32(requestPacket);
+    spiSlave.bus.deselect(spiSlave.cs);
+
+    // Wait at least 100us
+    miosix::delayUs(100);
+
+    // Read response
+    spiSlave.bus.select(spiSlave.cs);
+
+    // Discard the first 3 bytes of the response
+    spiSlave.bus
+        .read24();  // TODO: should I verify also the command and register?
+
+    uint8_t err = spiSlave.bus.read();
+
+    if (err != 0)
+    {
+        // An error occurred while attempting to service the request
+        spiSlave.bus.deselect(spiSlave.cs);
+        lastError = COMMAND_FAILED;
+        return AccelerometerData();
+    }
+
+    rawDataX = spiSlave.bus.read32();
+    rawDataY = spiSlave.bus.read32();
+    rawDataZ = spiSlave.bus.read32();
+
+    spiSlave.bus.deselect(spiSlave.cs);
+
+    // Get measurements from raw data
+    data.accelerationX = extractMeasurement(rawDataX);
+    data.accelerationY = extractMeasurement(rawDataY);
+    data.accelerationZ = extractMeasurement(rawDataZ);
+
+    return data;
+}
+
+float VN100Spi::extractMeasurement(uint32_t rawData)
+{
+    // The floating point values received are stored as 32-bit IEEE
+    // floating point numbers in little endian byte order.
+
+    // Ensure that the operation is legal
+    static_assert(sizeof(uint32_t) == sizeof(float) &&
+                  "Error, data size mismatch");
+
+    rawData = swapBytes32(rawData);
+
+    float f;
+    std::memcpy(&f, &rawData, sizeof(uint32_t));
+
+    return f;
 }
 
 }  // namespace Boardcore

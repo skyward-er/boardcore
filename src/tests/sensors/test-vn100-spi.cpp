@@ -50,12 +50,27 @@ int main()
 
     VN100Spi sensor(bus, csPin, busConfiguration);
 
+    // Let the sensor start up
+    Thread::sleep(1000);
+
     if (!sensor.init())
     {
         printf("Error, cannot initialize the sensor\n\n");
         return 0;
     }
     printf("Sensor initialized\n");
+
+    for (int i = 0; i < 100; ++i)
+    {
+        AccelerometerData data = sensor.readAcc();
+
+        printf("sample %d:\n", i + 1);
+        printf("AccX: %f\n", data.accelerationX);
+        printf("AccY: %f\n", data.accelerationY);
+        printf("AccZ: %f\n\n", data.accelerationZ);
+
+        Thread::sleep(500);
+    }
 
     return 0;
 }
