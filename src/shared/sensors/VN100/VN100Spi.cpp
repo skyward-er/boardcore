@@ -46,6 +46,10 @@ bool VN100Spi::init()
         return false;
     }
 
+    // First communication after startup might fail
+    // Send dummy data to clean up
+    sendDummyPacket();
+
     if (checkModelNumber() == false)
     {
         LOG_ERR(logger, "Got bad CHIPID");
@@ -103,13 +107,25 @@ bool VN100Spi::checkModelNumber()
     if (err != 0)
     {
         // An error occurred while attempting to service the request
-        LOG_ERR(logger, "Error, cannot get CHIPID");
+        LOG_ERR(logger, "Error while reading CHIPID");
         return false;
     }
 
     // Check the model number
-    return strncmp(VN100SpiDefs::MODEL_NUMBER, buf,
-                   strlen(VN100SpiDefs::MODEL_NUMBER)) == 0;
+    if (strncmp(VN100SpiDefs::MODEL_NUMBER, buf,
+                strlen(VN100SpiDefs::MODEL_NUMBER)) != 0)
+    {
+        LOG_ERR(logger, "Error, invalid CHIPID");
+        return false;
+    }
+
+    return true;
+}
+
+void VN100Spi::sendDummyPacket()
+{
+    SPITransaction transaction(spiSlave);
+    transaction.write32(0);
 }
 
 bool VN100Spi::selfTest()

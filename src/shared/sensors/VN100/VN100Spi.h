@@ -75,6 +75,13 @@ private:
     bool checkModelNumber();
 
     /**
+     * @brief Utility function used to clean the junk before starting to
+     * communicate with the sensor. It send a 4 bytes packet of zeros to the
+     * sensor.
+     */
+    void sendDummyPacket();
+
+    /**
      * @brief Extracts floating point measurement from the data received from
      * the sensor.
      *
