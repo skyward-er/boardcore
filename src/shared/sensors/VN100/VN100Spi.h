@@ -91,6 +91,20 @@ private:
      */
     float extractMeasurement(uint32_t rawData);
 
+    /**
+     * @brief Utility function used to read from a register of the sensor.
+     *
+     * @param REG_ID The id of the register to read from.
+     * @param payloadBuf The buffer where data will be stored.
+     * @param PAYLOAD_SIZE The amount of data (in bytes) to be read from the
+     * register.
+     *
+     * @return Zero if the operation is successful, the error code otherwise.
+     * See the datasheet for error codes details.
+     */
+    uint8_t readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
+                         const uint32_t PAYLOAD_SIZE);
+
     bool isInit = false;
 
     SPISlave spiSlave;
