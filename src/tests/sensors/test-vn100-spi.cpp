@@ -60,9 +60,15 @@ int main()
     }
     printf("Sensor initialized\n");
 
+    if (!sensor.selfTest())
+    {
+        printf("Error while performing self test\n\n");
+        return 0;
+    }
+    printf("Self test successful\n");
+
     for (int i = 0; i < 100; ++i)
     {
-        // AccelerometerData data = sensor.readAcc();
         sensor.sample();
         VN100Data sample = sensor.getLastSample();
 
