@@ -33,7 +33,7 @@ namespace VN100SpiDefs
  */
 enum Registers
 {
-    REG_MODEL_NUMBER = 0x01,
+    REG_MODEL_NUMBER = 1,
 };
 
 /**
@@ -41,8 +41,8 @@ enum Registers
  */
 enum Commands
 {
-    READ_REG  = 0x01,
-    WRITE_REG = 0x02,
+    READ_REG  = 1,
+    WRITE_REG = 2,
 };
 
 /**

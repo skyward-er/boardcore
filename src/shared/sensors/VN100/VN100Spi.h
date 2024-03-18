@@ -63,6 +63,9 @@ public:
      */
     VN100Data sampleImpl() override;
 
+    // TODO: remove this, only for testing.
+    AccelerometerData readAcc();
+
 private:
     /**
      * @brief Check the model number register.
@@ -70,6 +73,16 @@ private:
      * @return Returns false if the red value is not valid.
      */
     bool checkModelNumber();
+
+    /**
+     * @brief Extracts floating point measurement from the data received from
+     * the sensor.
+     *
+     * @param rawData The data received from the sensor.
+     *
+     * @return The floating point data.
+     */
+    float extractMeasurement(uint32_t rawData);
 
     bool isInit = false;
 
