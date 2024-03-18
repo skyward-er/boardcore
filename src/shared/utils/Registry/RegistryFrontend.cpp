@@ -147,6 +147,8 @@ bool RegistryFrontend::loadConfiguration()
      * | Value(s) ...
      */
 
+    // RegistrySerializer.serialize(configuration);
+
     auto it = serializationVector.begin() + VECTOR_ZERO_OFFSET;
     EntryStructsUnion::getFromSerializedVector(vectorLen, it,
                                                serializationVector.end());
