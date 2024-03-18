@@ -111,35 +111,83 @@ bool VN100Spi::selfTest()
 
 VN100Data VN100Spi::sampleImpl()
 {
-    // TODO
+    D(assert(isInit && "init() was not called"));
 
-    return VN100Data();
+    // Reset any errors.
+    lastError = SensorErrors::NO_ERRORS;
+
+    VN100Data data;
+    data.accelerationTimestamp  = TimestampTimer::getTimestamp();
+    data.angularSpeedTimestamp  = data.accelerationTimestamp;
+    data.magneticFieldTimestamp = data.accelerationTimestamp;
+    data.pressureTimestamp      = data.accelerationTimestamp;
+    data.quaternionTimestamp    = data.accelerationTimestamp;
+    data.temperatureTimestamp   = data.accelerationTimestamp;
+
+    if (!getImuSample(data))
+    {
+        // An error occurred while gathering data
+        lastError = NO_NEW_DATA;
+        return lastSample;
+    }
+
+    if (!getQuaternionSample(data))
+    {
+        // An error occurred while gathering data
+        lastError = NO_NEW_DATA;
+        return lastSample;
+    }
+
+    return data;
 }
 
-AccelerometerData VN100Spi::readAcc()
+bool VN100Spi::getImuSample(VN100Data& data)
 {
-    AccelerometerData data;
+    uint8_t buf[VN100SpiDefs::IMU_SAMPLE_SIZE];
 
-    const int REG_ID       = 18;
-    const int PAYLOAD_SIZE = 12;  // 3 float (4 bytes) values
-    uint8_t buf[PAYLOAD_SIZE];
-
-    data.accelerationTimestamp = TimestampTimer::getTimestamp();
-
-    if (readRegister(REG_ID, buf, PAYLOAD_SIZE) != 0)
+    if (readRegister(VN100SpiDefs::REG_IMU_DATA, buf,
+                     VN100SpiDefs::IMU_SAMPLE_SIZE) != 0)
     {
-        // An error occurred
-        lastError = NO_NEW_DATA;
-        return AccelerometerData();
+        // An error occurred while reading data
+        return false;
     }
 
     // Get measurements from raw data
-    uint32_t* ptr      = (uint32_t*)buf;
-    data.accelerationX = extractMeasurement(ptr[0]);
-    data.accelerationY = extractMeasurement(ptr[1]);
-    data.accelerationZ = extractMeasurement(ptr[2]);
+    uint32_t* ptr       = (uint32_t*)buf;
+    data.magneticFieldX = extractMeasurement(ptr[0]);
+    data.magneticFieldY = extractMeasurement(ptr[1]);
+    data.magneticFieldZ = extractMeasurement(ptr[2]);
+    data.accelerationX  = extractMeasurement(ptr[3]);
+    data.accelerationY  = extractMeasurement(ptr[4]);
+    data.accelerationZ  = extractMeasurement(ptr[5]);
+    data.angularSpeedX  = extractMeasurement(ptr[6]);
+    data.angularSpeedY  = extractMeasurement(ptr[7]);
+    data.angularSpeedZ  = extractMeasurement(ptr[8]);
+    data.temperature    = extractMeasurement(ptr[9]);
+    data.pressure       = extractMeasurement(ptr[10]);
 
-    return data;
+    return true;
+}
+
+bool VN100Spi::getQuaternionSample(VN100Data& data)
+{
+    uint8_t buf[VN100SpiDefs::QUATERNION_SAMPLE_SIZE];
+
+    if (readRegister(VN100SpiDefs::REG_QUATERNION_DATA, buf,
+                     VN100SpiDefs::QUATERNION_SAMPLE_SIZE) != 0)
+    {
+        // An error occurred while reading data
+        return false;
+    }
+
+    // Get measurements from raw data
+    uint32_t* ptr    = (uint32_t*)buf;
+    data.quaternionX = extractMeasurement(ptr[0]);
+    data.quaternionY = extractMeasurement(ptr[1]);
+    data.quaternionZ = extractMeasurement(ptr[2]);
+    data.quaternionW = extractMeasurement(ptr[3]);
+
+    return true;
 }
 
 float VN100Spi::extractMeasurement(uint32_t rawData)

@@ -62,12 +62,22 @@ int main()
 
     for (int i = 0; i < 100; ++i)
     {
-        AccelerometerData data = sensor.readAcc();
+        // AccelerometerData data = sensor.readAcc();
+        sensor.sample();
+        VN100Data sample = sensor.getLastSample();
 
         printf("sample %d:\n", i + 1);
-        printf("AccX: %f\n", data.accelerationX);
-        printf("AccY: %f\n", data.accelerationY);
-        printf("AccZ: %f\n\n", data.accelerationZ);
+        printf("acc: %llu, %.3f, %.3f, %.3f\n", sample.accelerationTimestamp,
+               sample.accelerationX, sample.accelerationY,
+               sample.accelerationZ);
+        printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
+               sample.angularSpeedY, sample.angularSpeedZ);
+        printf("mag: %.3f, %.3f, %.3f\n", sample.magneticFieldX,
+               sample.magneticFieldY, sample.magneticFieldZ);
+        printf("quat: %.3f, %.3f, %.3f, %.3f\n", sample.quaternionX,
+               sample.quaternionY, sample.quaternionZ, sample.quaternionW);
+        printf("press: %.3f\n", sample.pressure);
+        printf("temp: %.3f\n\n", sample.temperature);
 
         Thread::sleep(500);
     }

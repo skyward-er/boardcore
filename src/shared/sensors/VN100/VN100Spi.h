@@ -63,9 +63,6 @@ public:
      */
     VN100Data sampleImpl() override;
 
-    // TODO: remove this, only for testing.
-    AccelerometerData readAcc();
-
 private:
     /**
      * @brief Check the model number register.
@@ -80,6 +77,25 @@ private:
      * sensor.
      */
     void sendDummyPacket();
+
+    /**
+     * @brief Get accelerometer, gyroscope, magnetometer, pressure and
+     * temperature measurements from the sensor.
+     *
+     * @param data The variable where measurements will be stored.
+     *
+     * @return True if the operation is successful, false otherwise.
+     */
+    bool getImuSample(VN100Data& data);
+
+    /**
+     * @brief Get quaternion measurements from the sensor.
+     *
+     * @param data The variable where measurements will be stored.
+     *
+     * @return True if the operation is successful, false otherwise.
+     */
+    bool getQuaternionSample(VN100Data& data);
 
     /**
      * @brief Extracts floating point measurement from the data received from
