@@ -64,6 +64,12 @@ bool VN100Spi::init()
 
 bool VN100Spi::checkModelNumber()
 {
+    // Ensure that the cast operation from uint8_t to char is legal
+    static_assert(sizeof(uint8_t) == sizeof(char) &&
+                  "Error, data size mismatch");
+    static_assert(alignof(uint8_t) == alignof(char) &&
+                  "Error, data alignment mismatch");
+
     int i = 0;
     char buf[VN100SpiDefs::MODEL_NUMBER_SIZE];
     for (i = 0; i < VN100SpiDefs::MODEL_NUMBER_SIZE; ++i)
@@ -71,40 +77,8 @@ bool VN100Spi::checkModelNumber()
         buf[i] = 0;
     }
 
-    constexpr uint32_t requestPacket =
-        (VN100SpiDefs::READ_REG << 24) |         // Read register command
-        (VN100SpiDefs::REG_MODEL_NUMBER << 16);  // Id of the register
-
-    // Send request packet
-    {
-        SPITransaction transaction{spiSlave};
-
-        transaction.write32(requestPacket);
-    }
-
-    // Wait at least 100us
-    miosix::delayUs(100);
-
-    // Read response
-    uint8_t err = 0;
-    {
-        // Low level spi is needed in order to read multiple data
-        // without raising the chip select pin
-
-        spiSlave.bus.select(spiSlave.cs);
-
-        // Discard the first 3 bytes of the response
-        spiSlave.bus
-            .read24();  // TODO: should I verify also the command and register?
-
-        err = spiSlave.bus.read();
-
-        spiSlave.bus.read((uint8_t*)buf, VN100SpiDefs::MODEL_NUMBER_SIZE);
-
-        spiSlave.bus.deselect(spiSlave.cs);
-    }
-
-    if (err != 0)
+    if (readRegister(VN100SpiDefs::REG_MODEL_NUMBER, (uint8_t*)buf,
+                     VN100SpiDefs::MODEL_NUMBER_SIZE) != 0)
     {
         // An error occurred while attempting to service the request
         LOG_ERR(logger, "Error while reading CHIPID");
@@ -144,21 +118,68 @@ VN100Data VN100Spi::sampleImpl()
 
 AccelerometerData VN100Spi::readAcc()
 {
-    // Low level spi is needed in order to read multiple data
-    // without raising the chip select pin
-
     AccelerometerData data;
 
-    // Variables used to store raw data extracted from the sensor
-    uint32_t rawDataX = 0;
-    uint32_t rawDataY = 0;
-    uint32_t rawDataZ = 0;
-
-    constexpr uint32_t requestPacket =
-        (VN100SpiDefs::READ_REG << 24) |  // Read register command
-        (18 << 16);                       // Id of the register
+    const int REG_ID       = 18;
+    const int PAYLOAD_SIZE = 12;  // 3 float (4 bytes) values
+    uint8_t buf[PAYLOAD_SIZE];
 
     data.accelerationTimestamp = TimestampTimer::getTimestamp();
+
+    if (readRegister(REG_ID, buf, PAYLOAD_SIZE) != 0)
+    {
+        // An error occurred
+        lastError = NO_NEW_DATA;
+        return AccelerometerData();
+    }
+
+    // Get measurements from raw data
+    uint32_t* ptr      = (uint32_t*)buf;
+    data.accelerationX = extractMeasurement(ptr[0]);
+    data.accelerationY = extractMeasurement(ptr[1]);
+    data.accelerationZ = extractMeasurement(ptr[2]);
+
+    return data;
+}
+
+float VN100Spi::extractMeasurement(uint32_t rawData)
+{
+    // The floating point values received are stored as 32-bit IEEE
+    // floating point numbers in little endian byte order.
+
+    // Ensure that the copy operation from uint32_t to float is legal
+    static_assert(sizeof(uint32_t) == sizeof(float) &&
+                  "Error, data size mismatch");
+
+    float f;
+    std::memcpy(&f, &rawData, sizeof(uint32_t));
+
+    return f;
+}
+
+uint8_t VN100Spi::readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
+                               const uint32_t PAYLOAD_SIZE)
+{
+    /**
+     * When reading from a sensor's register 2 spi transactions are needed.
+     *
+     * First I have to send the request packet, then wait at least 100
+     * microseconds to let the sensor process the request.
+     *
+     * After this period of time we can proceed with the reading. First
+     * we receive a 4 bytes header, whit the first byte always 0, the second
+     * being the read register command, the third being the register we asked
+     * for and the fourth the error value.
+     *
+     * Finally we receive the content of the register.
+     *
+     * Low level spi is needed in order to issue multiple readings without
+     * raising the chip select.
+     */
+
+    const uint32_t requestPacket =
+        (VN100SpiDefs::READ_REG << 24) |  // Read register command
+        (REG_ID << 16);                   // Id of the register
 
     // Send request packet
     spiSlave.bus.select(spiSlave.cs);
@@ -181,39 +202,14 @@ AccelerometerData VN100Spi::readAcc()
     {
         // An error occurred while attempting to service the request
         spiSlave.bus.deselect(spiSlave.cs);
-        lastError = COMMAND_FAILED;
-        return AccelerometerData();
+        return err;
     }
 
-    rawDataX = spiSlave.bus.read32();
-    rawDataY = spiSlave.bus.read32();
-    rawDataZ = spiSlave.bus.read32();
+    spiSlave.bus.read(payloadBuf, PAYLOAD_SIZE);
 
     spiSlave.bus.deselect(spiSlave.cs);
 
-    // Get measurements from raw data
-    data.accelerationX = extractMeasurement(rawDataX);
-    data.accelerationY = extractMeasurement(rawDataY);
-    data.accelerationZ = extractMeasurement(rawDataZ);
-
-    return data;
-}
-
-float VN100Spi::extractMeasurement(uint32_t rawData)
-{
-    // The floating point values received are stored as 32-bit IEEE
-    // floating point numbers in little endian byte order.
-
-    // Ensure that the operation is legal
-    static_assert(sizeof(uint32_t) == sizeof(float) &&
-                  "Error, data size mismatch");
-
-    rawData = swapBytes32(rawData);
-
-    float f;
-    std::memcpy(&f, &rawData, sizeof(uint32_t));
-
-    return f;
+    return 0;
 }
 
 }  // namespace Boardcore
