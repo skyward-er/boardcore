@@ -350,9 +350,9 @@ void IRQbspInit()
     radio::cs::mode(Mode::OUTPUT);
     radio::cs::high();
     radio::txEn::mode(Mode::OUTPUT);
-    radio::txEn::high();
+    radio::txEn::low();
     radio::rxEn::mode(Mode::OUTPUT);
-    radio::rxEn::high();
+    radio::rxEn::low();
     radio::dio0::mode(Mode::INPUT_PULL_UP);
     radio::dio1::mode(Mode::INPUT_PULL_UP);
     radio::dio3::mode(Mode::INPUT_PULL_UP);
