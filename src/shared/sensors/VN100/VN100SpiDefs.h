@@ -33,7 +33,9 @@ namespace VN100SpiDefs
  */
 enum Registers
 {
-    REG_MODEL_NUMBER = 1,
+    REG_MODEL_NUMBER    = 1,
+    REG_QUATERNION_DATA = 9,
+    REG_IMU_DATA        = 54,
 };
 
 /**
@@ -48,12 +50,22 @@ enum Commands
 /**
  * @brief The expected model number to be red from the sensor.
  */
-const char* MODEL_NUMBER = "VN-100";
+const char* const MODEL_NUMBER = "VN-100";
 
 /**
  * @brief Size of the buffer used to retrieve the model number from the sensor.
  */
 const int MODEL_NUMBER_SIZE = 24;
+
+/**
+ * @brief Size of the buffer used to retrieve imu data from the sensor.
+ */
+const int IMU_SAMPLE_SIZE = 44;
+
+/**
+ * @brief Size of the buffer used to retrieve quaternion data from the sensor.
+ */
+const int QUATERNION_SAMPLE_SIZE = 16;
 
 }  // namespace VN100SpiDefs
 
