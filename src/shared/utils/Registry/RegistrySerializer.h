@@ -23,6 +23,9 @@
 
 #include <utils/Debug.h>
 
+#include <unordered_map>
+#include <vector>
+
 #include "TypeStructures.h"
 
 namespace Boardcore
@@ -170,4 +173,5 @@ private:
     bool write(std::vector<uint8_t>::iterator& it, uint32_t element);
     bool write(std::vector<uint8_t>::iterator& it, uint64_t element);
 };
+
 }  // namespace Boardcore

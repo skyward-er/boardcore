@@ -122,6 +122,7 @@ The TypeUnion fields;
 Add in EntryStructsUnion the getFromUnion, make and getFromSerializedVector overloads;
 Modify the and appendSerializedFromUnion for the serialization also of such new type.
  
+ - `RegistrySerializer.h`, `RegistrySerializer.cpp`: Remember to update the serializer to have the serialize, deserialize methods for the new types. Also for the switch case in the deserializeConfiguration method.
 
 
 ### Goals
@@ -212,6 +213,8 @@ Type structures have:
 
 - `(Float|UInt32|...)Type`: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
 
+- `RegistryHeader`: The header structure for the serialization and de-serialization. Contains the attributes and information useful for the serialization and de-serialization procedures.
+
 #### RegistryFrontend.h
 
 - `TypeUnion`: The union type for saving the values of the different configuration entries
@@ -220,6 +223,12 @@ Type structures have:
 
 #### Data saving serialization
 serializationVector is a vector that after getSerializedVector will contain:
+|||
+|:-----|--------:|
+|Header| serializardConfigurations|
+
+As for now, the header (visible in TypeStructures.h) is composed with 8B of zero bytes, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of CRC - checksum computed with xor byte per byte of the serialized configurations following the header.
+
 |||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
 |8B zero| 4B Length vector | 4B Nr. entries | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
@@ -255,3 +264,6 @@ registry middleware's thread, while in reality write just writes to the buffer t
 be then written by the thread.
 - `load`: Loads into the vector the saved configuration from the backend. Returns false if none is saved.
 - `clear`: Clears/deletes the configuration in buffers and underlying backend
+
+## The serializer
+The serializer simply taken a configuration, it serialize or deserialize it following the format specified above. It isolates the serialize and de-serialize procedure from the frontend by making it simpler and more coherent.

@@ -21,15 +21,8 @@
  */
 #pragma once
 
-#include <diagnostic/PrintLogger.h>
 #include <stdint.h>
-#include <utils/Debug.h>
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-#include <unordered_map>
-#include <vector>
 namespace Boardcore
 {
 
@@ -306,118 +299,6 @@ struct EntryStructsUnion
         returnValue.coordinates_type = valueToSet;
         return EntryStructsUnion(returnValue, TypesEnum::COORDINATES);
     }
-
-    /**
-     * @brief Inserts into the vector the uint32_t data as serialized data of
-     * uint8_t elements, without touching the previous part of the vector
-     *
-     * @param serializationVector the vector where to insert the serialized data
-     */
-    static void insertUint32ToVector(uint32_t tempUint32,
-                                     std::vector<uint8_t>& serializationVector)
-    {
-        serializationVector.push_back(static_cast<uint8_t>(tempUint32 >> 24));
-        serializationVector.push_back(static_cast<uint8_t>(tempUint32 >> 16));
-        serializationVector.push_back(static_cast<uint8_t>(tempUint32 >> 8));
-        serializationVector.push_back(static_cast<uint8_t>(tempUint32));
-    }
-
-    /**
-     * @brief Get the value From Vector object with the serialized value and
-     * advances the iterator to the next field after the value
-     *
-     * @param iterator the iterator at the current vector position where the
-     * value is.
-     * @param end the end of the vector, to check not to exceed vector.
-     */
-    static void getFromSerializedVector(
-        uint32_t& value, std::vector<uint8_t>::iterator& iterator,
-        const std::vector<uint8_t>::iterator end)
-    {
-        value    = 0;
-        int step = 3;
-        while (iterator != end && step >= 0)
-        {
-            value |= (*iterator) << (8 * step);
-            iterator++;
-            step--;
-        }
-    }
-
-    static void getFromSerializedVector(
-        float& value, std::vector<uint8_t>::iterator& iterator,
-        const std::vector<uint8_t>::iterator end)
-    {
-        uint32_t valueFromVector;
-        EntryStructsUnion::getFromSerializedVector(valueFromVector, iterator,
-                                                   end);
-        // Needed cast for bitwise conversion for serialization
-        // cppcheck-suppress invalidPointerCast
-        value = *(reinterpret_cast<float*>(&valueFromVector));
-    }
-
-    static void getFromSerializedVector(
-        Coordinates& value, std::vector<uint8_t>::iterator& iterator,
-        const std::vector<uint8_t>::iterator end)
-    {
-        getFromSerializedVector(value.latitude, iterator, end);
-        getFromSerializedVector(value.longitude, iterator, end);
-    }
-
-    /**
-     * @brief Appends to the vector its value serialized, without touching the
-     * previous part of the vector
-     *
-     * @param serializationVector The vector to which append the serialized
-     * value
-     * @return True if the append and serialization process went correctly,
-     * False otherwise
-     */
-    bool appendSerializedFromUnion(std::vector<uint8_t>& serializationVector)
-    {
-        uint32_t tempUint32;
-        switch (this->type)
-        {
-            case TypesEnum::UINT32:
-                if (this->getFromUnion(tempUint32))
-                {
-                    insertUint32ToVector(tempUint32, serializationVector);
-                    return true;
-                }
-                break;
-            case TypesEnum::FLOAT:
-                float tempFloat;
-                if (this->getFromUnion(tempFloat))
-                {
-                    // Needed cast for bitwise conversion for serialization
-                    // cppcheck-suppress invalidPointerCast
-                    tempUint32 = *(reinterpret_cast<uint32_t*>(&tempFloat));
-
-                    insertUint32ToVector(tempUint32, serializationVector);
-                    return true;
-                }
-                break;
-            case TypesEnum::COORDINATES:
-                Coordinates tempCoord;
-                if (this->getFromUnion(tempCoord))
-                {
-                    tempUint32 = *(
-                        // cppcheck-suppress invalidPointerCast
-                        reinterpret_cast<uint32_t*>(&tempCoord.latitude));
-
-                    insertUint32ToVector(tempUint32, serializationVector);
-
-                    tempUint32 = *(
-                        // cppcheck-suppress invalidPointerCast
-                        reinterpret_cast<uint32_t*>(&tempCoord.longitude));
-
-                    insertUint32ToVector(tempUint32, serializationVector);
-                    return true;
-                }
-                break;
-        }
-        return false;
-    }
 };
 
-};  // namespace Boardcore
+}  // namespace Boardcore
