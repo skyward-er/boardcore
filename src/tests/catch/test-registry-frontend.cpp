@@ -23,12 +23,13 @@
 #include "catch-tests-entry.cpp"
 #endif
 #include <stdint.h>
-#include <utils/Registry/RegistryFrontend.h>
+// #include <utils/Registry/RegistryFrontend.h>
 /*! TODO: Re-add it when the middleware is integrated again */
 // #include <utils/Registry/RegistryMiddleware.h>
 
 #include <catch2/catch.hpp>
 #include <utils/Registry/RegistryFrontend.cpp>
+#include <utils/Registry/RegistrySerializer.cpp>
 /*! TODO: Re-add it when the middleware is integrated again */
 // #include <utils/Registry/RegistryMiddleware.cpp>
 
@@ -36,18 +37,18 @@ using namespace Boardcore;
 
 /** Magic numbers for testing the set/get for each data type, they do not
  * reflect the reals configuration ids and values in use! */
-static constexpr uint8_t testValueUint8              = 20;
-static constexpr uint32_t testValueUint32            = 30;
-static constexpr float testValueFloat                = 1.45;
-static constexpr float testValueLatitude             = 45.50109;
-static constexpr float testValueLongitude            = 9.15633;
-static constexpr uint32_t coordinateId               = 8;
-static constexpr uint32_t deploymentAltitudeId       = 50;
-static constexpr uint32_t targetCoordinatesId        = 1;
-static constexpr uint32_t ventingValveAtomicTimingId = 49;
-static constexpr uint32_t algorithmId                = 128;
-static constexpr uint32_t ignitionTimeId             = 3;
-static constexpr uint32_t aFloatValueId              = 13;
+static constexpr uint8_t TEST_VALUE_UINT8                = 20;
+static constexpr uint32_t TEST_VALUE_UINT32              = 30;
+static constexpr float TEST_VALUE_FLOAT                  = 1.45;
+static constexpr float TEST_VALUE_LATITUDE               = 45.50109;
+static constexpr float TEST_VALUE_LONGITUDE              = 9.15633;
+static constexpr uint32_t COORDINATE_ID                  = 8;
+static constexpr uint32_t DEPLOYMENT_ALTITUDE_ID         = 50;
+static constexpr uint32_t TARGET_COORDINATES_ID          = 1;
+static constexpr uint32_t VENTING_VALVE_ATOMIC_TIMING_ID = 49;
+static constexpr uint32_t ALGORITHM_ID                   = 128;
+static constexpr uint32_t IGNITION_TIME_ID               = 3;
+static constexpr uint32_t FLOAT_VALUE_ID                 = 13;
 
 TEST_CASE(
     "RegistryFrontend test - Set and get type Unsafe configuration entries")
@@ -56,106 +57,107 @@ TEST_CASE(
     float floatValue;
     uint32_t uint32Value;
     uint8_t uint8Value;
-    Coordinates coordinatesValue(testValueLatitude, testValueLongitude);
+    Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE);
     /*! Check that the registry is first empty */
     REQUIRE(registry.isConfigurationEmpty());
     /*! Checks that there are effectively non-initialized entry configurations
      */
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(deploymentAltitudeId), floatValue));
+        static_cast<uint32_t>(DEPLOYMENT_ALTITUDE_ID), floatValue));
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(targetCoordinatesId), coordinatesValue));
+        static_cast<uint32_t>(TARGET_COORDINATES_ID), coordinatesValue));
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(ventingValveAtomicTimingId), uint32Value));
+        static_cast<uint32_t>(VENTING_VALVE_ATOMIC_TIMING_ID), uint32Value));
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(algorithmId), uint8Value));
+        static_cast<uint32_t>(ALGORITHM_ID), uint8Value));
     /*! Check set configuration results in right get */
-    REQUIRE(registry.setConfigurationUnsafe(static_cast<uint32_t>(algorithmId),
-                                            testValueUint8));
+    REQUIRE(registry.setConfigurationUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
+                                            TEST_VALUE_UINT8));
     uint8Value = 0;
-    REQUIRE(registry.getConfigurationUnsafe(algorithmId, uint8Value));
-    REQUIRE(uint8Value == testValueUint8);
+    REQUIRE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
+    REQUIRE(uint8Value == TEST_VALUE_UINT8);
     uint32Value = 0;
-    REQUIRE(registry.setConfigurationUnsafe(coordinateId, testValueUint32));
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, uint32Value));
-    REQUIRE(uint32Value == testValueUint32);
+    REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, TEST_VALUE_UINT32));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, uint32Value));
+    REQUIRE(uint32Value == TEST_VALUE_UINT32);
     /*! Checks that get configuration is false if the type is incorrect w.r.t.
      * the type of the set type */
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(coordinateId, floatValue));
+    REQUIRE_FALSE(registry.getConfigurationUnsafe(COORDINATE_ID, floatValue));
 }
 
 TEST_CASE("RegistryFrontend test - Arm/Disarm test")
 {
     RegistryFrontend registry;
     uint8_t uint8Value;
-    Coordinates coordinatesValue(testValueLatitude, testValueLongitude),
+    Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE),
         coordinateGet;
-    REQUIRE(registry.setConfigurationUnsafe(coordinateId, coordinatesValue));
+    REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, coordinatesValue));
     registry.arm();
     /*! If the registry is "armed" no set are allowed but gets are */
-    REQUIRE_FALSE(registry.setConfigurationUnsafe(algorithmId, testValueUint8));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(algorithmId, uint8Value));
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE_FALSE(
+        registry.setConfigurationUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8));
+    REQUIRE_FALSE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
     /*! DISARM AND SET NEW ENTRIES */
 
     registry.disarm();
-    REQUIRE(registry.setConfigurationUnsafe(algorithmId, testValueUint8));
-    REQUIRE(registry.getConfigurationUnsafe(algorithmId, uint8Value));
-    REQUIRE(uint8Value == testValueUint8);
+    REQUIRE(registry.setConfigurationUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8));
+    REQUIRE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
+    REQUIRE(uint8Value == TEST_VALUE_UINT8);
 }
 
 TEST_CASE("RegistryFrontend test - serialization/deserialization test")
 {
     RegistryFrontend registry;
-    Coordinates coordinatesValue(testValueLatitude, testValueLongitude),
+    Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE),
         coordinateGet(0, 0);
     uint32_t valueInt = 0;
     float valueFloat  = 0;
 
     registry.clear();
     /*! FIRST SET OF THE CONFIGURATION */
-    REQUIRE(registry.setConfigurationUnsafe(coordinateId, coordinatesValue));
+    REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, coordinatesValue));
     registry.saveConfiguration();
 
     /*! LOAD AND CHECK CONFIGURATION */
     registry.saveConfiguration();
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(registry.loadConfiguration());
     REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
     /*! SET OTHER DATA TYPES CONFIGURATIONS ENTRIES*/
 
-    REQUIRE(registry.setConfigurationUnsafe((ventingValveAtomicTimingId),
-                                            testValueUint32));
+    REQUIRE(registry.setConfigurationUnsafe((VENTING_VALVE_ATOMIC_TIMING_ID),
+                                            TEST_VALUE_UINT32));
     registry.saveConfiguration();
 
     valueInt = 0;
     registry.saveConfiguration();
-    REQUIRE(
-        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
-    REQUIRE(valueInt == testValueUint32);
+    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
+                                            valueInt));
+    REQUIRE(valueInt == TEST_VALUE_UINT32);
     registry.saveConfiguration();
 
-    REQUIRE(registry.setConfigurationUnsafe(aFloatValueId, testValueFloat));
+    REQUIRE(registry.setConfigurationUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT));
     registry.saveConfiguration();
     valueFloat = 0;
     registry.saveConfiguration();
 
-    REQUIRE(
-        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
-    REQUIRE(valueInt == testValueUint32);
-    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat));
-    REQUIRE(valueFloat == testValueFloat);
+    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
+                                            valueInt));
+    REQUIRE(valueInt == TEST_VALUE_UINT32);
+    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
+    REQUIRE(valueFloat == TEST_VALUE_FLOAT);
 
     /*! SAVE AGAIN WITH ALL TYPES INSIDE CONFIGURATION */
 
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
 
     registry.saveConfiguration();
     registry.saveConfiguration();
@@ -165,7 +167,7 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     registry.saveConfiguration();
     registry.loadConfiguration();
 
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
 
     registry.saveConfiguration();
     REQUIRE(registry.loadConfiguration());
@@ -177,34 +179,35 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     REQUIRE(registry.loadConfiguration());
     REQUIRE(registry.loadConfiguration());
 
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
-    REQUIRE(
-        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
-    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat));
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
+                                            valueInt));
+    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
 
     /*! CHECK AFTER RELOAD */
 
     coordinateGet.latitude  = 0;
     coordinateGet.longitude = 0;
-    REQUIRE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
     valueInt = 0;
-    REQUIRE(
-        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
-    REQUIRE(valueInt == testValueUint32);
+    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
+                                            valueInt));
+    REQUIRE(valueInt == TEST_VALUE_UINT32);
 
     valueFloat = 0;
-    REQUIRE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat));
-    REQUIRE(valueFloat == testValueFloat);
+    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
+    REQUIRE(valueFloat == TEST_VALUE_FLOAT);
 
     /*! CANCEL CONFIGURATION */
 
     registry.clear();
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(coordinateId, coordinateGet));
     REQUIRE_FALSE(
-        registry.getConfigurationUnsafe(ventingValveAtomicTimingId, valueInt));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(aFloatValueId, valueFloat));
+        registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE_FALSE(registry.getConfigurationUnsafe(
+        VENTING_VALVE_ATOMIC_TIMING_ID, valueInt));
+    REQUIRE_FALSE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
 }

@@ -253,6 +253,7 @@ private:
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
     std::vector<uint8_t> elementVector;
+    RegistrySerializer serializer;
     // TODO: Re-add it when the middleware is integrated again
     // RegistryMiddlewareFlash middleware;
     PrintLogger logger = Logging::getLogger("registry-frontend");

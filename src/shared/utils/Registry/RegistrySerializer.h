@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#pragma once
 
 #include <utils/Debug.h>
 
@@ -70,40 +71,35 @@ public:
      *
      * @param vector The reference to the vector for
      * serialization/deserialization procedures
-     * @param configuration The configuration map to be serialized or to be
-     * loaded
      */
-    RegistrySerializer(
-        std::vector<uint8_t>& vector,
-        std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration);
+    explicit RegistrySerializer(std::vector<uint8_t>& vector);
 
     /**
      * @brief Serializes the configuration map into a serialized uint8_t vector
      *
-     * @param vector The vector where we serialize the configuration
-     * @param configurationToSerialize The configuration from which we read the
+     * @param configuration The configuration from which we read the
      * current entries to be serialized
      */
-    void serializeConfigurationToVector();
+    void serializeConfiguration(
+        std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration);
 
     /**
      * @brief De-serializes the data from a serialized vector into the
      * configuration map. In case of malformed serialized vectors, does not
      * changes the configuration map and returns false
      *
-     * @param serializedVector The vector from which we load the configuration
-     * @param configurationToLoad The map in which we want to insert the entries
+     * @param configuration The map in which we want to insert the entries
      * from the serialized vector
      * @return true If the de-serialization was successful and the entries where
      * added into the map
      * @return false Otherwise, e.g. in case of malformed or even corrupted byte
      * vectors
      */
-    bool deserializeConfigurationFromVector();
+    bool deserializeConfiguration(
+        std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration);
 
 private:
     std::vector<uint8_t>& serializationVector;
-    std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
 
     /**
      * @brief Computes the CRC/checksum of the feed vector
@@ -111,21 +107,20 @@ private:
      * @param vector The vector from which extract a CRC checksum
      * @return uint32_t The computed CRC
      */
-    uint32_t computeCRC();
+    uint32_t computeCRC(std::vector<uint8_t>::iterator& it);
 
     /**
      * @brief Adds an element to the vector in head or tail position.
      *
      * @param serializedVector The vector for which we add the serialized data
      * @param element The element to be added to the serialized vector
-     * @param tailAppend True if we insert at end, False if we insert to head
      */
-    void addToVector(uint32_t element, bool tailAppend);
-    void addToVector(float element, bool tailAppend);
-    void addToVector(uint64_t element, bool tailAppend);
-    void addToVector(Coordinates element, bool tailAppend);
-    bool addToVector(EntryStructsUnion element, bool tailAppend);
-    void addToVector(TypesEnum element, bool tailAppend);
+    void serialize(uint32_t element);
+    void serialize(float element);
+    void serialize(uint64_t element);
+    void serialize(Coordinates element);
+    bool serialize(EntryStructsUnion element);
+    void serialize(TypesEnum element);
 
     /**
      * @brief Reads from the vector the element specified in sequential order.
@@ -136,13 +131,43 @@ private:
      * @return true If the read was successful
      * @return false Otherwise, e.g. not enough bytes to read the element
      */
-    bool readFromVector(std::vector<uint8_t>::iterator& it, uint32_t& element);
-    bool readFromVector(std::vector<uint8_t>::iterator& it, uint64_t& element);
-    bool readFromVector(std::vector<uint8_t>::iterator& it, float& element);
-    bool readFromVector(std::vector<uint8_t>::iterator& it,
-                        Coordinates& element);
-    bool readFromVector(std::vector<uint8_t>::iterator& it,
-                        EntryStructsUnion& element);
-    bool readFromVector(std::vector<uint8_t>::iterator& it, TypesEnum& element);
+    bool deserialize(std::vector<uint8_t>::iterator& it, uint32_t& element);
+    bool deserialize(std::vector<uint8_t>::iterator& it, uint64_t& element);
+    bool deserialize(std::vector<uint8_t>::iterator& it, float& element);
+    bool deserialize(std::vector<uint8_t>::iterator& it, Coordinates& element);
+    bool deserialize(std::vector<uint8_t>::iterator& it,
+                     EntryStructsUnion& element);
+    bool deserialize(std::vector<uint8_t>::iterator& it, TypesEnum& element);
+
+    /**
+     * @brief Deserializes the header structure from the vector
+     *
+     * @param it The iterator to the current position of the vector
+     * @param header The header to be retrieve
+     * @return true If the header was deserialized successfully
+     * @return false Otherwise, e.g. malformed/too short header
+     */
+    bool deserializeHeader(std::vector<uint8_t>::iterator& it,
+                           RegistryHeader& header);
+
+    /**
+     * @brief Writes into the pre-allocated space the header
+     *
+     * @param header The header to be written
+     * @return true If it could successfully write
+     * @return false Otherwise, e.g. has no sufficient space to write
+     */
+    bool writeHeader(RegistryHeader header);
+
+    /**
+     * @brief Write functions mainly used for the writeHeader
+     *
+     * @param initialPosition The initial position from which write the element
+     * @param element The element to be written
+     * @return true If it could successfully write
+     * @return false Otherwise, e.g. has no sufficient space to write
+     */
+    bool write(std::vector<uint8_t>::iterator& it, uint32_t element);
+    bool write(std::vector<uint8_t>::iterator& it, uint64_t element);
 };
 }  // namespace Boardcore

@@ -28,8 +28,6 @@
 #include <bitset>
 #include <mutex>
 
-#include "TypeStructures.h"
-
 namespace
 {
 constexpr uint32_t VECTOR_NR_ENTRIES_RESERVE = 40;
@@ -53,7 +51,7 @@ namespace Boardcore
  * @brief Registry front end constructor. Initializes the configuration from
  * the backend.
  */
-RegistryFrontend::RegistryFrontend()
+RegistryFrontend::RegistryFrontend() : serializer(serializationVector)
 {
     serializationVector.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY);
     elementVector.reserve(NR_BYTES_ENTRY_ID + NR_BYTES_PER_ENTRY +
@@ -128,85 +126,8 @@ bool RegistryFrontend::loadConfiguration()
     // TODO: Method that will call the backend and initializes the vector
     // TODO: if(!middleware.load(serializationVector)) return false;
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    uint32_t id = 0, typeId, checksum = 0, savedChecksum = 0, nrEntries = 0,
-             vectorLen = 0, counter = 0, uint32Value;
-    Coordinates coordinate;
-    float floatValue;
-
-    bool success = true;
     configuration.clear();
-
-    /* Vector structure
-     *
-     * [ 0|0|0|0|0|0|0|0
-     * | nr_entries 31-24 | nr_e 23-16 | nr_e 15-8 | nr_e 7-0
-     * | vector_length 31-24 | v_len 23-16 | v_len 15-8 | v_len 7-0
-     * | crc/checksum 31-24 | crc 23-16 | crc 15-8 | crc 7-0
-     * | Entry_ID 31-24 | E_ID 23-16 | E_ID 15-8 | E_ID 7-0
-     * | Type_ID 31-24 | Type_ID 23-16 | Type_ID 15-8 | TYpe_ID 7-0
-     * | Value(s) ...
-     */
-
-    // RegistrySerializer.serialize(configuration);
-
-    auto it = serializationVector.begin() + VECTOR_ZERO_OFFSET;
-    EntryStructsUnion::getFromSerializedVector(vectorLen, it,
-                                               serializationVector.end());
-    it = serializationVector.begin() + VECTOR_ZERO_OFFSET + 4;
-    EntryStructsUnion::getFromSerializedVector(nrEntries, it,
-                                               serializationVector.end());
-    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 8) << 24;
-    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 9) << 16;
-    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 10) << 8;
-    savedChecksum |= serializationVector.at(VECTOR_ZERO_OFFSET + 11);
-    assert(vectorLen == serializationVector.size());
-
-    for (auto iterator =
-             serializationVector.begin() + CONFIGURATIONS_START_OFFSET;
-         iterator != serializationVector.end(); iterator++)
-    {
-        checksum ^= *iterator << (3 - (counter % 4)) * 8;
-        counter++;
-    }
-    if (checksum != savedChecksum)
-    {
-        LOG_ERR(logger, "Corrupted saved configuration");
-        return false;
-    }
-    it      = serializationVector.begin() + CONFIGURATIONS_START_OFFSET;
-    counter = 0;
-    while (it != serializationVector.end() && success && counter < nrEntries)
-    {
-        // Gets the ID of the entry, the ID of the data type, the value
-        EntryStructsUnion::getFromSerializedVector(id, it,
-                                                   serializationVector.end());
-        EntryStructsUnion::getFromSerializedVector(typeId, it,
-                                                   serializationVector.end());
-        TypesEnum type = static_cast<TypesEnum>(typeId);
-        switch (type)
-        {
-            case TypesEnum::COORDINATES:
-                EntryStructsUnion::getFromSerializedVector(
-                    coordinate, it, serializationVector.end());
-                success &= setConfigurationUnsafeInternal(id, coordinate);
-                break;
-            case TypesEnum::FLOAT:
-                EntryStructsUnion::getFromSerializedVector(
-                    floatValue, it, serializationVector.end());
-                success &= setConfigurationUnsafeInternal(id, floatValue);
-                break;
-            case TypesEnum::UINT32:
-                EntryStructsUnion::getFromSerializedVector(
-                    uint32Value, it, serializationVector.end());
-                success &= setConfigurationUnsafeInternal(id, uint32Value);
-                break;
-            default:
-                success = false;
-                break;
-        }
-        counter++;
-    }
-    return success;
+    return serializer.deserializeConfiguration(configuration);
 }
 
 /**
@@ -243,68 +164,7 @@ bool RegistryFrontend::isConfigurationEmpty()
 void RegistryFrontend::updateSerializedConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    uint32_t checksum = 0;
-    int counter       = 0;
-    uint32_t len      = 0;
-    serializationVector.clear();
-    for (auto& it : configuration)
-    {
-        // Insert configurationID, TypeID, value for each entry
-        EntryStructsUnion::insertUint32ToVector(static_cast<uint32_t>(it.first),
-                                                serializationVector);
-        EntryStructsUnion::insertUint32ToVector(it.second.type,
-                                                serializationVector);
-        it.second.appendSerializedFromUnion(serializationVector);
-    }
-    for (auto& it : serializationVector)
-    {
-        checksum ^= it << (3 - (counter % 4)) * 8;
-        counter++;
-    }
-    /* Vector structure
-     *
-     * [ 0|0|0|0|0|0|0|0
-     * | nr_entries 31-24 | nr_e 23-16 | nr_e 15-8 | nr_e 7-0
-     * | vector_length 31-24 | v_len 23-16 | v_len 15-8 | v_len 7-0
-     * | crc/checksum 31-24 | crc 23-16 | crc 15-8 | crc 7-0
-     * | Entry_ID 31-24 | E_ID 23-16 | E_ID 15-8 | E_ID 7-0
-     * | Type_ID 31-24 | Type_ID 23-16 | Type_ID 15-8 | TYpe_ID 7-0
-     * | Value(s) ...
-     */
-
-    /* Inserts nr. configurations, length vector, checksum and then the count
-     * of elements after the 8B zeroed*/
-    serializationVector.insert(serializationVector.begin(),
-                               static_cast<uint8_t>(checksum));
-    serializationVector.insert(serializationVector.begin(),
-                               static_cast<uint8_t>(checksum >> 8));
-    serializationVector.insert(serializationVector.begin(),
-                               static_cast<uint8_t>(checksum >> 16));
-    serializationVector.insert(serializationVector.begin(),
-                               static_cast<uint8_t>(checksum >> 24));
-
-    // Insert the size of the saved configuration as 4B UINT32
-    serializationVector.insert(serializationVector.begin(),
-                               (configuration.size()));
-    serializationVector.insert(serializationVector.begin(),
-                               (configuration.size() >> 8));
-    serializationVector.insert(serializationVector.begin(),
-                               (configuration.size() >> 16));
-    serializationVector.insert(serializationVector.begin(),
-                               (configuration.size() >> 24));
-
-    // Insert 4B size placeholder for size attribute
-    serializationVector.insert(serializationVector.begin(), 4, 0);
-
-    // Adds at the beginning 8 zeros bytes
-    serializationVector.insert(serializationVector.begin(), VECTOR_ZERO_OFFSET,
-                               0);
-    // Write the actual vector size
-    len                        = serializationVector.size();
-    serializationVector.at(8)  = static_cast<uint8_t>(len >> 24);
-    serializationVector.at(9)  = static_cast<uint8_t>(len >> 16);
-    serializationVector.at(10) = static_cast<uint8_t>(len >> 8);
-    serializationVector.at(11) = static_cast<uint8_t>(len);
+    serializer.serializeConfiguration(configuration);
 }
 
 void RegistryFrontend::saveConfiguration()
