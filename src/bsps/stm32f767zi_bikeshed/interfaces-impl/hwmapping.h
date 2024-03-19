@@ -24,14 +24,14 @@
 
 #include "interfaces/gpio.h"
 
-#define MIOSIX_SENSOR_H3LIS_SPI SPI1
-#define MIOSIX_SENSOR_LPS22_SPI SPI1
-#define MIOSIX_SENSOR_LSM6_SPI SPI3
+#define MIOSIX_SENSOR_H3LIS331DL_SPI SPI1
+#define MIOSIX_SENSOR_LPS22DF_SPI SPI1
+#define MIOSIX_SENSOR_LSM6DSRX_SPI SPI3
 #define MIOSIX_SENSOR_LIS2MDL_SPI SPI3
-#define MIOSIX_SENSOR_GPS_SPI SPI3
-#define MIOSIX_SENSOR_ADS131_SPI SPI4
+#define MIOSIX_SENSOR_UBXGPS_SPI SPI3
+#define MIOSIX_SENSOR_ADS131M08_SPI SPI4
 
-#define MIOSIX_SENSOR_LPS28_I2C I2C1
+#define MIOSIX_SENSOR_LPS28DFW_I2C I2C1
 
 #define MIOSIX_SENSOR_VN100_SYNC_IN EXTI7_IRQHandlerImpl
 #define MIOSIX_SENSOR_VN100_SPI SPI1
@@ -144,12 +144,12 @@ using adc123in11 = Gpio<GPIOC_BASE, 1>;
 namespace sensors
 {
 
-namespace ADS131
+namespace ADS131M08
 {
 using cs = Gpio<GPIOG_BASE, 10>;
 }
 
-namespace LPS22
+namespace LPS22DF
 {
 using cs = Gpio<GPIOD_BASE, 7>;
 }
@@ -159,17 +159,17 @@ namespace LIS2MDL
 using cs = Gpio<GPIOG_BASE, 11>;
 }
 
-namespace H3LIS
+namespace H3LIS331DL
 {
 using cs = Gpio<GPIOG_BASE, 9>;
 }
 
-namespace LSM6
+namespace LSM6DSRX
 {
 using cs = Gpio<GPIOD_BASE, 12>;
 }
 
-namespace gps
+namespace UBXGps
 {
 using cs = Gpio<GPIOG_BASE, 7>;
 }
