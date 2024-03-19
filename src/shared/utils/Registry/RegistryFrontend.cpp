@@ -23,26 +23,15 @@
 #pragma once
 #include "RegistryFrontend.h"
 
-#include <utils/Debug.h>
-
-#include <bitset>
-#include <mutex>
-
 namespace
 {
 constexpr uint32_t VECTOR_NR_ENTRIES_RESERVE = 40;
 constexpr uint32_t NR_BYTES_ENTRY_ID =
     4;  //< Nr. bytes allocated in the vector for the entryId
-constexpr uint32_t NR_BYTES_TYPE_ID =
-    4;  //< Nr. bytes allocated in the vector for the typeid
+constexpr uint32_t NR_BYTES_HEADER =
+    20;  //< Nr. bytes allocated in the vector for the typeid
 constexpr uint32_t NR_BYTES_PER_ENTRY =
     6;  //< For now assuming 1B ID, 1B type ID, 4B values
-constexpr uint32_t VECTOR_ZERO_OFFSET =
-    8;  //< 8 zeroed bytes offset before real vector data
-constexpr uint32_t CONFIGURATIONS_START_OFFSET =
-    VECTOR_ZERO_OFFSET + 12; /*< Nr. bytes from start to the base where
-                          configuration starts (zero B, Nr. entries (4B),
-                          Len_vector (4B), checksum (4B))*/
 }  // namespace
 namespace Boardcore
 {
@@ -53,7 +42,8 @@ namespace Boardcore
  */
 RegistryFrontend::RegistryFrontend() : serializer(serializationVector)
 {
-    serializationVector.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY);
+    serializationVector.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY +
+                                NR_BYTES_HEADER);
     elementVector.reserve(NR_BYTES_ENTRY_ID + NR_BYTES_PER_ENTRY +
                           sizeof(TypeUnion));
     configuration.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY);
@@ -64,7 +54,7 @@ RegistryFrontend::RegistryFrontend() : serializer(serializationVector)
      * TODO: The registry will load from the backend the saved configuration
      * and initialize configuration, after initialize properly the middleware
      * and backend */
-};
+}
 
 /**
  * @brief Registry front end destructor. Saves configuration to
@@ -73,8 +63,8 @@ RegistryFrontend::RegistryFrontend() : serializer(serializationVector)
 RegistryFrontend::~RegistryFrontend()
 {
     /* TODO: The registry will save the configurations and also use the
-     * proper destructors if needed*/
-    saveConfiguration();
+     * proper destructors if needed?*/
+    // saveConfiguration();
 }
 
 /**
@@ -120,12 +110,11 @@ void RegistryFrontend::visitConfiguration(
  */
 bool RegistryFrontend::loadConfiguration()
 {
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     /* TODO: get from the backend the vector, verify the checksum, load entry by
      * entry
      */
-    // TODO: Method that will call the backend and initializes the vector
     // TODO: if(!middleware.load(serializationVector)) return false;
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     configuration.clear();
     return serializer.deserializeConfiguration(configuration);
 }
@@ -154,26 +143,21 @@ bool RegistryFrontend::isConfigurationEmpty()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     return configuration.empty();
-};
-
-/**
- * @brief Updates the Serialized bytes vector of the configuration actually
- * saved in the frontend with the actual configuration
- *
- */
-void RegistryFrontend::updateSerializedConfiguration()
-{
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-    serializer.serializeConfiguration(configuration);
 }
 
+/**
+ * @brief Saves the configuration to the backend
+ *
+ * @attention: The save will be inhibited in case of "armed" state in order
+ * to avoid unwanted allocations to the serializationVector during flight.
+ */
 void RegistryFrontend::saveConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     // In case the registry is armed inhibit the saving
     if (isArmed)
         return;
-    updateSerializedConfiguration();
+    serializer.serializeConfiguration(configuration);
     // TODO: Re-add it when the middleware is integrated again
     // middleware.write(serializationVector);
 }
@@ -190,6 +174,6 @@ void RegistryFrontend::clear()
     configuration.clear();
     // TODO: Re-add it when the middleware is integrated again
     // middleware.clear();
-}
+};
 
-};  // namespace Boardcore
+}  // namespace Boardcore

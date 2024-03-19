@@ -42,8 +42,9 @@ namespace Boardcore
  * all fields as zeros
  *
  */
-RegistryHeader::RegistryHeader()
-    : zeroBytes(0), vecLen(0), nrEntries(0), crc(0){};
+RegistryHeader::RegistryHeader() : zeroBytes(0), vecLen(0), nrEntries(0), crc(0)
+{
+}
 
 /**
  * @brief Construct a new Registry Header object
@@ -56,7 +57,9 @@ RegistryHeader::RegistryHeader()
 RegistryHeader::RegistryHeader(uint32_t lenPartiallySerializedVec,
                                uint32_t nrEntries, uint32_t crcPartialVec)
     : zeroBytes(0), vecLen(lenPartiallySerializedVec + size()),
-      nrEntries(nrEntries), crc(crcPartialVec){};
+      nrEntries(nrEntries), crc(crcPartialVec)
+{
+}
 
 /**
  * @brief Computes and returns the size of the whole registry header
@@ -76,7 +79,9 @@ uint32_t RegistryHeader::size()
  * serialization/deserialization procedures
  */
 RegistrySerializer::RegistrySerializer(std::vector<uint8_t>& vector)
-    : serializationVector(vector){};
+    : serializationVector(vector)
+{
+}
 
 /**
  * @brief Serializes the configuration map into a serialized uint8_t vector
@@ -229,7 +234,7 @@ uint32_t RegistrySerializer::computeCRC(std::vector<uint8_t>::iterator& it)
             return acc;
         });
     return crc;
-};
+}
 
 /**
  * @brief Adds an element to the vector in head or tail position.
@@ -243,7 +248,7 @@ void RegistrySerializer::serialize(uint32_t element)
     {
         serializationVector.push_back(static_cast<uint8_t>(element >> i * 8));
     }
-};
+}
 
 void RegistrySerializer::serialize(float element)
 {
@@ -257,7 +262,7 @@ void RegistrySerializer::serialize(float element)
         // cppcheck-suppress invalidPointerCast
         serialize(*(reinterpret_cast<uint64_t*>(&element)));
     }
-};
+}
 
 void RegistrySerializer::serialize(uint64_t element)
 {
@@ -265,13 +270,13 @@ void RegistrySerializer::serialize(uint64_t element)
     {
         serializationVector.push_back(static_cast<uint8_t>(element >> i * 8));
     }
-};
+}
 
 void RegistrySerializer::serialize(Coordinates element)
 {
     serialize(element.latitude);
     serialize(element.longitude);
-};
+}
 
 bool RegistrySerializer::serialize(EntryStructsUnion element)
 {
@@ -292,12 +297,12 @@ bool RegistrySerializer::serialize(EntryStructsUnion element)
             break;
     }
     return true;
-};
+}
 
 void RegistrySerializer::serialize(TypesEnum element)
 {
     serialize(static_cast<uint32_t>(element));
-};
+}
 
 /**
  * @brief Reads from the vector the element specified in sequential order.
@@ -320,7 +325,7 @@ bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
         it++;
     }
     return true;
-};
+}
 
 /**
  * @brief Reads from the vector the element specified in sequential order.
@@ -344,7 +349,7 @@ bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
         it++;
     }
     return true;
-};
+}
 
 bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
                                      float& element)
@@ -373,7 +378,7 @@ bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
         element = *(reinterpret_cast<float*>(&value));
     }
     return success;
-};
+}
 
 bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
                                      Coordinates& element)
@@ -382,7 +387,7 @@ bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
     success &= deserialize(it, element.latitude);
     success &= deserialize(it, element.longitude);
     return success;
-};
+}
 
 bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
                                      EntryStructsUnion& element)
@@ -405,7 +410,7 @@ bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
             break;
     }
     return success;
-};
+}
 
 bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
                                      TypesEnum& element)
@@ -457,7 +462,7 @@ bool RegistrySerializer::write(std::vector<uint8_t>::iterator& it,
         it++;
     }
     return true;
-};
+}
 
 bool RegistrySerializer::write(std::vector<uint8_t>::iterator& it,
                                uint64_t element)
@@ -470,7 +475,7 @@ bool RegistrySerializer::write(std::vector<uint8_t>::iterator& it,
         it++;
     }
     return true;
-};
+}
 
 /**
  * @brief Deserializes the header structure from the vector

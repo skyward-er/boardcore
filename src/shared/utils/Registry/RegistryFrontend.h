@@ -26,8 +26,6 @@
 #include <stdint.h>
 #include <utils/Debug.h>
 
-#include <condition_variable>
-#include <functional>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -52,8 +50,6 @@ namespace Boardcore
 class RegistryFrontend
 {
 public:
-    std::recursive_mutex mutexForRegistry;
-
     RegistryFrontend();
     ~RegistryFrontend();
 
@@ -195,7 +191,7 @@ public:
         }
         value.value = iterator->second.value;
         return true;
-    };
+    }
 
     /**
      * @brief Sets the configuration entry in the registry configuration
@@ -213,7 +209,7 @@ public:
     bool setConfiguration(T configurationEntry)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        if (setInternallyConfiguration(configurationEntry))
+        if (setConfigurationInternal(configurationEntry))
         {
             saveConfiguration();
             return true;
@@ -235,9 +231,6 @@ public:
      *
      * @attention: The save will be inhibited in case of "armed" state in order
      * to avoid unwanted allocations to the serializationVector during flight.
-     *
-     * @return true If the saving was successful
-     * @return false Otherwise
      */
     void saveConfiguration();
 
@@ -249,6 +242,7 @@ public:
     void clear();
 
 private:
+    std::recursive_mutex mutexForRegistry;
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
@@ -307,7 +301,7 @@ private:
      * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setInternallyConfiguration(T configurationEntry)
+    bool setConfigurationInternal(T configurationEntry)
     {
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         /* In case that the configuration is in an armed state it cannot be
@@ -330,11 +324,6 @@ private:
         saveConfiguration();
         return success;
     }
-
-    /**
-     * @brief Updates the Serialized bytes vector of the configuration actually
-     * saved in the frontend with the actual configuration
-     */
-    void updateSerializedConfiguration();
 };
+
 }  // namespace Boardcore
