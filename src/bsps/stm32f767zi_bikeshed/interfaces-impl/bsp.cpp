@@ -291,18 +291,18 @@ void IRQbspInit()
     interfaces::adcs::adc12in9::mode(Mode::INPUT_ANALOG);
     interfaces::adcs::adc123in11::mode(Mode::INPUT_ANALOG);
 
-    sensors::ADS131::cs::mode(Mode::OUTPUT);
-    sensors::ADS131::cs::high();
-    sensors::LPS22::cs::mode(Mode::OUTPUT);
-    sensors::LPS22::cs::high();
+    sensors::ADS131M08::cs::mode(Mode::OUTPUT);
+    sensors::ADS131M08::cs::high();
+    sensors::LPS22DF::cs::mode(Mode::OUTPUT);
+    sensors::LPS22DF::cs::high();
     sensors::LIS2MDL::cs::mode(Mode::OUTPUT);
     sensors::LIS2MDL::cs::high();
-    sensors::H3LIS::cs::mode(Mode::OUTPUT);
-    sensors::H3LIS::cs::high();
-    sensors::LSM6::cs::mode(Mode::OUTPUT);
-    sensors::LSM6::cs::high();
-    sensors::gps::cs::mode(Mode::OUTPUT);
-    sensors::gps::cs::high();
+    sensors::H3LIS331DL::cs::mode(Mode::OUTPUT);
+    sensors::H3LIS331DL::cs::high();
+    sensors::LSM6DSRX::cs::mode(Mode::OUTPUT);
+    sensors::LSM6DSRX::cs::high();
+    sensors::UBXGps::cs::mode(Mode::OUTPUT);
+    sensors::UBXGps::cs::high();
     sensors::PS0::cs::mode(Mode::OUTPUT);
     sensors::PS0::cs::high();
     sensors::PS1::cs::mode(Mode::OUTPUT);
