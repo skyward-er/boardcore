@@ -20,8 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include <utils/ModuleManager/ModuleManager.h>
+
 #include <catch2/catch.hpp>
-#include <utils/ModuleManager/ModuleManager.hpp>
 
 using namespace Boardcore;
 
@@ -29,65 +30,54 @@ namespace Boardcore
 {
 class B;
 
-class A : public Module {
+class A : public Module
+{
 public:
     A() {}
 
-    void bing_a(bool value) {
-        this->value = value;
-    }
+    void bing_a(bool value) { this->value = value; }
 
-    bool bong_a() {
-        return value;
-    }
+    bool bong_a() { return value; }
 
-    void inject(ModuleInjector &getter) {
-        b = getter.get<B>();
-    }
+    void inject(ModuleInjector &getter) { b = getter.get<B>(); }
 
 private:
     B *b;
     bool value;
 };
 
-class B : public Module {
+class B : public Module
+{
 public:
     B() {}
 
-    void bing_b(bool value) {
-        this->value = value;
-    }
+    void bing_b(bool value) { this->value = value; }
 
-    bool bong_b() {
-        return value;
-    }
+    bool bong_b() { return value; }
 
-    void inject(ModuleInjector &getter) {
-        a = getter.get<A>();
-    }
+    void inject(ModuleInjector &getter) { a = getter.get<A>(); }
 
 private:
     A *a;
     bool value;
 };
 
-class CIface : public Module {
+class CIface : public Module
+{
 public:
     virtual void bing_c() = 0;
     virtual bool bong_c() = 0;
 };
 
-class C : public CIface {
+class C : public CIface
+{
 public:
-    void bing_c() {
-        value = a->bong_a() && b->bong_b();
-    }
+    void bing_c() { value = a->bong_a() && b->bong_b(); }
 
-    bool bong_c() {
-        return value;
-    }
+    bool bong_c() { return value; }
 
-    void inject(ModuleInjector &getter) {
+    void inject(ModuleInjector &getter)
+    {
         a = getter.get<A>();
         b = getter.get<B>();
     }
@@ -98,19 +88,14 @@ private:
     bool value;
 };
 
-class D : public Module {
+class D : public Module
+{
 public:
-    void bing_d() {
-        value = c->bong_c();
-    }
-    
-    bool bong_d() {
-        return value;
-    }
+    void bing_d() { value = c->bong_c(); }
 
-    void inject(ModuleInjector &getter) {
-        c = getter.get<CIface>();
-    }
+    bool bong_d() { return value; }
+
+    void inject(ModuleInjector &getter) { c = getter.get<CIface>(); }
 
 private:
     CIface *c;

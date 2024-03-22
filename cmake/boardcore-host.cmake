@@ -57,6 +57,7 @@ set(BOARDCORE_HOST_SRC
     ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
     ${SBS_BASE}/src/shared/utils/Registry/RegistryFrontend.cpp
     ${SBS_BASE}/src/shared/utils/Registry/RegistrySerializer.cpp
+    ${SBS_BASE}/src/shared/utils/ModuleManager/ModuleManager.cpp
 )
 
 # Create a library specific for host builds
