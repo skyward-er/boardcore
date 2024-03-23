@@ -58,10 +58,9 @@ TEST_CASE(
     uint32_t uint32Value;
     uint8_t uint8Value;
     Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE);
-    /*! Check that the registry is first empty */
+    // Check that the registry is first empty
     REQUIRE(registry.isConfigurationEmpty());
-    /*! Checks that there are effectively non-initialized entry configurations
-     */
+    // Checks that there are effectively non-initialized entry configurations
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
         static_cast<uint32_t>(DEPLOYMENT_ALTITUDE_ID), floatValue));
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
@@ -70,7 +69,7 @@ TEST_CASE(
         static_cast<uint32_t>(VENTING_VALVE_ATOMIC_TIMING_ID), uint32Value));
     REQUIRE_FALSE(registry.getConfigurationUnsafe(
         static_cast<uint32_t>(ALGORITHM_ID), uint8Value));
-    /*! Check set configuration results in right get */
+    // Check set configuration results in right get
     REQUIRE(registry.setConfigurationUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
                                             TEST_VALUE_UINT8));
     uint8Value = 0;
@@ -80,7 +79,7 @@ TEST_CASE(
     REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, TEST_VALUE_UINT32));
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, uint32Value));
     REQUIRE(uint32Value == TEST_VALUE_UINT32);
-    /*! Checks that get configuration is false if the type is incorrect w.r.t.
+    /* Checks that get configuration is false if the type is incorrect w.r.t.
      * the type of the set type */
     REQUIRE_FALSE(registry.getConfigurationUnsafe(COORDINATE_ID, floatValue));
 }
@@ -93,7 +92,7 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
         coordinateGet;
     REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, coordinatesValue));
     registry.arm();
-    /*! If the registry is "armed" no set are allowed but gets are */
+    // If the registry is "armed" no set are allowed but gets are
     REQUIRE_FALSE(
         registry.setConfigurationUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8));
     REQUIRE_FALSE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
@@ -101,7 +100,7 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
-    /*! DISARM AND SET NEW ENTRIES */
+    // DISARM AND SET NEW ENTRIES
 
     registry.disarm();
     REQUIRE(registry.setConfigurationUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8));
@@ -118,36 +117,32 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     float valueFloat  = 0;
 
     registry.clear();
-    /*! FIRST SET OF THE CONFIGURATION */
+    // FIRST SET OF THE CONFIGURATION
     REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, coordinatesValue));
-    registry.saveConfiguration();
+    REQUIRE(registry.saveConfiguration());
 
-    /*! LOAD AND CHECK CONFIGURATION */
-    registry.saveConfiguration();
+    // LOAD AND CHECK CONFIGURATION
+    REQUIRE(registry.saveConfiguration());
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(registry.loadConfiguration());
+    REQUIRE(registry.loadConfiguration());
+    REQUIRE(registry.saveConfiguration());
     REQUIRE(registry.loadConfiguration());
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
-    /*! SET OTHER DATA TYPES CONFIGURATIONS ENTRIES*/
+    // SET OTHER DATA TYPES CONFIGURATIONS ENTRIES
 
     REQUIRE(registry.setConfigurationUnsafe((VENTING_VALVE_ATOMIC_TIMING_ID),
                                             TEST_VALUE_UINT32));
-    registry.saveConfiguration();
-
     valueInt = 0;
-    registry.saveConfiguration();
+    REQUIRE(registry.saveConfiguration());
     REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
                                             valueInt));
     REQUIRE(valueInt == TEST_VALUE_UINT32);
-    registry.saveConfiguration();
-
     REQUIRE(registry.setConfigurationUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT));
-    registry.saveConfiguration();
     valueFloat = 0;
-    registry.saveConfiguration();
 
     REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
                                             valueInt));
@@ -155,8 +150,20 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
     REQUIRE(valueFloat == TEST_VALUE_FLOAT);
 
-    /*! SAVE AGAIN WITH ALL TYPES INSIDE CONFIGURATION */
+    // SAVE AGAIN WITH ALL TYPES INSIDE CONFIGURATION
 
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.saveConfiguration());
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.saveConfiguration());
+    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(
+        registry
+            .loadConfiguration()); /*TODO: At load with more types... Si caca*/
+    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
+                                            valueInt));
+    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
 
     registry.saveConfiguration();
@@ -185,7 +192,7 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
 
-    /*! CHECK AFTER RELOAD */
+    // CHECK AFTER RELOAD
 
     coordinateGet.latitude  = 0;
     coordinateGet.longitude = 0;
@@ -202,7 +209,7 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
     REQUIRE(valueFloat == TEST_VALUE_FLOAT);
 
-    /*! CANCEL CONFIGURATION */
+    // CANCEL CONFIGURATION
 
     registry.clear();
     REQUIRE_FALSE(
