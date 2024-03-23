@@ -153,6 +153,29 @@ struct EntryStructsUnion
     }
 
     /**
+     * @brief Returns the size in byte of the type + value
+     *
+     * @return size_t The type + value size in Bytes
+     */
+    size_t sizeBytes()
+    {
+        size_t returnVal = sizeof(TypesEnum);
+        switch (type)
+        {
+            case TypesEnum::COORDINATES:
+                returnVal += sizeof(Coordinates);
+                break;
+            case TypesEnum::UINT32:
+                returnVal += sizeof(uint32_t);
+            case TypesEnum::FLOAT:
+                returnVal += sizeof(float);
+            default:
+                break;
+        }
+        return returnVal;
+    }
+
+    /**
      * @brief Gets from the TypeUnion the float value and returns it.
      *
      * @param unionType the union value from which take the integer.

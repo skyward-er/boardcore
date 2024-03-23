@@ -49,27 +49,27 @@ RegistryHeader::RegistryHeader() : zeroBytes(0), vecLen(0), nrEntries(0), crc(0)
 /**
  * @brief Construct a new Registry Header object
  *
- * @param lenPartiallySerializedVec  The length of the vector serialized so far
+ * @param vectorSize  The length of the vector
  * @param nrEntries The nr of entries in the serialized vector
  * @param crcPartialVec The CRC/checksum computed on the partially serialized
  * vector
  */
-RegistryHeader::RegistryHeader(uint32_t lenPartiallySerializedVec,
-                               uint32_t nrEntries, uint32_t crcPartialVec)
-    : zeroBytes(0), vecLen(lenPartiallySerializedVec + size()),
-      nrEntries(nrEntries), crc(crcPartialVec)
+RegistryHeader::RegistryHeader(uint32_t vectorSize, uint32_t nrEntries,
+                               uint32_t crcPartialVec)
+    : zeroBytes(0), vecLen(vectorSize), nrEntries(nrEntries), crc(crcPartialVec)
 {
 }
 
 /**
- * @brief Computes and returns the size of the whole registry header
- * structure
+ * @brief Computes and returns the size in nr. of uint8_t of the whole registry
+ * header structure
  *
  * @return uint32_t The size of all the attributes of the header
  */
 uint32_t RegistryHeader::size()
 {
-    return sizeof(zeroBytes) + sizeof(vecLen) + sizeof(nrEntries) + sizeof(crc);
+    return (sizeof(zeroBytes) + sizeof(vecLen) + sizeof(nrEntries) +
+            sizeof(crc));
 }
 
 /**
@@ -79,7 +79,7 @@ uint32_t RegistryHeader::size()
  * serialization/deserialization procedures
  */
 RegistrySerializer::RegistrySerializer(std::vector<uint8_t>& vector)
-    : serializationVector(vector)
+    : serializationVector(vector), vectorWritePosition(0)
 {
 }
 
@@ -93,42 +93,75 @@ RegistrySerializer::RegistrySerializer(std::vector<uint8_t>& vector)
  * inserted into the serialized data vector
  * @return false Otherwise
  */
-void RegistrySerializer::serializeConfiguration(
+bool RegistrySerializer::serializeConfiguration(
     std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration)
 {
     RegistryHeader header;
-    if (serializationVector.size() < header.size())
+    size_t configurationSize = 0;
+    bool success             = true;
+    vectorWritePosition      = 0;
+
+    // Compute the overall space required for the configurations
+    for (auto& entry : configuration)
     {
-        serializationVector.clear();
-        // Inserts zero bytes for allocating the space for the header
-        serializationVector.insert(serializationVector.begin(), header.size(),
-                                   0);
+        configurationSize += sizeof(entry.first);
+        configurationSize += entry.second.sizeBytes();
     }
-    else if (serializationVector.size() > header.size())
+
+    // Resizes the serialization vector if the size is incorrect
+    if (serializationVector.size() != header.size() + configurationSize)
     {
-        // Keeps just the bytes for the header
-        serializationVector.erase(serializationVector.begin() + header.size(),
-                                  serializationVector.end());
+        serializationVector.resize(header.size() + configurationSize);
     }
+
+    vectorWritePosition  = header.size();
+    uint32_t uint32Value = 0;
+    ConfigurationId id   = 0;
+    Coordinates coordinate(0, 0);
+    float floatValue = 0;
 
     // Add the configuration entries one after the other
     for (auto& entry : configuration)
     {
         // Appends the entry ID
-        serialize(entry.first);
+        write(entry.first);
         // Appends the configuration entry
-        serialize(entry.second);
+        write(entry.second.type);
+
+        switch (entry.second.type)
+        {
+            case TypesEnum::COORDINATES:
+                entry.second.getFromUnion(coordinate);
+                write(coordinate);
+                break;
+
+            case TypesEnum::UINT32:
+                entry.second.getFromUnion(uint32Value);
+                write(uint32Value);
+                break;
+
+            case TypesEnum::FLOAT:
+                entry.second.getFromUnion(floatValue);
+                write(floatValue);
+                break;
+
+            default:
+                return false;
+                break;
+        }
     }
 
     // Compute the CRC of the serialized configuration
-    header.zeroBytes = 0;
-    header.vecLen    = serializationVector.size();
-    header.nrEntries = configuration.size();
-    auto iterator    = serializationVector.begin() + header.size();
-    header.crc       = computeCRC(iterator);
+    vectorWritePosition = 0;
+    header.zeroBytes    = 0;
+    header.vecLen       = serializationVector.size();
+    header.nrEntries    = configuration.size();
+    auto iterator       = serializationVector.begin() + header.size();
+    header.crc          = computeCRC(iterator);
 
     // Add the RegistryHeader at vector head position
     writeHeader(header);
+    return success;
 }
 
 /**
@@ -154,63 +187,78 @@ bool RegistrySerializer::deserializeConfiguration(
     if (serializationVector.size() < header.size())
         return false;
 
-    auto iterator = serializationVector.begin();
-    success &= deserializeHeader(iterator, header);
+    vectorWritePosition = 0;
+    success &= deserializeHeader(header);
 
-    iterator          = serializationVector.begin() + header.size();
+    auto iterator     = serializationVector.begin() + header.size();
     uint32_t savedCRC = computeCRC(iterator);
 
     // Malformed or corrupted or empty configuration cases
-    if (!success || serializationVector.size() == 0 ||
-        header.crc != savedCRC)  // TODO: CRC ISSUE!
+    if (!success || serializationVector.size() == 0 || header.crc != savedCRC)
         return false;
 
+    // Clears the configuration for the correct insertion
+    configuration.clear();
+
     // Set the configuration from the saved configuration
-    iterator    = serializationVector.begin() + header.size();
-    int counter = 0;
-    uint32_t uint32Value;
-    ConfigurationId id;
+    iterator             = serializationVector.begin() + header.size();
+    int counter          = 0;
+    uint32_t uint32Value = 0;
+    ConfigurationId id   = 0;
     TypesEnum typeId;
-    Coordinates coordinate;
+    Coordinates coordinate(0, 0);
     float floatValue;
-    while (iterator != serializationVector.end() &&
+
+    while (vectorWritePosition < serializationVector.size() &&
            counter < header.nrEntries && success)
     {
         // Gets the ID of the entry, the ID of the data type, the value
-        success &= deserialize(iterator, id);
-        success &= deserialize(iterator, typeId);
+        success &= deserialize(id);
+        success &= deserialize(typeId);  // TODO: si sminchia... 8...
         switch (typeId)
         {
             case TypesEnum::COORDINATES:
             {
-                success &= deserialize(iterator, coordinate);
+                success &= deserialize(coordinate);
+                if (!success)
+                    return false;
                 EntryStructsUnion entry = EntryStructsUnion::make(coordinate);
+                // WHY CANNOT DO THE INSERT FROM SECOND PROBLEMS!!!
                 success &=
                     configuration.insert(std::make_pair(id, entry)).second;
                 break;
             }
             case TypesEnum::FLOAT:
             {
-                success &= deserialize(iterator, floatValue);
+                success &= deserialize(floatValue);
+                if (!success)
+                    return false;
                 EntryStructsUnion entry = EntryStructsUnion::make(floatValue);
+                // WHY CANNOT DO THE INSERT????
                 success &=
                     configuration.insert(std::make_pair(id, entry)).second;
                 break;
             }
             case TypesEnum::UINT32:
             {
-                success &= deserialize(iterator, uint32Value);
+                success &= deserialize(uint32Value);
+                if (!success)
+                    return false;
                 EntryStructsUnion entry = EntryStructsUnion::make(uint32Value);
+                // WHY CANNOT DO THE INSERT????
                 success &=
                     configuration.insert(std::make_pair(id, entry)).second;
                 break;
             }
             default:
             {
-                success = false;
+                success = false;  //< WHY DOES ENTER IN HERE, 2nd
+                                  // configuration???? READS SHITS FOR TYPEID???
                 break;
             }
         }
+        if (!success)
+            return false;
         counter++;
     }
     return success;
@@ -237,244 +285,29 @@ uint32_t RegistrySerializer::computeCRC(std::vector<uint8_t>::iterator& it)
 }
 
 /**
- * @brief Adds an element to the vector in head or tail position.
- *
- * @param serializedVector The vector for which we add the serialized data
- * @param element The element to be added to the serialized vector
- */
-void RegistrySerializer::serialize(uint32_t element)
-{
-    for (int i = 3; i >= 0; i--)
-    {
-        serializationVector.push_back(static_cast<uint8_t>(element >> i * 8));
-    }
-}
-
-void RegistrySerializer::serialize(float element)
-{
-    if (FLOAT_IS_32_BIT)
-    {
-        // cppcheck-suppress invalidPointerCast
-        serialize(*(reinterpret_cast<uint32_t*>(&element)));
-    }
-    else
-    {
-        // cppcheck-suppress invalidPointerCast
-        serialize(*(reinterpret_cast<uint64_t*>(&element)));
-    }
-}
-
-void RegistrySerializer::serialize(uint64_t element)
-{
-    for (int i = 5; i >= 0; i--)
-    {
-        serializationVector.push_back(static_cast<uint8_t>(element >> i * 8));
-    }
-}
-
-void RegistrySerializer::serialize(Coordinates element)
-{
-    serialize(element.latitude);
-    serialize(element.longitude);
-}
-
-bool RegistrySerializer::serialize(EntryStructsUnion element)
-{
-    serialize(element.type);
-    switch (element.type)
-    {
-        case TypesEnum::COORDINATES:
-            serialize(element.value.coordinates_type);
-            break;
-        case TypesEnum::FLOAT:
-            serialize(element.value.float_type);
-            break;
-        case TypesEnum::UINT32:
-            serialize(element.value.uint32_type);
-            break;
-        default:
-            return false;
-            break;
-    }
-    return true;
-}
-
-void RegistrySerializer::serialize(TypesEnum element)
-{
-    serialize(static_cast<uint32_t>(element));
-}
-
-/**
- * @brief Reads from the vector the element specified in sequential order.
- *
- * @param it The iterator to visit the vector, which is increased while reading
- * @param element The element we want to get from the serialized vector
- * @return true If the read was successful
- * @return false Otherwise, e.g. not enough bytes to read the element
- */
-bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
-                                     uint32_t& element)
-{
-    element = 0;
-    for (int i = 3; i >= 0; i--)
-    {
-        // Cannot read the needed byte, malformed vector
-        if (it == serializationVector.end())
-            return false;
-        element |= (static_cast<uint32_t>(*it) << i * 8);
-        it++;
-    }
-    return true;
-}
-
-/**
- * @brief Reads from the vector the element specified in sequential order.
- *
- * @param it The iterator to visit the vector, which is increased while
- * reading
- * @param element The element we want to get from the serialized vector
- * @return true If the read was successful
- * @return false Otherwise, e.g. not enough bytes to read the element
- */
-bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
-                                     uint64_t& element)
-{
-    element = 0;
-    for (int i = 5; i >= 0; i--)
-    {
-        // Cannot read the needed byte, malformed vector
-        if (it == serializationVector.end())
-            return false;
-        element |= (static_cast<uint64_t>(*it) << i * 8);
-        it++;
-    }
-    return true;
-}
-
-bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
-                                     float& element)
-{
-    bool success = true;
-
-    if (FLOAT_IS_32_BIT)
-    {
-        uint32_t value;
-
-        // cppcheck-suppress invalidPointerCast
-        value = *(reinterpret_cast<uint32_t*>(&element));
-        success &= deserialize(it, value);
-        // cppcheck-suppress invalidPointerCast
-        element = *(reinterpret_cast<float*>(&value));
-    }
-    // 64-bit float case
-    else
-    {
-        uint64_t value;
-
-        // cppcheck-suppress invalidPointerCast
-        value = *(reinterpret_cast<uint64_t*>(&element));
-        success &= deserialize(it, value);
-        // cppcheck-suppress invalidPointerCast
-        element = *(reinterpret_cast<float*>(&value));
-    }
-    return success;
-}
-
-bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
-                                     Coordinates& element)
-{
-    bool success = true;
-    success &= deserialize(it, element.latitude);
-    success &= deserialize(it, element.longitude);
-    return success;
-}
-
-bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
-                                     EntryStructsUnion& element)
-{
-    bool success = true;
-    success &= deserialize(it, element.type);
-    switch (element.type)
-    {
-        case TypesEnum::COORDINATES:
-            success &= deserialize(it, element.value.coordinates_type);
-            break;
-        case TypesEnum::FLOAT:
-            success &= deserialize(it, element.value.float_type);
-            break;
-        case TypesEnum::UINT32:
-            success &= deserialize(it, element.value.uint32_type);
-            break;
-        default:
-            return false;
-            break;
-    }
-    return success;
-}
-
-bool RegistrySerializer::deserialize(std::vector<uint8_t>::iterator& it,
-                                     TypesEnum& element)
-{
-    bool success;
-    uint32_t temp;
-    success = deserialize(it, temp);
-    element = static_cast<TypesEnum>(temp);
-    return success;
-}
-
-/**
  * @brief Writes into the pre-allocated space the header
  *
  * @param header The header to be written
  * @return true If it could successfully write
  * @return false Otherwise, e.g. has no sufficient space to write
  */
-bool RegistrySerializer::writeHeader(RegistryHeader header)
+bool RegistrySerializer::writeHeader(RegistryHeader& header)
 {
     bool success = true;
-    auto it      = serializationVector.begin();
     if (serializationVector.size() < header.size())
         return false;
     // Writing on the space allocated before
-    success &= write(it, header.zeroBytes);
-    success &= write(it, header.vecLen);
-    success &= write(it, header.nrEntries);
-    success &= write(it, header.crc);
+    success &= write(header.zeroBytes);
+    success &= write(header.vecLen);
+    success &= write(header.nrEntries);
+    success &= write(header.crc);
     return success;
 }
 
-/**
- * @brief Write functions mainly used for the writeHeader
- *
- * @param initialPosition The initial position from which write the element
- * @param element The element to be written
- * @return true If it could successfully write
- * @return false Otherwise, e.g. has no sufficient space to write
- */
-bool RegistrySerializer::write(std::vector<uint8_t>::iterator& it,
-                               uint32_t element)
+bool RegistrySerializer::writeHeader(RegistryHeader& header, uint32_t position)
 {
-    for (int i = 3; i >= 0; i--)
-    {
-        if (it == serializationVector.end())
-            return false;
-        (*it) = static_cast<uint8_t>(element >> i * 8);
-        it++;
-    }
-    return true;
-}
-
-bool RegistrySerializer::write(std::vector<uint8_t>::iterator& it,
-                               uint64_t element)
-{
-    for (int i = 5; i >= 0; i--)
-    {
-        if (it == serializationVector.end())
-            return false;
-        (*it) = static_cast<uint8_t>(element >> i * 8);
-        it++;
-    }
-    return true;
+    vectorWritePosition = position;
+    return writeHeader(header);
 }
 
 /**
@@ -485,17 +318,23 @@ bool RegistrySerializer::write(std::vector<uint8_t>::iterator& it,
  * @return true If the header was deserialized successfully
  * @return false Otherwise, e.g. malformed/too short header
  */
-bool RegistrySerializer::deserializeHeader(std::vector<uint8_t>::iterator& it,
-                                           RegistryHeader& header)
+bool RegistrySerializer::deserializeHeader(RegistryHeader& header,
+                                           uint32_t position)
 {
-    bool success = true;
-    success &= deserialize(it, header.zeroBytes);
+    vectorWritePosition = position;
+    bool success        = true;
+    success &= deserialize(header.zeroBytes);
     if (header.zeroBytes != 0)
         return false;
-    success &= deserialize(it, header.vecLen);
-    success &= deserialize(it, header.nrEntries);
-    success &= deserialize(it, header.crc);
+    success &= deserialize(header.vecLen);
+    success &= deserialize(header.nrEntries);
+    success &= deserialize(header.crc);
     return success;
+}
+
+bool RegistrySerializer::deserializeHeader(RegistryHeader& header)
+{
+    return deserializeHeader(header, vectorWritePosition);
 }
 
 }  // namespace Boardcore
