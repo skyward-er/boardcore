@@ -232,7 +232,7 @@ public:
      * @attention: The save will be inhibited in case of "armed" state in order
      * to avoid unwanted allocations to the serializationVector during flight.
      */
-    void saveConfiguration();
+    bool saveConfiguration();
 
     /**
      * @brief Clear the configuration actually saved, resetting to empty

@@ -46,7 +46,7 @@ RegistryFrontend::RegistryFrontend() : serializer(serializationVector)
                                 NR_BYTES_HEADER);
     elementVector.reserve(NR_BYTES_ENTRY_ID + NR_BYTES_PER_ENTRY +
                           sizeof(TypeUnion));
-    configuration.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY);
+    configuration.reserve(VECTOR_NR_ENTRIES_RESERVE);
     // middleware.init(); //< Initializes with the backend
     // TODO: Re-add it when the middleware is integrated again
     // middleware.start();
@@ -111,11 +111,12 @@ void RegistryFrontend::visitConfiguration(
 bool RegistryFrontend::loadConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    if (isArmed)
+        return false;
     /* TODO: get from the backend the vector, verify the checksum, load entry by
      * entry
      */
     // TODO: if(!middleware.load(serializationVector)) return false;
-    configuration.clear();
     return serializer.deserializeConfiguration(configuration);
 }
 
@@ -151,13 +152,13 @@ bool RegistryFrontend::isConfigurationEmpty()
  * @attention: The save will be inhibited in case of "armed" state in order
  * to avoid unwanted allocations to the serializationVector during flight.
  */
-void RegistryFrontend::saveConfiguration()
+bool RegistryFrontend::saveConfiguration()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     // In case the registry is armed inhibit the saving
     if (isArmed)
-        return;
-    serializer.serializeConfiguration(configuration);
+        return false;
+    return serializer.serializeConfiguration(configuration);
     // TODO: Re-add it when the middleware is integrated again
     // middleware.write(serializationVector);
 }
