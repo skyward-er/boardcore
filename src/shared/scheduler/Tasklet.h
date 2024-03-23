@@ -33,9 +33,9 @@ public:
     using StopFlag = std::atomic<bool>;
     using Function = std::function<void(StopFlag&)>;
 
-    Tasklet(Function function,
-            miosix::Priority priority = miosix::MAIN_PRIORITY,
-            unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD)
+    explicit Tasklet(Function function,
+                     miosix::Priority priority = miosix::MAIN_PRIORITY,
+                     unsigned int stacksize = miosix::STACK_DEFAULT_FOR_PTHREAD)
         : ActiveObject(stacksize, priority), function(function)
     {
     }
@@ -57,10 +57,10 @@ private:
         RECOVER
     };
 
-    PeriodicTasklet(Function function, uint32_t period,
-                    Policy policy             = Policy::RECOVER,
-                    miosix::Priority priority = miosix::MAIN_PRIORITY,
-                    unsigned int stacksize = miosix::STACK_DEFAULT_FOR_PTHREAD)
+    explicit PeriodicTasklet(
+        Function function, uint32_t period, Policy policy = Policy::RECOVER,
+        miosix::Priority priority = miosix::MAIN_PRIORITY,
+        unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD)
         : ActiveObject(stacksize, priority), function(function), period(period),
           policy(policy)
     {
