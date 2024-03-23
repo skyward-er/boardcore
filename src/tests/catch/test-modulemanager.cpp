@@ -42,8 +42,8 @@ public:
     void inject(ModuleInjector &getter) { b = getter.get<B>(); }
 
 private:
-    B *b;
-    bool value;
+    B *b       = nullptr;
+    bool value = false;
 };
 
 class B : public Module
@@ -58,8 +58,8 @@ public:
     void inject(ModuleInjector &getter) { a = getter.get<A>(); }
 
 private:
-    A *a;
-    bool value;
+    A *a       = nullptr;
+    bool value = false;
 };
 
 class CIface : public Module
@@ -72,9 +72,9 @@ public:
 class C : public CIface
 {
 public:
-    void bing_c() { value = a->bong_a() && b->bong_b(); }
+    void bing_c() override { value = a->bong_a() && b->bong_b(); }
 
-    bool bong_c() { return value; }
+    bool bong_c() override { return value; }
 
     void inject(ModuleInjector &getter)
     {
@@ -83,9 +83,9 @@ public:
     }
 
 private:
-    A *a;
-    B *b;
-    bool value;
+    A *a       = nullptr;
+    B *b       = nullptr;
+    bool value = false;
 };
 
 class D : public Module
@@ -98,8 +98,8 @@ public:
     void inject(ModuleInjector &getter) { c = getter.get<CIface>(); }
 
 private:
-    CIface *c;
-    bool value;
+    CIface *c  = nullptr;
+    bool value = false;
 };
 }  // namespace Boardcore
 

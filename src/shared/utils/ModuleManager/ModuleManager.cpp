@@ -66,6 +66,8 @@ bool ModuleManager::inject()
         module.second.ptr->inject(injector);
     }
 
+    // cppcheck is stupid
+    // cppcheck-suppress knownConditionTrueFalse
     if (load_success)
     {
         LOG_INFO(logger, "Configuring succesful!");
