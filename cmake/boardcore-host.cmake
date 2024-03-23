@@ -47,6 +47,7 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
 
     # Scheduler
     ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
+    ${SBS_BASE}/src/shared/scheduler/Tasklet.cpp
 
     # Sensors
     ${SBS_BASE}/src/shared/sensors/SensorManager.cpp

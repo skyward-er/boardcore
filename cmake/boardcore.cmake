@@ -81,6 +81,7 @@ foreach(OPT_BOARD ${BOARDS})
 
         # Scheduler
         ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
+        ${SBS_BASE}/src/shared/scheduler/Tasklet.cpp
 
         # Sensors
         ${SBS_BASE}/src/shared/sensors/ADS1118/ADS1118.cpp
