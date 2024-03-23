@@ -23,6 +23,8 @@
 
 #include <utils/Debug.h>
 
+#include <cstdint>
+#include <cstring>
 #include <unordered_map>
 #include <vector>
 
