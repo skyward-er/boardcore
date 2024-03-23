@@ -37,14 +37,25 @@ namespace Boardcore
 class ModuleInjector;
 class ModuleManager;
 
+/**
+ * @brief Interface for an injectable module.
+ */
 class Module
 {
 public:
     virtual ~Module() = default;
 
+    /**
+     * @brief Invoked by the ModuleManager to inject modules.
+     *
+     * @param injector Proxy class used to obtain modules.
+     */
     virtual void inject(ModuleInjector &injector) = 0;
 };
 
+/**
+ * @brief Main ModuleManager class.
+ */
 class ModuleManager
 {
     friend class ModuleInjector;
@@ -61,6 +72,12 @@ private:
 public:
     ModuleManager() {}
 
+    /**
+     * @brief Insert a new module.
+     *
+     * @param module Module to insert in the ModuleManager.
+     * @returns True if succesfull, false otherwise.
+     */
     template <typename T>
     [[nodiscard]] bool insert(T *module)
     {
@@ -68,8 +85,19 @@ public:
                           typeid(*module));
     }
 
+    /**
+     * @brief Generate a gaphviz compatible output showing module dependencies.
+     * Needs to be called after inject.
+     *
+     * @param os Output stream to write to.
+     */
     void graphviz(std::ostream &os);
 
+    /**
+     * @brief Inject all dependencies into all inserted modules.
+     *
+     * @returns True if succesfull, false otherwise.
+     */
     [[nodiscard]] bool inject();
 
 private:
@@ -84,6 +112,9 @@ private:
     std::unordered_map<std::type_index, ModuleInfo> modules;
 };
 
+/**
+ * @brief Proxy class used to obtain modules.
+ */
 class ModuleInjector
 {
     friend class ModuleManager;
@@ -95,6 +126,12 @@ private:
     }
 
 public:
+    /**
+     * @brief Retrieve a specific module, recording dependencies and tracking
+     * unsatisfied dependencies.
+     *
+     * @returns The requested module or nullptr if not found.
+     */
     template <typename T>
     T *get()
     {
