@@ -33,6 +33,9 @@
 namespace Boardcore
 {
 
+using RegistryConfiguration =
+    std::unordered_map<ConfigurationId, EntryStructsUnion>;
+
 struct RegistryHeader
 {
     uint64_t zeroBytes;
@@ -88,8 +91,7 @@ public:
      * inserted into the serialized data vector
      * @return false Otherwise
      */
-    bool serializeConfiguration(
-        std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration);
+    bool serializeConfiguration(RegistryConfiguration& configuration);
 
     /**
      * @brief De-serializes the data from a serialized vector into the
@@ -103,8 +105,7 @@ public:
      * @return false Otherwise, e.g. in case of malformed or even corrupted byte
      * vectors
      */
-    bool deserializeConfiguration(
-        std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration);
+    bool deserializeConfiguration(RegistryConfiguration& configuration);
 
 private:
     std::vector<uint8_t>& serializationVector;
@@ -135,7 +136,7 @@ private:
         if (serializationVector.size() < vectorWritePosition + size)
             return false;
 
-        /*alignas(T)*/ uint8_t buffer[size];
+        uint8_t buffer[size];
 
         for (int count = 0; count < size; count++)
             buffer[count] = serializationVector.at(vectorWritePosition + count);
@@ -192,7 +193,7 @@ private:
         if (serializationVector.size() < vectorWritePosition + size)
             return false;
 
-        /*alignas(T)*/ uint8_t buffer[size];
+        uint8_t buffer[size];
         std::memcpy(buffer, &element, size);
 
         for (int count = 0; count < size; count++)

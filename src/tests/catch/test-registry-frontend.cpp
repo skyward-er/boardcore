@@ -158,9 +158,7 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
     REQUIRE(registry.saveConfiguration());
     REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(
-        registry
-            .loadConfiguration()); /*TODO: At load with more types... Si caca*/
+    REQUIRE(registry.loadConfiguration());
     REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
                                             valueInt));
     REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
