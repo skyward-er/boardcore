@@ -94,7 +94,7 @@ RegistrySerializer::RegistrySerializer(std::vector<uint8_t>& vector)
  * @return false Otherwise
  */
 bool RegistrySerializer::serializeConfiguration(
-    std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration)
+    RegistryConfiguration& configuration)
 {
     RegistryHeader header;
     size_t configurationSize = 0;
@@ -178,7 +178,7 @@ bool RegistrySerializer::serializeConfiguration(
  * vectors
  */
 bool RegistrySerializer::deserializeConfiguration(
-    std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration)
+    RegistryConfiguration& configuration)
 {
     bool success = true;
     RegistryHeader header;
@@ -214,7 +214,7 @@ bool RegistrySerializer::deserializeConfiguration(
     {
         // Gets the ID of the entry, the ID of the data type, the value
         success &= deserialize(id);
-        success &= deserialize(typeId);  // TODO: si sminchia... 8...
+        success &= deserialize(typeId);
         switch (typeId)
         {
             case TypesEnum::COORDINATES:
@@ -223,7 +223,6 @@ bool RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return false;
                 EntryStructsUnion entry = EntryStructsUnion::make(coordinate);
-                // WHY CANNOT DO THE INSERT FROM SECOND PROBLEMS!!!
                 success &=
                     configuration.insert(std::make_pair(id, entry)).second;
                 break;
@@ -234,7 +233,6 @@ bool RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return false;
                 EntryStructsUnion entry = EntryStructsUnion::make(floatValue);
-                // WHY CANNOT DO THE INSERT????
                 success &=
                     configuration.insert(std::make_pair(id, entry)).second;
                 break;
@@ -245,15 +243,13 @@ bool RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return false;
                 EntryStructsUnion entry = EntryStructsUnion::make(uint32Value);
-                // WHY CANNOT DO THE INSERT????
                 success &=
                     configuration.insert(std::make_pair(id, entry)).second;
                 break;
             }
             default:
             {
-                success = false;  //< WHY DOES ENTER IN HERE, 2nd
-                                  // configuration???? READS SHITS FOR TYPEID???
+                success = false;
                 break;
             }
         }
