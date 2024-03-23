@@ -82,8 +82,11 @@ public:
      *
      * @param configuration The configuration from which we read the
      * current entries to be serialized
+     * * @return true If the configuration was successfully serialized and
+     * inserted into the serialized data vector
+     * @return false Otherwise
      */
-    void serializeConfiguration(
+    bool serializeConfiguration(
         std::unordered_map<ConfigurationId, EntryStructsUnion>& configuration);
 
     /**
@@ -103,6 +106,7 @@ public:
 
 private:
     std::vector<uint8_t>& serializationVector;
+    uint32_t vectorWritePosition;
 
     /**
      * @brief Computes the CRC/checksum of the feed vector
@@ -113,34 +117,38 @@ private:
     uint32_t computeCRC(std::vector<uint8_t>::iterator& it);
 
     /**
-     * @brief Adds an element to the vector in head or tail position.
-     *
-     * @param serializedVector The vector for which we add the serialized data
-     * @param element The element to be added to the serialized vector
-     */
-    void serialize(uint32_t element);
-    void serialize(float element);
-    void serialize(uint64_t element);
-    void serialize(Coordinates element);
-    bool serialize(EntryStructsUnion element);
-    void serialize(TypesEnum element);
-
-    /**
      * @brief Reads from the vector the element specified in sequential order.
      *
      * @param it The iterator to visit the vector, which is increased while
      * reading
-     * @param element The element we want to get from the serialized vector
+     * @tparam element The element we want to get from the serialized vector
      * @return true If the read was successful
      * @return false Otherwise, e.g. not enough bytes to read the element
      */
-    bool deserialize(std::vector<uint8_t>::iterator& it, uint32_t& element);
-    bool deserialize(std::vector<uint8_t>::iterator& it, uint64_t& element);
-    bool deserialize(std::vector<uint8_t>::iterator& it, float& element);
-    bool deserialize(std::vector<uint8_t>::iterator& it, Coordinates& element);
-    bool deserialize(std::vector<uint8_t>::iterator& it,
-                     EntryStructsUnion& element);
-    bool deserialize(std::vector<uint8_t>::iterator& it, TypesEnum& element);
+    template <typename T>
+    bool deserialize(T& element)
+    {
+        std::size_t size = sizeof(T);
+
+        if (serializationVector.size() < vectorWritePosition + size)
+            return false;
+
+        /*alignas(T)*/ uint8_t buffer[size];
+
+        for (int count = 0; count < size; count++)
+            buffer[count] = serializationVector.at(vectorWritePosition + count);
+        std::memcpy(&element, buffer, size);
+
+        vectorWritePosition += size;
+        return true;
+    }
+
+    template <typename T>
+    bool deserialize(T& element, uint32_t position)
+    {
+        vectorWritePosition = position;
+        return deserialize(element);
+    }
 
     /**
      * @brief Deserializes the header structure from the vector
@@ -150,8 +158,8 @@ private:
      * @return true If the header was deserialized successfully
      * @return false Otherwise, e.g. malformed/too short header
      */
-    bool deserializeHeader(std::vector<uint8_t>::iterator& it,
-                           RegistryHeader& header);
+    bool deserializeHeader(RegistryHeader& header, uint32_t position);
+    bool deserializeHeader(RegistryHeader& header);
 
     /**
      * @brief Writes into the pre-allocated space the header
@@ -160,18 +168,44 @@ private:
      * @return true If it could successfully write
      * @return false Otherwise, e.g. has no sufficient space to write
      */
-    bool writeHeader(RegistryHeader header);
+    bool writeHeader(RegistryHeader& header, uint32_t position);
+    bool writeHeader(RegistryHeader& header);
 
     /**
-     * @brief Write functions mainly used for the writeHeader
+     * @brief Write functions writes to the vector the elements to serialize. It
+     * does such task using memcpy and using the positional attribute to know
+     * the current position where to write and updates such attribute.
      *
-     * @param initialPosition The initial position from which write the element
-     * @param element The element to be written
+     * @tparam element The element to be written in the serialized vector
+     * @param position: The position in which we want to write the vector, by
+     * default keeps the vectorWritePosition as position
      * @return true If it could successfully write
      * @return false Otherwise, e.g. has no sufficient space to write
      */
-    bool write(std::vector<uint8_t>::iterator& it, uint32_t element);
-    bool write(std::vector<uint8_t>::iterator& it, uint64_t element);
+    template <typename T>
+    bool write(T& element)
+    {
+        std::size_t size = sizeof(T);
+
+        if (serializationVector.size() < vectorWritePosition + size)
+            return false;
+
+        /*alignas(T)*/ uint8_t buffer[size];
+        std::memcpy(buffer, &element, size);
+
+        for (int count = 0; count < size; count++)
+            serializationVector.at(vectorWritePosition + count) = buffer[count];
+
+        vectorWritePosition += size;
+        return true;
+    }
+
+    template <typename T>
+    bool write(T& element, uint32_t position)
+    {
+        vectorWritePosition = position;
+        return write(element);
+    }
 };
 
 }  // namespace Boardcore
