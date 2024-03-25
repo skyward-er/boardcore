@@ -32,10 +32,10 @@ namespace Boardcore
 
 struct PropagatorState
 {
-    uint64_t timestamp;
+    uint64_t timestamp;      ///< Prediction timestamp [ms]
     uint32_t nPropagations;  ///< Predictions from last received NAS state
-    Eigen::Vector3f x_prop;  ///< Position propagation state ENU [m]
-    Eigen::Vector3f v_prop;  ///< Speed propagation state ENU [m]
+    Eigen::Vector3f x_prop;  ///< Position propagation state NED [m]
+    Eigen::Vector3f v_prop;  ///< Speed propagation state NED [m]
     Eigen::Vector4f q_prop;  ///< Quaternion propagation (scalar last)
     Eigen::Vector3f b_prop;  ///< Gyroscope bias propagation
 
@@ -64,11 +64,13 @@ struct PropagatorState
         b_prop = Eigen::Vector3f(nasState.bx, nasState.by, nasState.bz);
     }
 
-    static std::string header() { return "timestamp,nPropagations\n"; }
+    static std::string header() { return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n"; }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << nPropagations << "\n";
+        os << timestamp << "," << nPropagations << "," << x_prop(0) << "," << x_prop(1) << "," << x_prop(2) << "," <<
+         v_prop(0) << "," << v_prop(1) << "," << v_prop(2) << "," << q_prop(0) << "," << q_prop(1) << "," << q_prop(2) << ","
+           << q_prop(3) << "," << b_prop(0) << "," << b_prop(1) << "," << b_prop(2) << "\n";
     }
 
     NASState getNasState()
