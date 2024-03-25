@@ -43,8 +43,12 @@ public:
      * @param bus SPI bus.
      * @param csPin SPI chip select pin.
      * @param busConfiguration SPI bus configuration.
+     * @param syncOutSkipFactor The SyncOutSkipFactor defines how many times the
+     * data ready event should be skipped before actually triggering the
+     * interrupt pin.
      */
-    VN100Spi(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration);
+    VN100Spi(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
+             uint16_t syncOutSkipFactor);
 
     /**
      * @brief Initialize the sensor.
@@ -78,6 +82,13 @@ private:
      */
     void sendDummyPacket();
     // TODO: check if really needed and if there is a better solution
+
+    /**
+     * @brief Set the data ready interrupt.
+     *
+     * @return True if the operation is successful, false otherwise.
+     */
+    bool setInterrupt();
 
     /**
      * @brief Get accelerometer, gyroscope, magnetometer, pressure and
@@ -138,6 +149,13 @@ private:
     bool isInit = false;
 
     SPISlave spiSlave;
+
+    /**
+     * @brief The SyncOutSkipFactor defines how many times the sync out event
+     * should be skipped before actually triggering the SyncOut pin (data
+     * ready).
+     */
+    const uint16_t syncOutSkipFactor = 0;
 
     PrintLogger logger =
         Logging::getLogger("vn100-spi");  // TODO: is it fine? Should it be

@@ -43,12 +43,15 @@ int main()
     mosiPin.alternateFunction(6);
     mosiPin.mode(Mode::ALTERNATE);
 
+    GpioPin intPin(GPIOC_BASE, 15);  // PC15 interrupt pin
+    intPin.mode(Mode::INPUT);
+
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
     busConfiguration.clockDivider = SPI::ClockDivider::DIV_256;
     busConfiguration.mode =
         SPI::Mode::MODE_3;  // Set clock polarity to 0 and phase to 1
 
-    VN100Spi sensor(bus, csPin, busConfiguration);
+    VN100Spi sensor(bus, csPin, busConfiguration, 200);
 
     // Let the sensor start up
     Thread::sleep(1000);
