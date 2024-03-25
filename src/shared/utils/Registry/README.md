@@ -113,17 +113,23 @@ If the data type needed not exists already you need to follow these steps:
 
 | Goal |  Description  |
 |:-----|:--------:|
-| G1 | The configuration will be saved in memory |
-|G2 | It will be possible to set the value of a particular configuration entry|
-|G3 | It will be possible to get the value of a particular configuration entry |
-|G4 | It will be possible to inspect the configured entries |
-|G5 | More data types can be used as value for the different configurations entries |
-|G6 | There will be a protection against changes to the configuration during flight |
-|G7 | No dynamic allocations will be executed during the flight |
-|G8 | The registry will offer a persistent configuration saving |
-|G9 | It will be possible to verify the integrity of the configuration|
-|G10 | It will be possible to explore the current configuration |
-|G11 | Thread safeness is guaranteed |
+| G1 | The configuration could be possibly saved in memory |
+| G2 | The configuration could be possibly loaded from memory |
+|G3 | It will be possible to set the value of a particular configuration entry|
+|G4 | It will be possible to get the value of a particular configuration entry |
+|G5 | It will be possible to inspect the configured entries |
+|G6 | More data types can be used as value for the different configurations entries |
+|G7 | There will be a protection against changes to the configuration during flight |
+|G8 | No dynamic allocations will be executed during the flight |
+|G9 | The registry will offer a persistent configuration saving |
+|G10 | It will be possible to verify the integrity of the configuration|
+|G11 | It will be possible to explore the current configuration |
+|G12 | Thread safeness is guaranteed |
+
+**Note:** the Registry Frontend purpose is not to assure with 100% certainty that a configuration is saved in memory and will be loaded. Instead it is an
+additional safety net which, in case of a restart of the rocket, could possibly lead to have the saved configuration re-loaded after reboot/reset.
+
+This note about the registry frontend purpose also considers the fact that a configuration may not be saved in memory, that the memory could have issues or even that a configuration is saved but corrupted.
 
 ### Assumptions
 The front-end, FE, considers some important assumptions about the usage of such sw component.
