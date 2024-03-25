@@ -266,4 +266,51 @@ uint8_t VN100Spi::readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
     return 0;
 }
 
+uint8_t VN100Spi::writeRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
+                                const uint32_t PAYLOAD_SIZE)
+{
+    /**
+     * When writing to a sensor's register 2 spi transactions are needed.
+     *
+     * First I have to send the request packet with the value to be written,
+     * then wait at least 100 microseconds to let the sensor process the
+     * request.
+     *
+     * After this period of time we proceed with reading the outcome of the
+     * operation. We receive a 4 bytes header, whit the first byte always 0, the
+     * second being the write register command, the third being the register we
+     * asked for and the fourth the error value. If the error value is 0 no
+     * error occurred and the operation is successful.
+     *
+     * Low level spi is needed in order to issue multiple readings and writings
+     * without raising the chip select.
+     */
+
+    const uint32_t requestPacket =
+        (VN100SpiDefs::WRITE_REG << 24) |  // Read register command
+        (REG_ID << 16);                    // Id of the register
+
+    // Send request packet
+    spiSlave.bus.select(spiSlave.cs);
+    spiSlave.bus.write32(requestPacket);
+    spiSlave.bus.write(payloadBuf, PAYLOAD_SIZE);
+    spiSlave.bus.deselect(spiSlave.cs);
+
+    // Wait at least 100us
+    miosix::delayUs(100);
+
+    // Read response
+    spiSlave.bus.select(spiSlave.cs);
+
+    // Discard the first 3 bytes of the response
+    spiSlave.bus
+        .read24();  // TODO: should I verify also the command and register?
+
+    uint8_t err = spiSlave.bus.read();
+
+    spiSlave.bus.deselect(spiSlave.cs);
+
+    return err;
+}
+
 }  // namespace Boardcore
