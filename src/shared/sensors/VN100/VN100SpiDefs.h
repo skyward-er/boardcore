@@ -33,9 +33,10 @@ namespace VN100SpiDefs
  */
 enum Registers
 {
-    REG_MODEL_NUMBER    = 1,
-    REG_QUATERNION_DATA = 9,
-    REG_IMU_DATA        = 54,
+    REG_MODEL_NUMBER    = 1,   ///< WhoAmI register
+    REG_QUATERNION_DATA = 9,   ///< Quaternion data register
+    REG_SYNC            = 32,  ///< Used to set data ready interrupt
+    REG_IMU_DATA        = 54,  ///< Imu data register
 };
 
 /**
@@ -45,6 +46,29 @@ enum Commands
 {
     READ_REG  = 1,
     WRITE_REG = 2,
+};
+
+/**
+ * @brief Data format of the synchronization control register, used for reading
+ * and writing operations.
+ */
+struct __attribute__((packed)) SynchronizationData
+{
+    uint8_t syncInMode;         ///< Behaviour of the syncIn event
+    uint8_t syncInEdge;         ///< Trigger syncIn on rising or falling edge
+    uint16_t syncInSkipFactor;  ///< How many times trigger edges defined by
+                                ///< SyncInEdge should occur prior to triggering
+                                ///< a SyncIn event
+    const uint32_t RESERVED = 0;  ///< Reserved, do not use
+    uint8_t syncOutMode;          ///< Behavior of the SyncOut event
+    uint8_t syncOutPolarity;      ///< The polarity of the output pulse on the
+                                  ///< SyncOut pin (positive or negative)
+    uint16_t syncOutSkipFactor;   ///< how many times the sync out event should
+                                  ///< be skipped before actually triggering the
+                                  ///< SyncOut pin
+    uint32_t
+        syncOutPulseWidth;  ///< Controls the desired width of the SyncOut pulse
+    const uint32_t RESERVED2 = 0;  ///< Reserved, do not use
 };
 
 /**
