@@ -77,6 +77,7 @@ private:
      * sensor.
      */
     void sendDummyPacket();
+    // TODO: check if really needed and if there is a better solution
 
     /**
      * @brief Get accelerometer, gyroscope, magnetometer, pressure and
@@ -120,6 +121,19 @@ private:
      */
     uint8_t readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
                          const uint32_t PAYLOAD_SIZE);
+
+    /**
+     * @brief Utility function used to write data to a register of the sensor.
+     *
+     * @param REG_ID The id of the register to be written.
+     * @param payloadBuf The buffer containing the data to be written.
+     * @param PAYLOAD_SIZE The amount of data (in bytes) to be written.
+     *
+     * @return Zero if the operation is successful, the error code otherwise.
+     * See the datasheet for error codes details.
+     */
+    uint8_t writeRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
+                          const uint32_t PAYLOAD_SIZE);
 
     bool isInit = false;
 
