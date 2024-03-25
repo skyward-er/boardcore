@@ -16,66 +16,44 @@ Therefore, it is of the utmost importance to save the configuration and avoid de
 ## The front-end
 
 ### Invocation examples
-In this case we take as example a fictitious configuration entry (NAME which has as value datatype a float)
+In this case we take as example a fictitious configuration entry with uint32_t configuration `id` and value `value`
 
-Type-unsafe interface methods (the one for now tested and considered as most used):
+Type-unsafe interface methods (which takes any data type given as value, without having any map id->data type if the entry was not already set):
 
 #### setConfigurationUnsafe
 ```cpp
 float value = 1.3;
-/* The id could also be a specific enum (will be casted to uint32_t)*/
+// The id could also be a specific enum (will be casted to uint32_t)
 uint32_t id = 10;
 
-if(frontEnd.setUnsafe(id, value))
- { /* correctly set */
+if(frontEnd.setUnsafe(id, value) == RegistryError::OK)
+{    
+    // correctly set
 }
 
 ```
 #### getConfigurationUnsafe
 ```cpp
 float value;
-/* The id could also be a specific enum (will be casted to uint32_t)*/
+// The id could also be a specific enum (will be casted to uint32_t)
 uint32_t id;
 
 
-if(frontEnd.getConfigurationUnsafe(id, value)) {
+if(frontEnd.getConfigurationUnsafe(id, value) == RegistryError::OK) 
+{
     /* Getted the value */
-    }
+}
 ```
 
 #### getConfigurationOrDefaultUnsafe
 ```cpp
 uint32_t ignitionTime, ignitionDefault = 200;
-/* The id could also be a specific enum (will be casted to uint32_t)*/
+//The id could also be a specific enum (will be casted to uint32_t)
 uint32_t id = 0;
 /* Default value that will be get (and possibly set) if cannot get an already initialized value*/
 uint32_t default = 400;
 
 ignitionTime = frontEnd.getConfigurationOrDefaultUnsafe(id, ignitionDefault);
-```
-
-Type-safe interface methods:
-
-#### setConfiguration
-```cpp
-/* Structure from the OBSW structures*/
-Ignition ignitionTime(2.0);
-frontEnd.setConfiguration(ignitionTime);
-```
-#### getConfiguration
-```cpp
-/* Structure from the OBSW structures*/
-Ignition ignitionTime;
-if(!frontEnd.getConfiguration(ignitionTime)){
-    /* Error getting the configuration value */
-}
-```
-
-#### getConfigurationOrDefault
-```cpp
-/* Structure from the OBSW structures*/
-Ignition ignitionTime, ignitionDefault(2.0);
-ignitionTime = frontEnd.getConfigurationOrDefault(ignitionDefault);
 ```
 
 #### arm
@@ -88,9 +66,9 @@ frontEnd.arm()
 frontEnd.disarm()
 ```
 
-#### isConfigurationEmpty
+#### isEmpty
 ```cpp
-if(frontEnd.isConfigurationEmpty())
+if(frontEnd.isEmpty())
 {
     /* The front end configuration is empty */
 }
@@ -98,12 +76,17 @@ if(frontEnd.isConfigurationEmpty())
 
 #### save
 ```cpp
-frontEnd.save();
+if(frontEnd.save() == RegistryError::OK)
+{
+    // Saved correctly the configuration
+}
 ```
 
 #### load
 ```cpp
-frontEnd.load();
+if(frontEnd.load() == RegistryError::OK){
+    // Loaded the configuration correctly
+}
 ```
 
 #### clear
@@ -114,15 +97,16 @@ frontEnd.clear();
 ### How to add new structs
 The correct flow to add new types/configuration entries is:
 
-- `TypeStructure.h`: If not exist, create a new struct for the type that we will use for the configuration entry value. The structures in OBSW will refer to these structures. 
+If the data type needed not exists already you need to follow these steps:
 
-- `RegistryFrontend.h`: Remember to update:
-The type enum; 
-The TypeUnion fields;
-Add in EntryStructsUnion the get, make and getFromSerializedVector overloads;
-Modify the and appendSerializedFromUnion for the serialization also of such new type.
- 
- - `RegistrySerializer.h`, `RegistrySerializer.cpp`: Remember to update the serializer to have the serialize, deserialize methods for the new types. Also for the switch case in the deserializeConfiguration method.
+- `TypeStructure.h`: 
+    - Add the type to the TypeUnion;
+    - Update the type enum; 
+    - Create the correct overloads in EntryStructsUnion;
+
+ - `RegistrySerializer.h`, `RegistrySerializer.cpp`: 
+    - Update the write
+    - Update the deserialize
 
 
 ### Goals
@@ -140,7 +124,6 @@ Modify the and appendSerializedFromUnion for the serialization also of such new 
 |G9 | It will be possible to verify the integrity of the configuration|
 |G10 | It will be possible to explore the current configuration |
 |G11 | Thread safeness is guaranteed |
-|G12| Some methods also guarantees type safeness|
 
 ### Assumptions
 The front-end, FE, considers some important assumptions about the usage of such sw component.
@@ -149,15 +132,15 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 
 | Assumption |  Description  |
 |:-----|:--------:|
-|A1 | The FE is constructed and instantiated once, a single time|
-|A2 | The FE does saves and retrieves a single configuration from the registry and no multiple versions|
-|A3 | The FE is called before the flight phase for instantiation and registry check |
+|A1 | The FE is constructed and started once, a single time|
+|A2 | The FE does saves and loads a single configuration from the registry and no multiple versions|
+|A3 | The FE is called before the flight phase for instantiation, load and set |
 |A4 | The FE is correctly armed before the flight |
 |A5 | The FE disarming is not used during flight phase |
 |A6 | The caller considers the return of the get and set methods|
 |A7 | Configuration entries does not have pointers as datatype |
-|A8| The backend does not modify the vector to be saved.|
-|A9| Other methods not modify the vector through getSerializedConfiguration|
+|A8 | The backend does not modify the vector to be saved.|
+|A9 | The save method is correctly trigger externally when a save is needed |
 
 ### Requirements
 
@@ -165,26 +148,29 @@ Such assumptions considers the actual necessities for Skyward Registry and might
 |:-----|:--------:|
 |R1 | The interface must allow setting a value for the specific configuration entries |
 |R2 | The interface must allow getting a specified value for a   configuration entries |
-|R3 | The interface must perform some type check for the   specifics entries to get |
-|R4 | The interface must not allocate memory during the  flight phase |
+|R3 | The interface must perform some type check for the specifics entries to get |
+|R4 | The interface must not allocate memory during the flight phase |
 |R5 | The interface must not change the configuration entries during flight phase |
 |R6 | The interface does save the configuration entries using the back-end components |
 |R7 | The FE must manage concurrent get/set by multiple threads (Thread safety)|
 |R8 | The FE must manage concurrent arm/disarm by multiple threads  (Thread safety)|
 |R9 | The FE must allow exploration of the actual configuration|
 |R10 | The FE should be able to control the configuration state (empty or has elements)|
+| R11 | The FE should not be blocked during the actual backend saving procedure |
 
 ### Interface methods
 
-The unsafe (type-unsafe) methods does not use the proper data structure for the set and get but instead just pass a parameter value for a specific registry entry uint32_t index identifier (could be a casted enumerator from OBSW structures)
+The unsafe (type-unsafe) methods uses a parameter value for a specific registry entry uint32_t index identifier (could be a casted enumerator from OBSW structures) and a value from a specific data type. The Unsafeness is given by the fact that the data type is given from the value data type given to the set/get methods.
 
-- `setConfiguration[Unsafe]`:  A setter method is in need to ensure R1. This method should allow 
+- `start`: Starts the backend and other objects that requires to be started, as an ActiveObject.
+
+- `setUnsafe`:  A setter method is in need to ensure R1. This method should allow 
     insert a value for a specific configuration entry while guarantee the different data types for the values (R3).
     
-- `getConfiguration[Unsafe]`:  A getter method is in need to ensure the visibility of the configuration. 
+- `getUnsafe`:  A getter method is in need to ensure the visibility of the configuration. 
     Such method should get a value for a specified configuration entry and changes the value to passed by reference value parameter. It does check that the type is consistent with the saved one.
 
-- `getOrSetDefaultConfiguration[Unsafe]`: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
+- `getOrSetDefaultUnsafe`: A particular get method which returns the get value and if it is not existing in the configuration set it (if possible!) and returns the default value.
 
  - `arm`:  An "arm" method which guarantees no memory allocations and no changes to the configuration are in place
     until a "disarm" method. It is an important functionality to ensure a "safe" memory configuration during flight.
@@ -192,7 +178,7 @@ The unsafe (type-unsafe) methods does not use the proper data structure for the 
  - `disarm`: A "disarm" method, to disable the stable and "safe" configuration mode of the registry to allow again 
     allocations and settings on the configuration.
 
- - `isConfigurationEmpty`: A method to know if there is an existing configuration or if it is empty
+ - `isEmpty`: A method to know if there is an existing configuration or if it is empty
 
 - `configuredEntries`: A method which returns the already existing entries of the configuration as a set.
 
@@ -202,42 +188,49 @@ The unsafe (type-unsafe) methods does not use the proper data structure for the 
 
 - `clear`: Clears the configuration both in frontend and backend components, starting with an empty configuration.
 
-- `visitConfiguration`: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
+- `visit`: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
 
 ### Data structures
 The data structures are managed in 2 main header files.
 #### RegistryTypes.h
 Type structures have:
 
-- `RootTypeStructure`: A root type, with just 2 template attributes: value and index
-
-- `(Float|UInt32|...)Type`: A sub-type that does specify the value attribute type. It inherits from RootTypeStructure
-
-- `RegistryHeader`: The header structure for the serialization and de-serialization. Contains the attributes and information useful for the serialization and de-serialization procedures.
-
-#### RegistryFrontend.h
-
 - `TypeUnion`: The union type for saving the values of the different configuration entries
 
-- `EntryStructsUnion`: The structure actually saved into the configuration, with the value and type attributes. Also, it does expose all the useful operations for get/set the value from/to union, append to the serialize vector a value, get a value from the serialized vector.
+- `EntryStructsUnion`: The structure actually saved into the configuration, with the value and type attributes. Also, it does expose all the useful operations for get/set the value from/to union and create a new instance of EntryStructsUnion through `make(value)` method.
 
-#### Data saving serialization
+#### RegistrySerializer.h
+
+- `RegistryHeader`: The header structure for the serialization and de-serialization. Contains the attributes and information useful for the serialization and de-serialization procedures.
+- `RegistryFooter`: Contains the CRC/Checksum of the serialized configuration.
+
+## The serializer
+The serializer simply taken a configuration, it serialize or deserialize it on the vector given in the constructor, following the format specified above. It isolates the serialize and de-serialize procedure from the frontend by making it simpler and more coherent.
+
+### Exposed methods:
+- `RegistrySerializer(vector)` The constructor needs the vector to/from which it writes the serialized data or reads to deserialize it.
+
+- `serializeConfiguration(configuration)` Serializes the configuration + header and footer to the vector given in the constructor.
+
+ - `deserializeConfiguration(configuration)` From the vector, loads the configuration inserting the entries if the vector checks (CRC, length, startBytes) are verified.
+
+### Data saving serialization
 serializationVector is a vector that after getSerializedVector will contain:
 |||
 |:-----|--------:|
 |Header| serializardConfigurations|
 
-As for now, the header (visible in RegistryTypes.h) is composed with 8B of zero bytes, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of CRC - checksum computed with xor byte per byte of the serialized configurations following the header.
+As for now, the header (visible in RegistryTypes.h) is composed with 8B of bytes equal to decimal 1 for endianess checking, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of CRC - checksum computed with xor byte per byte of the serialized configurations following the header.
 
 |||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
-|8B zero| 4B Length vector | 4B Nr. entries | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
+|8B = 1| 4B Length vector | 4B Nr. entries | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
 
 Header closeup (0bit as rightmost one / big endian):
 
 |||||||||||||||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
-|0|0|0|0|0|0|0|0|v_len 31-24|v_len 23-16|v_len 15-8|v_len 7-0|nr_en 31-24|nr_en 23-16|nr_en 15-8|nr_en 7-0|crc 31-24|crc 23-16|crc 15-8|crc 7-0|
+|0|0|0|0|0|0|0|1|v_len 31-24|v_len 23-16|v_len 15-8|v_len 7-0|nr_en 31-24|nr_en 23-16|nr_en 15-8|nr_en 7-0|crc 31-24|crc 23-16|crc 15-8|crc 7-0|
 
 The vector will contain only the set configurations. After the header, there will be all the configured entries with configuration ID, Type ID, Value(s).
 
@@ -251,19 +244,4 @@ e.g. for a Coordinate:
 Where TypeID in this example is a coordinates type and therefore 45.50109 is the latitude and 9.15633 the longitude
 
 ### Saving
-The save of the configuration is done at each new entry configured, each set will held to a save of the configuration, mediated by the middleware which might lead to discard late writes.
-
-## The middleware
-Another part of the Registry is the middleware which decouples the registry front-end and the backend. This aims to avoid the block given by waiting the SD or underlying saving backend for write the serialized configuration.
-
-This component avoid this by using a buffer for the write to backend and another, at disposal for writes from the front-end. It is an active object which waits for new data to write it to backend.
-
-### Methods
-- `write`: Writes to the backend the given configuration. The real write is done by the run() method executed by the
-registry middleware's thread, while in reality write just writes to the buffer the serialized configuration that will
-be then written by the thread.
-- `load`: Loads into the vector the saved configuration from the backend. Returns false if none is saved.
-- `clear`: Clears/deletes the configuration in buffers and underlying backend
-
-## The serializer
-The serializer simply taken a configuration, it serialize or deserialize it following the format specified above. It isolates the serialize and de-serialize procedure from the frontend by making it simpler and more coherent.
+The save of the configuration is done manually by using the RegistryFrontend `save()` method. To reset the memory `clear()` + `save()` should be used.
