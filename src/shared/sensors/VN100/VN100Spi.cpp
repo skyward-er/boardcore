@@ -32,8 +32,9 @@ namespace Boardcore
 {
 
 VN100Spi::VN100Spi(SPIBus& bus, miosix::GpioPin csPin,
-                   SPIBusConfig busConfiguration)
-    : spiSlave(bus, csPin, busConfiguration)
+                   SPIBusConfig busConfiguration, uint16_t syncOutSkipFactor)
+    : spiSlave(bus, csPin, busConfiguration),
+      syncOutSkipFactor(syncOutSkipFactor)
 {
 }
 
@@ -50,10 +51,17 @@ bool VN100Spi::init()
     // Send dummy data to clean up
     sendDummyPacket();
 
-    if (checkModelNumber() == false)
+    if (!checkModelNumber())
     {
         LOG_ERR(logger, "Got bad CHIPID");
         lastError = SensorErrors::INVALID_WHOAMI;
+        return false;
+    }
+
+    if (!setInterrupt())
+    {
+        LOG_ERR(logger, "Unable to set data ready interrupt");
+        lastError = SensorErrors::INIT_FAIL;
         return false;
     }
 
@@ -100,6 +108,46 @@ void VN100Spi::sendDummyPacket()
 {
     SPITransaction transaction(spiSlave);
     transaction.write32(0);
+}
+
+bool VN100Spi::setInterrupt()
+{
+    /**
+     * The data ready interrupt is set via the synchronization control register,
+     * by setting the SyncOut mode.
+     *
+     * Imu data is sampled at 800Hz, while Attitude data (quaternion) is sampled
+     * at 400 Hz. Considering that attitude data has a lower rate we set the
+     * data ready to trigger on attitude data.
+     *
+     * We can set the SyncOutSkipFactor, that defines how many times the sync
+     * out event should be skipped before actually triggering the SyncOut pin.
+     * This way we can control the rate at which the data ready interrupt is
+     * triggered.
+     *
+     * The values not needed for the data ready of the register will be set to
+     * default.
+     */
+
+    // Init struct and set default values
+    VN100SpiDefs::SynchronizationData sData;
+    sData.syncInMode = 3;  // Set to: count number of trigger events on SYNC_IN.
+    sData.syncInEdge = 0;  // Trigger on rising edge
+    sData.syncInSkipFactor = 0;  // Don't skip
+
+    // Set needed values
+    sData.syncOutMode = 3;  // Trigger when attitude measurements are available
+    sData.syncOutPolarity   = 1;  // Positive output pulse on the SyncOut pin
+    sData.syncOutSkipFactor = syncOutSkipFactor;
+    sData.syncOutPulseWidth =
+        1000000;  // Width of the SyncOut pulse in nanoseconds. Now is set to 1
+                  // millisecond
+    // TODO: is 1ms fine for syncOutPulseWidth? Too long? Too short?
+
+    uint8_t err = writeRegister(VN100SpiDefs::REG_SYNC, (uint8_t*)&sData,
+                                sizeof(VN100SpiDefs::SynchronizationData));
+
+    return err == 0;
 }
 
 bool VN100Spi::selfTest()
