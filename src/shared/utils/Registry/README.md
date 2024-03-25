@@ -119,7 +119,7 @@ The correct flow to add new types/configuration entries is:
 - `RegistryFrontend.h`: Remember to update:
 The type enum; 
 The TypeUnion fields;
-Add in EntryStructsUnion the getFromUnion, make and getFromSerializedVector overloads;
+Add in EntryStructsUnion the get, make and getFromSerializedVector overloads;
 Modify the and appendSerializedFromUnion for the serialization also of such new type.
  
  - `RegistrySerializer.h`, `RegistrySerializer.cpp`: Remember to update the serializer to have the serialize, deserialize methods for the new types. Also for the switch case in the deserializeConfiguration method.
@@ -206,7 +206,7 @@ The unsafe (type-unsafe) methods does not use the proper data structure for the 
 
 ### Data structures
 The data structures are managed in 2 main header files.
-#### TypeStructures.h
+#### RegistryTypes.h
 Type structures have:
 
 - `RootTypeStructure`: A root type, with just 2 template attributes: value and index
@@ -227,7 +227,7 @@ serializationVector is a vector that after getSerializedVector will contain:
 |:-----|--------:|
 |Header| serializardConfigurations|
 
-As for now, the header (visible in TypeStructures.h) is composed with 8B of zero bytes, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of CRC - checksum computed with xor byte per byte of the serialized configurations following the header.
+As for now, the header (visible in RegistryTypes.h) is composed with 8B of zero bytes, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of CRC - checksum computed with xor byte per byte of the serialized configurations following the header.
 
 |||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|

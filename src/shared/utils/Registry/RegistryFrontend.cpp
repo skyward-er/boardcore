@@ -23,48 +23,28 @@
 #pragma once
 #include "RegistryFrontend.h"
 
-namespace
-{
-constexpr uint32_t VECTOR_NR_ENTRIES_RESERVE = 40;
-constexpr uint32_t NR_BYTES_ENTRY_ID =
-    4;  //< Nr. bytes allocated in the vector for the entryId
-constexpr uint32_t NR_BYTES_HEADER =
-    20;  //< Nr. bytes allocated in the vector for the typeid
-constexpr uint32_t NR_BYTES_PER_ENTRY =
-    6;  //< For now assuming 1B ID, 1B type ID, 4B values
-}  // namespace
 namespace Boardcore
 {
 
 /**
- * @brief Registry front end constructor. Initializes the configuration from
- * the backend.
+ * @brief Registry front end constructor. Initializes the configuration of
+ * the underlying objects and reserves 1KB for the vectors and map data
+ * structures.
  */
 RegistryFrontend::RegistryFrontend() : serializer(serializationVector)
 {
-    serializationVector.reserve(VECTOR_NR_ENTRIES_RESERVE * NR_BYTES_PER_ENTRY +
-                                NR_BYTES_HEADER);
-    elementVector.reserve(NR_BYTES_ENTRY_ID + NR_BYTES_PER_ENTRY +
-                          sizeof(TypeUnion));
-    configuration.reserve(VECTOR_NR_ENTRIES_RESERVE);
-    // middleware.init(); //< Initializes with the backend
-    // TODO: Re-add it when the middleware is integrated again
-    // middleware.start();
-    /*
-     * TODO: The registry will load from the backend the saved configuration
-     * and initialize configuration, after initialize properly the middleware
-     * and backend */
+    serializationVector.reserve(1024);
+    configuration.reserve(
+        1024 / sizeof(std::pair<ConfigurationId, EntryStructsUnion>));
 }
 
 /**
- * @brief Registry front end destructor. Saves configuration to
- * the backend.
+ * @brief Start function to start frontend and other objects, such as
+ * ActiveObjects to write to backend and the backend itself
  */
-RegistryFrontend::~RegistryFrontend()
+void RegistryFrontend::start()
 {
-    /* TODO: The registry will save the configurations and also use the
-     * proper destructors if needed?*/
-    // saveConfiguration();
+    // TODO: Will start the appropriate objects
 }
 
 /**
@@ -73,7 +53,7 @@ RegistryFrontend::~RegistryFrontend()
  */
 void RegistryFrontend::arm()
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     isArmed = true;
 }
 
@@ -84,7 +64,7 @@ void RegistryFrontend::arm()
  */
 void RegistryFrontend::disarm()
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     isArmed = false;
 }
 
@@ -93,10 +73,10 @@ void RegistryFrontend::disarm()
  * EntryStructsUnion union as parameter for each configured entry in the
  * configuration.
  */
-void RegistryFrontend::visitConfiguration(
+void RegistryFrontend::visit(
     std::function<void(ConfigurationId, EntryStructsUnion&)> callback)
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     for (auto& it : configuration)
     {
         callback(it.first, it.second);
@@ -105,23 +85,33 @@ void RegistryFrontend::visitConfiguration(
 
 /**
  * @brief Loads from the backend the configuration
- * @return True if the configuration exists in memory and is not corrupted,
- * False if not.
+ *
+ * @return OK if the configuration exists in memory and is not
+ * corrupted
+ * @return MALFORMED_SERIALIZED_VECTOR if the vector has a bad format (see
+ * serializer)
+ * @return CRC_FAIL In case the saved CRC/Checksum is incorrect (see
+ * serializer)
+ * @return NO_SUCH_TYPE In case there are unspecified type ids (see
+ * serializer)
+ * @return CANNOT_INSERT In case could not insert into the configuration the
+ * de-serialized element
+ * @return WRONG_ENDIANESS In case the endianess of serialization not
+ * corresponds (see serializer)
  */
-bool RegistryFrontend::loadConfiguration()
+RegistryError RegistryFrontend::load()
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     if (isArmed)
-        return false;
-    /* TODO: get from the backend the vector, verify the checksum, load entry by
-     * entry
-     */
+        return RegistryError::ARMED;
+    /* TODO: get from the backend the vector*/
     // TODO: if(!middleware.load(serializationVector)) return false;
     return serializer.deserializeConfiguration(configuration);
 }
 
 /**
  * @brief Verify if there is an existing entry given its enum entry.
+ *
  * @param configurationIndex The configuration entry ID for which we verify
  * the entry is configured.
  * @return True if such configuration entry exists in the configuration
@@ -130,7 +120,7 @@ bool RegistryFrontend::loadConfiguration()
 bool RegistryFrontend::isEntryConfigured(
     const ConfigurationId configurationIndex)
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     auto iterator = configuration.find(configurationIndex);
     return !(iterator == configuration.end());
 }
@@ -138,11 +128,12 @@ bool RegistryFrontend::isEntryConfigured(
 /**
  * @brief Verify that the configuration is empty or exists some setted
  * entries
+ *
  * @return True if the configuration has no entries. False otherwise
  */
-bool RegistryFrontend::isConfigurationEmpty()
+bool RegistryFrontend::isEmpty()
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     return configuration.empty();
 }
 
@@ -151,13 +142,23 @@ bool RegistryFrontend::isConfigurationEmpty()
  *
  * @attention: The save will be inhibited in case of "armed" state in order
  * to avoid unwanted allocations to the serializationVector during flight.
+ *
+ * @return OK if could save correctly
+ * @return MALFORMED_SERIALIZED_VECTOR if the vector not have the
+ * appropriate length (see serializer)
+ * @return CRC_FAIL In case the saved CRC/Checksum not corresponds (see
+ * serializer)
+ * @return NO_SUCH_TYPE In case there are unspecified type ids (see
+ * serializer)
+ * @return CANNOT_INSERT In case could not insert into the configuration the
+ * loaded element
  */
-bool RegistryFrontend::saveConfiguration()
+RegistryError RegistryFrontend::save()
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     // In case the registry is armed inhibit the saving
     if (isArmed)
-        return false;
+        return RegistryError::ARMED;
     return serializer.serializeConfiguration(configuration);
     // TODO: Re-add it when the middleware is integrated again
     // middleware.write(serializationVector);
@@ -166,11 +167,13 @@ bool RegistryFrontend::saveConfiguration()
 /**
  * @brief Clear the configuration actually saved, resetting to empty
  * configuration. Does affect also the underlying backend.
- * @attention It does delete also the backend saved copies
+ *
+ * @attention It does not directly delete the backend saved copy, save should be
+ * used to trigger such action
  */
 void RegistryFrontend::clear()
 {
-    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::mutex> lock(mutexForRegistry);
     serializationVector.clear();
     configuration.clear();
     // TODO: Re-add it when the middleware is integrated again

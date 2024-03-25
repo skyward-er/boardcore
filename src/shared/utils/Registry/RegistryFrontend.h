@@ -33,7 +33,7 @@
 // TODO: Re-add it when the middleware is integrated again
 // #include "RegistryMiddleware.h"
 #include "RegistrySerializer.h"
-#include "TypeStructures.h"
+#include "RegistryTypes.h"
 
 namespace Boardcore
 {
@@ -50,8 +50,18 @@ namespace Boardcore
 class RegistryFrontend
 {
 public:
+    /**
+     * @brief Registry front end constructor. Initializes the configuration of
+     * the underlying objects and reserves 1KB for the vectors and map data
+     * structures.
+     */
     RegistryFrontend();
-    ~RegistryFrontend();
+
+    /**
+     * @brief Start function to start frontend and other objects, such as
+     * ActiveObjects to write to backend and the backend itself
+     */
+    void start();
 
     /**
      * @brief Disables the memory registry set and allocations.
@@ -71,7 +81,7 @@ public:
      * EntryStructsUnion union as parameter for each configured entry in the
      * configuration.
      */
-    void visitConfiguration(
+    void visit(
         std::function<void(ConfigurationId, EntryStructsUnion&)> callback);
 
     /**
@@ -88,7 +98,7 @@ public:
      * entries
      * @return True if the configuration has no entries. False otherwise
      */
-    bool isConfigurationEmpty();
+    bool isEmpty();
 
     // TYPE UNSAFE INTERFACE METHODS
 
@@ -100,19 +110,25 @@ public:
      * enumeration value
      * @param value The value to be insert for the specified configuration
      * entry
-     * @return True in case of successful insertion. False otherwise (memory
-     * limits or "armed" memory)
+     * @return OK in case of successful insertion.
+     * @return ENTRY_NOT_FOUND In case the entry is not found in the
+     * configuration
+     * @return INCORRECT_TYPE If the setted data type not corresponds with the
+     * given value data type
      */
     template <typename T>
-    bool getConfigurationUnsafe(const ConfigurationId configurationIndex,
-                                T& value)
+    RegistryError getUnsafe(const ConfigurationId configurationIndex,
+                            T& outValue)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
         /** Checks that the value type corresponds to the set type and finds
          * the entry*/
-        return !(iterator == configuration.end()) &&
-               (iterator->second.getFromUnion(value));
+        if (iterator == configuration.end())
+            return RegistryError::ENTRY_NOT_FOUND;
+        if (!iterator->second.get(outValue))
+            return RegistryError::INCORRECT_TYPE;
+        return RegistryError::OK;
     }
 
     /**
@@ -128,17 +144,18 @@ public:
      * configuration
      */
     template <typename T>
-    T getOrSetDefaultConfigurationUnsafe(
-        const ConfigurationId configurationIndex, T defaultValue)
+    T getOrSetDefaultUnsafe(const ConfigurationId configurationIndex,
+                            T defaultValue)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
         T returnValue;
-        if (getConfigurationUnsafe(configuration, &returnValue))
+        if (getUnsafe(configuration, &returnValue))
         {
             return returnValue;
         }
-        if (!setConfigurationUnsafe(configurationIndex, defaultValue))
-            TRACE("Registry - Could not insert the default configuration");
+        if (!setUnsafe(configurationIndex, defaultValue))
+            LOG_ERR(logger,
+                    "Registry - Could not insert the default configuration");
         return defaultValue;
     }
 
@@ -152,178 +169,91 @@ public:
      * @param configurationIndex The ID of the configuration entry to set
      * @param value The value to be set for the specified configuration
      * entry
-     * @return True if it was possible to set the configurationEntry. False
-     * otherwise, e.g. in case of allocation issues or "armed" memory
-     */
-    template <typename T>
-    bool setConfigurationUnsafe(ConfigurationId configurationIndex, T value)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        if (setConfigurationUnsafeInternal(configurationIndex, value))
-        {
-            saveConfiguration();
-            return true;
-        }
-        return false;
-    }
-
-    // TYPE SAFE INTERFACE METHODS
-
-    /**
-     * @brief Gets the saved configuration entry for such index type-safely.
-     *
-     * @tparam T The configuration entry value data type.
-     * @param value The returned configuration entry with its current value.
-     * @return True if the configuration has such entry in memory. False
-     * otherwise.
-     */
-    template <typename T>
-    bool getConfiguration(T& value)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        auto iterator = configuration.find(value.index);
-        if (iterator == configuration.end())
-        {
-            TRACE(
-                "Registry - getConfiguration - Get configuration not "
-                "found");
-            return false;
-        }
-        value.value = iterator->second.value;
-        return true;
-    }
-
-    /**
-     * @brief Sets the configuration entry in the registry configuration
-     * using the given configuration entry struct.
-     * This method calls the underlying internal method and also saves the
-     * configuration
-     *
-     * @tparam T The configuration entry struct
-     * @param configurationEntry The configuration entry initialized and set
-     * struct to be saved in the configuration.
-     * @return True if the entry is correctly saved in the registry. False
-     * otherwise, e.g. in case of allocation issues or "armed" memory
-     */
-    template <typename T>
-    bool setConfiguration(T configurationEntry)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        if (setConfigurationInternal(configurationEntry))
-        {
-            saveConfiguration();
-            return true;
-        }
-        return false;
-    }
-
-    // DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE
-
-    /**
-     * @brief Loads from the backend the configuration
-     * @return True if the configuration exists in memory and is not
-     * corrupted, False if not.
-     */
-    bool loadConfiguration();
-
-    /**
-     * @brief Saves the configuration to the backend
-     *
-     * @attention: The save will be inhibited in case of "armed" state in order
-     * to avoid unwanted allocations to the serializationVector during flight.
-     */
-    bool saveConfiguration();
-
-    /**
-     * @brief Clear the configuration actually saved, resetting to empty
-     * configuration. Does affect also the underlying backend.
-     * @attention It does delete also the backend saved copies
-     */
-    void clear();
-
-private:
-    std::recursive_mutex mutexForRegistry;
-    std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
-    bool isArmed = false;
-    std::vector<uint8_t> serializationVector;
-    std::vector<uint8_t> elementVector;
-    RegistrySerializer serializer;
-    // TODO: Re-add it when the middleware is integrated again
-    // RegistryMiddlewareFlash middleware;
-    PrintLogger logger = Logging::getLogger("registry-frontend");
-
-    /**
-     * @brief Sets the value for the configuration entry with the specified
-     * enum. This method is internally used both by the public method and from
-     * the load.
-     * @tparam T The configuration struct datatype
-     * @param configurationIndex The configuration entry ID
-     * @param value The value to be set for the specified configuration
+     * @return OK if it was possible to set the configurationEntry.
+     * @return ARMED If the registry is in an armed state, therefore setting a
+     * configuration is forbidden
+     * @return CANNOT_INSERT If could not insert into the configuration map the
      * entry
-     * @return True if it was possible to set the configurationEntry. False
-     * otherwise, e.g. in case of allocation issues or "armed" memory
      */
     template <typename T>
-    bool setConfigurationUnsafeInternal(
-        const ConfigurationId configurationIndex, T value)
+    RegistryError setUnsafe(ConfigurationId configurationIndex, T value)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
+        std::lock_guard<std::mutex> lock(mutexForRegistry);
         /* In case that the configuration is in an armed state it cannot be
          * modified */
         {
             if (isArmed)
-                return false;
+                return RegistryError::ARMED;
             EntryStructsUnion entry = EntryStructsUnion::make(value);
             bool success =
                 configuration.insert(std::make_pair(configurationIndex, entry))
                     .second;
             if (!success)
             {
-                TRACE(
-                    "Registry - setConfigurationUnsafe - Could not insert the "
-                    "configuration entry");
                 LOG_ERR(logger, "Could not insert the entry");
-                return false;
+                return RegistryError::CANNOT_INSERT;
             }
-            return true;
+            return RegistryError::OK;
         }
     }
 
+    // DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE
+
     /**
-     * @brief Sets the configuration entry in the registry configuration
-     * using the given configuration entry struct. This method is internally
-     * used both by the public method and from the load
+     * @brief Loads from the backend the configuration
      *
-     * @tparam T The configuration entry struct
-     * @param configurationEntry The configuration entry initialized and set
-     * struct to be saved in the configuration.
-     * @return True if the entry is correctly saved in the registry. False
-     * otherwise, e.g. in case of allocation issues or "armed" memory
+     * @return OK if the configuration exists in memory and is not
+     * corrupted
+     * @return MALFORMED_SERIALIZED_VECTOR if the vector has a bad format (see
+     * serializer)
+     * @return CRC_FAIL In case the saved CRC/Checksum is incorrect (see
+     * serializer)
+     * @return NO_SUCH_TYPE In case there are unspecified type ids (see
+     * serializer)
+     * @return CANNOT_INSERT In case could not insert into the configuration the
+     * de-serialized element
+     * @return WRONG_ENDIANESS In case the endianess of serialization not
+     * corresponds (see serializer)
      */
-    template <typename T>
-    bool setConfigurationInternal(T configurationEntry)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
-        /* In case that the configuration is in an armed state it cannot be
-         * modified */
-        if (isArmed)
-            return false;
-        EntryStructsUnion entryToSet = EntryStructsUnion(configurationEntry);
-        bool success                 = configuration
-                           .insert(std::make_pair(configurationEntry.enumVal,
-                                                  entryToSet.value))
-                           .second;
-        if (!success)
-        {
-            TRACE(
-                "Registry - setConfiguration - Could not insert the "
-                "configuration entry");
-            LOG_ERR(logger, "Could not insert the entry");
-            return false;
-        }
-        saveConfiguration();
-        return success;
-    }
+    RegistryError load();
+
+    /**
+     * @brief Saves the configuration to the backend
+     *
+     * @attention: The save will be inhibited in case of "armed" state in order
+     * to avoid unwanted allocations to the serializationVector during flight.
+     *
+     * @return OK if could save correctly
+     * @return MALFORMED_SERIALIZED_VECTOR if the vector not have the
+     * appropriate length (see serializer)
+     * @return CRC_FAIL In case the saved CRC/Checksum not corresponds (see
+     * serializer)
+     * @return NO_SUCH_TYPE In case there are unspecified type ids (see
+     * serializer)
+     * @return CANNOT_INSERT In case could not insert into the configuration the
+     * loaded element
+     */
+    RegistryError save();
+
+    /**
+     * @brief Clear the configuration actually saved, resetting to empty
+     * configuration. Does affect also the underlying backend.
+     *
+     * @attention It does not directly delete the backend saved copy, save
+     * should be used to trigger such action
+     */
+    void clear();
+
+private:
+    std::mutex mutexForRegistry;
+    std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
+    bool isArmed = false;
+    std::vector<uint8_t> serializationVector;
+    RegistrySerializer serializer;
+    // TODO: Re-add it when the middleware is integrated again
+    // RegistryMiddlewareFlash middleware; // May be done as unique ptr to
+    // middleware...
+    PrintLogger logger = Logging::getLogger("registry-frontend");
 };
 
 }  // namespace Boardcore
