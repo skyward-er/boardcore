@@ -35,7 +35,7 @@
 
 using namespace Boardcore;
 
-/** Magic numbers for testing the set/get for each data type, they do not
+/* Magic numbers for testing the set/get for each data type, they do not
  * reflect the reals configuration ids and values in use! */
 static constexpr uint8_t TEST_VALUE_UINT8                = 20;
 static constexpr uint32_t TEST_VALUE_UINT32              = 30;
@@ -57,162 +57,187 @@ TEST_CASE(
     float floatValue;
     uint32_t uint32Value;
     uint8_t uint8Value;
-    Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE);
+    Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE};
     // Check that the registry is first empty
-    REQUIRE(registry.isConfigurationEmpty());
+    REQUIRE(registry.isEmpty());
     // Checks that there are effectively non-initialized entry configurations
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(DEPLOYMENT_ALTITUDE_ID), floatValue));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(TARGET_COORDINATES_ID), coordinatesValue));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(VENTING_VALVE_ATOMIC_TIMING_ID), uint32Value));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        static_cast<uint32_t>(ALGORITHM_ID), uint8Value));
+    REQUIRE(registry.getUnsafe(static_cast<uint32_t>(DEPLOYMENT_ALTITUDE_ID),
+                               floatValue) != RegistryError::OK);
+    REQUIRE(registry.getUnsafe(static_cast<uint32_t>(TARGET_COORDINATES_ID),
+                               coordinatesValue) != RegistryError::OK);
+    REQUIRE(registry.getUnsafe(
+                static_cast<uint32_t>(VENTING_VALVE_ATOMIC_TIMING_ID),
+                uint32Value) != RegistryError::OK);
+    REQUIRE(registry.getUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
+                               uint8Value) != RegistryError::OK);
     // Check set configuration results in right get
-    REQUIRE(registry.setConfigurationUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
-                                            TEST_VALUE_UINT8));
+    REQUIRE(registry.setUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
+                               TEST_VALUE_UINT8) == RegistryError::OK);
     uint8Value = 0;
-    REQUIRE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint8Value) == RegistryError::OK);
     REQUIRE(uint8Value == TEST_VALUE_UINT8);
     uint32Value = 0;
-    REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, TEST_VALUE_UINT32));
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, uint32Value));
+    REQUIRE(registry.setUnsafe(COORDINATE_ID, TEST_VALUE_UINT32) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, uint32Value) ==
+            RegistryError::OK);
     REQUIRE(uint32Value == TEST_VALUE_UINT32);
     /* Checks that get configuration is false if the type is incorrect w.r.t.
      * the type of the set type */
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(COORDINATE_ID, floatValue));
+    REQUIRE_FALSE(registry.getUnsafe(COORDINATE_ID, floatValue) ==
+                  RegistryError::OK);
 }
 
 TEST_CASE("RegistryFrontend test - Arm/Disarm test")
 {
     RegistryFrontend registry;
     uint8_t uint8Value;
-    Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE),
+    Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE},
         coordinateGet;
-    REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, coordinatesValue));
+    REQUIRE(registry.setUnsafe(COORDINATE_ID, coordinatesValue) ==
+            RegistryError::OK);
     registry.arm();
     // If the registry is "armed" no set are allowed but gets are
-    REQUIRE_FALSE(
-        registry.setConfigurationUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8) !=
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint8Value) != RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
     // DISARM AND SET NEW ENTRIES
 
     registry.disarm();
-    REQUIRE(registry.setConfigurationUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8));
-    REQUIRE(registry.getConfigurationUnsafe(ALGORITHM_ID, uint8Value));
+    REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint8Value) == RegistryError::OK);
     REQUIRE(uint8Value == TEST_VALUE_UINT8);
 }
 
 TEST_CASE("RegistryFrontend test - serialization/deserialization test")
 {
     RegistryFrontend registry;
-    Coordinates coordinatesValue(TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE),
-        coordinateGet(0, 0);
+    Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE},
+        coordinateGet{0, 0};
     uint32_t valueInt = 0;
     float valueFloat  = 0;
 
     registry.clear();
     // FIRST SET OF THE CONFIGURATION
-    REQUIRE(registry.setConfigurationUnsafe(COORDINATE_ID, coordinatesValue));
-    REQUIRE(registry.saveConfiguration());
+    REQUIRE(registry.setUnsafe(COORDINATE_ID, coordinatesValue) ==
+            RegistryError::OK);
+    REQUIRE(registry.save() == RegistryError::OK);
 
     // LOAD AND CHECK CONFIGURATION
-    REQUIRE(registry.saveConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.saveConfiguration());
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.save() == RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.save() == RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
     // SET OTHER DATA TYPES CONFIGURATIONS ENTRIES
 
-    REQUIRE(registry.setConfigurationUnsafe((VENTING_VALVE_ATOMIC_TIMING_ID),
-                                            TEST_VALUE_UINT32));
+    REQUIRE(registry.setUnsafe((VENTING_VALVE_ATOMIC_TIMING_ID),
+                               TEST_VALUE_UINT32) == RegistryError::OK);
     valueInt = 0;
-    REQUIRE(registry.saveConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
-                                            valueInt));
+    REQUIRE(registry.save() == RegistryError::OK);
+    REQUIRE(registry.getUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID, valueInt) ==
+            RegistryError::OK);
     REQUIRE(valueInt == TEST_VALUE_UINT32);
-    REQUIRE(registry.setConfigurationUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT));
+    REQUIRE(registry.setUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT) ==
+            RegistryError::OK);
     valueFloat = 0;
 
-    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
-                                            valueInt));
+    REQUIRE(registry.getUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID, valueInt) ==
+            RegistryError::OK);
     REQUIRE(valueInt == TEST_VALUE_UINT32);
-    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, valueFloat) ==
+            RegistryError::OK);
     REQUIRE(valueFloat == TEST_VALUE_FLOAT);
 
     // SAVE AGAIN WITH ALL TYPES INSIDE CONFIGURATION
 
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(registry.saveConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(registry.saveConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
-                                            valueInt));
-    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
+    REQUIRE(registry.save() == RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
+    REQUIRE(registry.save() == RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.getUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID, valueInt) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, valueFloat) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
 
-    registry.saveConfiguration();
-    registry.saveConfiguration();
-    registry.saveConfiguration();
-    registry.saveConfiguration();
-    registry.saveConfiguration();
-    registry.saveConfiguration();
-    registry.loadConfiguration();
+    registry.save();
+    registry.save();
+    registry.save();
+    registry.save();
+    registry.save();
+    registry.save();
+    registry.load();
 
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
 
-    registry.saveConfiguration();
-    REQUIRE(registry.loadConfiguration());
-    registry.saveConfiguration();
-    REQUIRE(registry.loadConfiguration());
-    registry.saveConfiguration();
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.loadConfiguration());
-    REQUIRE(registry.loadConfiguration());
+    registry.save();
+    REQUIRE(registry.load() == RegistryError::OK);
+    registry.save();
+    REQUIRE(registry.load() == RegistryError::OK);
+    registry.save();
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(registry.load() == RegistryError::OK);
 
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
-                                            valueInt));
-    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID, valueInt) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, valueFloat) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
 
     // CHECK AFTER RELOAD
 
     coordinateGet.latitude  = 0;
     coordinateGet.longitude = 0;
-    REQUIRE(registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
+            RegistryError::OK);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
 
     valueInt = 0;
-    REQUIRE(registry.getConfigurationUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID,
-                                            valueInt));
+    REQUIRE(registry.getUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID, valueInt) ==
+            RegistryError::OK);
     REQUIRE(valueInt == TEST_VALUE_UINT32);
 
     valueFloat = 0;
-    REQUIRE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, valueFloat) ==
+            RegistryError::OK);
     REQUIRE(valueFloat == TEST_VALUE_FLOAT);
 
     // CANCEL CONFIGURATION
 
     registry.clear();
-    REQUIRE_FALSE(
-        registry.getConfigurationUnsafe(COORDINATE_ID, coordinateGet));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(
-        VENTING_VALVE_ATOMIC_TIMING_ID, valueInt));
-    REQUIRE_FALSE(registry.getConfigurationUnsafe(FLOAT_VALUE_ID, valueFloat));
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) !=
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(VENTING_VALVE_ATOMIC_TIMING_ID, valueInt) !=
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, valueFloat) !=
+            RegistryError::OK);
 }

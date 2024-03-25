@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "TypeStructures.h"
+#include "RegistryTypes.h"
 
 namespace Boardcore
 {
@@ -36,41 +36,30 @@ namespace Boardcore
 using RegistryConfiguration =
     std::unordered_map<ConfigurationId, EntryStructsUnion>;
 
+/**
+ * @brief Serialization header, with useful information about the serialized
+ * vector. Header to the actually serialized configuration
+ */
 struct RegistryHeader
 {
-    uint64_t zeroBytes;
+    uint64_t startBytes;
     uint32_t vecLen;
     uint32_t nrEntries;
-    uint32_t crc;
-
-    /**
-     * @brief Construct a new empty Registry Header object, initialized with
-     * all fields as zeros
-     *
-     */
-    RegistryHeader();
-
-    /**
-     * @brief Construct a new Registry Header object
-     *
-     * @param lenPartiallySerializedVec  The length of the vector serialized so
-     * far
-     * @param nrEntries The nr of entries in the serialized vector
-     * @param crcPartialVec The CRC/checksum computed on the partially
-     * serialized vector
-     */
-    RegistryHeader(uint32_t lenPartiallySerializedVec, uint32_t nrEntries,
-                   uint32_t crcPartialVec);
-
-    /**
-     * @brief Computes and returns the size of the whole registry header
-     * structure
-     *
-     * @return uint32_t The size of all the attributes of the header
-     */
-    uint32_t size();
 };
 
+/**
+ * @brief Registry Footer, with CRC checksum at end of the actually serialized
+ * configuration vector
+ */
+struct RegistryFooter
+{
+    uint32_t crc;
+};
+
+/**
+ * @brief Serialization and de-serialization class for the registry. It does
+ * serialize and deserialize the configuration to the specified vector.
+ */
 class RegistrySerializer
 {
 public:
@@ -87,25 +76,36 @@ public:
      *
      * @param configuration The configuration from which we read the
      * current entries to be serialized
-     * * @return true If the configuration was successfully serialized and
+     * @return OK If the configuration was successfully serialized and
      * inserted into the serialized data vector
-     * @return false Otherwise
+     * @return WRONG_WRITES_SIZE If the write was unsuccessful
+     * @return NO_SUCH_TYPE In case there is an unspecified type id to be
+     * serialized
      */
-    bool serializeConfiguration(RegistryConfiguration& configuration);
+    RegistryError serializeConfiguration(RegistryConfiguration& configuration);
 
     /**
      * @brief De-serializes the data from a serialized vector into the
      * configuration map. In case of malformed serialized vectors, does not
-     * changes the configuration map and returns false
+     * changes the configuration map and returns an error
      *
      * @param configuration The map in which we want to insert the entries
      * from the serialized vector
-     * @return true If the de-serialization was successful and the entries where
+     * @return OK If the de-serialization was successful and the entries where
      * added into the map
-     * @return false Otherwise, e.g. in case of malformed or even corrupted byte
-     * vectors
+     * @return MALFORMED_SERIALIZED_VECTOR if the vector not have the
+     * appropriate length for the header, footer and configuration
+     * @return CRC_FAIL In case the saved CRC/Checksum not corresponds with the
+     * one recomputed from the serialized configuration
+     * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
+     * data type for the configuration
+     * @return CANNOT_INSERT In case could not insert into the configuration the
+     * de-serialized element
+     * @return WRONG_ENDIANESS In case the endianess of the loaded data not
+     * corresponds
      */
-    bool deserializeConfiguration(RegistryConfiguration& configuration);
+    RegistryError deserializeConfiguration(
+        RegistryConfiguration& configuration);
 
 private:
     std::vector<uint8_t>& serializationVector;
@@ -114,10 +114,9 @@ private:
     /**
      * @brief Computes the CRC/checksum of the feed vector
      *
-     * @param vector The vector from which extract a CRC checksum
      * @return uint32_t The computed CRC
      */
-    uint32_t computeCRC(std::vector<uint8_t>::iterator& it);
+    uint32_t computeCRC();
 
     /**
      * @brief Reads from the vector the element specified in sequential order.
@@ -125,54 +124,34 @@ private:
      * @param it The iterator to visit the vector, which is increased while
      * reading
      * @tparam element The element we want to get from the serialized vector
-     * @return true If the read was successful
-     * @return false Otherwise, e.g. not enough bytes to read the element
+     * @return OK If the read was successful
+     * @return MALFORMED_SERIALIZED_VECTOR Otherwise, in case the vector is not
+     * long enough to read the element
      */
     template <typename T>
-    bool deserialize(T& element)
+    RegistryError deserialize(T& element)
     {
-        std::size_t size = sizeof(T);
+        size_t elSize = sizeof(T);
 
-        if (serializationVector.size() < vectorWritePosition + size)
-            return false;
+        if (serializationVector.size() < vectorWritePosition + elSize)
+            return RegistryError::MALFORMED_SERIALIZED_VECTOR;
 
-        uint8_t buffer[size];
+        std::memcpy(&element, serializationVector.data() + vectorWritePosition,
+                    elSize);
 
-        for (int count = 0; count < size; count++)
-            buffer[count] = serializationVector.at(vectorWritePosition + count);
-        std::memcpy(&element, buffer, size);
-
-        vectorWritePosition += size;
-        return true;
+        vectorWritePosition += elSize;
+        return RegistryError::OK;
     }
-
-    template <typename T>
-    bool deserialize(T& element, uint32_t position)
-    {
-        vectorWritePosition = position;
-        return deserialize(element);
-    }
-
-    /**
-     * @brief Deserializes the header structure from the vector
-     *
-     * @param it The iterator to the current position of the vector
-     * @param header The header to be retrieve
-     * @return true If the header was deserialized successfully
-     * @return false Otherwise, e.g. malformed/too short header
-     */
-    bool deserializeHeader(RegistryHeader& header, uint32_t position);
-    bool deserializeHeader(RegistryHeader& header);
 
     /**
      * @brief Writes into the pre-allocated space the header
      *
      * @param header The header to be written
-     * @return true If it could successfully write
-     * @return false Otherwise, e.g. has no sufficient space to write
+     * @return OK If it could successfully write
+     * @return NO_SPACE_FOR_HEADER Otherwise, in case cannot write the header
+     * due to not enough space on the allocated vector
      */
-    bool writeHeader(RegistryHeader& header, uint32_t position);
-    bool writeHeader(RegistryHeader& header);
+    RegistryError writeHeader(RegistryHeader& header);
 
     /**
      * @brief Write functions writes to the vector the elements to serialize. It
@@ -180,35 +159,34 @@ private:
      * the current position where to write and updates such attribute.
      *
      * @tparam element The element to be written in the serialized vector
-     * @param position: The position in which we want to write the vector, by
-     * default keeps the vectorWritePosition as position
-     * @return true If it could successfully write
-     * @return false Otherwise, e.g. has no sufficient space to write
+     * @return OK If it could successfully write
+     * @return WRONG_WRITES_SIZE Otherwise, in case could not write due to not
+     * enough space in the vector
      */
     template <typename T>
-    bool write(T& element)
+    RegistryError write(T& element)
     {
-        std::size_t size = sizeof(T);
+        size_t elSize = sizeof(T);
 
-        if (serializationVector.size() < vectorWritePosition + size)
-            return false;
+        if (serializationVector.size() < vectorWritePosition + elSize)
+            return RegistryError::WRONG_WRITES_SIZE;
 
-        uint8_t buffer[size];
-        std::memcpy(buffer, &element, size);
+        std::memcpy(serializationVector.data() + vectorWritePosition, &element,
+                    elSize);
 
-        for (int count = 0; count < size; count++)
-            serializationVector.at(vectorWritePosition + count) = buffer[count];
-
-        vectorWritePosition += size;
-        return true;
+        vectorWritePosition += elSize;
+        return RegistryError::OK;
     }
 
-    template <typename T>
-    bool write(T& element, uint32_t position)
-    {
-        vectorWritePosition = position;
-        return write(element);
-    }
+    /**
+     * @brief The size function to get the size of the vector that will be
+     * serialized. It does take into account the header, actual configuration
+     * and footer.
+     *
+     * @return size_t The size that the serialized vector will have after the
+     * serialization process
+     */
+    size_t size(RegistryConfiguration& configuration);
 };
 
 }  // namespace Boardcore
