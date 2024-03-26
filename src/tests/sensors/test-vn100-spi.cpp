@@ -21,6 +21,7 @@
  */
 
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/VN100/VN100Spi.h>
 
 using namespace miosix;
@@ -51,7 +52,7 @@ int main()
     busConfiguration.mode =
         SPI::Mode::MODE_3;  // Set clock polarity to 0 and phase to 1
 
-    VN100Spi sensor(bus, csPin, busConfiguration, 200);
+    VN100Spi sensor(bus, csPin, busConfiguration, 0);
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -70,26 +71,24 @@ int main()
     }
     printf("Self test successful\n");
 
-    for (int i = 0; i < 100; ++i)
+    // Count how many data ready I receive in 1 seconds
+    // I expect around 400, given syncOutSkipFactor=0
+    int count            = 0;
+    const uint64_t start = TimestampTimer::getTimestamp();
+    while (TimestampTimer::getTimestamp() - start <
+           1000 * 1000)  // Execute for 1 second
     {
-        sensor.sample();
-        VN100Data sample = sensor.getLastSample();
+        int dataReady = intPin.value();
+        if (dataReady == 1)
+        {
+            ++count;
+            Thread::sleep(2);
+        }
 
-        printf("sample %d:\n", i + 1);
-        printf("acc: %llu, %.3f, %.3f, %.3f\n", sample.accelerationTimestamp,
-               sample.accelerationX, sample.accelerationY,
-               sample.accelerationZ);
-        printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
-               sample.angularSpeedY, sample.angularSpeedZ);
-        printf("mag: %.3f, %.3f, %.3f\n", sample.magneticFieldX,
-               sample.magneticFieldY, sample.magneticFieldZ);
-        printf("quat: %.3f, %.3f, %.3f, %.3f\n", sample.quaternionX,
-               sample.quaternionY, sample.quaternionZ, sample.quaternionW);
-        printf("press: %.3f\n", sample.pressure);
-        printf("temp: %.3f\n\n", sample.temperature);
-
-        Thread::sleep(500);
+        miosix::delayUs(100);
     }
+
+    printf("dataReady occurrences: %d\n", count);
 
     return 0;
 }
