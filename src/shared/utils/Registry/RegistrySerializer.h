@@ -36,7 +36,7 @@ namespace Boardcore
 using RegistryConfiguration =
     std::unordered_map<ConfigurationId, EntryStructsUnion>;
 
-using EntryFunc = std::function<void(ConfigurationId, EntryStructsUnion&)>;
+using EntryFunc = std::function<void>(ConfigurationId, EntryStructsUnion&);
 
 /**
  * @brief Serialization header, with useful information about the serialized
