@@ -36,15 +36,17 @@ namespace Boardcore
 using RegistryConfiguration =
     std::unordered_map<ConfigurationId, EntryStructsUnion>;
 
+using EntryFunc = std::function<void(ConfigurationId, EntryStructsUnion&)>;
+
 /**
  * @brief Serialization header, with useful information about the serialized
  * vector. Header to the actually serialized configuration
  */
 struct RegistryHeader
 {
-    uint64_t startBytes;
-    uint32_t vecLen;
-    uint32_t nrEntries;
+    uint64_t startBytes;  ///< Bytes at start, initialized as 1
+    uint32_t totalSize;   ///< Total size of serialized data in bytes
+    uint32_t nrEntries;   ///< Nr of configuration entries
 };
 
 /**
@@ -74,13 +76,21 @@ public:
     /**
      * @brief Serializes the configuration map into a serialized uint8_t vector
      *
+     * @note In case an error is returned no guarantees are made about the
+     * contents of the vector
+     * @note The vector is resized if not of the exact size for serialization
      * @param configuration The configuration from which we read the
      * current entries to be serialized
-     * @return OK If the configuration was successfully serialized and
-     * inserted into the serialized data vector
-     * @return WRONG_WRITES_SIZE If the write was unsuccessful
-     * @return NO_SUCH_TYPE In case there is an unspecified type id to be
-     * serialized
+     * @return OK If the de-serialization was successful and the entries where
+     * added into the map
+     * @return MALFORMED_SERIALIZED_DATA if the vector not have the
+     * appropriate length for the header, footer and configuration
+     * @return CRC_FAIL In case the saved CRC/Checksum not corresponds with the
+     * one recomputed from the serialized configuration
+     * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
+     * data type for the configuration
+     * @return CANNOT_INSERT In case could not insert into the configuration the
+     * de-serialized element
      */
     RegistryError serializeConfiguration(RegistryConfiguration& configuration);
 
@@ -93,7 +103,7 @@ public:
      * from the serialized vector
      * @return OK If the de-serialization was successful and the entries where
      * added into the map
-     * @return MALFORMED_SERIALIZED_VECTOR if the vector not have the
+     * @return MALFORMED_SERIALIZED_DATA if the vector not have the
      * appropriate length for the header, footer and configuration
      * @return CRC_FAIL In case the saved CRC/Checksum not corresponds with the
      * one recomputed from the serialized configuration
@@ -112,7 +122,7 @@ private:
     uint32_t vectorWritePosition;
 
     /**
-     * @brief Computes the CRC/checksum of the feed vector
+     * @brief Computes the CRC/checksum of the serialized configuration data
      *
      * @return uint32_t The computed CRC
      */
@@ -125,7 +135,7 @@ private:
      * reading
      * @tparam element The element we want to get from the serialized vector
      * @return OK If the read was successful
-     * @return MALFORMED_SERIALIZED_VECTOR Otherwise, in case the vector is not
+     * @return MALFORMED_SERIALIZED_DATA Otherwise, in case the vector is not
      * long enough to read the element
      */
     template <typename T>
@@ -134,7 +144,7 @@ private:
         size_t elSize = sizeof(T);
 
         if (serializationVector.size() < vectorWritePosition + elSize)
-            return RegistryError::MALFORMED_SERIALIZED_VECTOR;
+            return RegistryError::MALFORMED_SERIALIZED_DATA;
 
         std::memcpy(&element, serializationVector.data() + vectorWritePosition,
                     elSize);
@@ -144,19 +154,10 @@ private:
     }
 
     /**
-     * @brief Writes into the pre-allocated space the header
-     *
-     * @param header The header to be written
-     * @return OK If it could successfully write
-     * @return NO_SPACE_FOR_HEADER Otherwise, in case cannot write the header
-     * due to not enough space on the allocated vector
-     */
-    RegistryError writeHeader(RegistryHeader& header);
-
-    /**
-     * @brief Write functions writes to the vector the elements to serialize. It
-     * does such task using memcpy and using the positional attribute to know
-     * the current position where to write and updates such attribute.
+     * @brief serialize functions writes to the vector the elements to
+     * serialize. It does such task using memcpy and using the positional
+     * attribute to know the current position where to write and updates such
+     * attribute.
      *
      * @tparam element The element to be written in the serialized vector
      * @return OK If it could successfully write
@@ -164,7 +165,7 @@ private:
      * enough space in the vector
      */
     template <typename T>
-    RegistryError write(T& element)
+    RegistryError serialize(T& element)
     {
         size_t elSize = sizeof(T);
 

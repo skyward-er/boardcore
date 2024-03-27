@@ -194,7 +194,7 @@ The unsafe (type-unsafe) methods uses a parameter value for a specific registry 
 
 - `clear`: Clears the configuration both in frontend and backend components, starting with an empty configuration.
 
-- `visit`: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
+- `forEach`: Given a callback, it does apply it for each element of the actual configuration with the id and EntryStructUnion parameters. 
 
 ### Data structures
 The data structures are managed in 2 main header files.

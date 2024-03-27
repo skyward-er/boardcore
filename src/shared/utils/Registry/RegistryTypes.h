@@ -53,7 +53,7 @@ union TypeUnion
 {
     float float_type;
     uint32_t
-        uint32_type;  //< used for both uint32_t and uint8_t type with upcast
+        uint32_type;  ///< used for both uint32_t and uint8_t type with upcast
     Coordinates coordinates_type;
 };
 
@@ -66,17 +66,17 @@ static_assert(
  */
 enum RegistryError
 {
-    OK,                           //< Correct condition
-    CANNOT_INSERT,                //< Could not insert to the configuration
-    MALFORMED_SERIALIZED_VECTOR,  //< Malformed vector while deserializing
-    CRC_FAIL,                     //< Case the CRC does fail
-    INCORRECT_TYPE,               //< The typeId and data type not correspond
-    WRONG_WRITES_SIZE,            //< Cannot write due to wrong vector size
-    NO_SPACE_FOR_HEADER,  //< There is not enough space to write the header
-    NO_SUCH_TYPE,         //< There is no such type in TypeEnum
-    ARMED,            //< The registry is armed, the operation is not allowed
-    ENTRY_NOT_FOUND,  //< Not found such entry
-    WRONG_ENDIANESS,  //< In case the endianess not corresponds
+    OK,                         ///< Correct condition
+    CANNOT_INSERT,              ///< Could not insert to the configuration
+    MALFORMED_SERIALIZED_DATA,  ///< Malformed vector while deserializing
+    CRC_FAIL,                   ///< Case the CRC does fail
+    INCORRECT_TYPE,             ///< The typeId and data type not correspond
+    WRONG_WRITES_SIZE,          ///< Cannot write due to wrong vector size
+    NO_SPACE_FOR_HEADER,  ///< There is not enough space to write the header
+    NO_SUCH_TYPE,         ///< There is no such type in TypeEnum
+    ARMED,            ///< The registry is armed, the operation is not allowed
+    ENTRY_NOT_FOUND,  ///< Not found such entry
+    WRONG_ENDIANESS,  ///< In case the endianess not corresponds
 };
 
 /**
