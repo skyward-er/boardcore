@@ -19,7 +19,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#pragma once
 
 #include "RegistrySerializer.h"
 
@@ -130,6 +129,8 @@ RegistryError RegistrySerializer::deserializeConfiguration(
     vectorWritePosition  = header.totalSize - sizeof(RegistryFooter);
     RegistryFooter footer;
     success &= (deserialize(footer) == RegistryError::OK);
+    if (!success)
+        return RegistryError::MALFORMED_SERIALIZED_DATA;
     // Restore vector position
     vectorWritePosition = previousPos;
 
@@ -141,7 +142,7 @@ RegistryError RegistrySerializer::deserializeConfiguration(
     configuration.clear();
 
     // Set the configuration from the saved configuration
-    int counter = 0;
+    uint32_t counter = 0;
 
     while (vectorWritePosition < serializationVector.size() - sizeof(footer) &&
            counter < header.nrEntries)
