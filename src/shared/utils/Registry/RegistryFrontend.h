@@ -77,17 +77,19 @@ public:
     void disarm();
 
     /**
-     * @brief Visits the configuration applying the callback with the id and
-     * EntryStructsUnion union as parameter for each configured entry in the
-     * configuration.
+     * @brief Executes immediately the predicate for each the configuration
+     * applying the callback with the id and EntryStructsUnion union as
+     * parameter for each configured entry in the configuration.
+     *
+     * @param predicate The predicate function to execute for each configuration
+     * entry
      */
-    void visit(
-        std::function<void(ConfigurationId, EntryStructsUnion&)> callback);
+    void forEach(const EntryFunc& predicate);
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
-     * @param configurationIndex The configuration entry ID for which we verify
-     * the entry is configured.
+     * @param configurationIndex The configuration entry ID for which we
+     * verify the entry is configured.
      * @return True if such configuration entry exists in the configuration
      * otherwise False.
      */
@@ -134,6 +136,7 @@ public:
     /**
      * @brief Gets the value for a specified configuration entry. Otherwise
      * returns and try to set the default value
+     *
      * @tparam T The value data type to be returned and eventually set.
      * @param configurationIndex Identifies the configuration entry with its
      * enumeration value
@@ -181,20 +184,16 @@ public:
         std::lock_guard<std::mutex> lock(mutexForRegistry);
         /* In case that the configuration is in an armed state it cannot be
          * modified */
+        if (isArmed)
+            return RegistryError::ARMED;
+        EntryStructsUnion entry = EntryStructsUnion::make(value);
+        bool success = configuration.insert({configurationIndex, entry}).second;
+        if (!success)
         {
-            if (isArmed)
-                return RegistryError::ARMED;
-            EntryStructsUnion entry = EntryStructsUnion::make(value);
-            bool success =
-                configuration.insert(std::make_pair(configurationIndex, entry))
-                    .second;
-            if (!success)
-            {
-                LOG_ERR(logger, "Could not insert the entry");
-                return RegistryError::CANNOT_INSERT;
-            }
-            return RegistryError::OK;
+            LOG_ERR(logger, "Could not insert the entry");
+            return RegistryError::CANNOT_INSERT;
         }
+        return RegistryError::OK;
     }
 
     // DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE
@@ -249,7 +248,6 @@ private:
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
-    RegistrySerializer serializer;
     // TODO: Re-add it when the middleware is integrated again
     // RegistryMiddlewareFlash middleware; // May be done as unique ptr to
     // middleware...
