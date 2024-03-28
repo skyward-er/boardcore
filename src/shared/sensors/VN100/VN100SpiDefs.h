@@ -31,7 +31,7 @@ namespace VN100SpiDefs
 /**
  * @brief Internal registers definitions.
  */
-enum Registers
+enum Registers : uint8_t
 {
     REG_MODEL_NUMBER  = 1,   ///< WhoAmI register
     REG_QUAT_IMU_DATA = 15,  ///< Quaternion, accelerometer, gyroscope and
@@ -42,10 +42,31 @@ enum Registers
 /**
  * @brief Commands available for the sensor.
  */
-enum Commands
+enum Commands : uint8_t
 {
     READ_REG  = 1,
     WRITE_REG = 2,
+};
+
+/**
+ * @brief Error codes of the sensor.
+ */
+enum class VNErrors : uint8_t
+{
+    NO_ERROR               = 0,
+    HARD_FAULT             = 1,
+    SERIAL_BUFFER_OVERFLOW = 2,
+    INVALID_CHECKSUM       = 3,
+    INVALID_COMMAND        = 4,
+    NOT_ENOUGH_PARAMETERS  = 5,
+    TOO_MANY_PARAMETERS    = 6,
+    INVALID_PARAMETER      = 7,
+    INVALID_REGISTER       = 8,
+    UNAUTHORIZED_ACCESS    = 9,
+    WATCHDOG_RESET         = 10,
+    OUTPUT_BUFFER_OVERFLOW = 11,
+    INSUFFICIENT_BAUDRATE  = 12,
+    ERROR_BUFFER_OVERFLOW  = 255,
 };
 
 /**
