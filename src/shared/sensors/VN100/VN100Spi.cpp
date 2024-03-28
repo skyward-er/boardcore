@@ -26,8 +26,6 @@
 #include <interfaces/endianness.h>
 #include <utils/Debug.h>
 
-#include "VN100SpiDefs.h"
-
 namespace Boardcore
 {
 
@@ -86,7 +84,8 @@ bool VN100Spi::checkModelNumber()
     }
 
     if (readRegister(VN100SpiDefs::REG_MODEL_NUMBER, (uint8_t*)buf,
-                     VN100SpiDefs::MODEL_NUMBER_SIZE) != 0)
+                     VN100SpiDefs::MODEL_NUMBER_SIZE) !=
+        VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while attempting to service the request
         LOG_ERR(logger, "Error while reading CHIPID");
@@ -151,10 +150,17 @@ bool VN100Spi::setInterrupt()
                   // millisecond
     // TODO: is 1ms fine for syncOutPulseWidth? Too long? Too short?
 
-    uint8_t err = writeRegister(VN100SpiDefs::REG_SYNC, (uint8_t*)&sData,
-                                sizeof(VN100SpiDefs::SynchronizationData));
+    VN100SpiDefs::VNErrors err =
+        writeRegister(VN100SpiDefs::REG_SYNC, (uint8_t*)&sData,
+                      sizeof(VN100SpiDefs::SynchronizationData));
 
-    return err == 0;
+    if (err != VN100SpiDefs::VNErrors::NO_ERROR)
+    {
+        TRACE("setInterrupt() failed, error: %u\n", err);
+        return false;
+    }
+
+    return true;
 }
 
 bool VN100Spi::selfTest()
@@ -197,10 +203,13 @@ bool VN100Spi::getSample(VN100SpiData& data)
 {
     uint8_t buf[VN100SpiDefs::SAMPLE_SIZE];
 
-    if (readRegister(VN100SpiDefs::REG_QUAT_IMU_DATA, buf,
-                     VN100SpiDefs::SAMPLE_SIZE) != 0)
+    VN100SpiDefs::VNErrors err = readRegister(VN100SpiDefs::REG_QUAT_IMU_DATA,
+                                              buf, VN100SpiDefs::SAMPLE_SIZE);
+
+    if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while reading data
+        TRACE("getSample() failed, error: %u\n", err);
         return false;
     }
 
@@ -238,8 +247,9 @@ float VN100Spi::extractMeasurement(uint32_t rawData)
     return f;
 }
 
-uint8_t VN100Spi::readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
-                               const uint32_t PAYLOAD_SIZE)
+VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
+                                              uint8_t* payloadBuf,
+                                              const uint32_t PAYLOAD_SIZE)
 {
     /**
      * When reading from a sensor's register 2 spi transactions are needed.
@@ -277,9 +287,9 @@ uint8_t VN100Spi::readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
     spiSlave.bus
         .read24();  // TODO: should I verify also the command and register?
 
-    uint8_t err = spiSlave.bus.read();
+    VN100SpiDefs::VNErrors err = (VN100SpiDefs::VNErrors)spiSlave.bus.read();
 
-    if (err != 0)
+    if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while attempting to service the request
         spiSlave.bus.deselect(spiSlave.cs);
@@ -290,11 +300,12 @@ uint8_t VN100Spi::readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
 
     spiSlave.bus.deselect(spiSlave.cs);
 
-    return 0;
+    return VN100SpiDefs::VNErrors::NO_ERROR;
 }
 
-uint8_t VN100Spi::writeRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
-                                const uint32_t PAYLOAD_SIZE)
+VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint32_t REG_ID,
+                                               uint8_t* payloadBuf,
+                                               const uint32_t PAYLOAD_SIZE)
 {
     /**
      * When writing to a sensor's register 2 spi transactions are needed.
@@ -337,7 +348,7 @@ uint8_t VN100Spi::writeRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
 
     spiSlave.bus.deselect(spiSlave.cs);
 
-    return err;
+    return (VN100SpiDefs::VNErrors)err;
 }
 
 }  // namespace Boardcore

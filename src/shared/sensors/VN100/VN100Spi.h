@@ -27,6 +27,7 @@
 #include <sensors/Sensor.h>
 
 #include "VN100SpiData.h"
+#include "VN100SpiDefs.h"
 
 namespace Boardcore
 {
@@ -119,10 +120,10 @@ private:
      * register.
      *
      * @return Zero if the operation is successful, the error code otherwise.
-     * See the datasheet for error codes details.
      */
-    uint8_t readRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
-                         const uint32_t PAYLOAD_SIZE);
+    VN100SpiDefs::VNErrors readRegister(const uint32_t REG_ID,
+                                        uint8_t* payloadBuf,
+                                        const uint32_t PAYLOAD_SIZE);
 
     /**
      * @brief Utility function used to write data to a register of the sensor.
@@ -132,10 +133,10 @@ private:
      * @param PAYLOAD_SIZE The amount of data (in bytes) to be written.
      *
      * @return Zero if the operation is successful, the error code otherwise.
-     * See the datasheet for error codes details.
      */
-    uint8_t writeRegister(const uint32_t REG_ID, uint8_t* payloadBuf,
-                          const uint32_t PAYLOAD_SIZE);
+    VN100SpiDefs::VNErrors writeRegister(const uint32_t REG_ID,
+                                         uint8_t* payloadBuf,
+                                         const uint32_t PAYLOAD_SIZE);
 
     bool isInit = false;
 
