@@ -33,10 +33,10 @@ namespace VN100SpiDefs
  */
 enum Registers
 {
-    REG_MODEL_NUMBER    = 1,   ///< WhoAmI register
-    REG_QUATERNION_DATA = 9,   ///< Quaternion data register
-    REG_SYNC            = 32,  ///< Used to set data ready interrupt
-    REG_IMU_DATA        = 54,  ///< Imu data register
+    REG_MODEL_NUMBER  = 1,   ///< WhoAmI register
+    REG_QUAT_IMU_DATA = 15,  ///< Quaternion, accelerometer, gyroscope and
+                             ///< magnetometer data register
+    REG_SYNC = 32,           ///< Used to set data ready interrupt
 };
 
 /**
@@ -82,14 +82,9 @@ const char* const MODEL_NUMBER = "VN-100";
 const int MODEL_NUMBER_SIZE = 24;
 
 /**
- * @brief Size of the buffer used to retrieve imu data from the sensor.
+ * @brief Size of the buffer used to retrieve data from the sensor.
  */
-const int IMU_SAMPLE_SIZE = 44;
-
-/**
- * @brief Size of the buffer used to retrieve quaternion data from the sensor.
- */
-const int QUATERNION_SAMPLE_SIZE = 16;
+const int SAMPLE_SIZE = 52;
 
 }  // namespace VN100SpiDefs
 
