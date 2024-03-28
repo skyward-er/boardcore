@@ -108,6 +108,13 @@ void VN100Spi::sendDummyPacket()
 {
     SPITransaction transaction(spiSlave);
     transaction.write32(0);
+
+    /**
+     * After issuing a command the vn100 needs al least 100 microseconds
+     * before providing a reply. Considering this function's purpose is
+     * to clean the communication I wait a full millisecond before proceeding.
+     */
+    miosix::Thread::sleep(1);
 }
 
 bool VN100Spi::setInterrupt()
@@ -184,6 +191,9 @@ VN100Data VN100Spi::sampleImpl()
         lastError = NO_NEW_DATA;
         return lastSample;
     }
+
+    // The sensor needs some time between the 2 reads
+    miosix::delayUs(20);
 
     if (!getQuaternionSample(data))
     {
