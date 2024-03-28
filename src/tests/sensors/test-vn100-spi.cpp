@@ -47,7 +47,7 @@ int main()
     intPin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_256;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_2;
     busConfiguration.mode =
         SPI::Mode::MODE_3;  // Set clock polarity to 0 and phase to 1
 
@@ -73,7 +73,7 @@ int main()
     for (int i = 0; i < 100; ++i)
     {
         sensor.sample();
-        VN100Data sample = sensor.getLastSample();
+        VN100SpiData sample = sensor.getLastSample();
 
         printf("sample %d:\n", i + 1);
         printf("acc: %llu, %.3f, %.3f, %.3f\n", sample.accelerationTimestamp,
@@ -83,10 +83,8 @@ int main()
                sample.angularSpeedY, sample.angularSpeedZ);
         printf("mag: %.3f, %.3f, %.3f\n", sample.magneticFieldX,
                sample.magneticFieldY, sample.magneticFieldZ);
-        printf("quat: %.3f, %.3f, %.3f, %.3f\n", sample.quaternionX,
+        printf("quat: %.3f, %.3f, %.3f, %.3f\n\n", sample.quaternionX,
                sample.quaternionY, sample.quaternionZ, sample.quaternionW);
-        printf("press: %.3f\n", sample.pressure);
-        printf("temp: %.3f\n\n", sample.temperature);
 
         Thread::sleep(500);
     }

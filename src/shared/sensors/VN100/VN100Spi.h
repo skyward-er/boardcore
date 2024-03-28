@@ -26,7 +26,7 @@
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
-#include "VN100Data.h"
+#include "VN100SpiData.h"
 
 namespace Boardcore
 {
@@ -34,7 +34,7 @@ namespace Boardcore
 /**
  * @brief Driver class for VN100 Spi IMU.
  */
-class VN100Spi : public Sensor<VN100Data>
+class VN100Spi : public Sensor<VN100SpiData>
 {
 public:
     /**
@@ -65,7 +65,7 @@ public:
     /**
      * @brief Gather data from the sensor.
      */
-    VN100Data sampleImpl() override;
+    VN100SpiData sampleImpl() override;
 
 private:
     /**
@@ -91,23 +91,14 @@ private:
     bool setInterrupt();
 
     /**
-     * @brief Get accelerometer, gyroscope, magnetometer, pressure and
-     * temperature measurements from the sensor.
+     * @brief Get quaternion, accelerometer, gyroscope and magnetometer
+     * measurements from the sensor.
      *
      * @param data The variable where measurements will be stored.
      *
      * @return True if the operation is successful, false otherwise.
      */
-    bool getImuSample(VN100Data& data);
-
-    /**
-     * @brief Get quaternion measurements from the sensor.
-     *
-     * @param data The variable where measurements will be stored.
-     *
-     * @return True if the operation is successful, false otherwise.
-     */
-    bool getQuaternionSample(VN100Data& data);
+    bool getSample(VN100SpiData& data);
 
     /**
      * @brief Extracts floating point measurement from the data received from
