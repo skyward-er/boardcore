@@ -30,19 +30,19 @@ namespace Boardcore
 /**
  * @brief data type class
  */
-struct VN100Data : public QuaternionData,
-                   public MagnetometerData,
-                   public AccelerometerData,
-                   public GyroscopeData,
-                   public TemperatureData,
-                   public PressureData
+struct VN100SerialData : public QuaternionData,
+                         public MagnetometerData,
+                         public AccelerometerData,
+                         public GyroscopeData,
+                         public TemperatureData,
+                         public PressureData
 {
 
     /**
      * @brief Void parameters constructor
      */
     // cppcheck-suppress uninitDerivedMemberVar
-    VN100Data()
+    VN100SerialData()
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
           AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
@@ -57,9 +57,9 @@ struct VN100Data : public QuaternionData,
      */
     // cppcheck-suppress passedByValue
     // cppcheck-suppress uninitDerivedMemberVar
-    VN100Data(QuaternionData quat, MagnetometerData magData,
-              AccelerometerData accData, GyroscopeData gyro,
-              TemperatureData temp, PressureData pres)
+    VN100SerialData(QuaternionData quat, MagnetometerData magData,
+                    AccelerometerData accData, GyroscopeData gyro,
+                    TemperatureData temp, PressureData pres)
         : QuaternionData(quat), MagnetometerData(magData),
           AccelerometerData(accData), GyroscopeData(gyro),
           TemperatureData(temp), PressureData(pres)
