@@ -58,7 +58,7 @@
 #include <string.h>
 #include <utils/Debug.h>
 
-#include "VN100Data.h"
+#include "VN100SerialData.h"
 #include "drivers/usart/USART.h"
 
 namespace Boardcore
@@ -67,7 +67,7 @@ namespace Boardcore
 /**
  * @brief Driver class for VN100 IMU.
  */
-class VN100 : public Sensor<VN100Data>, public ActiveObject
+class VN100Serial : public Sensor<VN100SerialData>, public ActiveObject
 {
 public:
     enum class CRCOptions : uint8_t
@@ -86,8 +86,9 @@ public:
      * @param Redundancy check option.
      * @param samplePeriod Sampling period in ms
      */
-    VN100(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod = 20);
+    VN100Serial(USART &usart, int baudrate,
+                CRCOptions crc        = CRCOptions::CRC_ENABLE_8,
+                uint16_t samplePeriod = 20);
 
     bool init() override;
 
@@ -119,7 +120,7 @@ private:
     /**
      * @brief Sample action implementation.
      */
-    VN100Data sampleImpl() override;
+    VN100SerialData sampleImpl() override;
 
     /**
      * @brief Active object method, about the thread execution
@@ -131,7 +132,7 @@ private:
      *
      * @return VN100Data The sampled data
      */
-    VN100Data sampleData();
+    VN100SerialData sampleData();
 
     /**
      * @brief Disables the async messages that the vn100 is default configured
@@ -274,9 +275,9 @@ private:
      * @brief Mutex to synchronize the reading and writing of the threadSample
      */
     mutable miosix::FastMutex mutex;
-    VN100Data threadSample;
+    VN100SerialData threadSample;
 
-    PrintLogger logger = Logging::getLogger("vn100");
+    PrintLogger logger = Logging::getLogger("vn100-serial");
 
     static const unsigned int recvStringMaxDimension = 200;
 };

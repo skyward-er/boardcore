@@ -447,8 +447,8 @@ sbs_target(test-ubxgps-serial stm32f429zi_death_stack_v2)
 add_executable(test-ubxgps-spi src/tests/sensors/test-ubxgps-spi.cpp)
 sbs_target(test-ubxgps-spi stm32f429zi_death_stack_v2)
 
-add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
-sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
+add_executable(test-vn100-serial src/tests/sensors/test-vn100-serial.cpp)
+sbs_target(test-vn100-serial stm32f407vg_stm32f4discovery)
 
 add_executable(test-vn100-spi src/tests/sensors/test-vn100-spi.cpp)
 sbs_target(test-vn100-spi stm32f407vg_stm32f4discovery)
