@@ -208,7 +208,7 @@ Type structures have:
 #### RegistrySerializer.h
 
 - `RegistryHeader`: The header structure for the serialization and de-serialization. Contains the attributes and information useful for the serialization and de-serialization procedures.
-- `RegistryFooter`: Contains the CRC/Checksum of the serialized configuration.
+- `RegistryFooter`: Contains the custom checksum of the serialized configuration.
 
 ## The serializer
 The serializer simply taken a configuration, it serialize or deserialize it on the vector given in the constructor, following the format specified above. It isolates the serialize and de-serialize procedure from the frontend by making it simpler and more coherent.
@@ -218,7 +218,7 @@ The serializer simply taken a configuration, it serialize or deserialize it on t
 
 - `serializeConfiguration(configuration)` Serializes the configuration + header and footer to the vector given in the constructor.
 
- - `deserializeConfiguration(configuration)` From the vector, loads the configuration inserting the entries if the vector checks (CRC, length, startBytes) are verified.
+ - `deserializeConfiguration(configuration)` From the vector, loads the configuration inserting the entries if the vector checks (Checksum, length, startBytes) are verified.
 
 ### Data saving serialization
 serializationVector is a vector that after getSerializedVector will contain:
@@ -226,17 +226,17 @@ serializationVector is a vector that after getSerializedVector will contain:
 |:-----|--------:|
 |Header| serializardConfigurations|
 
-As for now, the header (visible in RegistryTypes.h) is composed with 8B of bytes equal to decimal 1 for endianess checking, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of CRC - checksum computed with xor byte per byte of the serialized configurations following the header.
+As for now, the header (visible in RegistryTypes.h) is composed with 8B of bytes equal to decimal 1 for endianess checking, 4 bytes of vector length (whole vector including the header), 4B of nr. of configuration entries in the serialized vector, 4B of checksum - checksum computed with xor byte per byte of the serialized configurations following the header.
 
 |||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
-|8B = 1| 4B Length vector | 4B Nr. entries | 4B CRC-Checksum | ID_0 | TypeID_0 | Value_0| ... |
+|8B = 1| 4B Length vector | 4B Nr. entries | 4B Checksum | ID_0 | TypeID_0 | Value_0| ... |
 
 Header closeup (0bit as rightmost one / big endian):
 
 |||||||||||||||||||||
 |:-----|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|----:|
-|0|0|0|0|0|0|0|1|v_len 31-24|v_len 23-16|v_len 15-8|v_len 7-0|nr_en 31-24|nr_en 23-16|nr_en 15-8|nr_en 7-0|crc 31-24|crc 23-16|crc 15-8|crc 7-0|
+|0|0|0|0|0|0|0|1|v_len 31-24|v_len 23-16|v_len 15-8|v_len 7-0|nr_en 31-24|nr_en 23-16|nr_en 15-8|nr_en 7-0|chsum 31-24|chsum 23-16|chsum 15-8|chsum 7-0|
 
 The vector will contain only the set configurations. After the header, there will be all the configured entries with configuration ID, Type ID, Value(s).
 

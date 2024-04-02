@@ -51,12 +51,12 @@ struct RegistryHeader
 };
 
 /**
- * @brief Registry Footer, with CRC checksum at end of the actually serialized
- * configuration vector
+ * @brief Registry Footer, with checksum checksum at end of the actually
+ * serialized configuration vector
  */
 struct RegistryFooter
 {
-    uint32_t crc;
+    uint32_t checksum;
 };
 
 /**
@@ -86,7 +86,7 @@ public:
      * added into the map
      * @return MALFORMED_SERIALIZED_DATA if the vector not have the
      * appropriate length for the header, footer and configuration
-     * @return CRC_FAIL In case the saved CRC/Checksum not corresponds with the
+     * @return CHECKSUM_FAIL In case the saved Checksum not corresponds with the
      * one recomputed from the serialized configuration
      * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
      * data type for the configuration
@@ -106,7 +106,7 @@ public:
      * added into the map
      * @return MALFORMED_SERIALIZED_DATA if the vector not have the
      * appropriate length for the header, footer and configuration
-     * @return CRC_FAIL In case the saved CRC/Checksum not corresponds with the
+     * @return CHECKSUM_FAIL In case the saved Checksum not corresponds with the
      * one recomputed from the serialized configuration
      * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
      * data type for the configuration
@@ -123,11 +123,11 @@ private:
     uint32_t vectorWritePosition;
 
     /**
-     * @brief Computes the CRC/checksum of the serialized configuration data
+     * @brief Computes a custom checksum of the serialized configuration data
      *
-     * @return uint32_t The computed CRC
+     * @return uint32_t The computed custom checksum
      */
-    uint32_t computeCRC();
+    uint32_t computeChecksum();
 
     /**
      * @brief Reads from the vector the element specified in sequential order.

@@ -98,9 +98,9 @@ RegistryError RegistrySerializer::serializeConfiguration(
 
     // Compute the Footer and write it
     RegistryFooter footer;
-    footer.crc = computeCRC();
+    footer.checksum = computeChecksum();
 
-    // Add the RegistryHeader at vector head position
+    // Add the footer to the serialized data
     return serialize(footer);
 }
 
@@ -134,9 +134,9 @@ RegistryError RegistrySerializer::deserializeConfiguration(
     // Restore vector position
     vectorWritePosition = previousPos;
 
-    uint32_t savedCRC = computeCRC();
-    if (footer.crc != savedCRC)
-        return RegistryError::CRC_FAIL;
+    uint32_t savedChecksum = computeChecksum();
+    if (footer.checksum != savedChecksum)
+        return RegistryError::CHECKSUM_FAIL;
 
     // Clears the configuration for the correct insertion
     configuration.clear();
@@ -202,7 +202,7 @@ RegistryError RegistrySerializer::deserializeConfiguration(
     return RegistryError::OK;
 }
 
-uint32_t RegistrySerializer::computeCRC()
+uint32_t RegistrySerializer::computeChecksum()
 {
     uint32_t counter = 0;
     return std::accumulate(
