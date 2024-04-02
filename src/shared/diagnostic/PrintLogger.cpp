@@ -46,6 +46,31 @@ static string getLevelString(uint8_t level)
     }
 }
 
+static string truncateFileName(const string& name, int depth = 0)
+{
+    char sep = '/';
+
+    // Find the first separator if there is one
+    auto start = name.rfind(sep);
+    if (start == string::npos)
+    {
+        // Maybe we are on windows...
+        sep   = '\\';
+        start = name.rfind(sep);
+    }
+
+    // Now traverse the path until we reach the end or the required depth
+    for (int i = 0; i < depth && start != string::npos; i++)
+    {
+        start = name.rfind(sep, start - 1);
+    }
+
+    // Truncate the path if needed
+    return start == string::npos
+               ? name
+               : "..." + string{name.cbegin() + start, name.cend()};
+}
+
 void LogSink::log(const LogRecord& record)
 {
     using namespace fmt::literals;
@@ -56,7 +81,7 @@ void LogSink::log(const LogRecord& record)
         string tsStr = fmt::format("{:02d}:{:06.3f}", min, (ts - min * 60));
 
         logImpl(fmt::format(
-            format, "ts"_a = tsStr, "file"_a = record.file,
+            format, "ts"_a = tsStr, "file"_a = truncateFileName(record.file, 1),
             "line"_a =  // cppcheck-suppress AssignmentIntegerToAddress
             record.line,
             "fun"_a = record.function, "lvl"_a = getLevelString(record.level),
