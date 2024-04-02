@@ -48,21 +48,13 @@ static string getLevelString(uint8_t level)
 
 static string truncateFileName(const string& name, int depth = 0)
 {
-    char sep = '/';
-
-    // Find the first separator if there is one
-    auto start = name.rfind(sep);
-    if (start == string::npos)
-    {
-        // Maybe we are on windows...
-        sep   = '\\';
-        start = name.rfind(sep);
-    }
+    // Find the first separator
+    auto start = name.find_last_of("\\/");
 
     // Now traverse the path until we reach the end or the required depth
     for (int i = 0; i < depth && start != string::npos; i++)
     {
-        start = name.rfind(sep, start - 1);
+        start = name.find_last_of("\\/", start - 1);
     }
 
     // Truncate the path if needed
