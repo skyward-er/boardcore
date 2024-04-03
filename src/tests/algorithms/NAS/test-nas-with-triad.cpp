@@ -59,7 +59,6 @@ int main()
     nas              = new NAS(getEKConfig());
 
     // Logger::getInstance().start();
-    TimestampTimer::resetTimestamp();
     sensorManager->start();
 
     while (true)

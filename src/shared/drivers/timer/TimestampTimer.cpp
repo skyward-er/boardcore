@@ -1,5 +1,5 @@
 /* Copyright (c) 2020-2021 Skyward Experimental Rocketry
- * Authors: Luca Conterio, Davide Mor, Alberto Nidasio
+ * Authors: Luca Conterio, Davide Mor, Alberto Nidasio, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,51 +22,16 @@
 
 #include "TimestampTimer.h"
 
-#include <diagnostic/PrintLogger.h>
+#include <miosix.h>
+#include <utils/TimeUtils.h>
 
 namespace Boardcore
 {
-
-#ifndef COMPILE_FOR_HOST
-
 namespace TimestampTimer
 {
-
-GP32bitTimer timestampTimer = initTimestampTimer();
-
-}  // namespace TimestampTimer
-
-void TimestampTimer::resetTimestamp() { timestampTimer.setCounter(0); }
-
-// TODO: Keep support for STM32F103
-GP32bitTimer TimestampTimer::initTimestampTimer()
+unsigned long long getTimestamp()
 {
-    GP32bitTimer timer = GP32bitTimer{TIM2};
-    {
-        miosix::FastInterruptDisableLock dLock;
-        // Enable TIM2 peripheral clock
-        RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-    }
-
-    timer.reset();
-
-    timer.setFrequency(TIMER_FREQUENCY);
-
-    // Generate an update event to apply the new prescaler value
-    timer.generateUpdate();
-
-    timestampTimer.enable();
-
-    PrintLogger logger = Logging::getLogger("timestamptimer");
-    LOG_INFO(logger, "Initialized timestamp timer");
-
-    return timer;
+    return static_cast<unsigned long long>(nsToUs(miosix::getTime()));
 }
-
-#else
-
-void TimestampTimer::resetTimestamp() {}
-
-#endif
-
+}  // namespace TimestampTimer
 }  // namespace Boardcore

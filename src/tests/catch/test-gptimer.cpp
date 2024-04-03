@@ -27,7 +27,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <drivers/timer/TimestampTimer.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
 
 #include <catch2/catch.hpp>

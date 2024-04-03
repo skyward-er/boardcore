@@ -1,5 +1,5 @@
 /* Copyright (c) 2020-2021 Skyward Experimental Rocketry
- * Authors: Luca Conterio, Davide Mor, Alberto Nidasio
+ * Authors: Luca Conterio, Davide Mor, Alberto Nidasio, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,84 +22,32 @@
 
 #pragma once
 
-#include <Singleton.h>
-#include <kernel/kernel.h>
-
-#ifndef COMPILE_FOR_HOST
-#include "GeneralPurposeTimer.h"
-#include "TimerUtils.h"
-#endif
-
 namespace Boardcore
 {
 
 /**
- * @brief Utility for precise timestamp values.
+ * @brief Utility for microsecond timestamp values.
  *
- * TimestanTimer works with 32bit timers, TIM2 or TIM5.
+ * @deprecated
+ * This namespace provided access to sub-millisecond timestamp values for
+ * precise timing requirements before Miosix 2.7, since at that time Miosix only
+ * had millisecond-accurate tick values. It has now been deprecated in favor of
+ * `miosix::getTime()` which has nanosecond resolution. The class is kept
+ * for compatibility reasons and should be removed in the future.
  *
- * TIM2 is used, if we'll need to use TIM5 or both works need to be done to
- * implement timer selection.
- *
- * The preferred configuration is to use a timer frequency of 250KHz. This way
- * the timer has a resolution of 4us, a reload timer of 4.7 hours and for tick
- * to time conversion require only a shift operation.
- *
- * For timer resolution and duration refer to :
- * https://docs.google.com/spreadsheets/d/1FiNDVU7Rg98yZzz1dZ4GDAq3-nEg994ziezCawJ-OK4/edit?usp=sharing
+ * The old timer used a 32bit value and the TIM2 or TIM5 hardware peripherals,
+ * at a frequency of 250KHz. This way the timer had a resolution of 4us, it
+ * would overflow after 4.7 hours and only required a 2-bit shift left
+ * operation to convert from counter tick to microseconds.
  */
 namespace TimestampTimer
 {
-
 /**
- * @brief Preferred timer clock frequency.
- */
-static constexpr uint32_t TIMER_FREQUENCY = 250000;
-
-/**
- * @brief Resets the timestamp timer to 0.
- */
-void resetTimestamp();
-
-/**
- * @brief Compute the current timer value in microseconds.
+ * @brief Returns the current timer value in microseconds.
+ * @deprecated Use miosix::getTime() instead and update the code to nanoseconds.
  *
  * @return Current timestamp in microseconds.
  */
-uint64_t getTimestamp();
-
-#ifndef COMPILE_FOR_HOST
-
-/**
- * @brief Initialize the timer.
- *
- * Enables the timer clock, resets the timer registers and sets che correct
- * timer configuration.
- */
-GP32bitTimer initTimestampTimer();
-
-/**
- * @brief TimestampTimer defaults to TIM2.
- */
-extern GP32bitTimer timestampTimer;
-
-#endif
-
+unsigned long long getTimestamp();
 };  // namespace TimestampTimer
-
-inline uint64_t TimestampTimer::getTimestamp()
-{
-#ifdef COMPILE_FOR_HOST
-    return time(NULL);
-#else
-    // With a timer frequency of 250KHz, the conversion from timer ticks to
-    // microseconds only take a 2 byte shift (x4)
-    return static_cast<uint64_t>(timestampTimer.readCounter()) << 2;
-
-    // If the timer frequency is not a multiple of 2 you must compute the value
-    // this way:
-    // return TimerUtils::toIntMicroSeconds(timestampTimer.getTimer());
-#endif
-}
-
 }  // namespace Boardcore

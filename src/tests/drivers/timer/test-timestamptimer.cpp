@@ -55,10 +55,6 @@ int main()
         Kernel::Thread::sleepUntil(prevTick + 1000);
     }
 
-    printf("Now resetting the TimestampTimer\n");
-
-    TimestampTimer::resetTimestamp();
-
     while (true)
     {
         long long prevTick = Kernel::getOldTick();

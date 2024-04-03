@@ -186,15 +186,12 @@ int main()
         for (int i = 0; i < level; i++)
         {
             // data[dataCounter++] = fifo[i];
-            data[dataCounter++] = {
-                fifoNum,
-                fifo[i],
-                level,
-                TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timestampTimer.getTimer(), watermarkDelta),
-                CpuMeter::getCpuStats().mean,
-                TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timestampTimer.getTimer(), update)};
+            data[dataCounter++] = {fifoNum,
+                                   fifo[i],
+                                   level,
+                                   watermarkDelta,
+                                   CpuMeter::getCpuStats().mean,
+                                   update};
 
             // Stop if we have enough data
             if (dataCounter >= NUM_SAMPLES)

@@ -26,9 +26,18 @@ namespace Boardcore
 {
 namespace Constants
 {
+constexpr long long NS_IN_US = 1000ll;        // Nanoseconds in 1 us
 constexpr long long NS_IN_MS = 1000000ll;     // Nanoseconds in 1 ms
 constexpr long long NS_IN_S  = 1000000000ll;  // Nanoseconds in 1 s
 }  // namespace Constants
+
+/**
+ * @brief Convert nanoseconds to microseconds.
+ *
+ * @param ns Nanoseconds.
+ * @return Microseconds.
+ */
+constexpr long long nsToUs(long long ns) { return ns / Constants::NS_IN_US; }
 
 /**
  * @brief Convert nanoseconds to milliseconds.

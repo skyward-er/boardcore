@@ -31,6 +31,7 @@
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimerUtils.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/L3GD20/L3GD20.h>
 #include <utils/KernelTime.h>
@@ -162,10 +163,9 @@ int main()
     {
         // clang-format off
          printf("%d,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
-                0,
+                i,
                 data[i].timestamp,
-                TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timestampTimer.getTimer(), data[i].sampleDelta),
+                data[i].sampleDelta,
                 (data[i].timestamp - data[i - 1].timestamp),
                 data[i].data.angularSpeedX,
                 data[i].data.angularSpeedY,
