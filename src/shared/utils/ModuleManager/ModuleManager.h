@@ -47,6 +47,7 @@ public:
 
     /**
      * @brief Invoked by the ModuleManager to inject modules.
+     * Override this method to retrieve dependency modules from the injector via `ModuleInjector::get()`.
      *
      * @param injector Proxy class used to obtain modules.
      */
@@ -64,7 +65,9 @@ private:
     struct ModuleInfo
     {
         Module *ptr;
+        // Name of the module interface
         std::string name;
+        // Name of the actual concrete implementation of this module interface
         std::string impl;
         std::vector<std::type_index> deps;
     };
@@ -76,7 +79,7 @@ public:
      * @brief Insert a new module.
      *
      * @param module Module to insert in the ModuleManager.
-     * @returns True if succesfull, false otherwise.
+     * @returns True if succesful, false otherwise.
      */
     template <typename T>
     [[nodiscard]] bool insert(T *module)
@@ -96,7 +99,7 @@ public:
     /**
      * @brief Inject all dependencies into all inserted modules.
      *
-     * @returns True if succesfull, false otherwise.
+     * @returns True if succesful, false otherwise.
      */
     [[nodiscard]] bool inject();
 
@@ -120,7 +123,7 @@ class ModuleInjector
     friend class ModuleManager;
 
 private:
-    ModuleInjector(ModuleManager *manager, ModuleManager::ModuleInfo *info)
+    ModuleInjector(ModuleManager &manager, ModuleManager::ModuleInfo &info)
         : manager(manager), info(info)
     {
     }
@@ -144,8 +147,8 @@ private:
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("ModuleManager");
 
-    ModuleManager *manager;
-    ModuleManager::ModuleInfo *info;
+    ModuleManager &manager;
+    ModuleManager::ModuleInfo &info;
 };
 
 }  // namespace Boardcore

@@ -62,7 +62,7 @@ bool ModuleManager::inject()
     for (auto& module : modules)
     {
         LOG_INFO(logger, "Configuring [{}]...", module.second.name);
-        ModuleInjector injector{this, &module.second};
+        ModuleInjector injector{*this, module.second};
         module.second.ptr->inject(injector);
     }
 
