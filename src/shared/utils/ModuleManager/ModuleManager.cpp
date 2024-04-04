@@ -66,8 +66,6 @@ bool ModuleManager::inject()
         module.second.ptr->inject(injector);
     }
 
-    // cppcheck is stupid
-    // cppcheck-suppress knownConditionTrueFalse
     if (load_success)
     {
         LOG_INFO(logger, "Configuring succesful!");
@@ -94,18 +92,18 @@ bool ModuleManager::insertImpl(Module* ptr, const std::type_info& module_info,
 Module* ModuleInjector::getImpl(const std::type_info& module_info)
 {
     auto idx  = std::type_index{module_info};
-    auto iter = manager->modules.find(idx);
-    if (iter == manager->modules.end())
+    auto iter = manager.modules.find(idx);
+    if (iter == manager.modules.end())
     {
-        manager->load_success = false;
+        manager.load_success = false;
 
         std::string module_name = type_name_demangled(module_info);
         LOG_ERR(logger, "[{}] requires [{}], but the latter is not present",
-                info->name, module_name);
+                info.name, module_name);
 
         return nullptr;
     }
 
-    info->deps.push_back(idx);
+    info.deps.push_back(idx);
     return iter->second.ptr;
 }

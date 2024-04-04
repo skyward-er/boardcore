@@ -47,7 +47,8 @@ public:
 
     /**
      * @brief Invoked by the ModuleManager to inject modules.
-     * Override this method to retrieve dependency modules from the injector via `ModuleInjector::get()`.
+     * Override this method to retrieve dependency modules from the injector via
+     * `ModuleInjector::get()`.
      *
      * @param injector Proxy class used to obtain modules.
      */
