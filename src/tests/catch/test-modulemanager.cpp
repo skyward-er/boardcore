@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <utils/ModuleManager/ModuleHolster.h>
 #include <utils/ModuleManager/ModuleManager.h>
 
 #include <catch2/catch.hpp>
@@ -62,29 +63,24 @@ private:
     bool value = false;
 };
 
-class CIface : public Module
+class CIface
 {
 public:
     virtual void bing_c() = 0;
     virtual bool bong_c() = 0;
 };
 
-class C : public CIface
+class C : public CIface, public ModuleHolster<A, B>
 {
 public:
-    void bing_c() override { value = a->bong_a() && b->bong_b(); }
+    void bing_c() override
+    {
+        value = getModule<A>()->bong_a() && getModule<B>()->bong_b();
+    }
 
     bool bong_c() override { return value; }
 
-    void inject(ModuleInjector &getter)
-    {
-        a = getter.get<A>();
-        b = getter.get<B>();
-    }
-
 private:
-    A *a       = nullptr;
-    B *b       = nullptr;
     bool value = false;
 };
 
