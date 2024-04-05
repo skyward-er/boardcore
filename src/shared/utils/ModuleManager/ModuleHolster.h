@@ -32,11 +32,6 @@ namespace Boardcore
 namespace Details
 {
 
-template <typename T>
-struct Empty
-{
-};
-
 // Storage implementation
 template <typename... Types>
 struct Storage
@@ -46,7 +41,7 @@ struct Storage
 
     // No-op, dummy get (this should never be reached)
     template <typename T>
-    T *get(Empty<T>)
+    T *get()
     {
         return nullptr;
     }
@@ -67,12 +62,16 @@ struct Storage<Type, Types...> : public Storage<Types...>
         Super::inject(injector);
     }
 
-    Type *get(Empty<Type>) { return item; }
+    template <typename T>
+    typename std::enable_if_t<std::is_same<T, Type>::value, T *> get()
+    {
+        return item;
+    }
 
     template <typename T>
-    T *get(Empty<T>)
+    typename std::enable_if_t<!std::is_same<T, Type>::value, T *> get()
     {
-        return Super::template get(Empty<T>{});
+        return Super::template get<T>();
     }
 };
 
@@ -109,7 +108,7 @@ public:
         static_assert(Details::Find<T, Types...>::value,
                       "Module T is not present in the ModuleHolster");
 
-        return storage.get(Details::Empty<T>{});
+        return storage.template get<T>();
     }
 
 private:
