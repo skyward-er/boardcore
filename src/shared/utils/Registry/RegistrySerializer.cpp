@@ -138,9 +138,6 @@ RegistryError RegistrySerializer::deserializeConfiguration(
     if (footer.checksum != savedChecksum)
         return RegistryError::CHECKSUM_FAIL;
 
-    // Clears the configuration for the correct insertion
-    configuration.clear();
-
     // Set the configuration from the saved configuration
     uint32_t counter = 0;
 
@@ -164,7 +161,11 @@ RegistryError RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return RegistryError::MALFORMED_SERIALIZED_DATA;
                 EntryStructsUnion entry = EntryStructsUnion::make(coordinate);
-                success &= configuration.insert({id, entry}).second;
+                auto it                 = configuration.find(id);
+                if (it == configuration.end())
+                    success &= configuration.insert({id, entry}).second;
+                else
+                    it->second = entry;
                 break;
             }
             case TypesEnum::FLOAT:
@@ -174,7 +175,11 @@ RegistryError RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return RegistryError::MALFORMED_SERIALIZED_DATA;
                 EntryStructsUnion entry = EntryStructsUnion::make(floatValue);
-                success &= configuration.insert({id, entry}).second;
+                auto it                 = configuration.find(id);
+                if (it == configuration.end())
+                    success &= configuration.insert({id, entry}).second;
+                else
+                    it->second = entry;
                 break;
             }
             case TypesEnum::UINT32:
@@ -184,7 +189,11 @@ RegistryError RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return RegistryError::MALFORMED_SERIALIZED_DATA;
                 EntryStructsUnion entry = EntryStructsUnion::make(uint32Value);
-                success &= configuration.insert({id, entry}).second;
+                auto it                 = configuration.find(id);
+                if (it == configuration.end())
+                    success &= configuration.insert({id, entry}).second;
+                else
+                    it->second = entry;
                 break;
             }
             default:

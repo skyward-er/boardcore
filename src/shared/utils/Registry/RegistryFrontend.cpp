@@ -38,19 +38,19 @@ void RegistryFrontend::start()
 
 void RegistryFrontend::arm()
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     isArmed = true;
 }
 
 void RegistryFrontend::disarm()
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     isArmed = false;
 }
 
 void RegistryFrontend::forEach(const EntryFunc& predicate)
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     for (auto& it : configuration)
     {
         predicate(it.first, it.second);
@@ -59,7 +59,7 @@ void RegistryFrontend::forEach(const EntryFunc& predicate)
 
 RegistryError RegistryFrontend::load()
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     if (isArmed)
         return RegistryError::ARMED;
     // TODO: get from the backend the vector
@@ -70,20 +70,20 @@ RegistryError RegistryFrontend::load()
 bool RegistryFrontend::isEntryConfigured(
     const ConfigurationId configurationIndex)
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     auto iterator = configuration.find(configurationIndex);
     return !(iterator == configuration.end());
 }
 
 bool RegistryFrontend::isEmpty()
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     return configuration.empty();
 }
 
 RegistryError RegistryFrontend::save()
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     // In case the registry is armed inhibit the saving
     if (isArmed)
         return RegistryError::ARMED;
@@ -94,8 +94,7 @@ RegistryError RegistryFrontend::save()
 
 void RegistryFrontend::clear()
 {
-    const std::lock_guard<std::mutex> lock(mutexForRegistry);
-    serializationVector.clear();
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     configuration.clear();
     // TODO: clear the backend
 };

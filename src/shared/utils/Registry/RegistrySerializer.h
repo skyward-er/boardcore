@@ -37,8 +37,6 @@ namespace Boardcore
 using RegistryConfiguration =
     std::unordered_map<ConfigurationId, EntryStructsUnion>;
 
-using EntryFunc = std::function<void(ConfigurationId, EntryStructsUnion&)>;
-
 /**
  * @brief Serialization header, with useful information about the serialized
  * vector. Header to the actually serialized configuration
@@ -102,6 +100,8 @@ public:
      *
      * @param configuration The map in which we want to insert the entries
      * from the serialized vector
+     * @note The deserialization adds/overwrites configuration entries. The
+     * already present entries are maintained.
      * @return OK If the de-serialization was successful and the entries where
      * added into the map
      * @return MALFORMED_SERIALIZED_DATA if the vector not have the

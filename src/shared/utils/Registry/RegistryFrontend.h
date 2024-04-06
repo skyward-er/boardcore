@@ -50,6 +50,8 @@ namespace Boardcore
 class RegistryFrontend
 {
 public:
+    using EntryFunc = std::function<void(ConfigurationId, EntryStructsUnion&)>;
+
     /**
      * @brief Registry front end constructor. Initializes the configuration of
      * the underlying objects and reserves 1KB for the vectors and map data
@@ -122,7 +124,7 @@ public:
     RegistryError getUnsafe(const ConfigurationId configurationIndex,
                             T& outValue)
     {
-        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         auto iterator = configuration.find(configurationIndex);
         /** Checks that the value type corresponds to the set type and finds
          * the entry*/
@@ -150,13 +152,13 @@ public:
     T getOrSetDefaultUnsafe(const ConfigurationId configurationIndex,
                             T defaultValue)
     {
-        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         T returnValue;
-        if (getUnsafe(configuration, &returnValue))
+        if (getUnsafe(configurationIndex, returnValue) == RegistryError::OK)
         {
             return returnValue;
         }
-        if (!setUnsafe(configurationIndex, defaultValue))
+        if (setUnsafe(configurationIndex, defaultValue) != RegistryError::OK)
             LOG_ERR(logger,
                     "Registry - Could not insert the default configuration");
         return defaultValue;
@@ -181,7 +183,7 @@ public:
     template <typename T>
     RegistryError setUnsafe(ConfigurationId configurationIndex, T value)
     {
-        std::lock_guard<std::mutex> lock(mutexForRegistry);
+        std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         /* In case that the configuration is in an armed state it cannot be
          * modified */
         if (isArmed)
@@ -244,13 +246,11 @@ public:
     void clear();
 
 private:
-    std::mutex mutexForRegistry;
+    std::recursive_mutex mutexForRegistry;
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
-    // TODO: Re-add it when the middleware is integrated again
-    // RegistryMiddlewareFlash middleware; // May be done as unique ptr to
-    // middleware...
+    // TODO: Backend attributes to add
     PrintLogger logger = Logging::getLogger("registry-frontend");
 };
 

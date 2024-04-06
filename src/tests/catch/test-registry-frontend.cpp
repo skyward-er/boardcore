@@ -37,7 +37,6 @@ using namespace Boardcore;
 
 /* Magic numbers for testing the set/get for each data type, they do not
  * reflect the reals configuration ids and values in use! */
-static constexpr uint8_t TEST_VALUE_UINT8                = 20;
 static constexpr uint32_t TEST_VALUE_UINT32              = 30;
 static constexpr float TEST_VALUE_FLOAT                  = 1.45;
 static constexpr float TEST_VALUE_LATITUDE               = 45.50109;
@@ -50,16 +49,40 @@ static constexpr uint32_t ALGORITHM_ID                   = 128;
 static constexpr uint32_t IGNITION_TIME_ID               = 3;
 static constexpr uint32_t FLOAT_VALUE_ID                 = 13;
 
+void visitFunction(ConfigurationId entryId, EntryStructsUnion& entry)
+{
+    switch (entryId)
+    {
+        case FLOAT_VALUE_ID:
+            float valf;
+            entry.get(valf);
+            REQUIRE(valf == TEST_VALUE_FLOAT);
+            break;
+
+        case ALGORITHM_ID:
+            uint32_t valu32;
+            entry.get(valu32);
+            REQUIRE(valu32 == TEST_VALUE_UINT32);
+            break;
+
+        default:
+            REQUIRE(false);
+    }
+};
+
 TEST_CASE(
-    "RegistryFrontend test - Set and get type Unsafe configuration entries")
+    "RegistryFrontend test - Set and get type Unsafe configuration entries, "
+    "test various functions")
 {
     RegistryFrontend registry;
     float floatValue;
     uint32_t uint32Value;
-    uint8_t uint8Value;
     Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE};
-    // Check that the registry is first empty
+    /* Check that the registry is first empty and see that isEntryConfigured
+     * works */
     REQUIRE(registry.isEmpty());
+    REQUIRE_FALSE(registry.isEntryConfigured(ALGORITHM_ID));
+
     // Checks that there are effectively non-initialized entry configurations
     REQUIRE(registry.getUnsafe(static_cast<uint32_t>(DEPLOYMENT_ALTITUDE_ID),
                                floatValue) != RegistryError::OK);
@@ -69,13 +92,16 @@ TEST_CASE(
                 static_cast<uint32_t>(VENTING_VALVE_ATOMIC_TIMING_ID),
                 uint32Value) != RegistryError::OK);
     REQUIRE(registry.getUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
-                               uint8Value) != RegistryError::OK);
+                               uint32Value) != RegistryError::OK);
     // Check set configuration results in right get
     REQUIRE(registry.setUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
-                               TEST_VALUE_UINT8) == RegistryError::OK);
-    uint8Value = 0;
-    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint8Value) == RegistryError::OK);
-    REQUIRE(uint8Value == TEST_VALUE_UINT8);
+                               TEST_VALUE_UINT32) == RegistryError::OK);
+    REQUIRE(!registry.isEmpty());
+
+    uint32Value = 0;
+    REQUIRE(registry.isEntryConfigured(ALGORITHM_ID));
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) == RegistryError::OK);
+    REQUIRE(uint32Value == TEST_VALUE_UINT32);
     uint32Value = 0;
     REQUIRE(registry.setUnsafe(COORDINATE_ID, TEST_VALUE_UINT32) ==
             RegistryError::OK);
@@ -86,21 +112,48 @@ TEST_CASE(
      * the type of the set type */
     REQUIRE_FALSE(registry.getUnsafe(COORDINATE_ID, floatValue) ==
                   RegistryError::OK);
+
+    // GET OR SET TEST
+    uint32Value =
+        registry.getOrSetDefaultUnsafe(ALGORITHM_ID, TEST_VALUE_UINT32);
+    REQUIRE(uint32Value == TEST_VALUE_UINT32);
+
+    registry.clear();
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) ==
+            RegistryError::ENTRY_NOT_FOUND);
+    uint32Value =
+        registry.getOrSetDefaultUnsafe(ALGORITHM_ID, TEST_VALUE_UINT32);
+    REQUIRE(uint32Value == TEST_VALUE_UINT32);
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) == RegistryError::OK);
+    REQUIRE(uint32Value == TEST_VALUE_UINT32);
+
+    floatValue = 0;
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, floatValue) ==
+            RegistryError::ENTRY_NOT_FOUND);
+    floatValue =
+        registry.getOrSetDefaultUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT);
+    REQUIRE(floatValue == TEST_VALUE_FLOAT);
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, floatValue) ==
+            RegistryError::OK);
+    REQUIRE(floatValue == TEST_VALUE_FLOAT);
+
+    // VISIT
+    registry.forEach(visitFunction);
 }
 
 TEST_CASE("RegistryFrontend test - Arm/Disarm test")
 {
     RegistryFrontend registry;
-    uint8_t uint8Value;
+    uint32_t uint32Value;
     Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE},
         coordinateGet;
     REQUIRE(registry.setUnsafe(COORDINATE_ID, coordinatesValue) ==
             RegistryError::OK);
     registry.arm();
     // If the registry is "armed" no set are allowed but gets are
-    REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8) !=
+    REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT32) !=
             RegistryError::OK);
-    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint8Value) != RegistryError::OK);
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) != RegistryError::OK);
     REQUIRE(registry.getUnsafe(COORDINATE_ID, coordinateGet) ==
             RegistryError::OK);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
@@ -109,10 +162,10 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
     // DISARM AND SET NEW ENTRIES
 
     registry.disarm();
-    REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT8) ==
+    REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT32) ==
             RegistryError::OK);
-    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint8Value) == RegistryError::OK);
-    REQUIRE(uint8Value == TEST_VALUE_UINT8);
+    REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) == RegistryError::OK);
+    REQUIRE(uint32Value == TEST_VALUE_UINT32);
 }
 
 TEST_CASE("RegistryFrontend test - serialization/deserialization test")

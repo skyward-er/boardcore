@@ -128,19 +128,6 @@ struct EntryStructsUnion
     }
 
     /**
-     * @brief Get from Union object the unsigned integer 8b  value.
-     *
-     * @param outValue the uint8_t value saved into the union type
-     */
-    bool get(uint8_t& outValue)
-    {
-        if (type != TypesEnum::UINT32)
-            return false;
-        outValue = static_cast<uint8_t>(value.uint32_type);
-        return true;
-    }
-
-    /**
      * @brief Get from Union object the unsigned integer 32b value.
      *
      * @param outValue the uint32_t value saved into the union type
@@ -180,19 +167,6 @@ struct EntryStructsUnion
         TypeUnion returnValue;
         returnValue.float_type = value;
         return EntryStructsUnion(returnValue, TypesEnum::FLOAT);
-    }
-
-    /**
-     * @brief Set the Union object with its unsigned 8bit integer value
-     *
-     * @param value The value to be set into the union type
-     * @return The created EntryStructUnion instance for such value and type
-     */
-    static EntryStructsUnion make(uint8_t value)
-    {
-        TypeUnion returnValue;
-        returnValue.uint32_type = static_cast<uint32_t>(value);
-        return EntryStructsUnion(returnValue, TypesEnum::UINT32);
     }
 
     /**
