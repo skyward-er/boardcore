@@ -38,6 +38,7 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/algorithms/MEA/MEA.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakes.cpp
+    ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
 
     # Logger
     ${SBS_BASE}/src/shared/logger/Logger.cpp

@@ -30,6 +30,14 @@
 namespace Boardcore
 {
 
+/**
+ * @brief Struct containing the state of the propagator. Stores the timestamp of
+ * the propagation, the number of propagations since the last NAS rocket packet
+ * and the propagated NAS state already divided in significant vectors so that
+ * computations with the NAS state are easier.
+ * It also exposes a method to retrieve the propagated NAS state as a NASState
+ * structure.
+ */
 struct PropagatorState
 {
     uint64_t timestamp;      ///< Prediction timestamp [ms]
@@ -45,6 +53,13 @@ struct PropagatorState
     {
     }
 
+    PropagatorState(const PropagatorState& newState)
+        : PropagatorState(newState.timestamp, newState.nPropagations,
+                          newState.x_prop, newState.v_prop, newState.q_prop,
+                          newState.b_prop)
+    {
+    }
+
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
                     Eigen::Vector3f x_prop, Eigen::Vector3f v_prop,
                     Eigen::Vector4f q_prop, Eigen::Vector3f b_prop)
@@ -55,41 +70,34 @@ struct PropagatorState
 
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
                     NASState nasState)
-        : timestamp(timestamp), nPropagations(nPropagations)
+        : timestamp(timestamp), nPropagations(nPropagations),
+          x_prop(nasState.n, nasState.e, nasState.d),
+          v_prop(nasState.vn, nasState.ve, nasState.vd),
+          q_prop(nasState.qx, nasState.qy, nasState.qz, nasState.qw),
+          b_prop(nasState.bx, nasState.by, nasState.bz)
     {
-        x_prop = Eigen::Vector3f(nasState.n, nasState.e, nasState.d);
-        v_prop = Eigen::Vector3f(nasState.vn, nasState.ve, nasState.vd);
-        q_prop =
-            Eigen::Vector4f(nasState.qx, nasState.qy, nasState.qz, nasState.qw);
-        b_prop = Eigen::Vector3f(nasState.bx, nasState.by, nasState.bz);
     }
 
-    static std::string header() { return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n"; }
+    static std::string header()
+    {
+        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << nPropagations << "," << x_prop(0) << "," << x_prop(1) << "," << x_prop(2) << "," <<
-         v_prop(0) << "," << v_prop(1) << "," << v_prop(2) << "," << q_prop(0) << "," << q_prop(1) << "," << q_prop(2) << ","
-           << q_prop(3) << "," << b_prop(0) << "," << b_prop(1) << "," << b_prop(2) << "\n";
+        os << timestamp << "," << nPropagations << "," << x_prop(0) << ","
+           << x_prop(1) << "," << x_prop(2) << "," << v_prop(0) << ","
+           << v_prop(1) << "," << v_prop(2) << "," << q_prop(0) << ","
+           << q_prop(1) << "," << q_prop(2) << "," << q_prop(3) << ","
+           << b_prop(0) << "," << b_prop(1) << "," << b_prop(2) << "\n";
     }
 
-    NASState getNasState()
+    NASState getNasState() const
     {
         Eigen::Matrix<float, 13, 1> nasState;
+        // cppcheck-suppress constStatement
         nasState << x_prop, v_prop, q_prop, b_prop;
         return NASState(timestamp, nasState);
-    }
-
-    bool operator==(const PropagatorState& other) const
-    {
-        return nPropagations == other.nPropagations && x_prop == other.x_prop &&
-               v_prop == other.v_prop && q_prop == other.q_prop &&
-               b_prop == other.b_prop;
-    }
-
-    bool operator!=(const PropagatorState& other) const
-    {
-        return !(*this == other);
     }
 };
 

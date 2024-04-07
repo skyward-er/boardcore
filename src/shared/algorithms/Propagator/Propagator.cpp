@@ -42,6 +42,8 @@ void Propagator::step()
     // last state available
     const PropagatorState& oldState = getState();
 
+    // updates with the last received NAS state if present, otherwise uses the
+    // last Propagator state
     PropagatorState newState =
         (oldState.nPropagations == 0
              ? PropagatorState(oldState.timestamp, oldState.nPropagations,

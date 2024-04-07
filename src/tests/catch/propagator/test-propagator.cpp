@@ -20,98 +20,100 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/Propagator/propagator.h>
+#include <algorithms/Propagator/Propagator.h>
 
 #include <catch2/catch.hpp>
+#include <iostream>
 
 #include "test-propagator-data.h"
 
 using namespace Boardcore;
 using namespace Eigen;
 
+void checkPropagatorStates(const PropagatorState& currentState,
+                           const PropagatorState& expectedState)
+{
+    REQUIRE(currentState.nPropagations == expectedState.nPropagations);
+    REQUIRE(currentState.getNasState().n ==
+            Approx(expectedState.getNasState().n).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().e ==
+            Approx(expectedState.getNasState().e).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().d ==
+            Approx(expectedState.getNasState().d).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().vn ==
+            Approx(expectedState.getNasState().vn).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().ve ==
+            Approx(expectedState.getNasState().ve).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().vd ==
+            Approx(expectedState.getNasState().vd).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().qx ==
+            Approx(expectedState.getNasState().qx).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().qy ==
+            Approx(expectedState.getNasState().qy).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().qz ==
+            Approx(expectedState.getNasState().qz).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().qw ==
+            Approx(expectedState.getNasState().qw).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().bx ==
+            Approx(expectedState.getNasState().bx).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().by ==
+            Approx(expectedState.getNasState().by).epsilon(0.0001));
+    REQUIRE(currentState.getNasState().bz ==
+            Approx(expectedState.getNasState().bz).epsilon(0.0001));
+}
+
+void testPropagator(float dt, const PropagatorState& STATE0, NASState* nas,
+                    uint32_t n)
+{
+    // Setting up the Propagator
+    Propagator propagator(dt);
+    propagator.init();
+    propagator.begin();
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        // Calculating the expected state after the operation
+        PropagatorState expectedState(i, i % 10, nas[i]);
+
+        if (i % 10 == 0)
+        {
+            // Simulating a reception of a packet with the nas state; it doesn't
+            // update the internal state
+            propagator.setRocketNasState(expectedState.getNasState());
+        }
+        else
+        {
+            // Propagating the internal state of the propagator
+            propagator.update();
+            checkPropagatorStates(propagator.getState(), expectedState);
+        }
+    }
+}
+
+TEST_CASE("Propagator Update Test 0")
+{
+    using namespace TestPropagator0;
+
+    testPropagator(dt, STATE0, nas, n);
+}
+
 TEST_CASE("Propagator Update Test 1")
 {
     using namespace TestPropagator1;
-    PropagatorState state;
 
-    for (int i = 1; i < 50; i++)
-    {
-        float updatePeriod = i * 10.f;
-        Propagator propagator(updatePeriod);
-        propagator.init();
-        propagator.setState(STATE0);
+    testPropagator(dt, STATE0, nas, n);
+}
 
-        // Check if setState works
-        if (propagator.getState() != STATE0)
-        {
-            FAIL(
-                "The stored rocket nas state is different than the set one "
-                "["
-                << i << "]: " << propagator.getState() << " != " << STATE0);
-        }
+TEST_CASE("Propagator Update Test 2")
+{
+    using namespace TestPropagator2;
 
-        // Update of the state
-        propagator.update();
-        {
-            PropagatorState STATE1(STATE0);
-            STATE1.nPropagations++;
-            if (propagator.getState() != STATE1)
-            {
-                FAIL(
-                    "The updated nas state is different than the correct one "
-                    "["
-                    << i << "]: " << propagator.getState() << " != " << STATE1);
-            }
-        }
+    testPropagator(dt, STATE0, nas, n);
+}
 
-        for (unsigned i = 1; i < ROCKET_STATES.size(); i++)
-        {
-            propagator.setRocketNasState(ROCKET_STATES[i]);
-            // check if the nas state of the rocket is stored properly
-            if (propagator.getRocketNasState() != ROCKET_STATES[i])
-            {
-                FAIL(
-                    "The stored rocket nas state is different than the set one "
-                    "["
-                    << i << "]: " << state << " != " << ROCKET_STATES[i]);
-            }
+TEST_CASE("Propagator Update Test 3")
+{
+    using namespace TestPropagator3;
 
-            // check if the nPropagations value is reset
-            if (propagator.getState().nPropagations != 0)
-            {
-                FAIL(
-                    "The stored rocket nas state is different than the set one "
-                    "["
-                    << i << "]: " << state << " != " << ROCKET_STATES[i]);
-            }
-
-            PropagatorState newState = ROCKET_STATES[i];
-
-            propagator.update();
-            newState.nPropagations++;
-            newState.x_prop += (newState.v_prop * updatePeriod);
-            if (propagator.getState() !=
-                Approx(newState).epsilon(0.01))
-            {
-                FAIL(
-                    "The estimated rocket state is different than the correct "
-                    "one ["
-                    << i << "]: " << propagator.getState()
-                    << " != " << newState);
-            }
-
-            propagator.update();
-            newState.nPropagations++;
-            newState.x_prop += (newState.v_prop * updatePeriod);
-            if (propagator.getState() !=
-                Approx(newState).epsilon(0.01))
-            {
-                FAIL(
-                    "The estimated rocket state is different than the correct "
-                    "one ["
-                    << i << "]: " << propagator.getState()
-                    << " != " << newState);
-            }
-        }
-    }
+    testPropagator(dt, STATE0, nas, n);
 }
