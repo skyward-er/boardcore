@@ -145,10 +145,7 @@ bool VN100Spi::setInterrupt()
     sData.syncOutMode = 3;  // Trigger when attitude measurements are available
     sData.syncOutPolarity   = 1;  // Positive output pulse on the SyncOut pin
     sData.syncOutSkipFactor = syncOutSkipFactor;
-    sData.syncOutPulseWidth =
-        1000000;  // Width of the SyncOut pulse in nanoseconds. Now is set to 1
-                  // millisecond
-    // TODO: is 1ms fine for syncOutPulseWidth? Too long? Too short?
+    sData.syncOutPulseWidth = VN100SpiDefs::SYNC_OUT_PULSE_WIDTH;
 
     VN100SpiDefs::VNErrors err =
         writeRegister(VN100SpiDefs::REG_SYNC, (uint8_t*)&sData,
@@ -284,8 +281,7 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
     spiSlave.bus.select(spiSlave.cs);
 
     // Discard the first 3 bytes of the response
-    spiSlave.bus
-        .read24();  // TODO: should I verify also the command and register?
+    spiSlave.bus.read24();
 
     VN100SpiDefs::VNErrors err = (VN100SpiDefs::VNErrors)spiSlave.bus.read();
 
@@ -341,8 +337,7 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint32_t REG_ID,
     spiSlave.bus.select(spiSlave.cs);
 
     // Discard the first 3 bytes of the response
-    spiSlave.bus
-        .read24();  // TODO: should I verify also the command and register?
+    spiSlave.bus.read24();
 
     uint8_t err = spiSlave.bus.read();
 

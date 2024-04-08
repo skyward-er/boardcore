@@ -99,13 +99,21 @@ const char* const MODEL_NUMBER = "VN-100";
 
 /**
  * @brief Size of the buffer used to retrieve the model number from the sensor.
+ * It corresponds to the size of the register, see the datasheet for details.
  */
 const int MODEL_NUMBER_SIZE = 24;
 
 /**
  * @brief Size of the buffer used to retrieve data from the sensor.
+ * It corresponds to the size of the register, see the datasheet for details.
  */
 const int SAMPLE_SIZE = 52;
+
+/**
+ * @brief Width of the SyncOut pulse in nanoseconds. Now is set to 1
+ * millisecond.
+ */
+const uint32_t SYNC_OUT_PULSE_WIDTH = 1000000;
 
 }  // namespace VN100SpiDefs
 
