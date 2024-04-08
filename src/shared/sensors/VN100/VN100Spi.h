@@ -22,6 +22,19 @@
 
 #pragma once
 
+/**
+ * Driver for the VN100 SPI IMU.
+ *
+ * The VN100 sensor is a calibrated IMU which includes accelerometer,
+ * magnetometer, gyroscope, barometer and temperature sensor. It also provides
+ * attitude data (yaw, pith, roll, quaternion).
+ * This driver samples imu compensated data (accelerometer, gyroscope and
+ * magnetometer) and quaternion data.
+ *
+ * The sampling rate is 400Hz. The data ready interrupt can be set to a lower
+ * rate by changing the syncOutSkipFactor parameter.
+ */
+
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
