@@ -29,7 +29,7 @@
 namespace Boardcore
 {
 
-namespace Details
+namespace ModuleHolsterDetails
 {
 
 // Storage implementation
@@ -77,21 +77,18 @@ struct Storage<Type, Types...> : public Storage<Types...>
 
 // Find type in list implementation
 template <typename T, typename... Types>
-struct Find : std::false_type
+struct Contains : std::false_type
 {
 };
 
 template <typename T, typename Type, typename... Types>
-struct Find<T, Type, Types...> : Find<T, Types...>
+struct Contains<T, Type, Types...>
+    : std::integral_constant<bool, std::is_same<T, Type>::value ||
+                                       Contains<T, Types...>::value>
 {
 };
 
-template <typename T, typename... Types>
-struct Find<T, T, Types...> : std::true_type
-{
-};
-
-}  // namespace Details
+}  // namespace ModuleHolsterDetails
 
 template <typename... Types>
 class ModuleHolster : public Module
@@ -105,14 +102,14 @@ public:
     template <typename T>
     T *getModule()
     {
-        static_assert(Details::Find<T, Types...>::value,
+        static_assert(ModuleHolsterDetails::Contains<T, Types...>::value,
                       "Module T is not present in the ModuleHolster");
 
         return storage.template get<T>();
     }
 
 private:
-    Details::Storage<Types...> storage;
+    ModuleHolsterDetails::Storage<Types...> storage;
 };
 
 }  // namespace Boardcore
