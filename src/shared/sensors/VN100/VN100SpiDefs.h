@@ -70,8 +70,8 @@ enum class VNErrors : uint8_t
 };
 
 /**
- * @brief Data format of the synchronization control register, used for reading
- * and writing operations.
+ * @brief Data format of the synchronization control register, used for read
+ * and write operations.
  */
 struct __attribute__((packed)) SynchronizationData
 {

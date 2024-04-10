@@ -28,7 +28,7 @@ namespace Boardcore
 {
 
 /**
- * @brief data type class
+ * @brief Data type class.
  */
 struct VN100SpiData : public QuaternionData,
                       public MagnetometerData,
@@ -37,9 +37,8 @@ struct VN100SpiData : public QuaternionData,
 {
 
     /**
-     * @brief Void parameters constructor
+     * @brief Void parameters constructor.
      */
-    // cppcheck-suppress uninitDerivedMemberVar
     VN100SpiData()
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
@@ -48,12 +47,10 @@ struct VN100SpiData : public QuaternionData,
     }
 
     /**
-     * @brief Constructor with parameters
+     * @brief Constructor with parameters.
      *
-     * @param single data structures for all the data
+     * @param single Data structures for all the data.
      */
-    // cppcheck-suppress passedByValue
-    // cppcheck-suppress uninitDerivedMemberVar
     VN100SpiData(QuaternionData quat, MagnetometerData magData,
                  AccelerometerData accData, GyroscopeData gyro,
                  TemperatureData temp, PressureData pres)
