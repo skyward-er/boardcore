@@ -56,6 +56,8 @@ bool VN100Spi::init()
         return false;
     }
 
+    miosix::delayUs(100);
+
     if (!setInterrupt())
     {
         LOG_ERR(logger, "Unable to set data ready interrupt");
