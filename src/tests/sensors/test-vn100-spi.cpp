@@ -37,19 +37,18 @@ int main()
     clockPin.mode(Mode::ALTERNATE);
     clockPin.alternateFunction(6);
     GpioPin misoPin(GPIOB_BASE, 4);  // PB4 MISO
-    misoPin.alternateFunction(6);
     misoPin.mode(Mode::ALTERNATE);
+    misoPin.alternateFunction(6);
     GpioPin mosiPin(GPIOB_BASE, 5);  // PB5 MOSI
-    mosiPin.alternateFunction(6);
     mosiPin.mode(Mode::ALTERNATE);
+    mosiPin.alternateFunction(6);
 
     GpioPin intPin(GPIOC_BASE, 15);  // PC15 interrupt pin
     intPin.mode(Mode::INPUT);
 
-    SPIBusConfig busConfiguration;  // Bus configuration for the sensor
+    SPIBusConfig busConfiguration;
     busConfiguration.clockDivider = SPI::ClockDivider::DIV_2;
-    busConfiguration.mode =
-        SPI::Mode::MODE_3;  // Set clock polarity to 0 and phase to 1
+    busConfiguration.mode         = SPI::Mode::MODE_3;
 
     VN100Spi sensor(bus, csPin, busConfiguration, 200);
 

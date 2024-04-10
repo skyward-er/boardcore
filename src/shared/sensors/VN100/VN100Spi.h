@@ -93,9 +93,11 @@ private:
      * @brief Utility function used to clean the junk before starting to
      * communicate with the sensor. It send a 4 bytes packet of zeros to the
      * sensor.
+     *
+     * TODO: this function is used because of a bug with spi mode 3 peripherals,
+     * remove it when the bug is fixed.
      */
     void sendDummyPacket();
-    // TODO: check if really needed and if there is a better solution
 
     /**
      * @brief Set the data ready interrupt.
@@ -162,9 +164,7 @@ private:
      */
     const uint16_t syncOutSkipFactor = 0;
 
-    PrintLogger logger =
-        Logging::getLogger("vn100-spi");  // TODO: is it fine? Should it be
-                                          // changed to the exact model number?
+    PrintLogger logger = Logging::getLogger("vn100-spi");
 };
 
 }  // namespace Boardcore

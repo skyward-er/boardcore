@@ -83,12 +83,14 @@ bool VN100Spi::checkModelNumber()
         buf[i] = 0;
     }
 
-    if (readRegister(VN100SpiDefs::REG_MODEL_NUMBER, (uint8_t*)buf,
-                     VN100SpiDefs::MODEL_NUMBER_SIZE) !=
-        VN100SpiDefs::VNErrors::NO_ERROR)
+    VN100SpiDefs::VNErrors err =
+        readRegister(VN100SpiDefs::REG_MODEL_NUMBER, (uint8_t*)buf,
+                     VN100SpiDefs::MODEL_NUMBER_SIZE);
+    if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while attempting to service the request
         LOG_ERR(logger, "Error while reading CHIPID");
+        TRACE("Error code: %u\n", err);
         return false;
     }
 
@@ -97,6 +99,7 @@ bool VN100Spi::checkModelNumber()
                 strlen(VN100SpiDefs::MODEL_NUMBER)) != 0)
     {
         LOG_ERR(logger, "Error, invalid CHIPID");
+        TRACE("%s != %s\n", VN100SpiDefs::MODEL_NUMBER, buf);
         return false;
     }
 
@@ -110,8 +113,9 @@ void VN100Spi::sendDummyPacket()
 
     /**
      * After issuing a command the vn100 needs al least 100 microseconds
-     * before providing a reply. Considering this function's purpose is
-     * to clean the communication I wait a full millisecond before proceeding.
+     * before providing a reply. Considering this function is called only
+     * during the initialization phase I wait for a full millisecond, as a
+     * safety measure.
      */
     miosix::Thread::sleep(1);
 }
@@ -131,8 +135,8 @@ bool VN100Spi::setInterrupt()
      * This way we can control the rate at which the data ready interrupt is
      * triggered.
      *
-     * The values not needed for the data ready of the register will be set to
-     * default.
+     * SyncIn values, which aren't needed for the data ready of the register,
+     * will be set to default.
      */
 
     // Init struct and set default values
