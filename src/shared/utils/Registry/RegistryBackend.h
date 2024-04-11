@@ -65,4 +65,17 @@ public:
     virtual bool save(std::vector<uint8_t>& buf) = 0;
 };
 
+/**
+ * @brief Dummy no-op backend
+ */
+class DummyBackend final : public RegistryBackend
+{
+public:
+    bool start() override { return true; }
+
+    bool load(std::vector<uint8_t>& buf) override { return true; }
+
+    bool save(std::vector<uint8_t>& buf) override { return true; }
+};
+
 }  // namespace Boardcore

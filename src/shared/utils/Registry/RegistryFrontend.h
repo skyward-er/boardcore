@@ -23,9 +23,9 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <stdint.h>
 #include <utils/Debug.h>
 
+#include <cstdint>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -56,7 +56,8 @@ public:
      * the underlying objects and reserves 1KB for the vectors and map data
      * structures.
      */
-    RegistryFrontend(std::unique_ptr<RegistryBackend> backend = nullptr);
+    RegistryFrontend(std::unique_ptr<RegistryBackend> backend =
+                         std::make_unique<DummyBackend>());
 
     /**
      * @brief Start function to start frontend and other objects, such as

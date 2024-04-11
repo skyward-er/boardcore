@@ -34,7 +34,7 @@ RegistryFrontend::RegistryFrontend(std::unique_ptr<RegistryBackend> backend)
 
 RegistryError RegistryFrontend::start()
 {
-    if (backend && !backend->start())
+    if (!backend->start())
         return RegistryError::BACKEND_START_FAIL;
 
     return RegistryError::OK;
@@ -67,7 +67,7 @@ RegistryError RegistryFrontend::load()
     if (isArmed)
         return RegistryError::ARMED;
 
-    if (backend && !backend->load(serializationVector))
+    if (!backend->load(serializationVector))
         return RegistryError::BACKEND_LOAD_FAIL;
 
     RegistrySerializer serializer(serializationVector);
@@ -104,7 +104,7 @@ RegistryError RegistryFrontend::save()
     if (error != RegistryError::OK)
         return error;
 
-    if (backend && !backend->save(serializationVector))
+    if (!backend->save(serializationVector))
         return RegistryError::BACKEND_LOAD_FAIL;
 
     return RegistryError::OK;
