@@ -49,7 +49,7 @@ static constexpr uint32_t ALGORITHM_ID                   = 128;
 static constexpr uint32_t IGNITION_TIME_ID               = 3;
 static constexpr uint32_t FLOAT_VALUE_ID                 = 13;
 
-void visitFunction(ConfigurationId entryId, EntryStructsUnion& entry)
+void visitFunction(ConfigurationId entryId, EntryStructsUnion &entry)
 {
     switch (entryId)
     {
@@ -74,6 +74,35 @@ void visitFunction(ConfigurationId entryId, EntryStructsUnion& entry)
 
         default:
             REQUIRE(false);
+    }
+};
+
+class FakeBackend : public RegistryBackend
+{
+public:
+    int &startCount, &saveCount, &loadCount;
+
+    FakeBackend(int &startCount, int &saveCount, int &loadCount)
+        : startCount(startCount), saveCount(saveCount), loadCount(loadCount)
+    {
+    }
+
+    bool start() override
+    {
+        startCount++;
+        return true;
+    }
+
+    bool load(std::vector<uint8_t> &) override
+    {
+        loadCount++;
+        return true;
+    }
+
+    bool save(std::vector<uint8_t> &) override
+    {
+        saveCount++;
+        return true;
     }
 };
 
@@ -306,4 +335,31 @@ TEST_CASE("RegistryFrontend test - serialization/deserialization test")
             RegistryError::OK);
     REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, valueFloat) !=
             RegistryError::OK);
+}
+
+TEST_CASE("RegistryFrontend test - Backend test")
+{
+    int startCount = 0, saveCount = 0, loadCount = 0;
+
+    RegistryFrontend registry(
+        std::make_unique<FakeBackend>(startCount, saveCount, loadCount));
+
+    REQUIRE(startCount == 0);
+    REQUIRE(saveCount == 0);
+    REQUIRE(loadCount == 0);
+
+    REQUIRE(registry.start() == RegistryError::OK);
+    REQUIRE(startCount == 1);
+    REQUIRE(saveCount == 0);
+    REQUIRE(loadCount == 0);
+
+    REQUIRE(registry.save() == RegistryError::OK);
+    REQUIRE(startCount == 1);
+    REQUIRE(saveCount == 1);
+    REQUIRE(loadCount == 0);
+
+    REQUIRE(registry.load() == RegistryError::OK);
+    REQUIRE(startCount == 1);
+    REQUIRE(saveCount == 1);
+    REQUIRE(loadCount == 1);
 }

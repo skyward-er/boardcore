@@ -77,6 +77,9 @@ enum RegistryError
     ARMED,            ///< The registry is armed, the operation is not allowed
     ENTRY_NOT_FOUND,  ///< Not found such entry
     WRONG_ENDIANESS,  ///< In case the endianess not corresponds
+    BACKEND_START_FAIL,  //< Backend failed to start
+    BACKEND_LOAD_FAIL,   //< Backend failed to load data
+    BACKEND_SAVE_FAIL,   //< Backend failed to save data
 };
 
 /**

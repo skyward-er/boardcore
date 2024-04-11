@@ -24,14 +24,21 @@
 
 namespace Boardcore
 {
-RegistryFrontend::RegistryFrontend()
+RegistryFrontend::RegistryFrontend(std::unique_ptr<RegistryBackend> backend)
+    : backend{std::move(backend)}
 {
     serializationVector.reserve(1024);
     configuration.reserve(
         1024 / sizeof(std::pair<ConfigurationId, EntryStructsUnion>));
 }
 
-void RegistryFrontend::start() {}
+RegistryError RegistryFrontend::start()
+{
+    if (backend && !backend->start())
+        return RegistryError::BACKEND_START_FAIL;
+
+    return RegistryError::OK;
+}
 
 void RegistryFrontend::arm()
 {
@@ -59,8 +66,16 @@ RegistryError RegistryFrontend::load()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     if (isArmed)
         return RegistryError::ARMED;
+
+    if (backend && !backend->load(serializationVector))
+        return RegistryError::BACKEND_LOAD_FAIL;
+
     RegistrySerializer serializer(serializationVector);
-    return serializer.deserializeConfiguration(configuration);
+    RegistryError error = serializer.deserializeConfiguration(configuration);
+    if (error != RegistryError::OK)
+        return error;
+
+    return RegistryError::OK;
 }
 
 bool RegistryFrontend::isEntryConfigured(
@@ -83,8 +98,16 @@ RegistryError RegistryFrontend::save()
     // In case the registry is armed inhibit the saving
     if (isArmed)
         return RegistryError::ARMED;
+
     RegistrySerializer serializer(serializationVector);
-    return serializer.serializeConfiguration(configuration);
+    RegistryError error = serializer.serializeConfiguration(configuration);
+    if (error != RegistryError::OK)
+        return error;
+
+    if (backend && !backend->save(serializationVector))
+        return RegistryError::BACKEND_LOAD_FAIL;
+
+    return RegistryError::OK;
 }
 
 void RegistryFrontend::clear()

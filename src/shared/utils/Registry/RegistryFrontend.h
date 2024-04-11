@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "RegistryBackend.h"
 #include "RegistrySerializer.h"
 #include "RegistryTypes.h"
 
@@ -55,13 +56,13 @@ public:
      * the underlying objects and reserves 1KB for the vectors and map data
      * structures.
      */
-    RegistryFrontend();
+    RegistryFrontend(std::unique_ptr<RegistryBackend> backend = nullptr);
 
     /**
      * @brief Start function to start frontend and other objects, such as
      * ActiveObjects to write to backend and the backend itself
      */
-    void start();
+    [[nodiscard]] RegistryError start();
 
     /**
      * @brief Disables the memory registry set and allocations.
@@ -248,6 +249,7 @@ private:
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
+    std::unique_ptr<RegistryBackend> backend;
     PrintLogger logger = Logging::getLogger("registry-frontend");
 };
 
