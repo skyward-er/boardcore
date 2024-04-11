@@ -38,6 +38,7 @@ using namespace Boardcore;
 /* Magic numbers for testing the set/get for each data type, they do not
  * reflect the reals configuration ids and values in use! */
 static constexpr uint32_t TEST_VALUE_UINT32              = 30;
+static constexpr uint32_t TEST_VALUE_UINT32_2            = 32;
 static constexpr float TEST_VALUE_FLOAT                  = 1.45;
 static constexpr float TEST_VALUE_LATITUDE               = 45.50109;
 static constexpr float TEST_VALUE_LONGITUDE              = 9.15633;
@@ -139,6 +140,12 @@ TEST_CASE(
     REQUIRE(registry.isEntryConfigured(ALGORITHM_ID));
     REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) == RegistryError::OK);
     REQUIRE(uint32Value == TEST_VALUE_UINT32);
+    uint32Value = 0;
+    REQUIRE(registry.setUnsafe(COORDINATE_ID, TEST_VALUE_UINT32_2) ==
+            RegistryError::OK);
+    REQUIRE(registry.getUnsafe(COORDINATE_ID, uint32Value) ==
+            RegistryError::OK);
+    REQUIRE(uint32Value == TEST_VALUE_UINT32_2);
     uint32Value = 0;
     REQUIRE(registry.setUnsafe(COORDINATE_ID, TEST_VALUE_UINT32) ==
             RegistryError::OK);

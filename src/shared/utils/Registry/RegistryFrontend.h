@@ -177,8 +177,6 @@ public:
      * @return OK if it was possible to set the configurationEntry.
      * @return ARMED If the registry is in an armed state, therefore setting a
      * configuration is forbidden
-     * @return CANNOT_INSERT If could not insert into the configuration map the
-     * entry
      */
     template <typename T>
     RegistryError setUnsafe(ConfigurationId configurationIndex, T value)
@@ -189,12 +187,9 @@ public:
         if (isArmed)
             return RegistryError::ARMED;
         EntryStructsUnion entry = EntryStructsUnion::make(value);
-        bool success = configuration.insert({configurationIndex, entry}).second;
-        if (!success)
-        {
-            LOG_ERR(logger, "Could not insert the entry");
-            return RegistryError::CANNOT_INSERT;
-        }
+        auto insert = configuration.insert({configurationIndex, entry});
+        if (!insert.second)
+            insert.first->second = entry;
         return RegistryError::OK;
     }
 
@@ -211,8 +206,6 @@ public:
      * serializer)
      * @return NO_SUCH_TYPE In case there are unspecified type ids (see
      * serializer)
-     * @return CANNOT_INSERT In case could not insert into the configuration the
-     * de-serialized element
      * @return WRONG_ENDIANESS In case the endianess of serialization not
      * corresponds (see serializer)
      */
@@ -231,8 +224,6 @@ public:
      * serializer)
      * @return NO_SUCH_TYPE In case there are unspecified type ids (see
      * serializer)
-     * @return CANNOT_INSERT In case could not insert into the configuration the
-     * loaded element
      */
     RegistryError save();
 

@@ -89,6 +89,8 @@ enum RegistryError
 struct EntryStructsUnion
 {
 
+    EntryStructsUnion() = default;
+
     /**
      * @brief Returns the size in byte of the type + value
      *

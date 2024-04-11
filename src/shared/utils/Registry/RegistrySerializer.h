@@ -88,8 +88,6 @@ public:
      * one recomputed from the serialized configuration
      * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
      * data type for the configuration
-     * @return CANNOT_INSERT In case could not insert into the configuration the
-     * de-serialized element
      */
     RegistryError serializeConfiguration(RegistryConfiguration& configuration);
 
@@ -110,8 +108,6 @@ public:
      * one recomputed from the serialized configuration
      * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
      * data type for the configuration
-     * @return CANNOT_INSERT In case could not insert into the configuration the
-     * de-serialized element
      * @return WRONG_ENDIANESS In case the endianess of the loaded data not
      * corresponds
      */

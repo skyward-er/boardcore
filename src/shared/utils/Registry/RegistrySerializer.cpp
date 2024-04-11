@@ -161,11 +161,9 @@ RegistryError RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return RegistryError::MALFORMED_SERIALIZED_DATA;
                 EntryStructsUnion entry = EntryStructsUnion::make(coordinate);
-                auto it                 = configuration.find(id);
-                if (it == configuration.end())
-                    success &= configuration.insert({id, entry}).second;
-                else
-                    it->second = entry;
+                auto insert             = configuration.insert({id, entry});
+                if (!insert.second)
+                    insert.first->second = entry;
                 break;
             }
             case TypesEnum::FLOAT:
@@ -175,11 +173,9 @@ RegistryError RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return RegistryError::MALFORMED_SERIALIZED_DATA;
                 EntryStructsUnion entry = EntryStructsUnion::make(floatValue);
-                auto it                 = configuration.find(id);
-                if (it == configuration.end())
-                    success &= configuration.insert({id, entry}).second;
-                else
-                    it->second = entry;
+                auto insert             = configuration.insert({id, entry});
+                if (!insert.second)
+                    insert.first->second = entry;
                 break;
             }
             case TypesEnum::UINT32:
@@ -189,11 +185,9 @@ RegistryError RegistrySerializer::deserializeConfiguration(
                 if (!success)
                     return RegistryError::MALFORMED_SERIALIZED_DATA;
                 EntryStructsUnion entry = EntryStructsUnion::make(uint32Value);
-                auto it                 = configuration.find(id);
-                if (it == configuration.end())
-                    success &= configuration.insert({id, entry}).second;
-                else
-                    it->second = entry;
+                auto insert             = configuration.insert({id, entry});
+                if (!insert.second)
+                    insert.first->second = entry;
                 break;
             }
             default:
