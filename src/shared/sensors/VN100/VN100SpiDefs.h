@@ -33,10 +33,11 @@ namespace VN100SpiDefs
  */
 enum Registers : uint8_t
 {
-    REG_MODEL_NUMBER  = 1,   ///< WhoAmI register
-    REG_QUAT_IMU_DATA = 15,  ///< Quaternion, accelerometer, gyroscope and
-                             ///< magnetometer data register
-    REG_SYNC = 32,           ///< Used to set data ready interrupt
+    REG_MODEL_NUMBER  = 1,     ///< WhoAmI register
+    REG_QUAT_IMU_DATA = 15,    ///< Quaternion, accelerometer, gyroscope and
+                               ///< magnetometer data register
+    REG_SYNC            = 32,  ///< Used to set data ready interrupt
+    REG_TEMP_PRESS_DATA = 54,  ///< Temperature and pressure data register
 };
 
 /**
@@ -108,6 +109,13 @@ const int MODEL_NUMBER_SIZE = 24;
  * It corresponds to the size of the register, see the datasheet for details.
  */
 const int SAMPLE_SIZE = 52;
+
+/**
+ * @brief Size of the buffer used to retrieve temperature and pressure data
+ * from the sensor. It corresponds to the size of the register, see the
+ * datasheet for details.
+ */
+const int TEMP_PRESS_SIZE = 44;
 
 /**
  * @brief Width of the SyncOut pulse in nanoseconds. Now is set to 1

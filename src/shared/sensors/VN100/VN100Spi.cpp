@@ -65,6 +65,9 @@ bool VN100Spi::init()
         return false;
     }
 
+    // Wait to ensure that enough time has passed before the next operation
+    miosix::delayUs(100);
+
     isInit    = true;
     lastError = SensorErrors::NO_ERRORS;
     return true;
@@ -176,6 +179,9 @@ bool VN100Spi::selfTest()
         return false;
     }
 
+    // Wait to ensure that enough time has passed before the next operation
+    miosix::delayUs(100);
+
     return true;
 }
 
@@ -233,6 +239,58 @@ bool VN100Spi::getSample(VN100SpiData& data)
     data.angularSpeedZ  = extractMeasurement(ptr[12]);
 
     return true;
+}
+
+TemperatureData VN100Spi::getTemperature()
+{
+    TemperatureData data;
+
+    uint8_t buf[VN100SpiDefs::TEMP_PRESS_SIZE];
+
+    // Get timestamp
+    data.temperatureTimestamp = TimestampTimer::getTimestamp();
+
+    VN100SpiDefs::VNErrors err = readRegister(
+        VN100SpiDefs::REG_TEMP_PRESS_DATA, buf, VN100SpiDefs::TEMP_PRESS_SIZE);
+
+    if (err != VN100SpiDefs::VNErrors::NO_ERROR)
+    {
+        // An error occurred while reading data
+        TRACE("getTemperature() failed, error: %u\n", err);
+        return data;
+    }
+
+    // Get measurement from raw data
+    uint32_t* ptr    = (uint32_t*)buf;
+    data.temperature = extractMeasurement(ptr[9]);
+
+    return data;
+}
+
+PressureData VN100Spi::getPressure()
+{
+    PressureData data;
+
+    uint8_t buf[VN100SpiDefs::TEMP_PRESS_SIZE];
+
+    // Get timestamp
+    data.pressureTimestamp = TimestampTimer::getTimestamp();
+
+    VN100SpiDefs::VNErrors err = readRegister(
+        VN100SpiDefs::REG_TEMP_PRESS_DATA, buf, VN100SpiDefs::TEMP_PRESS_SIZE);
+
+    if (err != VN100SpiDefs::VNErrors::NO_ERROR)
+    {
+        // An error occurred while reading data
+        TRACE("getPressure() failed, error: %u\n", err);
+        return data;
+    }
+
+    // Get measurement from raw data
+    uint32_t* ptr = (uint32_t*)buf;
+    data.pressure = extractMeasurement(ptr[10]);
+
+    return data;
 }
 
 float VN100Spi::extractMeasurement(uint32_t rawData)
