@@ -65,6 +65,13 @@ void visitFunction(ConfigurationId entryId, EntryStructsUnion& entry)
             REQUIRE(valu32 == TEST_VALUE_UINT32);
             break;
 
+        case COORDINATE_ID:
+            Coordinates coordinate;
+            entry.get(coordinate);
+            REQUIRE(coordinate.latitude == TEST_VALUE_LATITUDE);
+            REQUIRE(coordinate.longitude == TEST_VALUE_LONGITUDE);
+            break;
+
         default:
             REQUIRE(false);
     }
@@ -77,7 +84,8 @@ TEST_CASE(
     RegistryFrontend registry;
     float floatValue;
     uint32_t uint32Value;
-    Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE};
+    Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE},
+        coordinatesGet;
     /* Check that the registry is first empty and see that isEntryConfigured
      * works */
     REQUIRE(registry.isEmpty());
@@ -136,6 +144,11 @@ TEST_CASE(
     REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, floatValue) ==
             RegistryError::OK);
     REQUIRE(floatValue == TEST_VALUE_FLOAT);
+
+    coordinatesGet =
+        registry.getOrSetDefaultUnsafe(COORDINATE_ID, coordinatesValue);
+    REQUIRE(coordinatesGet.latitude == coordinatesValue.latitude);
+    REQUIRE(coordinatesGet.longitude == coordinatesValue.longitude);
 
     // VISIT
     registry.forEach(visitFunction);
