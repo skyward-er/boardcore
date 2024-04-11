@@ -33,6 +33,9 @@
  *
  * The sampling rate is 400Hz. The data ready interrupt can be set to a lower
  * rate by changing the syncOutSkipFactor parameter.
+ *
+ * ATTENTION: at least 100 microseconds has to pass between the read/write
+ * operations with the sensor.
  */
 
 #include <diagnostic/PrintLogger.h>
@@ -80,6 +83,16 @@ public:
      * @brief Gather data from the sensor.
      */
     VN100SpiData sampleImpl() override;
+
+    /**
+     * @brief Retrieve temperature data from the sensor.
+     */
+    TemperatureData getTemperature();
+
+    /**
+     * @brief Retrieve pressure data from the sensor.
+     */
+    PressureData getPressure();
 
 private:
     /**
