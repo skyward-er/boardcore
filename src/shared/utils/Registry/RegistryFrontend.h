@@ -30,8 +30,6 @@
 #include <unordered_map>
 #include <vector>
 
-// TODO: Re-add it when the middleware is integrated again
-// #include "RegistryMiddleware.h"
 #include "RegistrySerializer.h"
 #include "RegistryTypes.h"
 
@@ -250,7 +248,6 @@ private:
     std::unordered_map<ConfigurationId, EntryStructsUnion> configuration;
     bool isArmed = false;
     std::vector<uint8_t> serializationVector;
-    // TODO: Backend attributes to add
     PrintLogger logger = Logging::getLogger("registry-frontend");
 };
 

@@ -31,10 +31,7 @@ RegistryFrontend::RegistryFrontend()
         1024 / sizeof(std::pair<ConfigurationId, EntryStructsUnion>));
 }
 
-void RegistryFrontend::start()
-{
-    // TODO: Will start the appropriate objects
-}
+void RegistryFrontend::start() {}
 
 void RegistryFrontend::arm()
 {
@@ -62,7 +59,6 @@ RegistryError RegistryFrontend::load()
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     if (isArmed)
         return RegistryError::ARMED;
-    // TODO: get from the backend the vector
     RegistrySerializer serializer(serializationVector);
     return serializer.deserializeConfiguration(configuration);
 }
@@ -89,14 +85,12 @@ RegistryError RegistryFrontend::save()
         return RegistryError::ARMED;
     RegistrySerializer serializer(serializationVector);
     return serializer.serializeConfiguration(configuration);
-    // TODO: Write to backend
 }
 
 void RegistryFrontend::clear()
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     configuration.clear();
-    // TODO: clear the backend
 };
 
 }  // namespace Boardcore
