@@ -196,9 +196,6 @@ RegistryError RegistrySerializer::deserializeConfiguration(
             }
         }
 
-        if (!success)
-            return RegistryError::CANNOT_INSERT;
-
         counter++;
     }
 

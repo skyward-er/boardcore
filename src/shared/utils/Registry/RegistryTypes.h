@@ -67,7 +67,6 @@ static_assert(
 enum RegistryError
 {
     OK,                         ///< Correct condition
-    CANNOT_INSERT,              ///< Could not insert to the configuration
     MALFORMED_SERIALIZED_DATA,  ///< Malformed vector while deserializing
     CHECKSUM_FAIL,              ///< Case the custom checksum does fail
     INCORRECT_TYPE,             ///< The typeId and data type not correspond
