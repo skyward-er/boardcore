@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace Boardcore
 {
@@ -67,27 +67,30 @@ static_assert(
 enum RegistryError
 {
     OK,                         ///< Correct condition
-    MALFORMED_SERIALIZED_DATA,  ///< Malformed vector while deserializing
-    CHECKSUM_FAIL,              ///< Case the custom checksum does fail
-    INCORRECT_TYPE,             ///< The typeId and data type not correspond
-    WRONG_WRITES_SIZE,          ///< Cannot write due to wrong vector size
+    MALFORMED_SERIALIZED_DATA,  ///< Malformed data while deserializing
+    CHECKSUM_FAIL,              ///< The custom checksum check fails
+    INCORRECT_TYPE,             ///< The typeId and value type not correspond
+    WRONG_WRITES_SIZE,          ///< Cannot write due to wrong data size
     NO_SPACE_FOR_HEADER,  ///< There is not enough space to write the header
     NO_SUCH_TYPE,         ///< There is no such type in TypeEnum
     ARMED,            ///< The registry is armed, the operation is not allowed
     ENTRY_NOT_FOUND,  ///< Not found such entry
-    WRONG_ENDIANESS,  ///< In case the endianess not corresponds
+    WRONG_ENDIANESS,  ///< The endianess not corresponds
     BACKEND_START_FAIL,  //< Backend failed to start
     BACKEND_LOAD_FAIL,   //< Backend failed to load data
     BACKEND_SAVE_FAIL,   //< Backend failed to save data
 };
 
 /**
- * Union data struct to be stored in the map. It does contain the enumeration
- * index and the value of such configuration entry
+ * @brief Union data struct to be stored in the map. It does contain the
+ * enumeration index and the value of such configuration entry
  */
 struct EntryStructsUnion
 {
 
+    /**
+     * @brief Default constructor to construct a new Entry Structs Union object
+     */
     EntryStructsUnion() = default;
 
     /**
@@ -120,8 +123,7 @@ struct EntryStructsUnion
      * @brief Gets from the TypeUnion the float value and returns it.
      *
      * @param outValue the float value saved into the union type
-     *
-     * @return True if the type is correct w.r.t. the saved one
+     * @return True if the data type is correct w.r.t. the saved one
      */
     bool get(float& outValue)
     {
@@ -135,6 +137,7 @@ struct EntryStructsUnion
      * @brief Get from Union object the unsigned integer 32b value.
      *
      * @param outValue the uint32_t value saved into the union type
+     * @return True if the data type is correct w.r.t. the saved one
      */
     bool get(uint32_t& outValue)
     {
@@ -148,9 +151,7 @@ struct EntryStructsUnion
      * @brief Get from Union object the coordinates value.
      *
      * @param outValue the coordinates value saved into the union type
-     *
-     * @return True if the type is coherent with the one saved into the
-     * EntryStructUnion
+     * @return True if the data type is correct w.r.t. the saved one
      */
     bool get(Coordinates& outValue)
     {
