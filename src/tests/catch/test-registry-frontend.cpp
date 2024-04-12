@@ -22,16 +22,10 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
-#include <stdint.h>
-// #include <utils/Registry/RegistryFrontend.h>
-/*! TODO: Re-add it when the middleware is integrated again */
-// #include <utils/Registry/RegistryMiddleware.h>
+#include <utils/Registry/RegistryFrontend.h>
 
 #include <catch2/catch.hpp>
-#include <utils/Registry/RegistryFrontend.cpp>
-#include <utils/Registry/RegistrySerializer.cpp>
-/*! TODO: Re-add it when the middleware is integrated again */
-// #include <utils/Registry/RegistryMiddleware.cpp>
+#include <cstdint>
 
 using namespace Boardcore;
 
@@ -50,6 +44,13 @@ static constexpr uint32_t ALGORITHM_ID                   = 128;
 static constexpr uint32_t IGNITION_TIME_ID               = 3;
 static constexpr uint32_t FLOAT_VALUE_ID                 = 13;
 
+/**
+ * @brief Test function for the forEach frontend function. Tests that the value
+ * and id are correctly passed to this function
+ *
+ * @param entryId The id of the configuration entry
+ * @param entry The EntryStructsUnion structure of the configuration entry
+ */
 void visitFunction(ConfigurationId entryId, EntryStructsUnion &entry)
 {
     switch (entryId)
@@ -78,6 +79,10 @@ void visitFunction(ConfigurationId entryId, EntryStructsUnion &entry)
     }
 };
 
+/**
+ * @brief Fake backend to test the frontend without a real backend class that
+ * uses memory/storage
+ */
 class FakeBackend : public RegistryBackend
 {
 public:
@@ -108,18 +113,22 @@ public:
 };
 
 TEST_CASE(
-    "RegistryFrontend test - Set and get type Unsafe configuration entries, "
-    "test various functions")
+    "RegistryFrontend test - Set, Get, GetOrSetDefault, forEach, isEmpty, ")
 {
     RegistryFrontend registry;
     float floatValue;
     uint32_t uint32Value;
     Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE},
         coordinatesGet;
+
+    // IS EMTPY
+
     /* Check that the registry is first empty and see that isEntryConfigured
      * works */
     REQUIRE(registry.isEmpty());
     REQUIRE_FALSE(registry.isEntryConfigured(ALGORITHM_ID));
+
+    // GET, SET, IS CONFIGURED
 
     // Checks that there are effectively non-initialized entry configurations
     REQUIRE(registry.getUnsafe(static_cast<uint32_t>(DEPLOYMENT_ALTITUDE_ID),
@@ -131,6 +140,7 @@ TEST_CASE(
                 uint32Value) != RegistryError::OK);
     REQUIRE(registry.getUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
                                uint32Value) != RegistryError::OK);
+
     // Check set configuration results in right get
     REQUIRE(registry.setUnsafe(static_cast<uint32_t>(ALGORITHM_ID),
                                TEST_VALUE_UINT32) == RegistryError::OK);
@@ -152,12 +162,13 @@ TEST_CASE(
     REQUIRE(registry.getUnsafe(COORDINATE_ID, uint32Value) ==
             RegistryError::OK);
     REQUIRE(uint32Value == TEST_VALUE_UINT32);
+
     /* Checks that get configuration is false if the type is incorrect w.r.t.
      * the type of the set type */
     REQUIRE_FALSE(registry.getUnsafe(COORDINATE_ID, floatValue) ==
                   RegistryError::OK);
 
-    // GET OR SET TEST
+    // GET OR SET DEFAULT TEST
     uint32Value =
         registry.getOrSetDefaultUnsafe(ALGORITHM_ID, TEST_VALUE_UINT32);
     REQUIRE(uint32Value == TEST_VALUE_UINT32);
@@ -193,12 +204,15 @@ TEST_CASE(
 TEST_CASE("RegistryFrontend test - Arm/Disarm test")
 {
     RegistryFrontend registry;
-    uint32_t uint32Value;
+    uint32_t uint32Value = 0;
     Coordinates coordinatesValue{TEST_VALUE_LATITUDE, TEST_VALUE_LONGITUDE},
         coordinateGet;
+    float floatValue = 0;
+
     REQUIRE(registry.setUnsafe(COORDINATE_ID, coordinatesValue) ==
             RegistryError::OK);
     registry.arm();
+
     // If the registry is "armed" no set are allowed but gets are
     REQUIRE(registry.setUnsafe(ALGORITHM_ID, TEST_VALUE_UINT32) !=
             RegistryError::OK);
@@ -207,6 +221,11 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
             RegistryError::OK);
     REQUIRE(coordinateGet.latitude == coordinatesValue.latitude);
     REQUIRE(coordinateGet.longitude == coordinatesValue.longitude);
+    floatValue =
+        registry.getOrSetDefaultUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT);
+    REQUIRE(floatValue == TEST_VALUE_FLOAT);
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, floatValue) !=
+            RegistryError::OK);
 
     // DISARM AND SET NEW ENTRIES
 
@@ -215,6 +234,11 @@ TEST_CASE("RegistryFrontend test - Arm/Disarm test")
             RegistryError::OK);
     REQUIRE(registry.getUnsafe(ALGORITHM_ID, uint32Value) == RegistryError::OK);
     REQUIRE(uint32Value == TEST_VALUE_UINT32);
+    floatValue =
+        registry.getOrSetDefaultUnsafe(FLOAT_VALUE_ID, TEST_VALUE_FLOAT);
+    REQUIRE(floatValue == TEST_VALUE_FLOAT);
+    REQUIRE(registry.getUnsafe(FLOAT_VALUE_ID, floatValue) ==
+            RegistryError::OK);
 }
 
 TEST_CASE("RegistryFrontend test - serialization/deserialization test")
