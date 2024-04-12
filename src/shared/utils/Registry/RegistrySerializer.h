@@ -99,7 +99,7 @@ public:
      * @param configuration The map in which we want to insert the entries
      * from the serialized vector
      * @note The deserialization adds/overwrites configuration entries. The
-     * already present entries are maintained.
+     * already present entries are overriden.
      * @return OK If the de-serialization was successful and the entries where
      * added into the map
      * @return MALFORMED_SERIALIZED_DATA if the vector not have the
