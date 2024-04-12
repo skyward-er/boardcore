@@ -105,7 +105,7 @@ RegistryError RegistryFrontend::save()
         return error;
 
     if (!backend->save(serializationVector))
-        return RegistryError::BACKEND_LOAD_FAIL;
+        return RegistryError::BACKEND_SAVE_FAIL;
 
     return RegistryError::OK;
 }
