@@ -37,10 +37,10 @@ class RegistryBackend
 {
 public:
     /**
-     * @begin Starts the backend, eventually used in backend that
-     * needs to start classes and other things e.g. an ActiveObject
+     * @brief Starts the backend, eventually used in backends that
+     * need to start classes and other things e.g. an ActiveObject
      *
-     * @return true if succesful, false otherwize
+     * @return true if successful, false otherwise
      */
     virtual bool start() = 0;
 
@@ -51,7 +51,7 @@ public:
      * @param buf The buffer where the data will be loaded from the
      * storage/memory if any is saved.
      *
-     * @return true if succesful, false otherwize.
+     * @return true if successful, false otherwise.
      */
     virtual bool load(std::vector<uint8_t>& buf) = 0;
 
@@ -60,7 +60,7 @@ public:
      *
      * @param buf The buf vector with the data to be saved.
      *
-     * @return true if succesful, false otherwize.
+     * @return true if successful, false otherwise.
      */
     virtual bool save(std::vector<uint8_t>& buf) = 0;
 };

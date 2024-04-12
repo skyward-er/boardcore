@@ -39,7 +39,7 @@ using RegistryConfiguration =
 
 /**
  * @brief Serialization header, with useful information about the serialized
- * vector. Header to the actually serialized configuration
+ * data. Header to the actually serialized data.
  */
 struct RegistryHeader
 {
@@ -49,8 +49,8 @@ struct RegistryHeader
 };
 
 /**
- * @brief Registry Footer, with checksum checksum at end of the actually
- * serialized configuration vector
+ * @brief Registry Footer, with checksum of the configuration data (not whole
+ * data). Placed at the end of the actually serialized data
  */
 struct RegistryFooter
 {
@@ -73,7 +73,8 @@ public:
     explicit RegistrySerializer(std::vector<uint8_t>& vector);
 
     /**
-     * @brief Serializes the configuration map into a serialized uint8_t vector
+     * @brief Serializes the configuration map into the uint8_t vector for
+     * serialized data
      *
      * @note In case an error is returned no guarantees are made about the
      * contents of the vector
@@ -99,11 +100,13 @@ public:
      * @param configuration The map in which we want to insert the entries
      * from the serialized vector
      * @note The deserialization adds/overwrites configuration entries. The
-     * already present entries are overriden.
+     * already present entries, if in the deserialized data, are overriden.
+     * @note Pre-existing configuration entries are not removed (but might be
+     * overwritten)
      * @return OK If the de-serialization was successful and the entries where
      * added into the map
      * @return MALFORMED_SERIALIZED_DATA if the vector not have the
-     * appropriate length for the header, footer and configuration
+     * appropriate length for the header, footer and configuration data
      * @return CHECKSUM_FAIL In case the saved Checksum not corresponds with the
      * one recomputed from the serialized configuration
      * @return NO_SUCH_TYPE In case the type id not corresponds to any defined
@@ -126,11 +129,12 @@ private:
     uint32_t computeChecksum();
 
     /**
-     * @brief Reads from the vector the element specified in sequential order.
      *
-     * @param it The iterator to visit the vector, which is increased while
-     * reading
-     * @tparam element The element we want to get from the serialized vector
+     * @brief Deserializes from the vector the data in sequential order and
+     * inserts/overwrites entries into the configuration.
+     *
+     * @tparam T the element data type
+     * @param element The element we want to get from the serialized vector
      * @return OK If the read was successful
      * @return MALFORMED_SERIALIZED_DATA Otherwise, in case the vector is not
      * long enough to read the element
@@ -156,7 +160,8 @@ private:
      * attribute to know the current position where to write and updates such
      * attribute.
      *
-     * @tparam element The element to be written in the serialized vector
+     * @tparam T the element data type
+     * @param element The element to be written in the serialized vector
      * @return OK If it could successfully write
      * @return WRONG_WRITES_SIZE Otherwise, in case could not write due to not
      * enough space in the vector

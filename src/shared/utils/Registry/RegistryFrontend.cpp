@@ -34,6 +34,7 @@ RegistryFrontend::RegistryFrontend(std::unique_ptr<RegistryBackend> backend)
 
 RegistryError RegistryFrontend::start()
 {
+    const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     if (!backend->start())
         return RegistryError::BACKEND_START_FAIL;
 
@@ -71,11 +72,7 @@ RegistryError RegistryFrontend::load()
         return RegistryError::BACKEND_LOAD_FAIL;
 
     RegistrySerializer serializer(serializationVector);
-    RegistryError error = serializer.deserializeConfiguration(configuration);
-    if (error != RegistryError::OK)
-        return error;
-
-    return RegistryError::OK;
+    return serializer.deserializeConfiguration(configuration);
 }
 
 bool RegistryFrontend::isEntryConfigured(

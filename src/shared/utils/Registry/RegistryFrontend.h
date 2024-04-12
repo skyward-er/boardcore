@@ -38,13 +38,12 @@ namespace Boardcore
 {
 
 /**
- * This is the front-end for the registry in case of
- * type unsafe and safe methods for type safeness.
- * It does check the data types but its job is mainly the one of
- * getting and setting given the uint32_t or ConfigurationEnum parameter, the
- * value for such configuration entry. Also it does expose methods for change
- * into a "safe" state the registry during flight as for methods for exploring
- * the current configuration
+ * @brief This is the front-end for the registry to store and load the
+ * configuration. Its methods are type unsafe since the type is determined by
+ * the entry setted. It does check the data types but its job is mainly the one
+ * of get and set for the given ConfigurationId, the value of the entry. It also
+ * exposes methods for go into a "safe" state during armed state / flight.
+ * Finally there are methods to visit the entire configuration (forEach).
  */
 class RegistryFrontend
 {
@@ -61,7 +60,7 @@ public:
 
     /**
      * @brief Start function to start frontend and other objects, such as
-     * ActiveObjects to write to backend and the backend itself
+     * ActiveObjects, needed to write to backend, and the backend itself
      */
     [[nodiscard]] RegistryError start();
 
@@ -73,13 +72,14 @@ public:
 
     /**
      * @brief Enable set methods and memory allocations.
-     * To be used when the rocket is NOT in an "armed" state and while on
+     *
+     * @note To be used when the rocket is NOT in an "armed" state and while on
      * ground.
      */
     void disarm();
 
     /**
-     * @brief Executes immediately the predicate for each the configuration
+     * @brief Executes immediately the predicate for each to the configuration
      * applying the callback with the id and EntryStructsUnion union as
      * parameter for each configured entry in the configuration.
      *
@@ -90,6 +90,7 @@ public:
 
     /**
      * @brief Verify if there is an existing entry given its enum entry.
+     *
      * @param configurationIndex The configuration entry ID for which we
      * verify the entry is configured.
      * @return True if such configuration entry exists in the configuration
@@ -100,6 +101,7 @@ public:
     /**
      * @brief Verify that the configuration is empty or exists some setted
      * entries
+     *
      * @return True if the configuration has no entries. False otherwise
      */
     bool isEmpty();
@@ -107,13 +109,14 @@ public:
     // TYPE UNSAFE INTERFACE METHODS
 
     /**
-     * Method to get the value for a given configuration entry.
-     * It does change the given variable with the correct value if existing
-     * @tparam T The configuration struct for such configuration entry
+     * @brief Gets the value for a given configuration entry.
+     *
+     * @note It does change the given variable with the correct value if
+     * existing
+     * @tparam T The value data type for such configuration entry
      * @param configurationIndex Identifies the configuration entry with its
      * enumeration value
-     * @param value The value to be insert for the specified configuration
-     * entry
+     * @param outValue the specified configuration entry value
      * @return OK in case of successful insertion.
      * @return ENTRY_NOT_FOUND In case the entry is not found in the
      * configuration
@@ -137,7 +140,7 @@ public:
 
     /**
      * @brief Gets the value for a specified configuration entry. Otherwise
-     * returns and try to set the default value
+     * returns default and try to set the default value
      *
      * @tparam T The value data type to be returned and eventually set.
      * @param configurationIndex Identifies the configuration entry with its
@@ -167,10 +170,10 @@ public:
     /**
      * @brief Sets the value for the configuration entry with the specified
      * enum
-     * This method calls the underlying internal method and also saves the
-     * configuration
      *
-     * @tparam T The configuration struct datatype
+     * @note The set applies only to frontend, the change does not apply to
+     * backend, save should be triggered manually to do so
+     * @tparam T The configuration value datatype
      * @param configurationIndex The ID of the configuration entry to set
      * @param value The value to be set for the specified configuration
      * entry
@@ -193,16 +196,18 @@ public:
         return RegistryError::OK;
     }
 
-    // DATA SERIALIZATION TO BYTES FOR BACKEND LOAD AND SAVE
+    // LOAD AND SAVE TO BACKEND
 
     /**
      * @brief Loads from the backend the configuration
      *
+     * @note The operation overrides configurations but maintains the ones that
+     * are not present in the backend configuration
      * @return OK if the configuration exists in memory and is not
      * corrupted
      * @return MALFORMED_SERIALIZED_VECTOR if the vector has a bad format (see
      * serializer)
-     * @return CRC_FAIL In case the saved CRC/Checksum is incorrect (see
+     * @return CHECKSUM_FAIL In case the saved Checksum is incorrect (see
      * serializer)
      * @return NO_SUCH_TYPE In case there are unspecified type ids (see
      * serializer)
@@ -218,9 +223,9 @@ public:
      * to avoid unwanted allocations to the serializationVector during flight.
      *
      * @return OK if could save correctly
-     * @return MALFORMED_SERIALIZED_VECTOR if the vector not have the
+     * @return MALFORMED_SERIALIZED_DATA if the vector not have the
      * appropriate length (see serializer)
-     * @return CRC_FAIL In case the saved CRC/Checksum not corresponds (see
+     * @return CHECKSUM_FAIL In case the saved Checksum not corresponds (see
      * serializer)
      * @return NO_SUCH_TYPE In case there are unspecified type ids (see
      * serializer)
@@ -229,7 +234,9 @@ public:
 
     /**
      * @brief Clear the configuration actually saved, resetting to empty
-     * configuration. Does affect also the underlying backend.
+     * configuration.
+     *
+     * @note Does affect the underlying backend.
      *
      * @attention It does not directly delete the backend saved copy, save
      * should be used to trigger such action
