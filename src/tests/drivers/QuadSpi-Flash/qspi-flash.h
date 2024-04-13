@@ -27,9 +27,9 @@
 using namespace miosix;
 using namespace Boardcore;
 
-/* driver for MX25R3235FM1IL0 flash memory chip
- *  model of flash memory on compute unit: MX25R3235FM1IL0 4MB
- *   FLASH memory space organisation:
+/*  driver for MX25R3235FM1IL0 flash memory chip
+ *  model of flash memory on compute unit: MX25R3235FM1IL0 4MB, device ID:
+ * 0xC22816 FLASH memory space organisation:
  *   - number of byte in the memory: 4.194.304 >> about 4 MB
  *   - "pages"   of 256 Byte each   - number of pages:   16.384
  *   - "sector"  of about 4  KByte  - number of sector:   1.024
@@ -39,6 +39,9 @@ using namespace Boardcore;
 
 namespace FlashMemory
 {
+
+// device id of the flash
+static const uint32_t DEVICE_ID = 0xC22816;
 
 static const uint32_t PAGES_PER_SECTOR    = 16;
 static const uint32_t SECTORS_PER_BLOCK32 = 8;
@@ -71,7 +74,7 @@ void disable();
 // init peripheral clock and GPIO
 void init();
 
-// abort any operation and reset configuration register (CCR)
+// abort any ongoing operation and reset configuration register (CCR)
 void abort_reset();
 
 // wait till the current operation is ended
@@ -95,7 +98,21 @@ public:
     // read unique device ID
     uint32_t readID();
 
-    // erase the entire memory chip - THIS OPERATION MIGHT TAKE A WHILE!!
+    // test the communication with the device by checking on its ID
+    bool test();
+
+    // write a vector into a sector of the flash
+    bool write_vector(std::vector<uint8_t>& vector, uint32_t sector_num,
+                      bool verify_write);
+
+    // read an std::vector starting by a specific sectro number
+    bool read_sector(std::vector<uint8_t>& vector, uint32_t sector_num);
+
+    // program a page into the flash memory
+    bool page_program(std::vector<uint8_t>& vector, uint32_t start_address,
+                      bool verify);
+
+    // erase the entire memory chip - THIS OPERATION WILL TAKE A WHILE!!
     bool chip_erase();
 
     // erase the sector which contains the address (24 bit) specified
@@ -110,11 +127,11 @@ public:
     // read a byte at a specific address (24 bit) in memory
     uint8_t read_byte(uint32_t address);
 
-    // write a byte at a specific address (24 bit) in memory
-    bool byte_program(uint8_t data, uint32_t address);
+    // program a byte at a specific address (24 bit) in memory
+    bool byte_program(uint8_t data, uint32_t address, bool verify);
 
     // ATTENTION it may take a while! - makes the flash return to power-on
-    // default status.
+    // default state
     void software_reset();
 
     // check last erase operation result
@@ -123,13 +140,19 @@ public:
     // check last program operation result
     bool check_program();
 
-private:
     // enable writing
     void write_enable();
+
+    // read status register of the flash memory
+    uint8_t read_status_reg();
 
     // disable writing
     void write_disable();
 
+    // read security register of the flash
+    uint8_t read_security_reg();
+
+private:
     // wait till flash has executed the current operation
     void waitProgress();
 
@@ -137,11 +160,8 @@ private:
     // registers)
     bool isInProgress();
 
-    // read security register of the flash
-    uint8_t read_security_reg();
-
-    // read status register of the flash memory
-    uint8_t read_status_reg();
+    // true = quadspi initialised - false = not initialised yet 
+    bool initialised = false; 
 
     // most important flash memory commands
     enum Commands
@@ -149,7 +169,7 @@ private:
         // read unique ID of the memory
         READ_ID = 0x9F,
 
-        // write enable, needs to be executed before modify any data
+        // write enable, needs to be executed before writing any data
         WRITE_ENABLE = 0x06,
 
         // write disable
@@ -161,13 +181,13 @@ private:
         // write status register
         WRITE_STATUS_REG = 0x01,
 
-        // read secutity register
+        // read security register
         READ_SECURITY_REG = 0x2B,
 
         // read configuration register
         READ_CONFIG_REGISTER = 0x15,
 
-        // read data from memory
+        // read data bytes from memory
         READ = 0x03,
 
         // write a page on memory.
@@ -176,10 +196,10 @@ private:
         // erase a specific sector of the memory
         SECTOR_ERASE = 0x20,
 
-        // erase a specific block of 32KB of the memory
+        // erase a specific block of 32KB on the memory
         BLOCK_32_ERASE = 0x52,
 
-        // erase a specific block of 64KB of the memory
+        // erase a specific block of 64KB on the memory
         BLOCK_64_ERASE = 0xD8,
 
         // erase all data on the chip - THIS COULD TAKE A LONG TIME !
