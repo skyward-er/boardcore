@@ -34,6 +34,7 @@ set(BOARDCORE_HOST_SRC
 
     # Algorithms
     ${SBS_BASE}/src/shared/algorithms/MEA/MEA.cpp
+    ${SBS_BASE}/src/shared/algorithms/NAS/NAS.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakes.cpp
 
