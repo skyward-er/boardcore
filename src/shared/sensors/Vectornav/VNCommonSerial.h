@@ -46,6 +46,14 @@ public:
 
     ~VNCommonSerial();
 
+    /**
+     * @brief Method to reset the sensor to default values and to close
+     * the connection. Used if you need to close and re initialize the sensor.
+     *
+     * @return True if operation succeeded.
+     */
+    bool closeAndReset();
+
 private:
     /**
      * @brief The name of the sensor, to be displayed inside the log.
@@ -98,6 +106,26 @@ protected:
      * @return True if operation succeeded.
      */
     bool asyncPause();
+
+    /**
+     * @brief Sets the user selected crc method.
+     *
+     * @param waitResponse If true wait for a serial response.
+     *
+     * @return True if operation succeeded.
+     */
+    bool setCrc(bool waitResponse = true);
+
+    /**
+     * @brief Utility function used to retrieve the binary output from the
+     * sensor.
+     *
+     * @param binaryData The variable that will hold the data.
+     * @param sampleCommand The command to be sent to sample data.
+     * @return True if operation successful, false otherwise.
+     */
+    template <typename T>
+    bool getBinaryOutput(T &binaryData, const char *const sampleCommand);
 
     /**
      * @brief Utility function used to extract quaternion data from the
@@ -183,6 +211,33 @@ protected:
      * @brief Actual strlen() of the recvString.
      */
     uint8_t recvStringLength = 0;
+
+    bool isInit = false;
 };
+
+template <typename T>
+bool VNCommonSerial::getBinaryOutput(T &binaryData,
+                                     const char *const sampleCommand)
+{
+    // TODO: REMOVE READ-BLOCKING
+    uint8_t initByte = 0;
+
+    // Remove any junk
+    // TODO: needed? Or we can assume it is empty?
+    clearBuffer();
+
+    usart.writeString(sampleCommand);
+
+    // Check the read of the 0xFA byte to find the start of the message
+    if (usart.readBlocking(&initByte, 1) && initByte == 0xFA)
+    {
+        if (usart.readBlocking(&binaryData, sizeof(T)))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 }  // namespace Boardcore
