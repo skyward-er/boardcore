@@ -128,14 +128,6 @@ bool VNCommonSerial::verifyChecksum(char *command, int length)
     return true;
 }
 
-void VNCommonSerial::clearBuffer()
-{
-    char c;
-    while (usart.read(&c, 1))
-    {
-    }
-}
-
 bool VNCommonSerial::asyncPause()
 {
     usart.writeString("$VNASY,0*XX\n");

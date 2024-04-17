@@ -216,7 +216,7 @@ VN300Data VN300::sampleBinary()
 
 VN300Data VN300::sampleASCII()
 {
-    clearBuffer();
+    usart.clearQueue();
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
     usart.writeString(preSampleImuString);
 
@@ -240,7 +240,7 @@ VN300Data VN300::sampleASCII()
     AccelerometerData acc = sampleAccelerometer();
     GyroscopeData gyro    = sampleGyroscope();
 
-    clearBuffer();
+    usart.clearQueue();
     // Returns INS LLA message
     usart.writeString(preSampleINSlla);
 
@@ -272,7 +272,7 @@ bool VN300::disableAsyncMessages(bool waitResponse)
     miosix::Thread::sleep(
         50);  // TODO: needed? I don't think so, but has to be checked
     // Send the command
-    clearBuffer();
+    usart.clearQueue();
     if (!sendStringCommand(command))
     {
         return false;
@@ -299,7 +299,7 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
 
     miosix::Thread::sleep(
         50);  // TODO: needed? I don't think so, but has to be checked
-    clearBuffer();
+    usart.clearQueue();
     if (!sendStringCommand(command))
     {
         return false;
@@ -325,7 +325,7 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
 
     miosix::Thread::sleep(
         50);  // TODO: needed? I don't think so, but has to be checked
-    clearBuffer();
+    usart.clearQueue();
     if (!sendStringCommand(command))
     {
         return false;
@@ -351,7 +351,7 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
 
     miosix::Thread::sleep(
         50);  // TODO: needed? I don't think so, but has to be checked
-    clearBuffer();
+    usart.clearQueue();
     if (!sendStringCommand(command))
     {
         return false;
@@ -406,10 +406,7 @@ bool VN300::setBinaryOutput()
     miosix::Thread::sleep(
         50);  // TODO: needed? I don't think so, but has to be checked
 
-    // This function is used to clear the usart buffer, it needs to be replaced
-    // with the function from usart class
-    // TODO
-    clearBuffer();
+    usart.clearQueue();
 
     // Send the command
     if (!sendStringCommand(command))
@@ -456,8 +453,7 @@ bool VN300::selfTestImpl()
     miosix::Thread::sleep(100);
 
     // removing junk
-    // TODO: change to usart.clear()
-    clearBuffer();
+    usart.clearQueue();
 
     // I check the model number
     if (!sendStringCommand("VNRRG,01"))
