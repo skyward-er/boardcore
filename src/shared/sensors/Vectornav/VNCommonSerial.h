@@ -108,6 +108,18 @@ protected:
     bool setCrc(bool waitResponse = true);
 
     /**
+     * @brief Configures the default serial communication.
+     */
+    void configDefaultSerialPort();
+
+    /**
+     * @brief Configures the user defined serial communication.
+     *
+     * @return True if operation succeeded.
+     */
+    bool configUserSerialPort();
+
+    /**
      * @brief Utility function used to retrieve the binary output from the
      * sensor.
      *
@@ -187,6 +199,11 @@ protected:
     CRCOptions crc;
 
     PrintLogger logger;
+
+    /**
+     * @brief Default baudrate value for the usart communication.
+     */
+    static const int DEFAULT_BAUDRATE = 115200;
 
     /**
      * @brief Maximum size of the receiving string.

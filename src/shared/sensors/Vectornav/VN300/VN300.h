@@ -114,20 +114,6 @@ private:
     // TODO: move to common files
 
     /**
-     * @brief Configures the default serial communication.
-     */
-    void configDefaultSerialPort();
-    // TODO: move to common files
-
-    /**
-     * @brief Configures the user defined serial communication.
-     *
-     * @return True if operation succeeded.
-     */
-    bool configUserSerialPort();
-    // TODO: move to common files
-
-    /**
      * @brief Sets the antenna A offset.
      *
      * @param antPos antenna position.
@@ -178,11 +164,6 @@ private:
     VN300Data sampleBinary();
 
     VN300Data sampleASCII();
-
-    /**
-     * @brief Default baudrate value for the usart communication.
-     */
-    static const int defaultBaudRate = 115200;
 
     VN300Defs::SamplingMethod samplingMethod;
 
