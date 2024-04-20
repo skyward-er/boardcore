@@ -34,25 +34,25 @@ struct NASState
     // 13 extended kalman states
 
     // Position [m]
-    float n = 0;
-    float e = 0;
-    float d = 0;
+    float n = 0;  ///< North (x)
+    float e = 0;  ///< East  (y)
+    float d = 0;  ///< Down  (z)
 
     // Velocity [m/s]
-    float vn = 0;
-    float ve = 0;
-    float vd = 0;
+    float vn = 0;  ///< Velocity North (x)
+    float ve = 0;  ///< Velocity East  (y)
+    float vd = 0;  ///< Velocity Down  (z)
 
-    // Attitude as quaternion
-    float qx = 0;
-    float qy = 0;
-    float qz = 0;
-    float qw = 1;
+    // Attitude as quaternion, from body to NED frame
+    float qx = 0;  ///< Quaternion x
+    float qy = 0;  ///< Quaternion y
+    float qz = 0;  ///< Quaternion z
+    float qw = 1;  ///< Quaternion w
 
     // Gyroscope bias
-    float bx = 0;
-    float by = 0;
-    float bz = 0;
+    float bx = 0;  ///< Gyroscope bias x
+    float by = 0;  ///< Gyroscope bias y
+    float bz = 0;  ///< Gyroscope bias z
 
     NASState() {}
 

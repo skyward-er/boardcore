@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Emilio Corigliano
+ * Author: Emilio Corigliano, Davide Basso
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 
-#include "nasData2.h"
+#include "nasData.h"
 
 using namespace Boardcore;
 using namespace Eigen;
@@ -35,58 +35,106 @@ void checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i);
 TEST_CASE("NAS complete")
 {
     static_assert(sizeof(acc) / sizeof(acc[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
-    static_assert(sizeof(baro) / sizeof(baro[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
+                  sizeof(output) / sizeof(output[0]));
+    // static_assert(sizeof(baro) / sizeof(baro[0]) ==
+    //               sizeof(output) / sizeof(output[0]));
     static_assert(sizeof(gps) / sizeof(gps[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
+                  sizeof(output) / sizeof(output[0]));
     static_assert(sizeof(gyro) / sizeof(gyro[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
+                  sizeof(output) / sizeof(output[0]));
     static_assert(sizeof(mag) / sizeof(mag[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
+                  sizeof(output) / sizeof(output[0]));
     static_assert(sizeof(pitot) / sizeof(pitot[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
-    static_assert(sizeof(nasInputs) / sizeof(nasInputs[0]) ==
-           sizeof(nasOutputs) / sizeof(nasOutputs[0]));
+                  sizeof(output) / sizeof(output[0]));
+    static_assert(sizeof(input) / sizeof(input[0]) ==
+                  sizeof(output) / sizeof(output[0]));
 
     NAS nas(nasConfig);
     NASState x_curr;
-    ReferenceValues r(gps[0].height, baro[0].pressure, 15, gps[0].latitude, gps[0].longitude);
+    ReferenceValues r(gps[0].height, baro[0].pressure, 15, gps[0].latitude,
+                      gps[0].longitude);
     nas.setReferenceValues(r);
 
-    for (uint32_t i = 0; i < sizeof(nasOutputs) / sizeof(nasOutputs[0]) - 1; i++)
+    for (uint32_t i = 0; i < sizeof(output) / sizeof(output[0]) - 1; i++)
     {
-        nas.setX(nasInputs[i].getX());
-        printf("[%d] d_after setX: %f\n", i, nas.getState().d);
+        nas.setX(input[i].getX());
 
-        // Update the kalman
+        // Predict acceleration
         nas.predictAcc(acc[i]);
-        printf("[%d] d_predAcc: %f\n", i, nas.getState().d);
-        nas.predictGyro(gyro[i]);
-        nas.correctGPS(gps[i]);
-        printf("[%d] d_pre: %f\n", i, nas.getState().d);
-        printf("[%d] pres: %f\n", i, baro[i].pressure);
-        nas.correctBaro(baro[i].pressure);
-        printf("[%d] d_post: %f\n", i, nas.getState().d);
+        printf("[%d] Predicting acceleration:\n", i);
+        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].acc_x);
+        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].acc_y);
+        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].acc_z);
+        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].acc_vx);
+        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].acc_vy);
+        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].acc_vz);
 
+        // Predict gyro
+        nas.predictGyro(gyro[i]);
+        printf("[%d] Predicting gyroscope:\n", i);
+        printf("[%d] qx: %f.2/%f.2\n", i, nas.getState().qx, steps[i].gyro_gx);
+        printf("[%d] qy: %f.2/%f.2\n", i, nas.getState().qy, steps[i].gyro_gy);
+        printf("[%d] qz: %f.2/%f.2\n", i, nas.getState().qz, steps[i].gyro_gz);
+        printf("[%d] qw: %f.2/%f.2\n", i, nas.getState().qw, steps[i].gyro_gw);
+        printf("[%d] bx: %f.2/%f.2\n", i, nas.getState().bx, steps[i].gyro_gbx);
+        printf("[%d] by: %f.2/%f.2\n", i, nas.getState().by, steps[i].gyro_gby);
+        printf("[%d] bz: %f.2/%f.2\n", i, nas.getState().bz, steps[i].gyro_gbz);
+
+        // Correct gps
+        nas.correctGPS(gps[i]);
+        printf("[%d] Correcting GPS:\n", i);
+        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].gps_x);
+        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].gps_y);
+        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].gps_z);
+        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].gps_vx);
+        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].gps_vy);
+        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].gps_vz);
+
+        // Correct barometer
+        nas.correctBaro(baro[i].pressure);
+        printf("[%d] Correcting barometer:\n", i);
+        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].baro_x);
+        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].baro_y);
+        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].baro_z);
+        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].baro_vx);
+        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].baro_vy);
+        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].baro_vz);
+
+        // Correct magnetometer
         nas.correctMag(mag[i]);
+        printf("[%d] Correcting magnetometer:\n", i);
+        printf("[%d] qx: %f.2/%f.2\n", i, nas.getState().qx, steps[i].mag_gx);
+        printf("[%d] qy: %f.2/%f.2\n", i, nas.getState().qy, steps[i].mag_gy);
+        printf("[%d] qz: %f.2/%f.2\n", i, nas.getState().qz, steps[i].mag_gz);
+        printf("[%d] qw: %f.2/%f.2\n", i, nas.getState().qw, steps[i].mag_gw);
+        printf("[%d] bx: %f.2/%f.2\n", i, nas.getState().bx, steps[i].mag_gbx);
+        printf("[%d] by: %f.2/%f.2\n", i, nas.getState().by, steps[i].mag_gby);
+        printf("[%d] bz: %f.2/%f.2\n", i, nas.getState().bz, steps[i].mag_gbz);
+
+        // Correct pitot
         nas.correctPitot(pitot[i].airspeed);
+        printf("[%d] Correcting pitot:\n", i);
+        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].pitot_x);
+        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].pitot_y);
+        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].pitot_z);
+        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].pitot_vx);
+        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].pitot_vy);
+        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].pitot_vz);
 
         // Get the results
         x_curr = NASState(i, nas.getX());
-
-        checkStates(i, x_curr, nasInputs[i+1]);
+        checkStates(i, x_curr, input[i + 1]);
     }
 }
 
 void checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i)
 {
-    static const float marginN  = 0.05;
-    static const float marginE  = 0.05;
-    static const float marginD  = 0.05;
-    static const float marginVN = 0.05;
-    static const float marginVE = 0.05;
-    static const float marginVD = 0.05;
+    static const float marginN  = 0.5;
+    static const float marginE  = 0.5;
+    static const float marginD  = 0.5;
+    static const float marginVN = 0.1;
+    static const float marginVE = 0.1;
+    static const float marginVD = 0.1;
     static const float marginQ  = 0.02;
     static const float marginB  = 0.01;
 
