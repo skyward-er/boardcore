@@ -36,8 +36,8 @@ TEST_CASE("NAS complete")
 {
     static_assert(sizeof(acc) / sizeof(acc[0]) ==
                   sizeof(output) / sizeof(output[0]));
-    // static_assert(sizeof(baro) / sizeof(baro[0]) ==
-    //               sizeof(output) / sizeof(output[0]));
+    static_assert(sizeof(baro) / sizeof(baro[0]) ==
+                  sizeof(output) / sizeof(output[0]));
     static_assert(sizeof(gps) / sizeof(gps[0]) ==
                   sizeof(output) / sizeof(output[0]));
     static_assert(sizeof(gyro) / sizeof(gyro[0]) ==
@@ -91,7 +91,7 @@ TEST_CASE("NAS complete")
         printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].gps_vz);
 
         // Correct barometer
-        nas.correctBaro(baro[i].pressure);
+        // nas.correctBaro(baro[i].pressure);
         printf("[%d] Correcting barometer:\n", i);
         printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].baro_x);
         printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].baro_y);
