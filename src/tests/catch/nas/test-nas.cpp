@@ -72,13 +72,13 @@ TEST_CASE("NAS complete")
         // Predict gyro
         nas.predictGyro(gyro[i]);
         printf("[%d] Predicting gyroscope:\n", i);
-        printf("[%d] qx: %f.2/%f.2\n", i, nas.getState().qx, steps[i].gyro_gx);
-        printf("[%d] qy: %f.2/%f.2\n", i, nas.getState().qy, steps[i].gyro_gy);
-        printf("[%d] qz: %f.2/%f.2\n", i, nas.getState().qz, steps[i].gyro_gz);
-        printf("[%d] qw: %f.2/%f.2\n", i, nas.getState().qw, steps[i].gyro_gw);
-        printf("[%d] bx: %f.2/%f.2\n", i, nas.getState().bx, steps[i].gyro_gbx);
-        printf("[%d] by: %f.2/%f.2\n", i, nas.getState().by, steps[i].gyro_gby);
-        printf("[%d] bz: %f.2/%f.2\n", i, nas.getState().bz, steps[i].gyro_gbz);
+        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qx, steps[i].gyro_gx);
+        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qy, steps[i].gyro_gy);
+        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qz, steps[i].gyro_gz);
+        printf("[%d] QW: %f.2/%f.2\n", i, nas.getState().qw, steps[i].gyro_gw);
+        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().bx, steps[i].gyro_gbx);
+        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().by, steps[i].gyro_gby);
+        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().bz, steps[i].gyro_gbz);
 
         // Correct gps
         nas.correctGPS(gps[i]);
@@ -91,7 +91,7 @@ TEST_CASE("NAS complete")
         printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].gps_vz);
 
         // Correct barometer
-        // nas.correctBaro(baro[i].pressure);
+        nas.correctBaro(baro[i].pressure);
         printf("[%d] Correcting barometer:\n", i);
         printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].baro_x);
         printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].baro_y);
@@ -103,13 +103,13 @@ TEST_CASE("NAS complete")
         // Correct magnetometer
         nas.correctMag(mag[i]);
         printf("[%d] Correcting magnetometer:\n", i);
-        printf("[%d] qx: %f.2/%f.2\n", i, nas.getState().qx, steps[i].mag_gx);
-        printf("[%d] qy: %f.2/%f.2\n", i, nas.getState().qy, steps[i].mag_gy);
-        printf("[%d] qz: %f.2/%f.2\n", i, nas.getState().qz, steps[i].mag_gz);
-        printf("[%d] qw: %f.2/%f.2\n", i, nas.getState().qw, steps[i].mag_gw);
-        printf("[%d] bx: %f.2/%f.2\n", i, nas.getState().bx, steps[i].mag_gbx);
-        printf("[%d] by: %f.2/%f.2\n", i, nas.getState().by, steps[i].mag_gby);
-        printf("[%d] bz: %f.2/%f.2\n", i, nas.getState().bz, steps[i].mag_gbz);
+        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qx, steps[i].mag_gx);
+        printf("[%d] QY: %f.2/%f.2\n", i, nas.getState().qy, steps[i].mag_gy);
+        printf("[%d] QZ: %f.2/%f.2\n", i, nas.getState().qz, steps[i].mag_gz);
+        printf("[%d] QW: %f.2/%f.2\n", i, nas.getState().qw, steps[i].mag_gw);
+        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().bx, steps[i].mag_gbx);
+        printf("[%d] BY: %f.2/%f.2\n", i, nas.getState().by, steps[i].mag_gby);
+        printf("[%d] BZ: %f.2/%f.2\n", i, nas.getState().bz, steps[i].mag_gbz);
 
         // Correct pitot
         nas.correctPitot(pitot[i].airspeed);
