@@ -19,99 +19,64 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "qspi-flash.h"
+#include "drivers/qspi-flash/qspi-flash.h"
+
+/*
+ * This is a simple test of "MX25R3235FM1IL0" flash memory chip on compute unit.
+ * it will ensure that flash is working by performing "write" and "read" vector
+ * operations.
+ */
 
 qspi_flash mymemory;
 
 int main()
 {
 
+    // init qspi-flash communication
     mymemory.init();
 
-    std::vector<uint8_t> v;
-    v.reserve(20000);
-    for (uint32_t i = 0; i < v.capacity(); i++)
-        v.push_back(5);
-    v.resize(v.capacity());
-
-    /*
-    printf("vettore: \n");
-    uint32_t i = 0;
-    for (i = 0; i < v.size(); i++)
+    // test if flash is working
+    if (mymemory.test())
     {
-        printf("v[%d]: %d \n", i, v[i]);
+
+        // create a vector of ten bytes to write on memory
+        std::vector<uint8_t> v;
+        v.reserve(10);
+        for (uint32_t i = 0; i < v.capacity(); i++)
+            v.push_back(99);
+        v.resize(v.capacity());  // make sure that size match with capacity
+
+        // write vector "v" at 50th sector and double check on data
+        if (mymemory.write_vector(v, 50, true) == false)
+        {
+            printf("ERROR - write operation failed !\n");
+            return -1;
+        }
+
+        // create a vector in which will be copied the bytes of 50th sector
+        std::vector<uint8_t> v2;
+
+        // read 50th entire sector into the vector "v2"
+        if (mymemory.read_sector(v2, 50) == false)
+        {
+            printf("ERROR - read operation failed ! \n");
+            return -1;
+        }
+
+        // print first ten bytes of data in the vector "v2"
+        printf("\nvector v2: \n");
+        uint32_t a = 0;
+        for (a = 0; a < 10 && a < v2.size(); a++)
+        {
+            printf("v2[%d]: %d \n", a, v2[a]);
+        }
+        printf("v2 size: %d\n", v2.size());
+        printf("v2 capacity: %d\n", v2.capacity());
+        return 0;
     }
-    printf("vector size: %u\n", v.size());
-    printf("vector capacity: %d\n", v.capacity());
-    */
-
-    // printf("result: %d\n", mymemory.write_vector(v, 1019, true));
-
-    // --------- read FUNZIONA -------------
-    std::vector<uint8_t> v2;
-    mymemory.read_sector(v2, 1023);
-    printf("\nvettore v2: \n");
-    uint32_t a = 0;
-    for (a = 0; a < FlashMemory::SECTOR_SIZE; a++)
+    else
     {
-        printf("v2[%d]: %d \n", a, v2[a]);
+        printf("Error - flash memory is not working properly!\n");
+        return -1;
     }
-    printf("v2 size: %d\n", v2.size());
-    printf("v2 capacity: %d\n", v2.capacity());
-
-    // ------------- ATTENZIONE SU FUNZIONI DI LETTURA -----------------
-    // numero di bytes della flash = 2 ^ (FSIZE + 1)
-    // impostare la corretta dimensione della flash è necessario al corretto
-    // funzionamento delle operazioni di lettura dalla flash. tutte le
-    // operazioni di lettura della memoria a partire da un indirizzo che non può
-    // essere contenuto nella memoria di dimensione indicata (FSIZE) non vengono
-    // eseguite dalla periferica QUADSPI. esempio: se la dimensione impostata è
-    // di 4 byte allora gli indirizzi accettati sono: 0-3b.
-
-    // - read_sector funziona bene.
-
-    // - program_sector funzionano bene con verify_write
-
-    // - page_program funziona beneeeeee
-
-    // - readID() funziona bene con sleep(1ms)
-
-    // - test() funziona bene
-
-    // - studiare come aggiungere quadspi mode: non vale la pena ad oggi
-
-    // - waitProgress più veloce: funziona tutto ok
-
-    // ----------- TEST ------ lettura security register
-    // ho modificato byte_program e read_security_reg()
-    // senza sleep() non ci sono dati nella FIFO. con sleep arriva sempre il
-    // byte data. read_security_reg() sembra leggere il registro, da provare con
-    // suspend commands. se non va, check con rilettura dei dati.
-
-    // assumo che la lettura del security_register sia corretta, verifico la
-    // riuscita delle operazioni più importanti rileggendo i dati.
-
-    // su funzioni meno importanti controllare check_operation() e controllare
-    // bene gli argomenti siano corretti. Nelle altre controllo con verify.
-
-    // modifico byte_program con flag verify e controllo su argomenti: FUNZIONA
-    // testata
-
-    // modifico tutte le erase: FUNZIONANNO testate
-
-    // modifico read_byte: FUNZIONA testata
-
-    // page_program modificata: aggiunto verify flag FUNZIONA testata.
-
-    // test finali page_program, read_sector, e program_sector FUNZIONANO
-    // TESTATE.
-
-    // METTERE FLAG INITIALISED 
-
-    // - commentare meglio e sistemare funzioni public e private.
-
-    // - forse aggiungere controllo anti loop operation.
-
-    while (true)
-        Thread::sleep(1000);
 }
