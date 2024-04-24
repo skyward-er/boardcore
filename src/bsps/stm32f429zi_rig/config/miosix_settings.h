@@ -153,7 +153,7 @@ const unsigned char MAX_OPEN_FILES = 8;
  * mode, so to use debugging it is necessary to disable sleep in the idle
  * thread. By default it is not defined (idle thread calls sleep).
  */
-//#define JTAG_DISABLE_SLEEP
+#define JTAG_DISABLE_SLEEP
 
 #if defined(WITH_DEEP_SLEEP) && defined(JTAG_DISABLE_SLEEP)
 #error Deep sleep cannot work together with jtag
