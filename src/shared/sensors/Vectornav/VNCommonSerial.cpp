@@ -128,9 +128,29 @@ bool VNCommonSerial::verifyChecksum(char *command, int length)
     return true;
 }
 
-bool VNCommonSerial::asyncPause()
+bool VNCommonSerial::disableAsyncMessages(bool waitResponse)
 {
-    usart.writeString("$VNASY,0*XX\n");
+    // Command string
+    std::string command = "VNWRG,06,00";
+
+    // Clear the receiving queue
+    usart.clearQueue();
+
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    if (waitResponse)
+    {
+        recvStringCommand(recvString.data(), recvStringMaxDimension);
+
+        if (checkErrorVN(recvString.data()))
+        {
+            return false;
+        }
+    }
+
     return true;
 }
 
