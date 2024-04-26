@@ -53,14 +53,14 @@ using mosi = Gpio<GPIOE_BASE, 6>;
 
 namespace usart1
 {
-using tx = Gpio<GPIOA_BASE, 2>;
-using rx = Gpio<GPIOA_BASE, 3>;
+using tx = Gpio<GPIOA_BASE, 9>;
+using rx = Gpio<GPIOA_BASE, 10>;
 }  // namespace usart1
 
 namespace usart2
 {
-using tx = Gpio<GPIOA_BASE, 9>;
-using rx = Gpio<GPIOA_BASE, 10>;
+using tx = Gpio<GPIOA_BASE, 2>;
+using rx = Gpio<GPIOA_BASE, 3>;
 }  // namespace usart2
 
 namespace can2
