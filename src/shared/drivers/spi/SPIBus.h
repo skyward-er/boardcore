@@ -132,6 +132,8 @@ public:
 
     void waitPeripheral();
 
+    void flushRxBuffer();
+
     /**
      * @brief Configures and enables the bus with the provided configuration.
      *
@@ -402,6 +404,12 @@ inline void SPIBus::waitPeripheral()
         ;
 }
 
+inline void SPIBus::flushRxBuffer()
+{
+    while ((spi->SR & SPI_SR_RXNE) != 0)
+        spi->DR;
+}
+
 inline void SPIBus::configure(SPIBusConfig newConfig)
 {
     // Do not reconfigure if already in the correct configuration.
@@ -520,8 +528,18 @@ inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
 
 inline uint8_t SPIBus::transfer(uint8_t data)
 {
-    // At the start of the transfer we assume that the RX FIFO is empty
-    assert((spi->SR & SPI_SR_RXNE) == 0);
+    /*
+     * On STM32F7xx and STM32F4xx series chips, on SPI3 only, the RXNE flag
+     * may be erroneously set at the beginning of the transaction with the
+     * RX buffer containing garbage data.
+     * On F7xx chips the issue can be reproduced by re-configuring the SPI from
+     * Mode 0 (CPOL=0, CPHA=0) to Mode 3 (CPOL=1, CPHA=1), after performing at
+     * least one transaction in Mode 0.
+     *
+     * We work around this issue by flushing the RX buffer at the beginning of
+     * the transaction.
+     */
+    flushRxBuffer();
 
     // Wait until the peripheral is ready to transmit
     while ((spi->SR & SPI_SR_TXE) == 0)
