@@ -263,30 +263,6 @@ VN300Data VN300::sampleASCII()
     return VN300Data(quat, mag, acc, gyro, ins);
 }
 
-bool VN300::disableAsyncMessages(bool waitResponse)
-{
-    // Command string
-    std::string command =
-        "VNWRG,06,00";  // Put 0 in register number 6 (ASYNC Config)
-
-    usart.clearQueue();
-    if (!sendStringCommand(command))
-    {
-        return false;
-    }
-
-    // Read the answer
-    if (waitResponse)
-    {
-        recvStringCommand(recvString.data(), recvStringMaxDimension);
-
-        if (checkErrorVN(recvString.data()))
-            return false;
-    }
-
-    return true;
-}
-
 bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
 {
     std::string command;
