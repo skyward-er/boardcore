@@ -181,19 +181,30 @@ VN300Data VN300::sampleBinary()
     const uint64_t timestamp = TimestampTimer::getTimestamp();
 
     bool sampleOutcome = false;
+    bool validChecksum = false;
     switch (binaryOutputPacket)
     {
         case VN300Defs::BinaryOutputPacket::FULL:
             sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataFull>(
                 bindataFull, preSampleBin1);
+
+            validChecksum =
+                crc == CRCOptions::CRC_NO ||
+                calculateChecksum16(reinterpret_cast<uint8_t*>(&bindataFull),
+                                    sizeof(bindataFull)) == 0;
             break;
         case VN300Defs::BinaryOutputPacket::ARP:
             sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataArp>(
                 binDataArp, preSampleBin1);
+
+            validChecksum =
+                crc == CRCOptions::CRC_NO ||
+                calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataArp),
+                                    sizeof(binDataArp)) == 0;
             break;
     }
 
-    // TODO: sampleOutcome = sampleOutcome && verifyChecksum();
+    sampleOutcome = sampleOutcome && validChecksum;
 
     if (sampleOutcome)
     {
