@@ -382,8 +382,7 @@ bool VN300::setBinaryOutput()
 
     // The reply is compared with the comp variable and in case of an error the
     // received message is passed to the logger
-    // TODO: why not using checkErrorVN()?
-    if (strncmp(comp, recvString.data() + 1, strlen(comp)) != 0)
+    if (checkErrorVN(recvString.data()) != 0)
     {
         LOG_WARN(logger, "The reply is wrong {}", recvString.data());
         return false;
