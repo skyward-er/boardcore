@@ -234,7 +234,6 @@ bool VNCommonSerial::getBinaryOutput(T &binaryData,
     uint8_t initByte = 0;
 
     // Remove any junk
-    // TODO: needed? Or we can assume it is empty?
     usart.clearQueue();
 
     usart.writeString(sampleCommand);
