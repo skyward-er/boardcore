@@ -29,14 +29,15 @@
 namespace Boardcore
 {
 
-VN300::VN300(USART &usart, int userBaudRate,
+VN300::VN300(USART& usart, int userBaudRate,
+             VN300Defs::BinaryOutputPacket binaryOutputPacket,
              VN300Defs::SamplingMethod samplingMethod, CRCOptions crc,
              const VN300Defs::AntennaPosition antPosA,
              const VN300Defs::AntennaPosition antPosB,
              const Eigen::Matrix3f rotMat)
     : VNCommonSerial(usart, userBaudRate, "VN300", crc),
-      samplingMethod(samplingMethod), antPosA(antPosA), antPosB(antPosB),
-      rotMat(rotMat)
+      binaryOutputPacket(binaryOutputPacket), samplingMethod(samplingMethod),
+      antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
 {
 }
 
@@ -173,39 +174,39 @@ VN300Data VN300::sampleImpl()
 
 VN300Data VN300::sampleBinary()
 {
-    VN300Defs::BinaryData bindata;
+    VN300Data data;
+    VN300Defs::BinaryDataFull bindataFull;
+    VN300Defs::BinaryDataArp binDataArp;
 
     const uint64_t timestamp = TimestampTimer::getTimestamp();
 
-    if (getBinaryOutput<VN300Defs::BinaryData>(bindata, preSampleBin1))
+    bool sampleOutcome = false;
+    switch (binaryOutputPacket)
     {
-        QuaternionData quat{timestamp, bindata.quatW_bin, bindata.quatX_bin,
-                            bindata.quatY_bin, bindata.quatZ_bin};
+        case VN300Defs::BinaryOutputPacket::FULL:
+            sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataFull>(
+                bindataFull, preSampleBin1);
+            break;
+        case VN300Defs::BinaryOutputPacket::ARP:
+            sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataArp>(
+                binDataArp, preSampleBin1);
+            break;
+    }
 
-        AccelerometerData acc{timestamp, bindata.accx, bindata.accy,
-                              bindata.accz};
+    // TODO: sampleOutcome = sampleOutcome && verifyChecksum();
 
-        MagnetometerData mag{timestamp, bindata.magx, bindata.magy,
-                             bindata.magz};
-
-        GyroscopeData gyro{timestamp, bindata.angx, bindata.angy, bindata.angz};
-
-        VN300Defs::Ins_Lla ins{
-            timestamp,
-            bindata.fix,
-            bindata.fix,  // add function to extract ins_fix from ins_status
-            bindata.ins_status,
-            bindata.yaw_bin,
-            bindata.pitch_bin,
-            bindata.roll_bin,
-            static_cast<float>(bindata.latitude_bin),
-            static_cast<float>(bindata.longitude_bin),
-            static_cast<float>(bindata.altitude_bin),
-            bindata.velx,
-            bindata.vely,
-            bindata.velz};
-
-        return VN300Data(quat, mag, acc, gyro, ins);
+    if (sampleOutcome)
+    {
+        switch (binaryOutputPacket)
+        {
+            case VN300Defs::BinaryOutputPacket::FULL:
+                buildBinaryDataFull(bindataFull, data, timestamp);
+                break;
+            case VN300Defs::BinaryOutputPacket::ARP:
+                buildBinaryDataArp(binDataArp, data, timestamp);
+                break;
+        }
+        return data;
     }
     else
     {
@@ -261,6 +262,67 @@ VN300Data VN300::sampleASCII()
     VN300Defs::Ins_Lla ins = sampleIns();
 
     return VN300Data(quat, mag, acc, gyro, ins);
+}
+
+void VN300::buildBinaryDataFull(const VN300Defs::BinaryDataFull& rawData,
+                                VN300Data& data, const uint64_t timestamp)
+{
+    QuaternionData quat{timestamp, rawData.quatW_bin, rawData.quatX_bin,
+                        rawData.quatY_bin, rawData.quatZ_bin};
+
+    AccelerometerData acc{timestamp, rawData.accx, rawData.accy, rawData.accz};
+
+    MagnetometerData mag{timestamp, rawData.magx, rawData.magy, rawData.magz};
+
+    GyroscopeData gyro{timestamp, rawData.angx, rawData.angy, rawData.angz};
+
+    VN300Defs::Ins_Lla ins{
+        timestamp,
+        rawData.fix,
+        rawData.fix,  // add function to extract ins_fix from ins_status
+        rawData.ins_status,
+        rawData.yaw_bin,
+        rawData.pitch_bin,
+        rawData.roll_bin,
+        static_cast<float>(rawData.latitude_bin),
+        static_cast<float>(rawData.longitude_bin),
+        static_cast<float>(rawData.altitude_bin),
+        rawData.velx,
+        rawData.vely,
+        rawData.velz};
+
+    data = VN300Data(quat, mag, acc, gyro, ins);
+}
+
+void VN300::buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
+                               VN300Data& data, const uint64_t timestamp)
+{
+    data = VN300Data();
+
+    // Gps
+    data.insTimestamp = timestamp;
+    data.latitude     = rawData.latitude;
+    data.longitude    = rawData.longitude;
+    data.altitude     = rawData.altitude;
+    data.fix_gps      = rawData.gpsFix;
+
+    // Angular
+    data.angularSpeedTimestamp = timestamp;
+    data.angularSpeedX         = rawData.angularX;
+    data.angularSpeedY         = rawData.angularY;
+    data.angularSpeedZ         = rawData.angularZ;
+
+    // Yaw pith roll
+    data.yaw   = rawData.yaw;
+    data.pitch = rawData.pitch;
+    data.roll  = rawData.roll;
+
+    // Quaternion
+    data.quaternionTimestamp = timestamp;
+    data.quaternionW         = rawData.quaternionW;
+    data.quaternionX         = rawData.quaternionX;
+    data.quaternionY         = rawData.quaternionY;
+    data.quaternionZ         = rawData.quaternionZ;
 }
 
 bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
@@ -342,24 +404,44 @@ bool VN300::setBinaryOutput()
     // this cause also that the sampleBinary function needs to be modified.
     // Another side effect it's that if a changed is done here it's highly
     // probable that the ascii version can't sample all the same data.
-    uint16_t outputGroup =
-        VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
 
-    uint16_t commonGroup =
-        VN300Defs::COMMONGROUP_YAWPITCHROLL |
-        VN300Defs::COMMONGROUP_QUATERNION | VN300Defs::COMMONGROUP_ANGULARRATE |
-        VN300Defs::COMMONGROUP_VELOCITY | VN300Defs::COMMONGROUP_ACCEL |
-        VN300Defs::COMMONGROUP_MAGPRES | VN300Defs::COMMONGROUP_INSSTATUS;
+    uint16_t outputGroup = 0, commonGroup = 0, gnssGroup = 0;
 
-    uint16_t gnssGroup = VN300Defs::GPSGROUP_NUMSATS | VN300Defs::GPSGROUP_FIX |
-                         VN300Defs::GPSGROUP_POSLLA;
+    // if (binaryOutputPacket == )
+    switch (binaryOutputPacket)
+    {
+        case VN300Defs::BinaryOutputPacket::FULL:
+            outputGroup =
+                VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
+
+            commonGroup = VN300Defs::COMMONGROUP_YAWPITCHROLL |
+                          VN300Defs::COMMONGROUP_QUATERNION |
+                          VN300Defs::COMMONGROUP_ANGULARRATE |
+                          VN300Defs::COMMONGROUP_VELOCITY |
+                          VN300Defs::COMMONGROUP_ACCEL |
+                          VN300Defs::COMMONGROUP_MAGPRES |
+                          VN300Defs::COMMONGROUP_INSSTATUS;
+
+            gnssGroup = VN300Defs::GPSGROUP_NUMSATS | VN300Defs::GPSGROUP_FIX |
+                        VN300Defs::GPSGROUP_POSLLA;
+            break;
+        case VN300Defs::BinaryOutputPacket::ARP:
+            outputGroup =
+                VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
+            commonGroup = VN300Defs::COMMONGROUP_YAWPITCHROLL |
+                          VN300Defs::COMMONGROUP_QUATERNION |
+                          VN300Defs::COMMONGROUP_ANGULARRATE;
+            gnssGroup = VN300Defs::GPSGROUP_FIX | VN300Defs::GPSGROUP_POSLLA;
+
+            break;
+    }
 
     // The "comp" string it's created in order format the message and also
     // compare the reply. The fields represents the binary register "75", the
     // type of communication "0" means that no asynchronous message is active
     // and "8" represents the divider at which the asynchronous message is sent
     // respect to the max rate
-    const char *comp = "VNWRG,75,0,8";
+    const char* comp = "VNWRG,75,0,8";
 
     // Using fmt::format it's possible to format the string also adding the
     // groups and their respective fields
@@ -451,7 +533,7 @@ bool VN300::selfTestImpl()
 VN300Defs::Ins_Lla VN300::sampleIns()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     VN300Defs::Ins_Lla data;
 
     // Look for the second ',' in the string
