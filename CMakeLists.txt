@@ -120,6 +120,7 @@ sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
 
 add_executable(catch-tests-boardcore
     src/tests/catch/catch-tests-entry.cpp
+    src/tests/catch/skyQuaternion/test-skyquaternion.cpp
     src/tests/catch/examples/example-test-factorial.cpp
     src/tests/catch/test-aero.cpp
     # src/tests/catch/test-buttonhandler.cpp
