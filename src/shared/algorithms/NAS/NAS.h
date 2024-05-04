@@ -184,6 +184,9 @@ private:
     ///< NED gravity vector [m/s^2].
     const Eigen::Vector3f gravityNed{0.0f, 0.0f, -Constants::g};
 
+    const float a = 111132.95225;  ///< Constants used in GPS correction(lat)
+    const float b = 111412.87733;  ///< Constants used in GPS correction(lon)
+
     // Utility matrixes used for the gps
     Eigen::Matrix<float, 4, 6> H_gps;
     Eigen::Matrix<float, 6, 4> H_gps_tr;

@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Emilio Corigliano, Davide Basso
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,50 @@
  * THE SOFTWARE.
  */
 
-#include "data/acc.h"
-#include "data/baro.h"
-#include "data/config.h"
-#include "data/gps.h"
-#include "data/gyro.h"
-#include "data/input.h"
-#include "data/mag.h"
-#include "data/output.h"
-#include "data/pitot.h"
-#include "data/steps.h"
+#pragma once
+
+namespace Boardcore
+{
+
+struct NASPredictionSteps
+{
+    float acc_x;
+    float acc_y;
+    float acc_z;
+    float acc_vx;
+    float acc_vy;
+    float acc_vz;
+    float gyro_gx;
+    float gyro_gy;
+    float gyro_gz;
+    float gyro_gw;
+    float gyro_gbx;
+    float gyro_gby;
+    float gyro_gbz;
+    float gps_x;
+    float gps_y;
+    float gps_z;
+    float gps_vx;
+    float gps_vy;
+    float gps_vz;
+    float baro_x;
+    float baro_y;
+    float baro_z;
+    float baro_vx;
+    float baro_vy;
+    float baro_vz;
+    float mag_gx;
+    float mag_gy;
+    float mag_gz;
+    float mag_gw;
+    float mag_gbx;
+    float mag_gby;
+    float mag_gbz;
+    float pitot_x;
+    float pitot_y;
+    float pitot_z;
+    float pitot_vx;
+    float pitot_vy;
+    float pitot_vz;
+};
+}  // namespace Boardcore

@@ -39,8 +39,8 @@ struct ReferenceValues
     float refAltitude;
     float refPressure;
     float refTemperature;
-    float refLatitude;
-    float refLongitude;
+    float refLatitude;   /// < [deg]
+    float refLongitude;  /// < [deg]
 
     // Pressure and temperature at mean sea level for altitude calculation
     float mslPressure    = Constants::MSL_PRESSURE;

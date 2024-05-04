@@ -57,17 +57,6 @@ NAS::NAS(NASConfig config) : config(config)
         // clang-format on
     }
 
-    // GPS
-    {
-        H_gps                = Matrix<float, 4, 6>::Zero();
-        H_gps.coeffRef(0, 0) = 1;
-        H_gps.coeffRef(1, 1) = 1;
-        H_gps.coeffRef(2, 3) = 1;
-        H_gps.coeffRef(3, 4) = 1;
-        H_gps_tr             = H_gps.transpose();
-        R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
-    }
-
     // Utility matrixes
     R_acc << config.SIGMA_ACC * Matrix3f::Identity();
     R_mag << config.SIGMA_MAG * Matrix3f::Identity();
@@ -190,6 +179,39 @@ void NAS::correctBaro(const float pressure)
 
 void NAS::correctGPS(const Vector4f& gps)
 {
+
+    // GPS
+    H_gps                = Matrix<float, 4, 6>::Zero();
+    H_gps.coeffRef(0, 0) = 1000 / a;
+    H_gps.coeffRef(0, 1) = 0;
+    H_gps.coeffRef(1, 0) =
+        (1000000.0 * x(1) *
+         sin((1000.0 * reference.refLatitude + (1000.0 * x(0)) / a) *
+             Constants::DEGREES_TO_RADIANS)) /
+        (a * b *
+         pow(cos((1000.0 * reference.refLatitude + (1000.0 * x(0)) / a) *
+                 Constants::DEGREES_TO_RADIANS),
+             2));
+    H_gps.coeffRef(1, 1) =
+        1000 / (b * cos((1000 * reference.refLatitude + (1000 * x(0)) / a) *
+                        Constants::DEGREES_TO_RADIANS));
+    H_gps.coeffRef(2, 3) = 1;
+    H_gps.coeffRef(3, 4) = 1;
+
+    H_gps_tr = H_gps.transpose();
+
+    Matrix<float, 1, 4> R_molt = {1, 1, gps(2) > 1 ? gps(2) : 1,
+                                  gps(3) > 1 ? gps(3) : 1};
+    Matrix<float, 4, 4> R_gps  = Matrix<float, 4, 4>::Zero();
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            R_gps(i, j) =
+                config.SIGMA_GPS.asDiagonal().toDenseMatrix()(i, j) * R_molt(j);
+        }
+    }
+
     Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
 
     Matrix<float, 4, 4> S = H_gps * Pl * H_gps_tr + R_gps;
@@ -198,10 +220,13 @@ void NAS::correctGPS(const Vector4f& gps)
     P.block<6, 6>(0, 0) = (Matrix<float, 6, 6>::Identity() - K * H_gps) * Pl;
 
     // Current state [n e vn ve]
-    Matrix<float, 4, 1> H{x(0), x(1), x(3), x(4)};
+    float lat = x(0) / a + reference.refLatitude;
+    float lon = x(1) / (b * cos(lat * Constants::DEGREES_TO_RADIANS)) +
+                reference.refLongitude;
+    Matrix<float, 4, 1> z{lat, lon, x(3), x(4)};
 
     // Update the state
-    x.head<6>() = x.head<6>() + K * (gps - H);
+    x.head<6>() = x.head<6>() + K * (gps - z);
 }
 
 void NAS::correctGPS(const GPSData& gps)
@@ -209,12 +234,8 @@ void NAS::correctGPS(const GPSData& gps)
     if (!gps.fix)
         return;
 
-    auto gpsPos = Aeroutils::geodetic2NED(
-        {gps.latitude, gps.longitude},
-        {reference.refLatitude, reference.refLongitude});
-
-    correctGPS(
-        Vector4f{gpsPos(0), gpsPos(1), gps.velocityNorth, gps.velocityEast});
+    correctGPS(Vector4f{gps.latitude, gps.longitude, gps.velocityNorth,
+                        gps.velocityEast});
 }
 
 void NAS::correctMag(const Vector3f& mag)
@@ -278,7 +299,7 @@ void NAS::correctAcc(const Vector3f& acc)
     Matrix<float, 3, 6> H;
     H << M, Matrix3f::Zero(3, 3);
     Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
-    Matrix<float, 3, 3> S = H * Pq * H.transpose() + R_acc;
+    Matrix<float, 3, 3> S  = H * Pq * H.transpose() + R_acc;
 
     Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
     Matrix<float, 6, 1> dx = K * (acc - aEst);
