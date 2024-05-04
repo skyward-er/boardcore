@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Emilio Corigliano, Davide Basso
+ * Authors: Emilio Corigliano, Davide Basso
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,105 +25,291 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 
-#include "nasData.h"
+#include "data/acc/include.h"
+#include "data/baro/include.h"
+#include "data/complete/include.h"
+#include "data/gps/include.h"
+#include "data/gyro/include.h"
+#include "data/mag/include.h"
+#include "data/pitot/include.h"
 
 using namespace Boardcore;
 using namespace Eigen;
 
+enum class NASAlgorithm
+{
+    PredictAcceleration,
+    PredictGyro,
+    CorrectGPS,
+    CorrectBaro,
+    CorrectMag,
+    CorrectPitot,
+    Complete
+};
+
+enum class NASExecution
+{
+    Static,
+    Evolving
+};
+
+void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
+                   AccelerometerData acc[], GyroscopeData gyro[], GPSData gps[],
+                   PressureData baro[], MagnetometerData mag[],
+                   PitotData pitot[], NASState input[], NASState output[],
+                   NASConfig nasConfig, NASPredictionSteps steps[]);
 void checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i);
 
-TEST_CASE("NAS complete")
+TEST_CASE("NAS - Predict acceleration - Static")
 {
-    static_assert(sizeof(acc) / sizeof(acc[0]) ==
-                  sizeof(output) / sizeof(output[0]));
-    static_assert(sizeof(baro) / sizeof(baro[0]) ==
-                  sizeof(output) / sizeof(output[0]));
-    static_assert(sizeof(gps) / sizeof(gps[0]) ==
-                  sizeof(output) / sizeof(output[0]));
-    static_assert(sizeof(gyro) / sizeof(gyro[0]) ==
-                  sizeof(output) / sizeof(output[0]));
-    static_assert(sizeof(mag) / sizeof(mag[0]) ==
-                  sizeof(output) / sizeof(output[0]));
-    static_assert(sizeof(pitot) / sizeof(pitot[0]) ==
-                  sizeof(output) / sizeof(output[0]));
-    static_assert(sizeof(input) / sizeof(input[0]) ==
-                  sizeof(output) / sizeof(output[0]));
+    testAlgorithm(NASAlgorithm::PredictAcceleration, NASExecution::Static,
+                  sizeof(acc_acc) / sizeof(acc_acc[0]), acc_acc, acc_gyro,
+                  acc_gps, acc_baro, acc_mag, acc_pitot, acc_input, acc_output,
+                  acc_nas_config, acc_steps);
+}
 
+TEST_CASE("NAS - Predict gyro - Static")
+{
+    testAlgorithm(NASAlgorithm::PredictGyro, NASExecution::Static,
+                  sizeof(gyro_acc) / sizeof(gyro_acc[0]), gyro_acc, gyro_gyro,
+                  gyro_gps, gyro_baro, gyro_mag, gyro_pitot, gyro_input,
+                  gyro_output, gyro_nas_config, gyro_steps);
+}
+
+TEST_CASE("NAS - Correct GPS - Static")
+{
+    testAlgorithm(NASAlgorithm::CorrectGPS, NASExecution::Static,
+                  sizeof(gps_acc) / sizeof(gps_acc[0]), gps_acc, gps_gyro,
+                  gps_gps, gps_baro, gps_mag, gps_pitot, gps_input, gps_output,
+                  gps_nas_config, gps_steps);
+}
+
+TEST_CASE("NAS - Correct barometer - Static")
+{
+    testAlgorithm(NASAlgorithm::CorrectBaro, NASExecution::Static,
+                  sizeof(baro_acc) / sizeof(baro_acc[0]), baro_acc, baro_gyro,
+                  baro_gps, baro_baro, baro_mag, baro_pitot, baro_input,
+                  baro_output, baro_nas_config, baro_steps);
+}
+
+TEST_CASE("NAS - Correct magnetometer - Static")
+{
+    testAlgorithm(NASAlgorithm::CorrectMag, NASExecution::Static,
+                  sizeof(mag_acc) / sizeof(mag_acc[0]), mag_acc, mag_gyro,
+                  mag_gps, mag_baro, mag_mag, mag_pitot, mag_input, mag_output,
+                  mag_nas_config, mag_steps);
+}
+
+TEST_CASE("NAS - Correct pitot - Static")
+{
+    testAlgorithm(NASAlgorithm::CorrectPitot, NASExecution::Static,
+                  sizeof(pitot_acc) / sizeof(pitot_acc[0]), pitot_acc,
+                  pitot_gyro, pitot_gps, pitot_baro, pitot_mag, pitot_pitot,
+                  pitot_input, pitot_output, pitot_nas_config, pitot_steps);
+}
+
+TEST_CASE("NAS - Complete - Static")
+{
+    testAlgorithm(NASAlgorithm::Complete, NASExecution::Static,
+                  sizeof(complete_acc) / sizeof(complete_acc[0]), complete_acc,
+                  complete_gyro, complete_gps, complete_baro, complete_mag,
+                  complete_pitot, complete_input, complete_output,
+                  complete_nas_config, complete_steps);
+}
+
+TEST_CASE("NAS - Predict acceleration - Evolving")
+{
+    testAlgorithm(NASAlgorithm::PredictAcceleration, NASExecution::Evolving,
+                  sizeof(acc_acc) / sizeof(acc_acc[0]), acc_acc, acc_gyro,
+                  acc_gps, acc_baro, acc_mag, acc_pitot, acc_input, acc_output,
+                  acc_nas_config, acc_steps);
+}
+
+TEST_CASE("NAS - Predict gyro - Evolving")
+{
+    testAlgorithm(NASAlgorithm::PredictGyro, NASExecution::Evolving,
+                  sizeof(gyro_acc) / sizeof(gyro_acc[0]), gyro_acc, gyro_gyro,
+                  gyro_gps, gyro_baro, gyro_mag, gyro_pitot, gyro_input,
+                  gyro_output, gyro_nas_config, gyro_steps);
+}
+
+TEST_CASE("NAS - Correct GPS - Evolving")
+{
+    testAlgorithm(NASAlgorithm::CorrectGPS, NASExecution::Evolving,
+                  sizeof(gps_acc) / sizeof(gps_acc[0]), gps_acc, gps_gyro,
+                  gps_gps, gps_baro, gps_mag, gps_pitot, gps_input, gps_output,
+                  gps_nas_config, gps_steps);
+}
+
+TEST_CASE("NAS - Correct barometer - Evolving")
+{
+    testAlgorithm(NASAlgorithm::CorrectBaro, NASExecution::Evolving,
+                  sizeof(baro_acc) / sizeof(baro_acc[0]), baro_acc, baro_gyro,
+                  baro_gps, baro_baro, baro_mag, baro_pitot, baro_input,
+                  baro_output, baro_nas_config, baro_steps);
+}
+
+TEST_CASE("NAS - Correct magnetometer - Evolving")
+{
+    testAlgorithm(NASAlgorithm::CorrectMag, NASExecution::Evolving,
+                  sizeof(mag_acc) / sizeof(mag_acc[0]), mag_acc, mag_gyro,
+                  mag_gps, mag_baro, mag_mag, mag_pitot, mag_input, mag_output,
+                  mag_nas_config, mag_steps);
+}
+
+TEST_CASE("NAS - Correct pitot - Evolving")
+{
+    testAlgorithm(NASAlgorithm::CorrectPitot, NASExecution::Evolving,
+                  sizeof(pitot_acc) / sizeof(pitot_acc[0]), pitot_acc,
+                  pitot_gyro, pitot_gps, pitot_baro, pitot_mag, pitot_pitot,
+                  pitot_input, pitot_output, pitot_nas_config, pitot_steps);
+}
+
+TEST_CASE("NAS - Complete - Evolving")
+{
+    testAlgorithm(NASAlgorithm::Complete, NASExecution::Evolving,
+                  sizeof(complete_acc) / sizeof(complete_acc[0]), complete_acc,
+                  complete_gyro, complete_gps, complete_baro, complete_mag,
+                  complete_pitot, complete_input, complete_output,
+                  complete_nas_config, complete_steps);
+}
+
+void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
+                   AccelerometerData acc[], GyroscopeData gyro[], GPSData gps[],
+                   PressureData baro[], MagnetometerData mag[],
+                   PitotData pitot[], NASState input[], NASState output[],
+                   NASConfig nasConfig, NASPredictionSteps steps[])
+{
     NAS nas(nasConfig);
     NASState x_curr;
     ReferenceValues r(gps[0].height, baro[0].pressure, 15, gps[0].latitude,
                       gps[0].longitude);
     nas.setReferenceValues(r);
 
-    for (uint32_t i = 0; i < sizeof(output) / sizeof(output[0]) - 1; i++)
+    nas.setX(input[0].getX());
+    for (uint32_t i = 0; i < length - 1; i++)
     {
-        nas.setX(input[i].getX());
+        if (execution == NASExecution::Static)
+        {
+            nas.setX(input[i].getX());
+        }
 
         // Predict acceleration
-        nas.predictAcc(acc[i]);
-        printf("[%d] Predicting acceleration:\n", i);
-        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].acc_x);
-        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].acc_y);
-        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].acc_z);
-        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].acc_vx);
-        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].acc_vy);
-        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].acc_vz);
+        if (algorithm == NASAlgorithm::PredictAcceleration ||
+            algorithm == NASAlgorithm::Complete)
+        {
+            nas.predictAcc(acc[i]);
+            printf("[%d] Predicting acceleration:\n", i);
+            printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n, output[i].n);
+            printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e, output[i].e);
+            printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d, output[i].d);
+            printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn, output[i].vn);
+            printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve, output[i].ve);
+            printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd, output[i].vd);
+        }
 
         // Predict gyro
-        nas.predictGyro(gyro[i]);
-        printf("[%d] Predicting gyroscope:\n", i);
-        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qx, steps[i].gyro_gx);
-        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qy, steps[i].gyro_gy);
-        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qz, steps[i].gyro_gz);
-        printf("[%d] QW: %f.2/%f.2\n", i, nas.getState().qw, steps[i].gyro_gw);
-        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().bx, steps[i].gyro_gbx);
-        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().by, steps[i].gyro_gby);
-        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().bz, steps[i].gyro_gbz);
+        if (algorithm == NASAlgorithm::PredictGyro ||
+            algorithm == NASAlgorithm::Complete)
+        {
+            nas.predictGyro(gyro[i]);
+            printf("[%d] Predicting gyroscope:\n", i);
+            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qx, output[i].qx);
+            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qy, output[i].qy);
+            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qz, output[i].qz);
+            printf("[%d] QW:%.2f/%.2f\n", i, nas.getState().qw, output[i].qw);
+            printf("[%d]BX: %.2f/%.2f\n", i, nas.getState().bx, output[i].bx);
+            printf("[%d] BX: %.2f/%.2f\n", i, nas.getState().by, output[i].by);
+            printf("[%d] BX: %.2f/%.2f\n", i, nas.getState().bz, output[i].bz);
+        }
 
         // Correct gps
-        nas.correctGPS(gps[i]);
-        printf("[%d] Correcting GPS:\n", i);
-        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].gps_x);
-        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].gps_y);
-        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].gps_z);
-        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].gps_vx);
-        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].gps_vy);
-        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].gps_vz);
+        if (Vector3f(acc[i].accelerationX, acc[i].accelerationY,
+                     acc[i].accelerationZ)
+                .norm() < 34)
+        {
+            if (algorithm == NASAlgorithm::CorrectGPS ||
+                algorithm == NASAlgorithm::Complete)
+            {
+                nas.correctGPS(gps[i]);
+                printf("[%d] Correcting GPS:\n", i);
+                printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n,
+                       steps[i].gps_x);
+                printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e,
+                       steps[i].gps_y);
+                printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d,
+                       steps[i].gps_z);
+                printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn,
+                       steps[i].gps_vx);
+                printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve,
+                       steps[i].gps_vy);
+                printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd,
+                       steps[i].gps_vz);
+            }
+        }
 
         // Correct barometer
-        nas.correctBaro(baro[i].pressure);
-        printf("[%d] Correcting barometer:\n", i);
-        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].baro_x);
-        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].baro_y);
-        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].baro_z);
-        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].baro_vx);
-        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].baro_vy);
-        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].baro_vz);
+        if (algorithm == NASAlgorithm::CorrectBaro ||
+            algorithm == NASAlgorithm::Complete)
+        {
+            nas.correctBaro(baro[i].pressure);
+            printf("[%d] Correcting barometer:\n", i);
+            printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n, steps[i].baro_x);
+            printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e, steps[i].baro_y);
+            printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d, steps[i].baro_z);
+            printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn,
+                   steps[i].baro_vx);
+            printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve,
+                   steps[i].baro_vy);
+            printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd,
+                   steps[i].baro_vz);
+        }
 
         // Correct magnetometer
-        nas.correctMag(mag[i]);
-        printf("[%d] Correcting magnetometer:\n", i);
-        printf("[%d] QX: %f.2/%f.2\n", i, nas.getState().qx, steps[i].mag_gx);
-        printf("[%d] QY: %f.2/%f.2\n", i, nas.getState().qy, steps[i].mag_gy);
-        printf("[%d] QZ: %f.2/%f.2\n", i, nas.getState().qz, steps[i].mag_gz);
-        printf("[%d] QW: %f.2/%f.2\n", i, nas.getState().qw, steps[i].mag_gw);
-        printf("[%d] BX: %f.2/%f.2\n", i, nas.getState().bx, steps[i].mag_gbx);
-        printf("[%d] BY: %f.2/%f.2\n", i, nas.getState().by, steps[i].mag_gby);
-        printf("[%d] BZ: %f.2/%f.2\n", i, nas.getState().bz, steps[i].mag_gbz);
+        if (algorithm == NASAlgorithm::CorrectMag ||
+            algorithm == NASAlgorithm::Complete)
+        {
+            nas.correctMag(mag[i]);
+            printf("[%d] Correcting magnetometer:\n", i);
+            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qx,
+                   steps[i].mag_gx);
+            printf("[%d] QY: %.2f/%.2f\n", i, nas.getState().qy,
+                   steps[i].mag_gy);
+            printf("[%d] QZ: %.2f/%.2f\n", i, nas.getState().qz,
+                   steps[i].mag_gz);
+            printf("[%d] QW:%.2f/%.2f\n", i, nas.getState().qw,
+                   steps[i].mag_gw);
+            printf("[%d]BX: %.2f/%.2f\n", i, nas.getState().bx,
+                   steps[i].mag_gbx);
+            printf("[%d] BY: %.2f/%.2f\n", i, nas.getState().by,
+                   steps[i].mag_gby);
+            printf("[%d] BZ: %.2f/%.2f\n", i, nas.getState().bz,
+                   steps[i].mag_gbz);
+        }
 
         // Correct pitot
-        nas.correctPitot(pitot[i].airspeed);
-        printf("[%d] Correcting pitot:\n", i);
-        printf("[%d] N: %f.2/%f.2\n", i, nas.getState().n, steps[i].pitot_x);
-        printf("[%d] E: %f.2/%f.2\n", i, nas.getState().e, steps[i].pitot_y);
-        printf("[%d] D: %f.2/%f.2\n", i, nas.getState().d, steps[i].pitot_z);
-        printf("[%d] VN: %f.2/%f.2\n", i, nas.getState().vn, steps[i].pitot_vx);
-        printf("[%d] VE: %f.2/%f.2\n", i, nas.getState().ve, steps[i].pitot_vy);
-        printf("[%d] VD: %f.2/%f.2\n", i, nas.getState().vd, steps[i].pitot_vz);
+        if (algorithm == NASAlgorithm::CorrectPitot ||
+            algorithm == NASAlgorithm::Complete)
+        {
+            nas.correctPitot(pitot[i].airspeed);
+            printf("[%d] Correcting pitot:\n", i);
+            printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n,
+                   steps[i].pitot_x);
+            printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e,
+                   steps[i].pitot_y);
+            printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d,
+                   steps[i].pitot_z);
+            printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn,
+                   steps[i].pitot_vx);
+            printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve,
+                   steps[i].pitot_vy);
+            printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd,
+                   steps[i].pitot_vz);
+        }
 
         // Get the results
-        x_curr = NASState(i, nas.getX());
-        checkStates(i, x_curr, input[i + 1]);
+        x_curr = nas.getState();
+        checkStates(i, x_curr, output[i]);
     }
 }
 

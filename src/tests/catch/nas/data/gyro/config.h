@@ -23,29 +23,30 @@
 /* This file was automatically generated, do not edit manually! */
 
 #include <algorithms/NAS/NASConfig.h>
+#include <algorithms/NAS/NASPredictionSteps.h>
 #include <algorithms/NAS/NASState.h>
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
 using namespace Boardcore;
 
-NASConfig nasConfig{
-    0.02,                           ///< T
-    0.0001,                         ///< SIGMA_BETA
-    10,                             ///< SIGMA_W
-    10,                             ///< SIGMA_ACC [simulated]
-    10,                             ///< SIGMA_MAG
-    5,                              ///< SIGMA_GPS
-    50,                             ///< SIGMA_BAR
-    10,                             ///< SIGMA_POS
-    10,                             ///< SIGMA_VEL
-    100,                            ///< SIGMA_PITOT
-    0.01,                           ///< P_POS
-    0.01,                           ///< P_POS_VERTICAL
-    0.01,                           ///< P_VEL
-    0.01,                           ///< P_VEL_VERTICAL
-    0.01,                           ///< P_ATT
-    0.01,                           ///< P_BIAS
-    6,                              ///< SATS_NUM [simulated]
-    {263.4372, -4.8129, 356.5518},  ///< NED_MAG
+NASConfig gyro_nas_config{
+    0.02,                                    ///< T
+    0.0001,                                  ///< SIGMA_BETA
+    10,                                      ///< SIGMA_W
+    10,                                      ///< SIGMA_ACC [simulated]
+    10,                                      ///< SIGMA_MAG
+    {0.002, 0.002, 0.00033333, 0.00033333},  ///< SIGMA_GPS
+    50,                                      ///< SIGMA_BAR
+    0.02,                                    ///< SIGMA_POS
+    1,                                       ///< SIGMA_VEL
+    100,                                     ///< SIGMA_PITOT
+    0.01,                                    ///< P_POS
+    0.01,                                    ///< P_POS_VERTICAL
+    0.01,                                    ///< P_VEL
+    0.01,                                    ///< P_VEL_VERTICAL
+    0.01,                                    ///< P_ATT
+    0.01,                                    ///< P_BIAS
+    6,                                       ///< SATS_NUM [simulated]
+    {263.7423, -4.0401, 356.7031},           ///< NED_MAG
 };
