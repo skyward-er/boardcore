@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-AccelerometerData baro_acc[] = {
+Boardcore::AccelerometerData baro_acc[] = {
     {
         20000,
         5.7433,

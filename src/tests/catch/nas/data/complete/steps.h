@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-NASPredictionSteps complete_steps[]{
+Boardcore::NASPredictionSteps complete_steps[]{
     {
         0,           0,           -160,        -0.0071732,  0.008816,
         0.081894,    -0.61363,    0.26681,     0.68151,     0.29633,

@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-NASState mag_output[] = {
+Boardcore::NASState mag_output[] = {
     {20000,
      {0, 0, -160, 0, 0, 0, -0.61363, 0.26682, 0.68151, 0.29633, 0, 0, 0}},
     {40000,

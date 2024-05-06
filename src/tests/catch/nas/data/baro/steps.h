@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-NASPredictionSteps baro_steps[]{
+Boardcore::NASPredictionSteps baro_steps[]{
     {
         0, 0,    -160, 0, 0,    0,        -0.61363, 0.26682, 0.68151, 0.29633,
         0, 0,    0,    0, 0,    -160,     0,        0,       0,       0,

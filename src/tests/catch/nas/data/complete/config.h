@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-NASConfig complete_nas_config{
+Boardcore::NASConfig complete_nas_config{
     0.02,                                    ///< T
     0.0001,                                  ///< SIGMA_BETA
     10,                                      ///< SIGMA_W

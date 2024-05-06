@@ -28,8 +28,6 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
 #include "acc.h"
 #include "baro.h"
 #include "config.h"

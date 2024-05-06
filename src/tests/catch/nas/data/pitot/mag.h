@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-MagnetometerData pitot_mag[] = {
+Boardcore::MagnetometerData pitot_mag[] = {
     {
         20000,
         -373.52,
