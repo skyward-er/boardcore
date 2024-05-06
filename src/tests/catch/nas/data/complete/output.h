@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-NASState complete_output[] = {
+Boardcore::NASState complete_output[] = {
     {20000,
      {7.047e-05, -8.6572e-05, -159.9978, -0.00011759, 0.00014453, 0.081894,
       -0.61367, 0.26679, 0.68147, 0.29636, -1.2556e-09, -6.4969e-09,

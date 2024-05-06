@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-PitotData gyro_pitot[] = {
+Boardcore::PitotData gyro_pitot[] = {
     {
         20000,
         0,

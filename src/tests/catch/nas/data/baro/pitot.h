@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-PitotData baro_pitot[] = {
+Boardcore::PitotData baro_pitot[] = {
     {
         20000,
         0,

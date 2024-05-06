@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-PitotData complete_pitot[] = {
+Boardcore::PitotData complete_pitot[] = {
     {
         20000,
         0,

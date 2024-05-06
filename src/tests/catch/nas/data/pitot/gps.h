@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-GPSData pitot_gps[] = {
+Boardcore::GPSData pitot_gps[] = {
     {
         20000,
         39.3891,

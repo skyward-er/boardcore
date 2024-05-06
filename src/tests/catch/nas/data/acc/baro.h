@@ -28,9 +28,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
 
-using namespace Boardcore;
-
-PressureData acc_baro[] = {
+Boardcore::PressureData acc_baro[] = {
     {
         20000,
         99449.4766,
