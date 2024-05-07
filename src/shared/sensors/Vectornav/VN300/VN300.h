@@ -86,8 +86,6 @@ public:
      */
     VN300(USART& usart, int userBaudRate,
           VN300Defs::BinaryOutputPacket binaryOutputPacket,
-          VN300Defs::SamplingMethod samplingMethod =
-              VN300Defs::SamplingMethod::BINARY,
           CRCOptions crc                     = CRCOptions::CRC_ENABLE_8,
           VN300Defs::AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           VN300Defs::AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -148,11 +146,7 @@ private:
      */
     bool selfTestImpl();
 
-    VN300Defs::Ins_Lla sampleIns();
-
     VN300Data sampleBinary();
-
-    VN300Data sampleASCII();
 
     /**
      * @brief Build output data packet starting from raw binary data received
@@ -178,22 +172,9 @@ private:
 
     VN300Defs::BinaryOutputPacket binaryOutputPacket;
 
-    VN300Defs::SamplingMethod samplingMethod;
-
     VN300Defs::AntennaPosition antPosA;
     VN300Defs::AntennaPosition antPosB;
     Eigen::Matrix3f rotMat;
-
-    /**
-     * @brief IMU pre-elaborated sample string for efficiency reasons.
-     */
-    const char* preSampleImuString = "";
-
-    /**
-     * @brief Temperature and pressure pre-elaborated sample string for
-     * efficiency reasons.
-     */
-    const char* preSampleINSlla = "";
 
     /**
      * @brief Pre-elaborated binary output polling command.
