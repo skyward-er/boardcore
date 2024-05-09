@@ -74,7 +74,7 @@ public:
      * @param scheduler Scheduler to be used by this PinObserver.
      * @param pollInterval Pin transition polling interval, defaults to 20 [ms].
      */
-    PinObserver(TaskScheduler &scheduler, uint32_t pollInterval = 20)
+    explicit PinObserver(TaskScheduler &scheduler, uint32_t pollInterval = 20)
         : scheduler{scheduler}, pollInterval{pollInterval}
     {
     }
