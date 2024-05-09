@@ -135,6 +135,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/TestUtils/TestHelper.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Registry/RegistryFrontend.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Registry/RegistrySerializer.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/Registry/Backend/FileBackend.cpp
 )
 
 # Creates the Skyward::Boardcore::${BOARD_NAME} library
