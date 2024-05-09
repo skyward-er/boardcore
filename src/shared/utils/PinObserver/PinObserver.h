@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Singleton.h>
 #include <scheduler/TaskScheduler.h>
 #include <utils/GpioPinCompare.h>
 
@@ -34,10 +33,10 @@ namespace Boardcore
 /**
  * @brief Pin transition.
  */
-enum class PinTransition
+enum class PinTransition : uint8_t
 {
-    FALLING_EDGE,  ///< The pin goes from high to low.
-    RISING_EDGE    ///< The pin goes from low to high.
+    FALLING_EDGE = 0,  ///< The pin goes from high to low.
+    RISING_EDGE        ///< The pin goes from low to high.
 };
 
 /**
@@ -64,14 +63,21 @@ struct PinData
  * transition is also available, in order to be able to observe the current
  * state of the pin.
  */
-class PinObserver : public Singleton<PinObserver>
+class PinObserver
 {
-    friend Singleton<PinObserver>;
-
-    static constexpr uint32_t SAMPLE_PERIOD = 20;  // 50Hz
-
 public:
     using PinCallback = std::function<void(PinTransition)>;
+
+    /**
+     * @brief Construct a new PinObserver object.
+     *
+     * @param scheduler Scheduler to be used by this PinObserver.
+     * @param pollInterval Pin transition polling interval, defaults to 20 [ms].
+     */
+    explicit PinObserver(TaskScheduler &scheduler, uint32_t pollInterval = 20)
+        : scheduler{scheduler}, pollInterval{pollInterval}
+    {
+    }
 
     /**
      * Observe a pin for a specific transition, and optionally for every
@@ -120,13 +126,6 @@ public:
 
 private:
     /**
-     * @brief Construct a new PinObserver object.
-     *
-     * @param pollInterval Pin transition polling interval, defaults to 20 [ms].
-     */
-    PinObserver();
-
-    /**
      * @brief This function is added to the scheduler for every pin registered
      * in the PinObserver.
      *
@@ -134,7 +133,8 @@ private:
      */
     void periodicPinValueCheck(miosix::GpioPin pin);
 
-    TaskScheduler scheduler;
+    TaskScheduler &scheduler;
+    uint32_t pollInterval;
 
     /// Map of all the callbacks registered in the PinObserver.
     std::map<miosix::GpioPin, PinData, GpioPinCompare> callbacks;

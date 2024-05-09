@@ -43,7 +43,7 @@ bool PinObserver::registerPinCallback(miosix::GpioPin pin, PinCallback callback,
     {
         if (scheduler.addTask(
                 std::bind(&PinObserver::periodicPinValueCheck, this, pin),
-                SAMPLE_PERIOD, TaskScheduler::Policy::RECOVER))
+                pollInterval, TaskScheduler::Policy::RECOVER))
             return true;
         else
             callbacks.erase(pin);
@@ -64,8 +64,6 @@ void PinObserver::resetPinChangesCount(miosix::GpioPin pin)
 {
     callbacks[pin].changesCount = 0;
 }
-
-PinObserver::PinObserver() {}
 
 void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
 {

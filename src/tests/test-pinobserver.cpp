@@ -56,6 +56,9 @@ void onTransition(GpioPin pin, PinTransition transition)
 
 int main()
 {
+    TaskScheduler scheduler;
+    PinObserver observer{scheduler};
+
     auto btn  = GpioPin(BTN_PORT, BTN_PIN);
     auto pin1 = GpioPin(PIN1_PORT, PIN1_PIN);
     auto pin2 = GpioPin(PIN2_PORT, PIN2_PIN);
@@ -64,12 +67,9 @@ int main()
     pin1.mode(Mode::INPUT_PULL_DOWN);
     pin2.mode(Mode::INPUT_PULL_UP);
 
-    PinObserver::getInstance().registerPinCallback(
-        btn, std::bind(onTransition, btn, _1), 10);
-    PinObserver::getInstance().registerPinCallback(
-        pin1, std::bind(onTransition, pin1, _1), 10);
-    PinObserver::getInstance().registerPinCallback(
-        pin2, std::bind(onTransition, pin2, _1), 10);
+    observer.registerPinCallback(btn, std::bind(onTransition, btn, _1), 10);
+    observer.registerPinCallback(pin1, std::bind(onTransition, pin1, _1), 10);
+    observer.registerPinCallback(pin2, std::bind(onTransition, pin2, _1), 10);
 
     while (true)
         Thread::sleep(10000);
