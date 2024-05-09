@@ -38,7 +38,7 @@ struct Coordinates
 using ConfigurationId = uint32_t;
 
 // Types used for the union
-enum TypesEnum
+enum class TypesEnum
 {
     UINT32,
     FLOAT,
@@ -64,7 +64,7 @@ static_assert(
 /**
  * @brief RegistryError enumeration as return type.
  */
-enum RegistryError
+enum class RegistryError
 {
     OK,                         ///< Correct condition
     MALFORMED_SERIALIZED_DATA,  ///< Malformed data while deserializing
