@@ -58,8 +58,8 @@ Eigen::Vector3f quat2eul(const Eigen::Vector4f& quat);
  * This applies to systems with 2 degrees of freedom, used to get the absolute
  * yaw and pitch angles wrt the north.
  *
- * @param quat The quaternion to be transformed [x, y, z, w].
- * @return Yaw, Pitch and Roll angles, with Roll set to 0.
+ * @param quat The quaternion to be transformed (scalar last: [x, y, z, w]).
+ * @return Yaw, Pitch and Roll angles, with Roll set to 0. [deg]
  */
 Eigen::Vector3f quat2stepperAngles(const Eigen::Vector4f& quat);
 
