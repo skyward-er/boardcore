@@ -92,13 +92,13 @@ Vector3f quat2stepperAngles(const Vector4f& q)
     float qw = q[3];
 
     Vector3f angles;
-    Matrix3f R;
 
     // clang-format off
     //           DOWN                  EAST                    NORD
-    R << (2*(qw*qw + qx*qx)-1), -2*(qx*qy - qw*qz),     -2*(qx*qz + qw*qy),
-          2*(qx*qy + qw*qz),    -(2*(qw*qw + qy*qy)-1), -2*(qy*qz - qw*qx),
-          2*(qx*qz - qw*qy),    -2*(qy*qz + qw*qx),     -(2*(qw*qw + qz*qz)-1);
+    Matrix3f R{
+          {(2*(qw*qw + qx*qx)-1), -2*(qx*qy - qw*qz),     -2*(qx*qz + qw*qy)},
+          {2*(qx*qy + qw*qz),     -(2*(qw*qw + qy*qy)-1), -2*(qy*qz - qw*qx)},
+          {2*(qx*qz - qw*qy),     -2*(qy*qz + qw*qx),     -(2*(qw*qw + qz*qz)-1)}};
     // clang-format on
 
     // pitch: rotation of motor2 (how the Down-axis move on DN-fixed plane)
