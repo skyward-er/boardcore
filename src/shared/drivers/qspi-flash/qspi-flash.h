@@ -49,6 +49,8 @@ using namespace Boardcore;
  * byte_program(uint8_t data, uint32_t address, bool verify); if you want to
  * store a vector of data bytes, you should use write_vector(...) function, this
  * method will take care about all erasing and programming sequences.
+ * IT'S ALWAYS RECOMMENDED TO CHECK ON RESULTS OF METHODS (true/false) TO BE
+ * SURE THAT AN ACTION HAS BEEN PROPERLY PERFORMED!
  */
 
 namespace FlashMemory
@@ -285,12 +287,6 @@ private:
      * @return security register value (8 bit)
      */
     uint8_t read_security_reg();
-
-    /**
-     * @brief wait till flash memory has done with the current operation
-     * (program/erase)
-     */
-    void waitProgress();
 
     // flag device initialised
     bool initialised = false;

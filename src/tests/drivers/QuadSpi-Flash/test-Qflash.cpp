@@ -31,6 +31,23 @@ qspi_flash mymemory;
 
 int main()
 {
+    // solo testare i timeout
+    // finire di mettere timeout poi test e commit
+    // ATTENZIONE SUL TIMEOUT DELLA FUNZIONE WAITPROGRESS() e ritorno false
+    // sulle funzioni.
+    // testare funzioni senza utilizzo di waitPogress() e nuovi timeout,
+    // eliminare waitProgress() e while in page_program. controllare che non sia
+    // possibile chiamare funzioni con operazioni ancora in corso.
+
+    /*
+    uint32_t t = 0;
+    while(1) {
+        t = t + 1;
+        printf("%u\n", t);
+    }
+
+    return 0;
+    */
 
     // init qspi-flash communication
     mymemory.init();
@@ -38,6 +55,9 @@ int main()
     // test if flash is working
     if (mymemory.test())
     {
+
+        // read device id
+        printf("\nID: %x\n", mymemory.readID());
 
         // create a vector of ten bytes to write on memory
         std::vector<uint8_t> v;
@@ -47,7 +67,7 @@ int main()
         v.resize(v.capacity());  // make sure that size match with capacity
 
         // write vector "v" at 50th sector and double check on data
-        if (mymemory.write_vector(v, 50, true) == false)
+        if (mymemory.write_vector(v, 88, true) == false)
         {
             printf("ERROR - write operation failed !\n");
             return -1;
@@ -57,7 +77,7 @@ int main()
         std::vector<uint8_t> v2;
 
         // read 50th entire sector into the vector "v2"
-        if (mymemory.read_sector(v2, 50) == false)
+        if (mymemory.read_sector(v2, 88) == false)
         {
             printf("ERROR - read operation failed ! \n");
             return -1;
@@ -69,9 +89,15 @@ int main()
         for (a = 0; a < 10 && a < v2.size(); a++)
         {
             printf("v2[%d]: %d \n", a, v2[a]);
+            if (v2[a] != 99)
+            {
+                printf("ERROR - data mismatch !\n");
+                return -1;
+            }
         }
         printf("v2 size: %d\n", v2.size());
         printf("v2 capacity: %d\n", v2.capacity());
+        printf("\n- flash memory is working properly !\n");
         return 0;
     }
     else

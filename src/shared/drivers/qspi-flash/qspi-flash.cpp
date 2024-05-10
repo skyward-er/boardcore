@@ -25,50 +25,12 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace FlashMemory;
 
-/**
- * QSPI Flash pins
- *
- * FLASH_NSS - PB10 - AF9  - QUADSPI_BK1_NCS
- * FLASH_CLK - PF10 - AF9  - QUADSPI_CLK
- * FLASH_IO0 - PF8  - AF10 - QUADSPI_BK1_IO0
- * FLASH_IO1 - PF9  - AF10 - QUADSPI_BK1_IO1
- * FLASH_IO2 - PF7  - AF9  - QUADSPI_BK1_IO2
- * FLASH_IO3 - PF6  - AF9  - QUADSPI_BK1_IO3
- */
-
-GpioPin flash_ncs(GPIOB_BASE, 10);
-GpioPin flash_sck(GPIOF_BASE, 10);
-GpioPin flash_io0(GPIOF_BASE, 8);
-GpioPin flash_io1(GPIOF_BASE, 9);
-GpioPin flash_io2(GPIOF_BASE, 7);
-GpioPin flash_io3(GPIOF_BASE, 6);
-
 void QSPI::enable() { QUADSPI->CR |= QUADSPI_CR_EN; }
 
 void QSPI::disable() { QUADSPI->CR &= ~QUADSPI_CR_EN; }
 
 void QSPI::init()
 {
-
-    // init GPIO peripheral pins
-    flash_ncs.mode(Mode::ALTERNATE);
-    flash_ncs.alternateFunction(9);
-    flash_ncs.speed(Speed::_100MHz);
-    flash_sck.mode(Mode::ALTERNATE);
-    flash_sck.alternateFunction(9);
-    flash_sck.speed(Speed::_100MHz);
-    flash_io0.mode(Mode::ALTERNATE);
-    flash_io0.alternateFunction(10);
-    flash_io0.speed(Speed::_100MHz);
-    flash_io1.mode(Mode::ALTERNATE);
-    flash_io1.alternateFunction(10);
-    flash_io1.speed(Speed::_100MHz);
-    flash_io2.mode(Mode::ALTERNATE);
-    flash_io2.alternateFunction(9);
-    flash_io2.speed(Speed::_100MHz);
-    flash_io3.mode(Mode::ALTERNATE);
-    flash_io3.alternateFunction(9);
-    flash_io3.speed(Speed::_100MHz);
 
     // init peripheral clock
     ClockUtils::enablePeripheralClock((QUADSPI_TypeDef*)QSPI_BASE);
@@ -77,17 +39,8 @@ void QSPI::init()
 
     Thread::sleep(1);
 
-    // abort possible ongoing command
-    QUADSPI->CR |= QUADSPI_CR_ABORT;
-
-    // Wait while aborted
-    while (QUADSPI->CR & QUADSPI_CR_ABORT)
-    {
-        ;
-    }
-
-    // disable peripheral
-    QSPI::disable();
+    // abort any operation
+    QSPI::abort_reset();
 
     // reset configuration registers
     QUADSPI->CR  = 0;
@@ -116,9 +69,14 @@ void QSPI::abort_reset()
     QUADSPI->CR |= QUADSPI_CR_ABORT;
 
     // Wait while aborted
+    uint32_t dt = 0;  // timeout
     while (QUADSPI->CR & QUADSPI_CR_ABORT)
     {
-        ;
+        dt = dt + 1;
+        if (dt > 10000)
+        {
+            return;
+        }
     }
 
     // to be sure that the peripheral is disabled
@@ -133,10 +91,15 @@ void QSPI::abort_reset()
 
 void QSPI::waitBusy()
 {
-    // wait till QUADSPI has completed the current communication with the flash.
+    // wait till QUADSPI has completed the current communication with the flash
+    uint32_t dt = 0;  // timeout
     while (QUADSPI->SR & (1 << QUADSPI_SR_BUSY_Pos))
     {
-        ;
+        dt = dt + 1;
+        if (dt > 20000)
+        {
+            return;
+        }
     }
 }
 
@@ -144,16 +107,61 @@ void QSPI::waitTransfer()
 {
     // by setting data lenght register (DLR) you set how many bytes are expected
     // from memory. wait till all expected bytes have been tranferred.
+    uint32_t dt = 0;  // timeout
     while (!(QUADSPI->SR & (1 << QUADSPI_SR_TCF_Pos)))
     {
-        ;
+        dt = dt + 1;
+        if (dt > 20000)
+        {
+            return;
+        }
     }
 
     // reset transfer complete flag (TCF)
     QUADSPI->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
 }
 
-qspi_flash::qspi_flash() { ; }
+qspi_flash::qspi_flash()
+{
+
+    /**
+     * QSPI Flash pins
+     *
+     * FLASH_NSS - PB10 - AF9  - QUADSPI_BK1_NCS
+     * FLASH_CLK - PF10 - AF9  - QUADSPI_CLK
+     * FLASH_IO0 - PF8  - AF10 - QUADSPI_BK1_IO0
+     * FLASH_IO1 - PF9  - AF10 - QUADSPI_BK1_IO1
+     * FLASH_IO2 - PF7  - AF9  - QUADSPI_BK1_IO2
+     * FLASH_IO3 - PF6  - AF9  - QUADSPI_BK1_IO3
+     */
+
+    GpioPin flash_ncs(GPIOB_BASE, 10);
+    GpioPin flash_sck(GPIOF_BASE, 10);
+    GpioPin flash_io0(GPIOF_BASE, 8);
+    GpioPin flash_io1(GPIOF_BASE, 9);
+    GpioPin flash_io2(GPIOF_BASE, 7);
+    GpioPin flash_io3(GPIOF_BASE, 6);
+
+    // init GPIO peripheral pins
+    flash_ncs.mode(Mode::ALTERNATE);
+    flash_ncs.alternateFunction(9);
+    flash_ncs.speed(Speed::_100MHz);
+    flash_sck.mode(Mode::ALTERNATE);
+    flash_sck.alternateFunction(9);
+    flash_sck.speed(Speed::_100MHz);
+    flash_io0.mode(Mode::ALTERNATE);
+    flash_io0.alternateFunction(10);
+    flash_io0.speed(Speed::_100MHz);
+    flash_io1.mode(Mode::ALTERNATE);
+    flash_io1.alternateFunction(10);
+    flash_io1.speed(Speed::_100MHz);
+    flash_io2.mode(Mode::ALTERNATE);
+    flash_io2.alternateFunction(9);
+    flash_io2.speed(Speed::_100MHz);
+    flash_io3.mode(Mode::ALTERNATE);
+    flash_io3.alternateFunction(9);
+    flash_io3.speed(Speed::_100MHz);
+}
 
 bool qspi_flash::test()
 {
@@ -163,7 +171,7 @@ bool qspi_flash::test()
         return false;
     }
 
-    return readID() == DEVICE_ID ? true : false;
+    return readID() == DEVICE_ID;
 }
 
 uint8_t qspi_flash::read_status_reg()
@@ -243,9 +251,15 @@ void qspi_flash::write_enable()
 
     // check status register until bit WEL = 1
     uint8_t status = read_status_reg();
+    uint8_t dt     = 0;  // timeout
     while (!(status & (1 << 1)))
     {
         Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 5)
+        {
+            return;
+        }
         status = read_status_reg();
     }
 }
@@ -301,7 +315,7 @@ uint32_t qspi_flash::readID()
         QSPI::disable();
 
         // the ID bytes order must be inverted
-        uint8_t lb = myID & (255U);          // lowest byte
+        uint8_t lb = myID;                   // lowest byte
         uint8_t mb = (myID >> 8) & (255U);   // middle byte
         uint8_t hb = (myID >> 16) & (255U);  // highest byte
 
@@ -350,9 +364,15 @@ void qspi_flash::write_disable()
 
     // check status register till bit WEL = 0
     uint8_t status = read_status_reg();
+    uint8_t dt     = 0;  // timeout
     while (status & (1 << 1))
     {
         Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 5)
+        {
+            return;
+        }
         status = read_status_reg();
     }
 }
@@ -375,22 +395,6 @@ bool qspi_flash::isInProgress()
 
     uint8_t status_reg = read_status_reg();
     return (status_reg & 1) ? true : false;
-}
-
-void qspi_flash::waitProgress()
-{
-
-    // check if memory has been initialised
-    if (initialised == false)
-    {
-        return;
-    }
-
-    // wait till any operation is in progress
-    while (isInProgress())
-    {
-        Thread::sleep(1);
-    }
 }
 
 uint8_t qspi_flash::read_byte(uint32_t address)
@@ -461,9 +465,6 @@ bool qspi_flash::chip_erase()
         return false;
     }
 
-    // wait for any ongoing operation
-    waitProgress();
-
     // enable data writing
     write_enable();
 
@@ -486,7 +487,16 @@ bool qspi_flash::chip_erase()
     QSPI::disable();
 
     // wait till current erase operation has ended
-    waitProgress();
+    uint32_t dt = 0;  // timeout
+    while (isInProgress())
+    {
+        Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 130000)  // (2 min and 10sec) mac chip erase time = 2 min
+        {
+            return false;
+        }
+    }
 
     // disable data writing
     write_disable();
@@ -512,9 +522,6 @@ bool qspi_flash::sector_erase(uint32_t address)
     // check on address range
     if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
         return false;
-
-    // wait for any ongoing operation
-    waitProgress();
 
     // enable data writing
     write_enable();
@@ -543,7 +550,16 @@ bool qspi_flash::sector_erase(uint32_t address)
     QSPI::disable();
 
     // wait till current erase operation has ended
-    waitProgress();
+    uint32_t dt = 0;  // timeout
+    while (isInProgress())
+    {
+        Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 260)  // max sector erase cycle time = 240 ms
+        {
+            return false;
+        }
+    }
 
     // disable data writing
     write_disable();
@@ -571,9 +587,6 @@ bool qspi_flash::block32_erase(uint32_t address)
     if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
         return false;
 
-    // wait till any ongiong operation has ended
-    waitProgress();
-
     // enable data writing
     write_enable();
 
@@ -600,8 +613,17 @@ bool qspi_flash::block32_erase(uint32_t address)
     // disable peripheral
     QSPI::disable();
 
-    // wait till the current erase operation has been executed
-    waitProgress();
+    // wait till current erase operation has ended
+    uint32_t dt = 0;  // timeout
+    while (isInProgress())
+    {
+        Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 3000)  // block_32 erase cycle max time = 1.8s
+        {
+            return false;
+        }
+    }
 
     // disable data writing
     write_disable();
@@ -629,9 +651,6 @@ bool qspi_flash::block64_erase(uint32_t address)
     if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
         return false;
 
-    // wait for any ongoing operation to end
-    waitProgress();
-
     // enable data writing
     write_enable();
 
@@ -658,8 +677,17 @@ bool qspi_flash::block64_erase(uint32_t address)
     // didable peripheral
     QSPI::disable();
 
-    // wait till the current erase operation has been completed
-    waitProgress();
+    // wait till current erase operation has ended
+    uint32_t dt = 0;  // timeout
+    while (isInProgress())
+    {
+        Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 4500)  // erase block_64K cycle max time = 3.5s
+        {
+            return false;
+        }
+    }
 
     // disable data writing
     write_disable();
@@ -687,10 +715,9 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
 
     // check on address range
     if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
+    {
         return false;
-
-    // wait for any operation in progress
-    waitProgress();
+    }
 
     // enable data writing
     write_enable();
@@ -719,8 +746,16 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
     // wait for the communication to end
     QSPI::waitBusy();
 
-    // wait till the current program operation has ended
-    waitProgress();
+    // wait till current program operation has ended
+    uint32_t dt = 0;  // timeout
+    while (isInProgress())
+    {
+        dt = dt + 1;
+        if (dt >= 5000)  // max program byte cycle time = 100us
+        {
+            return false;
+        }
+    }
 
     // disable data writing
     write_disable();
@@ -804,8 +839,6 @@ void qspi_flash::software_reset()
     }
 
     // -------------------- send RSTEN command -------------------------
-    // wait till any ongoing operation with the flash is ended
-    waitProgress();
 
     // reset peripheral
     QSPI::abort_reset();
@@ -991,9 +1024,14 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     {
 
         // if FIFO is full - wait till it has at least a byte available.
+        uint32_t dt = 0;  // timeout
         while (((QUADSPI->SR & QUADSPI_SR_FLEVEL) >> 8) >= 32)
         {
-            ;
+            dt = dt + 1;
+            if (dt >= 10000)
+            {
+                return false;
+            }
         }
 
         // add a single byte to be sent into the QSPI FIFO
@@ -1003,8 +1041,17 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     // wait for the end of communication
     QSPI::waitBusy();
 
-    // wait till the end of current program operation
-    waitProgress();
+    // wait till current program operation has ended
+    uint32_t dt = 0;  // timeout
+    while (isInProgress())
+    {
+        Thread::sleep(1);
+        dt = dt + 1;
+        if (dt >= 20)  // max page program cycle time = 10ms
+        {
+            return false;
+        }
+    }
 
     // if verify flag is set, double check on written data
     if (verify == true)
