@@ -184,9 +184,11 @@ public:
                       bool verify);
 
     /**
-     * @brief erase the entire memory chip
+     * @brief erase the entire memory chip. since this operation is not so
+     * reliable and it may take a lot of time, you should use block32_erase()
+     * and block64_erase() methods.
      * @return true/false - if the operation has been successful
-     * @warning THIS OPERATION WILL TAKE A WHILE !! (at least 30 sec)
+     * @warning THIS OPERATION WILL TAKE A WHILE !! (at least 1 min)
      */
     bool chip_erase();
 
@@ -231,9 +233,9 @@ public:
     bool byte_program(uint8_t data, uint32_t address, bool verify);
 
     /**
-     * @brief make the flash go back to power-on default state. altough that's
-     * not a "must-do" operation, it may be used when you have done with the
-     * memory.
+     * @brief make the flash go back to power-on default state. if the device
+     * is performing any program/erase operation, that operation will be deleted
+     * and some data could be lost!
      * @warning THIS FUNCTION MAY TAKE A WHILE !
      */
     void software_reset();
