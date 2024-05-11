@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <algorithms/ReferenceValues.h>
 #include <logger/Logger.h>
 #include <sensors/analog/Pitot/Pitot.h>
 #include <utils/AeroUtils/AeroUtils.h>
@@ -32,7 +33,7 @@ template <int N_DATA>
 struct PitotSimulatorData
 {
     float deltaP[N_DATA];
-    float airspeed[N_DATA];
+    float staticPressure[N_DATA];
 };
 
 /**
@@ -51,22 +52,45 @@ class HILPitot
 public:
     explicit HILPitot(const PitotSimulatorData<N_DATA> *sensorData)
         : HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>(
-              sensorData)
+              sensorData),
+          pitot(
+              [&]()
+              {
+                  // Assemble total pressure as sum of staticPressure and deltaP
+                  return Base::sensorData->staticPressure[Base::sampleCounter] +
+                         Base::sensorData->deltaP[Base::sampleCounter];
+              },
+              [&]()
+              { return Base::sensorData->staticPressure[Base::sampleCounter]; })
     {
+    }
+
+    void setReferenceValues(const Boardcore::ReferenceValues reference)
+    {
+        pitot.setReferenceValues(reference);
+    }
+
+    Boardcore::ReferenceValues getReferenceValues()
+    {
+        return pitot.getReferenceValues();
     }
 
 protected:
     HILPitotData updateData() override
     {
         HILPitotData tempData;
+        pitot.sample();
         {
             miosix::PauseKernelLock pkLock;
-            tempData.deltaP   = Base::sensorData->deltaP[Base::sampleCounter];
-            tempData.airspeed = Base::sensorData->airspeed[Base::sampleCounter];
+            auto sample        = pitot.getLastSample();
+            tempData.deltaP    = sample.deltaP;
+            tempData.airspeed  = sample.airspeed;
             tempData.timestamp = Base::updateTimestamp();
         }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;
     }
+
+    Boardcore::Pitot pitot;
 };
