@@ -70,6 +70,10 @@ set(BOARDCORE_SRC
     # Events
     ${BOARDCORE_PATH}/src/shared/events/EventBroker.cpp
 
+    # HIL
+    ${SBS_BASE}/src/shared/hil/HILFlightPhasesManager.cpp
+    ${SBS_BASE}/src/shared/hil/HILTransceiver.cpp
+    
     # Logger
     ${BOARDCORE_PATH}/src/shared/logger/Logger.cpp
 
