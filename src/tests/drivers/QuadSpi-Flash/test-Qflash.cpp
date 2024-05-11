@@ -31,23 +31,11 @@ qspi_flash mymemory;
 
 int main()
 {
-    // solo testare i timeout
-    // finire di mettere timeout poi test e commit
-    // ATTENZIONE SUL TIMEOUT DELLA FUNZIONE WAITPROGRESS() e ritorno false
-    // sulle funzioni.
-    // testare funzioni senza utilizzo di waitPogress() e nuovi timeout,
-    // eliminare waitProgress() e while in page_program. controllare che non sia
-    // possibile chiamare funzioni con operazioni ancora in corso.
-
-    /*
-    uint32_t t = 0;
-    while(1) {
-        t = t + 1;
-        printf("%u\n", t);
-    }
-
-    return 0;
-    */
+    // aggiunti software_reset con timeout: disaccoppiano le operazioni, anche
+    // senza delay - permettendo alle operazioni di erase che falliscono di non
+    // far fallire le altre operazioni successive. chip_erase se fallisce dopo
+    // circa 10 sec fa fallire alcune operazioni come write_vector() e
+    // page_program.
 
     // init qspi-flash communication
     mymemory.init();

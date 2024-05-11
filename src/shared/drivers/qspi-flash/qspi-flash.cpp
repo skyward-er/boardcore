@@ -459,6 +459,10 @@ bool qspi_flash::chip_erase()
     // 3 erase chip command
     // 4 wait till flash has completed the erase operation
 
+    // if chip_erase operation will not be completed properly resulting in a
+    // timeout event and a forced reset (after some seconds by the command),
+    // some post-operations may fail!
+
     // check if memory has been initialised
     if (initialised == false)
     {
@@ -492,8 +496,10 @@ bool qspi_flash::chip_erase()
     {
         Thread::sleep(1);
         dt = dt + 1;
-        if (dt >= 130000)  // (2 min and 10sec) mac chip erase time = 2 min
+        if (dt >= 130000)  // (2 min and 10sec) max chip erase time = 2 min
         {
+            software_reset();   // device forced reset to default status
+            Thread::sleep(20);  // recovery time = 12 ms
             return false;
         }
     }
@@ -557,6 +563,7 @@ bool qspi_flash::sector_erase(uint32_t address)
         dt = dt + 1;
         if (dt >= 260)  // max sector erase cycle time = 240 ms
         {
+            software_reset();  // device forced reset to default status
             return false;
         }
     }
@@ -621,6 +628,7 @@ bool qspi_flash::block32_erase(uint32_t address)
         dt = dt + 1;
         if (dt >= 3000)  // block_32 erase cycle max time = 1.8s
         {
+            software_reset();  // device forced reset to default status
             return false;
         }
     }
@@ -685,6 +693,7 @@ bool qspi_flash::block64_erase(uint32_t address)
         dt = dt + 1;
         if (dt >= 4500)  // erase block_64K cycle max time = 3.5s
         {
+            software_reset();  // device forced reset to default status
             return false;
         }
     }
@@ -753,6 +762,7 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
         dt = dt + 1;
         if (dt >= 5000)  // max program byte cycle time = 100us
         {
+            software_reset();  // device forced reset to default status
             return false;
         }
     }
@@ -874,6 +884,7 @@ void qspi_flash::software_reset()
 
     QSPI::disable();
 
+    // wait for flash to go back in power-on default status
     Thread::sleep(1);
 }
 
@@ -1049,6 +1060,7 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
         dt = dt + 1;
         if (dt >= 20)  // max page program cycle time = 10ms
         {
+            software_reset();  // device forced reset to default status
             return false;
         }
     }
