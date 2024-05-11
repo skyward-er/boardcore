@@ -181,7 +181,6 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             if (updated)
             {
                 lostUpdate = true;
-                updated    = false;  // We want the last computation
             }
         }
 
