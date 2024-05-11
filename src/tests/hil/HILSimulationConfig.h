@@ -445,7 +445,7 @@ public:
     {
         TRACE("OUTCOMES: (times dt from liftoff)\n\n");
         TRACE("Simulation time: %.3f [sec]\n\n",
-               (double)(t_stop - t_start) / 1000000.0f);
+              (double)(t_stop - t_start) / 1000000.0f);
 
         TRACE("Motor stopped burning (simulation flag): \n");
         outcomes[MainFlightPhases::SIM_BURNING].print(t_liftoff);
