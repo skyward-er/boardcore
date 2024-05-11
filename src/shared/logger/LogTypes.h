@@ -44,6 +44,7 @@
 #include <sensors/BMX160/BMX160Data.h>
 #include <sensors/BMX160/BMX160WithCorrectionData.h>
 #include <sensors/H3LIS331DL/H3LIS331DLData.h>
+#include <sensors/HILSensors/HILSensorsData.h>
 #include <sensors/HX711/HX711Data.h>
 #include <sensors/L3GD20/L3GD20Data.h>
 #include <sensors/LIS2MDL/LIS2MDLData.h>
@@ -52,6 +53,7 @@
 #include <sensors/LPS22DF/LPS22DFData.h>
 #include <sensors/LPS28DFW/LPS28DFWData.h>
 #include <sensors/LSM6DSRX/LSM6DSRXData.h>
+#include <sensors/MAX31856/MAX31856Data.h>
 #include <sensors/MBLoadCell/MBLoadCellData.h>
 #include <sensors/MPU9250/MPU9250Data.h>
 #include <sensors/MS5803/MS5803Data.h>
@@ -139,7 +141,16 @@ void registerTypes(Deserializer& ds)
     ds.registerType<MPXHZ6130AData>();
     ds.registerType<HSCMRNN015PAData>();
     ds.registerType<SSCMRNN030PAData>();
+    ds.registerType<MAX31856Data>();
     ds.registerType<PitotData>();
+    ds.registerType<HILAccelerometerData>();
+    ds.registerType<HILGyroscopeData>();
+    ds.registerType<HILMagnetometerData>();
+    ds.registerType<HILImuData>();
+    ds.registerType<HILGpsData>();
+    ds.registerType<HILBarometerData>();
+    ds.registerType<HILPitotData>();
+    ds.registerType<HILTempData>();
 }
 
 }  // namespace LogTypes
