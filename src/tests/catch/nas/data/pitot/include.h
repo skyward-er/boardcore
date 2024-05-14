@@ -22,12 +22,6 @@
 
 /* This file was automatically generated, do not edit manually! */
 
-#include <algorithms/NAS/NASConfig.h>
-#include <algorithms/NAS/NASPredictionSteps.h>
-#include <algorithms/NAS/NASState.h>
-#include <sensors/SensorData.h>
-#include <sensors/analog/Pitot/PitotData.h>
-
 #include "acc.h"
 #include "baro.h"
 #include "config.h"

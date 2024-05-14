@@ -141,6 +141,76 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-units.cpp
     src/tests/catch/test-registry-frontend.cpp
     src/tests/catch/nas/test-nas.cpp
+    # NAS catch test
+    src/tests/catch/nas/data/acc/acc.cpp
+    src/tests/catch/nas/data/acc/gyro.cpp
+    src/tests/catch/nas/data/acc/gps.cpp
+    src/tests/catch/nas/data/acc/baro.cpp
+    src/tests/catch/nas/data/acc/mag.cpp
+    src/tests/catch/nas/data/acc/pitot.cpp
+    src/tests/catch/nas/data/acc/input.cpp
+    src/tests/catch/nas/data/acc/output.cpp
+    src/tests/catch/nas/data/acc/steps.cpp
+
+    src/tests/catch/nas/data/gyro/acc.cpp
+    src/tests/catch/nas/data/gyro/gyro.cpp
+    src/tests/catch/nas/data/gyro/gps.cpp
+    src/tests/catch/nas/data/gyro/baro.cpp
+    src/tests/catch/nas/data/gyro/mag.cpp
+    src/tests/catch/nas/data/gyro/pitot.cpp
+    src/tests/catch/nas/data/gyro/input.cpp
+    src/tests/catch/nas/data/gyro/output.cpp
+    src/tests/catch/nas/data/gyro/steps.cpp
+
+    src/tests/catch/nas/data/gps/acc.cpp
+    src/tests/catch/nas/data/gps/gyro.cpp
+    src/tests/catch/nas/data/gps/gps.cpp
+    src/tests/catch/nas/data/gps/baro.cpp
+    src/tests/catch/nas/data/gps/mag.cpp
+    src/tests/catch/nas/data/gps/pitot.cpp
+    src/tests/catch/nas/data/gps/input.cpp
+    src/tests/catch/nas/data/gps/output.cpp
+    src/tests/catch/nas/data/gps/steps.cpp
+
+    src/tests/catch/nas/data/baro/acc.cpp
+    src/tests/catch/nas/data/baro/gyro.cpp
+    src/tests/catch/nas/data/baro/gps.cpp
+    src/tests/catch/nas/data/baro/baro.cpp
+    src/tests/catch/nas/data/baro/mag.cpp
+    src/tests/catch/nas/data/baro/pitot.cpp
+    src/tests/catch/nas/data/baro/input.cpp
+    src/tests/catch/nas/data/baro/output.cpp
+    src/tests/catch/nas/data/baro/steps.cpp
+
+    src/tests/catch/nas/data/pitot/acc.cpp
+    src/tests/catch/nas/data/pitot/gyro.cpp
+    src/tests/catch/nas/data/pitot/gps.cpp
+    src/tests/catch/nas/data/pitot/baro.cpp
+    src/tests/catch/nas/data/pitot/mag.cpp
+    src/tests/catch/nas/data/pitot/pitot.cpp
+    src/tests/catch/nas/data/pitot/input.cpp
+    src/tests/catch/nas/data/pitot/output.cpp
+    src/tests/catch/nas/data/pitot/steps.cpp
+
+    src/tests/catch/nas/data/mag/acc.cpp
+    src/tests/catch/nas/data/mag/gyro.cpp
+    src/tests/catch/nas/data/mag/gps.cpp
+    src/tests/catch/nas/data/mag/baro.cpp
+    src/tests/catch/nas/data/mag/mag.cpp
+    src/tests/catch/nas/data/mag/pitot.cpp
+    src/tests/catch/nas/data/mag/input.cpp
+    src/tests/catch/nas/data/mag/output.cpp
+    src/tests/catch/nas/data/mag/steps.cpp
+
+    src/tests/catch/nas/data/complete/acc.cpp
+    src/tests/catch/nas/data/complete/gyro.cpp
+    src/tests/catch/nas/data/complete/gps.cpp
+    src/tests/catch/nas/data/complete/baro.cpp
+    src/tests/catch/nas/data/complete/mag.cpp
+    src/tests/catch/nas/data/complete/pitot.cpp
+    src/tests/catch/nas/data/complete/input.cpp
+    src/tests/catch/nas/data/complete/output.cpp
+    src/tests/catch/nas/data/complete/steps.cpp
 )
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
