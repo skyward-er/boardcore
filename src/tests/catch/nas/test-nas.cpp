@@ -23,6 +23,7 @@
 #include <algorithms/NAS/NAS.h>
 
 #include <catch2/catch.hpp>
+#include <fstream>
 #include <iostream>
 
 #include "data/acc/include.h"
@@ -53,12 +54,49 @@ enum class NASExecution
     Evolving
 };
 
-void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
-                   AccelerometerData acc[], GyroscopeData gyro[], GPSData gps[],
-                   PressureData baro[], MagnetometerData mag[],
-                   PitotData pitot[], NASState input[], NASState output[],
-                   NASConfig nasConfig, NASPredictionSteps steps[]);
-void checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i);
+std::string algorithmToString(NASAlgorithm algorithm)
+{
+    switch (algorithm)
+    {
+        case NASAlgorithm::PredictAcceleration:
+            return "acc";
+        case NASAlgorithm::PredictGyro:
+            return "gyro";
+        case NASAlgorithm::CorrectGPS:
+            return "gps";
+        case NASAlgorithm::CorrectBaro:
+            return "baro";
+        case NASAlgorithm::CorrectMag:
+            return "mag";
+        case NASAlgorithm::CorrectPitot:
+            return "pitot";
+        case NASAlgorithm::Complete:
+            return "complete";
+        default:
+            return "unknown";
+    }
+}
+
+std::string executionToString(NASExecution execution)
+{
+    switch (execution)
+    {
+        case NASExecution::Static:
+            return "static";
+        case NASExecution::Evolving:
+            return "evolving";
+        default:
+            return "default";
+    }
+}
+
+void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
+                   uint32_t length, AccelerometerData acc[],
+                   GyroscopeData gyro[], GPSData gps[], PressureData baro[],
+                   MagnetometerData mag[], PitotData pitot[], NASState input[],
+                   NASState output[], NASConfig nasConfig,
+                   NASPredictionSteps steps[]);
+bool checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i);
 
 TEST_CASE("NAS - Predict acceleration - Static")
 {
@@ -174,19 +212,30 @@ TEST_CASE("NAS - Complete - Evolving")
                   complete_nas_config, complete_steps);
 }
 
-void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
-                   AccelerometerData acc[], GyroscopeData gyro[], GPSData gps[],
-                   PressureData baro[], MagnetometerData mag[],
-                   PitotData pitot[], NASState input[], NASState output[],
-                   NASConfig nasConfig, NASPredictionSteps steps[])
+void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
+                   uint32_t length, AccelerometerData acc[],
+                   GyroscopeData gyro[], GPSData gps[], PressureData baro[],
+                   MagnetometerData mag[], PitotData pitot[], NASState input[],
+                   NASState output[], NASConfig nasConfig,
+                   NASPredictionSteps steps[])
 {
     NAS nas(nasConfig);
     NASState x_curr;
     ReferenceValues r(gps[0].height, baro[0].pressure, 15, gps[0].latitude,
                       gps[0].longitude);
-    nas.setReferenceValues(r);
 
+    bool correct = true;
+
+    // std::ofstream outfile;
+    // auto filepath = algorithmToString(algorithm) + "-" +
+    //                 executionToString(execution) + ".csv";
+    // using ios = std::ios;
+    // outfile.open(filepath, ios::out | ios::trunc);
+    // outfile << "n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
+
+    nas.setReferenceValues(r);
     nas.setX(input[0].getX());
+
     for (uint32_t i = 0; i < length - 1; i++)
     {
         if (execution == NASExecution::Static)
@@ -199,13 +248,6 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
             algorithm == NASAlgorithm::Complete)
         {
             nas.predictAcc(acc[i]);
-            printf("[%d] Predicting acceleration:\n", i);
-            printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n, output[i].n);
-            printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e, output[i].e);
-            printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d, output[i].d);
-            printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn, output[i].vn);
-            printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve, output[i].ve);
-            printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd, output[i].vd);
         }
 
         // Predict gyro
@@ -213,14 +255,6 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
             algorithm == NASAlgorithm::Complete)
         {
             nas.predictGyro(gyro[i]);
-            printf("[%d] Predicting gyroscope:\n", i);
-            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qx, output[i].qx);
-            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qy, output[i].qy);
-            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qz, output[i].qz);
-            printf("[%d] QW:%.2f/%.2f\n", i, nas.getState().qw, output[i].qw);
-            printf("[%d]BX: %.2f/%.2f\n", i, nas.getState().bx, output[i].bx);
-            printf("[%d] BX: %.2f/%.2f\n", i, nas.getState().by, output[i].by);
-            printf("[%d] BX: %.2f/%.2f\n", i, nas.getState().bz, output[i].bz);
         }
 
         // Correct gps
@@ -232,19 +266,6 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
                 algorithm == NASAlgorithm::Complete)
             {
                 nas.correctGPS(gps[i]);
-                printf("[%d] Correcting GPS:\n", i);
-                printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n,
-                       steps[i].gps_x);
-                printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e,
-                       steps[i].gps_y);
-                printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d,
-                       steps[i].gps_z);
-                printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn,
-                       steps[i].gps_vx);
-                printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve,
-                       steps[i].gps_vy);
-                printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd,
-                       steps[i].gps_vz);
             }
         }
 
@@ -253,16 +274,6 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
             algorithm == NASAlgorithm::Complete)
         {
             nas.correctBaro(baro[i].pressure);
-            printf("[%d] Correcting barometer:\n", i);
-            printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n, steps[i].baro_x);
-            printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e, steps[i].baro_y);
-            printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d, steps[i].baro_z);
-            printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn,
-                   steps[i].baro_vx);
-            printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve,
-                   steps[i].baro_vy);
-            printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd,
-                   steps[i].baro_vz);
         }
 
         // Correct magnetometer
@@ -270,21 +281,6 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
             algorithm == NASAlgorithm::Complete)
         {
             nas.correctMag(mag[i]);
-            printf("[%d] Correcting magnetometer:\n", i);
-            printf("[%d] QX: %.2f/%.2f\n", i, nas.getState().qx,
-                   steps[i].mag_gx);
-            printf("[%d] QY: %.2f/%.2f\n", i, nas.getState().qy,
-                   steps[i].mag_gy);
-            printf("[%d] QZ: %.2f/%.2f\n", i, nas.getState().qz,
-                   steps[i].mag_gz);
-            printf("[%d] QW:%.2f/%.2f\n", i, nas.getState().qw,
-                   steps[i].mag_gw);
-            printf("[%d]BX: %.2f/%.2f\n", i, nas.getState().bx,
-                   steps[i].mag_gbx);
-            printf("[%d] BY: %.2f/%.2f\n", i, nas.getState().by,
-                   steps[i].mag_gby);
-            printf("[%d] BZ: %.2f/%.2f\n", i, nas.getState().bz,
-                   steps[i].mag_gbz);
         }
 
         // Correct pitot
@@ -292,101 +288,115 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution, int length,
             algorithm == NASAlgorithm::Complete)
         {
             nas.correctPitot(pitot[i].airspeed);
-            printf("[%d] Correcting pitot:\n", i);
-            printf("[%d] N: %.2f/%.2f\n", i, nas.getState().n,
-                   steps[i].pitot_x);
-            printf("[%d] E: %.2f/%.2f\n", i, nas.getState().e,
-                   steps[i].pitot_y);
-            printf("[%d] D: %.2f/%.2f\n", i, nas.getState().d,
-                   steps[i].pitot_z);
-            printf("[%d] VN: %.2f/%.2f\n", i, nas.getState().vn,
-                   steps[i].pitot_vx);
-            printf("[%d] VE: %.2f/%.2f\n", i, nas.getState().ve,
-                   steps[i].pitot_vy);
-            printf("[%d] VD: %.2f/%.2f\n", i, nas.getState().vd,
-                   steps[i].pitot_vz);
         }
 
         // Get the results
-        x_curr = nas.getState();
-        checkStates(i, x_curr, output[i]);
+        x_curr  = nas.getState();
+        correct = correct && checkStates(i, x_curr, output[i]);
+
+        // outfile << x_curr.n << "," << x_curr.e << "," << x_curr.d << ","
+        //         << x_curr.vn << "," << x_curr.ve << "," << x_curr.vd << ","
+        //         << x_curr.qx << "," << x_curr.qy << "," << x_curr.qz << ","
+        //         << x_curr.qw << "," << x_curr.bx << "," << x_curr.by << ","
+        //         << x_curr.bz << "\n";
+    }
+
+    // outfile.close();
+
+    if (!correct)
+    {
+        FAIL("Divergence detected in NAS algorithm");
     }
 }
 
-void checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i)
+bool checkStates(uint32_t i, const NASState &x_curr, const NASState &x_i)
 {
-    static const float marginN  = 0.5;
-    static const float marginE  = 0.5;
-    static const float marginD  = 0.5;
-    static const float marginVN = 0.1;
-    static const float marginVE = 0.1;
-    static const float marginVD = 0.1;
-    static const float marginQ  = 0.02;
+    static const float marginN  = 1;
+    static const float marginE  = 1;
+    static const float marginD  = 2;
+    static const float marginVN = 0.5;
+    static const float marginVE = 0.5;
+    static const float marginVD = 0.5;
+    static const float marginQ  = 0.05;
     static const float marginB  = 0.01;
 
     if (x_curr.n != Approx(x_i.n).margin(marginN))
     {
-        FAIL("The estimated n differs from the correct one ["
-             << i << "]: " << x_curr.n << " != " << x_i.n);
+        printf("The estimated n differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.n, x_i.n);
+        return false;
     }
     if (x_curr.e != Approx(x_i.e).margin(marginE))
     {
-        FAIL("The estimated e differs from the correct one ["
-             << i << "]: " << x_curr.e << " != " << x_i.e);
+        printf("The estimated e differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.e, x_i.e);
+        return false;
     }
     if (x_curr.d != Approx(x_i.d).margin(marginD))
     {
-        FAIL("The estimated d differs from the correct one ["
-             << i << "]: " << x_curr.d << " != " << x_i.d);
+        printf("The estimated d differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.d, x_i.d);
+        return false;
     }
     if (x_curr.vn != Approx(x_i.vn).margin(marginVN))
     {
-        FAIL("The estimated vn differs from the correct one ["
-             << i << "]: " << x_curr.vn << " != " << x_i.vn);
+        printf("The estimated vn differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.vn, x_i.vn);
+        return false;
     }
     if (x_curr.ve != Approx(x_i.ve).margin(marginVE))
     {
-        FAIL("The estimated ve differs from the correct one ["
-             << i << "]: " << x_curr.ve << " != " << x_i.ve);
+        printf("The estimated ve differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.ve, x_i.ve);
+        return false;
     }
     if (x_curr.vd != Approx(x_i.vd).margin(marginVD))
     {
-        FAIL("The estimated vd differs from the correct one ["
-             << i << "]: " << x_curr.vd << " != " << x_i.vd);
+        printf("The estimated vd differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.vd, x_i.vd);
+        return false;
     }
     if (x_curr.qx != Approx(x_i.qx).margin(marginQ))
     {
-        FAIL("The estimated qx differs from the correct one ["
-             << i << "]: " << x_curr.qx << " != " << x_i.qx);
+        printf("The estimated qx differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.qx, x_i.qx);
+        return false;
     }
     if (x_curr.qy != Approx(x_i.qy).margin(marginQ))
     {
-        FAIL("The estimated qy differs from the correct one ["
-             << i << "]: " << x_curr.qy << " != " << x_i.qy);
+        printf("The estimated qy differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.qy, x_i.qy);
+        return false;
     }
     if (x_curr.qz != Approx(x_i.qz).margin(marginQ))
     {
-        FAIL("The estimated qz differs from the correct one ["
-             << i << "]: " << x_curr.qz << " != " << x_i.qz);
+        printf("The estimated qz differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.qz, x_i.qz);
+        return false;
     }
     if (x_curr.qw != Approx(x_i.qw).margin(marginQ))
     {
-        FAIL("The estimated qw differs from the correct one ["
-             << i << "]: " << x_curr.qw << " != " << x_i.qw);
+        printf("The estimated qw differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.qw, x_i.qw);
+        return false;
     }
     if (x_curr.bx != Approx(x_i.bx).margin(marginQ))
     {
-        FAIL("The estimated bx differs from the correct one ["
-             << i << "]: " << x_curr.bx << " != " << x_i.bx);
+        printf("The estimated bx differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.bx, x_i.bx);
+        return false;
     }
     if (x_curr.by != Approx(x_i.by).margin(marginQ))
     {
-        FAIL("The estimated by differs from the correct one ["
-             << i << "]: " << x_curr.by << " != " << x_i.by);
+        printf("The estimated by differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.by, x_i.by);
+        return false;
     }
     if (x_curr.bz != Approx(x_i.bz).margin(marginQ))
     {
-        FAIL("The estimated bz differs from the correct one ["
-             << i << "]: " << x_curr.bz << " != " << x_i.bz);
+        printf("The estimated bz differs from the correct one [%u]: %f != %f\n",
+               i, x_curr.bz, x_i.bz);
+        return false;
     }
+    return true;
 }

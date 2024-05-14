@@ -22,6 +22,7 @@
 
 /* This file was automatically generated, do not edit manually! */
 
+#pragma once
 #include <algorithms/NAS/NASConfig.h>
 #include <algorithms/NAS/NASPredictionSteps.h>
 #include <algorithms/NAS/NASState.h>
