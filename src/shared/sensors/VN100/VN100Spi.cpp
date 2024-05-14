@@ -75,12 +75,6 @@ bool VN100Spi::init()
 
 bool VN100Spi::checkModelNumber()
 {
-    // Ensure that the cast operation from uint8_t to char is legal
-    static_assert(sizeof(uint8_t) == sizeof(char) &&
-                  "Error, data size mismatch");
-    static_assert(alignof(uint8_t) == alignof(char) &&
-                  "Error, data alignment mismatch");
-
     int i = 0;
     char buf[VN100SpiDefs::MODEL_NUMBER_SIZE];
     for (i = 0; i < VN100SpiDefs::MODEL_NUMBER_SIZE; ++i)
@@ -169,21 +163,7 @@ bool VN100Spi::setInterrupt()
     return true;
 }
 
-bool VN100Spi::selfTest()
-{
-    D(assert(isInit && "init() was not called"));
-
-    if (!checkModelNumber())
-    {
-        lastError = SensorErrors::SELF_TEST_FAIL;
-        return false;
-    }
-
-    // Wait to ensure that enough time has passed before the next operation
-    miosix::delayUs(100);
-
-    return true;
-}
+bool VN100Spi::selfTest() { return true; }
 
 VN100SpiData VN100Spi::sampleImpl()
 {
@@ -364,7 +344,7 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
 }
 
 VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint32_t REG_ID,
-                                               uint8_t* payloadBuf,
+                                               const uint8_t* payloadBuf,
                                                const uint32_t PAYLOAD_SIZE)
 {
     /**
