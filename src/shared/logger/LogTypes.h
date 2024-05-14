@@ -58,6 +58,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/UBXGPS/UBXGPSData.h>
 #include <sensors/VN100/VN100SerialData.h>
+#include <sensors/VN100/VN100SpiData.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
@@ -126,6 +127,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<LPS28DFWData>();
     ds.registerType<ADS131M08Data>();
     ds.registerType<VN100SerialData>();
+    ds.registerType<VN100SpiData>();
     ds.registerType<AnalogLoadCellData>();
     ds.registerType<BatteryVoltageSensorData>();
     ds.registerType<CurrentData>();

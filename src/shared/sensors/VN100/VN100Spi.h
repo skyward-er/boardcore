@@ -80,11 +80,6 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Gather data from the sensor.
-     */
-    VN100SpiData sampleImpl() override;
-
-    /**
      * @brief Retrieve temperature data from the sensor.
      */
     TemperatureData getTemperature();
@@ -93,6 +88,12 @@ public:
      * @brief Retrieve pressure data from the sensor.
      */
     PressureData getPressure();
+
+protected:
+    /**
+     * @brief Gather data from the sensor.
+     */
+    VN100SpiData sampleImpl() override;
 
 private:
     /**
@@ -163,7 +164,7 @@ private:
      * @return Zero if the operation is successful, the error code otherwise.
      */
     VN100SpiDefs::VNErrors writeRegister(const uint32_t REG_ID,
-                                         uint8_t* payloadBuf,
+                                         const uint8_t* payloadBuf,
                                          const uint32_t PAYLOAD_SIZE);
 
     bool isInit = false;
