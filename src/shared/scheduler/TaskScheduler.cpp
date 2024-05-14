@@ -23,6 +23,7 @@
 #include "TaskScheduler.h"
 
 #include <diagnostic/SkywardStack.h>
+#include <utils/TimeUtils.h>
 
 #include <algorithm>
 
@@ -54,6 +55,12 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
 size_t TaskScheduler::addTask(function_t function, uint32_t period,
                               Policy policy, int64_t startTick)
 {
+    return nanoAddTask(function, msToNs(period), policy, msToNs(startTick));
+}
+
+size_t TaskScheduler::nanoAddTask(function_t function, uint32_t period,
+                                  Policy policy, int64_t startTime)
+{
     // In the case of early returns, using RAII mutex wrappers to unlock the
     // mutex would cause it to be locked and unlocked one more time before
     // returning, because of the destructor being called on the Unlock object
@@ -71,18 +78,18 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
 
     if (policy == Policy::ONE_SHOT)
     {
-        startTick += period;
+        startTime += period;
     }
 
     // Insert a new task with the given parameters
-    tasks.emplace_back(function, period, policy, startTick);
+    tasks.emplace_back(function, period, policy, startTime);
     size_t id = tasks.size() - 1;
 
     // Only add the task to the agenda if the scheduler is running
     // Otherwise, the agenda will be populated when the scheduler is started
     if (isRunning())
     {
-        agenda.emplace(id, startTick);
+        agenda.emplace(id, startTime);
     }
     condvar.broadcast();  // Signals the run thread
 
@@ -114,7 +121,7 @@ void TaskScheduler::enableTask(size_t id)
     }
 
     task.enabled = true;
-    agenda.emplace(id, Kernel::getOldTick() + task.period);
+    agenda.emplace(id, miosix::getTime() + task.period);
     mutex.unlock();
 }
 
@@ -178,21 +185,25 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
 void TaskScheduler::populateAgenda()
 {
-    int64_t currentTick = Kernel::getOldTick();
+    int64_t currentTime = miosix::getTime();
 
     for (size_t id = 1; id < tasks.size(); id++)
     {
         Task& task = tasks[id];
 
-        int64_t nextTick = task.startTick;
-        // Normalize the tasks start time if they precede the current tick
-        if (nextTick < currentTick)
+        int64_t startTime = task.startTime;
+        int64_t nextTime  = startTime;
+
+        // Normalize the tasks start time if they precede the current time
+        if (startTime < currentTime)
         {
-            nextTick +=
-                ((currentTick - nextTick) / task.period + 1) * task.period;
+            int64_t timeSinceStart = currentTime - startTime;
+            int64_t periodsMissed  = timeSinceStart / task.period;
+            int64_t periodsToSkip  = periodsMissed + 1;
+            nextTime += periodsToSkip * task.period;
         }
 
-        agenda.emplace(id, nextTick);
+        agenda.emplace(id, nextTime);
     }
 }
 
@@ -213,18 +224,18 @@ void TaskScheduler::run()
             return;
         }
 
-        int64_t startTick = Kernel::getOldTick();
+        int64_t startTime = miosix::getTime();
         Event nextEvent   = agenda.top();
         Task& nextTask    = tasks[nextEvent.taskId];
 
         // If the task has the SKIP policy and its execution was missed, we need
         // to move it forward to match the period
-        if (nextEvent.nextTick < startTick && nextTask.policy == Policy::SKIP)
+        if (nextEvent.nextTime < startTime && nextTask.policy == Policy::SKIP)
         {
             agenda.pop();
-            enqueue(nextEvent, startTick);
+            enqueue(nextEvent, startTime);
         }
-        else if (nextEvent.nextTick <= startTick)
+        else if (nextEvent.nextTime <= startTime)
         {
             agenda.pop();
 
@@ -246,42 +257,42 @@ void TaskScheduler::run()
                 }
 
                 // Enqueue only on a valid task
-                updateStats(nextEvent, startTick, Kernel::getOldTick());
-                enqueue(nextEvent, startTick);
+                updateStats(nextEvent, startTime, miosix::getTime());
+                enqueue(nextEvent, startTime);
             }
         }
         else
         {
             Unlock<FastMutex> unlock(lock);
 
-            Kernel::Thread::sleepUntil(nextEvent.nextTick);
+            Thread::nanoSleepUntil(nextEvent.nextTime);
         }
     }
 }
 
-void TaskScheduler::updateStats(const Event& event, int64_t startTick,
-                                int64_t endTick)
+void TaskScheduler::updateStats(const Event& event, int64_t startTime,
+                                int64_t endTime)
 {
     Task& task = tasks[event.taskId];
 
     // Activation stats
-    float activationError = startTick - event.nextTick;
-    task.activationStats.add(activationError);
+    float activationError = startTime - event.nextTime;
+    task.activationStats.add(activationError / Constants::NS_IN_MS);
 
     // Period stats
     int64_t lastCall = task.lastCall;
     if (lastCall >= 0)
-        task.periodStats.add((startTick - lastCall));
+        task.periodStats.add((startTime - lastCall) / Constants::NS_IN_MS);
 
-    // Update the last call tick to the current start tick for the next
+    // Update the last call time to the current start time for the next
     // iteration
-    task.lastCall = startTick;
+    task.lastCall = startTime;
 
     // Workload stats
-    task.workloadStats.add(endTick - startTick);
+    task.workloadStats.add((endTime - startTime) / Constants::NS_IN_MS);
 }
 
-void TaskScheduler::enqueue(Event event, int64_t startTick)
+void TaskScheduler::enqueue(Event event, int64_t startTime)
 {
     Task& task = tasks[event.taskId];
     switch (task.policy)
@@ -292,21 +303,26 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
             task.enabled = false;
             return;
         case Policy::SKIP:
-            // Updated the missed events count
-            task.missedEvents += (startTick - event.nextTick) / task.period;
+        {
+            // Compute the number of missed periods since the last execution
+            int64_t timeSinceLastExec = startTime - event.nextTime;
+            int64_t periodsMissed     = timeSinceLastExec / task.period;
 
-            // Compute the number of periods between the tick the event should
-            // have been run and the tick it actually run. Than adds 1 and
-            // multiply the period to get the next execution tick still aligned
-            // to the original one.
-            // E.g. If a task has to run once every 2 ticks and start at tick 0
-            // but for whatever reason the first execution is at tick 3, then
-            // the next execution will be at tick 4.
-            event.nextTick +=
-                ((startTick - event.nextTick) / task.period + 1) * task.period;
+            // Schedule the task executon to the next aligned period, by
+            // skipping over the missed ones
+            // E.g. 3 periods have passed since last execution, the next viable
+            // schedule time is after 4 periods
+            int64_t periodsToSkip = periodsMissed + 1;
+            // Update the task to run at the next viable timeslot, while still
+            // being aligned to the original one
+            event.nextTime += periodsToSkip * task.period;
+
+            // Updated the missed events count
+            task.missedEvents += static_cast<uint32_t>(periodsMissed);
             break;
+        }
         case Policy::RECOVER:
-            event.nextTick += task.period;
+            event.nextTime += task.period;
             break;
     }
 
@@ -316,15 +332,15 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
 }
 
 TaskScheduler::Task::Task()
-    : function(nullptr), period(0), startTick(0), enabled(false),
+    : function(nullptr), period(0), startTime(0), enabled(false),
       policy(Policy::SKIP), lastCall(-1), activationStats(), periodStats(),
       workloadStats(), missedEvents(0), failedEvents(0)
 {
 }
 
-TaskScheduler::Task::Task(function_t function, uint32_t period, Policy policy,
-                          int64_t startTick)
-    : function(function), period(period), startTick(startTick), enabled(true),
+TaskScheduler::Task::Task(function_t function, int64_t period, Policy policy,
+                          int64_t startTime)
+    : function(function), period(period), startTime(startTime), enabled(true),
       policy(policy), lastCall(-1), activationStats(), periodStats(),
       workloadStats(), missedEvents(0), failedEvents(0)
 {
