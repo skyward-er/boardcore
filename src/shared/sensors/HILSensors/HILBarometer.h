@@ -26,11 +26,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct BarometerSimulatorData
+namespace Boardcore
 {
-    float measures[N_DATA];
-};
 
 /**
  * @brief fake barometer sensor used for the simulation.
@@ -41,22 +38,20 @@ struct BarometerSimulatorData
  */
 template <int N_DATA>
 class HILBarometer
-    : public HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>
+    : public Mock::HILSensor<PressureData, BarometerSimulatorData<N_DATA>>
 {
-    using Base =
-        HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>;
+    using Base = Mock::HILSensor<PressureData, BarometerSimulatorData<N_DATA>>;
 
 public:
     explicit HILBarometer(const BarometerSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>(
-              sensorData)
+        : Base(sensorData)
     {
     }
 
 protected:
-    HILBarometerData updateData() override
+    PressureData updateData() override
     {
-        HILBarometerData tempData;
+        PressureData tempData;
         {
             miosix::PauseKernelLock pkLock;
             tempData.pressure = Base::sensorData->measures[Base::sampleCounter];
@@ -67,3 +62,5 @@ protected:
         return tempData;
     }
 };
+
+}  // namespace Boardcore

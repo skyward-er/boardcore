@@ -26,11 +26,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct MagnetometerSimulatorData
+namespace Boardcore
 {
-    float measures[N_DATA][3];
-};
 
 /**
  * @brief fake magnetometer sensor used for the simulation.
@@ -41,24 +38,23 @@ struct MagnetometerSimulatorData
  */
 template <int N_DATA>
 class HILMagnetometer
-    : public HILSensor<HILMagnetometerData, MagnetometerSimulatorData<N_DATA>,
-                       N_DATA>
+    : public Mock::HILSensor<MagnetometerData,
+                             MagnetometerSimulatorData<N_DATA>>
 {
-    using Base = HILSensor<HILMagnetometerData,
-                           MagnetometerSimulatorData<N_DATA>, N_DATA>;
+    using Base =
+        Mock::HILSensor<MagnetometerData, MagnetometerSimulatorData<N_DATA>>;
 
 public:
     explicit HILMagnetometer(
         const MagnetometerSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILMagnetometerData, MagnetometerSimulatorData<N_DATA>,
-                    N_DATA>(sensorData)
+        : Base(sensorData)
     {
     }
 
 protected:
-    HILMagnetometerData updateData() override
+    MagnetometerData updateData() override
     {
-        HILMagnetometerData tempData;
+        MagnetometerData tempData;
         {
             miosix::PauseKernelLock pkLock;
             tempData.magneticFieldX =
@@ -74,3 +70,4 @@ protected:
         return tempData;
     }
 };
+}  // namespace Boardcore

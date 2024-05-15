@@ -26,11 +26,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct AccelerometerSimulatorData
+namespace Boardcore
 {
-    float measures[N_DATA][3];
-};
 
 /**
  * @brief fake accelerometer sensor used for the simulation.
@@ -41,24 +38,23 @@ struct AccelerometerSimulatorData
  */
 template <int N_DATA>
 class HILAccelerometer
-    : public HILSensor<HILAccelerometerData, AccelerometerSimulatorData<N_DATA>,
-                       N_DATA>
+    : public Mock::HILSensor<AccelerometerData,
+                             AccelerometerSimulatorData<N_DATA>>
 {
-    using Base = HILSensor<HILAccelerometerData,
-                           AccelerometerSimulatorData<N_DATA>, N_DATA>;
+    using Base =
+        Mock::HILSensor<AccelerometerData, AccelerometerSimulatorData<N_DATA>>;
 
 public:
     explicit HILAccelerometer(
         const AccelerometerSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILAccelerometerData, AccelerometerSimulatorData<N_DATA>,
-                    N_DATA>(sensorData)
+        : Base(sensorData)
     {
     }
 
 protected:
-    HILAccelerometerData updateData() override
+    AccelerometerData updateData() override
     {
-        HILAccelerometerData tempData;
+        AccelerometerData tempData;
         {
             miosix::PauseKernelLock pkLock;
             tempData.accelerationX =
@@ -74,3 +70,4 @@ protected:
         return tempData;
     }
 };
+}  // namespace Boardcore

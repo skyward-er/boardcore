@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /**
  * @brief Interface in order to reset the parameters of the SimSensor even if
  * they are templated on different SimSensorData
@@ -40,3 +43,5 @@ public:
      */
     virtual void resetSampleCounter() = 0;
 };
+
+}  // namespace Boardcore

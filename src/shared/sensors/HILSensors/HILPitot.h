@@ -29,12 +29,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct PitotSimulatorData
+namespace Boardcore
 {
-    float deltaP[N_DATA];
-    float staticPressure[N_DATA];
-};
 
 /**
  * @brief fake pitot (differential pressure) sensor used for the simulation.
@@ -44,15 +40,13 @@ struct PitotSimulatorData
  * ones, taking their data from the data received from a simulator.
  */
 template <int N_DATA>
-class HILPitot
-    : public HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>
+class HILPitot : public Mock::HILSensor<PitotData, PitotSimulatorData<N_DATA>>
 {
-    using Base = HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>;
+    using Base = Mock::HILSensor<PitotData, PitotSimulatorData<N_DATA>>;
 
 public:
     explicit HILPitot(const PitotSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILPitotData, PitotSimulatorData<N_DATA>, N_DATA>(
-              sensorData),
+        : Base(sensorData),
           pitot(
               [&]()
               {
@@ -76,9 +70,9 @@ public:
     }
 
 protected:
-    HILPitotData updateData() override
+    PitotData updateData() override
     {
-        HILPitotData tempData;
+        PitotData tempData;
         pitot.sample();
         {
             miosix::PauseKernelLock pkLock;
@@ -94,3 +88,4 @@ protected:
 
     Boardcore::Pitot pitot;
 };
+}  // namespace Boardcore

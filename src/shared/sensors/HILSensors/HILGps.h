@@ -28,14 +28,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct GPSSimulatorData
+namespace Boardcore
 {
-    float positionMeasures[N_DATA][3];
-    float velocityMeasures[N_DATA][3];
-    float fix;
-    float num_satellites;
-};
 
 /**
  * @brief fake gps sensor used for the HILulation.
@@ -45,20 +39,20 @@ struct GPSSimulatorData
  * ones, taking their data from the data received from a HILulator.
  */
 template <int N_DATA>
-class HILGps : public HILSensor<HILGpsData, GPSSimulatorData<N_DATA>, N_DATA>
+class HILGps : public Mock::HILSensor<GPSData, GPSSimulatorData<N_DATA>>
 {
-    using Base = HILSensor<HILGpsData, GPSSimulatorData<N_DATA>, N_DATA>;
+    using Base = Mock::HILSensor<GPSData, GPSSimulatorData<N_DATA>>;
 
 public:
     explicit HILGps(const GPSSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILGpsData, GPSSimulatorData<N_DATA>, N_DATA>(sensorData)
+        : Base(sensorData)
     {
     }
 
 protected:
-    HILGpsData updateData() override
+    GPSData updateData() override
     {
-        HILGpsData tempData;
+        GPSData tempData;
         {
             miosix::PauseKernelLock pkLock;
 
@@ -92,3 +86,4 @@ protected:
         return tempData;
     }
 };
+}  // namespace Boardcore

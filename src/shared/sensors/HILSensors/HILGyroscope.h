@@ -26,12 +26,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct GyroscopeSimulatorData
+namespace Boardcore
 {
-    float measures[N_DATA][3];
-};
-
 /**
  * @brief fake gyroscope sensor used for the simulation.
  *
@@ -41,22 +37,20 @@ struct GyroscopeSimulatorData
  */
 template <int N_DATA>
 class HILGyroscope
-    : public HILSensor<HILGyroscopeData, GyroscopeSimulatorData<N_DATA>, N_DATA>
+    : public Mock::HILSensor<GyroscopeData, GyroscopeSimulatorData<N_DATA>>
 {
-    using Base =
-        HILSensor<HILGyroscopeData, GyroscopeSimulatorData<N_DATA>, N_DATA>;
+    using Base = Mock::HILSensor<GyroscopeData, GyroscopeSimulatorData<N_DATA>>;
 
 public:
     explicit HILGyroscope(const GyroscopeSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILGyroscopeData, GyroscopeSimulatorData<N_DATA>, N_DATA>(
-              sensorData)
+        : Base(sensorData)
     {
     }
 
 protected:
-    HILGyroscopeData updateData() override
+    GyroscopeData updateData() override
     {
-        HILGyroscopeData tempData;
+        GyroscopeData tempData;
         {
             miosix::PauseKernelLock pkLock;
             tempData.angularSpeedX =
@@ -72,3 +66,4 @@ protected:
         return tempData;
     }
 };
+}  // namespace Boardcore

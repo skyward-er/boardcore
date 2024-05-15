@@ -27,9 +27,13 @@
 #include "HILTimestampManagement.h"
 #include "drivers/timer/TimestampTimer.h"
 #include "hil/HIL.h"
-#include "sensors/HILSensors/HILSensorsData.h"
 #include "sensors/Sensor.h"
 #include "sensors/SensorData.h"
+
+namespace Boardcore
+{
+namespace Mock
+{
 
 /**
  * @brief Fake sensor base used for the simulation. Every sensor for the
@@ -39,10 +43,12 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-template <typename HILSensorData, typename SimulatorSensorData, int N_DATA>
+template <typename DataType, typename SimulatorData>
 class HILSensor : public virtual HILTimestampManagement,
-                  public virtual Boardcore::Sensor<HILSensorData>
+                  public virtual Boardcore::Sensor<DataType>
 {
+    static_assert(SimulatorData::NDATA > 0, "Incorrect SimulatorData size");
+
 public:
     /**
      * @brief constructor of the fake sensor used for the simulation.
@@ -52,8 +58,7 @@ public:
      * @param addResetSampleCounter should be something like:
      * Boardcore::ModuleManager::getInstance().get<HIL>()->simulator->addResetSampleCounter()
      */
-    explicit HILSensor(const SimulatorSensorData *sensorData)
-        : sensorData(sensorData)
+    explicit HILSensor(const SimulatorData *sensorData) : sensorData(sensorData)
     {
         /* Registers the sensor on the HILTransceiver to be notified when a
          * new packet of simulated data arrives */
@@ -103,12 +108,12 @@ protected:
      * Takes the next unread sample available, continues sending the last sample
      * with the old timestamp if we already read all the samples.
      */
-    HILSensorData sampleImpl() override
+    DataType sampleImpl() override
     {
         if (initialized)
         {
             /* updates the last_sensor only if there is still data to be read */
-            if (sampleCounter >= N_DATA)
+            if (sampleCounter >= SimulatorData::NDATA)
             {
                 this->lastError = Boardcore::SensorErrors::NO_NEW_DATA;
                 LOG_WARN(logger, "{}: No new data", typeid(this).name());
@@ -146,11 +151,13 @@ protected:
      * WARNING: This method should call **AT THE END** the updateTimestamp
      * method.
      */
-    virtual HILSensorData updateData() = 0;
+    virtual DataType updateData() = 0;
 
     bool initialized  = false;
-    int sampleCounter = 0; /**< counter of the next sample to take */
-    const SimulatorSensorData
-        *sensorData; /**< reference to the Buffer structure */
+    int sampleCounter = 0;           /**< counter of the next sample to take */
+    const SimulatorData *sensorData; /**< reference to the Buffer structure */
     Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("HILSensor");
 };
+
+}  // namespace Mock
+}  // namespace Boardcore

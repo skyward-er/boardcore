@@ -26,11 +26,8 @@
 
 #include "HILSensor.h"
 
-template <int N_DATA>
-struct TemperatureSimulatorData
+namespace Boardcore
 {
-    float measures[N_DATA];
-};
 
 /**
  * @brief fake barometer sensor used for the simulation.
@@ -41,22 +38,21 @@ struct TemperatureSimulatorData
  */
 template <int N_DATA>
 class HILTemperature
-    : public HILSensor<HILTempData, TemperatureSimulatorData<N_DATA>, N_DATA>
+    : public Mock::HILSensor<TemperatureData, TemperatureSimulatorData<N_DATA>>
 {
     using Base =
-        HILSensor<HILTempData, TemperatureSimulatorData<N_DATA>, N_DATA>;
+        Mock::HILSensor<TemperatureData, TemperatureSimulatorData<N_DATA>>;
 
 public:
     explicit HILTemperature(const TemperatureSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILTempData, TemperatureSimulatorData<N_DATA>, N_DATA>(
-              sensorData)
+        : Base(sensorData)
     {
     }
 
 protected:
-    HILTempData updateData() override
+    TemperatureData updateData() override
     {
-        HILTempData tempData;
+        TemperatureData tempData;
         {
             miosix::PauseKernelLock pkLock;
             tempData.temperature =
@@ -68,3 +64,4 @@ protected:
         return tempData;
     }
 };
+}  // namespace Boardcore
