@@ -561,7 +561,7 @@ bool qspi_flash::sector_erase(uint32_t address)
     {
         Thread::sleep(1);
         dt = dt + 1;
-        if (dt >= 260)  // max sector erase cycle time = 240 ms
+        if (dt >= 1000)  // max sector erase cycle time = 240 ms
         {
             software_reset();  // device forced reset to default status
             return false;
@@ -926,12 +926,12 @@ bool qspi_flash::check_program()
     return reg & (1 << 5) ? false : true;
 }
 
-bool qspi_flash::read_sector(std::vector<uint8_t>& vector, uint32_t sector_num)
+bool qspi_flash::read_sector(uint8_t* vector, const size_t size,
+                             uint32_t sector_num)
 {
 
-    // read an entire sector of the flash and then copy it into a std::vector
-    // that will modify the vector and his elements.
-    // that fix size and capacity of the vector to SECTOR_SIZE.
+    // read an entire sector of the flash and then copy it into a vector whose
+    // size is equal or greater than the size of a sector.
 
     // check if memory has been initialised
     if (initialised == false)
@@ -945,19 +945,10 @@ bool qspi_flash::read_sector(std::vector<uint8_t>& vector, uint32_t sector_num)
         return false;
     }
 
-    // reserve enough bytes to retain a sector of the flash, also
-    // make sure that size parameter of vector match with the capacity.
-    if (vector.capacity() < SECTOR_SIZE)
+    // vector's size must be large enough for a sector
+    if (size < SECTOR_SIZE)
     {
-        vector.reserve(SECTOR_SIZE);
-        vector.resize(vector.capacity());
-    }
-
-    // if vector capacity is larger than the size of a sector
-    if (vector.capacity() >= SECTOR_SIZE)
-    {
-        vector.resize(SECTOR_SIZE);
-        vector.shrink_to_fit();
+        return false;
     }
 
     // computing correct address of the sector
@@ -965,7 +956,7 @@ bool qspi_flash::read_sector(std::vector<uint8_t>& vector, uint32_t sector_num)
 
     // read the sector and copy its data to vector
     uint32_t index = 0;
-    for (index = 0; index < vector.capacity(); index++)
+    for (index = 0; index < SECTOR_SIZE; index++)
     {
         vector[index] = read_byte(addr);
         addr++;
@@ -974,13 +965,14 @@ bool qspi_flash::read_sector(std::vector<uint8_t>& vector, uint32_t sector_num)
     return true;
 }
 
-bool qspi_flash::page_program(std::vector<uint8_t>& vector,
+bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
                               uint32_t start_address, bool verify)
 {
 
-    // program a vector (max size = 256 bytes) starting by a specific page
-    // address. WEL bit is set to zero automatically after the program
-    // operation. the address specified must be a starting
+    // program a vector (max size = 256 bytes) on flash memory starting by a
+    // specific page address.
+    // WEL bit is set to zero automatically after the program
+    // operation. The address specified must be a starting
     // address of a page !!!!
 
     // check if memory has been initialised
@@ -997,12 +989,12 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     if (start_address >= MEMORY_SIZE)
         return false;
 
-    // empty vector
-    if (vector.size() == 0)
+    // empty vector or null pointer
+    if (size == 0 || vector == nullptr)
         return false;
 
     // vector bigger than a page size
-    if (vector.size() > PAGE_SIZE)
+    if (size > PAGE_SIZE)
         return false;
 
     // enable data writing
@@ -1024,14 +1016,14 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     QUADSPI->CCR |= Commands::PAGE_PROGRAM;
 
     // set number of bytes to be transferred - 1
-    QUADSPI->DLR = vector.size() - 1;
+    QUADSPI->DLR = size - 1;
 
     // adding starting address
     QUADSPI->AR = start_address;
 
     // load data vector into the QUADSPI FIFO (buffer)
     uint16_t i = 0;
-    for (i = 0; i < vector.size(); i++)
+    for (i = 0; i < size; i++)
     {
 
         // if FIFO is full - wait till it has at least a byte available.
@@ -1058,7 +1050,7 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     {
         Thread::sleep(1);
         dt = dt + 1;
-        if (dt >= 20)  // max page program cycle time = 10ms
+        if (dt >= 50)  // max page program cycle time = 10ms
         {
             software_reset();  // device forced reset to default status
             return false;
@@ -1068,9 +1060,8 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     // if verify flag is set, double check on written data
     if (verify == true)
     {
-        for (i = 0; i < vector.size(); i++)
+        for (i = 0; i < size; i++)
         {
-
             if (read_byte(start_address + i) != vector[i])
                 return false;
         }
@@ -1080,11 +1071,9 @@ bool qspi_flash::page_program(std::vector<uint8_t>& vector,
     return check_program();
 }
 
-bool qspi_flash::write_vector(std::vector<uint8_t>& vector, uint32_t sector_num,
-                              bool verify_write)
+bool qspi_flash::write_vector(const uint8_t* vector, const size_t size,
+                              uint32_t sector_num, bool verify_write)
 {
-
-    // store a vector of bytes into the flash memory
 
     // check if memory has been initialised
     if (initialised == false)
@@ -1093,72 +1082,81 @@ bool qspi_flash::write_vector(std::vector<uint8_t>& vector, uint32_t sector_num,
     }
 
     // wrong sector_num specified
-    if (sector_num < 0 || sector_num >= SECTORS_NUM)
+    if (sector_num >= SECTORS_NUM)
     {
         return false;
     }
 
-    // if the vector doesn't have elements
-    if (vector.size() == 0 || vector.capacity() == 0)
+    // check that vector is valid and not empty
+    if ((vector == nullptr) || size == 0)
     {
         return false;
     }
 
     // if the vector is bigger than the flash capacity
-    if (vector.size() > MEMORY_SIZE)
+    if (size > MEMORY_SIZE)
+    {
         return false;
+    }
 
     // if the whole vector is bigger than the rest of sectors starting by
     // sector_num
-    if (vector.size() > (SECTOR_SIZE * (SECTORS_NUM - sector_num)))
+    if (size > (SECTOR_SIZE * (SECTORS_NUM - sector_num)))
+    {
         return false;
+    }
 
     // compute starting address
     uint32_t const start_address = SECTOR_SIZE * sector_num;
 
     // compute number of sectors needed to store the vector, then add one more
     // to store the last part of vector
-    uint32_t sectors_needed = vector.size() / SECTOR_SIZE;
-    if ((vector.size() % SECTOR_SIZE) != 0)
+    uint32_t sectors_needed = size / SECTOR_SIZE;
+    if ((size % SECTOR_SIZE) != 0)
+    {
         sectors_needed += 1;
+    }
 
     // erase all sectors needed to store the entire vector
     uint32_t sector_index = 0;
     for (sector_index = 0; sector_index < sectors_needed; sector_index++)
     {
         if (sector_erase(SECTOR_SIZE * (sector_num + sector_index)) == false)
+        {
             return false;
+        }
     }
 
     // compute the number of pages needed to store the entire vector, then add
-    // one more to store the vector last part.
-    uint32_t pages_needed = vector.size() / PAGE_SIZE;
-    if ((vector.size() % PAGE_SIZE) != 0)
-        pages_needed += 1;
-
-    // create a copy vector with capacity as a page size
-    std::vector<uint8_t> v;
-    v.reserve(PAGE_SIZE);
-    v.resize(0);
-
-    // for every page needed, first copy data bytes from "vector" to a copy
-    // vector "v" and then program the page.
-    uint32_t page = 0;
-    uint32_t elem = 0;
-    for (page = 0; page < pages_needed; page++)
+    // one more to store the vector last part
+    uint32_t pages_needed = size / PAGE_SIZE;
+    if ((size % PAGE_SIZE) != 0)
     {
-        v.resize(0);
-        uint32_t start_elem = page * PAGE_SIZE;
-        // copying 256 bytes from "vector" to "v"
-        for (elem = start_elem;
-             (elem < start_elem + PAGE_SIZE) && (elem < vector.size()); elem++)
-        {
-            v.push_back(vector[elem]);
-        }
+        pages_needed += 1;
+    }
 
-        // program the page stored into "v" on flash
-        if (page_program(v, start_address + (page * PAGE_SIZE), false) == false)
+    // split vector in pages and then program them on flash but the last one
+    uint32_t page = 0;
+    for (page = 0; page < pages_needed - 1; page++)
+    {
+        if (page_program(vector + (page * PAGE_SIZE), PAGE_SIZE,
+                         start_address + (page * PAGE_SIZE), false) == false)
             return false;
+    }
+
+    // program the last page, cause probably it has a different size
+    // than others.
+    /*
+     *  a little explanation of parameters:
+     *  1 - make the pointer point to the start byte of last page.
+     *  2 - is the size of last page which store the vector final part.
+     *  3 - calculate the start address of last page.
+     */
+    if (page_program(
+            vector + ((pages_needed - 1) * PAGE_SIZE), size % PAGE_SIZE,
+            start_address + ((pages_needed - 1) * PAGE_SIZE), false) == false)
+    {
+        return false;
     }
 
     // if verify_write is true:
@@ -1166,10 +1164,9 @@ bool qspi_flash::write_vector(std::vector<uint8_t>& vector, uint32_t sector_num,
     // vector.
     if (verify_write)
     {
-
         uint32_t index = 0;
         uint32_t addr  = start_address;
-        for (index = 0; index < vector.size(); index++)
+        for (index = 0; index < size; index++)
         {
             if (read_byte(addr) != vector[index])
             {
