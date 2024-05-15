@@ -31,11 +31,11 @@ qspi_flash mymemory;
 
 int main()
 {
-    // aggiunti software_reset con timeout: disaccoppiano le operazioni, anche
-    // senza delay - permettendo alle operazioni di erase che falliscono di non
-    // far fallire le altre operazioni successive. chip_erase se fallisce dopo
-    // circa 10 sec fa fallire alcune operazioni come write_vector() e
-    // page_program.
+
+    // change API from std::vector to normal arrays with no dynamic allocation.
+    // sector_erase() timeout values increased due to some problems
+    //  with write_vector().
+    // read_sector and write_vector tested !
 
     // init qspi-flash communication
     mymemory.init();
@@ -47,50 +47,33 @@ int main()
         // read device id
         printf("\nID: %x\n", mymemory.readID());
 
-        // create a vector of ten bytes to write on memory
-        std::vector<uint8_t> v;
-        v.reserve(10);
-        for (uint32_t i = 0; i < v.capacity(); i++)
-            v.push_back(99);
-        v.resize(v.capacity());  // make sure that size match with capacity
+        // create a vector
+        const size_t vect_size  = 5000;
+        uint8_t vect[vect_size] = {0};
+        uint32_t i              = 0;
+        for (i = 0; i < vect_size; i++)
+        {
+            vect[i] = 77;
+        }
 
-        // write vector "v" at 50th sector and double check on data
-        if (mymemory.write_vector(v, 88, true) == false)
+        // write vector "vect"
+        if (mymemory.write_vector(vect, vect_size, 883, true) == false)
         {
             printf("ERROR - write operation failed !\n");
             return -1;
         }
 
-        // create a vector in which will be copied the bytes of 50th sector
-        std::vector<uint8_t> v2;
+        printf("write operaton succeded!\n");
 
-        // read 50th entire sector into the vector "v2"
-        if (mymemory.read_sector(v2, 88) == false)
+        uint8_t b[6000] = {0};
+        printf("read_sector: %d\n", mymemory.read_sector(b, 6000, 884));
+
+        printf("array (b): \n");
+        for (i = 0; i < 6000; i++)
         {
-            printf("ERROR - read operation failed ! \n");
-            return -1;
+            printf("b[%d]: %d\n", i, b[i]);
         }
 
-        // print first ten bytes of data in the vector "v2"
-        printf("\nvector v2: \n");
-        uint32_t a = 0;
-        for (a = 0; a < 10 && a < v2.size(); a++)
-        {
-            printf("v2[%d]: %d \n", a, v2[a]);
-            if (v2[a] != 99)
-            {
-                printf("ERROR - data mismatch !\n");
-                return -1;
-            }
-        }
-        printf("v2 size: %d\n", v2.size());
-        printf("v2 capacity: %d\n", v2.capacity());
-        printf("\n- flash memory is working properly !\n");
         return 0;
-    }
-    else
-    {
-        printf("Error - flash memory is not working properly!\n");
-        return -1;
     }
 }

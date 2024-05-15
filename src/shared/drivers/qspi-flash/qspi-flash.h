@@ -138,7 +138,7 @@ public:
      * will be memorized on consecutive sectors of the memory, starting by
      * sector_num
      *
-     * @param vector std::vector to be saved in memory
+     * @param vector array to be saved in memory
      * @param sector_num number of the starting sector [0 - 1024]
      * @param verify_write double check on saved data flag,
      * true  = double check enabled,
@@ -151,37 +151,40 @@ public:
      *
      * @return true/false - if the whole operation has been successful.
      */
-    bool write_vector(std::vector<uint8_t>& vector, uint32_t sector_num,
-                      bool verify_write);
+    bool write_vector(const uint8_t* vector, const size_t size,
+                      uint32_t sector_num, bool verify_write);
 
     /**
-     * @brief copy a whole sector (4KB) from the flash to an std::vector.
-     * @param vector reference of the vector which will store the sector.
+     * @brief copy a whole sector (4KB) from flash into a vector whose size is
+     * greater or equal to the size of a sector in memory.
+     * @param vector array which will store the sector.
      * @param sector_num number of the sector which has to be copied into the
      * vector [0 - 1024]
      * @return true/false - if the operation has been successful.
-     * @warning this function modify the vector passed! it will also fix its
-     * size and capacity to the size of an entire sector of the flash (4096
-     * bytes).
+     * @warning the vector size must be enough to contain a whole sector!
+     * @warning This function modify the vector passed!
      */
-    bool read_sector(std::vector<uint8_t>& vector, uint32_t sector_num);
+    bool read_sector(uint8_t* vector, const size_t size, uint32_t sector_num);
 
     /**
-     * @brief program a page by setting (256 byte) at the starting address
-     * specified.
+     * @brief program a page (256 bytes) on memory at the starting address
+     * specified. if vector size is smaller than a whole page size there will be
+     * no effects on other bytes of the page.
      * @param vector vector of data bytes to be programmed - its size must not
      * be bigger than a page size (256 byte).
      * @param start_address starting address of the page to be programmed. must
-     * be a starting address.
+     * be a starting address!
      * @param verify double check on programmed data. true = enabled, false =
      * disabled.
      * @return true/false - if the operation has been successful.
      * @warning start_address must be a starting address of a page!
-     * if vector size is smaller than a page size there will be no effects on
-     * other bytes of the page.
+     * This function is only intended to program some bytes on flash by
+     * resetting some bits to "0". If you want to store a page of data you'll
+     * need to erase the sector associated with this page and then reprogram the
+     * page.
      */
-    bool page_program(std::vector<uint8_t>& vector, uint32_t start_address,
-                      bool verify);
+    bool page_program(const uint8_t* vector, const size_t size,
+                      uint32_t start_address, bool verify);
 
     /**
      * @brief erase the entire memory chip. since this operation is not so
@@ -229,6 +232,9 @@ public:
      * @param verify double check on programmed byte. true = enabled, false =
      * disabled.
      * @return true/false - if the operation has been successful
+     * @warning This function is only intended to program some bytes on flash by
+     * resetting some bits to "0". If you want to store a byte of data, you'll
+     * need to perform an erase operation and then program the byte.
      */
     bool byte_program(uint8_t data, uint32_t address, bool verify);
 
