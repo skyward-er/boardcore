@@ -27,15 +27,12 @@
  * operations.
  */
 
-qspi_flash mymemory;
+qspi_flash mymemory(QUADSPI);
 
 int main()
 {
 
-    // change API from std::vector to normal arrays with no dynamic allocation.
-    // sector_erase() timeout values increased due to some problems
-    //  with write_vector().
-    // read_sector and write_vector tested !
+    // cambiare a camel case
 
     // init qspi-flash communication
     mymemory.init();
@@ -57,7 +54,7 @@ int main()
         }
 
         // write vector "vect"
-        if (mymemory.write_vector(vect, vect_size, 883, true) == false)
+        if (mymemory.write(vect, vect_size, 883, true) == false)
         {
             printf("ERROR - write operation failed !\n");
             return -1;
