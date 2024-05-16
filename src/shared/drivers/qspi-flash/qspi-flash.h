@@ -79,28 +79,6 @@ static const uint32_t MEMORY_SIZE = BLOCK64_SIZE * BLOCK64_NUM;  // about 4 MB
 
 };  // namespace FlashMemory
 
-// QUADSPI peripheral utility-methods
-namespace QSPI
-{
-
-// enable/disable quadspi
-void enable();
-void disable();
-
-// init peripheral clock and GPIO
-void init();
-
-// abort any ongoing operation and reset configuration register (CCR)
-void abort_reset();
-
-// wait till the current operation is ended
-void waitBusy();
-
-// wait till all the expected bytes have been transferred
-void waitTransfer();
-
-}  // namespace QSPI
-
 class qspi_flash
 {
 
@@ -108,7 +86,7 @@ public:
     /**
      * @brief QUADSPI_FLASH class constructor
      */
-    qspi_flash();
+    qspi_flash(QUADSPI_TypeDef* qspi);
 
     /**
      * @brief Initialise QUADSPI peripheral in order to communicate with the
@@ -133,7 +111,7 @@ public:
     bool test();
 
     /**
-     * @brief write an entire vector on the flash, starting by a specific
+     * @brief write an entire vector on flash, starting by a specific
      * sector. if vector size exceed the size of a single sector, the vector
      * will be memorized on consecutive sectors of the memory, starting by
      * sector_num
@@ -151,8 +129,8 @@ public:
      *
      * @return true/false - if the whole operation has been successful.
      */
-    bool write_vector(const uint8_t* vector, const size_t size,
-                      uint32_t sector_num, bool verify_write);
+    bool write(const uint8_t* vector, const size_t size, uint32_t sector_num,
+               bool verify_write);
 
     /**
      * @brief copy a whole sector (4KB) from flash into a vector whose size is
@@ -254,6 +232,9 @@ public:
     bool isInProgress();
 
 private:
+    // pointer to access low-level QUADSPI peripheral registers
+    QUADSPI_TypeDef* Qspi;
+
     /**
      * @brief check result of last erase operation
      * @return true = success / false = fail
@@ -295,6 +276,24 @@ private:
      * @return security register value (8 bit)
      */
     uint8_t read_security_reg();
+
+    /* QuadSpi peripheral utility methods */
+    // enable QUADSPI peripheral
+    void enable();
+
+    // disable QUADSPI peripheral
+    void disable();
+
+    /* abort any ongoing operation and reset current
+    configuration of QUADSPI peripheral */
+    void abort_reset();
+
+    // wait till the current operation on QUADSPI peripheral is ended
+    void waitBusy();
+
+    // wait till all the expected bytes have been transferred by QUADSPI
+    // peripheral
+    void waitTransfer();
 
     // flag device initialised
     bool initialised = false;

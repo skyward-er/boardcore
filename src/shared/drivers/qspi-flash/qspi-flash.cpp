@@ -25,52 +25,19 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace FlashMemory;
 
-void QSPI::enable() { QUADSPI->CR |= QUADSPI_CR_EN; }
+void qspi_flash::enable() { Qspi->CR |= QUADSPI_CR_EN; }
 
-void QSPI::disable() { QUADSPI->CR &= ~QUADSPI_CR_EN; }
+void qspi_flash::disable() { Qspi->CR &= ~QUADSPI_CR_EN; }
 
-void QSPI::init()
-{
-
-    // init peripheral clock
-    ClockUtils::enablePeripheralClock((QUADSPI_TypeDef*)QSPI_BASE);
-
-    RCC_SYNC();
-
-    Thread::sleep(1);
-
-    // abort any operation
-    QSPI::abort_reset();
-
-    // reset configuration registers
-    QUADSPI->CR  = 0;
-    QUADSPI->DCR = 0;
-    QUADSPI->CCR = 0;
-    QUADSPI->DLR = 0;
-
-    // reset transfer complete flag (TCF)
-    QUADSPI->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
-
-    // peripheral default initialization
-    QUADSPI->CR |=
-        QUADSPI_CR_SSHIFT |             // Wait a full cycle to read
-        3 << QUADSPI_CR_PRESCALER_Pos;  // QSPI clock = 216MHz / 4 = 54MHz
-
-    // set the memory chip size - it must be always setted before any read
-    // operation.
-    QUADSPI->DCR |=
-        21 << QUADSPI_DCR_FSIZE_Pos;  // Flash size 32Mb = 4MB = 2^(21+1) bytes
-}
-
-void QSPI::abort_reset()
+void qspi_flash::abort_reset()
 {
 
     // abort possible ongoing command
-    QUADSPI->CR |= QUADSPI_CR_ABORT;
+    Qspi->CR |= QUADSPI_CR_ABORT;
 
     // Wait while aborted
     uint32_t dt = 0;  // timeout
-    while (QUADSPI->CR & QUADSPI_CR_ABORT)
+    while (Qspi->CR & QUADSPI_CR_ABORT)
     {
         dt = dt + 1;
         if (dt > 10000)
@@ -80,20 +47,20 @@ void QSPI::abort_reset()
     }
 
     // to be sure that the peripheral is disabled
-    QSPI::disable();
+    disable();
 
     // reset configuration register
-    QUADSPI->CCR = 0;
+    Qspi->CCR = 0;
 
     // transfer flag (TCF) will reset automatically and QUADSPI FIFO is flushed
     // if a transaction has been aborted.
 }
 
-void QSPI::waitBusy()
+void qspi_flash::waitBusy()
 {
     // wait till QUADSPI has completed the current communication with the flash
     uint32_t dt = 0;  // timeout
-    while (QUADSPI->SR & (1 << QUADSPI_SR_BUSY_Pos))
+    while (Qspi->SR & (1 << QUADSPI_SR_BUSY_Pos))
     {
         dt = dt + 1;
         if (dt > 20000)
@@ -103,12 +70,12 @@ void QSPI::waitBusy()
     }
 }
 
-void QSPI::waitTransfer()
+void qspi_flash::waitTransfer()
 {
     // by setting data lenght register (DLR) you set how many bytes are expected
     // from memory. wait till all expected bytes have been tranferred.
     uint32_t dt = 0;  // timeout
-    while (!(QUADSPI->SR & (1 << QUADSPI_SR_TCF_Pos)))
+    while (!(Qspi->SR & (1 << QUADSPI_SR_TCF_Pos)))
     {
         dt = dt + 1;
         if (dt > 20000)
@@ -118,11 +85,13 @@ void QSPI::waitTransfer()
     }
 
     // reset transfer complete flag (TCF)
-    QUADSPI->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
+    Qspi->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
 }
 
-qspi_flash::qspi_flash()
+qspi_flash::qspi_flash(QUADSPI_TypeDef* qspi)
 {
+
+    Qspi = qspi;
 
     /**
      * QSPI Flash pins
@@ -187,31 +156,31 @@ uint8_t qspi_flash::read_status_reg()
     }
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
-    QUADSPI->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |   // Indirect read mode
-                    1 << QUADSPI_CCR_DMODE_Pos |   // Data on 1-wire
-                    0 << QUADSPI_CCR_ABMODE_Pos |  // No alternate bytes
-                    0 << QUADSPI_CCR_ADMODE_Pos |  // No address
-                    1 << QUADSPI_CCR_IMODE_Pos;    // Instruction on 1-wire
+    Qspi->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |   // Indirect read mode
+                 1 << QUADSPI_CCR_DMODE_Pos |   // Data on 1-wire
+                 0 << QUADSPI_CCR_ABMODE_Pos |  // No alternate bytes
+                 0 << QUADSPI_CCR_ADMODE_Pos |  // No address
+                 1 << QUADSPI_CCR_IMODE_Pos;    // Instruction on 1-wire
 
     // Expect to receive 1 byte (flash status register)
-    QUADSPI->DLR = 0;
+    Qspi->DLR = 0;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // Trigger communication start by writing the instruction
-    QUADSPI->CCR |= Commands::READ_STATUS_REG << QUADSPI_CCR_INSTRUCTION_Pos;
+    Qspi->CCR |= Commands::READ_STATUS_REG << QUADSPI_CCR_INSTRUCTION_Pos;
 
     // wait till data trasfer is complete
-    QSPI::waitTransfer();
+    waitTransfer();
 
     // read status reg value from data register
-    uint32_t value = (uint8_t)QUADSPI->DR;
+    uint32_t value = (uint8_t)Qspi->DR;
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     return value;
 }
@@ -230,24 +199,24 @@ void qspi_flash::write_enable()
     }
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, istruction on 1 wire, no data, no address, no
     // alternate bytes
-    QUADSPI->CCR |= 1 << QUADSPI_CCR_IMODE_Pos;
+    Qspi->CCR |= 1 << QUADSPI_CCR_IMODE_Pos;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // start communication writing the instruction to CCR register - write
     // enable command
-    QUADSPI->CCR |= Commands::WRITE_ENABLE;
+    Qspi->CCR |= Commands::WRITE_ENABLE;
 
     // wait for the communication to end
-    QSPI::waitBusy();
+    waitBusy();
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     // check status register until bit WEL = 1
     uint8_t status = read_status_reg();
@@ -266,8 +235,35 @@ void qspi_flash::write_enable()
 
 void qspi_flash::init()
 {
-    // init QUADSPI peripheral in order to communicate with flash memory
-    QSPI::init();
+
+    // init peripheral clock
+    ClockUtils::enablePeripheralClock((QUADSPI_TypeDef*)QSPI_BASE);
+
+    RCC_SYNC();
+
+    Thread::sleep(1);
+
+    // abort any operation
+    abort_reset();
+
+    // reset configuration registers
+    Qspi->CR  = 0;
+    Qspi->DCR = 0;
+    Qspi->CCR = 0;
+    Qspi->DLR = 0;
+
+    // reset transfer complete flag (TCF)
+    Qspi->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
+
+    // peripheral default initialization
+    Qspi->CR |=
+        QUADSPI_CR_SSHIFT |             // Wait a full cycle to read
+        3 << QUADSPI_CR_PRESCALER_Pos;  // QSPI clock = 216MHz / 4 = 54MHz
+
+    // set the memory chip size - it must be always setted before any read
+    // operation.
+    Qspi->DCR |=
+        21 << QUADSPI_DCR_FSIZE_Pos;  // Flash size 32Mb = 4MB = 2^(21+1) bytes
 
     // set flag intialised device
     initialised = true;
@@ -283,36 +279,36 @@ uint32_t qspi_flash::readID()
     }
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
-    QUADSPI->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |   // Indirect read mode
-                    1 << QUADSPI_CCR_DMODE_Pos |   // Data on 1-wire
-                    0 << QUADSPI_CCR_ABMODE_Pos |  // No alternate bytes
-                    0 << QUADSPI_CCR_ADMODE_Pos |  // No address
-                    1 << QUADSPI_CCR_IMODE_Pos;    // Instruction on 1-wire
+    Qspi->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |   // Indirect read mode
+                 1 << QUADSPI_CCR_DMODE_Pos |   // Data on 1-wire
+                 0 << QUADSPI_CCR_ABMODE_Pos |  // No alternate bytes
+                 0 << QUADSPI_CCR_ADMODE_Pos |  // No address
+                 1 << QUADSPI_CCR_IMODE_Pos;    // Instruction on 1-wire
 
     // Expect to receive 3 bytes regarding ID of the flash
-    QUADSPI->DLR = 2;
+    Qspi->DLR = 2;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // Trigger communication by writing read ID command into CCR register
-    QUADSPI->CCR |= Commands::READ_ID << QUADSPI_CCR_INSTRUCTION_Pos;
+    Qspi->CCR |= Commands::READ_ID << QUADSPI_CCR_INSTRUCTION_Pos;
 
     // wait till communication is ended
-    QSPI::waitTransfer();
+    waitTransfer();
 
     // sus: even if some bytes have been received, the FIFO need some time to
     // store them.
     Thread::sleep(1);
 
     // if there are some bytes in quadspi buffer (FIFO), read them
-    if ((QUADSPI->SR & QUADSPI_SR_FLEVEL) >> 8)
+    if ((Qspi->SR & QUADSPI_SR_FLEVEL) >> 8)
     {
-        uint32_t myID = QUADSPI->DR;
+        uint32_t myID = Qspi->DR;
 
-        QSPI::disable();
+        disable();
 
         // the ID bytes order must be inverted
         uint8_t lb = myID;                   // lowest byte
@@ -325,7 +321,7 @@ uint32_t qspi_flash::readID()
     }
     else
     {
-        QSPI::disable();
+        disable();
         return 0;
     }
 }
@@ -344,23 +340,23 @@ void qspi_flash::write_disable()
     }
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, istruction on 1 wire, no data, no address, no
     // alternate bytes
-    QUADSPI->CCR |= 1 << QUADSPI_CCR_IMODE_Pos;
+    Qspi->CCR |= 1 << QUADSPI_CCR_IMODE_Pos;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // start communication writing write_disable command to CCR register
-    QUADSPI->CCR |= Commands::WRITE_DISABLE;
+    Qspi->CCR |= Commands::WRITE_DISABLE;
 
     // wait till the communication has ended
-    QSPI::waitBusy();
+    waitBusy();
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     // check status register till bit WEL = 0
     uint8_t status = read_status_reg();
@@ -404,7 +400,7 @@ uint8_t qspi_flash::read_byte(uint32_t address)
     // 2 send 3-byte address
     // 3 read only the first byte of data
     // in this case, since no data is needed, the communication starts whenever
-    // the adress register (QUADSPI->DR) is updated.
+    // the adress register (Qspi->DR) is updated.
 
     // check if memory has been initialised
     if (initialised == false)
@@ -417,34 +413,34 @@ uint8_t qspi_flash::read_byte(uint32_t address)
         return 0;
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
-    QUADSPI->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |  // Indirect read mode
-                    QUADSPI_CCR_DMODE_0 |         // data on a single  line
-                    QUADSPI_CCR_ADSIZE_1 |        // 3-byte (24 bit) address
-                    QUADSPI_CCR_ADMODE_0 |        // address on a single line
-                    QUADSPI_CCR_IMODE_0;  // instruction on a single line
+    Qspi->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |  // Indirect read mode
+                 QUADSPI_CCR_DMODE_0 |         // data on a single  line
+                 QUADSPI_CCR_ADSIZE_1 |        // 3-byte (24 bit) address
+                 QUADSPI_CCR_ADMODE_0 |        // address on a single line
+                 QUADSPI_CCR_IMODE_0;          // instruction on a single line
 
     // send read command
-    QUADSPI->CCR |= Commands::READ;
+    Qspi->CCR |= Commands::READ;
 
     // just 1 byte of data is supposed to be transferred
-    QUADSPI->DLR = 0;
+    Qspi->DLR = 0;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // start communication by specifing the address
-    QUADSPI->AR = address;
+    Qspi->AR = address;
 
     // wait the expected byte has been transferred
-    QSPI::waitTransfer();
+    waitTransfer();
 
     // read byte value from data register
-    uint8_t value = (uint8_t)QUADSPI->DR;
+    uint8_t value = (uint8_t)Qspi->DR;
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     return value;
 }
@@ -473,22 +469,22 @@ bool qspi_flash::chip_erase()
     write_enable();
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, no address, no data. all on one wire.
-    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0;  // istruction on one wire
+    Qspi->CCR |= QUADSPI_CCR_IMODE_0;  // istruction on one wire
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // write ERASE_CHIP command into CCR and start the communication
-    QUADSPI->CCR |= Commands::ERASE_CHIP;
+    Qspi->CCR |= Commands::ERASE_CHIP;
 
     // wait till the communication has ended
-    QSPI::waitBusy();
+    waitBusy();
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     // wait till current erase operation has ended
     uint32_t dt = 0;  // timeout
@@ -533,27 +529,27 @@ bool qspi_flash::sector_erase(uint32_t address)
     write_enable();
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, 3-byte address , no data. all on one wire.
-    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
-                    QUADSPI_CCR_ADSIZE_1 |  // 3-byte address
-                    QUADSPI_CCR_ADMODE_0;   // address on a single line
+    Qspi->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
+                 QUADSPI_CCR_ADSIZE_1 |  // 3-byte address
+                 QUADSPI_CCR_ADMODE_0;   // address on a single line
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // add sector erase command to CCR register
-    QUADSPI->CCR |= Commands::SECTOR_ERASE;
+    Qspi->CCR |= Commands::SECTOR_ERASE;
 
-    // start communication by writing the address in QUADSPI->AR
-    QUADSPI->AR = address;
+    // start communication by writing the address in Qspi->AR
+    Qspi->AR = address;
 
     // wait for the transaction to end
-    QSPI::waitBusy();
+    waitBusy();
 
     // disable data writing
-    QSPI::disable();
+    disable();
 
     // wait till current erase operation has ended
     uint32_t dt = 0;  // timeout
@@ -598,27 +594,27 @@ bool qspi_flash::block32_erase(uint32_t address)
     write_enable();
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, 3-byte address, no data. all on one wire.
-    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
-                    QUADSPI_CCR_ADSIZE_1 |  // 3-byte address
-                    QUADSPI_CCR_ADMODE_0;   // address on a single line
+    Qspi->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
+                 QUADSPI_CCR_ADSIZE_1 |  // 3-byte address
+                 QUADSPI_CCR_ADMODE_0;   // address on a single line
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // add block_32_erase command to CCR
-    QUADSPI->CCR |= Commands::BLOCK_32_ERASE;
+    Qspi->CCR |= Commands::BLOCK_32_ERASE;
 
-    // start communication by writing the address in QUADSPI->AR
-    QUADSPI->AR = address;
+    // start communication by writing the address in Qspi->AR
+    Qspi->AR = address;
 
     // wait till communication has ended
-    QSPI::waitBusy();
+    waitBusy();
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     // wait till current erase operation has ended
     uint32_t dt = 0;  // timeout
@@ -663,27 +659,27 @@ bool qspi_flash::block64_erase(uint32_t address)
     write_enable();
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, 3-byte address, no data. all on one wire.
-    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
-                    QUADSPI_CCR_ADSIZE_1 |  // 3-byte address
-                    QUADSPI_CCR_ADMODE_0;   // address on a single line
+    Qspi->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
+                 QUADSPI_CCR_ADSIZE_1 |  // 3-byte address
+                 QUADSPI_CCR_ADMODE_0;   // address on a single line
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // add BLOCK_64_ERASE command to CCR
-    QUADSPI->CCR |= Commands::BLOCK_64_ERASE;
+    Qspi->CCR |= Commands::BLOCK_64_ERASE;
 
-    // start communication by writing the address in QUADSPI->AR
-    QUADSPI->AR = address;
+    // start communication by writing the address in Qspi->AR
+    Qspi->AR = address;
 
     // wait till communication is ended
-    QSPI::waitBusy();
+    waitBusy();
 
     // didable peripheral
-    QSPI::disable();
+    disable();
 
     // wait till current erase operation has ended
     uint32_t dt = 0;  // timeout
@@ -732,28 +728,28 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
     write_enable();
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // idirect write mode
-    QUADSPI->CCR |= QUADSPI_CCR_DMODE_0 |   // data on a single line
-                    QUADSPI_CCR_ADSIZE_1 |  // address size 24 bit
-                    QUADSPI_CCR_ADMODE_0 |  // address on a single line
-                    QUADSPI_CCR_IMODE_0;    // instruction on a single line
+    Qspi->CCR |= QUADSPI_CCR_DMODE_0 |   // data on a single line
+                 QUADSPI_CCR_ADSIZE_1 |  // address size 24 bit
+                 QUADSPI_CCR_ADMODE_0 |  // address on a single line
+                 QUADSPI_CCR_IMODE_0;    // instruction on a single line
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // add PAGE_PROGRAM command to CCR
-    QUADSPI->CCR |= Commands::PAGE_PROGRAM;
+    Qspi->CCR |= Commands::PAGE_PROGRAM;
 
     // add address
-    QUADSPI->AR = address;
+    Qspi->AR = address;
 
     // trigger the communication by writing into data register
-    QUADSPI->DR = data;
+    Qspi->DR = data;
 
     // wait for the communication to end
-    QSPI::waitBusy();
+    waitBusy();
 
     // wait till current program operation has ended
     uint32_t dt = 0;  // timeout
@@ -796,32 +792,32 @@ uint8_t qspi_flash::read_security_reg()
     }
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
-    QUADSPI->CCR |= QUADSPI_CCR_FMODE_0 |  // Indirect read mode
-                    QUADSPI_CCR_DMODE_0 |  // data on one wire
-                    QUADSPI_CCR_IMODE_0;   // instruction on one wire
+    Qspi->CCR |= QUADSPI_CCR_FMODE_0 |  // Indirect read mode
+                 QUADSPI_CCR_DMODE_0 |  // data on one wire
+                 QUADSPI_CCR_IMODE_0;   // instruction on one wire
 
     // Expect to receive 1 byte (flash security register value)
-    QUADSPI->DLR = 0;
+    Qspi->DLR = 0;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // start communication by adding READ_SECURITY_REG command to CCR
-    QUADSPI->CCR |= Commands::READ_SECURITY_REG;
+    Qspi->CCR |= Commands::READ_SECURITY_REG;
 
     // wait till data trasfer is complete
-    QSPI::waitTransfer();
+    waitTransfer();
 
     // sus! same sussata of readID() function
     Thread::sleep(1);
 
     // read register value from data register
-    uint32_t value = (uint8_t)QUADSPI->DR;
+    uint32_t value = (uint8_t)Qspi->DR;
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     return value;
 }
@@ -851,38 +847,38 @@ void qspi_flash::software_reset()
     // -------------------- send RSTEN command -------------------------
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // indirect write mode, no data, no address, instruction on a single line
-    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0;
+    Qspi->CCR |= QUADSPI_CCR_IMODE_0;
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // start the communication by adding RESET_ENABLE command to CCR
-    QUADSPI->CCR |= Commands::RESET_ENABLE;
+    Qspi->CCR |= Commands::RESET_ENABLE;
 
     // wait for the communication to end
-    QSPI::waitBusy();
+    waitBusy();
 
     // disable peripheral
-    QSPI::disable();
+    disable();
 
     // let's give the flash some time to recognise reset_enable command
     Thread::sleep(1);
 
     // ------------------- send RST command --------------------------
-    QSPI::abort_reset();
+    abort_reset();
 
-    QUADSPI->CCR |= QUADSPI_CCR_IMODE_0;
+    Qspi->CCR |= QUADSPI_CCR_IMODE_0;
 
-    QSPI::enable();
+    enable();
 
-    QUADSPI->CCR |= Commands::RESET_MEMORY;
+    Qspi->CCR |= Commands::RESET_MEMORY;
 
-    QSPI::waitBusy();
+    waitBusy();
 
-    QSPI::disable();
+    disable();
 
     // wait for flash to go back in power-on default status
     Thread::sleep(1);
@@ -1001,25 +997,25 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
     write_enable();
 
     // reset peripheral
-    QSPI::abort_reset();
+    abort_reset();
 
     // idirect write mode
-    QUADSPI->CCR |= QUADSPI_CCR_DMODE_0 |   // data on a single line
-                    QUADSPI_CCR_ADSIZE_1 |  // address size 24 bit
-                    QUADSPI_CCR_ADMODE_0 |  // address on a single line
-                    QUADSPI_CCR_IMODE_0;    // instruction on a single line
+    Qspi->CCR |= QUADSPI_CCR_DMODE_0 |   // data on a single line
+                 QUADSPI_CCR_ADSIZE_1 |  // address size 24 bit
+                 QUADSPI_CCR_ADMODE_0 |  // address on a single line
+                 QUADSPI_CCR_IMODE_0;    // instruction on a single line
 
     // enable peripheral
-    QSPI::enable();
+    enable();
 
     // add page program command to CCR
-    QUADSPI->CCR |= Commands::PAGE_PROGRAM;
+    Qspi->CCR |= Commands::PAGE_PROGRAM;
 
     // set number of bytes to be transferred - 1
-    QUADSPI->DLR = size - 1;
+    Qspi->DLR = size - 1;
 
     // adding starting address
-    QUADSPI->AR = start_address;
+    Qspi->AR = start_address;
 
     // load data vector into the QUADSPI FIFO (buffer)
     uint16_t i = 0;
@@ -1028,7 +1024,7 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
 
         // if FIFO is full - wait till it has at least a byte available.
         uint32_t dt = 0;  // timeout
-        while (((QUADSPI->SR & QUADSPI_SR_FLEVEL) >> 8) >= 32)
+        while (((Qspi->SR & QUADSPI_SR_FLEVEL) >> 8) >= 32)
         {
             dt = dt + 1;
             if (dt >= 10000)
@@ -1038,11 +1034,11 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
         }
 
         // add a single byte to be sent into the QSPI FIFO
-        ((uint8_t*)&QUADSPI->DR)[0] = static_cast<uint8_t>(vector[i]);
+        ((uint8_t*)&Qspi->DR)[0] = static_cast<uint8_t>(vector[i]);
     }
 
     // wait for the end of communication
-    QSPI::waitBusy();
+    waitBusy();
 
     // wait till current program operation has ended
     uint32_t dt = 0;  // timeout
@@ -1071,8 +1067,8 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
     return check_program();
 }
 
-bool qspi_flash::write_vector(const uint8_t* vector, const size_t size,
-                              uint32_t sector_num, bool verify_write)
+bool qspi_flash::write(const uint8_t* vector, const size_t size,
+                       uint32_t sector_num, bool verify_write)
 {
 
     // check if memory has been initialised
