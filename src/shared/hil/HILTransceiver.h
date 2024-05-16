@@ -25,11 +25,13 @@
 #include <ActiveObject.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <drivers/usart/USART.h>
-#include <sensors/HILSensors/HILTimestampManagement.h>
 #include <utils/Debug.h>
 
 #include "HIL.h"
 #include "drivers/usart/USART.h"
+
+namespace Boardcore
+{
 
 template <class FlightPhases, class SimulatorData, class ActuatorData>
 class HIL;
@@ -47,22 +49,20 @@ public:
     }
 
     /**
-     * @brief adds to the resetSampleCounter list an object that has to be
-     * notified when a new packet of data is arrived from the simulator
-     *
-     * @param t SimTimestampManagement object
-     */
-    void addResetSampleCounter(HILTimestampManagement *t)
-    {
-        sensorsTimestamp.push_back(t);
-    }
-
-    /**
      * @brief Returns the number of lost updates.
      * @return the number of updates lost due to communication with the
      * simulator.
      */
     int getLostUpdates() { return nLostUpdates; }
+
+    /**
+     * @brief Returns the value in ns of the timestamp of the last received
+     * simulatorData.
+     */
+    const long long getTimestampSimulatorData()
+    {
+        return timestampSimulatorData;
+    }
 
 protected:
     /**
@@ -79,10 +79,11 @@ protected:
     }
 
     Boardcore::USART &hilSerial;
-    bool receivedFirstPacket = false;
-    bool updated             = false;
-    int nLostUpdates         = 0;
-    std::vector<HILTimestampManagement *> sensorsTimestamp;
+    bool receivedFirstPacket         = false;
+    bool updated                     = false;
+    int nLostUpdates                 = 0;
+    long long timestampSimulatorData = 0;  // timestamp of the last received
+                                           // simulatorData [ns]
     miosix::FastMutex mutex;
     miosix::ConditionVariable condVar;
     Boardcore::PrintLogger logger =
@@ -98,7 +99,9 @@ class HILTransceiver : public HILTransceiverBase
 {
 public:
     /**
-     * @brief Construct a serial connection attached to a control algorithm
+     * @brief Construct a serial connection attached to a control algorithm.
+     *
+     * @param hilSerial Serial port for the HIL communication.
      */
     explicit HILTransceiver(Boardcore::USART &hilSerial)
         : HILTransceiverBase(hilSerial), actuatorData()
@@ -176,7 +179,8 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             miosix::led3Off();
 
             miosix::PauseKernelLock kLock;
-            simulatorData = tempData;
+            simulatorData          = tempData;
+            timestampSimulatorData = miosix::getTime();
         }
 
         // If this is the first packet to be received, then update the flight
@@ -186,10 +190,6 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             receivedFirstPacket = true;
             hilPhasesManager->simulationStarted();
         }
-
-        // Notify all sensors that a new set of data is arrived
-        for (auto st : sensorsTimestamp)
-            st->resetSampleCounter();
 
         // Trigger events relative to the flight phases
         hilPhasesManager->processFlags(simulatorData);
@@ -208,3 +208,4 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
         miosix::led2Off();
     }
 }
+}  // namespace Boardcore

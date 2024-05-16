@@ -31,6 +31,9 @@
 #include "HILPhasesManager.h"
 #include "HILTransceiver.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Single interface to the hardware-in-the-loop framework.
  */
@@ -38,15 +41,25 @@ template <class FlightPhases, class SimulatorData, class ActuatorData>
 class HIL : public Boardcore::Module, public Boardcore::ActiveObject
 {
 public:
+    /**
+     * @brief Constructor of the HIL framework.
+     * @param hilTransceiver The pointer to the already built HILTranceiver.
+     * @param hilPhasesManager The pointer to the already built
+     * HILPhasesManager.
+     * @param updateActuatorData Function which returns the current ActuatorData
+     * situation.
+     * @param simulationPeriod Period of the simulation [ms].
+     */
     HIL(HILTransceiver<FlightPhases, SimulatorData, ActuatorData>
             *hilTransceiver,
         HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
             *hilPhasesManager,
-        std::function<ActuatorData()> updateActuatorData, int updatePeriod)
+        std::function<ActuatorData()> updateActuatorData, int simulationPeriod)
         : Boardcore::ActiveObject(Boardcore::STACK_MIN_FOR_SKYWARD,
                                   miosix::PRIORITY_MAX - 1),
           hilTransceiver(hilTransceiver), hilPhasesManager(hilPhasesManager),
-          updateActuatorData(updateActuatorData), updatePeriod(updatePeriod)
+          updateActuatorData(updateActuatorData),
+          simulationPeriod(simulationPeriod)
     {
         if (!Boardcore::ModuleManager::getInstance().insert<HILTransceiverBase>(
                 hilTransceiver))
@@ -106,18 +119,19 @@ public:
         }
     }
 
+    int getSimulationPeriod() { return simulationPeriod; }
+
     HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
     HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
         *hilPhasesManager;
 
 private:
-    // We are waiting for updatePeriod and not executing every updatePeriod
     void run() override
     {
         uint64_t ts = miosix::getTime();
         while (!shouldStop())
         {
-            ts += updatePeriod * 1000000;
+            ts += simulationPeriod * 1000000;
             if (hilPhasesManager->isSimulationRunning())
             {
                 hilTransceiver->setActuatorData(updateActuatorData());
@@ -128,5 +142,6 @@ private:
 
     Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("HIL");
     std::function<ActuatorData()> updateActuatorData;
-    int updatePeriod;
+    int simulationPeriod;  // Simulation period in milliseconds
 };
+}  // namespace Boardcore
