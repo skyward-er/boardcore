@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
+/* Copyright (c) 2023-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,84 +22,90 @@
 
 #pragma once
 
-#include <algorithms/AirBrakes/TrajectoryPoint.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <drivers/usart/USART.h>
-#include <events/Event.h>
-#include <events/EventHandler.h>
-#include <hil/HILPhasesManager.h>
-#include <hil/HILTransceiver.h>
+#include <events/EventBroker.h>
+#include <hil/HIL.h>
 #include <math.h>
-#include <sensors/HILSensors/IncludeHILSensors.h>
+#include <sensors/SensorInfo.h>
 #include <utils/Debug.h>
 #include <utils/Stats/Stats.h>
 
 #include <list>
 #include <utils/ModuleManager/ModuleManager.hpp>
 
-#include "algorithms/ADA/ADAData.h"
-#include "algorithms/NAS/NAS.h"
-#include "algorithms/NAS/NASState.h"
-#include "events/EventBroker.h"
-#include "sensors/SensorInfo.h"
+#include "Buses.h"
+#include "Sensors/SensorsConfig.h"
+#include "common/Events.h"
 
 namespace HILConfig
 {
 
-struct SensorConfig : public Boardcore::SensorInfo
-{
-    SensorConfig(const std::string& s, const uint32_t period)
-        : Boardcore::SensorInfo{s, period, []() {}, true}
-    {
-    }
-};
+constexpr bool IS_FULL_HIL = true;
 
-/** baudrate of connection */
-const int SIM_BAUDRATE = 115200;
-
-/** Period of simulation in milliseconds */
+/** Period of simulation [ms] */
 constexpr int SIMULATION_PERIOD = 100;
 
-/** sample frequency of sensor (samples/second) */
-constexpr int ACCEL_FREQ        = 100;
-constexpr int GYRO_FREQ         = 100;
-constexpr int MAGN_FREQ         = 100;
-constexpr int IMU_FREQ          = 100;
-constexpr int BARO_FREQ         = 50;
-constexpr int BARO_CHAMBER_FREQ = 50;
-constexpr int PITOT_FREQ        = 20;
-constexpr int TEMP_FREQ         = 10;
-constexpr int GPS_FREQ          = 10;
+/** sampling periods of sensors [ms] */
+constexpr int ACCEL_PERIOD        = HILTest::SensorsConfig::LSM6DSRX_PERIOD;
+constexpr int GYRO_PERIOD         = HILTest::SensorsConfig::LSM6DSRX_PERIOD;
+constexpr int MAGN_PERIOD         = HILTest::SensorsConfig::LIS2MDL_PERIOD;
+constexpr int IMU_PERIOD          = HILTest::SensorsConfig::IMU_PERIOD;
+constexpr int ANALOG_BARO_PERIOD  = HILTest::SensorsConfig::ADS131M08_PERIOD;
+constexpr int DIGITAL_BARO_PERIOD = HILTest::SensorsConfig::LPS22DF_PERIOD;
+constexpr int TEMP_PERIOD         = SIMULATION_PERIOD;  // just one sample
+constexpr int GPS_PERIOD          = HILTest::SensorsConfig::UBXGPS_PERIOD;
+constexpr int BARO_CHAMBER_PERIOD = 20;
+constexpr int PITOT_PERIOD        = 50;
 
-/** sensors configuration */
-const SensorConfig accelConfig("accel", ACCEL_FREQ);
-const SensorConfig gyroConfig("gyro", GYRO_FREQ);
-const SensorConfig magnConfig("magn", MAGN_FREQ);
-const SensorConfig imuConfig("imu", IMU_FREQ);
-const SensorConfig baroConfig("baro", BARO_FREQ);
-const SensorConfig pitotConfig("pitot", PITOT_FREQ);
-const SensorConfig gpsConfig("gps", GPS_FREQ);
-const SensorConfig tempConfig("temp", TEMP_FREQ);
+static_assert((SIMULATION_PERIOD % ACCEL_PERIOD) == 0,
+              "N_DATA_ACCEL not an integer");
+static_assert((SIMULATION_PERIOD % GYRO_PERIOD) == 0,
+              "N_DATA_GYRO not an integer");
+static_assert((SIMULATION_PERIOD % MAGN_PERIOD) == 0,
+              "N_DATA_MAGN not an integer");
+static_assert((SIMULATION_PERIOD % IMU_PERIOD) == 0,
+              "N_DATA_IMU not an integer");
+static_assert((SIMULATION_PERIOD % ANALOG_BARO_PERIOD) == 0,
+              "N_DATA_ANALOG_BARO not an integer");
+static_assert((SIMULATION_PERIOD % DIGITAL_BARO_PERIOD) == 0,
+              "N_DATA_DIGITAL_BARO not an integer");
+static_assert((SIMULATION_PERIOD % BARO_CHAMBER_PERIOD) == 0,
+              "N_DATA_BARO_CHAMBER not an integer");
+static_assert((SIMULATION_PERIOD % PITOT_PERIOD) == 0,
+              "N_DATA_PITOT not an integer");
+static_assert((SIMULATION_PERIOD % TEMP_PERIOD) == 0,
+              "N_DATA_TEMP not an integer");
+static_assert((SIMULATION_PERIOD % GPS_PERIOD) == 0,
+              "N_DATA_GPS not an integer");
 
 /** Number of samples per sensor at each simulator iteration */
-constexpr int N_DATA_ACCEL =
-    static_cast<int>((ACCEL_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_GYRO =
-    static_cast<int>((GYRO_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_MAGNETO =
-    static_cast<int>((MAGN_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_IMU =
-    static_cast<int>((IMU_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_BARO =
-    static_cast<int>((BARO_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_BARO_CHAMBER =
-    static_cast<int>((BARO_CHAMBER_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_PITOT =
-    static_cast<int>((PITOT_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_GPS =
-    static_cast<int>((GPS_FREQ * SIMULATION_PERIOD) / 1000.0);
-constexpr int N_DATA_TEMP =
-    static_cast<int>((TEMP_FREQ * SIMULATION_PERIOD) / 1000.0);
+constexpr int N_DATA_ACCEL        = SIMULATION_PERIOD / ACCEL_PERIOD;
+constexpr int N_DATA_GYRO         = SIMULATION_PERIOD / GYRO_PERIOD;
+constexpr int N_DATA_MAGNETO      = SIMULATION_PERIOD / MAGN_PERIOD;
+constexpr int N_DATA_IMU          = SIMULATION_PERIOD / IMU_PERIOD;
+constexpr int N_DATA_ANALOG_BARO  = SIMULATION_PERIOD / ANALOG_BARO_PERIOD;
+constexpr int N_DATA_DIGITAL_BARO = SIMULATION_PERIOD / DIGITAL_BARO_PERIOD;
+constexpr int N_DATA_BARO_CHAMBER = SIMULATION_PERIOD / BARO_CHAMBER_PERIOD;
+constexpr int N_DATA_PITOT        = SIMULATION_PERIOD / PITOT_PERIOD;
+constexpr int N_DATA_GPS          = SIMULATION_PERIOD / GPS_PERIOD;
+constexpr int N_DATA_TEMP         = SIMULATION_PERIOD / TEMP_PERIOD;
+
+// Sensors Data
+using MainAccelerometerSimulatorData =
+    Boardcore::AccelerometerSimulatorData<N_DATA_ACCEL>;
+using MainGyroscopeSimulatorData =
+    Boardcore::GyroscopeSimulatorData<N_DATA_GYRO>;
+using MainMagnetometerSimulatorData =
+    Boardcore::MagnetometerSimulatorData<N_DATA_MAGNETO>;
+using MainGPSSimulatorData = Boardcore::GPSSimulatorData<N_DATA_GPS>;
+using MainBarometerSimulatorData =
+    Boardcore::BarometerSimulatorData<N_DATA_DIGITAL_BARO>;
+using MainChamberPressureSimulatorData =
+    Boardcore::BarometerSimulatorData<N_DATA_BARO_CHAMBER>;
+using MainPitotSimulatorData = Boardcore::PitotSimulatorData<N_DATA_PITOT>;
+using MainTemperatureSimulatorData =
+    Boardcore::TemperatureSimulatorData<N_DATA_TEMP>;
 
 struct FlagsHIL
 {
@@ -126,7 +132,7 @@ struct FlagsHIL
 
     void print()
     {
-        TRACE(
+        printf(
             "flag_flight: %f\n"
             "flag_ascent: %f\n"
             "flag_burning: %f\n"
@@ -157,7 +163,7 @@ struct ADAStateHIL
 
     void print()
     {
-        TRACE(
+        printf(
             "mslAltitude: %+.3f\n"
             "aglAltitude: %+.3f\n"
             "verticalSpeed: %+.3f\n"
@@ -197,7 +203,7 @@ struct NASStateHIL
 
     void print()
     {
-        TRACE(
+        printf(
             "n: %+.3f\n"
             "e: %+.3f\n"
             "d: %+.3f\n"
@@ -222,7 +228,7 @@ struct AirBrakesStateHIL
 
     AirBrakesStateHIL() : updating(0) {}
 
-    void print() { TRACE("updating: %+.3f\n", updating); }
+    void print() { printf("updating: %+.3f\n", updating); }
 };
 
 /**
@@ -245,7 +251,7 @@ struct MEAStateHIL
 
     void print()
     {
-        TRACE(
+        printf(
             "correctedPressure: %+.3f\n"
             "estimatedMass: %+.3f\n"
             "estimatedApogee: %+.3f\n"
@@ -260,6 +266,7 @@ struct ActuatorsStateHIL
     float expulsionPercentage    = 0;
     float mainValvePercentage    = 0;
     float ventingValvePercentage = 0;
+    float cutterState            = 0;
 
     ActuatorsStateHIL()
         : airbrakesPercentage(0.0f), expulsionPercentage(0.0f),
@@ -267,24 +274,17 @@ struct ActuatorsStateHIL
     {
     }
 
-    ActuatorsStateHIL(float airbrakesPercentage, float expulsionPercentage,
-                      float mainValvePercentage, float ventingValvePercentage)
-        : airbrakesPercentage(airbrakesPercentage),
-          expulsionPercentage(expulsionPercentage),
-          mainValvePercentage(mainValvePercentage),
-          ventingValvePercentage(ventingValvePercentage)
-    {
-    }
-
     void print()
     {
-        TRACE(
+        printf(
             "airbrakes: %f perc\n"
             "expulsion: %f perc\n"
             "mainValve: %f perc\n"
-            "venting: %f perc\n",
+            "venting: %f perc\n"
+            "cutter: %f\n",
             airbrakesPercentage * 100, expulsionPercentage * 100,
-            mainValvePercentage * 100, ventingValvePercentage * 100);
+            mainValvePercentage * 100, ventingValvePercentage * 100,
+            cutterState);
     }
 };
 
@@ -297,16 +297,14 @@ struct ActuatorsStateHIL
  */
 struct SimulatorData
 {
-    struct AccelerometerSimulatorData<N_DATA_ACCEL> accelerometer;
-    struct GyroscopeSimulatorData<N_DATA_GYRO> gyro;
-    struct MagnetometerSimulatorData<N_DATA_MAGNETO> magnetometer;
-    struct GPSSimulatorData<N_DATA_GPS> gps;
-    struct BarometerSimulatorData<N_DATA_BARO> barometer1, barometer2,
-        barometer3;
-    struct BarometerSimulatorData<N_DATA_BARO_CHAMBER> pressureChamber;
-    struct PitotSimulatorData<N_DATA_PITOT> pitot;
-    struct TemperatureSimulatorData<N_DATA_TEMP> temperature;
-    struct FlagsHIL flags;
+    MainAccelerometerSimulatorData accelerometer;
+    MainGyroscopeSimulatorData gyro;
+    MainMagnetometerSimulatorData magnetometer;
+    MainGPSSimulatorData gps;
+    MainBarometerSimulatorData barometer1, barometer2, barometer3;
+    MainChamberPressureSimulatorData pressureChamber;
+    MainPitotSimulatorData pitot;
+    MainTemperatureSimulatorData temperature;
 };
 
 /**
@@ -359,27 +357,19 @@ enum MainFlightPhases
     SIMULATION_STOPPED
 };
 
-using MainHILAccelerometer = HILAccelerometer<N_DATA_ACCEL>;
-using MainHILGyroscope     = HILGyroscope<N_DATA_GYRO>;
-using MainHILMagnetometer  = HILMagnetometer<N_DATA_MAGNETO>;
-using MainHILGps           = HILGps<N_DATA_GPS>;
-using MainHILBarometer     = HILBarometer<N_DATA_BARO>;
-using MainHILBarometer     = HILBarometer<N_DATA_BARO_CHAMBER>;
-using MainHILPitot         = HILPitot<N_DATA_PITOT>;
-using MainHILTemperature   = HILTemperature<N_DATA_TEMP>;
-
 using MainHILTransceiver =
-    HILTransceiver<MainFlightPhases, SimulatorData, ActuatorData>;
-using MainHIL = HIL<MainFlightPhases, SimulatorData, ActuatorData>;
+    Boardcore::HILTransceiver<MainFlightPhases, SimulatorData, ActuatorData>;
+using MainHIL = Boardcore::HIL<MainFlightPhases, SimulatorData, ActuatorData>;
 
 class MainHILPhasesManager
-    : public HILPhasesManager<MainFlightPhases, SimulatorData, ActuatorData>
+    : public Boardcore::HILPhasesManager<MainFlightPhases, SimulatorData,
+                                         ActuatorData>
 {
 public:
     explicit MainHILPhasesManager(
         std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition)
-        : HILPhasesManager<MainFlightPhases, SimulatorData, ActuatorData>(
-              getCurrentPosition)
+        : Boardcore::HILPhasesManager<MainFlightPhases, SimulatorData,
+                                      ActuatorData>(getCurrentPosition)
     {
         flagsFlightPhases = {{MainFlightPhases::SIM_FLYING, false},
                              {MainFlightPhases::SIM_ASCENT, false},
@@ -400,12 +390,25 @@ public:
                              {MainFlightPhases::SIMULATION_STOPPED, false}};
 
         prev_flagsFlightPhases = flagsFlightPhases;
+
+        auto& eventBroker = Boardcore::EventBroker::getInstance();
+        eventBroker.subscribe(this, Common::TOPIC_ABK);
+        eventBroker.subscribe(this, Common::TOPIC_ADA);
+        eventBroker.subscribe(this, Common::TOPIC_MEA);
+        eventBroker.subscribe(this, Common::TOPIC_DPL);
+        eventBroker.subscribe(this, Common::TOPIC_CAN);
+        eventBroker.subscribe(this, Common::TOPIC_FLIGHT);
+        eventBroker.subscribe(this, Common::TOPIC_FMM);
+        eventBroker.subscribe(this, Common::TOPIC_FSR);
+        eventBroker.subscribe(this, Common::TOPIC_NAS);
+        eventBroker.subscribe(this, Common::TOPIC_TMTC);
+        eventBroker.subscribe(this, Common::TOPIC_MOTOR);
+        eventBroker.subscribe(this, Common::TOPIC_TARS);
+        eventBroker.subscribe(this, Common::TOPIC_ALT);
     }
 
     void processFlags(const SimulatorData& simulatorData) override
     {
-        updateSimulatorFlags(simulatorData);
-
         std::vector<MainFlightPhases> changed_flags;
 
         // set true when the first packet from the simulator arrives
@@ -443,44 +446,126 @@ public:
 
     void printOutcomes()
     {
-        TRACE("OUTCOMES: (times dt from liftoff)\n\n");
-        TRACE("Simulation time: %.3f [sec]\n\n",
-              (double)(t_stop - t_start) / 1000000.0f);
+        printf("OUTCOMES: (times dt from liftoff)\n\n");
+        printf("Simulation time: %.3f [sec]\n\n",
+               (double)(t_stop - t_start) / 1000000.0f);
 
-        TRACE("Motor stopped burning (simulation flag): \n");
+        printf("Motor stopped burning (simulation flag): \n");
         outcomes[MainFlightPhases::SIM_BURNING].print(t_liftoff);
 
-        TRACE("Airbrakes exit shadowmode: \n");
+        printf("Airbrakes exit shadowmode: \n");
         outcomes[MainFlightPhases::AEROBRAKES].print(t_liftoff);
 
-        TRACE("Apogee: \n");
+        printf("Apogee: \n");
         outcomes[MainFlightPhases::APOGEE].print(t_liftoff);
 
-        TRACE("Parachute 1: \n");
+        printf("Parachute 1: \n");
         outcomes[MainFlightPhases::PARA1].print(t_liftoff);
 
-        TRACE("Parachute 2: \n");
+        printf("Parachute 2: \n");
         outcomes[MainFlightPhases::PARA2].print(t_liftoff);
 
-        TRACE("Simulation Stopped: \n");
+        printf("Simulation Stopped: \n");
         outcomes[MainFlightPhases::SIMULATION_STOPPED].print(t_liftoff);
 
         // auto cpuMeter = Boardcore::CpuMeter::getCpuStats();
-        // TRACE("max cpu usage: %+.3f\n", cpuMeter.maxValue);
-        // TRACE("avg cpu usage: %+.3f\n", cpuMeter.mean);
-        // TRACE("min free heap: %+.3lu\n", cpuMeter.minFreeHeap);
-        // TRACE("max free stack:%+.3lu\n", cpuMeter.minFreeStack);
+        // printf("max cpu usage: %+.3f\n", cpuMeter.maxValue);
+        // printf("avg cpu usage: %+.3f\n", cpuMeter.mean);
+        // printf("min free heap: %+.3lu\n", cpuMeter.minFreeHeap);
+        // printf("max free stack:%+.3lu\n", cpuMeter.minFreeStack);
     }
 
 private:
     void handleEvent(const Boardcore::Event& e) override
     {
         std::vector<MainFlightPhases> changed_flags;
-
-        TRACE("%d invalid event\n", e);
+        switch (e)
+        {
+            case Common::Events::FMM_INIT_ERROR:
+                printf("[HIL] ------- INIT FAILED ! ------- \n");
+            case Common::Events::FMM_INIT_OK:
+                setFlagFlightPhase(MainFlightPhases::CALIBRATION, true);
+                TRACE("[HIL] ------- CALIBRATION ! ------- \n");
+                changed_flags.push_back(MainFlightPhases::CALIBRATION);
+                break;
+            case Common::Events::FLIGHT_DISARMED:
+                setFlagFlightPhase(MainFlightPhases::CALIBRATION_OK, true);
+                TRACE("[HIL] CALIBRATION OK!\n");
+                changed_flags.push_back(MainFlightPhases::CALIBRATION_OK);
+                break;
+            case Common::Events::FLIGHT_ARMED:
+                setFlagFlightPhase(MainFlightPhases::ARMED, true);
+                printf("[HIL] ------- READY TO LAUNCH ! ------- \n");
+                changed_flags.push_back(MainFlightPhases::ARMED);
+                break;
+            case Common::Events::FLIGHT_LAUNCH_PIN_DETACHED:
+                setFlagFlightPhase(MainFlightPhases::LIFTOFF_PIN_DETACHED,
+                                   true);
+                TRACE("[HIL] ------- LIFTOFF PIN DETACHED ! ------- \n");
+                changed_flags.push_back(MainFlightPhases::LIFTOFF_PIN_DETACHED);
+                break;
+            case Common::Events::FLIGHT_LIFTOFF:
+            case Common::Events::TMTC_FORCE_LAUNCH:
+                t_liftoff = Boardcore::TimestampTimer::getTimestamp();
+                printf("[HIL] ------- LIFTOFF -------: %f, %f \n",
+                       getCurrentPosition().z, getCurrentPosition().vz);
+                changed_flags.push_back(MainFlightPhases::LIFTOFF);
+                break;
+            case Common::Events::ABK_SHADOW_MODE_TIMEOUT:
+                setFlagFlightPhase(MainFlightPhases::AEROBRAKES, true);
+                registerOutcomes(MainFlightPhases::AEROBRAKES);
+                TRACE("[HIL] ABK shadow mode timeout\n");
+                changed_flags.push_back(MainFlightPhases::AEROBRAKES);
+                break;
+            case Common::Events::ADA_SHADOW_MODE_TIMEOUT:
+                TRACE("[HIL] ADA shadow mode timeout\n");
+                break;
+            case Common::Events::ABK_DISABLE:
+                setFlagFlightPhase(MainFlightPhases::AEROBRAKES, false);
+                TRACE("[HIL] ABK disabled\n");
+                break;
+            case Common::Events::FLIGHT_APOGEE_DETECTED:
+            case Common::Events::CAN_APOGEE_DETECTED:
+                setFlagFlightPhase(MainFlightPhases::AEROBRAKES, false);
+                registerOutcomes(MainFlightPhases::APOGEE);
+                printf("[HIL] ------- APOGEE DETECTED ! ------- %f, %f \n",
+                       getCurrentPosition().z, getCurrentPosition().vz);
+                changed_flags.push_back(MainFlightPhases::APOGEE);
+                break;
+            case Common::Events::FLIGHT_DROGUE_DESCENT:
+            case Common::Events::TMTC_FORCE_EXPULSION:
+                setFlagFlightPhase(MainFlightPhases::PARA1, true);
+                registerOutcomes(MainFlightPhases::PARA1);
+                printf("[HIL] ------- PARA1 ! -------%f, %f \n",
+                       getCurrentPosition().z, getCurrentPosition().vz);
+                changed_flags.push_back(MainFlightPhases::PARA1);
+                break;
+            case Common::Events::FLIGHT_WING_DESCENT:
+            case Common::Events::FLIGHT_DPL_ALT_DETECTED:
+            case Common::Events::TMTC_FORCE_DEPLOYMENT:
+                setFlagFlightPhase(MainFlightPhases::PARA1, false);
+                setFlagFlightPhase(MainFlightPhases::PARA2, true);
+                registerOutcomes(MainFlightPhases::PARA2);
+                printf("[HIL] ------- PARA2 ! ------- %f, %f \n",
+                       getCurrentPosition().z, getCurrentPosition().vz);
+                changed_flags.push_back(MainFlightPhases::PARA2);
+                break;
+            case Common::Events::FLIGHT_LANDING_DETECTED:
+            case Common::Events::TMTC_FORCE_LANDING:
+                t_stop = Boardcore::TimestampTimer::getTimestamp();
+                setFlagFlightPhase(MainFlightPhases::PARA2, false);
+                setFlagFlightPhase(MainFlightPhases::SIMULATION_STOPPED, true);
+                changed_flags.push_back(MainFlightPhases::SIMULATION_STOPPED);
+                registerOutcomes(MainFlightPhases::SIMULATION_STOPPED);
+                TRACE("[HIL] ------- SIMULATION STOPPED ! -------: %f \n\n\n",
+                      (double)t_stop / 1000000.0f);
+                printOutcomes();
+                break;
+            default:
+                TRACE("%s event\n", Common::getEventString(e).c_str());
+        }
 
         /* calling the callbacks subscribed to the changed flags */
-        // cppcheck-suppress unsignedLessThanZero
         for (unsigned int i = 0; i < changed_flags.size(); i++)
         {
             std::vector<TCallback> callbacksToCall =
@@ -492,30 +577,6 @@ private:
         }
 
         prev_flagsFlightPhases = flagsFlightPhases;
-    }
-
-    /**
-     * @brief Updates the flags of the object with the flags sent from matlab
-     * and checks for the apogee
-     */
-    void updateSimulatorFlags(const SimulatorData& simulatorData)
-    {
-        flagsFlightPhases[MainFlightPhases::SIM_ASCENT] =
-            simulatorData.flags.flag_ascent;
-        flagsFlightPhases[MainFlightPhases::SIM_FLYING] =
-            simulatorData.flags.flag_flight;
-        flagsFlightPhases[MainFlightPhases::SIM_BURNING] =
-            simulatorData.flags.flag_burning;
-        flagsFlightPhases[MainFlightPhases::SIM_AEROBRAKES] =
-            simulatorData.flags.flag_airbrakes;
-        flagsFlightPhases[MainFlightPhases::SIM_PARA1] =
-            simulatorData.flags.flag_para1;
-        flagsFlightPhases[MainFlightPhases::SIM_PARA2] =
-            simulatorData.flags.flag_para2;
-
-        flagsFlightPhases[MainFlightPhases::SIMULATION_STOPPED] =
-            isSetFalse(MainFlightPhases::SIM_FLYING) ||
-            prev_flagsFlightPhases[MainFlightPhases::SIMULATION_STOPPED];
     }
 };
 
