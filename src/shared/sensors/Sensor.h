@@ -233,8 +233,11 @@ template <typename T>
 static T* hillificator(T* sensor, bool enableHw,
                        typename HILSensor<T>::UpdateFn updateData)
 {
-    sensor = new Boardcore::HILSensor<T>(std::move(*sensor), enableHw,
-                                         std::move(updateData));
+    if (sensor)
+    {
+        sensor = new Boardcore::HILSensor<T>(std::move(*sensor), enableHw,
+                                             std::move(updateData));
+    }
     return sensor;
 }
 
