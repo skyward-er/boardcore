@@ -25,11 +25,11 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace FlashMemory;
 
-void qspi_flash::enable() { Qspi->CR |= QUADSPI_CR_EN; }
+void qspiFlash::enable() { Qspi->CR |= QUADSPI_CR_EN; }
 
-void qspi_flash::disable() { Qspi->CR &= ~QUADSPI_CR_EN; }
+void qspiFlash::disable() { Qspi->CR &= ~QUADSPI_CR_EN; }
 
-void qspi_flash::abort_reset()
+void qspiFlash::abortReset()
 {
 
     // abort possible ongoing command
@@ -56,7 +56,7 @@ void qspi_flash::abort_reset()
     // if a transaction has been aborted.
 }
 
-void qspi_flash::waitBusy()
+void qspiFlash::waitBusy()
 {
     // wait till QUADSPI has completed the current communication with the flash
     uint32_t dt = 0;  // timeout
@@ -70,7 +70,7 @@ void qspi_flash::waitBusy()
     }
 }
 
-void qspi_flash::waitTransfer()
+void qspiFlash::waitTransfer()
 {
     // by setting data lenght register (DLR) you set how many bytes are expected
     // from memory. wait till all expected bytes have been tranferred.
@@ -88,7 +88,7 @@ void qspi_flash::waitTransfer()
     Qspi->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
 }
 
-qspi_flash::qspi_flash(QUADSPI_TypeDef* qspi)
+qspiFlash::qspiFlash(QUADSPI_TypeDef* qspi)
 {
 
     Qspi = qspi;
@@ -132,10 +132,10 @@ qspi_flash::qspi_flash(QUADSPI_TypeDef* qspi)
     flash_io3.speed(Speed::_100MHz);
 }
 
-bool qspi_flash::test()
+bool qspiFlash::test()
 {
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
@@ -143,20 +143,20 @@ bool qspi_flash::test()
     return readID() == DEVICE_ID;
 }
 
-uint8_t qspi_flash::read_status_reg()
+uint8_t qspiFlash::readStatusReg()
 {
 
     // status register can be read at any time and during every kind of
     // operation.
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return 0;
     }
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     Qspi->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |   // Indirect read mode
                  1 << QUADSPI_CCR_DMODE_Pos |   // Data on 1-wire
@@ -185,7 +185,7 @@ uint8_t qspi_flash::read_status_reg()
     return value;
 }
 
-void qspi_flash::write_enable()
+void qspiFlash::writeEnable()
 {
 
     // 1 send wren command
@@ -193,13 +193,13 @@ void qspi_flash::write_enable()
     // 3 wait for bit WEL = 1
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return;
     }
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, istruction on 1 wire, no data, no address, no
     // alternate bytes
@@ -219,7 +219,7 @@ void qspi_flash::write_enable()
     disable();
 
     // check status register until bit WEL = 1
-    uint8_t status = read_status_reg();
+    uint8_t status = readStatusReg();
     uint8_t dt     = 0;  // timeout
     while (!(status & (1 << 1)))
     {
@@ -229,22 +229,20 @@ void qspi_flash::write_enable()
         {
             return;
         }
-        status = read_status_reg();
+        status = readStatusReg();
     }
 }
 
-void qspi_flash::init()
+void qspiFlash::init()
 {
 
     // init peripheral clock
     ClockUtils::enablePeripheralClock((QUADSPI_TypeDef*)QSPI_BASE);
 
-    RCC_SYNC();
-
     Thread::sleep(1);
 
     // abort any operation
-    abort_reset();
+    abortReset();
 
     // reset configuration registers
     Qspi->CR  = 0;
@@ -256,30 +254,28 @@ void qspi_flash::init()
     Qspi->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
 
     // peripheral default initialization
-    Qspi->CR |=
-        QUADSPI_CR_SSHIFT |             // Wait a full cycle to read
-        3 << QUADSPI_CR_PRESCALER_Pos;  // QSPI clock = 216MHz / 4 = 54MHz
+    // QSPI clock = 216MHz / 4 = 54MHz, wait a full cycle to read
+    Qspi->CR |= QUADSPI_CR_SSHIFT | 3 << QUADSPI_CR_PRESCALER_Pos;
 
-    // set the memory chip size - it must be always setted before any read
-    // operation.
-    Qspi->DCR |=
-        21 << QUADSPI_DCR_FSIZE_Pos;  // Flash size 32Mb = 4MB = 2^(21+1) bytes
+    // set the memory chip size - it must be setted before any read operation
+    // Flash size 32Mb = 4MB = 2^(21+1) bytes
+    Qspi->DCR |= 21 << QUADSPI_DCR_FSIZE_Pos;
 
     // set flag intialised device
     initialised = true;
 }
 
-uint32_t qspi_flash::readID()
+uint32_t qspiFlash::readID()
 {
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return 0;
     }
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     Qspi->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |   // Indirect read mode
                  1 << QUADSPI_CCR_DMODE_Pos |   // Data on 1-wire
@@ -311,9 +307,9 @@ uint32_t qspi_flash::readID()
         disable();
 
         // the ID bytes order must be inverted
-        uint8_t lb = myID;                   // lowest byte
-        uint8_t mb = (myID >> 8) & (255U);   // middle byte
-        uint8_t hb = (myID >> 16) & (255U);  // highest byte
+        uint8_t lb = myID;          // lowest byte
+        uint8_t mb = (myID >> 8);   // middle byte
+        uint8_t hb = (myID >> 16);  // highest byte
 
         myID = (lb << 16) | (mb << 8) | (hb);
 
@@ -326,7 +322,7 @@ uint32_t qspi_flash::readID()
     }
 }
 
-void qspi_flash::write_disable()
+void qspiFlash::writeDisable()
 {
 
     // 1 send wrid command
@@ -334,13 +330,13 @@ void qspi_flash::write_disable()
     // 3 wait for bit WEL = 0
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return;
     }
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, istruction on 1 wire, no data, no address, no
     // alternate bytes
@@ -349,7 +345,7 @@ void qspi_flash::write_disable()
     // enable peripheral
     enable();
 
-    // start communication writing write_disable command to CCR register
+    // start communication writing writeDisable command to CCR register
     Qspi->CCR |= Commands::WRITE_DISABLE;
 
     // wait till the communication has ended
@@ -359,7 +355,7 @@ void qspi_flash::write_disable()
     disable();
 
     // check status register till bit WEL = 0
-    uint8_t status = read_status_reg();
+    uint8_t status = readStatusReg();
     uint8_t dt     = 0;  // timeout
     while (status & (1 << 1))
     {
@@ -369,11 +365,11 @@ void qspi_flash::write_disable()
         {
             return;
         }
-        status = read_status_reg();
+        status = readStatusReg();
     }
 }
 
-bool qspi_flash::isInProgress()
+bool qspiFlash::isInProgress()
 {
 
     // check if memory is currently executing some operation.
@@ -384,16 +380,16 @@ bool qspi_flash::isInProgress()
     // progress.
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
-    uint8_t status_reg = read_status_reg();
-    return (status_reg & 1) ? true : false;
+    uint8_t statusReg = readStatusReg();
+    return (statusReg & 1);
 }
 
-uint8_t qspi_flash::read_byte(uint32_t address)
+uint8_t qspiFlash::readByte(uint32_t address)
 {
 
     // 1 send READ command
@@ -403,7 +399,7 @@ uint8_t qspi_flash::read_byte(uint32_t address)
     // the adress register (Qspi->DR) is updated.
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return 0;
     }
@@ -413,7 +409,7 @@ uint8_t qspi_flash::read_byte(uint32_t address)
         return 0;
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     Qspi->CCR |= 1 << QUADSPI_CCR_FMODE_Pos |  // Indirect read mode
                  QUADSPI_CCR_DMODE_0 |         // data on a single  line
@@ -445,31 +441,31 @@ uint8_t qspi_flash::read_byte(uint32_t address)
     return value;
 }
 
-bool qspi_flash::chip_erase()
+bool qspiFlash::chipErase()
 {
 
     // erase the entire flash memory chip
     // erase chip operation typical time: 30-60 s
     // 1 wait until the memory has finished any operation in progress
-    // 2 write_enable command
+    // 2 writeEnable command
     // 3 erase chip command
     // 4 wait till flash has completed the erase operation
 
-    // if chip_erase operation will not be completed properly resulting in a
+    // if chipErase operation will not be completed properly resulting in a
     // timeout event and a forced reset (after some seconds by the command),
     // some post-operations may fail!
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
     // enable data writing
-    write_enable();
+    writeEnable();
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, no address, no data. all on one wire.
     Qspi->CCR |= QUADSPI_CCR_IMODE_0;  // istruction on one wire
@@ -494,29 +490,29 @@ bool qspi_flash::chip_erase()
         dt = dt + 1;
         if (dt >= 130000)  // (2 min and 10sec) max chip erase time = 2 min
         {
-            software_reset();   // device forced reset to default status
+            softwareReset();    // device forced reset to default status
             Thread::sleep(20);  // recovery time = 12 ms
             return false;
         }
     }
 
     // disable data writing
-    write_disable();
+    writeDisable();
 
     // return the result of chip erase operation
-    return check_erase();
+    return checkErase();
 }
 
-bool qspi_flash::sector_erase(uint32_t address)
+bool qspiFlash::sectorErase(uint32_t address)
 {
 
     // 1 wait until the memory has finished any operation in progress
-    // 2 write_enable command
+    // 2 writeEnable command
     // 3 erase sector command
     // 4 wait till flash has completed the operation
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
@@ -526,10 +522,10 @@ bool qspi_flash::sector_erase(uint32_t address)
         return false;
 
     // enable data writing
-    write_enable();
+    writeEnable();
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, 3-byte address , no data. all on one wire.
     Qspi->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
@@ -559,42 +555,44 @@ bool qspi_flash::sector_erase(uint32_t address)
         dt = dt + 1;
         if (dt >= 1000)  // max sector erase cycle time = 240 ms
         {
-            software_reset();  // device forced reset to default status
+            softwareReset();  // device forced reset to default status
             return false;
         }
     }
 
     // disable data writing
-    write_disable();
+    writeDisable();
 
     // check on result of the last operation
-    return check_erase();
+    return checkErase();
 }
 
-bool qspi_flash::block32_erase(uint32_t address)
+bool qspiFlash::block32Erase(uint32_t address)
 {
 
     // erase a 32K block of data, any address of the block is valid
     // 1 wait until the memory has finished any operation in progress
-    // 2 write_enable command
+    // 2 writeEnable command
     // 3 erase block_32 command
     // 4 wait till flash has completed the operation
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
     // check on correct address range
     if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
+    {
         return false;
+    }
 
     // enable data writing
-    write_enable();
+    writeEnable();
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, 3-byte address, no data. all on one wire.
     Qspi->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
@@ -624,29 +622,29 @@ bool qspi_flash::block32_erase(uint32_t address)
         dt = dt + 1;
         if (dt >= 3000)  // block_32 erase cycle max time = 1.8s
         {
-            software_reset();  // device forced reset to default status
+            softwareReset();  // device forced reset to default status
             return false;
         }
     }
 
     // disable data writing
-    write_disable();
+    writeDisable();
 
     // check on the result
-    return check_erase();
+    return checkErase();
 }
 
-bool qspi_flash::block64_erase(uint32_t address)
+bool qspiFlash::block64Erase(uint32_t address)
 {
 
     // erase a 64K block of data, any address of the block is valid
     // 1 wait until the memory has finished any operation in progress
-    // 2 write_enable command
+    // 2 writeEnable command
     // 3 erase block_64 command
     // 4 wait till flash has completed the operation
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
@@ -656,10 +654,10 @@ bool qspi_flash::block64_erase(uint32_t address)
         return false;
 
     // enable data writing
-    write_enable();
+    writeEnable();
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, 3-byte address, no data. all on one wire.
     Qspi->CCR |= QUADSPI_CCR_IMODE_0 |   // istruction on one wire
@@ -689,19 +687,19 @@ bool qspi_flash::block64_erase(uint32_t address)
         dt = dt + 1;
         if (dt >= 4500)  // erase block_64K cycle max time = 3.5s
         {
-            software_reset();  // device forced reset to default status
+            softwareReset();  // device forced reset to default status
             return false;
         }
     }
 
     // disable data writing
-    write_disable();
+    writeDisable();
 
     // check on result
-    return check_erase();
+    return checkErase();
 }
 
-bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
+bool qspiFlash::byteProgram(uint8_t data, uint32_t address, bool verify)
 {
 
     // double-check data may take some extra time !
@@ -713,7 +711,7 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
     // 4 wait till the operation is ended
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
@@ -725,10 +723,10 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
     }
 
     // enable data writing
-    write_enable();
+    writeEnable();
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // idirect write mode
     Qspi->CCR |= QUADSPI_CCR_DMODE_0 |   // data on a single line
@@ -758,26 +756,28 @@ bool qspi_flash::byte_program(uint8_t data, uint32_t address, bool verify)
         dt = dt + 1;
         if (dt >= 5000)  // max program byte cycle time = 100us
         {
-            software_reset();  // device forced reset to default status
+            softwareReset();  // device forced reset to default status
             return false;
         }
     }
 
     // disable data writing
-    write_disable();
+    writeDisable();
 
     // if verify = true, double check on data saved
     if (verify == true)
     {
-        if (read_byte(address) != data)
+        if (readByte(address) != data)
+        {
             return false;
+        }
     }
 
     // check on result
-    return check_program();
+    return checkProgram();
 }
 
-uint8_t qspi_flash::read_security_reg()
+uint8_t qspiFlash::readSecurityReg()
 {
 
     // security register can be read at any time and during every kind of
@@ -786,13 +786,13 @@ uint8_t qspi_flash::read_security_reg()
     // 2 - receive one byte of data containing the value of the register
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return 0;
     }
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     Qspi->CCR |= QUADSPI_CCR_FMODE_0 |  // Indirect read mode
                  QUADSPI_CCR_DMODE_0 |  // data on one wire
@@ -822,7 +822,7 @@ uint8_t qspi_flash::read_security_reg()
     return value;
 }
 
-void qspi_flash::software_reset()
+void qspiFlash::softwareReset()
 {
 
     // if software reset is performed at the same time of another program/erase
@@ -839,7 +839,7 @@ void qspi_flash::software_reset()
     // commands sequence: RSTEN >> wait 1ms >> RST >> wait 1ms
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return;
     }
@@ -847,7 +847,7 @@ void qspi_flash::software_reset()
     // -------------------- send RSTEN command -------------------------
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // indirect write mode, no data, no address, instruction on a single line
     Qspi->CCR |= QUADSPI_CCR_IMODE_0;
@@ -868,7 +868,7 @@ void qspi_flash::software_reset()
     Thread::sleep(1);
 
     // ------------------- send RST command --------------------------
-    abort_reset();
+    abortReset();
 
     Qspi->CCR |= QUADSPI_CCR_IMODE_0;
 
@@ -884,7 +884,7 @@ void qspi_flash::software_reset()
     Thread::sleep(1);
 }
 
-bool qspi_flash::check_erase()
+bool qspiFlash::checkErase()
 {
 
     // ATTTENTION! - this function check only if the last erase operation has
@@ -894,16 +894,16 @@ bool qspi_flash::check_erase()
     // false - erase operation has failed
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
-    uint8_t reg = read_security_reg();
+    uint8_t reg = readSecurityReg();
     return reg & (1 << 6) ? false : true;
 }
 
-bool qspi_flash::check_program()
+bool qspiFlash::checkProgram()
 {
 
     // ATTTENTION! - this function check only if the last operation has been
@@ -913,30 +913,30 @@ bool qspi_flash::check_program()
     // false - erase operation has failed
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
-    uint8_t reg = read_security_reg();
+    uint8_t reg = readSecurityReg();
     return reg & (1 << 5) ? false : true;
 }
 
-bool qspi_flash::read_sector(uint8_t* vector, const size_t size,
-                             uint32_t sector_num)
+bool qspiFlash::readSector(uint8_t* vector, const size_t size,
+                           uint32_t sectorNum)
 {
 
     // read an entire sector of the flash and then copy it into a vector whose
     // size is equal or greater than the size of a sector.
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
-    // check on correct sector_num range
-    if (sector_num < 0 || sector_num > SECTORS_NUM)
+    // check on correct sectorNum range
+    if (sectorNum < 0 || sectorNum > SECTORS_NUM)
     {
         return false;
     }
@@ -948,21 +948,21 @@ bool qspi_flash::read_sector(uint8_t* vector, const size_t size,
     }
 
     // computing correct address of the sector
-    uint32_t addr = SECTOR_SIZE * sector_num;
+    uint32_t addr = SECTOR_SIZE * sectorNum;
 
     // read the sector and copy its data to vector
     uint32_t index = 0;
     for (index = 0; index < SECTOR_SIZE; index++)
     {
-        vector[index] = read_byte(addr);
+        vector[index] = readByte(addr);
         addr++;
     }
 
     return true;
 }
 
-bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
-                              uint32_t start_address, bool verify)
+bool qspiFlash::pageProgram(const uint8_t* vector, const size_t size,
+                            uint32_t startAddress, bool verify)
 {
 
     // program a vector (max size = 256 bytes) on flash memory starting by a
@@ -972,17 +972,17 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
     // address of a page !!!!
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
     // not a starting address of a page
-    if ((start_address % PAGE_SIZE) != 0)
+    if ((startAddress % PAGE_SIZE) != 0)
         return false;
 
-    // start_address out of address space of the memory
-    if (start_address >= MEMORY_SIZE)
+    // startAddress out of address space of the memory
+    if (startAddress >= MEMORY_SIZE)
         return false;
 
     // empty vector or null pointer
@@ -994,10 +994,10 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
         return false;
 
     // enable data writing
-    write_enable();
+    writeEnable();
 
     // reset peripheral
-    abort_reset();
+    abortReset();
 
     // idirect write mode
     Qspi->CCR |= QUADSPI_CCR_DMODE_0 |   // data on a single line
@@ -1015,7 +1015,7 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
     Qspi->DLR = size - 1;
 
     // adding starting address
-    Qspi->AR = start_address;
+    Qspi->AR = startAddress;
 
     // load data vector into the QUADSPI FIFO (buffer)
     uint16_t i = 0;
@@ -1048,7 +1048,7 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
         dt = dt + 1;
         if (dt >= 50)  // max page program cycle time = 10ms
         {
-            software_reset();  // device forced reset to default status
+            softwareReset();  // device forced reset to default status
             return false;
         }
     }
@@ -1058,27 +1058,27 @@ bool qspi_flash::page_program(const uint8_t* vector, const size_t size,
     {
         for (i = 0; i < size; i++)
         {
-            if (read_byte(start_address + i) != vector[i])
+            if (readByte(startAddress + i) != vector[i])
                 return false;
         }
     }
 
     // check on last program operation result
-    return check_program();
+    return checkProgram();
 }
 
-bool qspi_flash::write(const uint8_t* vector, const size_t size,
-                       uint32_t sector_num, bool verify_write)
+bool qspiFlash::write(const uint8_t* vector, const size_t size,
+                      uint32_t sectorNum, bool verify)
 {
 
     // check if memory has been initialised
-    if (initialised == false)
+    if (!initialised)
     {
         return false;
     }
 
-    // wrong sector_num specified
-    if (sector_num >= SECTORS_NUM)
+    // wrong sectorNum specified
+    if (sectorNum >= SECTORS_NUM)
     {
         return false;
     }
@@ -1096,14 +1096,14 @@ bool qspi_flash::write(const uint8_t* vector, const size_t size,
     }
 
     // if the whole vector is bigger than the rest of sectors starting by
-    // sector_num
-    if (size > (SECTOR_SIZE * (SECTORS_NUM - sector_num)))
+    // sectorNum
+    if (size > (SECTOR_SIZE * (SECTORS_NUM - sectorNum)))
     {
         return false;
     }
 
     // compute starting address
-    uint32_t const start_address = SECTOR_SIZE * sector_num;
+    uint32_t const start_address = SECTOR_SIZE * sectorNum;
 
     // compute number of sectors needed to store the vector, then add one more
     // to store the last part of vector
@@ -1117,7 +1117,7 @@ bool qspi_flash::write(const uint8_t* vector, const size_t size,
     uint32_t sector_index = 0;
     for (sector_index = 0; sector_index < sectors_needed; sector_index++)
     {
-        if (sector_erase(SECTOR_SIZE * (sector_num + sector_index)) == false)
+        if (sectorErase(SECTOR_SIZE * (sectorNum + sector_index)) == false)
         {
             return false;
         }
@@ -1135,8 +1135,8 @@ bool qspi_flash::write(const uint8_t* vector, const size_t size,
     uint32_t page = 0;
     for (page = 0; page < pages_needed - 1; page++)
     {
-        if (page_program(vector + (page * PAGE_SIZE), PAGE_SIZE,
-                         start_address + (page * PAGE_SIZE), false) == false)
+        if (pageProgram(vector + (page * PAGE_SIZE), PAGE_SIZE,
+                        start_address + (page * PAGE_SIZE), false) == false)
             return false;
     }
 
@@ -1148,23 +1148,23 @@ bool qspi_flash::write(const uint8_t* vector, const size_t size,
      *  2 - is the size of last page which store the vector final part.
      *  3 - calculate the start address of last page.
      */
-    if (page_program(
-            vector + ((pages_needed - 1) * PAGE_SIZE), size % PAGE_SIZE,
-            start_address + ((pages_needed - 1) * PAGE_SIZE), false) == false)
+    if (pageProgram(vector + ((pages_needed - 1) * PAGE_SIZE), size % PAGE_SIZE,
+                    start_address + ((pages_needed - 1) * PAGE_SIZE),
+                    false) == false)
     {
         return false;
     }
 
-    // if verify_write is true:
+    // if verify is true:
     // check that the bytes written into the flash match with the ones in the
     // vector.
-    if (verify_write)
+    if (verify)
     {
         uint32_t index = 0;
         uint32_t addr  = start_address;
         for (index = 0; index < size; index++)
         {
-            if (read_byte(addr) != vector[index])
+            if (readByte(addr) != vector[index])
             {
                 return false;
             }

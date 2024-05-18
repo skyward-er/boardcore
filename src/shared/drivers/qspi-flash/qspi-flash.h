@@ -79,14 +79,14 @@ static const uint32_t MEMORY_SIZE = BLOCK64_SIZE * BLOCK64_NUM;  // about 4 MB
 
 };  // namespace FlashMemory
 
-class qspi_flash
+class qspiFlash
 {
 
 public:
     /**
      * @brief QUADSPI_FLASH class constructor
      */
-    qspi_flash(QUADSPI_TypeDef* qspi);
+    qspiFlash(QUADSPI_TypeDef* qspi);
 
     /**
      * @brief Initialise QUADSPI peripheral in order to communicate with the
@@ -114,11 +114,12 @@ public:
      * @brief write an entire vector on flash, starting by a specific
      * sector. if vector size exceed the size of a single sector, the vector
      * will be memorized on consecutive sectors of the memory, starting by
-     * sector_num
+     * sectorNum
      *
      * @param vector array to be saved in memory
-     * @param sector_num number of the starting sector [0 - 1024]
-     * @param verify_write double check on saved data flag,
+     * @param size size of array
+     * @param sectorNum number of the starting sector [0 - 1024]
+     * @param verify double check on saved data,
      * true  = double check enabled,
      * false = double ckeck disabled,
      * It may slow down the execution still it's a recommended option.
@@ -129,40 +130,42 @@ public:
      *
      * @return true/false - if the whole operation has been successful.
      */
-    bool write(const uint8_t* vector, const size_t size, uint32_t sector_num,
-               bool verify_write);
+    bool write(const uint8_t* vector, const size_t size, uint32_t sectorNum,
+               bool verify);
 
     /**
      * @brief copy a whole sector (4KB) from flash into a vector whose size is
      * greater or equal to the size of a sector in memory.
      * @param vector array which will store the sector.
-     * @param sector_num number of the sector which has to be copied into the
+     * @param size size of array
+     * @param sectorNum number of the sector which has to be copied into the
      * vector [0 - 1024]
      * @return true/false - if the operation has been successful.
-     * @warning the vector size must be enough to contain a whole sector!
+     * @warning vector's size must be enough to contain a whole sector!
      * @warning This function modify the vector passed!
      */
-    bool read_sector(uint8_t* vector, const size_t size, uint32_t sector_num);
+    bool readSector(uint8_t* vector, const size_t size, uint32_t sectorNum);
 
     /**
-     * @brief program a page (256 bytes) on memory at the starting address
+     * @brief program a page (256 bytes) on memory at its starting address
      * specified. if vector size is smaller than a whole page size there will be
      * no effects on other bytes of the page.
      * @param vector vector of data bytes to be programmed - its size must not
      * be bigger than a page size (256 byte).
-     * @param start_address starting address of the page to be programmed. must
+     * @param size size of array
+     * @param startAddress starting address of the page to be programmed. must
      * be a starting address!
      * @param verify double check on programmed data. true = enabled, false =
-     * disabled.
+     * disabled. It may slow down the execution still it's a recommended option.
      * @return true/false - if the operation has been successful.
-     * @warning start_address must be a starting address of a page!
-     * This function is only intended to program some bytes on flash by
+     * @warning startAddress must be a starting address of a page!
+     * This function is only intended to program some bytes on flash by properly
      * resetting some bits to "0". If you want to store a page of data you'll
      * need to erase the sector associated with this page and then reprogram the
      * page.
      */
-    bool page_program(const uint8_t* vector, const size_t size,
-                      uint32_t start_address, bool verify);
+    bool pageProgram(const uint8_t* vector, const size_t size,
+                     uint32_t startAddress, bool verify);
 
     /**
      * @brief erase the entire memory chip. since this operation is not so
@@ -171,22 +174,22 @@ public:
      * @return true/false - if the operation has been successful
      * @warning THIS OPERATION WILL TAKE A WHILE !! (at least 1 min)
      */
-    bool chip_erase();
+    bool chipErase();
 
     /**
      * @brief erase a specific sector (4KB)
      * @param address generic address (24 bit) of the sector address space.
      * @return true/false - if the operation has been successful
      */
-    bool sector_erase(uint32_t address);
+    bool sectorErase(uint32_t address);
 
     /**
      * @brief erase a specific block (32KB)
      * @param address generic address (24 bit) of the block address space.
-     * @warning THIS OPERATION COULD TAKE A WHILE
+     * @warning THIS OPERATION COULD TAKE A WHILE !
      * @return true/false - if the operation has been successful
      */
-    bool block32_erase(uint32_t address);
+    bool block32Erase(uint32_t address);
 
     /**
      * @brief erase a specific block (64KB)
@@ -194,14 +197,14 @@ public:
      * @warning THIS OPERATION COULD TAKE A WHILE!
      * @return true/false - if the operation has been successful
      */
-    bool block64_erase(uint32_t address);
+    bool block64Erase(uint32_t address);
 
     /**
      * @brief read a single byte at a specific address
      * @param address byte address (24 bit), it can be any address
      * @return byte value
      */
-    uint8_t read_byte(uint32_t address);
+    uint8_t readByte(uint32_t address);
 
     /**
      * @brief program a single byte at a specific address
@@ -214,7 +217,7 @@ public:
      * resetting some bits to "0". If you want to store a byte of data, you'll
      * need to perform an erase operation and then program the byte.
      */
-    bool byte_program(uint8_t data, uint32_t address, bool verify);
+    bool byteProgram(uint8_t data, uint32_t address, bool verify);
 
     /**
      * @brief make the flash go back to power-on default state. if the device
@@ -222,7 +225,7 @@ public:
      * and some data could be lost!
      * @warning THIS FUNCTION MAY TAKE A WHILE !
      */
-    void software_reset();
+    void softwareReset();
 
     /**
      * @brief check if the memory is currently executing any operation like
@@ -239,13 +242,13 @@ private:
      * @brief check result of last erase operation
      * @return true = success / false = fail
      */
-    bool check_erase();
+    bool checkErase();
 
     /**
      * @brief check result of last program operation
      * @return true = success / false = fail
      */
-    bool check_program();
+    bool checkProgram();
 
     /**
      * @brief enable modifying (program/erase) data on memory
@@ -254,7 +257,7 @@ private:
      * command, also you should always issue a "write disable" command, when you
      * have done modifying data.
      */
-    void write_enable();
+    void writeEnable();
 
     /**
      * @brief disable modifying (program/erase) data on memory
@@ -263,19 +266,19 @@ private:
      * command, also you should always issue a "write disable" command, when you
      * have done modifying data.
      */
-    void write_disable();
+    void writeDisable();
 
     /**
      * @brief read memory's status register
      * @return status register value (8 bit)
      */
-    uint8_t read_status_reg();
+    uint8_t readStatusReg();
 
     /**
      * @brief read memory's security register
      * @return security register value (8 bit)
      */
-    uint8_t read_security_reg();
+    uint8_t readSecurityReg();
 
     /* QuadSpi peripheral utility methods */
     // enable QUADSPI peripheral
@@ -286,7 +289,7 @@ private:
 
     /* abort any ongoing operation and reset current
     configuration of QUADSPI peripheral */
-    void abort_reset();
+    void abortReset();
 
     // wait till the current operation on QUADSPI peripheral is ended
     void waitBusy();

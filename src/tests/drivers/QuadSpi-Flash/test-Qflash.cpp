@@ -27,12 +27,10 @@
  * operations.
  */
 
-qspi_flash mymemory(QUADSPI);
+qspiFlash mymemory(QUADSPI);
 
 int main()
 {
-
-    // cambiare a camel case
 
     // init qspi-flash communication
     mymemory.init();
@@ -63,7 +61,9 @@ int main()
         printf("write operaton succeded!\n");
 
         uint8_t b[6000] = {0};
-        printf("read_sector: %d\n", mymemory.read_sector(b, 6000, 884));
+        printf("read_sector: %d\n", mymemory.readSector(b, 6000, 884));
+
+        return 0;
 
         printf("array (b): \n");
         for (i = 0; i < 6000; i++)
