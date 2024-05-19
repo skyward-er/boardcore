@@ -31,7 +31,7 @@ namespace Boardcore
 /**
  * @brief Absolute pressure sensor with a 0-206kPa range (0-30psi)
  */
-class SSCDANN030PAA final : public HoneywellPressureSensor<SSCDANN030PAAData>
+class SSCDANN030PAA : public HoneywellPressureSensor<SSCDANN030PAAData>
 {
 public:
     SSCDANN030PAA(std::function<ADCData()> getSensorVoltage,
