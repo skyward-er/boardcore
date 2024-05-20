@@ -41,7 +41,7 @@ int main()
 
     const int baud = 921600;
     USART usart(USART2, baud);
-    VN300 sensor(usart, baud, VN300Defs::BinaryOutputPacket::FULL,
+    VN300 sensor(usart, baud, VN300Defs::SampleOptions::FULL,
                  VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
