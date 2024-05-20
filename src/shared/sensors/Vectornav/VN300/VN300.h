@@ -51,19 +51,11 @@
  * - 921600
  */
 
-#include <ActiveObject.h>
-#include <diagnostic/PrintLogger.h>
-#include <fmt/format.h>
 #include <sensors/Sensor.h>
 #include <sensors/Vectornav/VNCommonSerial.h>
-#include <string.h>
-#include <utils/Debug.h>
-
-#include <Eigen/Core>
 
 #include "VN300Data.h"
 #include "VN300Defs.h"
-#include "drivers/usart/USART.h"
 
 namespace Boardcore
 {
@@ -84,8 +76,7 @@ public:
      * @param samplePeriod Sampling period in ms
      * @param antPos antenna A position
      */
-    VN300(USART& usart, int userBaudRate,
-          VN300Defs::BinaryOutputPacket binaryOutputPacket,
+    VN300(USART& usart, int userBaudRate, VN300Defs::SampleOptions sampleOption,
           CRCOptions crc                     = CRCOptions::CRC_ENABLE_8,
           VN300Defs::AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           VN300Defs::AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -95,12 +86,13 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     /**
      * @brief Sample action implementation.
      */
     VN300Data sampleImpl() override;
 
+private:
     /**
      * @brief Sets the antenna A offset.
      *
@@ -139,13 +131,6 @@ private:
      */
     bool setBinaryOutput();
 
-    /**
-     * @brief Method implementation of self test.
-     *
-     * @return True if operation succeeded.
-     */
-    bool selfTestImpl();
-
     VN300Data sampleBinary();
 
     /**
@@ -170,7 +155,7 @@ private:
     void buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
                             VN300Data& data, const uint64_t timestamp);
 
-    VN300Defs::BinaryOutputPacket binaryOutputPacket;
+    VN300Defs::SampleOptions sampleOption;
 
     VN300Defs::AntennaPosition antPosA;
     VN300Defs::AntennaPosition antPosB;

@@ -23,20 +23,19 @@
 #include "VN300.h"
 
 #include <drivers/timer/TimestampTimer.h>
-
-#include "diagnostic/CpuMeter/CpuMeter.h"
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
 
 VN300::VN300(USART& usart, int userBaudRate,
-             VN300Defs::BinaryOutputPacket binaryOutputPacket, CRCOptions crc,
+             VN300Defs::SampleOptions sampleOption, CRCOptions crc,
              const VN300Defs::AntennaPosition antPosA,
              const VN300Defs::AntennaPosition antPosB,
              const Eigen::Matrix3f rotMat)
     : VNCommonSerial(usart, userBaudRate, "VN300", crc),
-      binaryOutputPacket(binaryOutputPacket), antPosA(antPosA),
-      antPosB(antPosB), rotMat(rotMat)
+      sampleOption(sampleOption), antPosA(antPosA), antPosB(antPosB),
+      rotMat(rotMat)
 {
 }
 
@@ -139,21 +138,12 @@ bool VN300::init()
     return true;
 }
 
-bool VN300::selfTest()
-{
-    if (!selfTestImpl())
-    {
-        lastError = SensorErrors::SELF_TEST_FAIL;
-        LOG_WARN(logger, "Unable to perform a successful VN300 self test");
-        return false;
-    }
-
-    return true;
-}
+bool VN300::selfTest() { return true; }
 
 VN300Data VN300::sampleImpl()
 {
     D(assert(isInit && "init() was not called"));
+
     // Reset any errors
     lastError = SensorErrors::NO_ERRORS;
 
@@ -168,11 +158,14 @@ VN300Data VN300::sampleBinary()
 
     const uint64_t timestamp = TimestampTimer::getTimestamp();
 
-    bool sampleOutcome = false;
+    bool sampleOutcome =
+        false;  // True if a valid sample was retrieved from the sensor
     bool validChecksum = false;
-    switch (binaryOutputPacket)
+
+    // Sample data and calculate checksum
+    switch (sampleOption)
     {
-        case VN300Defs::BinaryOutputPacket::FULL:
+        case VN300Defs::SampleOptions::FULL:
             sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataFull>(
                 bindataFull, preSampleBin1);
 
@@ -181,7 +174,7 @@ VN300Data VN300::sampleBinary()
                 calculateChecksum16(reinterpret_cast<uint8_t*>(&bindataFull),
                                     sizeof(bindataFull)) == 0;
             break;
-        case VN300Defs::BinaryOutputPacket::ARP:
+        case VN300Defs::SampleOptions::ARP:
             sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataArp>(
                 binDataArp, preSampleBin1);
 
@@ -192,16 +185,17 @@ VN300Data VN300::sampleBinary()
             break;
     }
 
+    // Verify if the sample was valid
     sampleOutcome = sampleOutcome && validChecksum;
 
     if (sampleOutcome)
     {
-        switch (binaryOutputPacket)
+        switch (sampleOption)
         {
-            case VN300Defs::BinaryOutputPacket::FULL:
+            case VN300Defs::SampleOptions::FULL:
                 buildBinaryDataFull(bindataFull, data, timestamp);
                 break;
-            case VN300Defs::BinaryOutputPacket::ARP:
+            case VN300Defs::SampleOptions::ARP:
                 buildBinaryDataArp(binDataArp, data, timestamp);
                 break;
         }
@@ -217,31 +211,45 @@ VN300Data VN300::sampleBinary()
 void VN300::buildBinaryDataFull(const VN300Defs::BinaryDataFull& rawData,
                                 VN300Data& data, const uint64_t timestamp)
 {
-    QuaternionData quat{timestamp, rawData.quatW_bin, rawData.quatX_bin,
-                        rawData.quatY_bin, rawData.quatZ_bin};
+    // Quaternion
+    data.quaternionTimestamp = timestamp;
+    data.quaternionW         = rawData.quatW_bin;
+    data.quaternionX         = rawData.quatX_bin;
+    data.quaternionY         = rawData.quatY_bin;
+    data.quaternionZ         = rawData.quatZ_bin;
 
-    AccelerometerData acc{timestamp, rawData.accx, rawData.accy, rawData.accz};
+    // Accelerometer
+    data.accelerationTimestamp = timestamp;
+    data.accelerationX         = rawData.accx;
+    data.accelerationY         = rawData.accy;
+    data.accelerationZ         = rawData.accz;
 
-    MagnetometerData mag{timestamp, rawData.magx, rawData.magy, rawData.magz};
+    // Magnetometer
+    data.magneticFieldTimestamp = timestamp;
+    data.magneticFieldX         = rawData.magx;
+    data.magneticFieldY         = rawData.magy;
+    data.magneticFieldZ         = rawData.magz;
 
-    GyroscopeData gyro{timestamp, rawData.angx, rawData.angy, rawData.angz};
+    // Gyroscope
+    data.angularSpeedTimestamp = timestamp;
+    data.angularSpeedX         = rawData.angx;
+    data.angularSpeedY         = rawData.angy;
+    data.angularSpeedZ         = rawData.angz;
 
-    VN300Defs::Ins_Lla ins{
-        timestamp,
-        rawData.fix,
-        rawData.fix,  // add function to extract ins_fix from ins_status
-        rawData.ins_status,
-        rawData.yaw_bin,
-        rawData.pitch_bin,
-        rawData.roll_bin,
-        static_cast<float>(rawData.latitude_bin),
-        static_cast<float>(rawData.longitude_bin),
-        static_cast<float>(rawData.altitude_bin),
-        rawData.velx,
-        rawData.vely,
-        rawData.velz};
-
-    data = VN300Data(quat, mag, acc, gyro, ins);
+    // Gps
+    data.insTimestamp = timestamp;
+    data.fix_gps      = rawData.fix;
+    data.fix_ins      = rawData.fix;
+    data.status       = rawData.ins_status;
+    data.yaw          = rawData.yaw_bin;
+    data.pitch        = rawData.pitch_bin;
+    data.roll         = rawData.roll_bin;
+    data.latitude     = rawData.latitude_bin;
+    data.longitude    = rawData.longitude_bin;
+    data.altitude     = rawData.altitude_bin;
+    data.nedVelX      = rawData.velx;
+    data.nedVelY      = rawData.vely;
+    data.nedVelZ      = rawData.velz;
 }
 
 void VN300::buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
@@ -357,10 +365,9 @@ bool VN300::setBinaryOutput()
 
     uint16_t outputGroup = 0, commonGroup = 0, gnssGroup = 0;
 
-    // if (binaryOutputPacket == )
-    switch (binaryOutputPacket)
+    switch (sampleOption)
     {
-        case VN300Defs::BinaryOutputPacket::FULL:
+        case VN300Defs::SampleOptions::FULL:
             outputGroup =
                 VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
 
@@ -375,7 +382,7 @@ bool VN300::setBinaryOutput()
             gnssGroup = VN300Defs::GPSGROUP_NUMSATS | VN300Defs::GPSGROUP_FIX |
                         VN300Defs::GPSGROUP_POSLLA;
             break;
-        case VN300Defs::BinaryOutputPacket::ARP:
+        case VN300Defs::SampleOptions::ARP:
             outputGroup =
                 VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
             commonGroup = VN300Defs::COMMONGROUP_YAWPITCHROLL |
@@ -393,14 +400,11 @@ bool VN300::setBinaryOutput()
     // respect to the max rate
     const char* comp = "VNWRG,75,0,8";
 
-    // Using fmt::format it's possible to format the string also adding the
-    // groups and their respective fields
     std::string command = fmt::format("{},{},{:x},{:x}", comp, outputGroup,
                                       commonGroup, gnssGroup);
 
     usart.clearQueue();
 
-    // Send the command
     if (!sendStringCommand(command))
     {
         return false;
@@ -412,68 +416,10 @@ bool VN300::setBinaryOutput()
         return false;
     }
 
-    // The reply is compared with the comp variable and in case of an error the
-    // received message is passed to the logger
     if (checkErrorVN(recvString.data()) != 0)
     {
-        LOG_WARN(logger, "The reply is wrong {}", recvString.data());
-        return false;
-    }
-
-    return true;
-}
-
-bool VN300::selfTestImpl()
-{
-    char modelNumber[]          = "VN-300T-CR";
-    const int modelNumberOffset = 10;
-
-    // Check the init status
-    if (!isInit)
-    {
-        lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(
-            logger,
-            "Unable to perform VN300 self test due to not initialized sensor");
-        return false;
-    }
-
-    miosix::Thread::sleep(100);
-
-    // removing junk
-    usart.clearQueue();
-
-    // I check the model number
-    if (!sendStringCommand("VNRRG,01"))
-    {
-        LOG_WARN(logger, "Unable to send string command");
-        lastError = SELF_TEST_FAIL;
-        return false;
-    }
-
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to receive string command");
-        lastError = SELF_TEST_FAIL;
-        return false;
-    }
-
-    // Now i check that the model number is VN-100 starting from the 10th
-    // position because of the message structure
-    if (strncmp(modelNumber, recvString.data() + modelNumberOffset,
-                strlen(modelNumber)) != 0)
-    {
-        LOG_ERR(logger, "VN-300 not corresponding: {} != {}", recvString.data(),
-                modelNumber);
-        lastError = SELF_TEST_FAIL;
-        return false;
-    }
-
-    // I check the checksum
-    if (!verifyChecksum(recvString.data(), recvStringLength))
-    {
-        LOG_ERR(logger, "Checksum verification failed: {}", recvString.data());
-        lastError = SELF_TEST_FAIL;
+        LOG_WARN(logger, "Error while setting binary output: {}",
+                 recvString.data());
         return false;
     }
 
