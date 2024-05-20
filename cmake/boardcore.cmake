@@ -109,7 +109,9 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/SensorSampler.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/VN100/VN100.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/Vectornav/VNCommonSerial.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/Vectornav/VN100/VN100.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/Vectornav/VN300/VN300.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/LPS28DFW/LPS28DFW.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/LPS22DF/LPS22DF.cpp
@@ -151,7 +153,7 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
     target_include_directories(${BOARDCORE_LIB} PUBLIC ${BOARDCORE_PATH}/src/shared)
 
     # Define DEBUG when in Debug mode
-    target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<CONFIG:Debug>:DEBUG>) 
+    target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<CONFIG:Debug>:DEBUG>)
 
     # Link libraries
     target_link_libraries(${BOARDCORE_LIB} PUBLIC
