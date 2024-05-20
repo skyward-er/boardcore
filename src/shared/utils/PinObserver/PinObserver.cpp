@@ -52,12 +52,6 @@ bool PinObserver::registerPinCallback(miosix::GpioPin pin, PinCallback callback,
     return false;
 }
 
-bool PinObserver::start() { return scheduler.start(); }
-
-void PinObserver::stop() { scheduler.stop(); }
-
-bool PinObserver::isRunning() { return scheduler.isRunning(); }
-
 PinData PinObserver::getPinData(miosix::GpioPin pin) { return callbacks[pin]; }
 
 void PinObserver::resetPinChangesCount(miosix::GpioPin pin)
