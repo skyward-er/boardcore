@@ -23,7 +23,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>
 
-set(BOARD_NAME stm32f767zi_bikeshed)
+set(BOARD_NAME stm32f767zi_lyra_biscotto)
 set(ARCH_NAME cortexM7_stm32f7)
 
 # Base directories with header files for this board

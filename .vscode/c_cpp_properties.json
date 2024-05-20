@@ -343,13 +343,13 @@
             ]
         },
         {
-            "name": "stm32f767zi_bikeshed",
+            "name": "stm32f767zi_lyra_biscotto",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
                 "${defaultDefines}",
-                "_MIOSIX_BOARDNAME=stm32f767zi_bikeshed",
+                "_MIOSIX_BOARDNAME=stm32f767zi_lyra_biscotto",
                 "_BOARD_STM32F767ZI_BIKESHED",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F769xx",
@@ -361,8 +361,8 @@
             "includePath": [
                 "${defaultIncludePaths}",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/common",
-                "${workspaceFolder}/src/bsps/stm32f767zi_bikeshed/config",
-                "${workspaceFolder}/src/bsps/stm32f767zi_bikeshed"
+                "${workspaceFolder}/src/bsps/stm32f767zi_lyra_biscotto/config",
+                "${workspaceFolder}/src/bsps/stm32f767zi_lyra_biscotto"
             ]
         },
         {

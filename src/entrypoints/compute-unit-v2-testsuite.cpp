@@ -331,7 +331,7 @@ void sd_test()
             if (actual != value)
             {
                 printf(
-                    "Failed to validate word %zu, expected: %u, actual: %u\n",
+                    "Failed to validate word %zu, expected: %lu, actual: %lu\n",
                     i, value, actual);
                 ok = false;
                 break;
