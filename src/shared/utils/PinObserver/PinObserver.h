@@ -95,26 +95,6 @@ public:
                              bool reverted               = false);
 
     /**
-     * @brief Starts the PinObserver's task scheduler.
-     *
-     * Note that the scheduler is started as soon as the PinObserver is first
-     * used.
-     *
-     * @return Whether the task scheduler was started or not.
-     */
-    bool start();
-
-    /**
-     * @brief Stops the PinObserver's task scheduler.
-     */
-    void stop();
-
-    /**
-     * @brief True if the PinObserver started correctly.
-     */
-    bool isRunning();
-
-    /**
      * @brief Returns the information for the specified pin.
      */
     PinData getPinData(miosix::GpioPin pin);

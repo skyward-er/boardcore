@@ -71,6 +71,8 @@ int main()
     observer.registerPinCallback(pin1, std::bind(onTransition, pin1, _1), 10);
     observer.registerPinCallback(pin2, std::bind(onTransition, pin2, _1), 10);
 
+    scheduler.start();
+
     while (true)
         Thread::sleep(10000);
 }
