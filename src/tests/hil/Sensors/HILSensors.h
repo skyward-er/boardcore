@@ -65,19 +65,17 @@ public:
         chamberPressureCreation();
         pitotCreation();
 
-        lps28dfw_1 = hillificator<>(lps28dfw_1, enableHw, updateLPS28DFWData);
-        lps28dfw_2 = hillificator<>(lps28dfw_2, enableHw, updateLPS28DFWData);
-        lps22df    = hillificator<>(lps22df, enableHw, updateLPS22DFData);
-        h3lis331dl = hillificator<>(h3lis331dl, enableHw, updateH3LIS331DLData);
-        lis2mdl    = hillificator<>(lis2mdl, enableHw, updateLIS2MDLData);
-        ubxgps     = hillificator<>(ubxgps, enableHw, updateUBXGPSData);
-        lsm6dsrx   = hillificator<>(lsm6dsrx, enableHw, updateLSM6DSRXData);
-        hscmrnn015pa_1 =
-            hillificator<>(hscmrnn015pa_1, enableHw, updateStaticPressureData);
-        hscmrnn015pa_2 =
-            hillificator<>(hscmrnn015pa_2, enableHw, updateStaticPressureData);
-        imu     = hillificator<>(imu, enableHw, updateIMUData);
-        chamber = hillificator<>(chamber, enableHw, updateCCData);
+        hillificator<>(lps28dfw_1, enableHw, updateLPS28DFWData);
+        hillificator<>(lps28dfw_2, enableHw, updateLPS28DFWData);
+        hillificator<>(lps22df, enableHw, updateLPS22DFData);
+        hillificator<>(h3lis331dl, enableHw, updateH3LIS331DLData);
+        hillificator<>(lis2mdl, enableHw, updateLIS2MDLData);
+        hillificator<>(ubxgps, enableHw, updateUBXGPSData);
+        hillificator<>(lsm6dsrx, enableHw, updateLSM6DSRXData);
+        hillificator<>(hscmrnn015pa_1, enableHw, updateStaticPressureData);
+        hillificator<>(hscmrnn015pa_2, enableHw, updateStaticPressureData);
+        hillificator<>(imu, enableHw, updateIMUData);
+        hillificator<>(chamber, enableHw, updateCCData);
     };
 
     bool start() override
@@ -85,13 +83,14 @@ public:
         // Registering the fake can sensors
         if (chamber)
         {
-            registerSensor(chamber, "chamber", HILConfig::BARO_CHAMBER_PERIOD,
+            registerSensor(chamber.get(), "chamber",
+                           HILConfig::BARO_CHAMBER_PERIOD,
                            [this]() { this->chamberPressureCallback(); });
         }
 
         if (pitot)
         {
-            registerSensor(pitot, "Pitot", HILConfig::PITOT_PERIOD,
+            registerSensor(pitot.get(), "Pitot", HILConfig::PITOT_PERIOD,
                            [this]() { this->pitotCallback(); });
         }
 
@@ -99,7 +98,10 @@ public:
     }
 
 private:
-    void chamberPressureCreation() { chamber = new MockChamberSensor(); }
+    void chamberPressureCreation()
+    {
+        chamber = std::make_unique<MockChamberSensor>();
+    }
 
     void chamberPressureCallback()
     {
@@ -112,8 +114,8 @@ private:
 
     void pitotCreation()
     {
-        pitot =
-            new Boardcore::Pitot(getTotalPressurePitot, getStaticPressurePitot);
+        pitot = std::make_unique<Boardcore::Pitot>(getTotalPressurePitot,
+                                                   getStaticPressurePitot);
         pitot->setReferenceValues(Boardcore::ReferenceValues());
     }
 
@@ -366,8 +368,8 @@ private:
         return staticPressure;
     };
 
-    MockChamberSensor* chamber = nullptr;
-    Boardcore::Pitot* pitot    = nullptr;
+    std::unique_ptr<MockChamberSensor> chamber;
+    std::unique_ptr<Boardcore::Pitot> pitot;
     bool enableHw;
 };
 }  // namespace HILTest

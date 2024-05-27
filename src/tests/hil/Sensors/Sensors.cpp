@@ -268,81 +268,81 @@ bool Sensors::start()
 
     if (lps22df)
     {
-        registerSensor(lps22df, "LPS22DF", LPS22DF_PERIOD,
+        registerSensor(lps22df.get(), "LPS22DF", LPS22DF_PERIOD,
                        [this]() { this->lps22dfCallback(); });
-        addInfoGetter(lps22df);
+        addInfoGetter(lps22df.get());
     }
 
     if (lps28dfw_1)
     {
-        registerSensor(lps28dfw_1, "LPS28DFW_1", LPS28DFW_PERIOD,
+        registerSensor(lps28dfw_1.get(), "LPS28DFW_1", LPS28DFW_PERIOD,
                        [this]() { this->lps28dfw_1Callback(); });
-        addInfoGetter(lps28dfw_1);
+        addInfoGetter(lps28dfw_1.get());
     }
 
     if (lps28dfw_2)
     {
-        registerSensor(lps28dfw_2, "LPS28DFW_2", LPS28DFW_PERIOD,
+        registerSensor(lps28dfw_2.get(), "LPS28DFW_2", LPS28DFW_PERIOD,
                        [this]() { this->lps28dfw_2Callback(); });
-        addInfoGetter(lps28dfw_2);
+        addInfoGetter(lps28dfw_2.get());
     }
 
     if (h3lis331dl)
     {
-        registerSensor(h3lis331dl, "h3lis331dl", H3LIS331DL_PERIOD,
+        registerSensor(h3lis331dl.get(), "h3lis331dl", H3LIS331DL_PERIOD,
                        [this]() { this->h3lis331dlCallback(); });
-        addInfoGetter(h3lis331dl);
+        addInfoGetter(h3lis331dl.get());
     }
 
     if (lis2mdl)
     {
-        registerSensor(lis2mdl, "lis2mdl", LIS2MDL_PERIOD,
+        registerSensor(lis2mdl.get(), "lis2mdl", LIS2MDL_PERIOD,
                        [this]() { this->lis2mdlCallback(); });
-        addInfoGetter(lis2mdl);
+        addInfoGetter(lis2mdl.get());
     }
 
     if (ubxgps)
     {
-        registerSensor(ubxgps, "ubxgps", UBXGPS_PERIOD,
+        registerSensor(ubxgps.get(), "ubxgps", UBXGPS_PERIOD,
                        [this]() { this->ubxgpsCallback(); });
-        addInfoGetter(ubxgps);
+        addInfoGetter(ubxgps.get());
     }
 
     if (lsm6dsrx)
     {
-        registerSensor(lsm6dsrx, "lsm6dsrx", LSM6DSRX_PERIOD,
+        registerSensor(lsm6dsrx.get(), "lsm6dsrx", LSM6DSRX_PERIOD,
                        [this]() { this->lsm6dsrxCallback(); });
-        addInfoGetter(lsm6dsrx);
+        addInfoGetter(lsm6dsrx.get());
     }
 
     if (ads131m08)
     {
-        registerSensor(ads131m08, "ads131m08", ADS131M08_PERIOD,
+        registerSensor(ads131m08.get(), "ads131m08", ADS131M08_PERIOD,
                        [this]() { this->ads131m08Callback(); });
-        addInfoGetter(ads131m08);
+        addInfoGetter(ads131m08.get());
     }
 
     if (mpxh6400a)
     {
-        registerSensor(mpxh6400a, "mpxh6400a", ADS131M08_PERIOD,
+        registerSensor(mpxh6400a.get(), "mpxh6400a", ADS131M08_PERIOD,
                        [this]() { this->deploymentPressureCallback(); });
     }
 
     if (hscmrnn015pa_1)
     {
-        registerSensor(hscmrnn015pa_1, "hscmrnn015pa_1", ADS131M08_PERIOD,
+        registerSensor(hscmrnn015pa_1.get(), "hscmrnn015pa_1", ADS131M08_PERIOD,
                        [this]() { this->staticPressure1Callback(); });
     }
 
     if (hscmrnn015pa_2)
     {
-        registerSensor(hscmrnn015pa_2, "hscmrnn015pa_2", ADS131M08_PERIOD,
+        registerSensor(hscmrnn015pa_2.get(), "hscmrnn015pa_2", ADS131M08_PERIOD,
                        [this]() { this->staticPressure2Callback(); });
     }
 
     if (imu)
     {
-        registerSensor(imu, "RotatedIMU", IMU_PERIOD,
+        registerSensor(imu.get(), "RotatedIMU", IMU_PERIOD,
                        [this]() { this->imuCallback(); });
     }
 
@@ -364,7 +364,7 @@ bool Sensors::start()
         MAG_CALIBRATION_PERIOD);
 
     // Create sensor manager with populated map and configured scheduler
-    manager = new SensorManager(sensorMap, scheduler);
+    manager = std::make_unique<SensorManager>(sensorMap, scheduler);
     return manager->start() && result != 0;
 }
 
@@ -467,8 +467,9 @@ void Sensors::lps22dfCreation()
     sensorConfig.odr = LPS22DF_ODR;
 
     // Create sensor instance with configured parameters
-    lps22df = new LPS22DF(buses->spi3, miosix::sensors::LPS22DF::cs::getPin(),
-                          config, sensorConfig);
+    lps22df = std::make_unique<LPS22DF>(buses->spi3,
+                                        miosix::sensors::LPS22DF::cs::getPin(),
+                                        config, sensorConfig);
 }
 void Sensors::lps28dfw_1Creation()
 {
@@ -478,7 +479,7 @@ void Sensors::lps28dfw_1Creation()
                                   LPS28DFW_ODR, false};
 
     // Create sensor instance with configured parameters
-    lps28dfw_1 = new LPS28DFW(buses->i2c1, config);
+    lps28dfw_1 = std::make_unique<LPS28DFW>(buses->i2c1, config);
 }
 void Sensors::lps28dfw_2Creation()
 {
@@ -488,7 +489,7 @@ void Sensors::lps28dfw_2Creation()
                                   LPS28DFW_ODR, false};
 
     // Create sensor instance with configured parameters
-    lps28dfw_2 = new LPS28DFW(buses->i2c1, config);
+    lps28dfw_2 = std::make_unique<LPS28DFW>(buses->i2c1, config);
 }
 void Sensors::h3lis331dlCreation()
 {
@@ -498,9 +499,9 @@ void Sensors::h3lis331dlCreation()
     config.clockDivider = SPI::ClockDivider::DIV_16;
 
     // Create sensor instance with configured parameters
-    h3lis331dl =
-        new H3LIS331DL(buses->spi3, miosix::sensors::H3LIS331DL::cs::getPin(),
-                       config, H3LIS331DL_ODR, H3LIS331DL_BDU, H3LIS331DL_FSR);
+    h3lis331dl = std::make_unique<H3LIS331DL>(
+        buses->spi3, miosix::sensors::H3LIS331DL::cs::getPin(), config,
+        H3LIS331DL_ODR, H3LIS331DL_BDU, H3LIS331DL_FSR);
 }
 void Sensors::lis2mdlCreation()
 {
@@ -516,8 +517,9 @@ void Sensors::lis2mdlCreation()
     sensorConfig.temperatureDivider = LIS2MDL_TEMPERATURE_DIVIDER;
 
     // Create sensor instance with configured parameters
-    lis2mdl = new LIS2MDL(buses->spi3, miosix::sensors::LIS2MDL::cs::getPin(),
-                          config, sensorConfig);
+    lis2mdl = std::make_unique<LIS2MDL>(buses->spi3,
+                                        miosix::sensors::LIS2MDL::cs::getPin(),
+                                        config, sensorConfig);
 }
 
 void Sensors::ubxgpsCreation()
@@ -528,8 +530,8 @@ void Sensors::ubxgpsCreation()
     config.clockDivider = SPI::ClockDivider::DIV_64;
 
     // Create sensor instance with configured parameters
-    ubxgps = new UBXGPSSpi(buses->spi4, miosix::sensors::GPS::cs::getPin(),
-                           config, 5);
+    ubxgps = std::make_unique<UBXGPSSpi>(
+        buses->spi4, miosix::sensors::GPS::cs::getPin(), config, 5);
 }
 
 void Sensors::lsm6dsrxCreation()
@@ -560,9 +562,9 @@ void Sensors::lsm6dsrxCreation()
     sensorConfig.fifoTemperatureBdr      = LSM6DSRX_FIFO_TEMPERATURE_BDR;
 
     // Create sensor instance with configured parameters
-    lsm6dsrx =
-        new LSM6DSRX(buses->spi1, miosix::sensors::LSM6DSRX::cs::getPin(),
-                     config, sensorConfig);
+    lsm6dsrx = std::make_unique<LSM6DSRX>(
+        buses->spi1, miosix::sensors::LSM6DSRX::cs::getPin(), config,
+        sensorConfig);
 }
 
 void Sensors::ads131m08Creation()
@@ -578,9 +580,9 @@ void Sensors::ads131m08Creation()
     sensorConfig.globalChopModeEnabled = ADS131M08_GLOBAL_CHOP_MODE;
 
     // Create the sensor instance with configured parameters
-    ads131m08 =
-        new ADS131M08(buses->spi4, miosix::sensors::ADS131::cs::getPin(),
-                      config, sensorConfig);
+    ads131m08 = std::make_unique<ADS131M08>(
+        buses->spi4, miosix::sensors::ADS131::cs::getPin(), config,
+        sensorConfig);
 }
 
 void Sensors::deploymentPressureCreation()
@@ -594,7 +596,7 @@ void Sensors::deploymentPressureCreation()
     };
 
     // Create the sensor instance with created function
-    mpxh6400a = new MPXH6400A(getVoltage, ADC_VOLTAGE_RANGE);
+    mpxh6400a = std::make_unique<MPXH6400A>(getVoltage, ADC_VOLTAGE_RANGE);
 }
 
 void Sensors::staticPressure1Creation()
@@ -608,7 +610,8 @@ void Sensors::staticPressure1Creation()
     };
 
     // Create the sensor instance with created function
-    hscmrnn015pa_1 = new HSCMRNN015PA(getVoltage, ADC_VOLTAGE_RANGE);
+    hscmrnn015pa_1 =
+        std::make_unique<HSCMRNN015PA>(getVoltage, ADC_VOLTAGE_RANGE);
 }
 
 void Sensors::staticPressure2Creation()
@@ -622,7 +625,8 @@ void Sensors::staticPressure2Creation()
     };
 
     // Create the sensor instance with created function
-    hscmrnn015pa_2 = new HSCMRNN015PA(getVoltage, ADC_VOLTAGE_RANGE);
+    hscmrnn015pa_2 =
+        std::make_unique<HSCMRNN015PA>(getVoltage, ADC_VOLTAGE_RANGE);
 }
 
 void Sensors::imuCreation()
@@ -630,10 +634,10 @@ void Sensors::imuCreation()
     // Register the IMU as the fake sensor, passing as parameters the methods to
     // retrieve real data. The sensor is not synchronized, but the sampling
     // thread is always the same.
-    imu = new RotatedIMU(
-        bind(&LSM6DSRX::getLastSample, lsm6dsrx),
+    imu = std::make_unique<RotatedIMU>(
+        bind(&LSM6DSRX::getLastSample, lsm6dsrx.get()),
         bind(&Sensors::getCalibratedMagnetometerLastSample, this),
-        bind(&LSM6DSRX::getLastSample, lsm6dsrx));
+        bind(&LSM6DSRX::getLastSample, lsm6dsrx.get()));
 
     // Invert the Y axis on the magnetometer
     Eigen::Matrix3f m{{1, 0, 0}, {0, -1, 0}, {0, 0, 1}};

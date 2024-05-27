@@ -140,7 +140,7 @@ protected:
     {
         // Add the sensor info getter to the array
         sensorsInit[sensorsId++] = [&]() -> Boardcore::SensorInfo
-        { return manager->getSensorInfo(lps22df); };
+        { return manager->getSensorInfo(sensor); };
     }
 
     // Creation and callbacks methods
@@ -195,10 +195,10 @@ protected:
     miosix::FastMutex calibrationMutex;
 
     // Fake processed sensors
-    RotatedIMU* imu = nullptr;
+    std::unique_ptr<RotatedIMU> imu;
 
     // Sensor manager
-    Boardcore::SensorManager* manager = nullptr;
+    std::unique_ptr<Boardcore::SensorManager> manager;
     Boardcore::SensorManager::SensorMap_t sensorMap;
     Boardcore::TaskScheduler* scheduler = nullptr;
     Buses* buses                        = nullptr;
@@ -215,18 +215,18 @@ protected:
     Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("Sensors");
 
     // Sensors instances
-    Boardcore::LPS22DF* lps22df       = nullptr;
-    Boardcore::LPS28DFW* lps28dfw_1   = nullptr;
-    Boardcore::LPS28DFW* lps28dfw_2   = nullptr;
-    Boardcore::H3LIS331DL* h3lis331dl = nullptr;
-    Boardcore::LIS2MDL* lis2mdl       = nullptr;
-    Boardcore::UBXGPSSpi* ubxgps      = nullptr;
-    Boardcore::LSM6DSRX* lsm6dsrx     = nullptr;
-    Boardcore::ADS131M08* ads131m08   = nullptr;
+    std::unique_ptr<Boardcore::LPS22DF> lps22df;
+    std::unique_ptr<Boardcore::LPS28DFW> lps28dfw_1;
+    std::unique_ptr<Boardcore::LPS28DFW> lps28dfw_2;
+    std::unique_ptr<Boardcore::H3LIS331DL> h3lis331dl;
+    std::unique_ptr<Boardcore::LIS2MDL> lis2mdl;
+    std::unique_ptr<Boardcore::UBXGPSSpi> ubxgps;
+    std::unique_ptr<Boardcore::LSM6DSRX> lsm6dsrx;
+    std::unique_ptr<Boardcore::ADS131M08> ads131m08;
 
     // Fake processed sensors
-    Boardcore::MPXH6400A* mpxh6400a         = nullptr;
-    Boardcore::HSCMRNN015PA* hscmrnn015pa_1 = nullptr;
-    Boardcore::HSCMRNN015PA* hscmrnn015pa_2 = nullptr;
+    std::unique_ptr<Boardcore::MPXH6400A> mpxh6400a;
+    std::unique_ptr<Boardcore::HSCMRNN015PA> hscmrnn015pa_1;
+    std::unique_ptr<Boardcore::HSCMRNN015PA> hscmrnn015pa_2;
 };
 }  // namespace HILTest

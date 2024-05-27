@@ -25,6 +25,7 @@
 #include <miosix.h>
 
 #include <array>
+#include <memory>
 #include <type_traits>
 
 #include "SensorData.h"
@@ -230,15 +231,14 @@ protected:
  * already instantiated sensor.
  */
 template <typename T>
-static T* hillificator(T* sensor, bool enableHw,
-                       typename HILSensor<T>::UpdateFn updateData)
+static void hillificator(std::unique_ptr<T>& sensor, bool enableHw,
+                         typename HILSensor<T>::UpdateFn updateData)
 {
     if (sensor)
     {
-        sensor = new Boardcore::HILSensor<T>(std::move(*sensor), enableHw,
-                                             std::move(updateData));
+        sensor = std::make_unique<Boardcore::HILSensor<T>>(
+            std::move(*sensor), enableHw, std::move(updateData));
     }
-    return sensor;
 }
 
 /**
