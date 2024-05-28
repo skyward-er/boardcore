@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
 #include <sensors/Vectornav/VN300/VN300.h>
 
 using namespace miosix;

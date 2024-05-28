@@ -220,11 +220,6 @@ void VNCommonSerial::configDefaultSerialPort()
 
 bool VNCommonSerial::configUserSerialPort()
 {
-    /**
-     * Even if the user configured baudrate is the default, I want to reset the
-     * buffer to clean the junk.
-     */
-
     std::string command;
 
     // I format the command to change baud rate
