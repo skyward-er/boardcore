@@ -27,10 +27,15 @@
  * operations.
  */
 
-qspiFlash mymemory(QUADSPI);
+QspiFlash mymemory(QUADSPI);
+
+// init all GPIO pins needed to communicate with flash memory
+void initBoard();
 
 int main()
 {
+
+    initBoard();
 
     // init qspi-flash communication
     mymemory.init();
@@ -48,7 +53,7 @@ int main()
         uint32_t i              = 0;
         for (i = 0; i < vect_size; i++)
         {
-            vect[i] = 77;
+            vect[i] = i % 12;
         }
 
         // write vector "vect"
@@ -60,17 +65,62 @@ int main()
 
         printf("write operaton succeded!\n");
 
-        uint8_t b[6000] = {0};
-        printf("read_sector: %d\n", mymemory.readSector(b, 6000, 884));
-
-        return 0;
+        uint8_t b[5000] = {0};
+        uint32_t a      = 0;
+        for (a = 0; a < 5000; a++)
+        {
+            b[a] = 55;
+        }
+        printf("read_sector: %d\n", mymemory.readSector(b, 5000, 883));
 
         printf("array (b): \n");
-        for (i = 0; i < 6000; i++)
+        for (i = 0; i < 5000; i++)
         {
             printf("b[%d]: %d\n", i, b[i]);
         }
 
         return 0;
     }
+}
+
+void initBoard()
+{
+
+    /**
+     * QSPI Flash pins
+     *
+     * FLASH_NSS - PB10 - AF9  - QUADSPI_BK1_NCS
+     * FLASH_CLK - PF10 - AF9  - QUADSPI_CLK
+     * FLASH_IO0 - PF8  - AF10 - QUADSPI_BK1_IO0
+     * FLASH_IO1 - PF9  - AF10 - QUADSPI_BK1_IO1
+     * FLASH_IO2 - PF7  - AF9  - QUADSPI_BK1_IO2
+     * FLASH_IO3 - PF6  - AF9  - QUADSPI_BK1_IO3
+     */
+
+    GpioPin flash_ncs(GPIOB_BASE, 10);
+    GpioPin flash_sck(GPIOF_BASE, 10);
+    GpioPin flash_io0(GPIOF_BASE, 8);
+    GpioPin flash_io1(GPIOF_BASE, 9);
+    GpioPin flash_io2(GPIOF_BASE, 7);
+    GpioPin flash_io3(GPIOF_BASE, 6);
+
+    // init GPIO peripheral pins
+    flash_ncs.mode(Mode::ALTERNATE);
+    flash_ncs.alternateFunction(9);
+    flash_ncs.speed(Speed::_100MHz);
+    flash_sck.mode(Mode::ALTERNATE);
+    flash_sck.alternateFunction(9);
+    flash_sck.speed(Speed::_100MHz);
+    flash_io0.mode(Mode::ALTERNATE);
+    flash_io0.alternateFunction(10);
+    flash_io0.speed(Speed::_100MHz);
+    flash_io1.mode(Mode::ALTERNATE);
+    flash_io1.alternateFunction(10);
+    flash_io1.speed(Speed::_100MHz);
+    flash_io2.mode(Mode::ALTERNATE);
+    flash_io2.alternateFunction(9);
+    flash_io2.speed(Speed::_100MHz);
+    flash_io3.mode(Mode::ALTERNATE);
+    flash_io3.alternateFunction(9);
+    flash_io3.speed(Speed::_100MHz);
 }
