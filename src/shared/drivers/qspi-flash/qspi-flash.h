@@ -45,9 +45,9 @@ using namespace Boardcore;
  * with the desired data.
  * you should also be aware that erasing a memory area could result in a data
  * loss. for example, to store a byte of data, you should: 1 erase selected
- * sector - sector_erase(uint32_t address); 2 program the byte -
- * byte_program(uint8_t data, uint32_t address, bool verify); if you want to
- * store a vector of data bytes, you should use write_vector(...) function, this
+ * sector - sectorErase(uint32_t address); 2 program the byte -
+ * byteProgram(uint8_t data, uint32_t address, bool verify); if you want to
+ * store a vector of data bytes, you should use write(...) function, this
  * method will take care about all erasing and programming sequences.
  * IT'S ALWAYS RECOMMENDED TO CHECK ON RESULTS OF METHODS (true/false) TO BE
  * SURE THAT AN ACTION HAS BEEN PROPERLY PERFORMED!
@@ -57,36 +57,36 @@ namespace FlashMemory
 {
 
 // device ID of the flash
-static const uint32_t DEVICE_ID = 0xC22816;
+static constexpr uint32_t DEVICE_ID = 0xC22816;
 
-static const uint32_t PAGES_PER_SECTOR    = 16;
-static const uint32_t SECTORS_PER_BLOCK32 = 8;
+static constexpr uint32_t PAGES_PER_SECTOR    = 16;
+static constexpr uint32_t SECTORS_PER_BLOCK32 = 8;
 
-static const uint32_t BLOCK32_NUM = 128;
-static const uint32_t BLOCK64_NUM = 64;
-static const uint32_t SECTORS_NUM = 1024;
-static const uint32_t PAGES_NUM   = 16384;
-static const uint32_t BYTES_NUM   = 4194304;
+static constexpr uint32_t BLOCK32_NUM = 128;
+static constexpr uint32_t BLOCK64_NUM = 64;
+static constexpr uint32_t SECTORS_NUM = 1024;
+static constexpr uint32_t PAGES_NUM   = 16384;
+static constexpr uint32_t BYTES_NUM   = 4194304;
 
 // sizes of each area in byte
-static const uint32_t PAGE_SIZE    = 256;
-static const uint32_t SECTOR_SIZE  = PAGE_SIZE * PAGES_PER_SECTOR;
-static const uint32_t BLOCK32_SIZE = SECTOR_SIZE * SECTORS_PER_BLOCK32;
-static const uint32_t BLOCK64_SIZE = BLOCK32_SIZE * 2;
+static constexpr uint32_t PAGE_SIZE    = 256;
+static constexpr uint32_t SECTOR_SIZE  = PAGE_SIZE * PAGES_PER_SECTOR;
+static constexpr uint32_t BLOCK32_SIZE = SECTOR_SIZE * SECTORS_PER_BLOCK32;
+static constexpr uint32_t BLOCK64_SIZE = BLOCK32_SIZE * 2;
 
-// memory size in byte
-static const uint32_t MEMORY_SIZE = BLOCK64_SIZE * BLOCK64_NUM;  // about 4 MB
+// memory size in byte (is about 4 MB)
+static constexpr uint32_t MEMORY_SIZE = BLOCK64_SIZE * BLOCK64_NUM;
 
 };  // namespace FlashMemory
 
-class qspiFlash
+class QspiFlash
 {
 
 public:
     /**
-     * @brief QUADSPI_FLASH class constructor
+     * @brief QspiFlash class constructor
      */
-    qspiFlash(QUADSPI_TypeDef* qspi);
+    QspiFlash(QUADSPI_TypeDef* qspi);
 
     /**
      * @brief Initialise QUADSPI peripheral in order to communicate with the
@@ -97,7 +97,7 @@ public:
 
     /**
      * @brief read the unique ID of flash
-     * @param returns device ID
+     * @returns device ID
      */
     uint32_t readID();
 
@@ -169,8 +169,8 @@ public:
 
     /**
      * @brief erase the entire memory chip. since this operation is not so
-     * reliable and it may take a lot of time, you should use block32_erase()
-     * and block64_erase() methods.
+     * reliable and it may take a lot of time, you should use block32Erase()
+     * and block64Erase() methods.
      * @return true/false - if the operation has been successful
      * @warning THIS OPERATION WILL TAKE A WHILE !! (at least 1 min)
      */
@@ -287,16 +287,25 @@ private:
     // disable QUADSPI peripheral
     void disable();
 
-    /* abort any ongoing operation and reset current
-    configuration of QUADSPI peripheral */
-    void abortReset();
+    /**
+     * @brief abort any ongoing operation and reset current configuration of
+     * QUADSPI peripheral
+     * @return true/false - if abort has been successful
+     */
+    bool abortReset();
 
-    // wait till the current operation on QUADSPI peripheral is ended
-    void waitBusy();
+    /**
+     * @brief wait till the current operation on QUADSPI peripheral is ended
+     * @return true/false - if timeout expires
+     */
+    bool waitBusy();
 
-    // wait till all the expected bytes have been transferred by QUADSPI
-    // peripheral
-    void waitTransfer();
+    /**
+     * @brief wait till all the expected bytes have been transferred by QUADSPI
+     * peripheral
+     * @return true/false - if timeout expires
+     */
+    bool waitTransfer();
 
     // flag device initialised
     bool initialised = false;
