@@ -29,6 +29,14 @@
 namespace Boardcore
 {
 
+/**
+ * @brief Data class for VN300.
+ *
+ * Units of measurement:
+ * - Magnetometer  [Gauss]
+ * - Accelerometer [m/s^2]
+ * - Gyroscope     [rad/s]
+ */
 struct VN300Data : public QuaternionData,
                    public MagnetometerData,
                    public AccelerometerData,
