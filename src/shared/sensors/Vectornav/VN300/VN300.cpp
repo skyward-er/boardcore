@@ -48,7 +48,7 @@ bool VN300::init()
     {
         lastError = SensorErrors::ALREADY_INIT;
         LOG_WARN(logger, "Sensor VN300 already initialized");
-        return true;
+        return false;
     }
 
     // Allocate the pre loaded strings based on the user selected crc
@@ -129,7 +129,6 @@ bool VN300::init()
         return false;
     }
 
-    // Set the isInit flag true
     isInit = true;
 
     // All good i restore the actual last error
@@ -185,7 +184,7 @@ VN300Data VN300::sampleFull()
         crc == CRCOptions::CRC_NO ||
         calculateChecksum16(reinterpret_cast<uint8_t*>(&bindataFull),
                             sizeof(bindataFull)) == 0;
-    if (!validChecksum)
+    if (sampleOutcome && !validChecksum)
     {
         lastError = SensorErrors::BUS_FAULT;
     }
@@ -226,7 +225,7 @@ VN300Data VN300::sampleArp()
     validChecksum = crc == CRCOptions::CRC_NO ||
                     calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataArp),
                                         sizeof(binDataArp)) == 0;
-    if (!validChecksum)
+    if (sampleOutcome && !validChecksum)
     {
         lastError = SensorErrors::BUS_FAULT;
     }
