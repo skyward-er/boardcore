@@ -44,7 +44,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
-
+    ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
 
     # Debug
     ${BOARDCORE_PATH}/src/shared/utils/Debug.cpp
