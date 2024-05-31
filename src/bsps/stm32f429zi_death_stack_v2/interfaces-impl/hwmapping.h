@@ -119,6 +119,24 @@ namespace ms5803
 {
 using cs = Gpio<GPIOD_BASE, 7>;
 }  // namespace ms5803
+namespace ads131m08
+{
+using cs = Gpio<GPIOC_BASE, 2>;
+}  // namespace ads131m08
+
+namespace lps22df
+{
+using cs = Gpio<GPIOB_BASE, 1>;
+}  // namespace lps22df
+
+namespace h3lis331dl
+{
+using cs = Gpio<GPIOC_BASE, 6>;
+}  // namespace h3lis331dl
+namespace ubxgps
+{
+using cs = Gpio<GPIOD_BASE, 7>;
+}  // namespace ubxgps
 
 }  // namespace sensors
 

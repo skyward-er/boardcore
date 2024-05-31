@@ -400,6 +400,18 @@ void IRQbspInit()
     ms5803::cs::mode(Mode::OUTPUT);
     ms5803::cs::high();
 
+    lps22df::cs::mode(Mode::OUTPUT);
+    lps22df::cs::high();
+
+    h3lis331dl::cs::mode(Mode::OUTPUT);
+    h3lis331dl::cs::high();
+
+    ads131m08::cs::mode(Mode::OUTPUT);
+    ads131m08::cs::high();
+
+    ubxgps::cs::mode(Mode::OUTPUT);
+    ubxgps::cs::high();
+
     using namespace inputs;
 
     vbat::mode(Mode::INPUT_ANALOG);
