@@ -139,7 +139,7 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
 
             LOG_ERR(
                 logger,
-                "Failed to initialize sensor {} -> Error: {} (period: {} ms)",
+                "Failed to initialize sensor {} -> Error: {} (period: {} ns)",
                 sensorInfo.id.c_str(), sensor->getLastError(),
                 sensorInfo.period);
         }
@@ -150,7 +150,7 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
 
         // Add sensor even if not initialized correctly, its isInitialized info
         // field will be false
-        LOG_DEBUG(logger, "Adding {} -> period: {} ms, enabled = {}",
+        LOG_DEBUG(logger, "Adding {} -> period: {} ns, enabled = {}",
                   sensorInfo.id.c_str(), sensorInfo.period,
                   sensorInfo.isEnabled);
 
@@ -209,7 +209,7 @@ void SensorManager::initScheduler()
         function_t samplerUpdateFunction([=]()
                                          { sampler->sampleAndCallback(); });
 
-        scheduler->addTask(samplerUpdateFunction, sampler->getSamplingPeriod(),
+        scheduler->nanoAddTask(samplerUpdateFunction, sampler->getSamplingPeriod(),
                            TaskScheduler::Policy::RECOVER);
     }
 }
@@ -231,7 +231,7 @@ uint8_t SensorManager::getFirstTaskID()
 
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period)
 {
-    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ms", id,
+    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ns", id,
               period);
 
     return new SimpleSensorSampler(id, period);
