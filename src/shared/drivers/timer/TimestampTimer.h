@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace Boardcore
 {
 
@@ -48,6 +50,6 @@ namespace TimestampTimer
  *
  * @return Current timestamp in microseconds.
  */
-unsigned long long getTimestamp();
+uint64_t getTimestamp();
 };  // namespace TimestampTimer
 }  // namespace Boardcore

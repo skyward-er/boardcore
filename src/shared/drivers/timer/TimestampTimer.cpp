@@ -29,9 +29,9 @@ namespace Boardcore
 {
 namespace TimestampTimer
 {
-unsigned long long getTimestamp()
+uint64_t getTimestamp()
 {
-    return static_cast<unsigned long long>(nsToUs(miosix::getTime()));
+    return static_cast<uint64_t>(nsToUs(miosix::getTime()));
 }
 }  // namespace TimestampTimer
 }  // namespace Boardcore
