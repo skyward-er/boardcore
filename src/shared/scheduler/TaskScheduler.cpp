@@ -26,6 +26,7 @@
 #include <utils/TimeUtils.h>
 
 #include <algorithm>
+#include <mutex>
 
 using namespace std;
 using namespace miosix;
@@ -61,17 +62,12 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
 size_t TaskScheduler::nanoAddTask(function_t function, uint32_t period,
                                   Policy policy, int64_t startTime)
 {
-    // In the case of early returns, using RAII mutex wrappers to unlock the
-    // mutex would cause it to be locked and unlocked one more time before
-    // returning, because of the destructor being called on the Unlock object
-    // first and then on the Lock object. To avoid this, we don't use RAII
-    // wrappers and manually lock and unlock the mutex instead.
-    mutex.lock();
+    std::unique_lock<miosix::FastMutex> lock{mutex};
 
     if (tasks.size() >= MAX_TASKS)
     {
         // Unlock the mutex to release the scheduler resources before logging
-        mutex.unlock();
+        lock.unlock();
         LOG_ERR(logger, "Full task scheduler");
         return 0;
     }
@@ -93,17 +89,16 @@ size_t TaskScheduler::nanoAddTask(function_t function, uint32_t period,
     }
     condvar.broadcast();  // Signals the run thread
 
-    mutex.unlock();
     return id;
 }
 
 void TaskScheduler::enableTask(size_t id)
 {
-    mutex.lock();
+    std::unique_lock<miosix::FastMutex> lock{mutex};
 
     if (id > tasks.size() - 1)
     {
-        mutex.unlock();
+        lock.unlock();
         LOG_ERR(logger, "Tried to enable an out-of-range task, id = {}", id);
         return;
     }
@@ -115,29 +110,27 @@ void TaskScheduler::enableTask(size_t id)
     // exception
     if (task.empty())
     {
-        mutex.unlock();
+        lock.unlock();
         LOG_WARN(logger, "Tried to enable an empty task, id = {}", id);
         return;
     }
 
     task.enabled = true;
     agenda.emplace(id, miosix::getTime() + task.period);
-    mutex.unlock();
 }
 
 void TaskScheduler::disableTask(size_t id)
 {
-    mutex.lock();
+    std::unique_lock<miosix::FastMutex> lock{mutex};
 
     if (id > tasks.size() - 1)
     {
-        mutex.unlock();
+        lock.unlock();
         LOG_ERR(logger, "Tried to disable an out-of-range task, id = {}", id);
         return;
     }
 
     tasks[id].enabled = false;
-    mutex.unlock();
 }
 
 bool TaskScheduler::start()
