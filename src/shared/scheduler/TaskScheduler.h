@@ -110,7 +110,7 @@ public:
      *
      * @param function Function to be called periodically.
      * @param period Inter call period [ms].
-     * @param policy Task policy, default is SKIP.
+     * @param policy Task policy, default is RECOVER.
      * @param startTick Absolute system tick of the first activation, useful
      * for synchronizing tasks [ms]
      * @return The ID of the task if it was added successfully, 0 otherwise.
@@ -130,12 +130,12 @@ public:
      *
      * @param function Function to be called periodically.
      * @param period Inter call period [ns].
-     * @param policy Task policy, default is SKIP.
+     * @param policy Task policy, default is RECOVER.
      * @param startTime Absolute system time of the first activation, useful for
      * synchronizing tasks [ns]
      * @return The ID of the task if it was added successfully, 0 otherwise.
      */
-    size_t nanoAddTask(function_t function, uint32_t period,
+    size_t nanoAddTask(function_t function, uint64_t period,
                        Policy policy     = Policy::RECOVER,
                        int64_t startTime = miosix::getTime());
 

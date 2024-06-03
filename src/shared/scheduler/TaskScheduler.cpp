@@ -59,7 +59,7 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     return nanoAddTask(function, msToNs(period), policy, msToNs(startTick));
 }
 
-size_t TaskScheduler::nanoAddTask(function_t function, uint32_t period,
+size_t TaskScheduler::nanoAddTask(function_t function, uint64_t period,
                                   Policy policy, int64_t startTime)
 {
     std::unique_lock<miosix::FastMutex> lock{mutex};
