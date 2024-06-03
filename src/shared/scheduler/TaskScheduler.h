@@ -117,7 +117,10 @@ public:
      */
     size_t addTask(function_t function, uint32_t period,
                    Policy policy     = Policy::RECOVER,
-                   int64_t startTick = Kernel::getOldTick());
+                   int64_t startTick = Kernel::getOldTick())
+    {
+        return nanoAddTask(function, msToNs(period), policy, msToNs(startTick));
+    }
 
     /**
      * @brief Add a nanosecond-period task function to the scheduler with an

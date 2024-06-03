@@ -53,12 +53,6 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
     tasks.emplace_back();
 }
 
-size_t TaskScheduler::addTask(function_t function, uint32_t period,
-                              Policy policy, int64_t startTick)
-{
-    return nanoAddTask(function, msToNs(period), policy, msToNs(startTick));
-}
-
 size_t TaskScheduler::nanoAddTask(function_t function, uint64_t period,
                                   Policy policy, int64_t startTime)
 {
