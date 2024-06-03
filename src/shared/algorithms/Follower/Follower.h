@@ -113,6 +113,14 @@ private:
     AntennaAngles rocketPositionToAntennaAngles(const NEDCoords& ned);
 
     /**
+     * @brief Minimize rotation angle.
+     *
+     * @param angle Angle of movement [deg]
+     * @return The minimized rotation angle [deg]
+     */
+    float minimizeRotation(float angle);
+
+    /**
      * @brief Synchronized setter for the state of the follower algorithm.
      * @warning Should NOT be called if not in a test.
      */
