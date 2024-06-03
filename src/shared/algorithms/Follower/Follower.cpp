@@ -121,6 +121,20 @@ bool Follower::init()
     return true;
 }
 
+float Follower::minimizeRotation(float angle)
+{
+    if (angle > 180)
+    {
+        angle -= 360;
+    }
+    else if (angle < -180)
+    {
+        angle += 360;
+    }
+
+    return angle;
+}
+
 void Follower::step()
 {
     NASState lastRocketNasState = getLastRocketNasState();
@@ -146,14 +160,8 @@ void Follower::step()
                              targetAngles.pitch - vn300.pitch};
 
     // Rotate in the shortest direction
-    if (diffAngles.yaw > 180)
-    {
-        diffAngles.yaw -= 360;
-    }
-    else if (diffAngles.yaw < -180)
-    {
-        diffAngles.yaw += 360;
-    }
+    diffAngles.yaw   = minimizeRotation(diffAngles.yaw);
+    diffAngles.pitch = minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =
