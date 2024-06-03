@@ -26,9 +26,11 @@
 #include <Singleton.h>
 #include <debug/debug.h>
 #include <diagnostic/PrintLogger.h>
+#include <units/Frequency.h>
 #include <utils/KernelTime.h>
 #include <utils/Stats/Stats.h>
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <list>
@@ -120,6 +122,53 @@ public:
                    int64_t startTick = Kernel::getOldTick())
     {
         return nanoAddTask(function, msToNs(period), policy, msToNs(startTick));
+    }
+
+    /**
+     * @brief Add a task function with the given frequency to the scheduler with
+     * an auto generated ID.
+     *
+     * Note that each task has it's own unique ID, even one shot tasks!
+     *
+     * For one shot tasks, the period is used as a delay. If 0 the task will be
+     * executed immediately, otherwise after the given period.
+     *
+     * @param function Function to be called periodically.
+     * @param frequency Task frequency [Hz].
+     * @param policy Task policy, default is RECOVER.
+     * @param startTime Absolute system time of the first activation, useful for
+     * synchronizing tasks [ns]
+     * @return The ID of the task if it was added successfully, 0 otherwise.
+     */
+    size_t addTask(function_t function, Units::Frequency::Hertz frequency,
+                   Policy policy     = Policy::RECOVER,
+                   int64_t startTime = miosix::getTime())
+    {
+        return nanoAddTask(function, sToNs(1) / frequency.value(), policy,
+                           startTime);
+    }
+
+    /**
+     * @brief Add a task function with the given period to the scheduler with an
+     * auto generated ID.
+     *
+     * Note that each task has it's own unique ID, even one shot tasks!
+     *
+     * For one shot tasks, the period is used as a delay. If 0 the task will be
+     * executed immediately, otherwise after the given period.
+     *
+     * @param function Function to be called periodically.
+     * @param period Inter call period.
+     * @param policy Task policy, default is RECOVER.
+     * @param startTime Absolute system time of the first activation, useful for
+     * synchronizing tasks [ns]
+     * @return The ID of the task if it was added successfully, 0 otherwise.
+     */
+    size_t addTask(function_t function, std::chrono::nanoseconds period,
+                   Policy policy     = Policy::RECOVER,
+                   int64_t startTime = miosix::getTime())
+    {
+        return nanoAddTask(function, period.count(), policy, startTime);
     }
 
     /**

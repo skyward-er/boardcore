@@ -130,13 +130,17 @@ void printTaskStats(TaskScheduler& scheduler)
  */
 void test_general_purpose()
 {
+    using namespace Boardcore::Units::Frequency;
+    using namespace std::chrono_literals;
+
     TaskScheduler scheduler{};
 
     int task1 = scheduler.addTask(f2Hz, 500);
-    scheduler.addTask(f5Hz, 200);
-    int task3 = scheduler.addTask(f500Hz, 2, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1, TaskScheduler::Policy::RECOVER);
+    scheduler.addTask(f5Hz, 5_hz);
+    int task3 =
+        scheduler.addTask(f500Hz, 0.5_khz, TaskScheduler::Policy::RECOVER);
+    scheduler.addTask(f1KHz, 1_khz, TaskScheduler::Policy::RECOVER);
+    scheduler.addTask(f1KHz, 1ms, TaskScheduler::Policy::RECOVER);
 
     printf("4 tasks added (2Hz 5Hz 500Hz 1KHz)\n");
     printf("The scheduler will be started in 2 seconds\n");

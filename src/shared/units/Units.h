@@ -40,6 +40,7 @@ enum class UnitKind
     Time,
     Speed,
     Acceleration,
+    Frequency,
 };
 
 // Base class to implement custom measurement units logic.
@@ -68,7 +69,7 @@ public:
     }
 
     template <UnitKind TargetKind, class TargetRatio = Ratio>
-    constexpr explicit operator Unit<TargetKind, TargetRatio>() const
+    constexpr operator Unit<TargetKind, TargetRatio>() const
     {
         return Unit<TargetKind, TargetRatio>(value<TargetRatio>());
     }
