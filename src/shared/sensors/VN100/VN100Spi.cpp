@@ -190,10 +190,10 @@ VN100SpiData VN100Spi::sampleImpl()
 
 bool VN100Spi::getSample(VN100SpiData& data)
 {
-    uint8_t buf[VN100SpiDefs::SAMPLE_SIZE];
+    VN100SpiDefs::RawImuQuatData rawData;
 
-    VN100SpiDefs::VNErrors err = readRegister(VN100SpiDefs::REG_QUAT_IMU_DATA,
-                                              buf, VN100SpiDefs::SAMPLE_SIZE);
+    VN100SpiDefs::VNErrors err = readRegister(
+        VN100SpiDefs::REG_QUAT_IMU_DATA, (uint8_t*)&rawData, sizeof(rawData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -203,20 +203,19 @@ bool VN100Spi::getSample(VN100SpiData& data)
     }
 
     // Get measurements from raw data
-    uint32_t* ptr       = (uint32_t*)buf;
-    data.quaternionX    = extractMeasurement(ptr[0]);
-    data.quaternionY    = extractMeasurement(ptr[1]);
-    data.quaternionZ    = extractMeasurement(ptr[2]);
-    data.quaternionW    = extractMeasurement(ptr[3]);
-    data.magneticFieldX = extractMeasurement(ptr[4]);
-    data.magneticFieldY = extractMeasurement(ptr[5]);
-    data.magneticFieldZ = extractMeasurement(ptr[6]);
-    data.accelerationX  = extractMeasurement(ptr[7]);
-    data.accelerationY  = extractMeasurement(ptr[8]);
-    data.accelerationZ  = extractMeasurement(ptr[9]);
-    data.angularSpeedX  = extractMeasurement(ptr[10]);
-    data.angularSpeedY  = extractMeasurement(ptr[11]);
-    data.angularSpeedZ  = extractMeasurement(ptr[12]);
+    data.quaternionX    = rawData.quatX;
+    data.quaternionY    = rawData.quatY;
+    data.quaternionZ    = rawData.quatZ;
+    data.quaternionW    = rawData.quatW;
+    data.magneticFieldX = rawData.magX;
+    data.magneticFieldY = rawData.magY;
+    data.magneticFieldZ = rawData.magZ;
+    data.accelerationX  = rawData.accX;
+    data.accelerationY  = rawData.accY;
+    data.accelerationZ  = rawData.accZ;
+    data.angularSpeedX  = rawData.gyrX;
+    data.angularSpeedY  = rawData.gyrY;
+    data.angularSpeedZ  = rawData.gyrZ;
 
     return true;
 }
@@ -225,13 +224,13 @@ TemperatureData VN100Spi::getTemperature()
 {
     TemperatureData data;
 
-    uint8_t buf[VN100SpiDefs::TEMP_PRESS_SIZE];
+    VN100SpiDefs::RawTempPressData rawData;
 
     // Get timestamp
     data.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     VN100SpiDefs::VNErrors err = readRegister(
-        VN100SpiDefs::REG_TEMP_PRESS_DATA, buf, VN100SpiDefs::TEMP_PRESS_SIZE);
+        VN100SpiDefs::REG_TEMP_PRESS_DATA, (uint8_t*)&rawData, sizeof(rawData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -241,8 +240,7 @@ TemperatureData VN100Spi::getTemperature()
     }
 
     // Get measurement from raw data
-    uint32_t* ptr    = (uint32_t*)buf;
-    data.temperature = extractMeasurement(ptr[9]);
+    data.temperature = rawData.temp;
 
     return data;
 }
@@ -251,13 +249,13 @@ PressureData VN100Spi::getPressure()
 {
     PressureData data;
 
-    uint8_t buf[VN100SpiDefs::TEMP_PRESS_SIZE];
+    VN100SpiDefs::RawTempPressData rawData;
 
     // Get timestamp
     data.pressureTimestamp = TimestampTimer::getTimestamp();
 
     VN100SpiDefs::VNErrors err = readRegister(
-        VN100SpiDefs::REG_TEMP_PRESS_DATA, buf, VN100SpiDefs::TEMP_PRESS_SIZE);
+        VN100SpiDefs::REG_TEMP_PRESS_DATA, (uint8_t*)&rawData, sizeof(rawData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -267,25 +265,9 @@ PressureData VN100Spi::getPressure()
     }
 
     // Get measurement from raw data
-    uint32_t* ptr = (uint32_t*)buf;
-    data.pressure = extractMeasurement(ptr[10]);
+    data.pressure = rawData.press;
 
     return data;
-}
-
-float VN100Spi::extractMeasurement(uint32_t rawData)
-{
-    // The floating point values received are stored as 32-bit IEEE
-    // floating point numbers in little endian byte order.
-
-    // Ensure that the copy operation from uint32_t to float is legal
-    static_assert(sizeof(uint32_t) == sizeof(float) &&
-                  "Error, data size mismatch");
-
-    float f;
-    std::memcpy(&f, &rawData, sizeof(uint32_t));
-
-    return f;
 }
 
 VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,

@@ -28,7 +28,12 @@ namespace Boardcore
 {
 
 /**
- * @brief Data type class.
+ * @brief Data type class for VN100 Spi.
+ *
+ * Units of measurement:
+ * - Magnetometer  [Gauss]
+ * - Accelerometer [m/s^2]
+ * - Gyroscope     [rad/s]
  */
 struct VN100SpiData : public QuaternionData,
                       public MagnetometerData,
@@ -36,9 +41,6 @@ struct VN100SpiData : public QuaternionData,
                       public GyroscopeData
 {
 
-    /**
-     * @brief Void parameters constructor.
-     */
     VN100SpiData()
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
@@ -46,11 +48,6 @@ struct VN100SpiData : public QuaternionData,
     {
     }
 
-    /**
-     * @brief Constructor with parameters.
-     *
-     * @param single Data structures for all the data.
-     */
     VN100SpiData(QuaternionData quat, MagnetometerData magData,
                  AccelerometerData accData, GyroscopeData gyro,
                  TemperatureData temp, PressureData pres)

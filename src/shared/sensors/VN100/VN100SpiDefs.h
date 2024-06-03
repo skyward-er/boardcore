@@ -94,6 +94,46 @@ struct __attribute__((packed)) SynchronizationData
 };
 
 /**
+ * @brief Data format of the data register (imu and quaternion), used for
+ * sampling operations.
+ */
+struct __attribute__((packed)) RawImuQuatData
+{
+    float quatX;
+    float quatY;
+    float quatZ;
+    float quatW;
+    float magX;
+    float magY;
+    float magZ;
+    float accX;
+    float accY;
+    float accZ;
+    float gyrX;
+    float gyrY;
+    float gyrZ;
+};
+
+/**
+ * @brief Data format of the data register (temperature and pressure), used
+ * for sampling operations.
+ */
+struct __attribute__((packed)) RawTempPressData
+{
+    float magX;
+    float magY;
+    float magZ;
+    float accX;
+    float accY;
+    float accZ;
+    float gyrX;
+    float gyrY;
+    float gyrZ;
+    float temp;
+    float press;
+};
+
+/**
  * @brief The expected model number to be red from the sensor.
  */
 const char* const MODEL_NUMBER = "VN-100";
@@ -103,19 +143,6 @@ const char* const MODEL_NUMBER = "VN-100";
  * It corresponds to the size of the register, see the datasheet for details.
  */
 const int MODEL_NUMBER_SIZE = 24;
-
-/**
- * @brief Size of the buffer used to retrieve data from the sensor.
- * It corresponds to the size of the register, see the datasheet for details.
- */
-const int SAMPLE_SIZE = 52;
-
-/**
- * @brief Size of the buffer used to retrieve temperature and pressure data
- * from the sensor. It corresponds to the size of the register, see the
- * datasheet for details.
- */
-const int TEMP_PRESS_SIZE = 44;
 
 /**
  * @brief Width of the SyncOut pulse in nanoseconds. Now is set to 1

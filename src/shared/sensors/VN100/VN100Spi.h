@@ -80,12 +80,12 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Retrieve temperature data from the sensor.
+     * @brief Retrieve temperature data from the sensor [°C].
      */
     TemperatureData getTemperature();
 
     /**
-     * @brief Retrieve pressure data from the sensor.
+     * @brief Retrieve pressure data from the sensor [kPa].
      */
     PressureData getPressure();
 
@@ -107,9 +107,6 @@ private:
      * @brief Utility function used to clean the junk before starting to
      * communicate with the sensor. It send a 4 bytes packet of zeros to the
      * sensor.
-     *
-     * TODO: this function is used because of a bug with spi mode 3 peripherals,
-     * remove it when the bug is fixed.
      */
     void sendDummyPacket();
 
@@ -129,16 +126,6 @@ private:
      * @return True if the operation is successful, false otherwise.
      */
     bool getSample(VN100SpiData& data);
-
-    /**
-     * @brief Extracts floating point measurement from the data received from
-     * the sensor.
-     *
-     * @param rawData The data received from the sensor.
-     *
-     * @return The floating point data.
-     */
-    float extractMeasurement(uint32_t rawData);
 
     /**
      * @brief Utility function used to read from a register of the sensor.
