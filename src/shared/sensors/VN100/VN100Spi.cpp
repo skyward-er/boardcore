@@ -307,9 +307,8 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
     spiSlave.bus.select(spiSlave.cs);
 
     // Discard the first 3 bytes of the response
-    spiSlave.bus.read24();
-
-    VN100SpiDefs::VNErrors err = (VN100SpiDefs::VNErrors)spiSlave.bus.read();
+    VN100SpiDefs::VNErrors err =
+        (VN100SpiDefs::VNErrors)(spiSlave.bus.read32() & 255);
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -363,9 +362,7 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint32_t REG_ID,
     spiSlave.bus.select(spiSlave.cs);
 
     // Discard the first 3 bytes of the response
-    spiSlave.bus.read24();
-
-    uint8_t err = spiSlave.bus.read();
+    uint8_t err = spiSlave.bus.read32() & 255;
 
     spiSlave.bus.deselect(spiSlave.cs);
 
