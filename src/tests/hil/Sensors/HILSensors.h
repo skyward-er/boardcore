@@ -22,7 +22,7 @@
 #pragma once
 
 #include <hil/HIL.h>
-#include <sensors/Sensor.h>
+#include <sensors/HILSensor.h>
 #include <sensors/analog/Pitot/Pitot.h>
 
 #include "../HILSimulationConfig.h"

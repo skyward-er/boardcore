@@ -27,6 +27,7 @@
 #include <events/EventBroker.h>
 #include <hil/HIL.h>
 #include <math.h>
+#include <sensors/HILSimulatorData.h>
 #include <sensors/SensorInfo.h>
 #include <utils/Debug.h>
 #include <utils/Stats/Stats.h>
