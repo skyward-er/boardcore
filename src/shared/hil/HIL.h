@@ -25,6 +25,7 @@
 #include <Singleton.h>
 #include <diagnostic/SkywardStack.h>
 #include <utils/KernelTime.h>
+#include <utils/TimeUtils.h>
 
 #include <utils/ModuleManager/ModuleManager.hpp>
 
@@ -131,7 +132,7 @@ private:
         uint64_t ts = miosix::getTime();
         while (!shouldStop())
         {
-            ts += simulationPeriod * 1000000;
+            ts += msToNs(simulationPeriod);
             if (hilPhasesManager->isSimulationRunning())
             {
                 hilTransceiver->setActuatorData(updateActuatorData());
