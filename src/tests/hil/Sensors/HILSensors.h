@@ -160,7 +160,7 @@ private:
         return sampleCounter;
     }
 
-    std::function<Boardcore::LPS28DFWData(void)> updateLPS28DFWData = []()
+    static Boardcore::LPS28DFWData updateLPS28DFWData()
     {
         Boardcore::LPS28DFWData data;
 
@@ -180,7 +180,7 @@ private:
         return data;
     };
 
-    std::function<Boardcore::LPS22DFData(void)> updateLPS22DFData = []()
+    static Boardcore::LPS22DFData updateLPS22DFData()
     {
         Boardcore::LPS22DFData data;
 
@@ -199,7 +199,7 @@ private:
         return data;
     };
 
-    std::function<Boardcore::H3LIS331DLData(void)> updateH3LIS331DLData = []()
+    static Boardcore::H3LIS331DLData updateH3LIS331DLData()
     {
         Boardcore::H3LIS331DLData data;
 
@@ -218,7 +218,7 @@ private:
         return data;
     };
 
-    std::function<Boardcore::LIS2MDLData(void)> updateLIS2MDLData = []()
+    static Boardcore::LIS2MDLData updateLIS2MDLData()
     {
         Boardcore::LIS2MDLData data;
 
@@ -237,7 +237,7 @@ private:
         return data;
     };
 
-    std::function<Boardcore::UBXGPSData(void)> updateUBXGPSData = []()
+    static Boardcore::UBXGPSData updateUBXGPSData()
     {
         Boardcore::UBXGPSData data;
 
@@ -268,7 +268,7 @@ private:
         return data;
     };
 
-    std::function<Boardcore::LSM6DSRXData(void)> updateLSM6DSRXData = []()
+    static Boardcore::LSM6DSRXData updateLSM6DSRXData()
     {
         Boardcore::LSM6DSRXData data;
 
@@ -294,8 +294,7 @@ private:
         return data;
     };
 
-    std::function<Boardcore::HSCMRNN015PAData(void)> updateStaticPressureData =
-        []()
+    static Boardcore::HSCMRNN015PAData updateStaticPressureData()
     {
         Boardcore::HSCMRNN015PAData data;
 
@@ -312,13 +311,16 @@ private:
         return data;
     };
 
-    std::function<RotatedIMUData(void)> updateIMUData = [this]()
+    static RotatedIMUData updateIMUData()
     {
-        return RotatedIMUData{getLSM6DSRXLastSample(), getLSM6DSRXLastSample(),
-                              getCalibratedMagnetometerLastSample()};
+        auto* sensors =
+            Boardcore::ModuleManager::getInstance().get<HILTest::Sensors>();
+        return RotatedIMUData{sensors->getLSM6DSRXLastSample(),
+                              sensors->getLSM6DSRXLastSample(),
+                              sensors->getCalibratedMagnetometerLastSample()};
     };
 
-    std::function<Boardcore::PressureData(void)> updateCCData = []()
+    static Boardcore::PressureData updateCCData()
     {
         Boardcore::PressureData data;
 
@@ -335,7 +337,7 @@ private:
         return data;
     };
 
-    std::function<float(void)> getTotalPressurePitot = []()
+    static float getTotalPressurePitot()
     {
         float totalPressure;
 
@@ -352,7 +354,7 @@ private:
         return totalPressure;
     };
 
-    std::function<float(void)> getStaticPressurePitot = []()
+    static float getStaticPressurePitot()
     {
         float staticPressure;
 
