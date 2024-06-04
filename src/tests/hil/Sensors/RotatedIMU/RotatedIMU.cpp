@@ -31,8 +31,9 @@ namespace HILTest
 RotatedIMU::RotatedIMU(std::function<AccelerometerData()> accSampleFunction,
                        std::function<MagnetometerData()> magSampleFunction,
                        std::function<GyroscopeData()> gyroSampleFunction)
-    : accSample(accSampleFunction), magSample(magSampleFunction),
-      gyroSample(gyroSampleFunction), accT(Matrix3f::Identity()),
+    : accSample(std::move(accSampleFunction)),
+      magSample(std::move(magSampleFunction)),
+      gyroSample(std::move(gyroSampleFunction)), accT(Matrix3f::Identity()),
       magT(Matrix3f::Identity()), gyroT(Matrix3f::Identity())
 {
 }
