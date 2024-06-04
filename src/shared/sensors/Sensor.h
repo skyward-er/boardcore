@@ -145,9 +145,10 @@ public:
  * In this way, the corresponding HILSensor behaves exactly like a sensor T, but
  * returns the data given by the simulator.
  *
- * The real hardware could be used passing a true enableHw flag; In this case,
- * when sample method is called, it is first sampled the real sensor and then
- * the data from the simulator are mapped into the SensorData struct.
+ * The real hardware sensor can be used by creating an instance of this class
+ * with the `enableHw` constructor parameter set to `true`. In that case,
+ * when the `sample` method is called, the real sensor is sampled and then
+ * the data from the simulator is mapped into the SensorData struct.
  */
 template <class T>
 class HILSensor : public T
