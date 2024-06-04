@@ -59,10 +59,7 @@ public:
      * @brief Returns the value in ns of the timestamp of the last received
      * simulatorData.
      */
-    const long long getTimestampSimulatorData()
-    {
-        return timestampSimulatorData;
-    }
+    const int64_t getTimestampSimulatorData() { return timestampSimulatorData; }
 
 protected:
     /**
@@ -79,11 +76,11 @@ protected:
     }
 
     Boardcore::USART &hilSerial;
-    bool receivedFirstPacket         = false;
-    bool updated                     = false;
-    int nLostUpdates                 = 0;
-    long long timestampSimulatorData = 0;  // timestamp of the last received
-                                           // simulatorData [ns]
+    bool receivedFirstPacket       = false;
+    bool updated                   = false;
+    int nLostUpdates               = 0;
+    int64_t timestampSimulatorData = 0;  // timestamp of the last received
+                                         // simulatorData [ns]
     miosix::FastMutex mutex;
     miosix::ConditionVariable condVar;
     Boardcore::PrintLogger logger =
