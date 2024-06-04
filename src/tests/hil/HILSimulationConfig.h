@@ -433,7 +433,7 @@ public:
         /* calling the callbacks subscribed to the changed flags */
         for (unsigned int i = 0; i < changed_flags.size(); i++)
         {
-            std::vector<TCallback> callbacksToCall =
+            std::vector<PhasesCallback> callbacksToCall =
                 callbacks[changed_flags[i]];
             for (unsigned int j = 0; j < callbacksToCall.size(); j++)
             {
@@ -568,7 +568,7 @@ private:
         /* calling the callbacks subscribed to the changed flags */
         for (unsigned int i = 0; i < changed_flags.size(); i++)
         {
-            std::vector<TCallback> callbacksToCall =
+            std::vector<PhasesCallback> callbacksToCall =
                 callbacks[changed_flags[i]];
             for (unsigned int j = 0; j < callbacksToCall.size(); j++)
             {
