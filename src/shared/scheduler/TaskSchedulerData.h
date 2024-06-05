@@ -24,6 +24,7 @@
 
 #include <utils/Stats/Stats.h>
 
+#include <chrono>
 #include <cstdint>
 #include <ostream>
 
@@ -44,7 +45,7 @@ namespace Boardcore
 struct TaskStatsResult
 {
     size_t id;
-    uint32_t period;
+    std::chrono::nanoseconds period;
     StatsResult activationStats;
     StatsResult periodStats;
     StatsResult workloadStats;
@@ -61,15 +62,16 @@ struct TaskStatsResult
 
     void print(std::ostream& os) const
     {
-        os << (int)id << "," << period << "," << activationStats.minValue << ","
-           << activationStats.maxValue << "," << activationStats.mean << ","
-           << activationStats.stdDev << "," << activationStats.nSamples << ","
-           << periodStats.minValue << "," << periodStats.maxValue << ","
-           << periodStats.mean << "," << periodStats.stdDev << ","
-           << periodStats.nSamples << "," << workloadStats.minValue << ","
-           << workloadStats.maxValue << "," << workloadStats.mean << ","
-           << workloadStats.stdDev << "," << workloadStats.nSamples << ","
-           << missedEvents << "," << failedEvents << "\n";
+        os << (int)id << "," << period.count() << ","
+           << activationStats.minValue << "," << activationStats.maxValue << ","
+           << activationStats.mean << "," << activationStats.stdDev << ","
+           << activationStats.nSamples << "," << periodStats.minValue << ","
+           << periodStats.maxValue << "," << periodStats.mean << ","
+           << periodStats.stdDev << "," << periodStats.nSamples << ","
+           << workloadStats.minValue << "," << workloadStats.maxValue << ","
+           << workloadStats.mean << "," << workloadStats.stdDev << ","
+           << workloadStats.nSamples << "," << missedEvents << ","
+           << failedEvents << "\n";
     }
 };
 

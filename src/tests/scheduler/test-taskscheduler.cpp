@@ -35,6 +35,16 @@ GpioPin pin5 = GpioPin(GPIOD_BASE, 9);
 
 bool taskLogEnabled;  ///< A flag to enable/disable task logging
 
+// Proxy sleep function to print when the main thread sleeps
+namespace Thread
+{
+void sleep(unsigned int ms)
+{
+    printf("Main thread sleeping for %u ms\n", ms);
+    miosix::Thread::sleep(ms);
+}
+}  // namespace Thread
+
 void task2Hz()
 {
     pin1.high();
@@ -110,21 +120,24 @@ void setup()
 
 void printTaskStats(TaskScheduler& scheduler)
 {
-    printf("Tasks stats:\n");
+    printf("* Tasks stats\n");
     for (auto stat : scheduler.getTaskStats())
     {
-        printf("- Task ID %d | Frequency %g Hz:\n", stat.id,
-               1 / (stat.period / 1000.0f));
-        printf("\t%-14s  %11s  %11s\n", "", "Average[ms]", "StdDev[ms]");
-        printf("\t%-14s  %11.2f  %11.2f\n", "Activation",
+        float frequency = 1.0f / stat.period.count() * std::nano::den;
+
+        printf("| Task ID %d | Frequency %g Hz:\n", stat.id, frequency);
+        printf("|\t%-14s  %12s  %12s\n", "", "Average[ms]", "StdDev[ms]");
+        printf("|\t%-14s  %12g  %12g\n", "Activation",
                stat.activationStats.mean, stat.activationStats.stdDev);
-        printf("\t%-14s  %11.2f  %11.2f\n", "Period", stat.periodStats.mean,
+        printf("|\t%-14s  %12g  %12g\n", "Period", stat.periodStats.mean,
                stat.periodStats.stdDev);
-        printf("\t%-14s  %11.2f  %11.2f\n", "Workload", stat.workloadStats.mean,
+        printf("|\t%-14s  %12g  %12g\n", "Workload", stat.workloadStats.mean,
                stat.workloadStats.stdDev);
-        printf("\t----------------------------------------\n");
-        printf("\t%-14s  %11ld\n", "Missed events", stat.missedEvents);
-        printf("\t%-14s  %11ld\n\n", "Failed events", stat.failedEvents);
+        printf("|\t------------------------------------------\n");
+        printf("|\t%-14s  %12ld\n", "Executions",
+               stat.activationStats.nSamples);
+        printf("|\t%-14s  %12ld\n", "Missed events", stat.missedEvents);
+        printf("|\t%-14s  %12ld\n|\n", "Failed events", stat.failedEvents);
     }
 }
 
@@ -380,19 +393,17 @@ void test_high_frequency()
     using namespace Units::Frequency;
 
     TaskScheduler scheduler{};
+    scheduler.addTask([&] { delayUs(10); }, 1_khz);
+    scheduler.addTask([&] { delayUs(10); }, 1_khz);
+    scheduler.addTask([&] { delayUs(10); }, 2_khz);
+    scheduler.addTask([&] { delayUs(10); }, 2_khz);
 
-    for (int i = 0; i < 8; i++)
-    {
-        scheduler.addTask(f1KHz, 1_khz, TaskScheduler::Policy::RECOVER);
-        scheduler.addTask(f1KHz, 1_khz, TaskScheduler::Policy::SKIP);
-    }
-
-    printf("16 tasks added (8x 1KHz SKIP | 8x 1KHz RECOVER)\n");
+    printf("4 tasks added (1KHz 1KHz 2KHz 2KHz)\n");
 
     printf("Starting the scheduler\n");
     scheduler.start();
 
-    Thread::sleep(2 * 1000);
+    Thread::sleep(5 * 1000);
 
     printf("Stopping the scheduler\n");
     scheduler.stop();

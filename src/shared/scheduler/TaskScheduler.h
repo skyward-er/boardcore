@@ -311,14 +311,13 @@ private:
     static TaskStatsResult fromTaskIdPairToStatsResult(const Task& task,
                                                        size_t id)
     {
-        return TaskStatsResult{
-            id,
-            static_cast<uint32_t>(task.period / Constants::NS_IN_MS),
-            task.activationStats.getStats(),
-            task.periodStats.getStats(),
-            task.workloadStats.getStats(),
-            task.missedEvents,
-            task.failedEvents};
+        return TaskStatsResult{id,
+                               std::chrono::nanoseconds{task.period},
+                               task.activationStats.getStats(),
+                               task.periodStats.getStats(),
+                               task.workloadStats.getStats(),
+                               task.missedEvents,
+                               task.failedEvents};
     }
 
     miosix::FastMutex mutex;  ///< Mutex to protect tasks and agenda.
