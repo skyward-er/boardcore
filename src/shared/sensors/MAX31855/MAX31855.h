@@ -64,9 +64,10 @@ public:
      */
     TemperatureData readInternalTemperature();
 
-private:
+protected:
     TemperatureData sampleImpl() override;
 
+private:
     SPISlave slave;
 
     PrintLogger logger = Logging::getLogger("max31855");
