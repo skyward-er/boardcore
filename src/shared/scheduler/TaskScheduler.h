@@ -111,17 +111,21 @@ public:
      * executed immediately, otherwise after the given period.
      *
      * @param function Function to be called periodically.
-     * @param period Inter call period [ms].
+     * @param periodMs Inter call period [ms].
      * @param policy Task policy, default is RECOVER.
      * @param startTick Absolute system tick of the first activation, useful
      * for synchronizing tasks [ms]
      * @return The ID of the task if it was added successfully, 0 otherwise.
      */
-    size_t addTask(function_t function, uint32_t period,
+    size_t addTask(function_t function, uint32_t periodMs,
                    Policy policy     = Policy::RECOVER,
                    int64_t startTick = Kernel::getOldTick())
     {
-        return nanoAddTask(function, msToNs(period), policy, msToNs(startTick));
+        auto period    = std::chrono::milliseconds{periodMs};
+        auto startTime = std::chrono::time_point<std::chrono::steady_clock>{
+            std::chrono::milliseconds{startTick}};
+
+        return addTask(function, period, policy, startTime);
     }
 
     /**
@@ -141,38 +145,18 @@ public:
      * @return The ID of the task if it was added successfully, 0 otherwise.
      */
     size_t addTask(function_t function, Units::Frequency::Hertz frequency,
-                   Policy policy     = Policy::RECOVER,
-                   int64_t startTime = miosix::getTime())
+                   Policy policy = Policy::RECOVER,
+                   std::chrono::time_point<std::chrono::steady_clock>
+                       startTime = std::chrono::steady_clock::now())
     {
-        return nanoAddTask(function, sToNs(1) / frequency.value(), policy,
-                           startTime);
+        auto period = std::chrono::nanoseconds{
+            static_cast<int64_t>(sToNs(1) / frequency.value())};
+
+        return addTask(function, period, policy, startTime);
     }
 
     /**
      * @brief Add a task function with the given period to the scheduler with an
-     * auto generated ID.
-     *
-     * Note that each task has it's own unique ID, even one shot tasks!
-     *
-     * For one shot tasks, the period is used as a delay. If 0 the task will be
-     * executed immediately, otherwise after the given period.
-     *
-     * @param function Function to be called periodically.
-     * @param period Inter call period.
-     * @param policy Task policy, default is RECOVER.
-     * @param startTime Absolute system time of the first activation, useful for
-     * synchronizing tasks [ns]
-     * @return The ID of the task if it was added successfully, 0 otherwise.
-     */
-    size_t addTask(function_t function, std::chrono::nanoseconds period,
-                   Policy policy     = Policy::RECOVER,
-                   int64_t startTime = miosix::getTime())
-    {
-        return nanoAddTask(function, period.count(), policy, startTime);
-    }
-
-    /**
-     * @brief Add a nanosecond-period task function to the scheduler with an
      * auto generated ID.
      *
      * Note that each task has it's own unique ID, even one shot tasks!
@@ -187,9 +171,10 @@ public:
      * synchronizing tasks [ns]
      * @return The ID of the task if it was added successfully, 0 otherwise.
      */
-    size_t nanoAddTask(function_t function, uint64_t period,
-                       Policy policy     = Policy::RECOVER,
-                       int64_t startTime = miosix::getTime());
+    size_t addTask(function_t function, std::chrono::nanoseconds period,
+                   Policy policy = Policy::RECOVER,
+                   std::chrono::time_point<std::chrono::steady_clock>
+                       startTime = std::chrono::steady_clock::now());
 
     /**
      * @brief Enables the task with the given id.

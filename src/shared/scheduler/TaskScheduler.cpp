@@ -29,6 +29,7 @@
 #include <mutex>
 
 using namespace std;
+using namespace std::chrono;
 using namespace miosix;
 
 namespace Boardcore
@@ -53,8 +54,8 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
     tasks.emplace_back();
 }
 
-size_t TaskScheduler::nanoAddTask(function_t function, uint64_t period,
-                                  Policy policy, int64_t startTime)
+size_t TaskScheduler::addTask(function_t function, nanoseconds period,
+                              Policy policy, time_point<steady_clock> startTime)
 {
     std::unique_lock<miosix::FastMutex> lock{mutex};
 
@@ -72,14 +73,15 @@ size_t TaskScheduler::nanoAddTask(function_t function, uint64_t period,
     }
 
     // Insert a new task with the given parameters
-    tasks.emplace_back(function, period, policy, startTime);
+    tasks.emplace_back(function, period.count(), policy,
+                       startTime.time_since_epoch().count());
     size_t id = tasks.size() - 1;
 
     // Only add the task to the agenda if the scheduler is running
     // Otherwise, the agenda will be populated when the scheduler is started
     if (isRunning())
     {
-        agenda.emplace(id, startTime);
+        agenda.emplace(id, startTime.time_since_epoch().count());
     }
     condvar.broadcast();  // Signals the run thread
 
