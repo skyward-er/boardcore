@@ -113,15 +113,18 @@ void printTaskStats(TaskScheduler& scheduler)
     printf("Tasks stats:\n");
     for (auto stat : scheduler.getTaskStats())
     {
-        printf("- %d:\n", stat.id);
-        printf("\tActivation: %.2f, %.2f\n", stat.activationStats.mean,
-               stat.activationStats.stdDev);
-        printf("\tPeriod: %.2f, %.2f\n", stat.periodStats.mean,
+        printf("- Task ID %d | Frequency %g Hz:\n", stat.id,
+               1 / (stat.period / 1000.0f));
+        printf("\t%-14s  %11s  %11s\n", "", "Average[ms]", "StdDev[ms]");
+        printf("\t%-14s  %11.2f  %11.2f\n", "Activation",
+               stat.activationStats.mean, stat.activationStats.stdDev);
+        printf("\t%-14s  %11.2f  %11.2f\n", "Period", stat.periodStats.mean,
                stat.periodStats.stdDev);
-        printf("\tWorkload: %.2f, %.2f\n", stat.workloadStats.mean,
+        printf("\t%-14s  %11.2f  %11.2f\n", "Workload", stat.workloadStats.mean,
                stat.workloadStats.stdDev);
-        printf("\tMissed events: %ld\n", stat.missedEvents);
-        printf("\tFailed events: %ld\n", stat.failedEvents);
+        printf("\t----------------------------------------\n");
+        printf("\t%-14s  %11ld\n", "Missed events", stat.missedEvents);
+        printf("\t%-14s  %11ld\n\n", "Failed events", stat.failedEvents);
     }
 }
 
@@ -191,7 +194,7 @@ void test_fill_scheduler()
     TaskScheduler scheduler{};
 
     printf("Adding tasks until the scheduler is full\n");
-    size_t taskCount = 0;
+    int taskCount = 0;
     // Fill up the scheduler with tasks
     do
     {
@@ -207,12 +210,12 @@ void test_fill_scheduler()
     // Subtract one because the 0-th task is reserved
     if (taskCount != TaskScheduler::MAX_TASKS - 1)
     {
-        printf("Error: couldn't fill the scheduler: taskCount = %zu \n",
+        printf("Error: couldn't fill the scheduler: taskCount = %d \n",
                taskCount);
         return;
     }
 
-    printf("Done adding tasks: taskCount = %zu\n", taskCount);
+    printf("Done adding tasks: taskCount = %d\n", taskCount);
 
     printf("Trying to add another task\n");
     // Try to add another task
@@ -222,7 +225,7 @@ void test_fill_scheduler()
         return;
     }
 
-    printf("Added tasks successfully\n");
+    printf("Adding a tasks failed as expected, all good\n");
 
     printf("Starting the scheduler\n");
     scheduler.start();
@@ -318,7 +321,7 @@ void test_edge_cases()
     printf("Starting the scheduler\n");
     scheduler.start();
 
-    printf("Starting the scheduler again");
+    printf("Starting the scheduler again\n");
     if (scheduler.start())
     {
         printf("Error: started the scheduler twice\n");
@@ -326,13 +329,13 @@ void test_edge_cases()
 
     Thread::sleep(1000);
 
-    printf("Disabling out-of-range tasks with IDs 0 and 256");
+    printf("Disabling out-of-range tasks with IDs 0 and 256\n");
     scheduler.disableTask(0);
     scheduler.disableTask(256);
 
     Thread::sleep(1000);
 
-    printf("Enabling out-of-range tasks with IDs 0 and 256");
+    printf("Enabling out-of-range tasks with IDs 0 and 256\n");
     scheduler.enableTask(0);
     scheduler.enableTask(256);
 
@@ -369,11 +372,41 @@ void test_long_range()
     scheduler.stop();
 }
 
+/**
+ * @brief Tests the scheduler with tasks running at a high frequency
+ */
+void test_high_frequency()
+{
+    using namespace Units::Frequency;
+
+    TaskScheduler scheduler{};
+
+    for (int i = 0; i < 8; i++)
+    {
+        scheduler.addTask(f1KHz, 1_khz, TaskScheduler::Policy::RECOVER);
+        scheduler.addTask(f1KHz, 1_khz, TaskScheduler::Policy::SKIP);
+    }
+
+    printf("16 tasks added (8x 1KHz SKIP | 8x 1KHz RECOVER)\n");
+
+    printf("Starting the scheduler\n");
+    scheduler.start();
+
+    Thread::sleep(2 * 1000);
+
+    printf("Stopping the scheduler\n");
+    scheduler.stop();
+
+    printTaskStats(scheduler);
+}
+
 }  // namespace
 
 int main()
 {
     setup();
+
+    printf("\n");
 
     // Avoid clutter from tasks since this test will add a lot of tasks
     taskLogEnabled = false;
@@ -400,6 +433,11 @@ int main()
 
     printf("=> Running the general purpose test\n");
     test_general_purpose();
+
+    printf("\n");
+
+    printf("=> Running the high frequency task test\n");
+    test_high_frequency();
 
     printf("\n");
 
