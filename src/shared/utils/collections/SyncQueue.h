@@ -49,21 +49,19 @@ private:
 template <typename T>
 void SynchronizedQueue<T>::put(const T& data)
 {
-    mMutex.lock();
+    miosix::Lock<miosix::Mutex> l(mMutex);
     queue.push_back(data);
     mCv.signal();
-    mMutex.unlock();
 }
 
 template <typename T>
 T SynchronizedQueue<T>::get()
 {
-    mMutex.lock();
+    miosix::Lock<miosix::Mutex> l(mMutex);
     while (queue.empty())
-        mCv.wait(mMutex);
+        mCv.wait(l);
     T result = queue.front();
     queue.pop_front();
-    mMutex.unlock();
 
     return result;
 }
@@ -71,6 +69,7 @@ T SynchronizedQueue<T>::get()
 template <typename T>
 int SynchronizedQueue<T>::len()
 {
+    miosix::Lock<miosix::Mutex> l(mMutex);
     return queue.size();
 }
 
