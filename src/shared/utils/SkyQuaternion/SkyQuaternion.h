@@ -52,6 +52,18 @@ Eigen::Vector4f eul2quat(const Eigen::Vector3f& euler);
 Eigen::Vector3f quat2eul(const Eigen::Vector4f& quat);
 
 /**
+ * @brief Translates quaternions to yaw and pitch angles assuming roll stays
+ * close to 0.
+ *
+ * This applies to systems with 2 degrees of freedom, used to get the absolute
+ * yaw and pitch angles wrt the north.
+ *
+ * @param quat The quaternion to be transformed (scalar last: [x, y, z, w]).
+ * @return Yaw, Pitch and Roll angles, with Roll set to 0. [deg]
+ */
+Eigen::Vector3f quat2stepperAngles(const Eigen::Vector4f& quat);
+
+/**
  * @brief Transform a rotation matrix into a quaternion.
  *
  * @param rtm The rotation matrix to be transformed (3x3).
