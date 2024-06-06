@@ -126,7 +126,10 @@ void TaskScheduler::disableTask(size_t id)
         return;
     }
 
-    tasks[id].enabled = false;
+    Task& task   = tasks[id];
+    task.enabled = false;
+    // Reset the last call time to avoid incorrect period statistics
+    task.lastCall = -1;
 }
 
 bool TaskScheduler::start()
@@ -256,21 +259,21 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTime,
 {
     Task& task = tasks[event.taskId];
 
-    // Activation stats
-    float activationError = startTime - event.nextTime;
-    task.activationStats.add(activationError / Constants::NS_IN_MS);
+    float activationTime = startTime - event.nextTime;
+    task.activationStats.add(activationTime / Constants::NS_IN_MS);
 
-    // Period stats
     int64_t lastCall = task.lastCall;
     if (lastCall >= 0)
-        task.periodStats.add((startTime - lastCall) / Constants::NS_IN_MS);
-
+    {
+        float periodTime = startTime - lastCall;
+        task.periodStats.add(periodTime / Constants::NS_IN_MS);
+    }
     // Update the last call time to the current start time for the next
     // iteration
     task.lastCall = startTime;
 
-    // Workload stats
-    task.workloadStats.add((endTime - startTime) / Constants::NS_IN_MS);
+    float workloadTime = endTime - startTime;
+    task.workloadStats.add(workloadTime / Constants::NS_IN_MS);
 }
 
 void TaskScheduler::enqueue(Event event, int64_t startTime)
