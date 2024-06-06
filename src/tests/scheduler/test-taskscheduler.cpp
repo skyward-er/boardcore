@@ -48,7 +48,7 @@ void sleep(unsigned int ms)
 void task2Hz()
 {
     pin1.high();
-    delayUs(1);
+    delayUs(100);
     pin1.low();
 
     if (taskLogEnabled)
@@ -60,7 +60,7 @@ void task2Hz()
 void task5Hz()
 {
     pin2.high();
-    delayUs(1);
+    delayUs(100);
     pin2.low();
 
     if (taskLogEnabled)
@@ -72,21 +72,21 @@ void task5Hz()
 void task500Hz()
 {
     pin3.high();
-    delayUs(1);
+    delayUs(100);
     pin3.low();
 }
 
 void task1KHz()
 {
     pin4.high();
-    delayUs(1);
+    delayUs(100);
     pin4.low();
 }
 
 void signalPin5()
 {
     pin5.high();
-    delayUs(1);
+    delayUs(100);
     pin5.low();
 }
 
@@ -124,20 +124,21 @@ void printTaskStats(TaskScheduler& scheduler)
     for (auto stat : scheduler.getTaskStats())
     {
         float frequency = 1.0f / stat.period.count() * std::nano::den;
-
-        printf("| Task ID %d | Frequency %g Hz:\n", stat.id, frequency);
-        printf("|\t%-14s  %12s  %12s\n", "", "Average[ms]", "StdDev[ms]");
-        printf("|\t%-14s  %12g  %12g\n", "Activation",
-               stat.activationStats.mean, stat.activationStats.stdDev);
-        printf("|\t%-14s  %12g  %12g\n", "Period", stat.periodStats.mean,
-               stat.periodStats.stdDev);
-        printf("|\t%-14s  %12g  %12g\n", "Workload", stat.workloadStats.mean,
-               stat.workloadStats.stdDev);
-        printf("|\t------------------------------------------\n");
-        printf("|\t%-14s  %12ld\n", "Executions",
-               stat.activationStats.nSamples);
-        printf("|\t%-14s  %12ld\n", "Missed events", stat.missedEvents);
-        printf("|\t%-14s  %12ld\n|\n", "Failed events", stat.failedEvents);
+        fmt::print(
+            "| Task ID {} | Frequency {} Hz:\n"
+            "|\t                 Average[ms]    StdDev[ms]\n"
+            "|\tActivation:     {:12.3g}  {:12.3g}\n"
+            "|\tPeriod:         {:12.3g}  {:12.3g}\n"
+            "|\tWorkload:       {:12.3g}  {:12.3g}\n"
+            "|\t------------------------------------------\n"
+            "|\tExecutions:     {:12}\n"
+            "|\tMissed events:  {:12}\n"
+            "|\tFailed events:  {:12}\n|\n",
+            stat.id, frequency, stat.activationStats.mean,
+            stat.activationStats.stdDev, stat.periodStats.mean,
+            stat.periodStats.stdDev, stat.workloadStats.mean,
+            stat.workloadStats.stdDev, stat.activationStats.nSamples,
+            stat.missedEvents, stat.failedEvents);
     }
 }
 
@@ -151,12 +152,13 @@ void test_general_purpose()
 
     TaskScheduler scheduler{};
 
-    int task1 = scheduler.addTask(f2Hz, 500);
-    scheduler.addTask(f5Hz, 5_hz);
-    int task3 =
-        scheduler.addTask(f500Hz, 0.5_khz, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1_khz, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1ms, TaskScheduler::Policy::RECOVER);
+    int task1 = scheduler.addTask([] { delayUs(150); }, 2_hz);
+    scheduler.addTask([] { delayUs(150); }, 5_hz);
+    int task3 = scheduler.addTask([] { delayUs(100); }, 500_hz,
+                                  TaskScheduler::Policy::RECOVER);
+    scheduler.addTask([] { delayUs(100); }, 1_khz,
+                      TaskScheduler::Policy::RECOVER);
+    scheduler.addTask([] { delayUs(100); }, 1ms, TaskScheduler::Policy::SKIP);
 
     printf("4 tasks added (2Hz 5Hz 500Hz 1KHz)\n");
     printf("The scheduler will be started in 2 seconds\n");
