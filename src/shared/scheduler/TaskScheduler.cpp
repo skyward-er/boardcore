@@ -178,21 +178,20 @@ void TaskScheduler::populateAgenda()
 
     for (size_t id = 1; id < tasks.size(); id++)
     {
-        Task& task = tasks[id];
-
+        Task& task        = tasks[id];
         int64_t startTime = task.startTime;
-        int64_t nextTime  = startTime;
 
-        // Normalize the tasks start time if they precede the current time
+        // Shift the task's start time if it precedes the current time
+        // to avoid clumping all tasks at the beginning (see issue #91)
         if (startTime < currentTime)
         {
             int64_t timeSinceStart = currentTime - startTime;
             int64_t periodsMissed  = timeSinceStart / task.period;
             int64_t periodsToSkip  = periodsMissed + 1;
-            nextTime += periodsToSkip * task.period;
+            startTime += periodsToSkip * task.period;
         }
 
-        agenda.emplace(id, nextTime);
+        agenda.emplace(id, startTime);
     }
 }
 
@@ -215,17 +214,10 @@ void TaskScheduler::run()
 
         int64_t startTime = miosix::getTime();
         Event nextEvent   = agenda.top();
-        Task& nextTask    = tasks[nextEvent.taskId];
 
-        // If the task has the SKIP policy and its execution was missed, we need
-        // to move it forward to match the period
-        if (nextEvent.nextTime < startTime && nextTask.policy == Policy::SKIP)
+        if (nextEvent.nextTime <= startTime)
         {
-            agenda.pop();
-            enqueue(nextEvent, startTime);
-        }
-        else if (nextEvent.nextTime <= startTime)
-        {
+            Task& nextTask = tasks[nextEvent.taskId];
             agenda.pop();
 
             // Execute the task function

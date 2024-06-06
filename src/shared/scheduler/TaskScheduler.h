@@ -72,23 +72,26 @@ public:
 
     /**
      * @brief Task behavior policy.
+     * Determines the behavior of the scheduler for a specific task.
      *
-     * This policies allows to change the behavior of the scheduler for the
-     * specific task:
-     * - ONE_SHOT: Allows to run the task once. When it is executed, it is
-     * removed from the tasks list.
-     * - SKIP: If for whatever reason a task can't be executed when
-     * it is supposed to (e.g. another thread occupies the CPU), the scheduler
-     * doesn't recover the missed executions but instead skips those and
-     * continues normally. This ensures that all the events are aligned with
-     * the original start time. In other words, the period and the start time of
-     * a task specifies the time slots the task has to be executed. If one of
-     * this time slots can't be used, that specific execution won't be
-     * recovered.
-     * - RECOVER: On the other hand, the RECOVER policy ensures that the missed
-     * executions are run. However, this will cause the period to not be
-     * respected and the task will run consecutively for some time (See issue
-     * #91).
+     * - ONE_SHOT: Runs the task once and subsequently removes it from the task
+     * list. This is useful for one-off tasks.
+     *
+     * - SKIP: Skips missed executions. This is useful for tasks that need to
+     * execute periodically but can skip some executions.
+     * If the task misses one or more executions, the scheduler will skip the
+     * missed executions, run the task once and re-schedule the task for
+     * future execution. The scheduler will try to align the task execution time
+     * with the original start time, but actual execution time is not guaranteed
+     * to be aligned with the period.
+     *
+     * - RECOVER: Recovers missed executions. This is useful for
+     * tasks that need to reach an overall number of iterations, but don't care
+     * too much about timing.
+     * Missed executions are recovered immediately, so this may cause one or
+     * more tasks to clump at the beginning of the task queue until all missed
+     * executions are recovered, causing the period to not be respected (see
+     * issue #91).
      */
     enum class Policy : uint8_t
     {
