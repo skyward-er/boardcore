@@ -54,9 +54,8 @@ int main()
     Boardcore::TaskScheduler scheduler;
 
     // Create modules
-    Buses* buses     = new Buses();
-    Sensors* sensors = (HIL_TEST ? new HILSensors(&scheduler, buses, false)
-                                 : new Sensors(&scheduler, buses));
+    Buses* buses = new Buses();
+    Sensors* sensors;
 
     if (HIL_TEST)
     {
@@ -80,6 +79,11 @@ int main()
         {
             initResult &= ModuleManager::getInstance().insert<MainHIL>(hil);
         }
+        sensors = new HILSensors(&scheduler, buses, hilTransceiver, false);
+    }
+    else
+    {
+        sensors = new Sensors(&scheduler, buses);
     }
 
     // Insert modules
