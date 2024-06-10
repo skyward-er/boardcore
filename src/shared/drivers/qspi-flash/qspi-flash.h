@@ -252,21 +252,25 @@ private:
 
     /**
      * @brief enable modifying (program/erase) data on memory
+     * @return true/false if write enable command has been properly performed by
+     * the flash
      * @warning This function issue a "write enable" command to the flash. In
      * order to modify any data on memory you have to issue a "write enable"
      * command, also you should always issue a "write disable" command, when you
      * have done modifying data.
      */
-    void writeEnable();
+    bool writeEnable();
 
     /**
      * @brief disable modifying (program/erase) data on memory
+     * @return true/false if write disable command has been properly performed
+     * by the flash
      * @warning This function issue a "write disable" command to the flash. In
      * order to modify any data on memory you have to issue a "write enable"
      * command, also you should always issue a "write disable" command, when you
      * have done modifying data.
      */
-    void writeDisable();
+    bool writeDisable();
 
     /**
      * @brief read memory's status register
