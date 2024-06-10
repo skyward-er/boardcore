@@ -47,6 +47,10 @@ int main()
         // read device id
         printf("\nID: %x\n", mymemory.readID());
 
+        // erase block
+        printf("\nerase block64: %d\n",
+               mymemory.block64Erase(FlashMemory::BLOCK64_SIZE * 60));
+
         // create a vector
         const size_t vect_size  = 5000;
         uint8_t vect[vect_size] = {0};
@@ -57,7 +61,7 @@ int main()
         }
 
         // write vector "vect"
-        if (mymemory.write(vect, vect_size, 883, true) == false)
+        if (mymemory.write(vect, vect_size, 1022, true) == false)
         {
             printf("ERROR - write operation failed !\n");
             return -1;
@@ -71,7 +75,7 @@ int main()
         {
             b[a] = 55;
         }
-        printf("read_sector: %d\n", mymemory.readSector(b, 5000, 883));
+        printf("read_sector: %d\n", mymemory.readSector(b, 5000, 1022));
 
         printf("array (b): \n");
         for (i = 0; i < 5000; i++)

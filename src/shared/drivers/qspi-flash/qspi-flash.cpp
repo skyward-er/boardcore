@@ -32,6 +32,9 @@ void QspiFlash::disable() { Qspi->CR &= ~QUADSPI_CR_EN; }
 bool QspiFlash::abortReset()
 {
 
+    // hard reset Transfer-Completed flag (TCF)
+    Qspi->FCR |= (1 << QUADSPI_FCR_CTCF_Pos);
+
     // abort possible ongoing command
     Qspi->CR |= QUADSPI_CR_ABORT;
 
@@ -40,7 +43,7 @@ bool QspiFlash::abortReset()
     while (Qspi->CR & QUADSPI_CR_ABORT)
     {
         dt = dt + 1;
-        if (dt > 10000)
+        if (dt > 100000)
         {
             return false;
         }
@@ -88,52 +91,13 @@ bool QspiFlash::waitTransfer()
         }
     }
 
-    // reset transfer complete flag (TCF)
-    Qspi->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
+    // hard reset Transfer-Completed flag (TCF)
+    Qspi->FCR |= (1 << QUADSPI_FCR_CTCF_Pos);
 
     return true;
 }
 
-QspiFlash::QspiFlash(QUADSPI_TypeDef* qspi) : Qspi{qspi}
-{
-    /**
-     * QSPI Flash pins
-     *
-     * FLASH_NSS - PB10 - AF9  - QUADSPI_BK1_NCS
-     * FLASH_CLK - PF10 - AF9  - QUADSPI_CLK
-     * FLASH_IO0 - PF8  - AF10 - QUADSPI_BK1_IO0
-     * FLASH_IO1 - PF9  - AF10 - QUADSPI_BK1_IO1
-     * FLASH_IO2 - PF7  - AF9  - QUADSPI_BK1_IO2
-     * FLASH_IO3 - PF6  - AF9  - QUADSPI_BK1_IO3
-     */
-
-    GpioPin flash_ncs(GPIOB_BASE, 10);
-    GpioPin flash_sck(GPIOF_BASE, 10);
-    GpioPin flash_io0(GPIOF_BASE, 8);
-    GpioPin flash_io1(GPIOF_BASE, 9);
-    GpioPin flash_io2(GPIOF_BASE, 7);
-    GpioPin flash_io3(GPIOF_BASE, 6);
-
-    // init GPIO peripheral pins
-    flash_ncs.mode(Mode::ALTERNATE);
-    flash_ncs.alternateFunction(9);
-    flash_ncs.speed(Speed::_100MHz);
-    flash_sck.mode(Mode::ALTERNATE);
-    flash_sck.alternateFunction(9);
-    flash_sck.speed(Speed::_100MHz);
-    flash_io0.mode(Mode::ALTERNATE);
-    flash_io0.alternateFunction(10);
-    flash_io0.speed(Speed::_100MHz);
-    flash_io1.mode(Mode::ALTERNATE);
-    flash_io1.alternateFunction(10);
-    flash_io1.speed(Speed::_100MHz);
-    flash_io2.mode(Mode::ALTERNATE);
-    flash_io2.alternateFunction(9);
-    flash_io2.speed(Speed::_100MHz);
-    flash_io3.mode(Mode::ALTERNATE);
-    flash_io3.alternateFunction(9);
-    flash_io3.speed(Speed::_100MHz);
-}
+QspiFlash::QspiFlash(QUADSPI_TypeDef* qspi) : Qspi{qspi} { ; }
 
 bool QspiFlash::test()
 {
@@ -159,7 +123,10 @@ uint8_t QspiFlash::readStatusReg()
     }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return 0;
+    }
 
     enable();
 
@@ -174,7 +141,10 @@ uint8_t QspiFlash::readStatusReg()
                  Commands::READ_STATUS_REG;     // read status reg command
 
     // wait till data trasfer is complete
-    waitTransfer();
+    if (!waitTransfer())
+    {
+        return 0;
+    }
 
     // read status reg value from data register
     uint32_t value = (uint8_t)Qspi->DR;
@@ -185,7 +155,7 @@ uint8_t QspiFlash::readStatusReg()
     return value;
 }
 
-void QspiFlash::writeEnable()
+bool QspiFlash::writeEnable()
 {
 
     // 1 send wren command
@@ -195,11 +165,14 @@ void QspiFlash::writeEnable()
     // check if memory has been initialised
     if (!initialised)
     {
-        return;
+        return false;
     }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -208,7 +181,10 @@ void QspiFlash::writeEnable()
     Qspi->CCR |= 1 << QUADSPI_CCR_IMODE_Pos | Commands::WRITE_ENABLE;
 
     // wait for the communication to end
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // disable peripheral
     disable();
@@ -222,10 +198,12 @@ void QspiFlash::writeEnable()
         dt = dt + 1;
         if (dt >= 5)
         {
-            return;
+            return false;
         }
         status = readStatusReg();
     }
+
+    return true;
 }
 
 void QspiFlash::init()
@@ -236,8 +214,12 @@ void QspiFlash::init()
 
     Thread::sleep(1);
 
-    // abort any operation
-    abortReset();
+    // abort any operation, if something goes wrong during abort
+    // don't set intialised flag
+    if (!abortReset())
+    {
+        return;
+    }
 
     disable();
 
@@ -272,7 +254,10 @@ uint32_t QspiFlash::readID()
     }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return 0;
+    }
 
     enable();
 
@@ -287,11 +272,10 @@ uint32_t QspiFlash::readID()
                  Commands::READ_ID;             // issue read id command
 
     // wait till communication is ended
-    waitTransfer();
-
-    // sus: even if some bytes have been received, the FIFO need some time to
-    // store them.
-    Thread::sleep(1);
+    if (!waitTransfer())
+    {
+        return 0;
+    }
 
     // if there are some bytes in quadspi buffer (FIFO), read them
     if ((Qspi->SR & QUADSPI_SR_FLEVEL) >> 8)
@@ -316,7 +300,7 @@ uint32_t QspiFlash::readID()
     }
 }
 
-void QspiFlash::writeDisable()
+bool QspiFlash::writeDisable()
 {
 
     // 1 send wrid command
@@ -326,11 +310,14 @@ void QspiFlash::writeDisable()
     // check if memory has been initialised
     if (!initialised)
     {
-        return;
+        return false;
     }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -339,7 +326,10 @@ void QspiFlash::writeDisable()
     Qspi->CCR |= 1 << QUADSPI_CCR_IMODE_Pos | Commands::WRITE_DISABLE;
 
     // wait till the communication has ended
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // disable peripheral
     disable();
@@ -353,10 +343,12 @@ void QspiFlash::writeDisable()
         dt = dt + 1;
         if (dt >= 5)
         {
-            return;
+            return false;
         }
         status = readStatusReg();
     }
+
+    return true;
 }
 
 bool QspiFlash::isInProgress()
@@ -399,7 +391,10 @@ uint8_t QspiFlash::readByte(uint32_t address)
         return 0;
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return 0;
+    }
 
     enable();
 
@@ -417,7 +412,10 @@ uint8_t QspiFlash::readByte(uint32_t address)
     Qspi->AR = address;
 
     // wait the expected byte has been transferred
-    waitTransfer();
+    if (!waitTransfer())
+    {
+        return 0;
+    }
 
     // read byte value from data register
     uint8_t value = (uint8_t)Qspi->DR;
@@ -449,10 +447,16 @@ bool QspiFlash::chipErase()
     }
 
     // enable data writing
-    writeEnable();
+    if (!writeEnable())
+    {
+        return false;
+    }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -461,7 +465,10 @@ bool QspiFlash::chipErase()
         QUADSPI_CCR_IMODE_0 | Commands::ERASE_CHIP;  // chip erase command
 
     // wait till the communication has ended
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // disable peripheral
     disable();
@@ -481,7 +488,10 @@ bool QspiFlash::chipErase()
     }
 
     // disable data writing
-    writeDisable();
+    if (!writeDisable())
+    {
+        return false;
+    }
 
     // return the result of chip erase operation
     return checkErase();
@@ -502,14 +512,20 @@ bool QspiFlash::sectorErase(uint32_t address)
     }
 
     // check on address range
-    if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
+    if (address > FlashMemory::MEMORY_SIZE)
         return false;
 
     // enable data writing
-    writeEnable();
+    if (!writeEnable())
+    {
+        return false;
+    }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -523,7 +539,10 @@ bool QspiFlash::sectorErase(uint32_t address)
     Qspi->AR = address;
 
     // wait for the transaction to end
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // disable peripheral
     disable();
@@ -542,7 +561,10 @@ bool QspiFlash::sectorErase(uint32_t address)
     }
 
     // disable data writing
-    writeDisable();
+    if (!writeDisable())
+    {
+        return false;
+    }
 
     // check on result of the last operation
     return checkErase();
@@ -564,16 +586,22 @@ bool QspiFlash::block32Erase(uint32_t address)
     }
 
     // check on correct address range
-    if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
+    if (address > FlashMemory::MEMORY_SIZE)
     {
         return false;
     }
 
     // enable data writing
-    writeEnable();
+    if (!writeEnable())
+    {
+        return false;
+    }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -587,7 +615,10 @@ bool QspiFlash::block32Erase(uint32_t address)
     Qspi->AR = address;
 
     // wait till communication has ended
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // disable peripheral
     disable();
@@ -606,7 +637,10 @@ bool QspiFlash::block32Erase(uint32_t address)
     }
 
     // disable data writing
-    writeDisable();
+    if (!writeDisable())
+    {
+        return false;
+    }
 
     // check on the result
     return checkErase();
@@ -628,14 +662,20 @@ bool QspiFlash::block64Erase(uint32_t address)
     }
 
     // check on correct address range
-    if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
+    if (address > FlashMemory::MEMORY_SIZE)
         return false;
 
     // enable data writing
-    writeEnable();
+    if (!writeEnable())
+    {
+        return false;
+    }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -649,7 +689,10 @@ bool QspiFlash::block64Erase(uint32_t address)
     Qspi->AR = address;
 
     // wait till communication is ended
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // didable peripheral
     disable();
@@ -668,7 +711,10 @@ bool QspiFlash::block64Erase(uint32_t address)
     }
 
     // disable data writing
-    writeDisable();
+    if (!writeDisable())
+    {
+        return false;
+    }
 
     // check on result
     return checkErase();
@@ -692,16 +738,22 @@ bool QspiFlash::byteProgram(uint8_t data, uint32_t address, bool verify)
     }
 
     // check on address range
-    if ((address < 0) || (address > FlashMemory::MEMORY_SIZE))
+    if (address > FlashMemory::MEMORY_SIZE)
     {
         return false;
     }
 
     // enable data writing
-    writeEnable();
+    if (!writeEnable())
+    {
+        return false;
+    }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -719,7 +771,10 @@ bool QspiFlash::byteProgram(uint8_t data, uint32_t address, bool verify)
     Qspi->DR = data;
 
     // wait for the communication to end
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // wait till current program operation has ended
     uint32_t dt = 0;  // timeout
@@ -734,7 +789,10 @@ bool QspiFlash::byteProgram(uint8_t data, uint32_t address, bool verify)
     }
 
     // disable data writing
-    writeDisable();
+    if (!writeDisable())
+    {
+        return false;
+    }
 
     // if verify = true, double check on data saved
     if (verify == true)
@@ -764,7 +822,10 @@ uint8_t QspiFlash::readSecurityReg()
     }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return 0;
+    }
 
     enable();
 
@@ -777,10 +838,10 @@ uint8_t QspiFlash::readSecurityReg()
                  Commands::READ_SECURITY_REG;  // read security reg coommand
 
     // wait till data trasfer is complete
-    waitTransfer();
-
-    // sus! same sussata of readID() function
-    Thread::sleep(1);
+    if (!waitTransfer())
+    {
+        return 0;
+    }
 
     // read register value from data register
     uint32_t value = (uint8_t)Qspi->DR;
@@ -850,7 +911,7 @@ void QspiFlash::softwareReset()
     disable();
 
     // wait for flash to go back in power-on default status
-    Thread::sleep(1);
+    Thread::sleep(5);
 }
 
 bool QspiFlash::checkErase()
@@ -905,7 +966,7 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
     }
 
     // check on correct sectorNum range
-    if (sectorNum < 0 || sectorNum > SECTORS_NUM)
+    if (sectorNum > SECTORS_NUM)
     {
         return false;
     }
@@ -925,8 +986,11 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
         return false;
     }
 
-    // reset peripheral
-    abortReset();
+    // reset peripheral and reset TCF flag
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -945,10 +1009,7 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
 
     uint32_t index = 0;
 
-    // reset transfer complete flag bit (TCF)
-    Qspi->FCR |= (1 << QUADSPI_FCR_CTCF_Pos);
-
-    // loop until all bytes expected have been received and
+    // loop until all bytes expected have been received or
     // there are some data bytes to read
     while (!(Qspi->SR & QUADSPI_SR_TCF) ||
            (((Qspi->SR & QUADSPI_SR_FLEVEL) >> 8) > 0))
@@ -959,7 +1020,8 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
             // save the first 4 bytes of data received from flash from FIFO
             uint32_t dataBytes = Qspi->DR;
 
-            // be sure that index doesn't exceed the size of sector
+            // be sure that index doesn't exceed the size of vector
+            // (vector's size >= sector's size)
             if (index <= (SECTOR_SIZE - 4))
             {
                 // copy dataBytes (32 bit) in four single byte in vector
@@ -970,6 +1032,7 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
             }
             else
             {
+                abortReset();  // abort reading data bytes from flash
                 return false;
             }
         }
@@ -1016,10 +1079,16 @@ bool QspiFlash::pageProgram(const uint8_t* vector, const size_t size,
         return false;
 
     // enable data writing
-    writeEnable();
+    if (!writeEnable())
+    {
+        return false;
+    }
 
     // reset peripheral
-    abortReset();
+    if (!abortReset())
+    {
+        return false;
+    }
 
     enable();
 
@@ -1058,7 +1127,10 @@ bool QspiFlash::pageProgram(const uint8_t* vector, const size_t size,
     }
 
     // wait for the end of communication
-    waitBusy();
+    if (!waitBusy())
+    {
+        return false;
+    }
 
     // wait till current program operation has ended
     uint32_t dt = 0;  // timeout
@@ -1157,7 +1229,9 @@ bool QspiFlash::write(const uint8_t* vector, const size_t size,
     {
         if (pageProgram(vector + (page * PAGE_SIZE), PAGE_SIZE,
                         start_address + (page * PAGE_SIZE), false) == false)
+        {
             return false;
+        }
     }
 
     // program the last page, cause probably it has a different size
