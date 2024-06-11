@@ -57,48 +57,48 @@ public:
     explicit HILSensors(Boardcore::TaskScheduler* sched, Buses* buses,
                         HILConfig::MainHILTransceiver* hilTransceiver,
                         bool enableHw)
-        : Sensors{sched, buses}, hilTransceiver{hilTransceiver}, enableHw{
-                                                                     enableHw}
+        : Sensors{sched, buses}, enableHw{enableHw}
     {
         using namespace HILConfig;
         using namespace Boardcore;
 
         // Creating the fake sensors for the can transmitted samples
         chamberPressureCreation();
-        pitotCreation(this->hilTransceiver);
+        pitotCreation(hilTransceiver);
 
         hillificator<>(lps28dfw_1, enableHw,
-                       [&]()
-                       { return updateLPS28DFWData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateLPS28DFWData(hilTransceiver); });
         hillificator<>(lps28dfw_2, enableHw,
-                       [&]()
-                       { return updateLPS28DFWData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateLPS28DFWData(hilTransceiver); });
         hillificator<>(lps22df, enableHw,
-                       [&]()
-                       { return updateLPS22DFData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateLPS22DFData(hilTransceiver); });
         hillificator<>(h3lis331dl, enableHw,
-                       [&]()
-                       { return updateH3LIS331DLData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateH3LIS331DLData(hilTransceiver); });
         hillificator<>(lis2mdl, enableHw,
-                       [&]()
-                       { return updateLIS2MDLData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateLIS2MDLData(hilTransceiver); });
         hillificator<>(ubxgps, enableHw,
-                       [&]()
-                       { return updateUBXGPSData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateUBXGPSData(hilTransceiver); });
         hillificator<>(lsm6dsrx, enableHw,
-                       [&]()
-                       { return updateLSM6DSRXData(this->hilTransceiver); });
-        hillificator<>(
-            hscmrnn015pa_1, enableHw,
-            [&]() { return updateStaticPressureData(this->hilTransceiver); });
-        hillificator<>(
-            hscmrnn015pa_2, enableHw,
-            [&]() { return updateStaticPressureData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateLSM6DSRXData(hilTransceiver); });
+        hillificator<>(hscmrnn015pa_1, enableHw,
+                       [hilTransceiver]()
+                       { return updateStaticPressureData(hilTransceiver); });
+        hillificator<>(hscmrnn015pa_2, enableHw,
+                       [hilTransceiver]()
+                       { return updateStaticPressureData(hilTransceiver); });
         hillificator<>(imu, enableHw,
-                       [&]()
-                       { return updateIMUData(this->hilTransceiver, *this); });
+                       [this, hilTransceiver]()
+                       { return updateIMUData(hilTransceiver, *this); });
         hillificator<>(chamber, enableHw,
-                       [&]() { return updateCCData(this->hilTransceiver); });
+                       [hilTransceiver]()
+                       { return updateCCData(hilTransceiver); });
     };
 
     bool start() override
@@ -138,8 +138,10 @@ private:
     void pitotCreation(HILConfig::MainHILTransceiver* hilTransceiver)
     {
         pitot = std::make_unique<Boardcore::Pitot>(
-            [&]() { return getTotalPressurePitot(this->hilTransceiver); },
-            [&]() { return getStaticPressurePitot(this->hilTransceiver); });
+            [hilTransceiver]()
+            { return getTotalPressurePitot(hilTransceiver); },
+            [hilTransceiver]()
+            { return getStaticPressurePitot(hilTransceiver); });
         pitot->setReferenceValues(Boardcore::ReferenceValues());
     }
 
@@ -166,18 +168,19 @@ private:
         assert(ts >= tsSensorData &&
                "Actual timestamp is lesser then the packet timestamp");
 
-        // Getting the index floored
-        int sampleCounter = (ts - tsSensorData) * nData / simulationPeriod;
-
-        if (sampleCounter >= nData)
+        if (ts >= tsSensorData + simulationPeriod)
         {
             // TODO: Register this as an error
             return nData - 1;  // Return the last valid index
         }
 
+        // Getting the index floored
+        int sampleCounter = (ts - tsSensorData) * nData / simulationPeriod;
+
         if (sampleCounter < 0)
         {
-            assert(false && "Calculated a negative index");
+            printf("sampleCounter: %d\n", sampleCounter);
+            assert(sampleCounter < 0 && "Calculated a negative index");
             return 0;
         }
 
@@ -374,7 +377,6 @@ private:
 
     std::unique_ptr<MockChamberSensor> chamber;
     std::unique_ptr<Boardcore::Pitot> pitot;
-    HILConfig::MainHILTransceiver* hilTransceiver;
     bool enableHw;
 };
 }  // namespace HILTest
