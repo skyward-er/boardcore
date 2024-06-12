@@ -931,6 +931,15 @@ bool QspiFlash::checkErase()
 
     uint8_t reg = readSecurityReg();
     return reg & (1 << 6) ? false : true;
+
+    if (reg & (1 << 6))
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 bool QspiFlash::checkProgram()
@@ -949,7 +958,15 @@ bool QspiFlash::checkProgram()
     }
 
     uint8_t reg = readSecurityReg();
-    return reg & (1 << 5) ? false : true;
+
+    if (reg & (1 << 5))
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 bool QspiFlash::readSector(uint8_t* vector, const size_t size,
