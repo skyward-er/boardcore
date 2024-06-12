@@ -45,7 +45,7 @@ int main()
     {
 
         // read device id
-        printf("\nID: %x\n", mymemory.readID());
+        printf("\nID: %ld\n", mymemory.readID());
 
         // erase block
         printf("\nerase block64: %d\n",
@@ -80,7 +80,7 @@ int main()
         printf("array (b): \n");
         for (i = 0; i < 5000; i++)
         {
-            printf("b[%d]: %d\n", i, b[i]);
+            printf("b[%ld]: %d\n", i, b[i]);
         }
 
         return 0;
