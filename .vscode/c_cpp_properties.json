@@ -465,7 +465,7 @@
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_lyra_gs",
-                "_BOARD_STM32F767ZI_GS",
+                "_BOARD_STM32F767ZI_LYRA_GS",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F767xx",
                 "HSE_VALUE=25000000",
