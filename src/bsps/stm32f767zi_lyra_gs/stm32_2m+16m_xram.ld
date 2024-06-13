@@ -37,12 +37,12 @@
  * the MEMORY definitions below accordingly.
  */
 
-_main_stack_size = 512;                             /* main stack = 512Bytes */
+_main_stack_size = 512; /* main stack = 512Bytes */
 _main_stack_top  = 0x20000000 + _main_stack_size;
-ASSERT(_main_stack_size   % 8 == 0, "MAIN stack size error");
+ASSERT(_main_stack_size % 8 == 0, "MAIN stack size error");
 
 /* Mapping the heap into XRAM */
-_heap_end = 0xd0000000 + 16M;                        /* end of available ram */
+_heap_end = 0xd0000000 + 16M; /* end of available ram */
 
 /* Identify the Entry Point  */
 ENTRY(_Z13Reset_Handlerv)
@@ -57,134 +57,122 @@ ENTRY(_Z13Reset_Handlerv)
  * we leave this 128KB DTCM unused except for the first 512Bytes which are for
  * the interrupt stack. This leaves us with 384KB of RAM
  */
-MEMORY
-{
-    xram(wx)  : ORIGIN = 0xd0000000, LENGTH =  16M
-    sram(wx)  : ORIGIN = 0x20020000, LENGTH = 384K
-    dtcm(wx)  : ORIGIN = 0x20000000, LENGTH = 128K    /* Used for main stack */
-    bram(rw)  : ORIGIN = 0x40024000, LENGTH =   4K    /* Bakup SRAM */
-    flash(rx) : ORIGIN = 0x08000000, LENGTH =   2M
+MEMORY{
+    xram(wx) : ORIGIN = 0xd0000000,
+    LENGTH = 16M sram(wx) : ORIGIN = 0x20020000,
+    LENGTH = 384K dtcm(wx) : ORIGIN = 0x20000000,
+    LENGTH                          = 128K /* Used for main stack */
+    bram(rw) : ORIGIN               = 0x40024000,
+    LENGTH                          = 4K /* Bakup SRAM */
+    flash(rx) : ORIGIN              = 0x08000000,
+    LENGTH                          = 2M
 }
 
 /* now define the output sections  */
 SECTIONS
 {
-    . = 0;
-    
+    .= 0;
+
     /* .text section: code goes to flash */
-    .text :
+    .text:
     {
         /* Startup code must go at address 0 */
         KEEP(*(.isr_vector))
-        
-        *(.text)
-        *(.text.*)
-        *(.gnu.linkonce.t.*)
-        /* these sections for thumb interwork? */
-        *(.glue_7)
-        *(.glue_7t)
-        /* these sections for C++? */
-        *(.gcc_except_table)
-        *(.gcc_except_table.*)
-        *(.ARM.extab*)
-        *(.gnu.linkonce.armextab.*)
 
-        . = ALIGN(4);
+        *(.text) * (.text.*) *
+            (.gnu.linkonce.t.*)
+            /* these sections for thumb interwork? */
+            * (.glue_7) *
+            (.glue_7t)
+            /* these sections for C++? */
+            * (.gcc_except_table) * (.gcc_except_table.*) *
+            (.ARM.extab*)*(.gnu.linkonce.armextab.*)
+
+                .= ALIGN(4);
         /* .rodata: constant data */
-        *(.rodata)
-        *(.rodata.*)
-        *(.gnu.linkonce.r.*)
+        *(.rodata) * (.rodata.*) *
+            (.gnu.linkonce.r.*)
 
-        /* C++ Static constructors/destructors (eabi) */
-        . = ALIGN(4);
+                /* C++ Static constructors/destructors (eabi) */
+                .= ALIGN(4);
         KEEP(*(.init))
-        
-        . = ALIGN(4);
-        __miosix_init_array_start = .;
-        KEEP (*(SORT(.miosix_init_array.*)))
-        KEEP (*(.miosix_init_array))
-        __miosix_init_array_end = .;
 
-        . = ALIGN(4);
-        __preinit_array_start = .;
-        KEEP (*(.preinit_array))
-        __preinit_array_end = .;
+            .                     = ALIGN(4);
+        __miosix_init_array_start =.;
+        KEEP(*(SORT(.miosix_init_array.*)))
+        KEEP(*(.miosix_init_array))
+        __miosix_init_array_end =.;
 
-        . = ALIGN(4);
-        __init_array_start = .;
-        KEEP (*(SORT(.init_array.*)))
-        KEEP (*(.init_array))
-        __init_array_end = .;
+        .                     = ALIGN(4);
+        __preinit_array_start =.;
+        KEEP(*(.preinit_array))
+        __preinit_array_end =.;
 
-        . = ALIGN(4);
+        .                  = ALIGN(4);
+        __init_array_start =.;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end =.;
+
+        .= ALIGN(4);
         KEEP(*(.fini))
 
-        . = ALIGN(4);
-        __fini_array_start = .;
-        KEEP (*(.fini_array))
-        KEEP (*(SORT(.fini_array.*)))
-        __fini_array_end = .;
+            .              = ALIGN(4);
+        __fini_array_start =.;
+        KEEP(*(.fini_array))
+        KEEP(*(SORT(.fini_array.*)))
+        __fini_array_end =.;
 
         /* C++ Static constructors/destructors (elf)  */
-        . = ALIGN(4);
-        _ctor_start = .;
-        KEEP (*crtbegin.o(.ctors))
-        KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-        KEEP (*(SORT(.ctors.*)))
-        KEEP (*crtend.o(.ctors))
-       _ctor_end = .;
+        .           = ALIGN(4);
+        _ctor_start =.;
+        KEEP(*crtbegin.o(.ctors))
+        KEEP(*(EXCLUDE_FILE(*crtend.o).ctors))
+        KEEP(*(SORT(.ctors.*)))
+        KEEP(*crtend.o(.ctors))
+        _ctor_end =.;
 
-        . = ALIGN(4);
-        KEEP (*crtbegin.o(.dtors))
-        KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-        KEEP (*(SORT(.dtors.*)))
-        KEEP (*crtend.o(.dtors))
-    } > flash
+        .= ALIGN(4);
+        KEEP(*crtbegin.o(.dtors))
+        KEEP(*(EXCLUDE_FILE(*crtend.o).dtors))
+        KEEP(*(SORT(.dtors.*)))
+        KEEP(*crtend.o(.dtors))
+    }
+    > flash
 
-    /* .ARM.exidx is sorted, so has to go in its own output section.  */
-    __exidx_start = .;
-    .ARM.exidx :
-    {
-        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > flash
-    __exidx_end = .;
+            /* .ARM.exidx is sorted, so has to go in its own output section.  */
+            __exidx_start =.;
+    .ARM.exidx
+        : {*(.ARM.exidx *.gnu.linkonce.armexidx.*)} > flash __exidx_end =.;
 
-	/*
+    /*
      * .data section: global variables go to xram, but also store a copy to
      * flash to initialize them
      */
     .data : ALIGN(8)
     {
-        _data = .;
-        *(.data)
-        *(.data.*)
-        *(.gnu.linkonce.d.*)
-        . = ALIGN(8);
-        _edata = .;
-    } > xram AT > flash
-    _etext = LOADADDR(.data);
+        _data                                      =.;
+        *(.data) * (.data.*) * (.gnu.linkonce.d.*).= ALIGN(8);
+        _edata                                     =.;
+    }
+    > xram AT > flash _etext = LOADADDR(.data);
 
     /* .bss section: uninitialized global variables go to xram */
-    _bss_start = .;
-    .bss :
-    {
-        *(.bss)
-        *(.bss.*)
-        *(.gnu.linkonce.b.*)
-        . = ALIGN(8);
-    } > xram
-    _bss_end = .;
+    _bss_start =.;
+    .bss: { *(.bss) * (.bss.*) * (.gnu.linkonce.b.*).= ALIGN(8); }
+    > xram _bss_end =.;
 
-    _end = .;
-    PROVIDE(end = .);
-    
+    _end =.;
+    PROVIDE(end =.);
+
     .preserve(NOLOAD) : ALIGN(4)
     {
-        _preserve_start = .;
-        . = ALIGN(4);
+        _preserve_start =.;
+        .               = ALIGN(4);
         *(.preserve);
         *(.preserve*);
-        . = ALIGN(4);
-        _preserve_end = .;
-    } > bram
+        .             = ALIGN(4);
+        _preserve_end =.;
+    }
+    > bram
 }
