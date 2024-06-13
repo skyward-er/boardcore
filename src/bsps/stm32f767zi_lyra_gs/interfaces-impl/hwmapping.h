@@ -184,5 +184,3 @@ using dip3 = Gpio<GPIOB_BASE, 15>;
 }  // namespace dipSwitch
 
 }  // namespace miosix
-
-#endif  // HWMAPPING_H
