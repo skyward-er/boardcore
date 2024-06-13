@@ -37,4 +37,3 @@
 #define RCC_SYNC() __DSB()  // TODO: can this dsb be removed?
 
 #endif  // ARCH_REGISTERS_IMPL_H
-

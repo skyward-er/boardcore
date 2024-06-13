@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
- #pragma once
+#pragma once
 
- #include "interfaces/gpio.h"
+#include "interfaces/gpio.h"
 
 #define MIOSIX_RADIO1_DIO0_IRQ EXTI6_IRQHandlerImpl
 #define MIOSIX_RADIO1_DIO1_IRQ EXTI4_IRQHandlerImpl
@@ -78,9 +78,9 @@ using rx = Gpio<GPIOA_BASE, 3>;
 // UART
 namespace uart4
 {
-    using tx = Gpio<GPIOA_BASE, 1>;
-    using rx = Gpio<GPIOA_BASE, 0>;
-} // namespace uart4
+using tx = Gpio<GPIOA_BASE, 1>;
+using rx = Gpio<GPIOA_BASE, 0>;
+}  // namespace uart4
 
 namespace can1
 {
@@ -90,24 +90,25 @@ using tx = Gpio<GPIOB_BASE, 9>;
 
 namespace timers
 {
-    using tim1ch1 = Gpio<GPIOA_BASE, 8>;   //< step StepperHorizontal
-using tim3ch2 = Gpio<GPIOC_BASE, 7>;    //<  count StepperHorizontal 
-using tim4ch1 = Gpio<GPIOD_BASE, 12>;  //< step StepperVertical
-using tim8ch1 = Gpio<GPIOC_BASE, 6>;  //< count StepperVertical
-using tim10ch1 = Gpio<GPIOB_BASE, 8>; //< LED Remote 
-using tim2ch4 = Gpio<GPIOB_BASE, 11>; //< LED Remote
-using tim2ch1 = Gpio<GPIOA_BASE, 15>; //< LED Remote
-}  // namespace timers 
+using tim1ch1  = Gpio<GPIOA_BASE, 8>;   //< step StepperHorizontal
+using tim3ch2  = Gpio<GPIOC_BASE, 7>;   //<  count StepperHorizontal
+using tim4ch1  = Gpio<GPIOD_BASE, 12>;  //< step StepperVertical
+using tim8ch1  = Gpio<GPIOC_BASE, 6>;   //< count StepperVertical
+using tim10ch1 = Gpio<GPIOB_BASE, 8>;   //< LED Remote
+using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< LED Remote
+using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< LED Remote
+}  // namespace timers
 
 }  // namespace interfaces
 
-namespace sensors{
-    namespace VN300
-    {
+namespace sensors
+{
+namespace VN300
+{
 using tx = interfaces::usart2::tx;
 using rx = interfaces::usart2::rx;
-    }
-} // namespace sensors
+}  // namespace VN300
+}  // namespace sensors
 
 namespace stepperHorizontal
 {
@@ -175,11 +176,12 @@ using intr = Gpio<GPIOC_BASE, 1>;
 using nrst = Gpio<GPIOB_BASE, 1>;
 }  // namespace ethernet
 
-namespace dipSwitch{
-    using sh = Gpio<GPIOC_BASE, 4>;
-    using dip2 = Gpio<GPIOC_BASE, 5>;
-    using dip3 = Gpio<GPIOB_BASE, 15>;
-} // namespace dipSwitch
+namespace dipSwitch
+{
+using sh   = Gpio<GPIOC_BASE, 4>;
+using dip2 = Gpio<GPIOC_BASE, 5>;
+using dip3 = Gpio<GPIOB_BASE, 15>;
+}  // namespace dipSwitch
 
 }  // namespace miosix
 

@@ -57,10 +57,9 @@ namespace miosix
 
 static void sdramCommandWait()
 {
-   for (int i = 0; i < 0xffff; i++)
+    for (int i = 0; i < 0xffff; i++)
         if ((FMC_Bank5_6->SDSR & FMC_SDSR_BUSY) == 0)
             return;
-
 }
 
 void configureSdram()
@@ -229,14 +228,13 @@ void IRQbspInit()
     // Enable USART1 pins port
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
-   
     userLed1::mode(Mode::OUTPUT);
     userLed2::mode(Mode::OUTPUT);
     userLed3::mode(Mode::OUTPUT);
     userLed4::mode(Mode::OUTPUT);
 
     // Setting AF, mode for interfaces
-    
+
     interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
     interfaces::spi1::miso::mode(Mode::ALTERNATE);
