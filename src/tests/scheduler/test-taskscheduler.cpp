@@ -35,10 +35,20 @@ GpioPin pin5 = GpioPin(GPIOD_BASE, 9);
 
 bool taskLogEnabled;  ///< A flag to enable/disable task logging
 
+// Proxy sleep function to print when the main thread sleeps
+namespace Thread
+{
+void sleep(unsigned int ms)
+{
+    printf("Main thread sleeping for %u ms\n", ms);
+    miosix::Thread::sleep(ms);
+}
+}  // namespace Thread
+
 void task2Hz()
 {
     pin1.high();
-    delayUs(1);
+    delayUs(100);
     pin1.low();
 
     if (taskLogEnabled)
@@ -50,7 +60,7 @@ void task2Hz()
 void task5Hz()
 {
     pin2.high();
-    delayUs(1);
+    delayUs(100);
     pin2.low();
 
     if (taskLogEnabled)
@@ -62,21 +72,21 @@ void task5Hz()
 void task500Hz()
 {
     pin3.high();
-    delayUs(1);
+    delayUs(100);
     pin3.low();
 }
 
 void task1KHz()
 {
     pin4.high();
-    delayUs(1);
+    delayUs(100);
     pin4.low();
 }
 
 void signalPin5()
 {
     pin5.high();
-    delayUs(1);
+    delayUs(100);
     pin5.low();
 }
 
@@ -110,18 +120,25 @@ void setup()
 
 void printTaskStats(TaskScheduler& scheduler)
 {
-    printf("Tasks stats:\n");
+    printf("* Tasks stats\n");
     for (auto stat : scheduler.getTaskStats())
     {
-        printf("- %d:\n", stat.id);
-        printf("\tActivation: %.2f, %.2f\n", stat.activationStats.mean,
-               stat.activationStats.stdDev);
-        printf("\tPeriod: %.2f, %.2f\n", stat.periodStats.mean,
-               stat.periodStats.stdDev);
-        printf("\tWorkload: %.2f, %.2f\n", stat.workloadStats.mean,
-               stat.workloadStats.stdDev);
-        printf("\tMissed events: %ld\n", stat.missedEvents);
-        printf("\tFailed events: %ld\n", stat.failedEvents);
+        float frequency = 1.0f / stat.period.count() * std::nano::den;
+        fmt::print(
+            "| Task ID {} | Frequency {} Hz:\n"
+            "|\t                 Average[ms]    StdDev[ms]\n"
+            "|\tActivation:     {:12.3g}  {:12.3g}\n"
+            "|\tPeriod:         {:12.3g}  {:12.3g}\n"
+            "|\tWorkload:       {:12.3g}  {:12.3g}\n"
+            "|\t------------------------------------------\n"
+            "|\tExecutions:     {:12}\n"
+            "|\tMissed events:  {:12}\n"
+            "|\tFailed events:  {:12}\n|\n",
+            stat.id, frequency, stat.activationStats.mean,
+            stat.activationStats.stdDev, stat.periodStats.mean,
+            stat.periodStats.stdDev, stat.workloadStats.mean,
+            stat.workloadStats.stdDev, stat.activationStats.nSamples,
+            stat.missedEvents, stat.failedEvents);
     }
 }
 
@@ -130,13 +147,18 @@ void printTaskStats(TaskScheduler& scheduler)
  */
 void test_general_purpose()
 {
+    using namespace Boardcore::Units::Frequency;
+    using namespace std::chrono_literals;
+
     TaskScheduler scheduler{};
 
-    int task1 = scheduler.addTask(f2Hz, 500);
-    scheduler.addTask(f5Hz, 200);
-    int task3 = scheduler.addTask(f500Hz, 2, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1, TaskScheduler::Policy::RECOVER);
+    int task1 = scheduler.addTask([] { delayUs(150); }, 2_hz);
+    scheduler.addTask([] { delayUs(150); }, 5_hz);
+    int task3 = scheduler.addTask([] { delayUs(100); }, 500_hz,
+                                  TaskScheduler::Policy::RECOVER);
+    scheduler.addTask([] { delayUs(100); }, 1_khz,
+                      TaskScheduler::Policy::RECOVER);
+    scheduler.addTask([] { delayUs(100); }, 1ms, TaskScheduler::Policy::SKIP);
 
     printf("4 tasks added (2Hz 5Hz 500Hz 1KHz)\n");
     printf("The scheduler will be started in 2 seconds\n");
@@ -187,7 +209,7 @@ void test_fill_scheduler()
     TaskScheduler scheduler{};
 
     printf("Adding tasks until the scheduler is full\n");
-    size_t taskCount = 0;
+    int taskCount = 0;
     // Fill up the scheduler with tasks
     do
     {
@@ -203,12 +225,12 @@ void test_fill_scheduler()
     // Subtract one because the 0-th task is reserved
     if (taskCount != TaskScheduler::MAX_TASKS - 1)
     {
-        printf("Error: couldn't fill the scheduler: taskCount = %zu \n",
+        printf("Error: couldn't fill the scheduler: taskCount = %d \n",
                taskCount);
         return;
     }
 
-    printf("Done adding tasks: taskCount = %zu\n", taskCount);
+    printf("Done adding tasks: taskCount = %d\n", taskCount);
 
     printf("Trying to add another task\n");
     // Try to add another task
@@ -218,7 +240,7 @@ void test_fill_scheduler()
         return;
     }
 
-    printf("Added tasks successfully\n");
+    printf("Adding a tasks failed as expected, all good\n");
 
     printf("Starting the scheduler\n");
     scheduler.start();
@@ -314,7 +336,7 @@ void test_edge_cases()
     printf("Starting the scheduler\n");
     scheduler.start();
 
-    printf("Starting the scheduler again");
+    printf("Starting the scheduler again\n");
     if (scheduler.start())
     {
         printf("Error: started the scheduler twice\n");
@@ -322,13 +344,13 @@ void test_edge_cases()
 
     Thread::sleep(1000);
 
-    printf("Disabling out-of-range tasks with IDs 0 and 256");
+    printf("Disabling out-of-range tasks with IDs 0 and 256\n");
     scheduler.disableTask(0);
     scheduler.disableTask(256);
 
     Thread::sleep(1000);
 
-    printf("Enabling out-of-range tasks with IDs 0 and 256");
+    printf("Enabling out-of-range tasks with IDs 0 and 256\n");
     scheduler.enableTask(0);
     scheduler.enableTask(256);
 
@@ -365,11 +387,39 @@ void test_long_range()
     scheduler.stop();
 }
 
+/**
+ * @brief Tests the scheduler with tasks running at a high frequency
+ */
+void test_high_frequency()
+{
+    using namespace Units::Frequency;
+
+    TaskScheduler scheduler{};
+    scheduler.addTask([&] { delayUs(10); }, 1_khz);
+    scheduler.addTask([&] { delayUs(10); }, 1_khz);
+    scheduler.addTask([&] { delayUs(10); }, 2_khz);
+    scheduler.addTask([&] { delayUs(10); }, 2_khz);
+
+    printf("4 tasks added (1KHz 1KHz 2KHz 2KHz)\n");
+
+    printf("Starting the scheduler\n");
+    scheduler.start();
+
+    Thread::sleep(5 * 1000);
+
+    printf("Stopping the scheduler\n");
+    scheduler.stop();
+
+    printTaskStats(scheduler);
+}
+
 }  // namespace
 
 int main()
 {
     setup();
+
+    printf("\n");
 
     // Avoid clutter from tasks since this test will add a lot of tasks
     taskLogEnabled = false;
@@ -396,6 +446,11 @@ int main()
 
     printf("=> Running the general purpose test\n");
     test_general_purpose();
+
+    printf("\n");
+
+    printf("=> Running the high frequency task test\n");
+    test_high_frequency();
 
     printf("\n");
 
