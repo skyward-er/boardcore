@@ -68,7 +68,7 @@ using miso = Gpio<GPIOE_BASE, 5>;
 using mosi = Gpio<GPIOE_BASE, 6>;
 }  // namespace spi4
 
-// USART
+// USART VN300
 namespace usart2
 {
 using tx = Gpio<GPIOA_BASE, 2>;
@@ -98,6 +98,13 @@ using tim10ch1 = Gpio<GPIOB_BASE, 8>;   //< LED Remote
 using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< LED Remote
 using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< LED Remote
 }  // namespace timers
+
+// Remote contol switches (ARP)
+namespace TLC
+{
+using switch1 = Gpio<GPIOB_BASE, 7>;
+using switch2 = Gpio<GPIOE_BASE, 3>;
+}  // namespace TLC
 
 }  // namespace interfaces
 
@@ -178,9 +185,9 @@ using nrst = Gpio<GPIOB_BASE, 1>;
 
 namespace dipSwitch
 {
-using sh   = Gpio<GPIOC_BASE, 4>;
-using dip2 = Gpio<GPIOC_BASE, 5>;
-using dip3 = Gpio<GPIOB_BASE, 15>;
+using sh  = Gpio<GPIOC_BASE, 4>;
+using clk = Gpio<GPIOC_BASE, 5>;
+using qh  = Gpio<GPIOB_BASE, 15>;
 }  // namespace dipSwitch
 
 }  // namespace miosix
