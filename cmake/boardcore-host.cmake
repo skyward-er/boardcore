@@ -29,9 +29,6 @@ set(BOARDCORE_HOST_SRC
     # Actuators
     ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
 
-    # Drivers
-    ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
-
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp
 

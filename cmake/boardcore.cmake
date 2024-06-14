@@ -58,7 +58,6 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/interrupt/external_interrupts.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/timer/PWM.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/timer/CountedPWM.cpp
-    ${BOARDCORE_PATH}/src/shared/drivers/timer/TimestampTimer.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/runcam/Runcam.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransaction.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/usart/USART.cpp

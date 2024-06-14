@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <miosix.h>
+#include <utils/TimeUtils.h>
+
 #include <cstdint>
 
 namespace Boardcore
@@ -44,12 +47,17 @@ namespace Boardcore
  */
 namespace TimestampTimer
 {
+
 /**
  * @brief Returns the current timer value in microseconds.
  * @deprecated Use miosix::getTime() instead and update the code to nanoseconds.
  *
  * @return Current timestamp in microseconds.
  */
-uint64_t getTimestamp();
+inline uint64_t getTimestamp()
+{
+    return static_cast<uint64_t>(nsToUs(miosix::getTime()));
+}
+
 };  // namespace TimestampTimer
 }  // namespace Boardcore
