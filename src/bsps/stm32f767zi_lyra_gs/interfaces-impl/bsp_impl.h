@@ -33,5 +33,23 @@
 
 namespace miosix
 {
+/**
+ * \internal
+ * Called by stage_1_boot.cpp to enable the SDRAM before initializing .data/.bss
+ * Requires the CPU clock to be already configured (running from the PLL)
+ */
+void configureSdram();
 
-}
+/**
+ * Polls the SD card sense GPIO.
+ *
+ * This board has no SD card whatsoever, but a card can be connected to the
+ * following GPIOs:
+ * TODO: never tested
+ *
+ * \return true. As there's no SD card sense switch, let's pretend that
+ * the card is present.
+ */
+inline bool sdCardSense() { return true; }
+
+}  // namespace miosix
