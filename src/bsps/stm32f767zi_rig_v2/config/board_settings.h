@@ -49,7 +49,7 @@ const unsigned int defaultSerialSpeed = 115200;
 
 // SD card driver
 static const unsigned char sdVoltage = 33;  // Board powered @ 3.3V
-#define SD_SDMMC 1  // Select either SDMMC1 or SDMMC2
+#define SD_SDMMC 1                          // Select either SDMMC1 or SDMMC2
 
 // Disable 4bit wire mode and set speed to 6Mhz (48Mhz / (6 + 2))
 #define SD_ONE_BIT_DATABUS

@@ -127,7 +127,7 @@ namespace LSM6DSRX
 using cs = Gpio<GPIOG_BASE, 12>;
 }
 
-}
+}  // namespace sensors
 
 namespace adcs
 {

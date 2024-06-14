@@ -330,6 +330,7 @@ void sd_test()
 
             if (actual != value)
             {
+                // cppcheck-suppress invalidPrintfArgType_uint
                 printf(
                     "Failed to validate word %zu, expected: %lu, actual: %lu\n",
                     i, value, actual);
