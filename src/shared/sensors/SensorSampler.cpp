@@ -28,14 +28,14 @@ using namespace std;
 namespace Boardcore
 {
 
-SensorSampler::SensorSampler(uint8_t id, uint32_t period)
+SensorSampler::SensorSampler(uint8_t id, std::chrono::nanoseconds period)
     : id(id), period(period)
 {
 }
 
 SensorSampler::~SensorSampler() { sensors.clear(); }
 
-bool SensorSampler::comparareByPeriod(SensorSampler* left, SensorSampler* right)
+bool SensorSampler::compareByPeriod(SensorSampler* left, SensorSampler* right)
 {
     return left->getSamplingPeriod() < right->getSamplingPeriod();
 }
@@ -84,7 +84,7 @@ void SensorSampler::sampleAndCallback()
 
 uint8_t SensorSampler::getID() { return id; }
 
-uint32_t SensorSampler::getSamplingPeriod() { return period; }
+std::chrono::nanoseconds SensorSampler::getSamplingPeriod() { return period; }
 
 unsigned int SensorSampler::getNumSensors() { return sensors.size(); }
 
@@ -104,7 +104,8 @@ const SensorInfo SensorSampler::getSensorInfo(AbstractSensor* sensor)
     return SensorInfo{};
 }
 
-SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t period)
+SimpleSensorSampler::SimpleSensorSampler(uint8_t id,
+                                         std::chrono::nanoseconds period)
     : SensorSampler(id, period)
 {
 }

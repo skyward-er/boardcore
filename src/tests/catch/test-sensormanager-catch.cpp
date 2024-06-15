@@ -36,6 +36,7 @@
 #include <sensors/SensorManager.h>
 
 using namespace Boardcore;
+using namespace Boardcore::Units::Frequency;
 
 static const size_t FIRST_TASK_ID = 1;  // used to test IDs assignment to tasks
 
@@ -103,7 +104,7 @@ private:
     TestSensor s2;
     SensorInfo s2_info{
         /*ID=*/"s2",
-        /*Period=*/1000,
+        /*Period=*/std::chrono::milliseconds{1000},
         /*Callback=*/[]() { std::cout << "Callback 2!" << std::endl; },
         /*Enabled=*/false};
 
@@ -117,7 +118,7 @@ private:
     TestSensor s4;
     SensorInfo s4_info{
         /*ID=*/"s4",
-        /*Period=*/1000,
+        /*Period=*/1_hz,
         /*Callback=*/[]() { std::cout << "Callback 4!" << std::endl; },
         /*Enabled=*/true};
 
@@ -215,15 +216,15 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // sampler at 2000 ms (2 Hz) has 1 sensor
     for (auto s : sensorManager->samplers)
     {
-        if (s->getSamplingPeriod() == 1000)
+        if (s->getSamplingPeriod() == std::chrono::milliseconds{1000})
         {
             REQUIRE(s->getNumSensors() == 3);
         }
-        else if (s->getSamplingPeriod() == 500)
+        else if (s->getSamplingPeriod() == std::chrono::milliseconds{500})
         {
             REQUIRE(s->getNumSensors() == 1);
         }
-        else if (s->getSamplingPeriod() == 2000)
+        else if (s->getSamplingPeriod() == std::chrono::milliseconds{2000})
         {
             REQUIRE(s->getNumSensors() == 1);
         }

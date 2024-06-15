@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include <atomic>
+#include <units/Frequency.h>
+#include <utils/KernelTime.h>
+
+#include <chrono>
 #include <functional>
 
 namespace Boardcore
@@ -38,14 +41,38 @@ namespace Boardcore
 struct SensorInfo
 {
     std::string id;
-    uint32_t period;  ///< Period in ms
+    std::chrono::nanoseconds period;
     std::function<void()> callback;
     bool isEnabled;
     bool isInitialized;
 
     SensorInfo(
+        // cppcheck-suppress passedByValue
         const std::string id = "", uint32_t period = 0,
-        std::function<void()> callback = []() {}, bool isEnabled = true);
+        std::function<void()> callback = []() {}, bool isEnabled = true)
+        : SensorInfo(id, std::chrono::milliseconds{period}, callback, isEnabled)
+    {
+    }
+
+    SensorInfo(
+        // cppcheck-suppress passedByValue
+        const std::string id, Units::Frequency::Hertz frequency,
+        std::function<void()> callback = []() {}, bool isEnabled = true)
+        : SensorInfo(id,
+                     std::chrono::nanoseconds{
+                         static_cast<int64_t>(sToNs(1) / frequency.value())},
+                     callback, isEnabled)
+    {
+    }
+
+    SensorInfo(
+        // cppcheck-suppress passedByValue
+        const std::string id, std::chrono::nanoseconds period,
+        std::function<void()> callback = []() {}, bool isEnabled = true)
+        : id(id), period(period), callback(callback), isEnabled(isEnabled),
+          isInitialized(false)
+    {
+    }
 
     SensorInfo& operator=(const SensorInfo& info)
     {
@@ -66,27 +93,6 @@ struct SensorInfo
                callback.target_type() == info.callback.target_type() &&
                callback.target<void()>() == info.callback.target<void()>();
     };
-
-private:
-    SensorInfo(const std::string id, uint32_t period,
-               std::function<void()> callback, bool isEnabled,
-               bool isInitialized);
 };
-
-// cppcheck-suppress passedByValue
-inline SensorInfo::SensorInfo(const std::string id, uint32_t period,
-                              std::function<void()> callback, bool isEnabled)
-    : SensorInfo(id, period, callback, isEnabled, false)
-{
-}
-
-// cppcheck-suppress passedByValue
-inline SensorInfo::SensorInfo(const std::string id, uint32_t period,
-                              std::function<void()> callback, bool isEnabled,
-                              bool isInitialized)
-    : id(id), period(period), callback(callback), isEnabled(isEnabled),
-      isInitialized(isInitialized)
-{
-}
 
 }  // namespace Boardcore

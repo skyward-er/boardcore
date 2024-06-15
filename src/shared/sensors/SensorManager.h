@@ -145,7 +145,7 @@ private:
      *
      * @return Pointer to the newly created sampler.
      */
-    SensorSampler* createSampler(uint8_t id, uint32_t period);
+    SensorSampler* createSampler(uint8_t id, std::chrono::nanoseconds period);
 
     const uint8_t MAX_TASK_ID = 255;  ///< Max id for tasks in the scheduler.
 
