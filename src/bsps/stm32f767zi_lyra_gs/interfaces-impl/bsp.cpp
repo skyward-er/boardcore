@@ -233,6 +233,15 @@ void IRQbspInit()
     userLed3::mode(Mode::OUTPUT);
     userLed4::mode(Mode::OUTPUT);
 
+    TLC::switch1::mode(Mode::INPUT);
+    TLC::switch2::mode(Mode::INPUT);
+
+    dipSwitch::sh::mode(Mode::OUTPUT);
+    dipSwitch::sh::low();
+    dipSwitch::clk::mode(Mode::OUTPUT);
+    dipSwitch::clk::low();
+    dipSwitch::qh::mode(Mode::INPUT);
+
     // Setting AF, mode for interfaces
 
     interfaces::spi1::sck::mode(Mode::ALTERNATE);
@@ -287,6 +296,36 @@ void IRQbspInit()
     interfaces::timers::tim8ch1::alternateFunction(3);
     interfaces::timers::tim10ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim10ch1::alternateFunction(3);
+
+    radio1::cs::mode(Mode::OUTPUT);
+    radio1::cs::high();
+    radio1::nrst::mode(Mode::OUTPUT);
+    radio1::nrst::high();
+    radio1::txen::mode(Mode::OUTPUT);
+    radio1::txen::low();
+    radio1::rxen::mode(Mode::OUTPUT);
+    radio1::rxen::low();
+    radio1::dio0::mode(Mode::INPUT);
+    radio1::dio1::mode(Mode::INPUT);
+    radio1::dio3::mode(Mode::INPUT);
+
+    radio2::cs::mode(Mode::OUTPUT);
+    radio2::cs::high();
+    radio2::nrst::mode(Mode::OUTPUT);
+    radio2::nrst::high();
+    radio2::txen::mode(Mode::OUTPUT);
+    radio2::txen::low();
+    radio2::rxen::mode(Mode::OUTPUT);
+    radio2::rxen::low();
+    radio2::dio0::mode(Mode::INPUT);
+    radio2::dio1::mode(Mode::INPUT);
+    radio2::dio3::mode(Mode::INPUT);
+
+    ethernet::cs::mode(Mode::OUTPUT);
+    ethernet::cs::high();
+    ethernet::nrst::mode(Mode::OUTPUT);
+    ethernet::nrst::high();
+    ethernet::intr::mode(Mode::INPUT);
 
     DefaultConsole::instance().IRQset(intrusive_ref_ptr<Device>(new STM32Serial(
         defaultSerial, defaultSerialSpeed, STM32Serial::NOFLOWCTRL)));
