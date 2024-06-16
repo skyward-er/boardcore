@@ -37,6 +37,7 @@
 
 using namespace Boardcore;
 using namespace Boardcore::Units::Frequency;
+using namespace std::chrono_literals;
 
 static const size_t FIRST_TASK_ID = 1;  // used to test IDs assignment to tasks
 
@@ -104,7 +105,7 @@ private:
     TestSensor s2;
     SensorInfo s2_info{
         /*ID=*/"s2",
-        /*Period=*/std::chrono::milliseconds{1000},
+        /*Period=*/1000ms,
         /*Callback=*/[]() { std::cout << "Callback 2!" << std::endl; },
         /*Enabled=*/false};
 

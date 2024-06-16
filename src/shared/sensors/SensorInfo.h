@@ -50,7 +50,8 @@ struct SensorInfo
         // cppcheck-suppress passedByValue
         const std::string id = "", uint32_t period = 0,
         std::function<void()> callback = []() {}, bool isEnabled = true)
-        : SensorInfo(id, std::chrono::milliseconds{period}, callback, isEnabled)
+        : SensorInfo(id, std::chrono::milliseconds{period}, std::move(callback),
+                     isEnabled)
     {
     }
 
@@ -61,7 +62,7 @@ struct SensorInfo
         : SensorInfo(id,
                      std::chrono::nanoseconds{
                          static_cast<int64_t>(sToNs(1) / frequency.value())},
-                     callback, isEnabled)
+                     std::move(callback), isEnabled)
     {
     }
 
@@ -69,8 +70,8 @@ struct SensorInfo
         // cppcheck-suppress passedByValue
         const std::string id, std::chrono::nanoseconds period,
         std::function<void()> callback = []() {}, bool isEnabled = true)
-        : id(id), period(period), callback(callback), isEnabled(isEnabled),
-          isInitialized(false)
+        : id(id), period(period), callback(std::move(callback)),
+          isEnabled(isEnabled), isInitialized(false)
     {
     }
 
