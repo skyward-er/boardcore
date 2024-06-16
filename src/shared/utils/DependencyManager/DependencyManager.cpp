@@ -82,6 +82,10 @@ bool DependencyManager::insertImpl(Injectable* ptr,
                                    const std::type_info& module_info,
                                    const std::type_info& impl_info)
 {
+    // Early check to see if ptr is nullptr, fail if that's the case
+    if (ptr == nullptr)
+        return false;
+
     auto idx         = std::type_index{module_info};
     auto module_name = type_name_demangled(module_info);
     auto impl_name   = type_name_demangled(impl_info);
