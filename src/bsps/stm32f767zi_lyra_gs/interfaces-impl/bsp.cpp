@@ -233,8 +233,8 @@ void IRQbspInit()
     userLed3::mode(Mode::OUTPUT);
     userLed4::mode(Mode::OUTPUT);
 
-    TLC::switch1::mode(Mode::INPUT);
-    TLC::switch2::mode(Mode::INPUT);
+    commBox::buttonArm::mode(Mode::INPUT);
+    commBox::buttonDisarm::mode(Mode::INPUT);
 
     dipSwitch::sh::mode(Mode::OUTPUT);
     dipSwitch::sh::low();
