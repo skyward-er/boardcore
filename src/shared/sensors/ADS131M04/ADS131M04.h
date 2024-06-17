@@ -124,9 +124,10 @@ public:
      */
     bool selfTest() override;
 
-private:
+protected:
     ADS131M04Data sampleImpl() override;
 
+private:
     /**
      * @brief Overwrites the channel settings.
      *

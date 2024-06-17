@@ -220,9 +220,10 @@ public:
      */
     bool selfTest() override { return true; };
 
-private:
+protected:
     MPU9250Data sampleImpl() override;
 
+private:
     void resetDevice();
 
     void selectAutoClock();

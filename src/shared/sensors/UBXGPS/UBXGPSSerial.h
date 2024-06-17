@@ -81,9 +81,10 @@ public:
      */
     bool selfTest() override;
 
-private:
+protected:
     UBXGPSData sampleImpl() override;
 
+private:
     /**
      * @brief Resets the device to its default configuration.
      *

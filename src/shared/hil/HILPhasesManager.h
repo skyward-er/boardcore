@@ -34,7 +34,8 @@
 #include <map>
 #include <utils/ModuleManager/ModuleManager.hpp>
 
-typedef std::function<void()> TCallback;
+namespace Boardcore
+{
 
 struct Outcomes
 {
@@ -104,6 +105,8 @@ template <class FlightPhases, class SimulatorData, class ActuatorData>
 class HILPhasesManager : public HILPhasesManagerBase
 {
 public:
+    using PhasesCallback = std::function<void()>;
+
     explicit HILPhasesManager(
         std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition)
         : HILPhasesManagerBase(getCurrentPosition)
@@ -112,7 +115,7 @@ public:
 
     bool isFlagActive(FlightPhases flag) { return flagsFlightPhases[flag]; }
 
-    void registerToFlightPhase(FlightPhases flag, TCallback func)
+    void registerToFlightPhase(FlightPhases flag, PhasesCallback func)
     {
         callbacks[flag].push_back(func);
     }
@@ -147,6 +150,7 @@ protected:
 
     std::map<FlightPhases, bool> flagsFlightPhases;
     std::map<FlightPhases, bool> prev_flagsFlightPhases;
-    std::map<FlightPhases, std::vector<TCallback>> callbacks;
+    std::map<FlightPhases, std::vector<PhasesCallback>> callbacks;
     std::map<FlightPhases, Outcomes> outcomes;
 };
+}  // namespace Boardcore

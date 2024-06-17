@@ -79,7 +79,7 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     /**
      * Implements a state machines composed of 3 states:
      * 1. Command pressure sample
@@ -94,6 +94,7 @@ private:
      */
     MS5803Data sampleImpl() override;
 
+private:
     MS5803Data updateData();
 
     SPISlave spiSlave;

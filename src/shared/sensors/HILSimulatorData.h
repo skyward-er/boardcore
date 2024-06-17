@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
+/* Copyright (c) 2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,48 +22,63 @@
 
 #pragma once
 
-#include <logger/Logger.h>
+#include <Eigen/Core>
+#include <ostream>
 
-#include "HILSensor.h"
+namespace Boardcore
+{
+
+template <int N_DATA>
+struct AccelerometerSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA][3];
+};
+
+template <int N_DATA>
+struct GyroscopeSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA][3];
+};
+
+template <int N_DATA>
+struct MagnetometerSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA][3];
+};
 
 template <int N_DATA>
 struct BarometerSimulatorData
 {
+    static constexpr int NDATA = N_DATA;
     float measures[N_DATA];
 };
 
-/**
- * @brief fake barometer sensor used for the simulation.
- *
- * This class is used to simulate as near as possible the situation of the
- * OBSW during the flight, using fake sensors classes instead of the real
- * ones, taking their data from the data received from a simulator.
- */
 template <int N_DATA>
-class HILBarometer
-    : public HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>
+struct GPSSimulatorData
 {
-    using Base =
-        HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>;
-
-public:
-    explicit HILBarometer(const BarometerSimulatorData<N_DATA> *sensorData)
-        : HILSensor<HILBarometerData, BarometerSimulatorData<N_DATA>, N_DATA>(
-              sensorData)
-    {
-    }
-
-protected:
-    HILBarometerData updateData() override
-    {
-        HILBarometerData tempData;
-        {
-            miosix::PauseKernelLock pkLock;
-            tempData.pressure = Base::sensorData->measures[Base::sampleCounter];
-            tempData.pressureTimestamp = Base::updateTimestamp();
-        }
-        Boardcore::Logger::getInstance().log(tempData);
-
-        return tempData;
-    }
+    static constexpr int NDATA = N_DATA;
+    float positionMeasures[N_DATA][3];
+    float velocityMeasures[N_DATA][3];
+    float fix;
+    float num_satellites;
 };
+
+template <int N_DATA>
+struct PitotSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float deltaP[N_DATA];
+    float staticPressure[N_DATA];
+};
+
+template <int N_DATA>
+struct TemperatureSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA];
+};
+
+}  // namespace Boardcore

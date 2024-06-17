@@ -281,7 +281,7 @@ public:
      */
     bool selfTest() override;
 
-private:
+protected:
     /**
      * @brief Reads the previously configured channel while writing the next
      * enabled configuration.
@@ -290,6 +290,7 @@ private:
      */
     ADS1118Data sampleImpl() override;
 
+private:
     /**
      * @brief Writes the configuration specified, reads the previous written
      * configuration's value and stores it. If enabled checks also that the

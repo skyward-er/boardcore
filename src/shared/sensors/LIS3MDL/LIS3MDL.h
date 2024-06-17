@@ -145,9 +145,10 @@ public:
      */
     bool applyConfig(Config config);
 
-private:
+protected:
     LIS3MDLData sampleImpl() override;
 
+private:
     void updateUnit(FullScale fs);
 
     SPISlave slave;

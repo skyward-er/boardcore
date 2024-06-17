@@ -33,10 +33,15 @@
 
 #include <utils/ModuleManager/ModuleManager.hpp>
 
+#include "Buses.h"
 #include "HILSimulationConfig.h"
+#include "Sensors/HILSensors.h"
+#include "Sensors/Sensors.h"
+#include "Sensors/SensorsConfig.h"
 
 using namespace Boardcore;
 using namespace HILConfig;
+using namespace HILTest;
 
 static const bool HIL_TEST = true;
 
@@ -49,91 +54,57 @@ int main()
     Boardcore::TaskScheduler scheduler;
 
     // Create modules
-    USART usart2(USART2, SIM_BAUDRATE);
-
-    // Create hil modules
-    auto* hilTransceiver   = new MainHILTransceiver(usart2);
-    auto* hilPhasesManager = new MainHILPhasesManager(
-        []() { return Boardcore::TimedTrajectoryPoint(); });
-
-    auto* sensorData = hilTransceiver->getSensorData();
-
-    auto* accelerometer = new MainHILAccelerometer(&sensorData->accelerometer);
-    auto* gyroscope     = new MainHILGyroscope(&sensorData->gyro);
-    auto* magnetometer  = new MainHILMagnetometer(&sensorData->magnetometer);
-    auto* gps           = new MainHILGps(&sensorData->gps);
-    auto* barometer1    = new MainHILBarometer(&sensorData->barometer1);
-    auto* barometer2    = new MainHILBarometer(&sensorData->barometer2);
-    auto* barometer3    = new MainHILBarometer(&sensorData->barometer3);
-    auto* baroChamber   = new MainHILBarometer(&sensorData->pressureChamber);
-    auto* pitot         = new MainHILPitot(&sensorData->pitot);
-    auto* temperature   = new MainHILTemperature(&sensorData->temperature);
-
-    // Create HIL class where we specify how to use previous modules to assemble
-    // ActuatorData
-    MainHIL* hil = new MainHIL(
-        hilTransceiver, hilPhasesManager,
-        [&]()
-        {
-            auto actuatorData = ActuatorData();
-
-            // ada
-            // const auto gpsSample                 = gps->getLastSample();
-            // actuatorData.adaState.aglAltitude    = gpsSample.height;
-            // actuatorData.adaState.mslAltitude    = gpsSample.height - 160;
-            // actuatorData.adaState.verticalSpeed  = -gpsSample.velocityDown;
-            // actuatorData.adaState.apogeeDetected = static_cast<float>(false);
-            // actuatorData.adaState.updating       = static_cast<float>(true);
-
-            actuatorData.flags = sensorData->flags;
-            return actuatorData;
-        },
-        SIMULATION_PERIOD);
-
-    // Insert modules
-    if (!ModuleManager::getInstance().insert<MainHIL>(hil))
-    {
-        initResult = false;
-        LOG_ERR(logger, "Error inserting the HIL module");
-    }
-
-    // Start modules
-    if (!EventBroker::getInstance().start())
-    {
-        initResult = false;
-        LOG_ERR(logger, "Error starting the EventBroker module");
-    }
-
-    if (!scheduler.start())
-    {
-        initResult = false;
-        LOG_ERR(logger, "Error starting the board scheduler module");
-    }
+    Buses* buses = new Buses();
+    Sensors* sensors;
 
     if (HIL_TEST)
     {
-        if (!ModuleManager::getInstance().get<MainHIL>()->start())
+        // Create hil modules
+        auto* hilTransceiver   = new MainHILTransceiver(buses->usart2);
+        auto* hilPhasesManager = new MainHILPhasesManager(
+            []() { return Boardcore::TimedTrajectoryPoint(); });
+
+        // Create HIL class where we specify how to use previous modules to
+        // assemble ActuatorData
+        MainHIL* hil = new MainHIL(
+            hilTransceiver, hilPhasesManager,
+            [&]()
+            {
+                auto actuatorData = ActuatorData();
+                return actuatorData;
+            },
+            SIMULATION_PERIOD);
+
+        if (HIL_TEST)
         {
-            initResult = false;
-            LOG_ERR(logger, "Error starting the HIL module");
+            initResult &= ModuleManager::getInstance().insert<MainHIL>(hil);
         }
+        sensors = new HILSensors(&scheduler, buses, hilTransceiver, false);
+    }
+    else
+    {
+        sensors = new Sensors(&scheduler, buses);
+    }
+
+    // Insert modules
+    initResult &= ModuleManager::getInstance().insert<Buses>(buses);
+    initResult &= ModuleManager::getInstance().insert<Sensors>(sensors);
+
+    // Start modules
+    initResult &= EventBroker::getInstance().start();
+    initResult &= scheduler.start();
+
+    if (HIL_TEST)
+    {
+        initResult &= ModuleManager::getInstance().get<MainHIL>()->start();
 
         ModuleManager::getInstance().get<MainHIL>()->waitStartSimulation();
     }
 
-    // Check the init result and launch an event
-    if (initResult)
-    {
-        // Post OK
-        LOG_INFO(logger, "Init OK");
+    initResult &= ModuleManager::getInstance().get<Sensors>()->start();
 
-        // Set the LED status
-        miosix::ledOn();
-    }
-    else
-    {
-        LOG_ERR(logger, "Init ERROR");
-    }
+    // Check the init result and launch an event
+    printf(initResult ? "Init OK\n" : "Init ERROR\n");
 
     // Periodic statistics
     while (true)
