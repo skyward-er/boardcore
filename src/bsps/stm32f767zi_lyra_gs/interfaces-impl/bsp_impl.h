@@ -25,10 +25,10 @@
  * Board support package, this file initializes hardware.
  ***************************************************************************/
 
-#ifndef BSP_IMPL_H
-#define BSP_IMPL_H
+#pragma once
 
 #include "config/miosix_settings.h"
+#include "hwmapping.h"
 #include "interfaces/gpio.h"
 
 namespace miosix
