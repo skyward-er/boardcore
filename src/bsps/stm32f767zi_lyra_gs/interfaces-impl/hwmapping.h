@@ -100,16 +100,19 @@ using tim1ch1  = Gpio<GPIOA_BASE, 8>;   //< step StepperHorizontal
 using tim3ch2  = Gpio<GPIOC_BASE, 7>;   //<  count StepperHorizontal
 using tim4ch1  = Gpio<GPIOD_BASE, 12>;  //< step StepperVertical
 using tim8ch1  = Gpio<GPIOC_BASE, 6>;   //< count StepperVertical
-using tim10ch1 = Gpio<GPIOB_BASE, 8>;   //< LED Remote
-using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< LED Remote
-using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< LED Remote
+using tim10ch1 = Gpio<GPIOB_BASE, 8>;   //< LED CommandBox
+using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< LED CommandBox
+using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< LED CommandBox
 }  // namespace timers
 
-// Command box contol switches (ARP)
+// Command box control switches (ARP)
 namespace commBox
 {
 using switchArm    = Gpio<GPIOE_BASE, 3>;
 using switchDisarm = Gpio<GPIOB_BASE, 7>;
+using ledTimG1     = tim10ch1;  //< green LED
+using ledTimR2     = tim2ch4;   //< red LED
+using ledTimO3     = tim2ch1;   //< orange LED
 }  // namespace commBox
 
 }  // namespace interfaces
