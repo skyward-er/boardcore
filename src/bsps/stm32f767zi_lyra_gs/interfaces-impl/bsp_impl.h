@@ -35,10 +35,10 @@ namespace miosix
 {
 inline void ledOn()
 {
-    userLed1G::high();
-    userLed2Y::high();
-    userLed3R::high();
-    userLed4O::high();
+    userLed1::high();
+    userLed2::high();
+    userLed3::high();
+    userLed4::high();
 }
 
 inline void ledOff()
