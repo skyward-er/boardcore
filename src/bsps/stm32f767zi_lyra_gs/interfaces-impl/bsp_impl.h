@@ -33,6 +33,50 @@
 
 namespace miosix
 {
+inline void ledOn()
+{
+    userLed1G::high();
+    userLed2Y::high();
+    userLed3R::high();
+    userLed4O::high();
+}
+
+inline void ledOff()
+{
+    userLed1::low();
+    userLed2::low();
+    userLed3::low();
+    userLed4::low();
+}
+
+/**
+ * @brief GREEN led on (CU)
+ */
+inline void led1On() { userLed1::high(); }
+
+inline void led1Off() { userLed1::low(); }
+
+/**
+ * @brief YELLOW led on (CU)
+ */
+inline void led2On() { userLed2::high(); }
+
+inline void led2Off() { userLed2::low(); }
+
+/**
+ * @brief RED led on (CU)
+ */
+inline void led3On() { userLed3::high(); }
+
+inline void led3Off() { userLed3::low(); }
+
+/**
+ * @brief ORANGE led on (CU)
+ */
+inline void led4On() { userLed4::high(); }
+
+inline void led4Off() { userLed4::low(); }
+
 /**
  * \internal
  * Called by stage_1_boot.cpp to enable the SDRAM before initializing .data/.bss

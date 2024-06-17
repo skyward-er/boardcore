@@ -41,6 +41,12 @@
 namespace miosix
 {
 
+// Compute units leds
+using userLed1 = Gpio<GPIOC_BASE, 14>;
+using userLed2 = Gpio<GPIOC_BASE, 13>;
+using userLed3 = Gpio<GPIOC_BASE, 2>;
+using userLed4 = Gpio<GPIOC_BASE, 15>;
+
 namespace interfaces
 {
 
@@ -99,12 +105,12 @@ using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< LED Remote
 using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< LED Remote
 }  // namespace timers
 
-// Remote contol switches (ARP)
-namespace TLC
+// Command box contol switches (ARP)
+namespace commBox
 {
-using switch1 = Gpio<GPIOB_BASE, 7>;
-using switch2 = Gpio<GPIOE_BASE, 3>;
-}  // namespace TLC
+using switchArm    = Gpio<GPIOE_BASE, 3>;
+using switchDisarm = Gpio<GPIOB_BASE, 7>;
+}  // namespace commBox
 
 }  // namespace interfaces
 
