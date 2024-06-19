@@ -1,5 +1,5 @@
 /*
- * C++ enabled linker script for stm32f767zi (2M FLASH, 512K RAM)
+ * C++ enabled linker script for stm32f767zi (2M FLASH, 512K RAM, 32MB XRAM)
  * Developed by TFT: Terraneo Federico Technologies
  * Optimized for use with the Miosix kernel
  */
@@ -8,7 +8,7 @@
  * This linker script puts:
  * - read only data and code (.text, .rodata, .eh_*) in FLASH
  * - the 512Byte main (IRQ) stack, .data and .bss in the DTCM 128KB RAM
- * - .data, .bss, stacks and heap in the internal RAM.
+ * - .data, .bss, stacks and heap in the external 32MB SDRAM.
  */
 
 /*
@@ -41,8 +41,8 @@ _main_stack_size = 512;                             /* main stack = 512Bytes */
 _main_stack_top  = 0x20000000 + _main_stack_size;
 ASSERT(_main_stack_size   % 8 == 0, "MAIN stack size error");
 
-/* Mapping the heap to the end of SRAM2 */
-_heap_end = 0x20000000 + 512K;                       /* end of available ram */
+/* Mapping the heap into XRAM */
+_heap_end = 0xd0000000 + 32M;                        /* end of available ram */
 
 /* Identify the Entry Point  */
 ENTRY(_Z13Reset_Handlerv)
@@ -59,6 +59,7 @@ ENTRY(_Z13Reset_Handlerv)
  */
 MEMORY
 {
+    xram(wx)  : ORIGIN = 0xd0000000, LENGTH =  32M
     sram(wx)  : ORIGIN = 0x20020000, LENGTH = 384K
     dtcm(wx)  : ORIGIN = 0x20000000, LENGTH = 128K    /* Used for main stack */
     bram(rw)  : ORIGIN = 0x40024000, LENGTH =   4K    /* Bakup SRAM */
@@ -149,7 +150,7 @@ SECTIONS
     __exidx_end = .;
 
 	/*
-     * .data section: global variables go to sram, but also store a copy to
+     * .data section: global variables go to xram, but also store a copy to
      * flash to initialize them
      */
     .data : ALIGN(8)
@@ -160,10 +161,10 @@ SECTIONS
         *(.gnu.linkonce.d.*)
         . = ALIGN(8);
         _edata = .;
-    } > sram AT > flash
+    } > xram AT > flash
     _etext = LOADADDR(.data);
 
-    /* .bss section: uninitialized global variables go to sram */
+    /* .bss section: uninitialized global variables go to xram */
     _bss_start = .;
     .bss :
     {
@@ -171,7 +172,7 @@ SECTIONS
         *(.bss.*)
         *(.gnu.linkonce.b.*)
         . = ALIGN(8);
-    } > sram
+    } > xram
     _bss_end = .;
 
     _end = .;

@@ -126,21 +126,23 @@ using rx = interfaces::usart2::rx;
 }  // namespace VN300
 }  // namespace sensors
 
-namespace stepperHorizontal
+// Stepper Horizontal
+namespace stepper1
 {
 using enable     = Gpio<GPIOB_BASE, 13>;
 using direction  = Gpio<GPIOD_BASE, 13>;
 using pulseTimer = interfaces::timers::tim1ch1;
 using countTimer = interfaces::timers::tim3ch2;
-}  // namespace stepperHorizontal
+}  // namespace stepper1
 
-namespace stepperVertical
+// Stepper Vertical
+namespace stepper2
 {
 using enable     = Gpio<GPIOB_BASE, 4>;
 using direction  = Gpio<GPIOD_BASE, 7>;
 using pulseTimer = interfaces::timers::tim4ch1;
 using countTimer = interfaces::timers::tim8ch1;
-}  // namespace stepperVertical
+}  // namespace stepper2
 
 namespace radio1
 {
@@ -159,6 +161,8 @@ using txen = Gpio<GPIOG_BASE, 3>;
 using rxen = Gpio<GPIOG_BASE, 7>;
 using nrst = Gpio<GPIOG_BASE, 12>;
 }  // namespace radio1
+
+namespace radio = radio1;
 
 namespace radio2
 {

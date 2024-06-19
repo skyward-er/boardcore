@@ -23,13 +23,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>
 
-set(BOARD_NAME stm32f767zi_lyra_gs)
+set(BOARD_NAME stm32f767zi_lyra_gs_no_xram)
 set(ARCH_NAME cortexM7_stm32f7)
 
 # Base directories with header files for this board
 set(ARCH_PATH ${KPATH}/arch/${ARCH_NAME}/common)
-set(BOARD_PATH ${BOARDCORE_PATH}/src/bsps/${BOARD_NAME})
-set(BOARD_CONFIG_PATH ${BOARDCORE_PATH}/src/bsps/${BOARD_NAME}/config)
+set(BOARD_PATH ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_gs)
+set(BOARD_CONFIG_PATH ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_gs/config)
 
 # Specify where to find the board specific config/miosix_settings.h
 set(BOARD_MIOSIX_SETTINGS_PATH ${BOARD_PATH})
@@ -50,8 +50,8 @@ set(OPT_OPTIMIZATION -O2)
 
 # Boot file and linker script
 set(BOOT_FILE ${BOARD_PATH}/core/stage_1_boot.cpp)
-# set(LINKER_SCRIPT ${BOARD_PATH}/stm32_2m+384k_ram.ld)
-set(LINKER_SCRIPT ${BOARD_PATH}/stm32_2m+32m_xram.ld)
+set(LINKER_SCRIPT ${BOARD_PATH}/stm32_2m+384k_ram.ld)
+# set(LINKER_SCRIPT ${BOARD_PATH}/stm32_2m+16m_xram.ld)
 
 # Enables the initialization of the external 16MB SDRAM memory
 set(XRAM -D__ENABLE_XRAM)
