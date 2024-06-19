@@ -47,7 +47,7 @@ namespace Canbus
  */
 class CanProtocol
 {
-    using MsgHandler = std::function<void(CanMessage data)>;
+    using MsgHandler = std::function<void(const CanMessage& data)>;
 
 public:
     /**

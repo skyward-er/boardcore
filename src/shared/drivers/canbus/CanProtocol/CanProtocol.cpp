@@ -32,7 +32,7 @@ namespace Canbus
 
 CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive,
                          miosix::Priority threadPriority)
-    : can(can), onReceive(onReceive), threadPriority(threadPriority)
+    : can(can), onReceive(std::move(onReceive)), threadPriority(threadPriority)
 {
 }
 
