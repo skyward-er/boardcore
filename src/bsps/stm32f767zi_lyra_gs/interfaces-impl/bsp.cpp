@@ -40,7 +40,6 @@
 #include "drivers/stm32_sgm.h"
 #include "filesystem/console/console_device.h"
 #include "filesystem/file_access.h"
-#include "hwmapping.h"
 #include "interfaces/arch_registers.h"
 #include "interfaces/delays.h"
 #include "interfaces/portability.h"
