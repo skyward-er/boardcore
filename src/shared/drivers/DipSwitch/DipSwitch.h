@@ -22,8 +22,6 @@
 
 #include <miosix.h>
 
-using namespace miosix;
-
 /**
  * @brief Dip switch status for the GS board
  */
@@ -40,7 +38,8 @@ struct DipStatus
 class DipSwitch
 {
 public:
-    DipSwitch(GpioPin& sh, GpioPin& clk, GpioPin& qh, uint32_t microSecClk)
+    DipSwitch(miosix::GpioPin& sh, miosix::GpioPin& clk, miosix::GpioPin& qh,
+              uint32_t microSecClk)
         : sh{sh}, clk{clk}, qh{qh}, microSecClk{microSecClk}
     {
     }
@@ -48,9 +47,9 @@ public:
     DipStatus read();
 
 private:
-    GpioPin& sh;
-    GpioPin& clk;
-    GpioPin& qh;
+    miosix::GpioPin& sh;
+    miosix::GpioPin& clk;
+    miosix::GpioPin& qh;
     uint32_t microSecClk;
 
     /**
