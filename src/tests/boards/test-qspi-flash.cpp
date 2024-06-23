@@ -27,13 +27,13 @@
 
 /**
  * A tiny look at the protocol
- * QUADSPI is a protocol to manage the communication between MCU and a flash memory. 
- * The peripheral takes care of all the pins involved, so you don't even need to toggle
- * the slave-select pin. In indirect mode every communication is handled by the firmware  
- * and registers, also every communication is triggered as soon as the peripheral has  
- * enough information to perform a command. 
- * Other two modes are available: polling mode and mapped mode.   
-*/
+ * QUADSPI is a protocol to manage the communication between MCU and a flash
+ * memory. The peripheral takes care of all the pins involved, so you don't even
+ * need to toggle the slave-select pin. In indirect mode every communication is
+ * handled by the firmware and registers, also every communication is triggered
+ * as soon as the peripheral has enough information to perform a command. Other
+ * two modes are available: polling mode and mapped mode.
+ */
 
 #include <miosix.h>
 #include <utils/ClockUtils.h>
@@ -118,7 +118,8 @@ int main()
         // Enable the peripheral (IT HAS TO BE DONE AFTER SETTING CCR REGISTER)
         QUADSPI->CR |= QUADSPI_CR_EN;
 
-        QUADSPI->DLR = 2;  // Expect to receive 3 bytes regarding ID of the flash 
+        // Expect to receive 3 bytes regarding ID of the flash
+        QUADSPI->DLR = 2;
 
         // Trigger communication start by writing the instruction
         QUADSPI->CCR |= 0x9F << QUADSPI_CCR_INSTRUCTION_Pos;
@@ -128,9 +129,10 @@ int main()
             ;
 
         // reset transfer complete flag (TCF)
-        QUADSPI->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos); 
+        QUADSPI->FCR &= ~(1 << QUADSPI_FCR_CTCF_Pos);
 
-        // until there are some bytes in the quadspi buffer (FIFO) keep reading them
+        // until there are some bytes in the quadspi buffer (FIFO) keep reading
+        // them
         while (QUADSPI->SR & (63 << QUADSPI_SR_FLEVEL_Pos))
         {
             printf("Data: 0x%lx\n", QUADSPI->DR);
@@ -140,7 +142,7 @@ int main()
         QUADSPI->CR &= ~QUADSPI_CR_EN;
 
         printf("QUADSPI disabled.\n");
-        printf("end!\n"); 
+        printf("end!\n");
     }
 
     while (true)
