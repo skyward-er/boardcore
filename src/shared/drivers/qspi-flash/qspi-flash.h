@@ -24,9 +24,6 @@
 
 #pragma once
 
-using namespace miosix;
-using namespace Boardcore;
-
 /*  driver of MX25R3235FM1IL0 flash memory chip
  *  model of flash memory on compute unit: MX25R3235FM1IL0 4MB, device ID:
  * 0xC22816 FLASH memory space organisation:

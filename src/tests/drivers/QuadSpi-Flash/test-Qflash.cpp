@@ -101,30 +101,30 @@ void initBoard()
      * FLASH_IO3 - PF6  - AF9  - QUADSPI_BK1_IO3
      */
 
-    GpioPin flash_ncs(GPIOB_BASE, 10);
-    GpioPin flash_sck(GPIOF_BASE, 10);
-    GpioPin flash_io0(GPIOF_BASE, 8);
-    GpioPin flash_io1(GPIOF_BASE, 9);
-    GpioPin flash_io2(GPIOF_BASE, 7);
-    GpioPin flash_io3(GPIOF_BASE, 6);
+    miosix::GpioPin flash_ncs(GPIOB_BASE, 10);
+    miosix::GpioPin flash_sck(GPIOF_BASE, 10);
+    miosix::GpioPin flash_io0(GPIOF_BASE, 8);
+    miosix::GpioPin flash_io1(GPIOF_BASE, 9);
+    miosix::GpioPin flash_io2(GPIOF_BASE, 7);
+    miosix::GpioPin flash_io3(GPIOF_BASE, 6);
 
     // init GPIO peripheral pins
-    flash_ncs.mode(Mode::ALTERNATE);
+    flash_ncs.mode(miosix::Mode::ALTERNATE);
     flash_ncs.alternateFunction(9);
-    flash_ncs.speed(Speed::_100MHz);
-    flash_sck.mode(Mode::ALTERNATE);
+    flash_ncs.speed(miosix::Speed::_100MHz);
+    flash_sck.mode(miosix::Mode::ALTERNATE);
     flash_sck.alternateFunction(9);
-    flash_sck.speed(Speed::_100MHz);
-    flash_io0.mode(Mode::ALTERNATE);
+    flash_sck.speed(miosix::Speed::_100MHz);
+    flash_io0.mode(miosix::Mode::ALTERNATE);
     flash_io0.alternateFunction(10);
-    flash_io0.speed(Speed::_100MHz);
-    flash_io1.mode(Mode::ALTERNATE);
+    flash_io0.speed(miosix::Speed::_100MHz);
+    flash_io1.mode(miosix::Mode::ALTERNATE);
     flash_io1.alternateFunction(10);
-    flash_io1.speed(Speed::_100MHz);
-    flash_io2.mode(Mode::ALTERNATE);
+    flash_io1.speed(miosix::Speed::_100MHz);
+    flash_io2.mode(miosix::Mode::ALTERNATE);
     flash_io2.alternateFunction(9);
-    flash_io2.speed(Speed::_100MHz);
-    flash_io3.mode(Mode::ALTERNATE);
+    flash_io2.speed(miosix::Speed::_100MHz);
+    flash_io3.mode(miosix::Mode::ALTERNATE);
     flash_io3.alternateFunction(9);
-    flash_io3.speed(Speed::_100MHz);
+    flash_io3.speed(miosix::Speed::_100MHz);
 }
