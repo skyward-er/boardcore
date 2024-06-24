@@ -80,7 +80,7 @@ int main()
         printf("array (b): \n");
         for (i = 0; i < 5000; i++)
         {
-            printf("b[%ld]: %d\n", i, b[i]);
+            printf("b[%u]: %u\n", i, b[i]);
         }
 
         return 0;

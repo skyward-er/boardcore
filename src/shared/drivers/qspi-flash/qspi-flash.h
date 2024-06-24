@@ -83,7 +83,7 @@ public:
     /**
      * @brief QspiFlash class constructor
      */
-    QspiFlash(QUADSPI_TypeDef* qspi);
+    explicit QspiFlash(QUADSPI_TypeDef* qspi);
 
     /**
      * @brief Initialise QUADSPI peripheral in order to communicate with the
