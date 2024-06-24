@@ -930,7 +930,6 @@ bool QspiFlash::checkErase()
     }
 
     uint8_t reg = readSecurityReg();
-    return reg & (1 << 6) ? false : true;
 
     if (reg & (1 << 6))
     {
