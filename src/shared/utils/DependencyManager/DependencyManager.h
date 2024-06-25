@@ -57,6 +57,43 @@ public:
 
 /**
  * @brief Main DependencyManager class.
+ *
+ * This utility is meant to be used as a dependency injector for Skyward OBSW.
+ *
+ * Dependencies and dependents should inherit from `Injectable`. Normally though
+ * you should extend from `InjectableWithDeps` in case of dependencies.
+ *
+ * Here's a quick example (for more examples look at
+ * src/tests/catch/test-dependencymanager.cpp):
+ * @code{.cpp}
+ *
+ * // A simple direct dependency
+ * class MyDependency1 : public Injectable {};
+ *
+ * // Abstracting direct dependencies with a common interface
+ * class MyDependency2Iface {};
+ * class MyDependency2 : public Injectable, public MyDependency2Iface {};
+ *
+ * // A simple dependant (which can become a dependency itself)
+ * class MyDependant : public InjectableWithDeps<MyDependency1,
+ * MyDependency2Iface> {};
+ *
+ * DependencyManager dependency_mgr;
+ *
+ * // Initialize the dependencies
+ * MyDependency1 *dep1 = ;
+ * MyDependency2Iface *dep2 = new MyDependency2();
+ *
+ * dependency_mgr.insert<MyDependency1>(new MyDependency1());
+ * dependency_mgr.insert<MyDependency2Iface>(new MyDependency2());
+ * dependency_mgr.insert<MyDependant>(new MyDependant());
+ *
+ * // Inject and resolve all dependencies!
+ * dependency_mgr.inject();
+ *
+ * // Optionally, print the resulting graph
+ * dependency_mgr.graphviz(std::cout);
+ * @endcode
  */
 class DependencyManager
 {

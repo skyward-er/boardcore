@@ -27,6 +27,7 @@
 
 using namespace Boardcore;
 
+// Simple utility function to demangle type infos
 std::string type_name_demangled(const std::type_info& info)
 {
     char* demangled =
