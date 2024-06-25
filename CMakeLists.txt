@@ -134,6 +134,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-sensormanager-catch.cpp
     src/tests/catch/xbee/test-xbee-parser.cpp
     src/tests/catch/test-modulemanager.cpp
+    src/tests/catch/test-dependencymanager.cpp
     src/tests/catch/test-MEA.cpp
     src/tests/catch/test-airbrakesInterp.cpp
     src/tests/catch/test-pitot.cpp
