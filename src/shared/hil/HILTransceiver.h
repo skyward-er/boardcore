@@ -168,10 +168,16 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             SimulatorData tempData;
             nLostUpdates = 0;
             miosix::led3On();
-            if (!hilSerial.readBlocking(&tempData, sizeof(SimulatorData)))
+            size_t nRead = 0;
+            if (!hilSerial.readBlocking(&tempData, sizeof(SimulatorData),
+                                        nRead))
             {
                 LOG_ERR(logger, "Failed serial read");
             }
+
+            assert(nRead == sizeof(SimulatorData) &&
+                   "Read less then SimulatorData bytes");
+
             hilSerial.clearQueue();
             miosix::led3Off();
 
