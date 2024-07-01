@@ -24,6 +24,8 @@
 
 #include <diagnostic/PrintLogger.h>
 
+#include <chrono>
+
 #include "Sensor.h"
 #include "SensorInfo.h"
 
@@ -44,7 +46,7 @@ public:
      * @param id Sampler identifier.
      * @param period Period at which the sampler performs sensors update.
      */
-    SensorSampler(uint8_t id, uint32_t period);
+    SensorSampler(uint8_t id, std::chrono::nanoseconds period);
 
     virtual ~SensorSampler();
 
@@ -54,7 +56,7 @@ public:
                sensors.size() == sampler.sensors.size();
     }
 
-    static bool comparareByPeriod(SensorSampler* left, SensorSampler* right);
+    static bool compareByPeriod(SensorSampler* left, SensorSampler* right);
 
     /**
      * @brief Add a sensor to the sensors map.
@@ -89,7 +91,7 @@ public:
 
     uint8_t getID();
 
-    uint32_t getSamplingPeriod();
+    std::chrono::nanoseconds getSamplingPeriod();
 
     unsigned int getNumSensors();
 
@@ -101,8 +103,8 @@ private:
      */
     virtual void sampleSensor(AbstractSensor* s) = 0;
 
-    uint8_t id;       ///< Sampler id used in the task scheduler.
-    uint32_t period;  ///< Sampler update/activation period.
+    uint8_t id;  ///< Sampler id used in the task scheduler.
+    std::chrono::nanoseconds period;  ///< Sampler update/activation period.
 
 protected:
     std::vector<std::pair<AbstractSensor*, SensorInfo>> sensors;
@@ -117,7 +119,7 @@ protected:
 class SimpleSensorSampler : public virtual SensorSampler
 {
 public:
-    SimpleSensorSampler(uint8_t id, uint32_t period);
+    SimpleSensorSampler(uint8_t id, std::chrono::nanoseconds period);
 
     ~SimpleSensorSampler();
 

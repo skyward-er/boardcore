@@ -139,9 +139,9 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
 
             LOG_ERR(
                 logger,
-                "Failed to initialize sensor {} -> Error: {} (period: {} ms)",
+                "Failed to initialize sensor {} -> Error: {} (period: {} ns)",
                 sensorInfo.id.c_str(), sensor->getLastError(),
-                sensorInfo.period);
+                sensorInfo.period.count());
         }
         else
         {
@@ -150,8 +150,8 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
 
         // Add sensor even if not initialized correctly, its isInitialized info
         // field will be false
-        LOG_DEBUG(logger, "Adding {} -> period: {} ms, enabled = {}",
-                  sensorInfo.id.c_str(), sensorInfo.period,
+        LOG_DEBUG(logger, "Adding {} -> period: {} ns, enabled = {}",
+                  sensorInfo.id.c_str(), sensorInfo.period.count(),
                   sensorInfo.isEnabled);
 
         // Check if a sampler with the same sampling period exists
@@ -201,7 +201,7 @@ void SensorManager::initScheduler()
     // Sort the vector to have lower period samplers (higher frequency) inserted
     // before higher period ones into the TaskScheduler
     std::stable_sort(samplers.begin(), samplers.end(),
-                     SensorSampler::comparareByPeriod);
+                     SensorSampler::compareByPeriod);
 
     // Add all the samplers to the scheduler
     for (auto& sampler : samplers)
@@ -229,10 +229,11 @@ uint8_t SensorManager::getFirstTaskID()
     return max->id + 1;
 }
 
-SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period)
+SensorSampler* SensorManager::createSampler(uint8_t id,
+                                            std::chrono::nanoseconds period)
 {
-    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ms", id,
-              period);
+    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ns", id,
+              period.count());
 
     return new SimpleSensorSampler(id, period);
 }
