@@ -38,6 +38,23 @@ std::string type_name_demangled(const std::type_info& info)
     return demangled2;
 }
 
+int32_t Boardcore::getNextDependencyId()
+{
+    static std::atomic<int32_t> NEXT{0};
+
+    int32_t value = NEXT.load();
+    if (value >= 256)
+    {
+        return -1;
+    }
+    else
+    {
+        while (NEXT.compare_exchange_weak(value, value + 1))
+            ;
+        return value;
+    }
+}
+
 void DependencyManager::graphviz(std::ostream& os)
 {
     os << "digraph {" << std::endl;
@@ -79,37 +96,36 @@ bool DependencyManager::inject()
     return load_success;
 }
 
-bool DependencyManager::insertImpl(Injectable* ptr,
+bool DependencyManager::insertImpl(Injectable* ptr, int32_t type_id,
                                    const std::type_info& module_info,
                                    const std::type_info& impl_info)
 {
-    // Early check to see if ptr is nullptr, fail if that's the case
-    if (ptr == nullptr)
+
+    // Early check to see if ptr is nullptr or type_id is invalid, fail if
+    // that's the case
+    if (ptr == nullptr || type_id < 0)
         return false;
 
-    auto idx         = std::type_index{module_info};
     auto module_name = type_name_demangled(module_info);
     auto impl_name   = type_name_demangled(impl_info);
 
-    return modules.insert({idx, ModuleInfo{ptr, module_name, impl_name, {}}})
+    return modules
+        .insert({type_id, ModuleInfo{ptr, module_name, impl_name, {}}})
         .second;
 }
 
-Injectable* DependencyInjector::getImpl(const std::type_info& module_info)
+Injectable* DependencyInjector::getImpl(int32_t type_id)
 {
-    auto idx  = std::type_index{module_info};
-    auto iter = manager.modules.find(idx);
+    auto iter = manager.modules.find(type_id);
     if (iter == manager.modules.end())
     {
         manager.load_success = false;
 
-        std::string module_name = type_name_demangled(module_info);
-        LOG_ERR(logger, "[{}] requires [{}], but the latter is not present",
-                info.name, module_name);
+        LOG_ERR(logger, "[{}] requires a non existant module", info.name);
 
         return nullptr;
     }
 
-    info.deps.push_back(idx);
+    info.deps.push_back(type_id);
     return iter->second.ptr;
 }
