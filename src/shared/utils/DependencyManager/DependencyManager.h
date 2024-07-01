@@ -90,8 +90,8 @@ public:
  * class MyDependency1 : public Injectable {};
  *
  * // Abstracting direct dependencies with a common interface
- * class MyDependency2Iface {};
- * class MyDependency2 : public Injectable, public MyDependency2Iface {};
+ * class MyDependency2Iface : public Injectable {};
+ * class MyDependency2 : public InjectableBasedWithDeps<MyDependency2Iface> {};
  *
  * // A simple dependant (which can become a dependency itself)
  * class MyDependant : public InjectableWithDeps<MyDependency1,
@@ -138,7 +138,8 @@ public:
      * @param dependency Injectable to insert in the DependencyManager.
      * @returns True if successful, false otherwise.
      */
-    template <typename T>
+    template <typename T, typename = std::enable_if_t<
+                              std::is_base_of<Injectable, T>::value>>
     [[nodiscard]] bool insert(T *dependency)
     {
         return insertImpl(dynamic_cast<Injectable *>(dependency),
@@ -164,6 +165,8 @@ private:
     [[nodiscard]] bool insertImpl(Injectable *ptr, int32_t type_id,
                                   const std::type_info &module_info,
                                   const std::type_info &impl_info);
+
+    Injectable *getImpl(int32_t type_id);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
@@ -270,6 +273,9 @@ struct Contains<T, Type, Types...>
 
 }  // namespace DependencyManagerDetails
 
+/**
+ * @brief Base class for an Injectable with dependencies.
+ */
 template <typename... Types>
 class InjectableWithDeps : public Injectable
 {
@@ -279,6 +285,42 @@ public:
         storage.inject(injector);
     }
 
+    /**
+     * @brief Get one of the modules in Types.
+     */
+    template <typename T>
+    T *getModule()
+    {
+        static_assert(DependencyManagerDetails::Contains<T, Types...>::value,
+                      "Dependency T is not present in the dependencies");
+
+        return storage.template get<T>();
+    }
+
+private:
+    DependencyManagerDetails::Storage<Types...> storage;
+};
+
+/**
+ * @brief Base class for an Injectable with dependencies and an Injectable
+ * superclass.
+ */
+template <typename Base, typename... Types>
+class InjectableBasedWithDeps : public Base
+{
+public:
+    static_assert(std::is_base_of<Injectable, Base>::value,
+                  "Base must be Injectable");
+
+    virtual void inject(DependencyInjector &injector) override
+    {
+        Base::inject(injector);
+        storage.inject(injector);
+    }
+
+    /**
+     * @brief Get one of the modules in Types.
+     */
     template <typename T>
     T *getModule()
     {

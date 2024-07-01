@@ -114,18 +114,33 @@ bool DependencyManager::insertImpl(Injectable* ptr, int32_t type_id,
         .second;
 }
 
-Injectable* DependencyInjector::getImpl(int32_t type_id)
+Injectable* DependencyManager::getImpl(int32_t type_id)
 {
-    auto iter = manager.modules.find(type_id);
-    if (iter == manager.modules.end())
+    auto iter = modules.find(type_id);
+    if (iter == modules.end())
     {
-        manager.load_success = false;
-
-        LOG_ERR(logger, "[{}] requires a non existant module", info.name);
-
         return nullptr;
     }
+    else
+    {
+        return iter->second.ptr;
+    }
+}
 
-    info.deps.push_back(type_id);
-    return iter->second.ptr;
+Injectable* DependencyInjector::getImpl(int32_t type_id)
+{
+    Injectable* ptr = manager.getImpl(type_id);
+    if (ptr == nullptr)
+    {
+        // Get failed, signal inject failure and log it
+        manager.load_success = false;
+        LOG_ERR(logger, "[{}] requires a non existant module", info.name);
+        return nullptr;
+    }
+    else
+    {
+        // Get successful, add it to the dependencies
+        info.deps.push_back(type_id);
+        return ptr;
+    }
 }
