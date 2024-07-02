@@ -114,6 +114,8 @@ public:
     /**
      * @brief Insert a new dependency.
      *
+     * @note If T is not Injectable the compiler will fail to find this method!
+     *
      * @param dependency Injectable to insert in the DependencyManager.
      * @returns True if successful, false otherwise.
      */
@@ -271,13 +273,15 @@ public:
 
     /**
      * @brief Get one of the modules in Types.
+     *
+     * @note If T is not inside Types... the compiler will fail to find this
+     * method!
      */
-    template <typename T>
+    template <typename T,
+              typename = std::enable_if_t<
+                  DependencyManagerDetails::Contains<T, Types...>::value>>
     T *getModule()
     {
-        static_assert(DependencyManagerDetails::Contains<T, Types...>::value,
-                      "Dependency T is not present in the dependencies");
-
         return storage.template get<T>();
     }
 
@@ -306,13 +310,15 @@ public:
 
     /**
      * @brief Get one of the modules in Types.
+     *
+     * @note If T is not inside Types... the compiler will fail to find this
+     * method!
      */
-    template <typename T>
+    template <typename T,
+              typename = std::enable_if_t<
+                  DependencyManagerDetails::Contains<T, Types...>::value>>
     T *getModule()
     {
-        static_assert(DependencyManagerDetails::Contains<T, Types...>::value,
-                      "Dependency T is not present in the dependencies");
-
         return storage.template get<T>();
     }
 
