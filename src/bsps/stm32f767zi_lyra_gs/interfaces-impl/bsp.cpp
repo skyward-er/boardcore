@@ -329,9 +329,10 @@ void IRQbspInit()
     stepper1::enable::mode(Mode::OUTPUT);
     stepper1::enable::high();
     stepper1::direction::mode(Mode::OUTPUT);
+
     stepper2::enable::mode(Mode::OUTPUT);
-    stepper2::direction::mode(Mode::OUTPUT);
     stepper2::enable::high();
+    stepper2::direction::mode(Mode::OUTPUT);
 
     DefaultConsole::instance().IRQset(intrusive_ref_ptr<Device>(new STM32Serial(
         defaultSerial, defaultSerialSpeed, STM32Serial::NOFLOWCTRL)));
