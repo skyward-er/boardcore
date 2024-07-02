@@ -24,6 +24,7 @@
 
 #include <algorithms/Algorithm.h>
 #include <algorithms/NAS/NASState.h>
+#include <algorithms/PIController.h>
 #include <diagnostic/PrintLogger.h>
 #include <logger/Logger.h>
 #include <sensors/SensorData.h>
@@ -44,7 +45,8 @@ public:
      *
      * @param updatePeriod The period of update of the follower algorithm [s].
      */
-    explicit Follower(float updatePeriod);
+    explicit Follower(float updatePeriod, float pitchKp, float pitchKi,
+                      float yawKp, float yawKi);
 
     /**
      * @brief Check that both the antenna and rocket coordinates have been set.
@@ -135,6 +137,9 @@ private:
     bool antennaCoordinatesSet   = false;
     bool rocketCoordinatesSet    = false;
     bool firstAntennaAttitudeSet = false;
+
+    PIController pitchSpeedController;
+    PIController yawSpeedController;
 
     VN300Data lastAntennaAttitude;
     miosix::FastMutex lastAntennaAttitudeMutex;
