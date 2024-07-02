@@ -34,8 +34,11 @@ using namespace miosix;
 namespace Boardcore
 {
 
-Follower::Follower(float updatePeriod)
-    : updatePeriod(updatePeriod), targetAngles({0, 0})
+Follower::Follower(float updatePeriod, float pitchKp, float pitchKi,
+                   float yawKp, float yawKi)
+    : updatePeriod(updatePeriod), targetAngles({0, 0}),
+      pitchSpeedController(pitchKp, pitchKi, updatePeriod),
+      yawSpeedController(yawKp, yawKi, updatePeriod)
 {
 }
 
@@ -163,11 +166,9 @@ void Follower::step()
     diffAngles.yaw   = minimizeRotation(diffAngles.yaw);
     diffAngles.pitch = minimizeRotation(diffAngles.pitch);
 
-    // Calculate angular velocity for moving the antennas toward position
-    float horizontalSpeed =
-        std::abs((diffAngles.yaw * 1000) / (360 * updatePeriod));
-    float verticalSpeed =
-        std::abs((diffAngles.pitch * 1000) / (360 * updatePeriod));
+    // Update the speed controllers
+    float horizontalSpeed = yawSpeedController.update(diffAngles.yaw);
+    float verticalSpeed   = pitchSpeedController.update(diffAngles.pitch);
 
     // Update the state of the follower
     FollowerState state;
