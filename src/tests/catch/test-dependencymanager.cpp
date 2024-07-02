@@ -23,6 +23,7 @@
 #include <utils/DependencyManager/DependencyManager.h>
 
 #include <catch2/catch.hpp>
+#include <iostream>
 
 using namespace Boardcore;
 
@@ -66,7 +67,7 @@ public:
     virtual bool bong_c() = 0;
 };
 
-class C : public InjectableBasedWithDeps<CIface, A, B>
+class C : public InjectableWithDeps<InjectableBase<CIface>, A, B>
 {
 public:
     void bing_c() override
@@ -109,7 +110,7 @@ public:
     virtual int get_truest_answer() { return getModule<E>()->get_answer(); }
 };
 
-class H : public InjectableBasedWithDeps<G, F>
+class H : public InjectableWithDeps<InjectableBase<G>, F>
 {
 public:
     int get_truest_answer() override
@@ -127,7 +128,33 @@ public:
     }
 };
 
+namespace Inner
+{
+template <typename T, typename U>
+struct Pair
+{
+};
+}  // namespace Inner
+
 }  // namespace Boardcore
+
+TEST_CASE("DependencyManager - TypeName")
+{
+
+    REQUIRE(Boardcore::typeName<Boardcore::A>() == "Boardcore::A");
+    REQUIRE(Boardcore::typeName<Boardcore::B>() == "Boardcore::B");
+    REQUIRE(Boardcore::typeName<Boardcore::CIface>() == "Boardcore::CIface");
+    REQUIRE(Boardcore::typeName<Boardcore::C>() == "Boardcore::C");
+    REQUIRE(Boardcore::typeName<Boardcore::D>() == "Boardcore::D");
+    REQUIRE(Boardcore::typeName<Boardcore::E>() == "Boardcore::E");
+    REQUIRE(Boardcore::typeName<Boardcore::F>() == "Boardcore::F");
+    REQUIRE(Boardcore::typeName<Boardcore::G>() == "Boardcore::G");
+    REQUIRE(Boardcore::typeName<Boardcore::H>() == "Boardcore::H");
+    REQUIRE(Boardcore::typeName<Boardcore::I>() == "Boardcore::I");
+    REQUIRE(Boardcore::typeName<
+                Boardcore::Inner::Pair<Boardcore::A, Boardcore::B>>() ==
+            "Boardcore::Inner::Pair<Boardcore::A, Boardcore::B>");
+}
 
 TEST_CASE("DependencyManager - Circular dependencies")
 {
@@ -151,6 +178,8 @@ TEST_CASE("DependencyManager - Circular dependencies")
 
     b->bing_b(false);
     REQUIRE(!b->bong_b());
+
+    manager.graphviz(std::cout);
 }
 
 TEST_CASE("DependencyManager - Virtual Dependencies")
@@ -183,6 +212,8 @@ TEST_CASE("DependencyManager - Virtual Dependencies")
     REQUIRE(c->bong_c());
     d->bing_d();
     REQUIRE(d->bong_d());
+
+    manager.graphviz(std::cout);
 }
 
 TEST_CASE("DependencyManager - Inject fail")
@@ -193,6 +224,17 @@ TEST_CASE("DependencyManager - Inject fail")
 
     REQUIRE(manager.insert(a));
     REQUIRE_FALSE(manager.inject());
+}
+
+TEST_CASE("DependencyManager - Insert two instances fail")
+{
+    DependencyManager manager;
+
+    Boardcore::A *a1 = new Boardcore::A();
+    Boardcore::A *a2 = new Boardcore::A();
+
+    REQUIRE(manager.insert(a1));
+    REQUIRE_FALSE(manager.insert(a2));
 }
 
 TEST_CASE("DependencyManager - Dependency tree")
@@ -211,4 +253,6 @@ TEST_CASE("DependencyManager - Dependency tree")
     REQUIRE(manager.inject());
 
     REQUIRE(i->get_ultimate_true_answer() == 111);
+
+    manager.graphviz(std::cout);
 }

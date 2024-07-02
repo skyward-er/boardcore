@@ -24,34 +24,18 @@
 
 #include <diagnostic/PrintLogger.h>
 
-#include <atomic>
-#include <map>
 #include <numeric>
 #include <ostream>
 #include <string>
 #include <typeindex>
 #include <typeinfo>
+#include <unordered_map>
 #include <vector>
+
+#include "TypeName.h"
 
 namespace Boardcore
 {
-
-/**
- * @brief A new unique DependencyId.
- *
- * @note DO NOT USE! Used internally by getDependencyId.
- */
-int32_t getNextDependencyId();
-
-/**
- * @brief Get the DependencyId of a specific T.
- */
-template <typename T>
-int32_t getDependencyId()
-{
-    static int32_t ID = getNextDependencyId();
-    return ID;
-}
 
 class DependencyInjector;
 class DependencyManager;
@@ -91,7 +75,8 @@ public:
  *
  * // Abstracting direct dependencies with a common interface
  * class MyDependency2Iface : public Injectable {};
- * class MyDependency2 : public InjectableBasedWithDeps<MyDependency2Iface> {};
+ * class MyDependency2 : public
+ * InjectableWithDeps<InjectableBase<MyDependency2Iface>> {};
  *
  * // A simple dependant (which can become a dependency itself)
  * class MyDependant : public InjectableWithDeps<MyDependency1,
@@ -100,9 +85,6 @@ public:
  * DependencyManager dependency_mgr;
  *
  * // Initialize the dependencies
- * MyDependency1 *dep1 = ;
- * MyDependency2Iface *dep2 = new MyDependency2();
- *
  * dependency_mgr.insert<MyDependency1>(new MyDependency1());
  * dependency_mgr.insert<MyDependency2Iface>(new MyDependency2());
  * dependency_mgr.insert<MyDependant>(new MyDependant());
@@ -122,11 +104,8 @@ private:
     struct ModuleInfo
     {
         Injectable *ptr;
-        // Name of the module interface
-        std::string name;
-        // Name of the actual concrete implementation of this module interface
-        std::string impl;
-        std::vector<int32_t> deps;
+        // List of dependencies
+        std::vector<std::string> deps;
     };
 
 public:
@@ -143,7 +122,7 @@ public:
     [[nodiscard]] bool insert(T *dependency)
     {
         return insertImpl(dynamic_cast<Injectable *>(dependency),
-                          getDependencyId<T>(), typeid(T), typeid(*dependency));
+                          Boardcore::typeName<T>());
     }
 
     /**
@@ -162,17 +141,16 @@ public:
     [[nodiscard]] bool inject();
 
 private:
-    [[nodiscard]] bool insertImpl(Injectable *ptr, int32_t type_id,
-                                  const std::type_info &module_info,
-                                  const std::type_info &impl_info);
+    [[nodiscard]] bool insertImpl(Injectable *ptr, std::string name);
 
-    Injectable *getImpl(int32_t type_id);
+    Injectable *getImpl(const std::string &name);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
     bool load_success = true;
-    std::map<int32_t, ModuleInfo> modules;
+    // Maps from interface type name to ModuleInfo
+    std::unordered_map<std::string, ModuleInfo> modules;
 };
 
 /**
@@ -183,8 +161,9 @@ class DependencyInjector
     friend class DependencyManager;
 
 private:
-    DependencyInjector(DependencyManager &manager,
-                       DependencyManager::ModuleInfo &info)
+    DependencyInjector(
+        DependencyManager &manager,
+        std::pair<const std::string, DependencyManager::ModuleInfo> &info)
         : manager(manager), info(info)
     {
     }
@@ -199,17 +178,17 @@ public:
     template <typename T>
     T *get()
     {
-        return dynamic_cast<T *>(getImpl(getDependencyId<T>()));
+        return dynamic_cast<T *>(getImpl(Boardcore::typeName<T>()));
     }
 
 private:
-    Injectable *getImpl(int32_t type_id);
+    Injectable *getImpl(const std::string &name);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
     DependencyManager &manager;
-    DependencyManager::ModuleInfo &info;
+    std::pair<const std::string, DependencyManager::ModuleInfo> &info;
 };
 
 namespace DependencyManagerDetails
@@ -273,6 +252,11 @@ struct Contains<T, Type, Types...>
 
 }  // namespace DependencyManagerDetails
 
+template <typename T>
+struct InjectableBase
+{
+};
+
 /**
  * @brief Base class for an Injectable with dependencies.
  */
@@ -306,9 +290,11 @@ private:
  * superclass.
  */
 template <typename Base, typename... Types>
-class InjectableBasedWithDeps : public Base
+class InjectableWithDeps<InjectableBase<Base>, Types...> : public Base
 {
 public:
+    using InjectableSuper = Base;
+
     static_assert(std::is_base_of<Injectable, Base>::value,
                   "Base must be Injectable");
 
