@@ -24,12 +24,15 @@
 
 #include <diagnostic/PrintLogger.h>
 
+#include <numeric>
 #include <ostream>
 #include <string>
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
 #include <vector>
+
+#include "TypeName.h"
 
 namespace Boardcore
 {
@@ -71,8 +74,9 @@ public:
  * class MyDependency1 : public Injectable {};
  *
  * // Abstracting direct dependencies with a common interface
- * class MyDependency2Iface {};
- * class MyDependency2 : public Injectable, public MyDependency2Iface {};
+ * class MyDependency2Iface : public Injectable {};
+ * class MyDependency2 : public
+ * InjectableWithDeps<InjectableBase<MyDependency2Iface>> {};
  *
  * // A simple dependant (which can become a dependency itself)
  * class MyDependant : public InjectableWithDeps<MyDependency1,
@@ -81,9 +85,6 @@ public:
  * DependencyManager dependency_mgr;
  *
  * // Initialize the dependencies
- * MyDependency1 *dep1 = ;
- * MyDependency2Iface *dep2 = new MyDependency2();
- *
  * dependency_mgr.insert<MyDependency1>(new MyDependency1());
  * dependency_mgr.insert<MyDependency2Iface>(new MyDependency2());
  * dependency_mgr.insert<MyDependant>(new MyDependant());
@@ -102,12 +103,12 @@ class DependencyManager
 private:
     struct ModuleInfo
     {
-        Injectable *ptr;
-        // Name of the module interface
-        std::string name;
-        // Name of the actual concrete implementation of this module interface
-        std::string impl;
-        std::vector<std::type_index> deps;
+        void *raw;  ///< Pointer to the dependency's concrete type, returned
+                    ///< when retrieving this dependency
+        Injectable *injectable;  ///< Pointer to the dependency as an
+                                 ///< Injectable, needed for dynamic dispatching
+                                 ///< of the inject method
+        std::vector<std::string> deps;  ///< List of dependencies
     };
 
 public:
@@ -116,14 +117,18 @@ public:
     /**
      * @brief Insert a new dependency.
      *
+     * @note If T is not Injectable the compiler will fail to find this method!
+     *
      * @param dependency Injectable to insert in the DependencyManager.
      * @returns True if successful, false otherwise.
      */
-    template <typename T>
+    template <typename T, typename = std::enable_if_t<
+                              std::is_base_of<Injectable, T>::value>>
     [[nodiscard]] bool insert(T *dependency)
     {
-        return insertImpl(dynamic_cast<Injectable *>(dependency), typeid(T),
-                          typeid(*dependency));
+        return insertImpl(reinterpret_cast<void *>(dependency),
+                          static_cast<Injectable *>(dependency),
+                          Boardcore::typeName<T>());
     }
 
     /**
@@ -142,15 +147,17 @@ public:
     [[nodiscard]] bool inject();
 
 private:
-    [[nodiscard]] bool insertImpl(Injectable *ptr,
-                                  const std::type_info &module_info,
-                                  const std::type_info &impl_info);
+    [[nodiscard]] bool insertImpl(void *raw, Injectable *injectable,
+                                  std::string name);
+
+    void *getImpl(const std::string &name);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
     bool load_success = true;
-    std::unordered_map<std::type_index, ModuleInfo> modules;
+    // Maps from interface type name to ModuleInfo
+    std::unordered_map<std::string, ModuleInfo> modules;
 };
 
 /**
@@ -161,8 +168,9 @@ class DependencyInjector
     friend class DependencyManager;
 
 private:
-    DependencyInjector(DependencyManager &manager,
-                       DependencyManager::ModuleInfo &info)
+    DependencyInjector(
+        DependencyManager &manager,
+        std::pair<const std::string, DependencyManager::ModuleInfo> &info)
         : manager(manager), info(info)
     {
     }
@@ -177,17 +185,17 @@ public:
     template <typename T>
     T *get()
     {
-        return dynamic_cast<T *>(getImpl(typeid(T)));
+        return reinterpret_cast<T *>(getImpl(Boardcore::typeName<T>()));
     }
 
 private:
-    Injectable *getImpl(const std::type_info &module_info);
+    void *getImpl(const std::string &name);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
     DependencyManager &manager;
-    DependencyManager::ModuleInfo &info;
+    std::pair<const std::string, DependencyManager::ModuleInfo> &info;
 };
 
 namespace DependencyManagerDetails
@@ -251,21 +259,86 @@ struct Contains<T, Type, Types...>
 
 }  // namespace DependencyManagerDetails
 
+template <typename T>
+struct InjectableBase
+{
+};
+
+/**
+ * @brief Base class for an Injectable with dependencies.
+ */
 template <typename... Types>
 class InjectableWithDeps : public Injectable
 {
+protected:
+    /**
+     * Alias of the super class, to be used in derived classes in the
+     * constructor or when overriding methods
+     */
+    using Super = InjectableWithDeps<Types...>;
+
 public:
     virtual void inject(DependencyInjector &injector) override
     {
         storage.inject(injector);
     }
 
-    template <typename T>
+    /**
+     * @brief Get one of the modules in Types.
+     *
+     * @note If T is not inside Types... the compiler will fail to find this
+     * method!
+     */
+    template <typename T,
+              typename = std::enable_if_t<
+                  DependencyManagerDetails::Contains<T, Types...>::value>>
     T *getModule()
     {
-        static_assert(DependencyManagerDetails::Contains<T, Types...>::value,
-                      "Dependency T is not present in the dependencies");
+        return storage.template get<T>();
+    }
 
+private:
+    DependencyManagerDetails::Storage<Types...> storage;
+};
+
+/**
+ * @brief Base class for an Injectable with dependencies and an Injectable
+ * superclass.
+ */
+template <typename Base, typename... Types>
+class InjectableWithDeps<InjectableBase<Base>, Types...> : public Base
+{
+protected:
+    /**
+     * Alias of the super class, to be used in derived classes in the
+     * constructor or when overriding methods
+     */
+    using Super = InjectableWithDeps<InjectableBase<Base>, Types...>;
+
+public:
+    using InjectableSuper = Base;
+    using Base::Base;  ///< Inherit constructors from Base
+
+    static_assert(std::is_base_of<Injectable, Base>::value,
+                  "Base must be Injectable");
+
+    virtual void inject(DependencyInjector &injector) override
+    {
+        Base::inject(injector);
+        storage.inject(injector);
+    }
+
+    /**
+     * @brief Get one of the modules in Types.
+     *
+     * @note If T is not inside Types... the compiler will fail to find this
+     * method!
+     */
+    template <typename T,
+              typename = std::enable_if_t<
+                  DependencyManagerDetails::Contains<T, Types...>::value>>
+    T *getModule()
+    {
         return storage.template get<T>();
     }
 

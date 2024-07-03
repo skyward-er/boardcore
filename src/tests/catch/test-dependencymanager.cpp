@@ -23,6 +23,7 @@
 #include <utils/DependencyManager/DependencyManager.h>
 
 #include <catch2/catch.hpp>
+#include <iostream>
 
 using namespace Boardcore;
 
@@ -46,7 +47,7 @@ private:
     bool value = false;
 };
 
-class B : public Injectable
+class B : public InjectableWithDeps<A>
 {
 public:
     B() {}
@@ -55,21 +56,18 @@ public:
 
     bool bong_b() { return value; }
 
-    void inject(DependencyInjector &getter) { a = getter.get<A>(); }
-
 private:
-    A *a       = nullptr;
     bool value = false;
 };
 
-class CIface
+class CIface : public Injectable
 {
 public:
     virtual void bing_c() = 0;
     virtual bool bong_c() = 0;
 };
 
-class C : public CIface, public InjectableWithDeps<A, B>
+class C : public InjectableWithDeps<InjectableBase<CIface>, A, B>
 {
 public:
     void bing_c() override
@@ -83,20 +81,80 @@ private:
     bool value = false;
 };
 
-class D : public Injectable
+class D : public InjectableWithDeps<CIface>
 {
 public:
-    void bing_d() { value = c->bong_c(); }
+    void bing_d() { value = getModule<CIface>()->bong_c(); }
 
     bool bong_d() { return value; }
 
-    void inject(DependencyInjector &getter) { c = getter.get<CIface>(); }
-
 private:
-    CIface *c  = nullptr;
     bool value = false;
 };
+
+class E : public Injectable
+{
+public:
+    int get_answer() { return 42; }
+};
+
+class F : public Injectable
+{
+public:
+    int get_true_answer() { return 69; }
+};
+
+class G : public InjectableWithDeps<E>
+{
+public:
+    virtual int get_truest_answer() { return getModule<E>()->get_answer(); }
+};
+
+class H : public InjectableWithDeps<InjectableBase<G>, F>
+{
+public:
+    int get_truest_answer() override
+    {
+        return getModule<F>()->get_true_answer() + G::get_truest_answer();
+    }
+};
+
+class I : public InjectableWithDeps<G>
+{
+public:
+    int get_ultimate_true_answer()
+    {
+        return getModule<G>()->get_truest_answer();
+    }
+};
+
+namespace Inner
+{
+template <typename T, typename U>
+struct Pair
+{
+};
+}  // namespace Inner
+
 }  // namespace Boardcore
+
+TEST_CASE("DependencyManager - TypeName")
+{
+
+    REQUIRE(Boardcore::typeName<Boardcore::A>() == "Boardcore::A");
+    REQUIRE(Boardcore::typeName<Boardcore::B>() == "Boardcore::B");
+    REQUIRE(Boardcore::typeName<Boardcore::CIface>() == "Boardcore::CIface");
+    REQUIRE(Boardcore::typeName<Boardcore::C>() == "Boardcore::C");
+    REQUIRE(Boardcore::typeName<Boardcore::D>() == "Boardcore::D");
+    REQUIRE(Boardcore::typeName<Boardcore::E>() == "Boardcore::E");
+    REQUIRE(Boardcore::typeName<Boardcore::F>() == "Boardcore::F");
+    REQUIRE(Boardcore::typeName<Boardcore::G>() == "Boardcore::G");
+    REQUIRE(Boardcore::typeName<Boardcore::H>() == "Boardcore::H");
+    REQUIRE(Boardcore::typeName<Boardcore::I>() == "Boardcore::I");
+    REQUIRE(Boardcore::typeName<
+                Boardcore::Inner::Pair<Boardcore::A, Boardcore::B>>() ==
+            "Boardcore::Inner::Pair<Boardcore::A, Boardcore::B>");
+}
 
 TEST_CASE("DependencyManager - Circular dependencies")
 {
@@ -105,8 +163,8 @@ TEST_CASE("DependencyManager - Circular dependencies")
     Boardcore::A *a = new Boardcore::A();
     Boardcore::B *b = new Boardcore::B();
 
-    REQUIRE(manager.insert<Boardcore::A>(a));
-    REQUIRE(manager.insert<Boardcore::B>(b));
+    REQUIRE(manager.insert(a));
+    REQUIRE(manager.insert(b));
     REQUIRE(manager.inject());
 
     a->bing_a(true);
@@ -120,6 +178,8 @@ TEST_CASE("DependencyManager - Circular dependencies")
 
     b->bing_b(false);
     REQUIRE(!b->bong_b());
+
+    manager.graphviz(std::cout);
 }
 
 TEST_CASE("DependencyManager - Virtual Dependencies")
@@ -152,6 +212,8 @@ TEST_CASE("DependencyManager - Virtual Dependencies")
     REQUIRE(c->bong_c());
     d->bing_d();
     REQUIRE(d->bong_d());
+
+    manager.graphviz(std::cout);
 }
 
 TEST_CASE("DependencyManager - Inject fail")
@@ -160,6 +222,37 @@ TEST_CASE("DependencyManager - Inject fail")
 
     Boardcore::A *a = new Boardcore::A();
 
-    REQUIRE(manager.insert<Boardcore::A>(a));
+    REQUIRE(manager.insert(a));
     REQUIRE_FALSE(manager.inject());
+}
+
+TEST_CASE("DependencyManager - Insert two instances fail")
+{
+    DependencyManager manager;
+
+    Boardcore::A *a1 = new Boardcore::A();
+    Boardcore::A *a2 = new Boardcore::A();
+
+    REQUIRE(manager.insert(a1));
+    REQUIRE_FALSE(manager.insert(a2));
+}
+
+TEST_CASE("DependencyManager - Dependency tree")
+{
+    DependencyManager manager;
+
+    Boardcore::E *e = new Boardcore::E();
+    Boardcore::F *f = new Boardcore::F();
+    Boardcore::H *h = new Boardcore::H();
+    Boardcore::I *i = new Boardcore::I();
+
+    REQUIRE(manager.insert(e));
+    REQUIRE(manager.insert(f));
+    REQUIRE(manager.insert<Boardcore::G>(h));
+    REQUIRE(manager.insert(i));
+    REQUIRE(manager.inject());
+
+    REQUIRE(i->get_ultimate_true_answer() == 111);
+
+    manager.graphviz(std::cout);
 }

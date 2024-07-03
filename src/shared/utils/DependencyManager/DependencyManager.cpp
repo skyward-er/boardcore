@@ -22,33 +22,26 @@
 
 #include "DependencyManager.h"
 
-#include <cxxabi.h>
 #include <fmt/format.h>
 
 using namespace Boardcore;
-
-// Simple utility function to demangle type infos
-std::string type_name_demangled(const std::type_info& info)
-{
-    char* demangled =
-        abi::__cxa_demangle(info.name(), nullptr, nullptr, nullptr);
-    std::string demangled2{demangled};
-    std::free(demangled);
-
-    return demangled2;
-}
 
 void DependencyManager::graphviz(std::ostream& os)
 {
     os << "digraph {" << std::endl;
 
+    // First print out all of the nodes
+    for (auto& module : modules)
+    {
+        os << fmt::format("  \"{}\"", module.first) << std::endl;
+    }
+
+    // Then print out the arcs
     for (auto& module : modules)
     {
         for (auto& dep : module.second.deps)
         {
-            os << fmt::format("  \"{}({})\" -> \"{}({})\"", module.second.name,
-                              module.second.impl, modules[dep].name,
-                              modules[dep].impl)
+            os << fmt::format("  \"{}\" -> \"{}\"", module.first, dep)
                << std::endl;
         }
     }
@@ -62,9 +55,9 @@ bool DependencyManager::inject()
 
     for (auto& module : modules)
     {
-        LOG_INFO(logger, "Configuring [{}]...", module.second.name);
-        DependencyInjector injector{*this, module.second};
-        module.second.ptr->inject(injector);
+        LOG_INFO(logger, "Configuring [{}]...", module.first);
+        DependencyInjector injector{*this, module};
+        module.second.injectable->inject(injector);
     }
 
     if (load_success)
@@ -79,37 +72,41 @@ bool DependencyManager::inject()
     return load_success;
 }
 
-bool DependencyManager::insertImpl(Injectable* ptr,
-                                   const std::type_info& module_info,
-                                   const std::type_info& impl_info)
+bool DependencyManager::insertImpl(void* raw, Injectable* injectable,
+                                   std::string name)
 {
-    // Early check to see if ptr is nullptr, fail if that's the case
-    if (ptr == nullptr)
-        return false;
-
-    auto idx         = std::type_index{module_info};
-    auto module_name = type_name_demangled(module_info);
-    auto impl_name   = type_name_demangled(impl_info);
-
-    return modules.insert({idx, ModuleInfo{ptr, module_name, impl_name, {}}})
+    return modules.insert({std::move(name), ModuleInfo{raw, injectable, {}}})
         .second;
 }
 
-Injectable* DependencyInjector::getImpl(const std::type_info& module_info)
+void* DependencyManager::getImpl(const std::string& name)
 {
-    auto idx  = std::type_index{module_info};
-    auto iter = manager.modules.find(idx);
-    if (iter == manager.modules.end())
+    auto iter = modules.find(name);
+    if (iter == modules.end())
     {
-        manager.load_success = false;
-
-        std::string module_name = type_name_demangled(module_info);
-        LOG_ERR(logger, "[{}] requires [{}], but the latter is not present",
-                info.name, module_name);
-
         return nullptr;
     }
+    else
+    {
+        return iter->second.raw;
+    }
+}
 
-    info.deps.push_back(idx);
-    return iter->second.ptr;
+void* DependencyInjector::getImpl(const std::string& name)
+{
+    void* ptr = manager.getImpl(name);
+    if (ptr == nullptr)
+    {
+        // Get failed, signal inject failure and log it
+        manager.load_success = false;
+        LOG_ERR(logger, "[{}] requires [{}], which doesn't exist", info.first,
+                name);
+        return nullptr;
+    }
+    else
+    {
+        // Get successful, add it to the dependencies
+        info.second.deps.push_back(name);
+        return ptr;
+    }
 }
