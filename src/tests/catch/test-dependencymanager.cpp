@@ -128,33 +128,7 @@ public:
     }
 };
 
-namespace Inner
-{
-template <typename T, typename U>
-struct Pair
-{
-};
-}  // namespace Inner
-
 }  // namespace Boardcore
-
-TEST_CASE("DependencyManager - TypeName")
-{
-
-    REQUIRE(Boardcore::typeName<Boardcore::A>() == "Boardcore::A");
-    REQUIRE(Boardcore::typeName<Boardcore::B>() == "Boardcore::B");
-    REQUIRE(Boardcore::typeName<Boardcore::CIface>() == "Boardcore::CIface");
-    REQUIRE(Boardcore::typeName<Boardcore::C>() == "Boardcore::C");
-    REQUIRE(Boardcore::typeName<Boardcore::D>() == "Boardcore::D");
-    REQUIRE(Boardcore::typeName<Boardcore::E>() == "Boardcore::E");
-    REQUIRE(Boardcore::typeName<Boardcore::F>() == "Boardcore::F");
-    REQUIRE(Boardcore::typeName<Boardcore::G>() == "Boardcore::G");
-    REQUIRE(Boardcore::typeName<Boardcore::H>() == "Boardcore::H");
-    REQUIRE(Boardcore::typeName<Boardcore::I>() == "Boardcore::I");
-    REQUIRE(Boardcore::typeName<
-                Boardcore::Inner::Pair<Boardcore::A, Boardcore::B>>() ==
-            "Boardcore::Inner::Pair<Boardcore::A, Boardcore::B>");
-}
 
 TEST_CASE("DependencyManager - Circular dependencies")
 {

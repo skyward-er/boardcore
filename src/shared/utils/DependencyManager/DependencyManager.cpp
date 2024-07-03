@@ -22,9 +22,35 @@
 
 #include "DependencyManager.h"
 
+#include <cxxabi.h>
 #include <fmt/format.h>
 
+#include <atomic>
+
 using namespace Boardcore;
+
+int32_t Boardcore::getNextDependencyId()
+{
+    static std::atomic<int32_t> NEXT_ID{0};
+
+    int32_t next_id = NEXT_ID;
+    while (next_id <= 256)
+    {
+        if (NEXT_ID.compare_exchange_weak(next_id, next_id + 1))
+            return next_id;
+    }
+
+    return -1;
+}
+
+std::string demangleName(const char* name)
+{
+    char* demangled = abi::__cxa_demangle(name, nullptr, nullptr, nullptr);
+    std::string demangled2{demangled};
+    std::free(demangled);
+
+    return demangled2;
+}
 
 void DependencyManager::graphviz(std::ostream& os)
 {
@@ -33,7 +59,7 @@ void DependencyManager::graphviz(std::ostream& os)
     // First print out all of the nodes
     for (auto& module : modules)
     {
-        os << fmt::format("  \"{}\"", module.first) << std::endl;
+        os << fmt::format("  \"{}\"", module.second.name) << std::endl;
     }
 
     // Then print out the arcs
@@ -41,7 +67,8 @@ void DependencyManager::graphviz(std::ostream& os)
     {
         for (auto& dep : module.second.deps)
         {
-            os << fmt::format("  \"{}\" -> \"{}\"", module.first, dep)
+            os << fmt::format("  \"{}\" -> \"{}\"", module.second.name,
+                              modules[dep].name)
                << std::endl;
         }
     }
@@ -55,8 +82,8 @@ bool DependencyManager::inject()
 
     for (auto& module : modules)
     {
-        LOG_INFO(logger, "Configuring [{}]...", module.first);
-        DependencyInjector injector{*this, module};
+        LOG_INFO(logger, "Configuring [{}]...", module.second.name);
+        DependencyInjector injector{*this, module.second};
         module.second.injectable->inject(injector);
     }
 
@@ -72,16 +99,21 @@ bool DependencyManager::inject()
     return load_success;
 }
 
-bool DependencyManager::insertImpl(void* raw, Injectable* injectable,
-                                   std::string name)
+bool DependencyManager::insertImpl(int32_t id, void* raw,
+                                   Injectable* injectable, const char* name)
 {
-    return modules.insert({std::move(name), ModuleInfo{raw, injectable, {}}})
+    // Check that the ID is valid
+    if (id < 0)
+        return false;
+
+    return modules
+        .insert({id, ModuleInfo{demangleName(name), raw, injectable, {}}})
         .second;
 }
 
-void* DependencyManager::getImpl(const std::string& name)
+void* DependencyManager::getImpl(int32_t id)
 {
-    auto iter = modules.find(name);
+    auto iter = modules.find(id);
     if (iter == modules.end())
     {
         return nullptr;
@@ -92,21 +124,21 @@ void* DependencyManager::getImpl(const std::string& name)
     }
 }
 
-void* DependencyInjector::getImpl(const std::string& name)
+void* DependencyInjector::getImpl(int32_t id)
 {
-    void* ptr = manager.getImpl(name);
+    void* ptr = manager.getImpl(id);
     if (ptr == nullptr)
     {
         // Get failed, signal inject failure and log it
         manager.load_success = false;
-        LOG_ERR(logger, "[{}] requires [{}], which doesn't exist", info.first,
-                name);
+        LOG_ERR(logger, "[{}] requires a modules which doesn't exist",
+                info.name);
         return nullptr;
     }
     else
     {
         // Get successful, add it to the dependencies
-        info.second.deps.push_back(name);
+        info.deps.push_back(id);
         return ptr;
     }
 }

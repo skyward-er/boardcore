@@ -24,18 +24,33 @@
 
 #include <diagnostic/PrintLogger.h>
 
+#include <map>
 #include <numeric>
 #include <ostream>
 #include <string>
 #include <typeindex>
 #include <typeinfo>
-#include <unordered_map>
 #include <vector>
-
-#include "TypeName.h"
 
 namespace Boardcore
 {
+
+/**
+ * @brief Returns the next available id.
+ *
+ * @note THIS IS ONLY USED INTERNALLY BY getDependencyId().
+ */
+int32_t getNextDependencyId();
+
+/**
+ * @brief Get the ID associated with the given T type.
+ */
+template <typename T>
+int32_t getDependencyId()
+{
+    static int32_t ID = getNextDependencyId();
+    return ID;
+}
 
 class DependencyInjector;
 class DependencyManager;
@@ -103,12 +118,13 @@ class DependencyManager
 private:
     struct ModuleInfo
     {
+        std::string name;  //< Name of the type.
         void *raw;  ///< Pointer to the dependency's concrete type, returned
                     ///< when retrieving this dependency
         Injectable *injectable;  ///< Pointer to the dependency as an
                                  ///< Injectable, needed for dynamic dispatching
                                  ///< of the inject method
-        std::vector<std::string> deps;  ///< List of dependencies
+        std::vector<int32_t> deps;  ///< List of dependencies
     };
 
 public:
@@ -126,9 +142,9 @@ public:
                               std::is_base_of<Injectable, T>::value>>
     [[nodiscard]] bool insert(T *dependency)
     {
-        return insertImpl(reinterpret_cast<void *>(dependency),
-                          static_cast<Injectable *>(dependency),
-                          Boardcore::typeName<T>());
+        return insertImpl(
+            getDependencyId<T>(), reinterpret_cast<void *>(dependency),
+            static_cast<Injectable *>(dependency), typeid(T).name());
     }
 
     /**
@@ -147,17 +163,17 @@ public:
     [[nodiscard]] bool inject();
 
 private:
-    [[nodiscard]] bool insertImpl(void *raw, Injectable *injectable,
-                                  std::string name);
+    [[nodiscard]] bool insertImpl(int32_t id, void *raw, Injectable *injectable,
+                                  const char *name);
 
-    void *getImpl(const std::string &name);
+    void *getImpl(int32_t id);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
     bool load_success = true;
     // Maps from interface type name to ModuleInfo
-    std::unordered_map<std::string, ModuleInfo> modules;
+    std::map<int32_t, ModuleInfo> modules;
 };
 
 /**
@@ -168,9 +184,8 @@ class DependencyInjector
     friend class DependencyManager;
 
 private:
-    DependencyInjector(
-        DependencyManager &manager,
-        std::pair<const std::string, DependencyManager::ModuleInfo> &info)
+    DependencyInjector(DependencyManager &manager,
+                       DependencyManager::ModuleInfo &info)
         : manager(manager), info(info)
     {
     }
@@ -185,17 +200,17 @@ public:
     template <typename T>
     T *get()
     {
-        return reinterpret_cast<T *>(getImpl(Boardcore::typeName<T>()));
+        return reinterpret_cast<T *>(getImpl(getDependencyId<T>()));
     }
 
 private:
-    void *getImpl(const std::string &name);
+    void *getImpl(int32_t id);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
     DependencyManager &manager;
-    std::pair<const std::string, DependencyManager::ModuleInfo> &info;
+    DependencyManager::ModuleInfo &info;
 };
 
 namespace DependencyManagerDetails
