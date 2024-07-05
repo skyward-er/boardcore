@@ -120,7 +120,7 @@ public:
     /**
      * @return last available sample from this sensor
      */
-    virtual const Data& getLastSample()
+    virtual Data getLastSample()
     {
         miosix::Lock<miosix::FastMutex> l(mutex);
         return lastSample;
