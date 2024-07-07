@@ -30,6 +30,7 @@
 
 #include "arch/common/drivers/serial.h"
 #include "filesystem/file_access.h"
+#include "kernel/scheduler/scheduler.h"
 #include "miosix.h"
 
 ///< Pointer to serial port classes to let interrupts access the classes
@@ -368,6 +369,11 @@ void USART::IRQhandleInterrupt()
         if (rxWaiting)
         {
             rxWaiting->IRQwakeup();
+            if (rxWaiting->IRQgetPriority() >
+                miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+            {
+                miosix::Scheduler::IRQfindNextThread();
+            }
             rxWaiting = nullptr;
         }
     }
