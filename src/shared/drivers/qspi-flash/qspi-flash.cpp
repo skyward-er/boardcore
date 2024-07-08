@@ -19,6 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#ifdef _ARCH_CORTEXM7_STM32F7
+
 #include "qspi-flash.h"
 
 using namespace miosix;
@@ -38,12 +41,11 @@ bool QspiFlash::abortReset()
     // abort possible ongoing command
     Qspi->CR |= QUADSPI_CR_ABORT;
 
-    // Wait while aborted
-    uint32_t dt = 0;  // timeout
+    // Wait till abort is completed
+    uint64_t dt = miosix::getTime();  // timeout
     while (Qspi->CR & QUADSPI_CR_ABORT)
     {
-        dt = dt + 1;
-        if (dt > 100000)
+        if ((miosix::getTime() - dt) > 10000000)  // 10ms
         {
             return false;
         }
@@ -64,11 +66,10 @@ bool QspiFlash::abortReset()
 bool QspiFlash::waitBusy()
 {
     // wait till QUADSPI has completed the current communication with the flash
-    uint32_t dt = 0;  // timeout
+    uint64_t dt = miosix::getTime();  // timeout
     while (Qspi->SR & (1 << QUADSPI_SR_BUSY_Pos))
     {
-        dt = dt + 1;
-        if (dt > 20000)
+        if ((miosix::getTime() - dt) > 10000000)  // 10ms
         {
             return false;
         }
@@ -81,11 +82,10 @@ bool QspiFlash::waitTransfer()
 {
     // by setting data lenght register (DLR) you set how many bytes are expected
     // from memory. wait till all expected bytes have been tranferred.
-    uint32_t dt = 0;  // timeout
+    uint64_t dt = miosix::getTime();  // timeout
     while (!(Qspi->SR & (1 << QUADSPI_SR_TCF_Pos)))
     {
-        dt = dt + 1;
-        if (dt > 20000)
+        if ((miosix::getTime() - dt) > 10000000)  // 10ms
         {
             return false;
         }
@@ -777,11 +777,12 @@ bool QspiFlash::byteProgram(uint8_t data, uint32_t address, bool verify)
     }
 
     // wait till current program operation has ended
-    uint32_t dt = 0;  // timeout
+    uint64_t dt = miosix::getTime();  // timeout
     while (isInProgress())
     {
-        dt = dt + 1;
-        if (dt >= 5000)  // max program byte cycle time = 100us
+        // max timeout time: 5ms
+        // max program byte cycle time = 100us
+        if ((miosix::getTime() - dt) > 5000000)
         {
             softwareReset();  // device forced reset to default status
             return false;
@@ -1027,6 +1028,7 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
 
     // loop until all bytes expected have been received or
     // there are some data bytes to read
+    uint64_t dt = miosix::getTime();  // timeout
     while (!(Qspi->SR & QUADSPI_SR_TCF) ||
            (((Qspi->SR & QUADSPI_SR_FLEVEL) >> 8) > 0))
     {
@@ -1049,6 +1051,15 @@ bool QspiFlash::readSector(uint8_t* vector, const size_t size,
             else
             {
                 abortReset();  // abort reading data bytes from flash
+                return false;
+            }
+        }
+        else
+        {
+            // timeout time = 400ms
+            if ((miosix::getTime() - dt) > 400000000)
+            {
+                abortReset();  // abort transaction with flash
                 return false;
             }
         }
@@ -1127,11 +1138,10 @@ bool QspiFlash::pageProgram(const uint8_t* vector, const size_t size,
     {
 
         // if FIFO is full - wait till it has at least a byte available.
-        uint32_t dt = 0;  // timeout
+        uint64_t dt = miosix::getTime();  // timeout
         while (((Qspi->SR & QUADSPI_SR_FLEVEL) >> 8) >= 32)
         {
-            dt = dt + 1;
-            if (dt >= 10000)
+            if ((miosix::getTime() - dt) > 100000000)  // timeout time: 100 ms
             {
                 return false;
             }
@@ -1284,3 +1294,5 @@ bool QspiFlash::write(const uint8_t* vector, const size_t size,
 
     return true;
 }
+
+#endif  // _ARCH_CORTEXM7_STM32F7

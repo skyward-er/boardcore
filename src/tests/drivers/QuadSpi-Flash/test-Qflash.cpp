@@ -44,6 +44,8 @@ int main()
     if (mymemory.test())
     {
 
+        printf("test(): ok\n");
+
         // read device id
         printf("\nID: %ld\n", mymemory.readID());
 
@@ -67,7 +69,7 @@ int main()
             return -1;
         }
 
-        printf("write operaton succeded!\n");
+        printf("write operation succeded!\n");
 
         uint8_t b[5000] = {0};
         uint32_t a      = 0;
@@ -80,7 +82,7 @@ int main()
         printf("array (b): \n");
         for (i = 0; i < 5000; i++)
         {
-            printf("b[%u]: %u\n", i, b[i]);
+            printf("b[%lu]: %u\n", i, b[i]);
         }
 
         return 0;

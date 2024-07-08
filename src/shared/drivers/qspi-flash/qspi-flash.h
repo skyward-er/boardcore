@@ -19,6 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#ifdef _ARCH_CORTEXM7_STM32F7
+
 #include <miosix.h>
 #include <utils/ClockUtils.h>
 
@@ -360,3 +363,5 @@ private:
         RESET_MEMORY = 0x99
     };
 };
+
+#endif  // _ARCH_CORTEXM7_STM32F7
