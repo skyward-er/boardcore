@@ -79,11 +79,14 @@ int main()
         }
         printf("read_sector: %d\n", mymemory.readSector(b, 5000, 1022));
 
+        /*
+        // print the whole array
         printf("array (b): \n");
         for (i = 0; i < 5000; i++)
         {
-            printf("b[%lu]: %u\n", i, b[i]);
+            printf("b[%u]: %u\n", i, b[i]);
         }
+        */
 
         return 0;
     }
