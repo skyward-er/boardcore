@@ -88,21 +88,15 @@ using tx = Gpio<GPIOA_BASE, 1>;
 using rx = Gpio<GPIOA_BASE, 0>;
 }  // namespace uart4
 
-namespace can1
-{
-using rx = Gpio<GPIOA_BASE, 11>;
-using tx = Gpio<GPIOB_BASE, 9>;
-}  // namespace can1
-
 namespace timers
 {
 using tim1ch1  = Gpio<GPIOA_BASE, 8>;   //< step StepperHorizontal
-using tim3ch2  = Gpio<GPIOC_BASE, 7>;   //<  count StepperHorizontal
+using tim3ch2  = Gpio<GPIOC_BASE, 7>;   //< count StepperHorizontal
 using tim4ch1  = Gpio<GPIOD_BASE, 12>;  //< step StepperVertical
 using tim8ch1  = Gpio<GPIOC_BASE, 6>;   //< count StepperVertical
-using tim10ch1 = Gpio<GPIOB_BASE, 8>;   //< LED CommandBox
-using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< LED CommandBox
-using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< LED CommandBox
+using tim10ch1 = Gpio<GPIOB_BASE, 8>;   //< yellow LED CommandBox
+using tim2ch4  = Gpio<GPIOB_BASE, 11>;  //< red LED CommandBox
+using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< blue LED CommandBox
 }  // namespace timers
 
 }  // namespace interfaces
@@ -112,9 +106,9 @@ namespace commBox
 {
 using switchArm    = Gpio<GPIOE_BASE, 3>;
 using switchDisarm = Gpio<GPIOB_BASE, 7>;
-using ledTimG1     = interfaces::timers::tim10ch1;  //< green LED
+using ledTimG1     = interfaces::timers::tim10ch1;  //< yellow LED
 using ledTimR2     = interfaces::timers::tim2ch4;   //< red LED
-using ledTimO3     = interfaces::timers::tim2ch1;   //< orange LED
+using ledTimO3     = interfaces::timers::tim2ch1;   //< blue LED
 }  // namespace commBox
 
 namespace sensors
