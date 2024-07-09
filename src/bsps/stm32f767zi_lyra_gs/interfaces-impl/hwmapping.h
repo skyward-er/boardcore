@@ -106,9 +106,9 @@ namespace commBox
 {
 using switchArm    = Gpio<GPIOE_BASE, 3>;
 using switchDisarm = Gpio<GPIOB_BASE, 7>;
-using ledTimG1     = interfaces::timers::tim10ch1;  //< yellow LED
+using ledTimY1     = interfaces::timers::tim10ch1;  //< yellow LED
 using ledTimR2     = interfaces::timers::tim2ch4;   //< red LED
-using ledTimO3     = interfaces::timers::tim2ch1;   //< blue LED
+using ledTimB3     = interfaces::timers::tim2ch1;   //< blue LED
 }  // namespace commBox
 
 namespace sensors
