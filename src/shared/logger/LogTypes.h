@@ -30,6 +30,7 @@
 #include <diagnostic/PrintLoggerData.h>
 #include <diagnostic/StackData.h>
 #include <drivers/adc/InternalADCData.h>
+#include <drivers/canbus/CanProtocol/CanProtocolTypes.h>
 #include <events/EventData.h>
 #include <logger/Deserializer.h>
 #include <logger/LoggerStats.h>
@@ -140,6 +141,13 @@ void registerTypes(Deserializer& ds)
     ds.registerType<HSCMRNN015PAData>();
     ds.registerType<SSCMRNN030PAData>();
     ds.registerType<PitotData>();
+    ds.registerType<CanPitotData>();
+    ds.registerType<CanPressureData>();
+    ds.registerType<CanTemperatureData>();
+    ds.registerType<CanCurrentData>();
+    ds.registerType<CanServoData>();
+    ds.registerType<CanBatteryVoltageSensorData>();
+    ds.registerType<CanVoltageData>();
 }
 
 }  // namespace LogTypes
