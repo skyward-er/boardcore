@@ -138,14 +138,14 @@ private:
     bool rocketCoordinatesSet    = false;
     bool firstAntennaAttitudeSet = false;
 
-    PIController pitchSpeedController;
-    PIController yawSpeedController;
-
     VN300Data lastAntennaAttitude;
     miosix::FastMutex lastAntennaAttitudeMutex;
 
     NASState lastRocketNasState;
     miosix::FastMutex lastRocketNasStateMutex;
+
+    FollowerState state;
+    miosix::FastMutex stateMutex;
 
     // GPS coordinates of the antenna [lat, lon, alt] [deg, deg, m]
     Eigen::Vector3f antennaCoordinates;
@@ -158,8 +158,9 @@ private:
     // Target yaw and pitch of the system [deg, deg]
     AntennaAngles targetAngles;
 
-    FollowerState state;
-    miosix::FastMutex stateMutex;
+    // PI controllers for the pitch and yaw speed
+    PIController pitchSpeedController;
+    PIController yawSpeedController;
 
     PrintLogger logger = Logging::getLogger("Follower");
 };
