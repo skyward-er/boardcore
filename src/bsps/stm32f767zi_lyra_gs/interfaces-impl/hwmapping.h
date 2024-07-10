@@ -104,8 +104,8 @@ using tim2ch1  = Gpio<GPIOA_BASE, 15>;  //< blue LED CommandBox
 // Command box control switches (ARP)
 namespace commBox
 {
-using switchArm    = Gpio<GPIOE_BASE, 3>;
-using switchActive = Gpio<GPIOB_BASE, 7>;
+using switchArm    = Gpio<GPIOB_BASE, 7>;
+using switchActive = Gpio<GPIOE_BASE, 3>;
 using ledTimY1     = interfaces::timers::tim10ch1;  //< yellow LED
 using ledTimR2     = interfaces::timers::tim2ch4;   //< red LED
 using ledTimB3     = interfaces::timers::tim2ch1;   //< blue LED
