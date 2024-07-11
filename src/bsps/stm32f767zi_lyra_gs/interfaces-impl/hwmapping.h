@@ -123,8 +123,8 @@ using rx = interfaces::usart2::rx;
 // Stepper Horizontal
 namespace stepper1
 {
-using enable     = Gpio<GPIOB_BASE, 13>;
-using direction  = Gpio<GPIOD_BASE, 13>;
+using enable     = Gpio<GPIOD_BASE, 13>;
+using direction  = Gpio<GPIOB_BASE, 13>;
 using pulseTimer = interfaces::timers::tim1ch1;
 using countTimer = interfaces::timers::tim3ch2;
 }  // namespace stepper1
@@ -132,8 +132,8 @@ using countTimer = interfaces::timers::tim3ch2;
 // Stepper Vertical
 namespace stepper2
 {
-using enable     = Gpio<GPIOB_BASE, 4>;
-using direction  = Gpio<GPIOD_BASE, 7>;
+using enable     = Gpio<GPIOD_BASE, 7>;
+using direction  = Gpio<GPIOB_BASE, 4>;
 using pulseTimer = interfaces::timers::tim4ch1;
 using countTimer = interfaces::timers::tim8ch1;
 }  // namespace stepper2
