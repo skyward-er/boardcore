@@ -25,6 +25,7 @@
 #include <actuators/Servo/ServoData.h>
 #include <actuators/stepper/StepperData.h>
 #include <algorithms/ADA/ADAData.h>
+#include <algorithms/Follower/FollowerData.h>
 #include <algorithms/NAS/NASState.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLoggerData.h>
@@ -140,6 +141,9 @@ void registerTypes(Deserializer& ds)
     ds.registerType<HSCMRNN015PAData>();
     ds.registerType<SSCMRNN030PAData>();
     ds.registerType<PitotData>();
+    ds.registerType<FollowerState>();
+    ds.registerType<LogAntennasCoordinates>();
+    ds.registerType<LogRocketCoordinates>();
 }
 
 }  // namespace LogTypes
