@@ -73,9 +73,9 @@ set(XRAM -D__ENABLE_XRAM)
 # running the core at 180MHz. If 180MHz is chosen the USB peripheral will
 # NOT WORK and the SDIO and RNG will run ~6% slower (45MHz insteand of 48)
 # Define USE_INTERNAL_CLOCK to bypass the external oscillator
-# set(CLOCK_FREQ -DHSE_VALUE=8000000 -DSYSCLK_FREQ_180MHz=180000000)
-set(CLOCK_FREQ -DHSE_VALUE=8000000 -DSYSCLK_FREQ_168MHz=168000000)
-# set(CLOCK_FREQ -DHSE_VALUE=8000000 -DSYSCLK_FREQ_100MHz=100000000)
+#set(CLOCK_FREQ -DHSE_VALUE=25000000 -DSYSCLK_FREQ_180MHz=180000000)
+set(CLOCK_FREQ -DHSE_VALUE=25000000 -DSYSCLK_FREQ_168MHz=168000000)
+#set(CLOCK_FREQ -DHSE_VALUE=25000000 -DSYSCLK_FREQ_100MHz=100000000)
 
 # C++ Exception/rtti support disable flags.
 # To save code size if not using C++ exceptions (nor some STL code which
