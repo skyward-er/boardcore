@@ -23,16 +23,6 @@
 #include <miosix.h>
 
 /**
- * @brief Dip switch status for the GS board
- */
-struct DipStatus
-{
-    bool isARP;
-    bool hasBackup;
-    uint8_t ipConfig;
-};
-
-/**
  * @brief Dip switch driver to read the current status of the switch
  */
 class DipSwitch
@@ -44,7 +34,12 @@ public:
     {
     }
 
-    DipStatus read();
+    /**
+     * @brief Performs a read of the dipSwitch
+     *
+     * @return uint8_t the read of the dip switch
+     */
+    uint8_t read();
 
 private:
     miosix::GpioPin& sh;

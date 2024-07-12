@@ -22,10 +22,9 @@
 
 #include "DipSwitch.h"
 
-DipStatus DipSwitch::read()
+uint8_t DipSwitch::read()
 {
-    DipStatus dipReading;
-    dipReading.ipConfig = 0;
+    uint8_t read = 0;
 
     // Write to the shift register (CS == Not LD)
     sh.low();
@@ -36,16 +35,17 @@ DipStatus DipSwitch::read()
     miosix::delayUs(microSecClk);
 
     // Read first register GS(0)/ARP(1)
-    dipReading.isARP     = readBit();
-    dipReading.hasBackup = readBit();
-    dipReading.ipConfig |= readBit();
-    dipReading.ipConfig |= readBit() << 1;
-    dipReading.ipConfig |= readBit() << 2;
-    dipReading.ipConfig |= readBit() << 3;
-    dipReading.ipConfig |= readBit() << 4;
-    dipReading.ipConfig |= readBit() << 5;
 
-    return dipReading;
+    read |= readBit();
+    read |= readBit() << 1;
+    read |= readBit() << 2;
+    read |= readBit() << 3;
+    read |= readBit() << 4;
+    read |= readBit() << 5;
+    read |= readBit() << 6;
+    read |= readBit() << 7;
+
+    return read;
 }
 
 uint8_t DipSwitch::readBit()
