@@ -27,8 +27,7 @@
 using namespace miosix;
 
 /**
- * The event counter is subscribed to topic 5.
- * Try to post events to that topic and check the counter.
+ * @brief Tests the read from a dipswitch using the DipSwitch driver
  */
 int main()
 {
@@ -40,13 +39,10 @@ int main()
     DipSwitch dipSwitch(sh, clk, qh, microSecClk);
     while (true)
     {
-        DipStatus status;
+        uint8_t status;
         Thread::sleep(1000);
         status = dipSwitch.read();
-        printf(
-            "Read from dipSwitch: isArp %d | hasBackup %d | uint ip config: "
-            "%d\n",
-            status.isARP, status.hasBackup, status.ipConfig);
+        printf("Read from dipSwitch: %d\n", status);
     }
     return 0;
 }
