@@ -39,10 +39,23 @@ struct NEDCoords
  */
 struct AntennaAngles
 {
+    uint64_t timestamp = 0;
+
     float yaw;    //!< Angle between the X axis (N axis) and the target position
                   //!< on the XY plane (NE plane), positive anti-clockwise [deg]
     float pitch;  //!< Angle between the XY plane (NE plane) and the target
-                  //!< position [deg]
+    //!< position [deg]
+
+    AntennaAngles() : timestamp{0}, yaw(0), pitch(0){};
+    AntennaAngles(uint64_t timestamp, float yaw, float pitch)
+        : timestamp{timestamp}, yaw(yaw), pitch(pitch){};
+
+    static std::string header() { return "timestamp,yaw,pitch\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << yaw << "," << pitch << "\n";
+    }
 };
 
 struct FollowerState

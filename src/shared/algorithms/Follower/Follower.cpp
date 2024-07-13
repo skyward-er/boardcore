@@ -35,7 +35,7 @@ namespace Boardcore
 {
 
 Follower::Follower(float updatePeriod)
-    : updatePeriod(updatePeriod), targetAngles({0, 0})
+    : updatePeriod(updatePeriod), targetAngles({0, 0, 0})
 {
 }
 
@@ -156,7 +156,8 @@ void Follower::step()
     VN300Data vn300 = getLastAntennaAttitude();
 
     // Calculate the amount to move from the current position
-    AntennaAngles diffAngles{targetAngles.yaw - vn300.yaw,
+    AntennaAngles diffAngles{targetAngles.timestamp,
+                             targetAngles.yaw - vn300.yaw,
                              targetAngles.pitch - vn300.pitch};
 
     // Rotate in the shortest direction
@@ -200,6 +201,8 @@ AntennaAngles Follower::rocketPositionToAntennaAngles(
                      rocketNed.d};
 
     AntennaAngles angles;
+    angles.timestamp = TimestampTimer::getTimestamp();
+
     // Calculate the horizontal angle relative to the NED frame
     // std::atan2 outputs angles in radians, convert to degrees
     angles.yaw = std::atan2(ned.e, ned.n) / EIGEN_PI * 180;
