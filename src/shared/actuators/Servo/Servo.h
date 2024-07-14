@@ -129,6 +129,10 @@ public:
      */
     ServoData getState();
 
+    // Allow move semantics for aggregate initialization
+    Servo(Servo&& s)            = default;
+    Servo& operator=(Servo&& s) = default;
+
 private:
     // This class is not copyable!
     Servo& operator=(const Servo&) = delete;

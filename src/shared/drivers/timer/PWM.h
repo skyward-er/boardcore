@@ -99,6 +99,10 @@ public:
      */
     GP16bitTimer& getTimer();
 
+    // Allow move semantics for aggregate initialization
+    PWM(PWM&& p)            = default;
+    PWM& operator=(PWM&& p) = default;
+
 private:
     // This class is not copyable!
     PWM& operator=(const PWM&) = delete;
