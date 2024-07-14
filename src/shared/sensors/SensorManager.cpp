@@ -130,6 +130,7 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
         AbstractSensor* sensor = it.first;
         SensorInfo sensorInfo  = it.second;
 
+        LOG_DEBUG(logger, "Initializing sensor {}", sensorInfo.id);
         // Try to initialize the sensors
         if (!initSensor(sensor))
         {
