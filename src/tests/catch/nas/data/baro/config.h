@@ -1,51 +1,51 @@
-/* Copyright (c) 2024 Skyward Experimental Rocketry
- * Author: Davide Basso
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
+/* Copyright (c) 2024 Skyward Experimental Rocketry                             
+ * Author: Davide Basso                                                         
+ *                                                                              
+ * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * in the Software without restriction, including without limitation the rights 
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell    
+ * copies of the Software, and to permit persons to whom the Software is        
+ * furnished to do so, subject to the following conditions:                     
+ *                                                                              
+ * The above copyright notice and this permission notice shall be included in   
+ * all copies or substantial portions of the Software.                          
+ *                                                                              
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR   
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,     
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER       
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-/* This file was automatically generated, do not edit manually! */
-
-#pragma once
-#include <algorithms/NAS/NASConfig.h>
-#include <algorithms/NAS/NASPredictionSteps.h>
-#include <algorithms/NAS/NASState.h>
-#include <sensors/SensorData.h>
-#include <sensors/analog/Pitot/PitotData.h>
-
-Boardcore::NASConfig baro_nas_config{
-    0.02,                                    ///< T
-    0.0001,                                  ///< SIGMA_BETA
-    10,                                      ///< SIGMA_W
-    10,                                      ///< SIGMA_ACC [simulated]
-    10,                                      ///< SIGMA_MAG
-    {0.002, 0.002, 0.00033333, 0.00033333},  ///< SIGMA_GPS
-    50,                                      ///< SIGMA_BAR
-    0.02,                                    ///< SIGMA_POS
-    1,                                       ///< SIGMA_VEL
-    100,                                     ///< SIGMA_PITOT
-    0.01,                                    ///< P_POS
-    0.01,                                    ///< P_POS_VERTICAL
-    0.01,                                    ///< P_VEL
-    0.01,                                    ///< P_VEL_VERTICAL
-    0.01,                                    ///< P_ATT
-    0.01,                                    ///< P_BIAS
-    6,                                       ///< SATS_NUM [simulated]
-    {263.7423, -4.0401, 356.7031},           ///< NED_MAG
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN    
+ * THE SOFTWARE.                                                                
+ */                                                                             
+                                                                                
+/* This file was automatically generated, do not edit manually! */              
+                                                                                
+#pragma once                                                                    
+#include <algorithms/NAS/NASConfig.h>                                           
+#include <algorithms/NAS/NASState.h>                                            
+#include <algorithms/NAS/NASPredictionSteps.h>                                  
+#include <sensors/SensorData.h>                                                 
+#include <sensors/analog/Pitot/PitotData.h>                                     
+                                                                                
+Boardcore::NASConfig baro_nas_config {
+    0.02, ///< T
+    0.0001, ///< SIGMA_BETA
+    10, ///< SIGMA_W
+    10, ///< SIGMA_ACC [simulated]
+    10, ///< SIGMA_MAG
+    { 0.002, 0.002, 0.00033333, 0.00033333 }, ///< SIGMA_GPS
+    2500, ///< SIGMA_BAR
+    0.02, ///< SIGMA_POS
+    1, ///< SIGMA_VEL
+    100, ///< SIGMA_PITOT
+    0.01, ///< P_POS
+    0.01, ///< P_POS_VERTICAL
+    0.01, ///< P_VEL
+    0.01, ///< P_VEL_VERTICAL
+    0.01, ///< P_ATT
+    0.01, ///< P_BIAS
+    6, ///< SATS_NUM [simulated]
+    { 263.7423, -4.0401, 356.7031 }, ///< NED_MAG
 };
