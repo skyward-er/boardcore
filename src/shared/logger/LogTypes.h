@@ -141,6 +141,9 @@ void registerTypes(Deserializer& ds)
     ds.registerType<HSCMRNN015PAData>();
     ds.registerType<SSCMRNN030PAData>();
     ds.registerType<PitotData>();
+    ds.registerType<DeviceStatus>();
+    ds.registerType<ServoCommand>();
+    ds.registerType<ServoFeedback>();
     ds.registerType<CanPitotData>();
     ds.registerType<CanPressureData>();
     ds.registerType<CanTemperatureData>();
@@ -148,6 +151,9 @@ void registerTypes(Deserializer& ds)
     ds.registerType<CanServoData>();
     ds.registerType<CanBatteryVoltageSensorData>();
     ds.registerType<CanVoltageData>();
+    ds.registerType<CanDeviceStatus>();
+    ds.registerType<CanServoCommand>();
+    ds.registerType<CanServoFeedback>();
 }
 
 }  // namespace LogTypes
