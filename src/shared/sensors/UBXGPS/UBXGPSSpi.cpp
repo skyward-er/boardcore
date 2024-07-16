@@ -256,7 +256,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);
-                Thread::sleep(1);  // GPS minimum time after deselect
+                // Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
             }
 
@@ -297,7 +297,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         spiSlave.bus.read(frame.checksum, 2);
 
         spiSlave.bus.deselect(spiSlave.cs);
-        Thread::sleep(1);  // GPS minimum time after deselect
+        // Thread::sleep(1);  // GPS minimum time after deselect
     }
 
     if (!frame.isValid())
