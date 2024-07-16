@@ -153,48 +153,51 @@ void NAS::predictGyro(const GyroscopeData& angularSpeed)
 
 void NAS::correctBaro(const float pressure)
 {
-    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
-
+    float altitude = -x(2);
     // Temperature at current altitude. Since in NED the altitude is negative,
     // mslTemperature returns temperature at current altitude and not at msl
-    float temp = Aeroutils::relTemperature(-x(2), reference.refTemperature);
+    float temp = Aeroutils::relTemperature(altitude, reference.refTemperature);
+
+    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
+    Matrix<float, 1, 1> R = Matrix<float, 1, 1>(powf(config.SIGMA_BAR, 2));
 
     // Compute gradient of the altitude-pressure function
     H[2] = Constants::a * Constants::n * reference.refPressure *
-           powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) / temp;
+           powf(1 + Constants::a * altitude / temp, -Constants::n - 1) / temp;
 
     Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
-    Matrix<float, 1, 1> S =
-        H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_BAR);
-    Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
-    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
+    Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
 
     float y_hat =
         Aeroutils::relPressure(reference.refAltitude - x(2),
                                reference.mslPressure, reference.mslTemperature);
+    Matrix<float, 1, 1> e = Matrix<float, 1, 1>(pressure - y_hat);
+    Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
+    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
 
     // Update the state
-    x.head<6>() = x.head<6>() + K * (pressure - y_hat);
+    x.head<6>() = x.head<6>() + K * e;
 }
 
 void NAS::correctGPS(const Vector4f& gps)
 {
-
     // GPS
-    H_gps                = Matrix<float, 4, 6>::Zero();
-    H_gps.coeffRef(0, 0) = 1000 / a;
-    H_gps.coeffRef(0, 1) = 0;
-    H_gps.coeffRef(1, 0) =
-        (1000000.0 * x(1) *
-         sin((1000.0 * reference.refLatitude + (1000.0 * x(0)) / a) *
-             Constants::DEGREES_TO_RADIANS)) /
-        (a * b *
-         pow(cos((1000.0 * reference.refLatitude + (1000.0 * x(0)) / a) *
-                 Constants::DEGREES_TO_RADIANS),
-             2));
-    H_gps.coeffRef(1, 1) =
-        1000 / (b * cos((1000 * reference.refLatitude + (1000 * x(0)) / a) *
-                        Constants::DEGREES_TO_RADIANS));
+    H_gps     = Matrix<float, 4, 6>::Zero();
+    float H11 = 1 / a;
+    float H12 = 0;
+    float H21 = (x(1) * sin((reference.refLatitude + (x(0)) / a) *
+                            Constants::DEGREES_TO_RADIANS)) /
+                (a * b *
+                 pow(cos((reference.refLatitude + (x(0)) / a) *
+                         Constants::DEGREES_TO_RADIANS),
+                     2));
+    float H22            = 1 / (b * cos((reference.refLatitude + (x(0)) / a) *
+                                        Constants::DEGREES_TO_RADIANS));
+    H_gps.coeffRef(0, 0) = H11 * 1000;
+    H_gps.coeffRef(0, 1) = H12 * 1000;
+    H_gps.coeffRef(1, 0) = H21 * 1000;
+    H_gps.coeffRef(1, 1) = H22 * 1000;
+
     H_gps.coeffRef(2, 3) = 1;
     H_gps.coeffRef(3, 4) = 1;
 
@@ -212,21 +215,23 @@ void NAS::correctGPS(const Vector4f& gps)
         }
     }
 
+    // Current state [n e vn ve]
+    float lat = x(0) / a + reference.refLatitude;
+    float lon = x(1) / (b * cos(lat * Constants::DEGREES_TO_RADIANS)) +
+                -reference.refLongitude;
+    Matrix<float, 4, 1> z{lat, lon, x(3), x(4)};
+    Vector4f e{(gps(0) - z(0)) * 1000.0f, (gps(1) - z(1)) * 1000.0f,
+               gps(2) - z(2), gps(3) - z(3)};
+
     Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
 
     Matrix<float, 4, 4> S = H_gps * Pl * H_gps_tr + R_gps;
     Matrix<float, 6, 4> K = Pl * H_gps_tr * S.inverse();
 
-    P.block<6, 6>(0, 0) = (Matrix<float, 6, 6>::Identity() - K * H_gps) * Pl;
-
-    // Current state [n e vn ve]
-    float lat = x(0) / a + reference.refLatitude;
-    float lon = x(1) / (b * cos(lat * Constants::DEGREES_TO_RADIANS)) +
-                reference.refLongitude;
-    Matrix<float, 4, 1> z{lat, lon, x(3), x(4)};
-
     // Update the state
-    x.head<6>() = x.head<6>() + K * (gps - z);
+    x.head<6>() = x.head<6>() + K * e;
+
+    P.block<6, 6>(0, 0) = (Matrix<float, 6, 6>::Identity() - K * H_gps) * Pl;
 }
 
 void NAS::correctGPS(const GPSData& gps)

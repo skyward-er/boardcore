@@ -212,6 +212,21 @@ TEST_CASE("NAS - Complete - Evolving")
                   complete_nas_config, complete_steps);
 }
 
+float linDiff(Matrix<float, 13, 1> X, float x, float y, float z, float vx,
+              float vy, float vz)
+{
+    return sqrt(pow(X(0) - x, 2) + pow(X(1) - y, 2) + pow(X(2) - z, 2) +
+                pow(X(3) - vx, 2) + pow(X(4) - vy, 2) + pow(X(5) - vz, 2));
+}
+
+float quatDiff(Matrix<float, 13, 1> X, float qx, float qy, float qz, float qw,
+               float bx, float by, float bz)
+{
+    return sqrt(pow(X(6) - qx, 2) + pow(X(7) - qy, 2) + pow(X(8) - qz, 2) +
+                pow(X(9) - qw, 2) + pow(X(10) - bx, 2) + pow(X(11) - by, 2) +
+                pow(X(12) - bz, 2));
+}
+
 void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
                    uint32_t length, AccelerometerData acc[],
                    GyroscopeData gyro[], GPSData gps[], PressureData baro[],
@@ -221,23 +236,23 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
 {
     NAS nas(nasConfig);
     NASState x_curr;
-    ReferenceValues r(gps[0].height, baro[0].pressure, 15, gps[0].latitude,
-                      gps[0].longitude);
+
+    // Launchpad position for Lyra-October-2024
+    float lat0 = 39.388727000000003;
+    float lon0 = 8.287841999999999;
+
+    ReferenceValues r(gps[0].height, Constants::MSL_PRESSURE,
+                      Constants::MSL_TEMPERATURE, lat0, lon0);
 
     bool correct = true;
-
-    // std::ofstream outfile;
-    // auto filepath = algorithmToString(algorithm) + "-" +
-    //                 executionToString(execution) + ".csv";
-    // using ios = std::ios;
-    // outfile.open(filepath, ios::out | ios::trunc);
-    // outfile << "n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
 
     nas.setReferenceValues(r);
     nas.setX(input[0].getX());
 
     for (uint32_t i = 0; i < length - 1; i++)
     {
+        std::cout << std::endl << std::endl << "i: " << i << std::endl;
+
         if (execution == NASExecution::Static)
         {
             nas.setX(input[i].getX());
@@ -248,6 +263,10 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
             algorithm == NASAlgorithm::Complete)
         {
             nas.predictAcc(acc[i]);
+            auto diff = linDiff(nas.getX(), steps[i].acc_x, steps[i].acc_y,
+                                steps[i].acc_z, steps[i].acc_vx,
+                                steps[i].acc_vy, steps[i].acc_vz);
+            std::cout << "diff-acc: " << diff << std::endl;
         }
 
         // Predict gyro
@@ -255,6 +274,11 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
             algorithm == NASAlgorithm::Complete)
         {
             nas.predictGyro(gyro[i]);
+            auto diff =
+                quatDiff(nas.getX(), steps[i].gyro_gx, steps[i].gyro_gy,
+                         steps[i].gyro_gz, steps[i].gyro_gw, steps[i].gyro_gbx,
+                         steps[i].gyro_gby, steps[i].gyro_gbz);
+            std::cout << "diff-gyro: " << diff << std::endl;
         }
 
         // Correct gps
@@ -266,6 +290,10 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
                 algorithm == NASAlgorithm::Complete)
             {
                 nas.correctGPS(gps[i]);
+                auto diff = linDiff(nas.getX(), steps[i].gps_x, steps[i].gps_y,
+                                    steps[i].gps_z, steps[i].gps_vx,
+                                    steps[i].gps_vy, steps[i].gps_vz);
+                std::cout << "diff-gps: " << diff << std::endl;
             }
         }
 
@@ -274,6 +302,10 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
             algorithm == NASAlgorithm::Complete)
         {
             nas.correctBaro(baro[i].pressure);
+            auto diff = linDiff(nas.getX(), steps[i].baro_x, steps[i].baro_y,
+                                steps[i].baro_z, steps[i].baro_vx,
+                                steps[i].baro_vy, steps[i].baro_vz);
+            std::cout << "diff-baro: " << diff << std::endl;
         }
 
         // Correct magnetometer
@@ -281,6 +313,11 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
             algorithm == NASAlgorithm::Complete)
         {
             nas.correctMag(mag[i]);
+            auto diff =
+                quatDiff(nas.getX(), steps[i].mag_gx, steps[i].mag_gy,
+                         steps[i].mag_gz, steps[i].mag_gw, steps[i].mag_gbx,
+                         steps[i].mag_gby, steps[i].mag_gbz);
+            std::cout << "diff-mag: " << diff << std::endl;
         }
 
         // Correct pitot
@@ -288,20 +325,16 @@ void testAlgorithm(NASAlgorithm algorithm, NASExecution execution,
             algorithm == NASAlgorithm::Complete)
         {
             nas.correctPitot(pitot[i].airspeed);
+            auto diff = linDiff(nas.getX(), steps[i].pitot_x, steps[i].pitot_y,
+                                steps[i].pitot_z, steps[i].pitot_vx,
+                                steps[i].pitot_vy, steps[i].pitot_vz);
+            std::cout << "diff-pitot: " << diff << std::endl;
         }
 
         // Get the results
         x_curr  = nas.getState();
         correct = correct && checkStates(i, x_curr, output[i]);
-
-        // outfile << x_curr.n << "," << x_curr.e << "," << x_curr.d << ","
-        //         << x_curr.vn << "," << x_curr.ve << "," << x_curr.vd << ","
-        //         << x_curr.qx << "," << x_curr.qy << "," << x_curr.qz << ","
-        //         << x_curr.qw << "," << x_curr.bx << "," << x_curr.by << ","
-        //         << x_curr.bz << "\n";
     }
-
-    // outfile.close();
 
     if (!correct)
     {
