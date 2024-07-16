@@ -232,10 +232,10 @@ LIS3MDLData LIS3MDL::sampleImpl()
     int16_t values[3];
     spi.readRegisters(OUT_X_L | INCREMENT_REG_FLAG,
                       reinterpret_cast<uint8_t*>(values), sizeof(values));
-
-    newData.magneticFieldX = currentUnit * values[0];
-    newData.magneticFieldY = currentUnit * values[1];
-    newData.magneticFieldZ = currentUnit * values[2];
+    newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
+    newData.magneticFieldX         = currentUnit * values[0];
+    newData.magneticFieldY         = currentUnit * values[1];
+    newData.magneticFieldZ         = currentUnit * values[2];
 
     return newData;
 }
