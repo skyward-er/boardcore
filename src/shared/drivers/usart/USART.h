@@ -79,30 +79,36 @@ public:
     virtual ~USARTInterface() = 0;
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
+     * @brief Blocking read operation to read nBytes until the data transfer
+     * is complete or the timeout is reached.
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
-     * @return If operation succeeded.
+     * @param timeout The maximum time [ns] that will be waited, -1 to disable
+     * the timeout and block forever.
+     * @return Whether bytes were read and no timeout occurred.
      */
-    [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes)
+    [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes,
+                                            int64_t timeout = -1)
     {
         size_t temp;
-        return readImpl(buffer, nBytes, temp, true);
+        return readImpl(buffer, nBytes, temp, true, timeout);
     };
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
+     * @brief Blocking read operation to read nBytes until the data transfer
+     * is complete or the timeout is reached.
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
      * @param nBytesRead Number of bytes read in the transaction.
-     * @return If operation succeeded.
+     * @param timeout The maximum time [ns] that will be waited, -1 to disable
+     * the timeout and block forever.
+     * @return Whether bytes were read and no timeout occurred.
      */
     [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes,
-                                            size_t &nBytesRead)
+                                            size_t &nBytesRead,
+                                            int64_t timeout = -1)
     {
-        return readImpl(buffer, nBytes, nBytesRead, true);
+        return readImpl(buffer, nBytes, nBytesRead, true, timeout);
     };
 
     /**
@@ -132,10 +138,12 @@ protected:
      * @param nBytesRead Number of bytes read.
      * @param blocking Whether the read should block or not; in case it isn't
      * blocking the read could return also 0 bytes.
-     * @return If operation succeeded.
+     * @param timeout The maximum time [ns] that will be waited when in blocking
+     * mode, -1 to disable the timeout and block forever.
+     * @return Whether bytes were read and no timeout occurred.
      */
     virtual bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
-                          const bool blocking) = 0;
+                          const bool blocking, int64_t timeout) = 0;
 
     USARTType *usart;
     int id = -1;                 ///< Can be from 1 to 8, -1 is invalid.
@@ -301,16 +309,19 @@ private:
      * @param nBytesRead Number of bytes read.
      * @param blocking Whether the read should block or not; in case it isn't
      * blocking the read could return also 0 bytes.
-     * @return If operation succeeded.
+     * @param timeout The maximum time [ns] that will be waited when in blocking
+     * mode, -1 to disable the timeout and block forever.
+     * @return Whether bytes were read and no timeout occurred.
      */
     [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
-                                const bool blocking) override;
+                                const bool blocking,
+                                int64_t timeout = -1) override;
 
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
 
-    ///< Pointer to the waiting on receive thread
-    miosix::Thread *rxWaiting = 0;
+    miosix::Thread *rxWaiter =
+        nullptr;  ///< The thread that is waiting to receive data
 
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
     bool idle             = true;          ///< Receiver idle
@@ -390,10 +401,13 @@ private:
      * @param nBytesRead Number of bytes read.
      * @param blocking Whether the read should block or not; in case it isn't
      * blocking the read could return also 0 bytes.
-     * @return If operation succeeded.
+     * @param timeout The maximum time [ns] that will be waited when in blocking
+     * mode, -1 to disable the timeout and block forever.
+     * @return Whether bytes were read and no timeout occurred.
      */
     [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
-                                const bool blocking) override;
+                                const bool blocking,
+                                int64_t timeout = -1) override;
 
     /**
      * @brief Creates a device that represents the serial port, adds it to the
