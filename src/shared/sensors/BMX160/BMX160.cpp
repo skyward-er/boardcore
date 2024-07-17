@@ -698,11 +698,12 @@ void BMX160::readData()
     auto gyrRaw = parseStruct<BMX160Defs::GyrRaw>(buf, idx);
     auto accRaw = parseStruct<BMX160Defs::AccRaw>(buf, idx);
 
+    auto timestamp = TimestampTimer::getTimestamp();
     // Push a new sample into the fifo
     pushSample(BMX160Data{
-        buildAccData(accRaw, lastInterruptTimestamp),
-        buildGyrData(gyrRaw, lastInterruptTimestamp),
-        buildMagData(magRaw, lastInterruptTimestamp),
+        buildAccData(accRaw, timestamp),
+        buildGyrData(gyrRaw, timestamp),
+        buildMagData(magRaw, timestamp),
     });
 }
 
