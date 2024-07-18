@@ -500,7 +500,7 @@ void USART::setBaudrate(int baudrate)
 }
 
 bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
-                     const bool blocking, int64_t timeout)
+                     const bool blocking, std::chrono::nanoseconds timeout)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
@@ -534,24 +534,18 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
         do
         {
             rxWaiter = miosix::Thread::IRQgetCurrentThread();
-            if (timeout <= -1)
-            {
-                miosix::Thread::IRQenableIrqAndWait(dLock);
-            }
-            else
-            {
-                int64_t now     = miosix::IRQgetTime();
-                auto waitResult = miosix::Thread::IRQenableIrqAndTimedWait(
-                    dLock, now + timeout);
 
-                if (waitResult == miosix::TimedWaitResult::Timeout)
-                {
-                    // De-register from wakeup by the IRQ
-                    rxWaiter = nullptr;
-                    // Make the outer for-loop quit after reading data from the
-                    // rxQueue, or we'd end up waiting again
-                    timedOut = true;
-                }
+            int64_t wakeup = miosix::IRQgetTime() + timeout.count();
+            auto waitResult =
+                miosix::Thread::IRQenableIrqAndTimedWait(dLock, wakeup);
+
+            if (waitResult == miosix::TimedWaitResult::Timeout)
+            {
+                // De-register from wakeup by the IRQ
+                rxWaiter = nullptr;
+                // Make the outer for-loop quit after reading data from the
+                // rxQueue, or we'd end up waiting again
+                timedOut = true;
             }
         } while (rxWaiter);
     }
@@ -705,7 +699,7 @@ bool STM32SerialWrapper::serialCommSetup()
 
 bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
                                   size_t &nBytesRead, const bool blocking,
-                                  int64_t timeout)
+                                  std::chrono::nanoseconds timeout)
 {
     // non-blocking read not supported in STM32SerialWrapper
     if (!blocking)
@@ -716,8 +710,9 @@ bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
                  "STM32SerialWrapper::read doesn't support non-blocking read"));
     }
 
-    // Timeout is not supported on STM32SerialWrapper
-    if (timeout <= -1)
+    // Timeout is not supported on STM32SerialWrapper, timeout is always set to
+    // std::chrono::nanoseconds::max() unless specified by the user
+    if (timeout != std::chrono::nanoseconds::max())
     {
         LOG_ERR(logger,
                 "STM32SerialWrapper::read doesn't support timeout on read");

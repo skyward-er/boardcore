@@ -254,10 +254,9 @@ bool testReadTimeout(USART *src, USART *dst)
     printf("\t%d--> sent: \t'' (nothing being sent, force timeout)\n",
            src->getId());
 
-    auto start = steady_clock::now();
-    bool result =
-        dst->readBlocking(buf, sizeof(buf), bytesRead, timeout.count());
-    auto end = steady_clock::now();
+    auto start  = steady_clock::now();
+    bool result = dst->readBlocking(buf, sizeof(buf), bytesRead, timeout);
+    auto end    = steady_clock::now();
 
     auto measuredTime = duration_cast<milliseconds>(end - start);
 
@@ -292,7 +291,7 @@ bool testReadTimeout(USART *src, USART *dst)
     src->writeString(testString);
 
     start  = steady_clock::now();
-    result = dst->readBlocking(buf, sizeof(buf), bytesRead, timeout.count());
+    result = dst->readBlocking(buf, sizeof(buf), bytesRead, timeout);
     end    = steady_clock::now();
 
     measuredTime = duration_cast<milliseconds>(end - start);
