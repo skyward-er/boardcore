@@ -23,6 +23,7 @@
 #include <fmt/format.h>
 
 #include <cassert>
+#include <chrono>
 
 #include "drivers/usart/USART.h"
 #include "miosix.h"
@@ -237,6 +238,114 @@ bool testClearQueue(USART *src, USART *dst)
     return true;
 }
 
+bool testReadBlockingTimeout(USART *src, USART *dst)
+{
+    using namespace std::chrono;
+
+    constexpr auto testString = "This is truly something :-D";
+    // Constexpr integer allows to use this value inside the thread function
+    // without lambda capture
+    constexpr int timeoutMs = 1000;
+    constexpr auto timeout  = milliseconds{timeoutMs};
+
+    char buf[64];
+    size_t bytesRead{0};
+
+    /************** Read with timeout without sending anything ***************/
+
+    auto start  = steady_clock::now();
+    bool result = dst->readBlocking(buf, 64, bytesRead, timeout.count());
+    auto end    = steady_clock::now();
+
+    // Timeout should return false, if it returned true then the test failed
+    if (result)
+    {
+        printf("### readBlocking returned success on timeout: %s (%zu bytes)\n",
+               buf, bytesRead);
+        return false;
+    }
+
+    auto measuredTimeout = duration_cast<milliseconds>(end - start);
+    // Check if the timeout is correct
+    if (measuredTimeout < timeout)
+    {
+        printf(
+            "### readBlocking returned before the timeout: expected: %lld ms, "
+            "measured: %lld ms\n",
+            timeout.count(), measuredTimeout.count());
+        return false;
+    }
+    else
+    {
+        printf(
+            "readBlocking timeout test results: "
+            "expected: %lld ms, measured: %lld ms\n",
+            timeout.count(), measuredTimeout.count());
+    }
+
+    src->clearQueue();
+    dst->clearQueue();
+
+    /************** Read with timeout with partial receive ***************/
+
+    // Start a high priority thread that sends something right before the end of
+    // the timeout
+    Thread::create(
+        [](void *usart)
+        {
+            auto src = static_cast<USART *>(usart);
+            // Tune the sleep time to be almost at the end of the timeout
+            Thread::sleep(timeoutMs - 2);
+            src->writeString(testString);
+        },
+        STACK_MIN, PRIORITY_MAX - 1, src, Thread::JOINABLE);
+
+    // Read with timeout
+    start  = steady_clock::now();
+    result = dst->readBlocking(buf, 64, bytesRead, timeout.count());
+    end    = steady_clock::now();
+
+    // Timeout should return false, if it returned true then the test failed
+    if (result)
+    {
+        printf(
+            "### readBlocking returned before the timeout: expected: %lld ms, "
+            "measured: %lld ms\n",
+            timeout.count(), measuredTimeout.count());
+        return false;
+    }
+    else
+    {
+        // Print how many bytes were read
+        printf(
+            "readBlocking timeout test results: "
+            "expected: %lld ms, measured: %lld ms, bytes read: %zu\n",
+            timeout.count(), measuredTimeout.count(), bytesRead);
+    }
+
+    // Since we should have partially received the string, read the rest of it
+    // (with a timeout because why not) and check if it's correct
+    if (!dst->readBlocking(buf + bytesRead, 64 - bytesRead, bytesRead,
+                           timeout.count()))
+    {
+        printf(
+            "### readBlocking failed to read the rest of the string: %s (%zu "
+            "bytes)\n",
+            buf, bytesRead);
+        return false;
+    }
+
+    if (strcmp(buf, testString) != 0)
+    {
+        printf("### readBlocking read the wrong string: %s (%zu bytes)\n", buf,
+               bytesRead);
+        return false;
+    }
+
+    printf("*** readBlocking timeout test passed\n");
+    return true;
+}
+
 /* Available default pins:
  * - USART1: tx=PA9  rx=PA10
  * - USART2: tx=PA2  rx=PA3
@@ -289,6 +398,8 @@ int main()
             // 2"
             testPassed &= testCommunicationSequential(&usarty, &usartx);
             testPassed &= testClearQueue(&usarty, &usartx);
+
+            testPassed &= testReadBlockingTimeout(&usartx, &usarty);
         }
 
         if (testPassed)
