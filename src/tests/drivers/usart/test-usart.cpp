@@ -254,7 +254,7 @@ bool testReadBlockingTimeout(USART *src, USART *dst)
     /************** Read with timeout without sending anything ***************/
 
     auto start  = steady_clock::now();
-    bool result = dst->readBlocking(buf, 64, bytesRead, timeout.count());
+    bool result = dst->readBlocking(buf, 64, bytesRead, timeout);
     auto end    = steady_clock::now();
 
     // Timeout should return false, if it returned true then the test failed
@@ -302,7 +302,7 @@ bool testReadBlockingTimeout(USART *src, USART *dst)
 
     // Read with timeout
     start  = steady_clock::now();
-    result = dst->readBlocking(buf, 64, bytesRead, timeout.count());
+    result = dst->readBlocking(buf, 64, bytesRead, timeout);
     end    = steady_clock::now();
 
     // Timeout should return false, if it returned true then the test failed
@@ -325,8 +325,7 @@ bool testReadBlockingTimeout(USART *src, USART *dst)
 
     // Since we should have partially received the string, read the rest of it
     // (with a timeout because why not) and check if it's correct
-    if (!dst->readBlocking(buf + bytesRead, 64 - bytesRead, bytesRead,
-                           timeout.count()))
+    if (!dst->readBlocking(buf + bytesRead, 64 - bytesRead, bytesRead, timeout))
     {
         printf(
             "### readBlocking failed to read the rest of the string: %s (%zu "
