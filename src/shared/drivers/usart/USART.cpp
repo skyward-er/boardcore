@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <utils/Debug.h>
+#include <utils/Numeric.h>
 
 #include <string>
 
@@ -535,7 +536,7 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
         {
             rxWaiter = miosix::Thread::IRQgetCurrentThread();
 
-            int64_t wakeup = miosix::IRQgetTime() + timeout.count();
+            int64_t wakeup = add_sat(miosix::IRQgetTime(), timeout.count());
             auto waitResult =
                 miosix::Thread::IRQenableIrqAndTimedWait(dLock, wakeup);
 
