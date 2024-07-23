@@ -121,8 +121,8 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
 
     if (currentSamplerId != 0)
     {
-        LOG_INFO(logger, "Task scheduler not empty: starting from task ID {}",
-                 currentSamplerId);
+        LOG_DEBUG(logger, "Task scheduler not empty: starting from task ID {}",
+                  currentSamplerId);
     }
 
     for (auto it : sensorsMap)
