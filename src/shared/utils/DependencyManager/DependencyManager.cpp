@@ -82,7 +82,7 @@ bool DependencyManager::inject()
 
     for (auto& module : modules)
     {
-        LOG_INFO(logger, "Configuring [{}]...", module.second.name);
+        LOG_DEBUG(logger, "Configuring [{}]...", module.second.name);
         DependencyInjector injector{*this, module.second};
         module.second.injectable->inject(injector);
     }
