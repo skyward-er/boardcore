@@ -173,7 +173,7 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         if (!(status & H3LIS331DLDefs::STATUS_REG_XYZDR))
         {
             lastError = SensorErrors::NO_NEW_DATA;
-            LOG_DEBUG(logger, "No new data available.");
+            LOG_ERR(logger, "No new data available.");
             return lastSample;
         }
 
