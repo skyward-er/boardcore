@@ -151,7 +151,9 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
     target_include_directories(${BOARDCORE_LIB} PUBLIC ${BOARDCORE_PATH}/src/shared)
 
     # Define DEBUG when in Debug mode
-    target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<CONFIG:Debug>:DEBUG>) 
+    target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<CONFIG:Debug>:DEBUG>)
+    # Define NDEBUG when not in Debug mode
+    target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
     # Link libraries
     target_link_libraries(${BOARDCORE_LIB} PUBLIC
