@@ -161,7 +161,7 @@ void Follower::step()
                              targetAngles.pitch - vn300.pitch};
 
     // Rotate in the shortest direction
-    diffAngles.yaw   = minimizeRotation(0.1 * diffAngles.yaw);
+    diffAngles.yaw   = 0.1 * minimizeRotation(diffAngles.yaw);
     diffAngles.pitch = minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
