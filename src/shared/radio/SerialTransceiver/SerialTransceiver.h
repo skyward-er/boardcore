@@ -44,7 +44,9 @@ public:
 
     ssize_t receive(uint8_t* packet, size_t packetLength)
     {
-        return usart.readBlocking(packet, packetLength);
+        size_t bytesRead = 0;
+        bool result      = usart.readBlocking(packet, packetLength, bytesRead);
+        return result ? bytesRead : 0;
     }
 
 private:
