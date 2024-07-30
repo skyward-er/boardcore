@@ -105,6 +105,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/MPU9250/MPU9250.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/MS5803/MS5803.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/MS5803/MS5803I2C.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/RotatedIMU/RotatedIMU.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/SensorManager.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/SensorSampler.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
