@@ -53,6 +53,10 @@ enum SensorErrors : uint8_t
 struct TimestampData
 {
     uint64_t timestamp;
+
+    static std::string header() { return "timestamp\n"; }
+
+    void print(std::ostream& os) const { os << timestamp << "\n"; }
 };
 
 struct LoadCellData
@@ -101,6 +105,13 @@ struct HumidityData
 {
     uint64_t humidityTimestamp = 0;
     float humidity             = 0;
+
+    static std::string header() { return "timestamp,humidity\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << humidityTimestamp << "," << humidity << "\n";
+    }
 };
 
 /**
@@ -314,6 +325,14 @@ struct ADCData
     uint64_t voltageTimestamp = 0;
     uint8_t channelId         = 0;
     float voltage             = 0;
+
+    static std::string header() { return "timestamp,channelId,voltage\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << voltageTimestamp << "," << (int)channelId << "," << voltage
+           << "\n";
+    }
 };
 
 /**

@@ -56,6 +56,7 @@
 #include <sensors/MBLoadCell/MBLoadCellData.h>
 #include <sensors/MPU9250/MPU9250Data.h>
 #include <sensors/MS5803/MS5803Data.h>
+#include <sensors/RotatedIMU/IMUData.h>
 #include <sensors/SensorData.h>
 #include <sensors/UBXGPS/UBXGPSData.h>
 #include <sensors/VN100/VN100Data.h>
@@ -90,70 +91,83 @@ namespace LogTypes
 
 void registerTypes(Deserializer& ds)
 {
-    ds.registerType<StepperData>();
-    ds.registerType<ServoData>();
+    ds.registerType<AccelerometerData>();
     ds.registerType<ADAState>();
-    ds.registerType<NASState>();
-    ds.registerType<CpuMeterData>();
-    ds.registerType<StackData>();
-    ds.registerType<LoggingString>();
-    ds.registerType<InternalADCData>();
-    ds.registerType<EventData>();
-    ds.registerType<LoggerStats>();
-    ds.registerType<MavlinkStatus>();
-    ds.registerType<Xbee::XbeeStatus>();
-    ds.registerType<TaskStatsResult>();
+    ds.registerType<ADCData>();
     ds.registerType<ADS1118Data>();
     ds.registerType<ADS131M04Data>();
+    ds.registerType<ADS131M08Data>();
+    ds.registerType<AnalogLoadCellData>();
+    ds.registerType<BatteryVoltageSensorData>();
     ds.registerType<BME280Data>();
     ds.registerType<BMP280Data>();
     ds.registerType<BMX160Data>();
-    ds.registerType<BMX160Temperature>();
     ds.registerType<BMX160FifoStats>();
+    ds.registerType<BMX160Temperature>();
     ds.registerType<BMX160WithCorrectionData>();
-    ds.registerType<HX711Data>();
-    ds.registerType<L3GD20Data>();
-    ds.registerType<LIS3DSHData>();
-    ds.registerType<LIS3MDLData>();
-    ds.registerType<MBLoadCellData>();
-    ds.registerType<MPU9250Data>();
-    ds.registerType<MS5803Data>();
-    ds.registerType<TemperatureData>();
-    ds.registerType<UBXGPSData>();
-    ds.registerType<LIS2MDLData>();
-    ds.registerType<H3LIS331DLData>();
-    ds.registerType<LPS22DFData>();
-    ds.registerType<LSM6DSRXData>();
-    ds.registerType<LPS28DFWData>();
-    ds.registerType<ADS131M08Data>();
-    ds.registerType<VN100Data>();
-    ds.registerType<AnalogLoadCellData>();
-    ds.registerType<BatteryVoltageSensorData>();
+    ds.registerType<CanBatteryVoltageSensorData>();
+    ds.registerType<CanCurrentData>();
+    ds.registerType<CanDeviceStatus>();
+    ds.registerType<CanPitotData>();
+    ds.registerType<CanPressureData>();
+    ds.registerType<CanServoCommand>();
+    ds.registerType<CanServoData>();
+    ds.registerType<CanServoFeedback>();
+    ds.registerType<CanTemperatureData>();
+    ds.registerType<CanVoltageData>();
+    ds.registerType<CpuMeterData>();
     ds.registerType<CurrentData>();
+    ds.registerType<CurrentData>();
+    ds.registerType<DeviceStatus>();
+    ds.registerType<EventData>();
+    ds.registerType<GPSData>();
+    ds.registerType<GyroscopeData>();
+    ds.registerType<H3LIS331DLData>();
     ds.registerType<HSCMAND015PAData>();
+    ds.registerType<HSCMRNN015PAData>();
     ds.registerType<HSCMRNN030PAData>();
     ds.registerType<HSCMRNN160KAData>();
-    ds.registerType<SSCDANN030PAAData>();
-    ds.registerType<SSCDRRN015PDAData>();
+    ds.registerType<HumidityData>();
+    ds.registerType<HX711Data>();
+    ds.registerType<IMUData>();
+    ds.registerType<InternalADCData>();
+    ds.registerType<L3GD20Data>();
+    ds.registerType<LIS2MDLData>();
+    ds.registerType<LIS3DSHData>();
+    ds.registerType<LIS3MDLData>();
+    ds.registerType<LoadCellData>();
+    ds.registerType<LoggerStats>();
+    ds.registerType<LoggingString>();
+    ds.registerType<LPS22DFData>();
+    ds.registerType<LPS28DFWData>();
+    ds.registerType<LSM6DSRXData>();
+    ds.registerType<MagnetometerData>();
+    ds.registerType<MavlinkStatus>();
+    ds.registerType<MBLoadCellData>();
+    ds.registerType<MPU9250Data>();
     ds.registerType<MPXH6115AData>();
     ds.registerType<MPXH6400AData>();
     ds.registerType<MPXHZ6130AData>();
-    ds.registerType<HSCMRNN015PAData>();
-    ds.registerType<SSCMRNN030PAData>();
+    ds.registerType<MS5803Data>();
+    ds.registerType<NASState>();
     ds.registerType<PitotData>();
-    ds.registerType<DeviceStatus>();
+    ds.registerType<PressureData>();
+    ds.registerType<QuaternionData>();
     ds.registerType<ServoCommand>();
+    ds.registerType<ServoData>();
     ds.registerType<ServoFeedback>();
-    ds.registerType<CanPitotData>();
-    ds.registerType<CanPressureData>();
-    ds.registerType<CanTemperatureData>();
-    ds.registerType<CanCurrentData>();
-    ds.registerType<CanServoData>();
-    ds.registerType<CanBatteryVoltageSensorData>();
-    ds.registerType<CanVoltageData>();
-    ds.registerType<CanDeviceStatus>();
-    ds.registerType<CanServoCommand>();
-    ds.registerType<CanServoFeedback>();
+    ds.registerType<SSCDANN030PAAData>();
+    ds.registerType<SSCDRRN015PDAData>();
+    ds.registerType<SSCMRNN030PAData>();
+    ds.registerType<StackData>();
+    ds.registerType<StepperData>();
+    ds.registerType<TaskStatsResult>();
+    ds.registerType<TemperatureData>();
+    ds.registerType<TimestampData>();
+    ds.registerType<UBXGPSData>();
+    ds.registerType<VN100Data>();
+    ds.registerType<VoltageData>();
+    ds.registerType<Xbee::XbeeStatus>();
 }
 
 }  // namespace LogTypes
