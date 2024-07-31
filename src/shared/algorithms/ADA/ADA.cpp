@@ -44,6 +44,15 @@ void ADA::update(const float pressure)
     updateState();
 }
 
+void ADA::update()
+{
+    // Update the Kalman filter
+    filter.predict();
+
+    // Convert filter data to altitudes and speeds
+    updateState();
+}
+
 ADAState ADA::getState() { return state; }
 
 void ADA::setReferenceValues(const ReferenceValues reference)

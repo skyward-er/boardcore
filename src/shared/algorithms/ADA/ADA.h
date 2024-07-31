@@ -45,6 +45,11 @@ public:
     void update(const float pressure);
 
     /**
+     * @brief Update the Kalman filter, skipping the correct step.
+     */
+    void update();
+
+    /**
      * @param state ADA state with altitude and Kalman parameters.
      */
     ADAState getState();
