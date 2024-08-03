@@ -47,7 +47,7 @@ int main()
     intPin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_2;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_64;
     busConfiguration.mode         = SPI::Mode::MODE_3;
 
     VN100Spi sensor(bus, csPin, busConfiguration, 200);

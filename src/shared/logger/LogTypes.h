@@ -166,7 +166,8 @@ void registerTypes(Deserializer& ds)
     ds.registerType<TemperatureData>();
     ds.registerType<TimestampData>();
     ds.registerType<UBXGPSData>();
-    ds.registerType<VN100Data>();
+    ds.registerType<VN100SerialData>();
+    ds.registerType<VN100SpiData>();
     ds.registerType<VoltageData>();
     ds.registerType<Xbee::XbeeStatus>();
 }
