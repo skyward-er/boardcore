@@ -50,6 +50,7 @@ public:
 
     bool selfTest() override { return true; };
 
+protected:
     ///< Converts the voltage value to pressure
     CurrentData sampleImpl() override
     {

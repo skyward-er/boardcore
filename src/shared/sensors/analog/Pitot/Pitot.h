@@ -55,6 +55,7 @@ public:
 
     ReferenceValues getReferenceValues() { return reference; }
 
+protected:
     PitotData sampleImpl() override
     {
         float totalPressure  = getTotalPressure();

@@ -76,7 +76,7 @@ public:
         dynamicOffset += value;
     }
 
-private:
+protected:
     LoadCellData sampleImpl() override
     {
         auto voltage = getVoltage();
@@ -86,6 +86,7 @@ private:
         return {voltage.voltageTimestamp, mass - dynamicOffset};
     }
 
+private:
     std::function<ADCData()> getVoltage;
 
     // std::atomic<float> does not support +=

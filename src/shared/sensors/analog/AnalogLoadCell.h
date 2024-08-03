@@ -52,6 +52,7 @@ public:
 
     void updateOffset(float offset) { this->offset += offset; }
 
+protected:
     AnalogLoadCellData sampleImpl() override
     {
         ADCData adcData = getVoltage();

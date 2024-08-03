@@ -59,6 +59,7 @@ public:
 
     void updateOffset(float offset) { this->offset += offset; }
 
+protected:
     AnalogPressureData sampleImpl() override
     {
         AnalogPressureData pressure;
@@ -81,7 +82,6 @@ public:
         return pressure;
     }
 
-protected:
     ///< Conversion function from volts to pascals.
     virtual float voltageToPressure(float voltage) = 0;
 

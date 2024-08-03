@@ -58,13 +58,14 @@ public:
 
     bool selfTest() override { return true; }
 
-private:
+protected:
     PressureData sampleImpl() override
     {
         auto voltage = getVoltage();
         return {voltage.voltageTimestamp, voltageToPressure(voltage.voltage)};
     }
 
+private:
     float voltageToPressure(float voltage)
     {
         // First convert voltage to current

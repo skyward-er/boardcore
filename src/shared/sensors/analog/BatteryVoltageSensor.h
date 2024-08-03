@@ -53,6 +53,7 @@ public:
 
     bool selfTest() override { return true; };
 
+protected:
     ///< Converts the adc voltage value to battery voltage
     BatteryVoltageSensorData sampleImpl() override
     {

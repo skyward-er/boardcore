@@ -60,6 +60,7 @@ public:
 
     bool selfTest() override { return true; };
 
+protected:
     /**
      * @return the difference between the two pressure values
      */
