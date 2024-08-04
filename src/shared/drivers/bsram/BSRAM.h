@@ -83,7 +83,6 @@ protected:
     static void disableWrite();
 
     static void readResetRegister();
-    static void clearResetFlag();
 
     static ResetReason lastReset;
 };

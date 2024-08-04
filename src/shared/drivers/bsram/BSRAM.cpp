@@ -42,10 +42,10 @@ BSRAM::BSRAM()
     // Enable PWR clock
     ClockUtils::enablePeripheralClock((void *)PWR_BASE);
 
+    enableWrite();
+
     // Enable backup SRAM Clock
     ClockUtils::enablePeripheralClock((void *)BKPSRAM_BASE);
-
-    enableWrite();
 
     // Enable Backup regulator (Backup SRAM low power Regulator) and wait for
     // its readiness
@@ -71,11 +71,15 @@ BSRAM::BSRAM()
     {
         memset(preserve_start, 0, preserve_end - preserve_start);
     }
+
+    disableWrite();
 }
 
 void BSRAM::disableWrite()
 {
-    // Enable Backup Domain write protection
+    __DSB();
+
+    // Disable writing on backup SRAM enabling Backup Domain write protection
 #ifdef _ARCH_CORTEXM7_STM32F7
     PWR->CR1 &= ~PWR_CR1_DBP;
 #else
@@ -85,18 +89,24 @@ void BSRAM::disableWrite()
 
 void BSRAM::enableWrite()
 {
-    // Disable Backup Domain write protection
+    // Enable writing on backup SRAM disabling Backup Domain write protection
 #ifdef _ARCH_CORTEXM7_STM32F7
     PWR->CR1 |= PWR_CR1_DBP;
 #else
     PWR->CR |= PWR_CR_DBP;
 #endif
+
+    __DSB();
 }
 
 void BSRAM::readResetRegister()
 {
+    // Reading the reset reason register
     uint32_t resetReg = RCC->CSR;
-    clearResetFlag();
+
+    // Clearing reset flag
+    RCC->CSR |= RCC_CSR_RMVF;
+
     if (resetReg & RCC_CSR_LPWRRSTF)
     {
         lastReset = ResetReason::RST_LOW_PWR;
@@ -134,7 +144,5 @@ void BSRAM::readResetRegister()
         lastReset = ResetReason::RST_UNKNOWN;
     }
 }
-
-void BSRAM::clearResetFlag() { RCC->CSR |= RCC_CSR_RMVF; }
 
 }  // namespace Boardcore
