@@ -36,17 +36,13 @@ namespace Boardcore
 template <class FlightPhases, class SimulatorData, class ActuatorData>
 class HIL;
 
-class HILTransceiverBase : public Boardcore::ActiveObject,
-                           public Boardcore::Module
+class HILTransceiverBase : public ActiveObject
 {
 public:
     /**
      * @brief Construct a serial connection attached to a control algorithm
      */
-    explicit HILTransceiverBase(Boardcore::USART &hilSerial)
-        : hilSerial(hilSerial)
-    {
-    }
+    explicit HILTransceiverBase(USART &hilSerial) : hilSerial(hilSerial) {}
 
     /**
      * @brief Returns the number of lost updates.
@@ -75,7 +71,7 @@ protected:
         updated = false;
     }
 
-    Boardcore::USART &hilSerial;
+    USART &hilSerial;
     bool receivedFirstPacket       = false;
     bool updated                   = false;
     int nLostUpdates               = 0;
@@ -83,8 +79,7 @@ protected:
                                          // simulatorData [ns]
     miosix::FastMutex mutex;
     miosix::ConditionVariable condVar;
-    Boardcore::PrintLogger logger =
-        Boardcore::Logging::getLogger("HILTransceiver");
+    PrintLogger logger = Logging::getLogger("HILTransceiver");
 };
 
 /**
@@ -100,8 +95,11 @@ public:
      *
      * @param hilSerial Serial port for the HIL communication.
      */
-    explicit HILTransceiver(Boardcore::USART &hilSerial)
-        : HILTransceiverBase(hilSerial), actuatorData()
+    explicit HILTransceiver(USART &hilSerial,
+                            HILPhasesManager<FlightPhases, SimulatorData,
+                                             ActuatorData> *hilPhasesManager)
+        : HILTransceiverBase(hilSerial), actuatorData(),
+          hilPhasesManager(hilPhasesManager)
     {
     }
 
@@ -139,6 +137,8 @@ private:
 
     SimulatorData simulatorData;
     ActuatorData actuatorData;
+    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
+        *hilPhasesManager;
 };
 
 /**
@@ -155,10 +155,6 @@ template <class FlightPhases, class SimulatorData, class ActuatorData>
 void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
 {
     LOG_INFO(logger, "HIL Transceiver started");
-    auto *hilPhasesManager =
-        Boardcore::ModuleManager::getInstance()
-            .get<HIL<FlightPhases, SimulatorData, ActuatorData>>()
-            ->hilPhasesManager;
     hilSerial.clearQueue();
 
     while (!shouldStop())
