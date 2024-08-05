@@ -159,7 +159,6 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
         Boardcore::ModuleManager::getInstance()
             .get<HIL<FlightPhases, SimulatorData, ActuatorData>>()
             ->hilPhasesManager;
-    bool lostUpdate = false;
     hilSerial.clearQueue();
 
     while (!shouldStop())
@@ -167,6 +166,7 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
         // Pausing the kernel in order to copy the data in the shared structure
         {
             SimulatorData tempData;
+            nLostUpdates = 0;
             miosix::led3On();
             if (!hilSerial.readBlocking(&tempData, sizeof(SimulatorData)))
             {
@@ -177,11 +177,6 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
 
             miosix::PauseKernelLock kLock;
             simulatorData = tempData;
-
-            if (updated)
-            {
-                lostUpdate = true;
-            }
         }
 
         // If this is the first packet to be received, then update the flight
@@ -199,13 +194,12 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
         // Trigger events relative to the flight phases
         hilPhasesManager->processFlags(simulatorData);
 
-        if (lostUpdate)
+        if (nLostUpdates > 0)
         {
             // This means also that the number of samples used for the mean sent
             // to the HIL simulator is made up of more than the number of
             // samples we though
-            LOG_WARN(logger, "Lost updates");
-            lostUpdate = false;
+            LOG_WARN(logger, "%d Lost updates", nLostUpdates);
         }
 
         waitActuatorData();
