@@ -20,16 +20,13 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <miosix.h>
 #include <string.h>
 #include <utils/ClockUtils.h>
 
 #define PRESERVE __attribute__((section(".preserve")))
-
-/**
- *  Backup SRAM pag 122
- * BKPSRAMEN
- */
 
 namespace Boardcore
 {
