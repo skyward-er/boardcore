@@ -23,6 +23,7 @@
 #pragma once
 
 #include <algorithms/AirBrakes/TrajectoryPoint.h>
+#include <diagnostic/PrintLogger.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <events/Event.h>
 #include <events/EventHandler.h>
@@ -30,6 +31,7 @@
 
 #include <iostream>
 #include <map>
+#include <utils/Debug.h>
 #include <utils/ModuleManager/ModuleManager.hpp>
 
 typedef std::function<void()> TCallback;
@@ -48,9 +50,9 @@ struct Outcomes
 
     void print(uint64_t t_start) const
     {
-        printf("@time     : %f [sec]\n", (double)(t - t_start) / 1000000);
-        printf("@altitude : %f [m]\n", z);
-        printf("@velocity : %f [m/s]\n\n", vz);
+        TRACE("@time     : %f [sec]\n", (double)(t - t_start) / 1000000);
+        TRACE("@altitude : %f [m]\n", z);
+        TRACE("@velocity : %f [m/s]\n\n", vz);
     }
 };
 
@@ -151,6 +153,6 @@ protected:
 
     std::map<FlightPhases, bool> flagsFlightPhases;
     std::map<FlightPhases, bool> prev_flagsFlightPhases;
-    std::map<FlightPhases, vector<TCallback>> callbacks;
+    std::map<FlightPhases, std::vector<TCallback>> callbacks;
     std::map<FlightPhases, Outcomes> outcomes;
 };

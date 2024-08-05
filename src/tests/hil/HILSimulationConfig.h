@@ -48,7 +48,7 @@ namespace HILConfig
 
 struct SensorConfig : public Boardcore::SensorInfo
 {
-    SensorConfig(const std::string s, const uint32_t period)
+    SensorConfig(const std::string& s, const uint32_t period)
         : Boardcore::SensorInfo{s, period, []() {}, true}
     {
     }
@@ -126,7 +126,7 @@ struct FlagsHIL
 
     void print()
     {
-        printf(
+        TRACE(
             "flag_flight: %f\n"
             "flag_ascent: %f\n"
             "flag_burning: %f\n"
@@ -157,7 +157,7 @@ struct ADAStateHIL
 
     void print()
     {
-        printf(
+        TRACE(
             "mslAltitude: %+.3f\n"
             "aglAltitude: %+.3f\n"
             "verticalSpeed: %+.3f\n"
@@ -197,7 +197,7 @@ struct NASStateHIL
 
     void print()
     {
-        printf(
+        TRACE(
             "n: %+.3f\n"
             "e: %+.3f\n"
             "d: %+.3f\n"
@@ -222,7 +222,7 @@ struct AirBrakesStateHIL
 
     AirBrakesStateHIL() : updating(0) {}
 
-    void print() { printf("updating: %+.3f\n", updating); }
+    void print() { TRACE("updating: %+.3f\n", updating); }
 };
 
 /**
@@ -245,7 +245,7 @@ struct MEAStateHIL
 
     void print()
     {
-        printf(
+        TRACE(
             "correctedPressure: %+.3f\n"
             "estimatedMass: %+.3f\n"
             "estimatedApogee: %+.3f\n"
@@ -278,7 +278,7 @@ struct ActuatorsStateHIL
 
     void print()
     {
-        printf(
+        TRACE(
             "airbrakes: %f perc\n"
             "expulsion: %f perc\n"
             "mainValve: %f perc\n"
@@ -376,7 +376,7 @@ class MainHILPhasesManager
     : public HILPhasesManager<MainFlightPhases, SimulatorData, ActuatorData>
 {
 public:
-    MainHILPhasesManager(
+    explicit MainHILPhasesManager(
         std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition)
         : HILPhasesManager<MainFlightPhases, SimulatorData, ActuatorData>(
               getCurrentPosition)
@@ -443,33 +443,33 @@ public:
 
     void printOutcomes()
     {
-        printf("OUTCOMES: (times dt from liftoff)\n\n");
-        printf("Simulation time: %.3f [sec]\n\n",
+        TRACE("OUTCOMES: (times dt from liftoff)\n\n");
+        TRACE("Simulation time: %.3f [sec]\n\n",
                (double)(t_stop - t_start) / 1000000.0f);
 
-        printf("Motor stopped burning (simulation flag): \n");
+        TRACE("Motor stopped burning (simulation flag): \n");
         outcomes[MainFlightPhases::SIM_BURNING].print(t_liftoff);
 
-        printf("Airbrakes exit shadowmode: \n");
+        TRACE("Airbrakes exit shadowmode: \n");
         outcomes[MainFlightPhases::AEROBRAKES].print(t_liftoff);
 
-        printf("Apogee: \n");
+        TRACE("Apogee: \n");
         outcomes[MainFlightPhases::APOGEE].print(t_liftoff);
 
-        printf("Parachute 1: \n");
+        TRACE("Parachute 1: \n");
         outcomes[MainFlightPhases::PARA1].print(t_liftoff);
 
-        printf("Parachute 2: \n");
+        TRACE("Parachute 2: \n");
         outcomes[MainFlightPhases::PARA2].print(t_liftoff);
 
-        printf("Simulation Stopped: \n");
+        TRACE("Simulation Stopped: \n");
         outcomes[MainFlightPhases::SIMULATION_STOPPED].print(t_liftoff);
 
         // auto cpuMeter = Boardcore::CpuMeter::getCpuStats();
-        // printf("max cpu usage: %+.3f\n", cpuMeter.maxValue);
-        // printf("avg cpu usage: %+.3f\n", cpuMeter.mean);
-        // printf("min free heap: %+.3lu\n", cpuMeter.minFreeHeap);
-        // printf("max free stack:%+.3lu\n", cpuMeter.minFreeStack);
+        // TRACE("max cpu usage: %+.3f\n", cpuMeter.maxValue);
+        // TRACE("avg cpu usage: %+.3f\n", cpuMeter.mean);
+        // TRACE("min free heap: %+.3lu\n", cpuMeter.minFreeHeap);
+        // TRACE("max free stack:%+.3lu\n", cpuMeter.minFreeStack);
     }
 
 private:
@@ -480,6 +480,7 @@ private:
         TRACE("%d invalid event\n", e);
 
         /* calling the callbacks subscribed to the changed flags */
+        // cppcheck-suppress unsignedLessThanZero
         for (unsigned int i = 0; i < changed_flags.size(); i++)
         {
             std::vector<TCallback> callbacksToCall =
