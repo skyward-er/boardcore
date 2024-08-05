@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,11 +24,10 @@
 
 #include <typeinfo>
 
-#include "HIL.h"
-#include "HILConfig.h"
-#include "HILSensorsData.h"
 #include "HILTimestampManagement.h"
 #include "drivers/timer/TimestampTimer.h"
+#include "hil/HIL.h"
+#include "sensors/HILSensors/HILSensorsData.h"
 #include "sensors/Sensor.h"
 #include "sensors/SensorData.h"
 
@@ -40,7 +39,7 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-template <typename HILSensorData>
+template <typename HILSensorData, typename SimulatorSensorData, int N_DATA>
 class HILSensor : public virtual HILTimestampManagement,
                   public virtual Boardcore::Sensor<HILSensorData>
 {
@@ -50,18 +49,17 @@ public:
      *
      * @param matlab reference of the MatlabTransceiver object that deals with
      * the simulator
-     * @param n_data_sensor number of samples in every period of simulation
+     * @param addResetSampleCounter should be something like:
+     * Boardcore::ModuleManager::getInstance().get<HIL>()->simulator->addResetSampleCounter()
      */
-    HILSensor(int n_data_sensor, void *sensorData)
+    explicit HILSensor(const SimulatorSensorData *sensorData)
+        : sensorData(sensorData)
     {
-        this->sensorData    = sensorData;
-        this->n_data_sensor = n_data_sensor;
-
-        /* Registers the sensor on the MatlabTransceiver to be notified when a
+        /* Registers the sensor on the HILTransceiver to be notified when a
          * new packet of simulated data arrives */
         Boardcore::ModuleManager::getInstance()
-            .get<HIL>()
-            ->simulator->addResetSampleCounter(this);
+            .get<HILTransceiverBase>()
+            ->addResetSampleCounter(this);
     }
 
     /**
@@ -85,7 +83,7 @@ public:
         if (initialized)
         {
             this->lastError = Boardcore::SensorErrors::ALREADY_INIT;
-            TRACE("ALREADY INITIALIZED!");
+            LOG_WARN(logger, "%s already initialized", typeid(this).name());
         }
         else
         {
@@ -110,11 +108,10 @@ protected:
         if (initialized)
         {
             /* updates the last_sensor only if there is still data to be read */
-            if (sampleCounter >= n_data_sensor)
+            if (sampleCounter >= N_DATA)
             {
                 this->lastError = Boardcore::SensorErrors::NO_NEW_DATA;
-                /*TRACE("[%s] NO NEW DATA! Simulation error\n",
-                      typeid(this).name());*/
+                LOG_WARN(logger, "%s: No new data", typeid(this).name());
             }
             else if (this->lastError != Boardcore::SensorErrors::NO_NEW_DATA)
             {
@@ -124,9 +121,7 @@ protected:
         else
         {
             this->lastError = Boardcore::SensorErrors::NOT_INIT;
-            TRACE(
-                "[HILSensor] sampleImpl() : not initialized, unable to "
-                "sample data \n");
+            LOG_WARN(logger, "%s is not initialized", typeid(this).name());
         }
 
         return this->lastSample;
@@ -155,6 +150,7 @@ protected:
 
     bool initialized  = false;
     int sampleCounter = 0; /**< counter of the next sample to take */
-    int n_data_sensor;     /**< number of samples in every period */
-    void *sensorData;      /**< reference to the Buffer structure */
+    const SimulatorSensorData
+        *sensorData; /**< reference to the Buffer structure */
+    Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("HILSensor");
 };

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,12 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct MagnetometerSimulatorData
+{
+    float measures[N_DATA][3];
+};
+
 /**
  * @brief fake magnetometer sensor used for the simulation.
  *
@@ -33,11 +39,19 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-class HILMagnetometer : public HILSensor<HILMagnetometerData>
+template <int N_DATA>
+class HILMagnetometer
+    : public HILSensor<HILMagnetometerData, MagnetometerSimulatorData<N_DATA>,
+                       N_DATA>
 {
+    using Base = HILSensor<HILMagnetometerData,
+                           MagnetometerSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILMagnetometer(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILMagnetometer(
+        const MagnetometerSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILMagnetometerData, MagnetometerSimulatorData<N_DATA>,
+                    N_DATA>(sensorData)
     {
     }
 
@@ -45,17 +59,16 @@ protected:
     HILMagnetometerData updateData() override
     {
         HILMagnetometerData tempData;
-
-        miosix::PauseKernelLock pkLock;
-        HILConfig::SimulatorData::Magnetometer *magnetometer =
-            reinterpret_cast<HILConfig::SimulatorData::Magnetometer *>(
-                sensorData);
-
-        tempData.magneticFieldX = magnetometer->measures[sampleCounter][0];
-        tempData.magneticFieldY = magnetometer->measures[sampleCounter][1];
-        tempData.magneticFieldZ = magnetometer->measures[sampleCounter][2];
-        tempData.magneticFieldTimestamp = updateTimestamp();
-
+        {
+            miosix::PauseKernelLock pkLock;
+            tempData.magneticFieldX =
+                Base::sensorData->measures[Base::sampleCounter][0];
+            tempData.magneticFieldY =
+                Base::sensorData->measures[Base::sampleCounter][1];
+            tempData.magneticFieldZ =
+                Base::sensorData->measures[Base::sampleCounter][2];
+            tempData.magneticFieldTimestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2024 Skyward Experimental Rocketry
  * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +26,12 @@
 
 #include "HILSensor.h"
 
+template <int N_DATA>
+struct GyroscopeSimulatorData
+{
+    float measures[N_DATA][3];
+};
+
 /**
  * @brief fake gyroscope sensor used for the simulation.
  *
@@ -33,11 +39,17 @@
  * OBSW during the flight, using fake sensors classes instead of the real
  * ones, taking their data from the data received from a simulator.
  */
-class HILGyroscope : public HILSensor<HILGyroscopeData>
+template <int N_DATA>
+class HILGyroscope
+    : public HILSensor<HILGyroscopeData, GyroscopeSimulatorData<N_DATA>, N_DATA>
 {
+    using Base =
+        HILSensor<HILGyroscopeData, GyroscopeSimulatorData<N_DATA>, N_DATA>;
+
 public:
-    HILGyroscope(int n_data_sensor, void *sensorData)
-        : HILSensor(n_data_sensor, sensorData)
+    explicit HILGyroscope(const GyroscopeSimulatorData<N_DATA> *sensorData)
+        : HILSensor<HILGyroscopeData, GyroscopeSimulatorData<N_DATA>, N_DATA>(
+              sensorData)
     {
     }
 
@@ -45,16 +57,16 @@ protected:
     HILGyroscopeData updateData() override
     {
         HILGyroscopeData tempData;
-
-        miosix::PauseKernelLock pkLock;
-        HILConfig::SimulatorData::Gyro *gyroscope =
-            reinterpret_cast<HILConfig::SimulatorData::Gyro *>(sensorData);
-
-        tempData.angularSpeedX         = gyroscope->measures[sampleCounter][0];
-        tempData.angularSpeedY         = gyroscope->measures[sampleCounter][1];
-        tempData.angularSpeedZ         = gyroscope->measures[sampleCounter][2];
-        tempData.angularSpeedTimestamp = updateTimestamp();
-
+        {
+            miosix::PauseKernelLock pkLock;
+            tempData.angularSpeedX =
+                Base::sensorData->measures[Base::sampleCounter][0];
+            tempData.angularSpeedY =
+                Base::sensorData->measures[Base::sampleCounter][1];
+            tempData.angularSpeedZ =
+                Base::sensorData->measures[Base::sampleCounter][2];
+            tempData.angularSpeedTimestamp = Base::updateTimestamp();
+        }
         Boardcore::Logger::getInstance().log(tempData);
 
         return tempData;
