@@ -55,8 +55,7 @@ class HILSensors : public Sensors
 {
 public:
     explicit HILSensors(Boardcore::TaskScheduler* sched, Buses* buses,
-                        HILConfig::MainHILTransceiver* hilTransceiver,
-                        bool enableHw)
+                        HILConfig::MainHIL* hil, bool enableHw)
         : Sensors{sched, buses}, enableHw{enableHw}
     {
         using namespace HILConfig;
@@ -64,41 +63,30 @@ public:
 
         // Creating the fake sensors for the can transmitted samples
         chamberPressureCreation();
-        pitotCreation(hilTransceiver);
+        pitotCreation(hil);
 
         hillificator<>(lps28dfw_1, enableHw,
-                       [hilTransceiver]()
-                       { return updateLPS28DFWData(hilTransceiver); });
+                       [hil]() { return updateLPS28DFWData(hil); });
         hillificator<>(lps28dfw_2, enableHw,
-                       [hilTransceiver]()
-                       { return updateLPS28DFWData(hilTransceiver); });
+                       [hil]() { return updateLPS28DFWData(hil); });
         hillificator<>(lps22df, enableHw,
-                       [hilTransceiver]()
-                       { return updateLPS22DFData(hilTransceiver); });
+                       [hil]() { return updateLPS22DFData(hil); });
         hillificator<>(h3lis331dl, enableHw,
-                       [hilTransceiver]()
-                       { return updateH3LIS331DLData(hilTransceiver); });
+                       [hil]() { return updateH3LIS331DLData(hil); });
         hillificator<>(lis2mdl, enableHw,
-                       [hilTransceiver]()
-                       { return updateLIS2MDLData(hilTransceiver); });
+                       [hil]() { return updateLIS2MDLData(hil); });
         hillificator<>(ubxgps, enableHw,
-                       [hilTransceiver]()
-                       { return updateUBXGPSData(hilTransceiver); });
+                       [hil]() { return updateUBXGPSData(hil); });
         hillificator<>(lsm6dsrx, enableHw,
-                       [hilTransceiver]()
-                       { return updateLSM6DSRXData(hilTransceiver); });
+                       [hil]() { return updateLSM6DSRXData(hil); });
         hillificator<>(hscmrnn015pa_1, enableHw,
-                       [hilTransceiver]()
-                       { return updateStaticPressureData(hilTransceiver); });
+                       [hil]() { return updateStaticPressureData(hil); });
         hillificator<>(hscmrnn015pa_2, enableHw,
-                       [hilTransceiver]()
-                       { return updateStaticPressureData(hilTransceiver); });
+                       [hil]() { return updateStaticPressureData(hil); });
         hillificator<>(imu, enableHw,
-                       [this, hilTransceiver]()
-                       { return updateIMUData(hilTransceiver, *this); });
+                       [this, hil]() { return updateIMUData(hil, *this); });
         hillificator<>(chamber, enableHw,
-                       [hilTransceiver]()
-                       { return updateCCData(hilTransceiver); });
+                       [hil]() { return updateCCData(hil); });
     };
 
     bool start() override
@@ -135,13 +123,11 @@ private:
         Boardcore::Logger::getInstance().log(lastSample);
     }
 
-    void pitotCreation(HILConfig::MainHILTransceiver* hilTransceiver)
+    void pitotCreation(HILConfig::MainHIL* hil)
     {
         pitot = std::make_unique<Boardcore::Pitot>(
-            [hilTransceiver]()
-            { return getTotalPressurePitot(hilTransceiver); },
-            [hilTransceiver]()
-            { return getStaticPressurePitot(hilTransceiver); });
+            [hil]() { return getTotalPressurePitot(hil); },
+            [hil]() { return getStaticPressurePitot(hil); });
         pitot->setReferenceValues(Boardcore::ReferenceValues());
     }
 
@@ -160,7 +146,7 @@ private:
         auto ts           = miosix::getTime();
         auto tsSensorData = Boardcore::ModuleManager::getInstance()
                                 .get<HILConfig::MainHIL>()
-                                ->hilTransceiver->getTimestampSimulatorData();
+                                ->getTimestampSimulatorData();
         auto simulationPeriod = Boardcore::ModuleManager::getInstance()
                                     .get<HILConfig::MainHIL>()
                                     ->getSimulationPeriod();
@@ -187,12 +173,11 @@ private:
         return sampleCounter;
     }
 
-    static Boardcore::LPS28DFWData updateLPS28DFWData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static Boardcore::LPS28DFWData updateLPS28DFWData(HILConfig::MainHIL* hil)
     {
         Boardcore::LPS28DFWData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iBaro = getSampleCounter(sensorData->barometer1.NDATA);
         int iTemp = getSampleCounter(sensorData->temperature.NDATA);
@@ -204,12 +189,11 @@ private:
         return data;
     };
 
-    static Boardcore::LPS22DFData updateLPS22DFData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static Boardcore::LPS22DFData updateLPS22DFData(HILConfig::MainHIL* hil)
     {
         Boardcore::LPS22DFData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iBaro = getSampleCounter(sensorData->barometer1.NDATA);
         int iTemp = getSampleCounter(sensorData->temperature.NDATA);
@@ -222,11 +206,11 @@ private:
     };
 
     static Boardcore::H3LIS331DLData updateH3LIS331DLData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+        HILConfig::MainHIL* hil)
     {
         Boardcore::H3LIS331DLData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iAcc = getSampleCounter(sensorData->accelerometer.NDATA);
 
@@ -238,12 +222,11 @@ private:
         return data;
     };
 
-    static Boardcore::LIS2MDLData updateLIS2MDLData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static Boardcore::LIS2MDLData updateLIS2MDLData(HILConfig::MainHIL* hil)
     {
         Boardcore::LIS2MDLData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iMag = getSampleCounter(sensorData->magnetometer.NDATA);
 
@@ -255,12 +238,11 @@ private:
         return data;
     };
 
-    static Boardcore::UBXGPSData updateUBXGPSData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static Boardcore::UBXGPSData updateUBXGPSData(HILConfig::MainHIL* hil)
     {
         Boardcore::UBXGPSData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iGps = getSampleCounter(sensorData->gps.NDATA);
 
@@ -284,12 +266,11 @@ private:
         return data;
     };
 
-    static Boardcore::LSM6DSRXData updateLSM6DSRXData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static Boardcore::LSM6DSRXData updateLSM6DSRXData(HILConfig::MainHIL* hil)
     {
         Boardcore::LSM6DSRXData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iAcc  = getSampleCounter(sensorData->accelerometer.NDATA);
         int iGyro = getSampleCounter(sensorData->gyro.NDATA);
@@ -309,11 +290,11 @@ private:
     };
 
     static Boardcore::HSCMRNN015PAData updateStaticPressureData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+        HILConfig::MainHIL* hil)
     {
         Boardcore::HSCMRNN015PAData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iBaro = getSampleCounter(sensorData->barometer1.NDATA);
 
@@ -323,20 +304,19 @@ private:
         return data;
     };
 
-    static RotatedIMUData updateIMUData(
-        HILConfig::MainHILTransceiver* hilTransceiver, Sensors& sensors)
+    static RotatedIMUData updateIMUData(HILConfig::MainHIL* hil,
+                                        Sensors& sensors)
     {
         return RotatedIMUData{sensors.getLSM6DSRXLastSample(),
                               sensors.getLSM6DSRXLastSample(),
                               sensors.getCalibratedMagnetometerLastSample()};
     };
 
-    static Boardcore::PressureData updateCCData(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static Boardcore::PressureData updateCCData(HILConfig::MainHIL* hil)
     {
         Boardcore::PressureData data;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iCC = getSampleCounter(sensorData->pressureChamber.NDATA);
 
@@ -346,12 +326,11 @@ private:
         return data;
     };
 
-    static float getTotalPressurePitot(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static float getTotalPressurePitot(HILConfig::MainHIL* hil)
     {
         float totalPressure;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iPitot = getSampleCounter(sensorData->pitot.NDATA);
 
@@ -361,12 +340,11 @@ private:
         return totalPressure;
     };
 
-    static float getStaticPressurePitot(
-        HILConfig::MainHILTransceiver* hilTransceiver)
+    static float getStaticPressurePitot(HILConfig::MainHIL* hil)
     {
         float staticPressure;
 
-        auto* sensorData = hilTransceiver->getSensorData();
+        auto* sensorData = hil->getSensorData();
 
         int iPitot = getSampleCounter(sensorData->pitot.NDATA);
 
