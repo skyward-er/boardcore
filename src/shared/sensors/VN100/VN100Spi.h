@@ -130,29 +130,29 @@ private:
     /**
      * @brief Utility function used to read from a register of the sensor.
      *
-     * @param REG_ID The id of the register to read from.
+     * @param regId The id of the register to read from.
      * @param payloadBuf The buffer where data will be stored.
-     * @param PAYLOAD_SIZE The amount of data (in bytes) to be read from the
+     * @param payloadSize The amount of data (in bytes) to be read from the
      * register.
      *
      * @return Zero if the operation is successful, the error code otherwise.
      */
-    VN100SpiDefs::VNErrors readRegister(const uint32_t REG_ID,
+    VN100SpiDefs::VNErrors readRegister(const uint8_t regId,
                                         uint8_t* payloadBuf,
-                                        const uint32_t PAYLOAD_SIZE);
+                                        const uint32_t payloadSize);
 
     /**
      * @brief Utility function used to write data to a register of the sensor.
      *
-     * @param REG_ID The id of the register to be written.
+     * @param regId The id of the register to be written.
      * @param payloadBuf The buffer containing the data to be written.
-     * @param PAYLOAD_SIZE The amount of data (in bytes) to be written.
+     * @param payloadSize The amount of data (in bytes) to be written.
      *
      * @return Zero if the operation is successful, the error code otherwise.
      */
-    VN100SpiDefs::VNErrors writeRegister(const uint32_t REG_ID,
+    VN100SpiDefs::VNErrors writeRegister(const uint8_t regId,
                                          const uint8_t* payloadBuf,
-                                         const uint32_t PAYLOAD_SIZE);
+                                         const uint32_t payloadSize);
 
     bool isInit = false;
 

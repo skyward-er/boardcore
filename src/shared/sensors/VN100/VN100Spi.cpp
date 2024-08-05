@@ -82,9 +82,9 @@ bool VN100Spi::checkModelNumber()
         buf[i] = 0;
     }
 
-    VN100SpiDefs::VNErrors err =
-        readRegister(VN100SpiDefs::REG_MODEL_NUMBER, (uint8_t*)buf,
-                     VN100SpiDefs::MODEL_NUMBER_SIZE);
+    VN100SpiDefs::VNErrors err = readRegister(VN100SpiDefs::REG_MODEL_NUMBER,
+                                              reinterpret_cast<uint8_t*>(buf),
+                                              VN100SpiDefs::MODEL_NUMBER_SIZE);
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while attempting to service the request
@@ -150,9 +150,9 @@ bool VN100Spi::setInterrupt()
     sData.syncOutSkipFactor = syncOutSkipFactor;
     sData.syncOutPulseWidth = VN100SpiDefs::SYNC_OUT_PULSE_WIDTH;
 
-    VN100SpiDefs::VNErrors err =
-        writeRegister(VN100SpiDefs::REG_SYNC, (uint8_t*)&sData,
-                      sizeof(VN100SpiDefs::SynchronizationData));
+    VN100SpiDefs::VNErrors err = writeRegister(
+        VN100SpiDefs::REG_SYNC, reinterpret_cast<uint8_t*>(&sData),
+        sizeof(VN100SpiDefs::SynchronizationData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -192,8 +192,9 @@ bool VN100Spi::getSample(VN100SpiData& data)
 {
     VN100SpiDefs::RawImuQuatData rawData;
 
-    VN100SpiDefs::VNErrors err = readRegister(
-        VN100SpiDefs::REG_QUAT_IMU_DATA, (uint8_t*)&rawData, sizeof(rawData));
+    VN100SpiDefs::VNErrors err =
+        readRegister(VN100SpiDefs::REG_QUAT_IMU_DATA,
+                     reinterpret_cast<uint8_t*>(&rawData), sizeof(rawData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -229,8 +230,9 @@ TemperatureData VN100Spi::getTemperature()
     // Get timestamp
     data.temperatureTimestamp = TimestampTimer::getTimestamp();
 
-    VN100SpiDefs::VNErrors err = readRegister(
-        VN100SpiDefs::REG_TEMP_PRESS_DATA, (uint8_t*)&rawData, sizeof(rawData));
+    VN100SpiDefs::VNErrors err =
+        readRegister(VN100SpiDefs::REG_TEMP_PRESS_DATA,
+                     reinterpret_cast<uint8_t*>(&rawData), sizeof(rawData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -254,8 +256,9 @@ PressureData VN100Spi::getPressure()
     // Get timestamp
     data.pressureTimestamp = TimestampTimer::getTimestamp();
 
-    VN100SpiDefs::VNErrors err = readRegister(
-        VN100SpiDefs::REG_TEMP_PRESS_DATA, (uint8_t*)&rawData, sizeof(rawData));
+    VN100SpiDefs::VNErrors err =
+        readRegister(VN100SpiDefs::REG_TEMP_PRESS_DATA,
+                     reinterpret_cast<uint8_t*>(&rawData), sizeof(rawData));
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -270,9 +273,9 @@ PressureData VN100Spi::getPressure()
     return data;
 }
 
-VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
+VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint8_t regId,
                                               uint8_t* payloadBuf,
-                                              const uint32_t PAYLOAD_SIZE)
+                                              const uint32_t payloadSize)
 {
     /**
      * When reading from a sensor's register 2 spi transactions are needed.
@@ -293,7 +296,7 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
 
     const uint32_t requestPacket =
         (VN100SpiDefs::READ_REG << 24) |  // Read register command
-        (REG_ID << 16);                   // Id of the register
+        (regId << 16);                    // Id of the register
 
     // Send request packet
     spiSlave.bus.select(spiSlave.cs);
@@ -317,16 +320,16 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint32_t REG_ID,
         return err;
     }
 
-    spiSlave.bus.read(payloadBuf, PAYLOAD_SIZE);
+    spiSlave.bus.read(payloadBuf, payloadSize);
 
     spiSlave.bus.deselect(spiSlave.cs);
 
     return VN100SpiDefs::VNErrors::NO_ERROR;
 }
 
-VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint32_t REG_ID,
+VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint8_t regId,
                                                const uint8_t* payloadBuf,
-                                               const uint32_t PAYLOAD_SIZE)
+                                               const uint32_t payloadSize)
 {
     /**
      * When writing to a sensor's register 2 spi transactions are needed.
@@ -347,12 +350,12 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint32_t REG_ID,
 
     const uint32_t requestPacket =
         (VN100SpiDefs::WRITE_REG << 24) |  // Read register command
-        (REG_ID << 16);                    // Id of the register
+        (regId << 16);                     // Id of the register
 
     // Send request packet
     spiSlave.bus.select(spiSlave.cs);
     spiSlave.bus.write32(requestPacket);
-    spiSlave.bus.write(payloadBuf, PAYLOAD_SIZE);
+    spiSlave.bus.write(payloadBuf, payloadSize);
     spiSlave.bus.deselect(spiSlave.cs);
 
     // Wait at least 100us
