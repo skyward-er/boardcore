@@ -126,10 +126,7 @@ private:
         while (!shouldStop())
         {
             ts += msToNs(simulationPeriod);
-            if (hilPhasesManager->isSimulationRunning())
-            {
-                hilTransceiver->setActuatorData(updateActuatorData());
-            }
+            hilTransceiver->setActuatorData(updateActuatorData());
             miosix::Thread::nanoSleepUntil(ts);
         }
     }
