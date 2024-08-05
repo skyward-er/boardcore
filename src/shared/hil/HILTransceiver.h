@@ -157,6 +157,10 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
     LOG_INFO(logger, "HIL Transceiver started");
     hilSerial.clearQueue();
 
+    miosix::led2On();
+    hilSerial.write(&actuatorData, sizeof(ActuatorData));
+    miosix::led2Off();
+
     while (!shouldStop())
     {
         // Pausing the kernel in order to copy the data in the shared structure
