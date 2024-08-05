@@ -24,6 +24,7 @@
 
 #include <Singleton.h>
 #include <diagnostic/SkywardStack.h>
+#include <utils/KernelTime.h>
 
 #include <utils/ModuleManager/ModuleManager.hpp>
 
@@ -101,7 +102,7 @@ public:
         LOG_INFO(logger, "Waiting for simulation to start...");
         while (!hilPhasesManager->isSimulationRunning())
         {
-            miosix::Thread::sleep(updatePeriod);
+            miosix::Thread::sleep(1);
         }
     }
 
@@ -110,15 +111,18 @@ public:
         *hilPhasesManager;
 
 private:
+    // We are waiting for updatePeriod and not executing every updatePeriod
     void run() override
     {
+        uint64_t ts = miosix::getTime();
         while (!shouldStop())
         {
+            ts += updatePeriod * 1000000;
             if (hilPhasesManager->isSimulationRunning())
             {
                 hilTransceiver->setActuatorData(updateActuatorData());
             }
-            miosix::Thread::sleep(updatePeriod);
+            miosix::Thread::nanoSleepUntil(ts);
         }
     }
 
