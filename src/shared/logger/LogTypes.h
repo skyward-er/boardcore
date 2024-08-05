@@ -45,7 +45,6 @@
 #include <sensors/BMX160/BMX160Data.h>
 #include <sensors/BMX160/BMX160WithCorrectionData.h>
 #include <sensors/H3LIS331DL/H3LIS331DLData.h>
-#include <sensors/HILSensors/HILSensorsData.h>
 #include <sensors/HX711/HX711Data.h>
 #include <sensors/L3GD20/L3GD20Data.h>
 #include <sensors/LIS2MDL/LIS2MDLData.h>

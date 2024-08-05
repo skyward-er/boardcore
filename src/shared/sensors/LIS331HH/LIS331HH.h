@@ -58,9 +58,10 @@ public:
 
     void setFullScaleRange(FullScaleRange fs);
 
-private:
+protected:
     LIS331HHData sampleImpl() override;
 
+private:
     SPISlave slave;
     float sensitivity = 6.0 / 32767.0;
 

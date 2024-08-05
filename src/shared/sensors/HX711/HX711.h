@@ -112,9 +112,10 @@ public:
      */
     float getOffset();
 
-private:
+protected:
     HX711Data sampleImpl() override;
 
+private:
     SPIBusInterface& bus;
     miosix::GpioPin sckPin;
     const SPIBusConfig config;

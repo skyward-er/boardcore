@@ -78,7 +78,7 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     /**
      * Implements a state machines composed of 3 states:
      * 1. Command pressure sample
@@ -93,6 +93,7 @@ private:
      */
     MS5803Data sampleImpl() override;
 
+private:
     MS5803Data updateData();
 
     uint16_t readReg(uint8_t reg);

@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Federico Mandelli
+ * Author: Matteo Pignataro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,25 +20,46 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include "BoardScheduler.h"
 
-#include "HSCMRNN015PAData.h"
-#include "HoneywellPressureSensor.h"
+using namespace Boardcore;
 
-namespace Boardcore
+namespace HILTest
 {
-
-/**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
- */
-class HSCMRNN015PA : public HoneywellPressureSensor<HSCMRNN015PAData>
+BoardScheduler::BoardScheduler()
 {
-public:
-    HSCMRNN015PA(std::function<ADCData()> getSensorVoltage,
-                 const float supplyVoltage = 5.0)
-        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594)
+    scheduler1 = new TaskScheduler(miosix::PRIORITY_MAX - 4);
+    scheduler2 = new TaskScheduler(miosix::PRIORITY_MAX - 3);
+    scheduler3 = new TaskScheduler(miosix::PRIORITY_MAX - 2);
+    scheduler4 = new TaskScheduler(miosix::PRIORITY_MAX - 1);
+}
+
+TaskScheduler* BoardScheduler::getScheduler(miosix::Priority priority)
+{
+    switch (priority.get())
     {
+        case miosix::PRIORITY_MAX:
+            return scheduler4;
+        case miosix::PRIORITY_MAX - 1:
+            return scheduler3;
+        case miosix::PRIORITY_MAX - 2:
+            return scheduler2;
+        case miosix::MAIN_PRIORITY:
+            return scheduler1;
+        default:
+            return scheduler1;
     }
-};
+}
 
-}  // namespace Boardcore
+bool BoardScheduler::start()
+{
+    return scheduler1->start() && scheduler2->start() && scheduler3->start() &&
+           scheduler4->start();
+}
+
+bool BoardScheduler::isStarted()
+{
+    return scheduler1->isRunning() && scheduler2->isRunning() &&
+           scheduler3->isRunning() && scheduler4->isRunning();
+}
+}  // namespace HILTest

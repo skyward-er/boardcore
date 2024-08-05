@@ -154,9 +154,10 @@ public:
      */
     bool setDRDYInterrupt(bool drdy);
 
-private:
+protected:
     LPS28DFWData sampleImpl() override;
 
+private:
     /**
      * @brief Converting the bytes read from the sensor to the pressure in Pa.
      */

@@ -33,7 +33,7 @@ namespace Boardcore
 /**
  * @brief Driver for NXP's MPXHZ6130A pressure sensor
  */
-class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
+class MPXHZ6130A : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
     MPXHZ6130A(std::function<ADCData()> getVoltage,

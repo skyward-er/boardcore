@@ -60,9 +60,10 @@ public:
 
     void stopCalibration();
 
-private:
+protected:
     BMX160WithCorrectionData sampleImpl() override;
 
+private:
     /**
      * @brief Rotates data axes as specified.
      */

@@ -48,9 +48,10 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     LPS331APData sampleImpl() override;
 
+private:
     bool checkWhoAmI();
 
     static constexpr uint8_t WHO_AM_I_VAL = 0x58;  ///< Who am I value
