@@ -161,7 +161,7 @@ void Follower::step()
                              targetAngles.pitch - vn300.pitch};
 
     // Rotate in the shortest direction
-    diffAngles.yaw   = 0.1 * minimizeRotation(diffAngles.yaw);
+    diffAngles.yaw   = 0.2 * minimizeRotation(diffAngles.yaw);
     diffAngles.pitch = minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
@@ -178,10 +178,6 @@ void Follower::step()
     state.horizontalSpeed = horizontalSpeed;
     state.verticalSpeed   = verticalSpeed;
     setState(state);
-
-    // Log the target angles
-    Boardcore::Logger::getInstance().log(
-        static_cast<Boardcore::AntennaAngles>(targetAngles));
 
 #ifndef NDEBUG
     std::cout << "[FOLLOWER] STEPPER "
