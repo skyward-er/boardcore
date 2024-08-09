@@ -134,9 +134,8 @@ using tim9ch1 = Gpio<GPIOA_BASE, 2>;
 
 namespace adcs
 {
-using adc12in8   = Gpio<GPIOB_BASE, 0>;
-using adc12in9   = Gpio<GPIOB_BASE, 1>;
-using adc123in11 = Gpio<GPIOC_BASE, 1>;
+using adc12in8 = Gpio<GPIOB_BASE, 0>;
+using adc12in9 = Gpio<GPIOB_BASE, 1>;
 }  // namespace adcs
 
 }  // namespace interfaces
@@ -211,9 +210,8 @@ using nrst = Gpio<GPIOE_BASE, 4>;
 
 namespace adcs
 {
-using vbat        = miosix::interfaces::adcs::adc12in8;
-using camVbat     = miosix::interfaces::adcs::adc12in9;
-using cutterSense = miosix::interfaces::adcs::adc123in11;
+using vbat    = miosix::interfaces::adcs::adc12in8;
+using camVbat = miosix::interfaces::adcs::adc12in9;
 }  // namespace adcs
 
 namespace sense
@@ -222,6 +220,7 @@ using detachPayload  = Gpio<GPIOC_BASE, 3>;
 using detachMain     = Gpio<GPIOA_BASE, 4>;
 using detachRamp     = Gpio<GPIOB_BASE, 11>;
 using expulsionSense = Gpio<GPIOA_BASE, 3>;
+using cutterSense    = Gpio<GPIOC_BASE, 1>;
 }  // namespace sense
 
 namespace gpios
