@@ -331,7 +331,7 @@ void IRQbspInit()
     sense::detachPayload::mode(Mode::INPUT);
     sense::detachMain::mode(Mode::INPUT);
     sense::detachRamp::mode(Mode::INPUT);
-    sense::expulsionSense::mode(Mode::INPUT);
+    sense::expulsionSense::mode(Mode::INPUT_PULL_UP);
 
     gpios::mainDeploy::mode(Mode::OUTPUT);
     gpios::mainDeploy::low();
