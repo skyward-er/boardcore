@@ -22,14 +22,14 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <inttypes.h>
-#include <sensors/VN100/VN100.h>
+#include <sensors/VN100/VN100Serial.h>
 
 using namespace miosix;
 using namespace Boardcore;
 
 int main()
 {
-    VN100Data sample;
+    VN100SerialData sample;
     string sampleRaw;
 
     GpioPin u2tx1(GPIOA_BASE, 2);
@@ -41,7 +41,7 @@ int main()
     u2tx1.mode(Mode::ALTERNATE);
 
     USART usart(USART2, 115200);
-    VN100 sensor{usart, 115200, VN100::CRCOptions::CRC_ENABLE_16};
+    VN100Serial sensor{usart, 115200, VN100Serial::CRCOptions::CRC_ENABLE_16};
 
     // Let the sensor start up
     Thread::sleep(1000);

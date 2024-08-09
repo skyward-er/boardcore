@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "VN100.h"
+#include "VN100Serial.h"
 
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/KernelTime.h>
@@ -28,12 +28,13 @@
 namespace Boardcore
 {
 
-VN100::VN100(USART &usart, int baudRate, CRCOptions crc, uint16_t samplePeriod)
+VN100Serial::VN100Serial(USART &usart, int baudRate, CRCOptions crc,
+                         uint16_t samplePeriod)
     : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc)
 {
 }
 
-bool VN100::init()
+bool VN100Serial::init()
 {
     SensorErrors backup = lastError;
 
@@ -117,7 +118,7 @@ bool VN100::init()
     return true;
 }
 
-void VN100::run()
+void VN100Serial::run()
 {
     while (!shouldStop())
     {
@@ -132,7 +133,7 @@ void VN100::run()
     }
 }
 
-bool VN100::sampleRaw()
+bool VN100Serial::sampleRaw()
 {
     // Sensor not init
     if (!isInit)
@@ -160,7 +161,7 @@ bool VN100::sampleRaw()
     return true;
 }
 
-string VN100::getLastRawSample()
+string VN100Serial::getLastRawSample()
 {
     // If not init i return the void string
     if (!isInit)
@@ -171,7 +172,7 @@ string VN100::getLastRawSample()
     return string(recvString, recvStringLength);
 }
 
-bool VN100::closeAndReset()
+bool VN100Serial::closeAndReset()
 {
     // Sensor not init
     if (!isInit)
@@ -196,7 +197,7 @@ bool VN100::closeAndReset()
     return true;
 }
 
-bool VN100::selfTest()
+bool VN100Serial::selfTest()
 {
     if (!selfTestImpl())
     {
@@ -208,13 +209,13 @@ bool VN100::selfTest()
     return true;
 }
 
-VN100Data VN100::sampleImpl()
+VN100SerialData VN100Serial::sampleImpl()
 {
     miosix::Lock<FastMutex> l(mutex);
     return threadSample;
 }
 
-VN100Data VN100::sampleData()
+VN100SerialData VN100Serial::sampleData()
 {
     if (!isInit)
     {
@@ -282,10 +283,10 @@ VN100Data VN100::sampleData()
     TemperatureData temp = sampleTemperature();
     PressureData press   = samplePressure();
 
-    return VN100Data(quat, mag, acc, gyro, temp, press);
+    return VN100SerialData(quat, mag, acc, gyro, temp, press);
 }
 
-bool VN100::disableAsyncMessages(bool waitResponse)
+bool VN100Serial::disableAsyncMessages(bool waitResponse)
 {
     // Command string
     std::string command =
@@ -306,7 +307,7 @@ bool VN100::disableAsyncMessages(bool waitResponse)
     return true;
 }
 
-bool VN100::configDefaultSerialPort()
+bool VN100Serial::configDefaultSerialPort()
 {
     // Initial default settings
     usart.setBaudrate(115200);
@@ -319,7 +320,7 @@ bool VN100::configDefaultSerialPort()
  * Even if the user configured baudrate is the default, I want to reset the
  * buffer to clean the junk.
  */
-bool VN100::configUserSerialPort()
+bool VN100Serial::configUserSerialPort()
 {
     std::string command;
 
@@ -339,7 +340,7 @@ bool VN100::configUserSerialPort()
     return true;
 }
 
-bool VN100::setCrc(bool waitResponse)
+bool VN100Serial::setCrc(bool waitResponse)
 {
     // Command for the crc change
     std::string command;
@@ -397,7 +398,7 @@ bool VN100::setCrc(bool waitResponse)
     return true;
 }
 
-bool VN100::selfTestImpl()
+bool VN100Serial::selfTestImpl()
 {
     char modelNumber[]          = "VN-100";
     const int modelNumberOffset = 10;
@@ -450,7 +451,7 @@ bool VN100::selfTestImpl()
     return true;
 }
 
-QuaternionData VN100::sampleQuaternion()
+QuaternionData VN100Serial::sampleQuaternion()
 {
     unsigned int indexStart = 0;
     char *nextNumber;
@@ -478,7 +479,7 @@ QuaternionData VN100::sampleQuaternion()
     return data;
 }
 
-MagnetometerData VN100::sampleMagnetometer()
+MagnetometerData VN100Serial::sampleMagnetometer()
 {
     unsigned int indexStart = 0;
     char *nextNumber;
@@ -505,7 +506,7 @@ MagnetometerData VN100::sampleMagnetometer()
     return data;
 }
 
-AccelerometerData VN100::sampleAccelerometer()
+AccelerometerData VN100Serial::sampleAccelerometer()
 {
     unsigned int indexStart = 0;
     char *nextNumber;
@@ -532,7 +533,7 @@ AccelerometerData VN100::sampleAccelerometer()
     return data;
 }
 
-GyroscopeData VN100::sampleGyroscope()
+GyroscopeData VN100Serial::sampleGyroscope()
 {
     unsigned int indexStart = 0;
     char *nextNumber;
@@ -559,7 +560,7 @@ GyroscopeData VN100::sampleGyroscope()
     return data;
 }
 
-TemperatureData VN100::sampleTemperature()
+TemperatureData VN100Serial::sampleTemperature()
 {
     unsigned int indexStart = 0;
     TemperatureData data;
@@ -583,7 +584,7 @@ TemperatureData VN100::sampleTemperature()
     return data;
 }
 
-PressureData VN100::samplePressure()
+PressureData VN100Serial::samplePressure()
 {
     unsigned int indexStart = 0;
     PressureData data;
@@ -607,7 +608,7 @@ PressureData VN100::samplePressure()
     return data;
 }
 
-bool VN100::sendStringCommand(std::string command)
+bool VN100Serial::sendStringCommand(std::string command)
 {
     if (crc == CRCOptions::CRC_ENABLE_8)
     {
@@ -648,7 +649,7 @@ bool VN100::sendStringCommand(std::string command)
     return true;
 }
 
-bool VN100::recvStringCommand(char *command, int maxLength)
+bool VN100Serial::recvStringCommand(char *command, int maxLength)
 {
     int i = 0;
     // Read the buffer
@@ -672,7 +673,7 @@ bool VN100::recvStringCommand(char *command, int maxLength)
     return true;
 }
 
-bool VN100::verifyChecksum(char *command, int length)
+bool VN100Serial::verifyChecksum(char *command, int length)
 {
     int checksumOffset = 0;
 
@@ -730,7 +731,7 @@ bool VN100::verifyChecksum(char *command, int length)
     return true;
 }
 
-uint8_t VN100::calculateChecksum8(uint8_t *message, int length)
+uint8_t VN100Serial::calculateChecksum8(uint8_t *message, int length)
 {
     int i;
     uint8_t result = 0x00;
@@ -745,7 +746,7 @@ uint8_t VN100::calculateChecksum8(uint8_t *message, int length)
     return result;
 }
 
-uint16_t VN100::calculateChecksum16(uint8_t *message, int length)
+uint16_t VN100Serial::calculateChecksum16(uint8_t *message, int length)
 {
     int i;
     uint16_t result = 0x0000;

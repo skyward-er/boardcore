@@ -59,7 +59,8 @@
 #include <sensors/RotatedIMU/IMUData.h>
 #include <sensors/SensorData.h>
 #include <sensors/UBXGPS/UBXGPSData.h>
-#include <sensors/VN100/VN100Data.h>
+#include <sensors/VN100/VN100SerialData.h>
+#include <sensors/VN100/VN100SpiData.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
@@ -165,7 +166,8 @@ void registerTypes(Deserializer& ds)
     ds.registerType<TemperatureData>();
     ds.registerType<TimestampData>();
     ds.registerType<UBXGPSData>();
-    ds.registerType<VN100Data>();
+    ds.registerType<VN100SerialData>();
+    ds.registerType<VN100SpiData>();
     ds.registerType<VoltageData>();
     ds.registerType<Xbee::XbeeStatus>();
 }
