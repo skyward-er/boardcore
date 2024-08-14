@@ -176,7 +176,11 @@ SECTIONS
 
     _end = .;
     PROVIDE(end = .);
-    
+
+    /*
+     * .preserve section: global variables preserved across software reboots go
+     * to bram, but also store a copy to flash to initialize them
+     */
     .preserve(NOLOAD) : ALIGN(4)
     {
         _preserve_start = .;
@@ -185,5 +189,5 @@ SECTIONS
         *(.preserve*);
         . = ALIGN(4);
         _preserve_end = .;
-    } > bram
+    } > bram AT > flash
 }
