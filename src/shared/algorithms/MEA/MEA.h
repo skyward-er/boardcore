@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2024 Skyward Experimental Rocketry
+ * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,123 @@
 
 #pragma once
 
-#include <algorithms/Kalman/Kalman.h>
+#include <algorithms/MEA/MEAData.h>
+#include <sensors/SensorData.h>
+#include <utils/AeroUtils/AeroUtils.h>
 
-#include "MEAData.h"
+#include <Eigen/Dense>
 
 namespace Boardcore
 {
 
-/**
- * @brief MEA stands for Mass Estimation Algorithm.
- *
- * It represents a kalman filter which by performing a prediction with the
- * current feed valve state and a correction with the pressure in combustion
- * chamber, estimates the remaining mass of the rocket.
- */
 class MEA
 {
 public:
-    using KalmanFilter = Kalman<float, 3, 1, 1>;
+    struct Config
+    {
+        Eigen::Matrix<float, 3, 3> F;  //< State propagation matrix
+        Eigen::Matrix<float, 3, 3> Q;  //< Model variance matrix
+        Eigen::Vector<float, 3> G;     //< Input vector
 
-    explicit MEA(const KalmanFilter::KalmanConfig kalmanConfig);
+        Eigen::Vector<float, 3> baroH;  //< Barometer output matrix
+        float baroR;                    //< Barometer measurement variance
 
-    /**
-     * @brief Update the Kalman filter.
-     *
-     * @param feedValvePosition Position reference of the feed valve [0-1]
-     * @param pressure Measured pressure inside the combustion chamber [Pa]
-     */
-    void update(const float feedValvePosition, const float pressure);
+        Eigen::Matrix<float, 3, 3> P;  //< Error covariance matrix
 
-    /**
-     * @brief Returns the MEA data including the estimated mass.
-     */
+        float initialMass;  //< Initial mass of the rocket
+
+        float accelThresh;  //< Minimum required acceleration to trigger accel
+                            // correction.
+        float speedThresh;  //< Minumum required speed to trigger accel
+                            // correction.
+
+        float Kt;     //< TODO: What is this?
+        float alpha;  //< TODO: What is this?
+        float c;      //< TODO: What is this?
+
+        Aeroutils::AerodynamicCoeff coeffs;  //< Aerodynamic coefficients.
+        float crossSection;                  //< Cross section of the rocket.
+
+        float ae;  //< TODO: What is this?
+        float p0;  //< Pressure at nozzle exit
+    };
+
+    struct Step
+    {
+        float mainValveOpen =
+            0.0f;  //< How open is the main valve? (between 0-1)
+
+        float ccPressure =
+            0.0f;  //< What is the current combustion chamber pressure? [bar]
+        bool hasCCPressure = false;  //< Is ccPressure valid?
+
+        Eigen::Vector<float, 3> acceleration =
+            Eigen::Vector<float, 3>::Zero();  //< Acceleration [m/s^2]
+        bool hasAcceleration = false;         //< Is acceleration valid?
+
+        float verticalSpeed =
+            0.0f;  //< Vertical component of speed [up positive] [m/s]
+        float mslAltitude = 0.0f;  //< Mean sea level altitude [m]
+        bool hasSpeedAndAlt =
+            false;  //< Are verticalSpeed and mslAltitude valid?
+
+        explicit Step(float mainValveOpen);
+
+        void withCCPressure(PressureData ccPressure);
+        void withCCPressure(float ccPressure);
+
+        void withAcceleration(AccelerometerData acceleration);
+        void withAcceleration(Eigen::Vector<float, 3> acceleration);
+
+        void withSpeedAndAlt(float verticalSpeed, float mslAltitude);
+    };
+
+    explicit MEA(const Config &config);
+
+    void update(const Step &step);
+
     MEAState getState();
 
-    /**
-     * @brief Sets the Kalman filter configuration.
-     */
-    void setKalmanConfig(KalmanFilter::KalmanConfig config);
-
 private:
-    /**
-     * @brief Computes useful data from the kalman current state.
-     */
+    void predict(const Step &step);
+    void computeForce(const Step &step);
+    void correctBaro(const Step &step);
+    void correctAccel(const Step &step);
+    void computeApogee(const Step &step);
     void updateState();
 
-    KalmanFilter filter;
+    Eigen::Matrix<float, 3, 3> F;  //< State propagation matrix
+    Eigen::Matrix<float, 3, 3> Q;  //< Model variance matrix
+
+    Eigen::Vector<float, 3> G;  //< Input Vector
+
+    Eigen::Matrix<float, 1, 3> baroH;
+    float baroR;
+
+    Eigen::Matrix<float, 3, 3> P;  //< Error covariance matrix
+    Eigen::Vector<float, 3> x;     //< State vector
+
+    float mach  = 0.0f;  //< Latest computed mach
+    float cd    = 0.0f;  //< Latest computed CD
+    float rho   = 0.0f;  //< Latest computed rho
+    float q     = 0.0f;  //< Latest computed dynamic pressure
+    float force = 0.0f;  //< Latest computed force
+
+    float apogee = 0.0f;  //< Latest computed apogee
+
+    float accelThresh;
+    float speedThresh;
+
+    float Kt;
+    float alpha;
+    float c;
+
+    Aeroutils::AerodynamicCoeff coeffs;
+    float crossSection;
+
+    float ae;
+    float p0;
+
     MEAState state;
 };
 

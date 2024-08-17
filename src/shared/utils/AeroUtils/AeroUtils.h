@@ -231,6 +231,20 @@ float computePitotMach(float pressureTotal, float pressureStatic);
 float computePitotAirspeed(float pressureTotal, float pressureStatic, float d,
                            float t0);
 
+struct AerodynamicCoeff
+{
+    float n000, n100, n200, n300, n400, n500, n600;
+};
+
+/**
+ * @brief Computes the CD from aerodynamic coefficients and mach.
+ *
+ * @param coeff Aerodynamic coefficients.
+ * @param mach Mach value.
+ * @return The computed CD.
+ */
+float computeCd(const AerodynamicCoeff& coeff, float mach);
+
 }  // namespace Aeroutils
 
 }  // namespace Boardcore

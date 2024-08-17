@@ -119,6 +119,13 @@ float computePitotAirspeed(float pressureTotal, float pressureStatic, float d,
     return M * c;
 }
 
+float computeCd(const AerodynamicCoeff& coeff, float mach)
+{
+    return coeff.n000 + coeff.n100 * mach + coeff.n200 * powf(mach, 2) +
+           coeff.n300 * powf(mach, 3) + coeff.n400 * powf(mach, 4) +
+           coeff.n500 * powf(mach, 5) + coeff.n600 * powf(mach, 6);
+}
+
 }  // namespace Aeroutils
 
 }  // namespace Boardcore

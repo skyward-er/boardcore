@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2024 Skyward Experimental Rocketry
+ * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <ostream>
 
 namespace Boardcore
@@ -30,20 +31,24 @@ namespace Boardcore
 struct MEAState
 {
     uint64_t timestamp;
-    float correctedPressure;
+
+    float estimatedPressure;
+    float estimatedMass;
+    float estimatedApogee;
+
     float x0;
     float x1;
-    float x2;
 
     static std::string header()
     {
-        return "timestamp,correctedPressure,x0,x1,x2\n";
+        return "timestamp,estimatedPressure,estimatedMass,estimatedApogee,x0,"
+               "x1\n";
     }
 
-    void print(std::ostream& os) const
+    void print(std::ostream &os) const
     {
-        os << timestamp << "," << correctedPressure << "," << x0 << "," << x1
-           << "," << x2 << "\n";
+        os << timestamp << "," << estimatedPressure << "," << estimatedMass
+           << "," << estimatedApogee << "," << x0 << "," << x1 << "\n";
     }
 };
 

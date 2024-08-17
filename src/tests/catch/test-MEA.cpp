@@ -30,6 +30,7 @@
 using namespace Boardcore;
 using namespace Eigen;
 
+/*
 constexpr float sensorNoiseVariance = 0.36f;
 constexpr float modelNoiseVariance  = 0.1f;
 constexpr float initialRocketMass   = 35.01f;
@@ -40,17 +41,43 @@ MEA::KalmanFilter::KalmanConfig getMEAKalmanConfig()
 
     // clang-format off
     config.F = MEA::KalmanFilter::MatrixNN({
-        {1.435871191228868, -0.469001276508780,  0.f}, 
+        {1.435871191228868, -0.469001276508780,  0.f},
         {1.f,                0.f,                0.f},
         {-0.002045309260755, 0.001867496708935,  1.f}});
-    
+
     config.H = {1.780138883879285,-1.625379384370081,0.f};
 
     config.P    = MEA::KalmanFilter::MatrixNN::Zero();
-    config.Q    = modelNoiseVariance * MEA::KalmanFilter::CVectorN({1, 1, 1}).asDiagonal();
-    config.R[0] = sensorNoiseVariance;
-    config.G    = MEA::KalmanFilter::MatrixNM{{4}, {0}, {0}};
-    config.x    = {0, 0, initialRocketMass};
+    config.Q    = modelNoiseVariance * MEA::KalmanFilter::CVectorN({1, 1,
+1}).asDiagonal(); config.R[0] = sensorNoiseVariance; config.G    =
+MEA::KalmanFilter::MatrixNM{{4}, {0}, {0}}; config.x    = {0, 0,
+initialRocketMass};
+    // clang-format on
+
+    return config;
+}
+*/
+
+MEA::Config getMEAConfig()
+{
+    MEA::Config config;
+
+    // clang-format off
+    config.F = Matrix<float, 3, 3>({
+        {1.435871191228868, -0.469001276508780,  0.f}, 
+        {1.f,                0.f,                0.f},
+        {-0.002045309260755, 0.001867496708935,  1.f}});
+    config.Q = Matrix<float, 3, 3>({
+        {0.1f, 0.0f, 0.0f}, 
+        {0.0f, 0.1f, 0.0f},
+        {0.0f, 0.0f, 0.1f}});
+    config.G = Matrix<float, 3, 1>{{4}, {0}, {0}};
+    
+    config.baroH = {1.780138883879285,-1.625379384370081,0.f};
+    config.baroR = 0.36f;
+
+    config.P           = Matrix<float, 3, 3>::Zero();
+    config.initialMass = 35.01f;
     // clang-format on
 
     return config;
@@ -58,31 +85,36 @@ MEA::KalmanFilter::KalmanConfig getMEAKalmanConfig()
 
 TEST_CASE("MEA Update Test")
 {
-    MEA mea(getMEAKalmanConfig());
+    MEA mea(getMEAConfig());
     MEAState state;
 
-    std::cout << "pressure,estimatedPressure,estimatedMass,command"
-              << std::endl;
+    std::cout << MEAState::header();
 
     for (unsigned i = 1; i < PRESSURE.size(); i++)
     {
         // Update the kalman
-        mea.update(COMMAND[i - 1], PRESSURE[i]);
+        MEA::Step step{COMMAND[i - 1]};
+        step.withCCPressure(PRESSURE[i]);
+
+        mea.update(step);
 
         // Get the results
         state = mea.getState();
 
-        if (state.x2 != Approx(ESTIMATED_MASS[i]).epsilon(0.01))
+        state.print(std::cout);
+
+        if (state.estimatedMass != Approx(ESTIMATED_MASS[i]).epsilon(0.01))
         {
             FAIL("The estimated mass differs from the correct one ["
-                 << i << "]: " << state.x2 << " != " << ESTIMATED_MASS[i]);
+                 << i << "]: " << state.estimatedMass
+                 << " != " << ESTIMATED_MASS[i]);
         }
 
-        if (state.correctedPressure !=
+        if (state.estimatedPressure !=
             Approx(ESTIMATED_PRESSURE[i]).epsilon(0.01))
         {
             FAIL("The estimated pressure differs from the correct one ["
-                 << i << "]: " << state.correctedPressure
+                 << i << "]: " << state.estimatedPressure
                  << " != " << ESTIMATED_PRESSURE[i]);
         }
     }
