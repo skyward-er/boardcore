@@ -31,6 +31,15 @@
 #include "config/miosix_settings.h"
 #include "interfaces/gpio.h"
 
+/**
+ * Macro to place a variable in the backup SRAM. Variables are allowed to have a
+ * default value. The kernel initializes the variable to the provided value if
+ * the reset reason is not a software reset.
+ *
+ * Example usage: `PRESERVE int myVar = 0;`
+ */
+#define PRESERVE __attribute__((section(".preserve")))
+
 namespace miosix
 {
 
@@ -45,6 +54,13 @@ namespace miosix
  * Requires the CPU clock to be already configured (running from the PLL)
  */
 void configureSdram();
+
+/**
+ * \internal
+ * Called by stage_1_boot.cpp to configure the backup SRAM and .preserve region
+ * Requires the CPU clock to be already configured (running from the PLL)
+ */
+void configureBackupSram();
 
 /**
  * \internal

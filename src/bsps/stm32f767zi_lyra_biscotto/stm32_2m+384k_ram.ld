@@ -181,7 +181,7 @@ SECTIONS
      * .preserve section: global variables preserved across software reboots go
      * to bram, but also store a copy to flash to initialize them
      */
-    .preserve(NOLOAD) : ALIGN(4)
+    .preserve : ALIGN(4)
     {
         _preserve_start = .;
         . = ALIGN(4);
@@ -190,4 +190,5 @@ SECTIONS
         . = ALIGN(4);
         _preserve_end = .;
     } > bram AT > flash
+    _preserve_load = LOADADDR(.preserve);
 }

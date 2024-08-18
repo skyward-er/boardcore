@@ -68,6 +68,8 @@ void program_startup()
     memcpy(data, etext, edata - data);
     memset(bss_start, 0, bss_end - bss_start);
 
+    miosix::configureBackupSram();
+
     // Move on to stage 2
     _init();
 

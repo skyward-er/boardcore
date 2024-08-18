@@ -237,12 +237,11 @@ void configureBackupSram()
     unsigned char *preserve_end   = &_preserve_end;
     unsigned char *preserve_load  = &_preserve_load;
 
-    // Load the .preserve section from flash is not a software reset
+    // Load the .preserve section from flash if not a software reset
     if (miosix::lastResetReason() != miosix::ResetReason::SOFTWARE)
     {
-        BSRAM::enableWrite();
+        BSRAM::EnableWriteLock l;
         memcpy(preserve_start, preserve_load, preserve_end - preserve_start);
-        BSRAM::disableWrite();
     }
 }
 
