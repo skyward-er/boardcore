@@ -25,7 +25,7 @@
 
 #include <iostream>
 
-int PRESERVE preservedVariable;
+int PRESERVE preservedVariable = 42;
 
 std::string to_string(miosix::ResetReason reason)
 {
@@ -45,6 +45,8 @@ std::string to_string(miosix::ResetReason reason)
             return "POWER_ON";
         case miosix::ResetReason::PIN:
             return "PIN";
+        default:
+            return "ResetReason not valid";
     }
 }
 
@@ -74,11 +76,16 @@ int main()
                 std::cout << "Input the new value of the preserved variable"
                           << std::endl;
                 std::cin >> userInput;
+                {
+                    // Enabling BSRAM write only in this scope
+                    miosix::BSRAM::EnableWriteLock l;
+                    preservedVariable = userInput;
+                }
 
-                miosix::BSRAM::enableWrite();
-                preservedVariable = userInput;
-                miosix::BSRAM::disableWrite();
-
+                // Set variable out of the allowed scope to check it isn't
+                // written
+                // cppcheck-suppress redundantAssignment
+                preservedVariable = 1337;
                 break;
 
             case 2:

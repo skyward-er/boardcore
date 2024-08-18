@@ -290,6 +290,9 @@ sbs_target(test-i2c-f7 stm32f767zi_nucleo)
 add_executable(test-wiz5500 src/tests/drivers/test-wiz5500.cpp)
 sbs_target(test-wiz5500 stm32f767zi_gemini_gs)
 
+add_executable(test-bsram src/tests/drivers/test-bsram.cpp)
+sbs_target(test-bsram stm32f767zi_lyra_biscotto)
+
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #
 #-----------------------------------------------------------------------------#
