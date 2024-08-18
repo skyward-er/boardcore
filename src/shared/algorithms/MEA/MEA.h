@@ -59,7 +59,7 @@ public:
         Aeroutils::AerodynamicCoeff coeffs;  //< Aerodynamic coefficients.
         float crossSection;                  //< Cross section of the rocket.
 
-        float ae;  //< TODO: What is this?
+        float ae;  //< Efflux area
         float p0;  //< Pressure at nozzle exit
     };
 

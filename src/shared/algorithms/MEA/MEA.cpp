@@ -190,4 +190,5 @@ void MEA::updateState()
     state.estimatedMass     = x(2);
     state.estimatedPressure = baroH * x;
     state.estimatedApogee   = apogee;
+    state.estimatedForce    = force;
 }

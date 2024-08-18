@@ -35,20 +35,23 @@ struct MEAState
     float estimatedPressure;
     float estimatedMass;
     float estimatedApogee;
+    float estimatedForce;
 
     float x0;
     float x1;
 
     static std::string header()
     {
-        return "timestamp,estimatedPressure,estimatedMass,estimatedApogee,x0,"
+        return "timestamp,estimatedPressure,estimatedMass,estimatedApogee,"
+               "estimatedForce,x0,"
                "x1\n";
     }
 
     void print(std::ostream &os) const
     {
         os << timestamp << "," << estimatedPressure << "," << estimatedMass
-           << "," << estimatedApogee << "," << x0 << "," << x1 << "\n";
+           << "," << estimatedApogee << "," << estimatedForce << "," << x0
+           << "," << x1 << "\n";
     }
 };
 
