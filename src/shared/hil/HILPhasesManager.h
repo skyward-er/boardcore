@@ -126,12 +126,54 @@ public:
         flagsFlightPhases[flag] = isEnable;
     }
 
-    virtual void processFlags(const SimulatorData& hil_flags) = 0;
+    void processFlags(const SimulatorData& hil_flags)
+    {
+        std::vector<FlightPhases> changed_flags;
+
+        processFlagsImpl(hil_flags, changed_flags);
+
+        /* calling the callbacks subscribed to the changed flags */
+        for (unsigned int i = 0; i < changed_flags.size(); i++)
+        {
+            std::vector<PhasesCallback> callbacksToCall =
+                callbacks[changed_flags[i]];
+            for (unsigned int j = 0; j < callbacksToCall.size(); j++)
+            {
+                callbacksToCall[j]();
+            }
+        }
+
+        prev_flagsFlightPhases = flagsFlightPhases;
+    }
 
     virtual void printOutcomes() = 0;
 
 protected:
-    virtual void handleEvent(const Event& e) = 0;
+    virtual void processFlagsImpl(const SimulatorData& hil_flags,
+                                  std::vector<FlightPhases>& changed_flags) = 0;
+
+    virtual void handleEventImpl(const Event& e,
+                                 std::vector<FlightPhases>& changed_flags) = 0;
+
+    void handleEvent(const Boardcore::Event& e) override
+    {
+        std::vector<FlightPhases> changed_flags;
+
+        handleEventImpl(e, changed_flags);
+
+        /* calling the callbacks subscribed to the changed flags */
+        for (unsigned int i = 0; i < changed_flags.size(); i++)
+        {
+            std::vector<PhasesCallback> callbacksToCall =
+                callbacks[changed_flags[i]];
+            for (unsigned int j = 0; j < callbacksToCall.size(); j++)
+            {
+                callbacksToCall[j]();
+            }
+        }
+
+        prev_flagsFlightPhases = flagsFlightPhases;
+    }
 
     void registerOutcomes(const FlightPhases& phase)
     {

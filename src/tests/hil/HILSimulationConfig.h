@@ -381,10 +381,9 @@ public:
         eventBroker.subscribe(this, Common::TOPIC_ALT);
     }
 
-    void processFlags(const SimulatorData& simulatorData) override
+    void processFlagsImpl(const SimulatorData& simulatorData,
+                          std::vector<MainFlightPhases>& changed_flags) override
     {
-        std::vector<MainFlightPhases> changed_flags;
-
         // set true when the first packet from the simulator arrives
         if (isSetTrue(MainFlightPhases::SIMULATION_STARTED))
         {
@@ -403,19 +402,6 @@ public:
                 changed_flags.push_back(MainFlightPhases::SIM_FLYING);
             }
         }
-
-        /* calling the callbacks subscribed to the changed flags */
-        for (unsigned int i = 0; i < changed_flags.size(); i++)
-        {
-            std::vector<PhasesCallback> callbacksToCall =
-                callbacks[changed_flags[i]];
-            for (unsigned int j = 0; j < callbacksToCall.size(); j++)
-            {
-                callbacksToCall[j]();
-            }
-        }
-
-        prev_flagsFlightPhases = flagsFlightPhases;
     }
 
     void printOutcomes()
@@ -450,9 +436,9 @@ public:
     }
 
 private:
-    void handleEvent(const Boardcore::Event& e) override
+    void handleEventImpl(const Boardcore::Event& e,
+                         std::vector<MainFlightPhases>& changed_flags) override
     {
-        std::vector<MainFlightPhases> changed_flags;
         switch (e)
         {
             case Common::Events::FMM_INIT_ERROR:
@@ -538,19 +524,6 @@ private:
             default:
                 TRACE("%s event\n", Common::getEventString(e).c_str());
         }
-
-        /* calling the callbacks subscribed to the changed flags */
-        for (unsigned int i = 0; i < changed_flags.size(); i++)
-        {
-            std::vector<PhasesCallback> callbacksToCall =
-                callbacks[changed_flags[i]];
-            for (unsigned int j = 0; j < callbacksToCall.size(); j++)
-            {
-                callbacksToCall[j]();
-            }
-        }
-
-        prev_flagsFlightPhases = flagsFlightPhases;
     }
 };
 
