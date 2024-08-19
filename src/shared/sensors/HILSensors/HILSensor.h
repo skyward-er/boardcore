@@ -111,7 +111,7 @@ protected:
             if (sampleCounter >= N_DATA)
             {
                 this->lastError = Boardcore::SensorErrors::NO_NEW_DATA;
-                LOG_WARN(logger, "%s: No new data", typeid(this).name());
+                LOG_WARN(logger, "{}: No new data", typeid(this).name());
             }
             else if (this->lastError != Boardcore::SensorErrors::NO_NEW_DATA)
             {
@@ -121,7 +121,7 @@ protected:
         else
         {
             this->lastError = Boardcore::SensorErrors::NOT_INIT;
-            LOG_WARN(logger, "%s is not initialized", typeid(this).name());
+            LOG_WARN(logger, "{} is not initialized", typeid(this).name());
         }
 
         return this->lastSample;

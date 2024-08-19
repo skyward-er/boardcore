@@ -101,7 +101,7 @@ public:
         LOG_INFO(logger, "Waiting for simulation to start...");
         while (!hilPhasesManager->isSimulationRunning())
         {
-            Thread::sleep(updatePeriod);
+            miosix::Thread::sleep(updatePeriod);
         }
     }
 
@@ -118,7 +118,7 @@ private:
             {
                 hilTransceiver->setActuatorData(updateActuatorData());
             }
-            Thread::sleep(updatePeriod);
+            miosix::Thread::sleep(updatePeriod);
         }
     }
 
