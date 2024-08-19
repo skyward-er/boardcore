@@ -125,14 +125,6 @@ void registerTypes(Deserializer& ds)
     ds.registerType<GPSData>();
     ds.registerType<GyroscopeData>();
     ds.registerType<H3LIS331DLData>();
-    ds.registerType<HILAccelerometerData>();
-    ds.registerType<HILGyroscopeData>();
-    ds.registerType<HILMagnetometerData>();
-    ds.registerType<HILImuData>();
-    ds.registerType<HILGpsData>();
-    ds.registerType<HILBarometerData>();
-    ds.registerType<HILPitotData>();
-    ds.registerType<HILTempData>();
     ds.registerType<HSCMAND015PAData>();
     ds.registerType<HSCMRNN015PAData>();
     ds.registerType<HSCMRNN030PAData>();
