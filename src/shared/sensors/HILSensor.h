@@ -71,7 +71,8 @@ public:
      * the sensor current sample.
      */
     HILSensor(T&& sensor, bool enableHw, UpdateFn updateData)
-        : T{std::move(sensor)}, enableHw{enableHw}, updateData{updateData}
+        : T{std::move(sensor)}, enableHw{enableHw}, updateData{
+                                                        std::move(updateData)}
     {
     }
 
