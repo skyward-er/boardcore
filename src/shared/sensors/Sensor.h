@@ -1,5 +1,5 @@
 /* Copyright (c) 2016-2020 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Luca Conterio
+ * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include <miosix.h>
 
 #include <array>
+#include <memory>
 #include <type_traits>
 
 #include "SensorData.h"
@@ -88,8 +89,11 @@ public:
 template <typename Data>
 class Sensor : public virtual AbstractSensor
 {
+public:
+    using DataType = Data;
+
 protected:
-    Data lastSample;
+    DataType lastSample;
 
     /**
      * @brief Read a data sample from the sensor.
@@ -97,19 +101,23 @@ protected:
      *        available correct sample.
      * @return sensor data sample
      */
-    virtual Data sampleImpl() = 0;
+    virtual DataType sampleImpl() = 0;
 
     // Thread safe mutex to synchronize writes and reads
     miosix::FastMutex mutex;
 
 public:
+    Sensor() {}
+
+    Sensor(Sensor&& other) : lastSample{std::move(other.lastSample)}, mutex{} {}
+
     virtual ~Sensor() {}
 
     void sample() override
     {
         // Sampling outside of the protected zone ensures that the sampling
         // action cannot cause locks or delays
-        Data d = sampleImpl();
+        DataType d = sampleImpl();
 
         {
             miosix::Lock<miosix::FastMutex> l(mutex);

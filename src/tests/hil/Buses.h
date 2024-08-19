@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Matteo Pignataro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,35 @@
 
 #pragma once
 
-#include "HSCMAND015PAData.h"
-#include "HoneywellPressureSensor.h"
+#include <drivers/i2c/I2C.h>
+#include <drivers/spi/SPIBus.h>
+#include <drivers/usart/USART.h>
+#include <interfaces-impl/hwmapping.h>
 
-namespace Boardcore
+#include <utils/ModuleManager/ModuleManager.hpp>
+namespace HILTest
 {
-
-/**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
- */
-class HSCMAND015PA : public HoneywellPressureSensor<HSCMAND015PAData>
+class Buses : public Boardcore::Module
 {
 public:
-    HSCMAND015PA(std::function<ADCData()> getSensorVoltage,
-                 const float supplyVoltage = 5.0)
-        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594)
+    Boardcore::SPIBus spi1;
+    Boardcore::SPIBus spi3;
+    Boardcore::SPIBus spi4;
+    Boardcore::SPIBus spi6;
+
+    Boardcore::I2C i2c1;
+
+    Boardcore::USART usart1;
+    Boardcore::USART usart2;
+    Boardcore::USART uart4;
+
+    Buses()
+        : spi1(SPI1), spi3(SPI3), spi4(SPI4), spi6(SPI6),
+          i2c1(I2C1, miosix::interfaces::i2c1::scl::getPin(),
+               miosix::interfaces::i2c1::sda::getPin()),
+          usart1(USART1, 115200), usart2(USART2, 256000, 1024),
+          uart4(UART4, 115200)
     {
     }
 };
-
-}  // namespace Boardcore
+}  // namespace HILTest

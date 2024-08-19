@@ -138,9 +138,10 @@ public:
      */
     void setOutputDataRate(ODR odr);
 
-private:
+protected:
     LPS22DFData sampleImpl() override;
 
+private:
     SPISlave slave;
     Config config;
 

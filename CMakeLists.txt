@@ -117,6 +117,12 @@ sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
 
+add_executable(test-hil 
+    src/tests/hil/test-hil.cpp 
+    src/tests/hil/Sensors/Sensors.cpp 
+)
+sbs_target(test-hil stm32f767zi_death_stack_v4)
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Catch                                #
 #-----------------------------------------------------------------------------#

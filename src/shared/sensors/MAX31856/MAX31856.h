@@ -82,9 +82,10 @@ public:
 
     void setColdJunctionOffset(float offset);
 
-private:
+protected:
     MAX31856Data sampleImpl() override;
 
+private:
     SPISlave slave;
     ThermocoupleType type;
 

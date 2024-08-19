@@ -31,7 +31,7 @@ namespace Boardcore
 /**
  * @brief Absolute pressure sensor with a 0-160kPa range
  */
-class HSCMRNN160KA final : public HoneywellPressureSensor<HSCMRNN160KAData>
+class HSCMRNN160KA : public HoneywellPressureSensor<HSCMRNN160KAData>
 {
 public:
     HSCMRNN160KA(std::function<ADCData()> getSensorVoltage,

@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Matteo Pignataro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,26 +19,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #pragma once
 
-#include "HSCMAND015PAData.h"
-#include "HoneywellPressureSensor.h"
+#include <scheduler/TaskScheduler.h>
 
-namespace Boardcore
+#include <utils/ModuleManager/ModuleManager.hpp>
+
+namespace HILTest
 {
-
 /**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
+ * @brief Class that wraps the 4 main task schedulers of the entire OBSW.
+ * There is a task scheduler for every miosix priority
  */
-class HSCMAND015PA : public HoneywellPressureSensor<HSCMAND015PAData>
+class BoardScheduler : public Boardcore::Module
 {
 public:
-    HSCMAND015PA(std::function<ADCData()> getSensorVoltage,
-                 const float supplyVoltage = 5.0)
-        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594)
-    {
-    }
-};
+    BoardScheduler();
 
-}  // namespace Boardcore
+    /**
+     * @brief Get the Scheduler object relative to the requested priority
+     *
+     * @param priority The task scheduler priority
+     * @return Boardcore::TaskScheduler& Reference to the requested task
+     * scheduler.
+     * @note Min priority scheduler is returned in case of non valid priority.
+     */
+    Boardcore::TaskScheduler* getScheduler(miosix::Priority priority);
+
+    [[nodiscard]] bool start();
+
+    /**
+     * @brief Returns if all the schedulers are up and running
+     */
+    bool isStarted();
+
+private:
+    Boardcore::TaskScheduler* scheduler1;
+    Boardcore::TaskScheduler* scheduler2;
+    Boardcore::TaskScheduler* scheduler3;
+    Boardcore::TaskScheduler* scheduler4;
+};
+}  // namespace HILTest

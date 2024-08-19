@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2024 Skyward Experimental Rocketry
+ * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,63 @@
 
 #pragma once
 
-#include "HSCMAND015PAData.h"
-#include "HoneywellPressureSensor.h"
+#include <Eigen/Core>
+#include <ostream>
 
 namespace Boardcore
 {
 
-/**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
- */
-class HSCMAND015PA : public HoneywellPressureSensor<HSCMAND015PAData>
+template <int N_DATA>
+struct AccelerometerSimulatorData
 {
-public:
-    HSCMAND015PA(std::function<ADCData()> getSensorVoltage,
-                 const float supplyVoltage = 5.0)
-        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594)
-    {
-    }
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA][3];
+};
+
+template <int N_DATA>
+struct GyroscopeSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA][3];
+};
+
+template <int N_DATA>
+struct MagnetometerSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA][3];
+};
+
+template <int N_DATA>
+struct BarometerSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA];
+};
+
+template <int N_DATA>
+struct GPSSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float positionMeasures[N_DATA][3];
+    float velocityMeasures[N_DATA][3];
+    float fix;
+    float num_satellites;
+};
+
+template <int N_DATA>
+struct PitotSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float deltaP[N_DATA];
+    float staticPressure[N_DATA];
+};
+
+template <int N_DATA>
+struct TemperatureSimulatorData
+{
+    static constexpr int NDATA = N_DATA;
+    float measures[N_DATA];
 };
 
 }  // namespace Boardcore

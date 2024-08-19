@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2018-2022 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,23 +22,34 @@
 
 #pragma once
 
-#include "HSCMAND015PAData.h"
-#include "HoneywellPressureSensor.h"
+#include <cstdint>
+#include <string>
+#include <vector>
 
-namespace Boardcore
+namespace Common
 {
 
-/**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
- */
-class HSCMAND015PA : public HoneywellPressureSensor<HSCMAND015PAData>
+enum Topics : uint8_t
 {
-public:
-    HSCMAND015PA(std::function<ADCData()> getSensorVoltage,
-                 const float supplyVoltage = 5.0)
-        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594)
-    {
-    }
+    TOPIC_ABK,
+    TOPIC_ADA,
+    TOPIC_MEA,
+    TOPIC_DPL,
+    TOPIC_CAN,
+    TOPIC_FLIGHT,
+    TOPIC_FMM,
+    TOPIC_FSR,
+    TOPIC_NAS,
+    TOPIC_TMTC,
+    TOPIC_MOTOR,
+    TOPIC_TARS,
+    TOPIC_ALT,
 };
 
-}  // namespace Boardcore
+const std::vector<uint8_t> TOPICS_LIST{
+    TOPIC_ABK,    TOPIC_ADA,  TOPIC_MEA, TOPIC_DPL, TOPIC_CAN,
+    TOPIC_FLIGHT, TOPIC_FMM,  TOPIC_FSR, TOPIC_NAS, TOPIC_TMTC,
+    TOPIC_MOTOR,  TOPIC_TARS, TOPIC_ALT,
+};
+
+}  // namespace Common

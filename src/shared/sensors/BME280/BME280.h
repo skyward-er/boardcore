@@ -238,9 +238,10 @@ public:
      */
     bool selfTest() override;
 
-private:
+protected:
     BME280Data sampleImpl() override;
 
+private:
     void reset();
 
     void setConfiguration();

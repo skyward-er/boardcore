@@ -216,9 +216,10 @@ public:
      */
     bool selfTest() override;
 
-private:
+protected:
     BMP280Data sampleImpl() override;
 
+private:
     bool reset();
 
     void setConfiguration();

@@ -53,6 +53,7 @@
 #include <sensors/LPS22DF/LPS22DFData.h>
 #include <sensors/LPS28DFW/LPS28DFWData.h>
 #include <sensors/LSM6DSRX/LSM6DSRXData.h>
+#include <sensors/MAX31856/MAX31856Data.h>
 #include <sensors/MBLoadCell/MBLoadCellData.h>
 #include <sensors/MPU9250/MPU9250Data.h>
 #include <sensors/MS5803/MS5803Data.h>
@@ -144,6 +145,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<LSM6DSRXData>();
     ds.registerType<MagnetometerData>();
     ds.registerType<MavlinkStatus>();
+    ds.registerType<MAX31856Data>();
     ds.registerType<MBLoadCellData>();
     ds.registerType<MPU9250Data>();
     ds.registerType<MPXH6115AData>();

@@ -116,12 +116,13 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     /**
      * @brief Sample action implementation.
      */
     VN100SerialData sampleImpl() override;
 
+private:
     /**
      * @brief Active object method, about the thread execution
      */

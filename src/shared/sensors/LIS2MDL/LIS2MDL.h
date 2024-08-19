@@ -99,9 +99,10 @@ public:
      */
     bool applyConfig(Config config);
 
-private:
+protected:
     LIS2MDLData sampleImpl() override;
 
+private:
     SPISlave slave;
     Config configuration;
 
