@@ -61,6 +61,9 @@ public:
 
         float ae;  //< Efflux area
         float p0;  //< Pressure at nozzle exit
+
+        float minMass;  //< Minimum mass used for predicted apogee
+        float maxMass;  //< Maximum mass used for predicted apogee
     };
 
     struct Step
@@ -104,6 +107,7 @@ private:
     void computeForce(const Step &step);
     void correctBaro(const Step &step);
     void correctAccel(const Step &step);
+    void computeMass();
     void computeApogee(const Step &step);
     void updateState();
 
@@ -124,6 +128,7 @@ private:
     float q     = 0.0f;  //< Latest computed dynamic pressure
     float force = 0.0f;  //< Latest computed force
 
+    float mass   = 0.0f;  //< Latest computed mass
     float apogee = 0.0f;  //< Latest computed apogee
 
     float accelThresh;
@@ -138,6 +143,9 @@ private:
 
     float ae;
     float p0;
+
+    float minMass;
+    float maxMass;
 
     MEAState state;
 };

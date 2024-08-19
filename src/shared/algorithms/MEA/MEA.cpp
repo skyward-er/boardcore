@@ -63,7 +63,8 @@ MEA::MEA(const Config &config)
       baroR{config.baroR}, P{config.P}, x{0, 0, config.initialMass},
       accelThresh{config.accelThresh}, speedThresh{config.speedThresh},
       Kt{config.Kt}, alpha{config.alpha}, c{config.c}, coeffs{config.coeffs},
-      crossSection{config.crossSection}, ae{config.ae}, p0{config.p0}
+      crossSection{config.crossSection}, ae{config.ae}, p0{config.p0},
+      minMass{config.minMass}, maxMass{config.maxMass}
 {
 }
 
@@ -80,6 +81,9 @@ void MEA::update(const Step &step)
 
     // Run accelerometer correction
     correctAccel(step);
+
+    // Compute current mass
+    computeMass();
 
     // Run apogee prediction
     computeApogee(step);
@@ -164,12 +168,17 @@ void MEA::correctAccel(const Step &step)
     x = x + K * (step.acceleration.x() - y);
 }
 
+void MEA::computeMass()
+{
+    // Clamp the used mass, so that we don't use bogus values in case the filter
+    // fails BAD
+    mass = std::max(std::min(x(2), maxMass), minMass);
+}
+
 void MEA::computeApogee(const Step &step)
 {
     if (!step.hasSpeedAndAlt)
         return;
-
-    float mass = x(2);
 
     // TODO: Matlab uses CD_correction_shutDown, should we?
     // Holy fuck, massive formula, split this for the love of god
@@ -186,8 +195,9 @@ void MEA::updateState()
 
     state.x0 = x(0);
     state.x1 = x(1);
+    state.x2 = x(2);
 
-    state.estimatedMass     = x(2);
+    state.estimatedMass     = mass;
     state.estimatedPressure = baroH * x;
     state.estimatedApogee   = apogee;
     state.estimatedForce    = force;

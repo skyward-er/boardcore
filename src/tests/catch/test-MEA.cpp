@@ -78,6 +78,9 @@ MEA::Config getMEAConfig()
 
     config.P           = Matrix<float, 3, 3>::Zero();
     config.initialMass = 35.01f;
+
+    config.minMass = 20.0f;
+    config.maxMass = 40.0f;
     // clang-format on
 
     return config;
