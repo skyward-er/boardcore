@@ -90,7 +90,7 @@ public:
      */
     [[nodiscard]] virtual bool readBlocking(
         void *buffer, size_t nBytes,
-        std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
+        std::chrono::nanoseconds timeout = std::chrono::nanoseconds::zero())
     {
         size_t temp;
         return readImpl(buffer, nBytes, temp, true, timeout);
@@ -108,7 +108,7 @@ public:
      */
     [[nodiscard]] virtual bool readBlocking(
         void *buffer, size_t nBytes, size_t &nBytesRead,
-        std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
+        std::chrono::nanoseconds timeout = std::chrono::nanoseconds::zero())
     {
         return readImpl(buffer, nBytes, nBytesRead, true, timeout);
     };
@@ -141,7 +141,7 @@ protected:
      * @param blocking Whether the read should block or not; in case it isn't
      * blocking the read could return also 0 bytes.
      * @param timeout The maximum time that will be waited when in blocking
-     * mode.
+     * mode, 0 to disable the timeout and wait forever.
      * @return Whether bytes were read and no timeout occurred.
      */
     virtual bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
@@ -229,7 +229,7 @@ public:
     [[nodiscard]] bool read(void *buffer, size_t nBytes)
     {
         size_t temp;
-        auto timeout = std::chrono::nanoseconds::max();
+        auto timeout = std::chrono::nanoseconds::zero();
         return readImpl(buffer, nBytes, temp, false, timeout);
     }
 
@@ -245,7 +245,7 @@ public:
      */
     [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead)
     {
-        auto timeout = std::chrono::nanoseconds::max();
+        auto timeout = std::chrono::nanoseconds::zero();
         return readImpl(buffer, nBytes, nBytesRead, false, timeout);
     };
 
@@ -315,7 +315,7 @@ private:
      * @param blocking Whether the read should block or not; in case it isn't
      * blocking the read could return also 0 bytes.
      * @param timeout The maximum time that will be waited when in blocking
-     * mode.
+     * mode, 0 to disable the timeout and wait forever.
      * @return Whether bytes were read and no timeout occurred.
      */
     [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,

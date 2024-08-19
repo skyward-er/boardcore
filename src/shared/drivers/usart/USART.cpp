@@ -536,17 +536,24 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
         {
             rxWaiter = miosix::Thread::IRQgetCurrentThread();
 
-            int64_t wakeup = add_sat(miosix::IRQgetTime(), timeout.count());
-            auto waitResult =
-                miosix::Thread::IRQenableIrqAndTimedWait(dLock, wakeup);
-
-            if (waitResult == miosix::TimedWaitResult::Timeout)
+            if (timeout == std::chrono::nanoseconds::zero())
             {
-                // De-register from wakeup by the IRQ
-                rxWaiter = nullptr;
-                // Make the outer for-loop quit after reading data from the
-                // rxQueue, or we'd end up waiting again
-                timedOut = true;
+                miosix::Thread::IRQenableIrqAndWait(dLock);
+            }
+            else
+            {
+                int64_t wakeup = add_sat(miosix::IRQgetTime(), timeout.count());
+                auto waitResult =
+                    miosix::Thread::IRQenableIrqAndTimedWait(dLock, wakeup);
+
+                if (waitResult == miosix::TimedWaitResult::Timeout)
+                {
+                    // De-register from wakeup by the IRQ
+                    rxWaiter = nullptr;
+                    // Make the outer for-loop quit after reading data from the
+                    // rxQueue, or we'd end up waiting again
+                    timedOut = true;
+                }
             }
         } while (rxWaiter);
     }
@@ -712,8 +719,8 @@ bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
     }
 
     // Timeout is not supported on STM32SerialWrapper, timeout is always set to
-    // std::chrono::nanoseconds::max() unless specified by the user
-    if (timeout != std::chrono::nanoseconds::max())
+    // std::chrono::nanoseconds::zero() unless specified by the user
+    if (timeout != std::chrono::nanoseconds::zero())
     {
         LOG_ERR(logger,
                 "STM32SerialWrapper::read doesn't support timeout on read");
