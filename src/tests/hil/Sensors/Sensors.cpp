@@ -176,10 +176,10 @@ HSCMRNN015PAData Sensors::getStaticPressure2LastSample()
                                      : HSCMRNN015PAData{};
 }
 
-RotatedIMUData Sensors::getIMULastSample()
+IMUData Sensors::getIMULastSample()
 {
     miosix::PauseKernelLock lock;
-    return imu != nullptr ? imu->getLastSample() : RotatedIMUData{};
+    return imu != nullptr ? imu->getLastSample() : IMUData{};
 }
 
 MagnetometerData Sensors::getCalibratedMagnetometerLastSample()
@@ -635,9 +635,13 @@ void Sensors::imuCreation()
     // retrieve real data. The sensor is not synchronized, but the sampling
     // thread is always the same.
     imu = std::make_unique<RotatedIMU>(
-        bind(&LSM6DSRX::getLastSample, lsm6dsrx.get()),
-        bind(&Sensors::getCalibratedMagnetometerLastSample, this),
-        bind(&LSM6DSRX::getLastSample, lsm6dsrx.get()));
+        [this]()
+        {
+            auto imu6 = getLSM6DSRXLastSample();
+            auto mag  = getLIS2MDLLastSample();
+
+            return IMUData{imu6, imu6, mag};
+        });
 
     // Invert the Y axis on the magnetometer
     Eigen::Matrix3f m{{1, 0, 0}, {0, -1, 0}, {0, 0, 1}};
@@ -714,7 +718,7 @@ void Sensors::staticPressure2Callback()
 }
 void Sensors::imuCallback()
 {
-    RotatedIMUData lastSample = imu->getLastSample();
+    IMUData lastSample = imu->getLastSample();
     Logger::getInstance().log(lastSample);
 }
 

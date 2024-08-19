@@ -304,12 +304,12 @@ private:
         return data;
     };
 
-    static RotatedIMUData updateIMUData(HILConfig::MainHIL* hil,
-                                        Sensors& sensors)
+    static Boardcore::IMUData updateIMUData(HILConfig::MainHIL* hil,
+                                            Sensors& sensors)
     {
-        return RotatedIMUData{sensors.getLSM6DSRXLastSample(),
-                              sensors.getLSM6DSRXLastSample(),
-                              sensors.getCalibratedMagnetometerLastSample()};
+        return Boardcore::IMUData{
+            sensors.getLSM6DSRXLastSample(), sensors.getLSM6DSRXLastSample(),
+            sensors.getCalibratedMagnetometerLastSample()};
     };
 
     static Boardcore::PressureData updateCCData(HILConfig::MainHIL* hil)

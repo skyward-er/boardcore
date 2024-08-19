@@ -27,6 +27,7 @@
 #include <sensors/LPS22DF/LPS22DF.h>
 #include <sensors/LPS28DFW/LPS28DFW.h>
 #include <sensors/LSM6DSRX/LSM6DSRX.h>
+#include <sensors/RotatedIMU/RotatedIMU.h>
 #include <sensors/SensorData.h>
 #include <sensors/SensorManager.h>
 #include <sensors/UBXGPS/UBXGPSSpi.h>
@@ -40,7 +41,6 @@
 #include <utils/ModuleManager/ModuleManager.hpp>
 
 #include "../Buses.h"
-#include "RotatedIMU/RotatedIMU.h"
 #include "SensorsConfig.h"
 #include "SensorsData.h"
 
@@ -93,7 +93,7 @@ public:
     virtual Boardcore::MPXH6400AData getDeploymentPressureLastSample();
     virtual Boardcore::HSCMRNN015PAData getStaticPressure1LastSample();
     virtual Boardcore::HSCMRNN015PAData getStaticPressure2LastSample();
-    virtual RotatedIMUData getIMULastSample();
+    virtual Boardcore::IMUData getIMULastSample();
     virtual Boardcore::MagnetometerData getCalibratedMagnetometerLastSample();
 
     // CAN fake sensors setters
@@ -195,7 +195,7 @@ protected:
     miosix::FastMutex calibrationMutex;
 
     // Fake processed sensors
-    std::unique_ptr<RotatedIMU> imu;
+    std::unique_ptr<Boardcore::RotatedIMU> imu;
 
     // Sensor manager
     std::unique_ptr<Boardcore::SensorManager> manager;

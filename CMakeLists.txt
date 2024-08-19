@@ -120,7 +120,6 @@ sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
 add_executable(test-hil 
     src/tests/hil/test-hil.cpp 
     src/tests/hil/Sensors/Sensors.cpp 
-    src/tests/hil/Sensors/RotatedIMU/RotatedIMU.cpp
 )
 sbs_target(test-hil stm32f767zi_death_stack_v4)
 
