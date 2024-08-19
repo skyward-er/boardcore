@@ -50,9 +50,10 @@ struct Outcomes
 
     void print(uint64_t t_start) const
     {
-        TRACE("@time     : %f [sec]\n", (double)(t - t_start) / 1000000);
-        TRACE("@altitude : %f [m]\n", z);
-        TRACE("@velocity : %f [m/s]\n\n", vz);
+        std::cout << "@time     : " << (double)(t - t_start) / 1000000
+                  << " [sec]\n";
+        std::cout << "@z : " << z << " [m]\n";
+        std::cout << "@vz : " << vz << " [m/s]\n\n";
     }
 };
 
