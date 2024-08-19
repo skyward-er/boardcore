@@ -108,43 +108,6 @@ using MainPitotSimulatorData = Boardcore::PitotSimulatorData<N_DATA_PITOT>;
 using MainTemperatureSimulatorData =
     Boardcore::TemperatureSimulatorData<N_DATA_TEMP>;
 
-struct FlagsHIL
-{
-    float flag_flight;
-    float flag_ascent;
-    float flag_burning;
-    float flag_airbrakes;
-    float flag_para1;
-    float flag_para2;
-
-    FlagsHIL(float flag_flight, float flag_ascent, float flag_burning,
-             float flag_airbrakes, float flag_para1, float flag_para2)
-        : flag_flight(flag_flight), flag_ascent(flag_ascent),
-          flag_burning(flag_burning), flag_airbrakes(flag_airbrakes),
-          flag_para1(flag_para1), flag_para2(flag_para2)
-    {
-    }
-
-    FlagsHIL()
-        : flag_flight(0.0f), flag_ascent(0.0f), flag_burning(0.0f),
-          flag_airbrakes(0.0f), flag_para1(0.0f), flag_para2(0.0f)
-    {
-    }
-
-    void print()
-    {
-        printf(
-            "flag_flight: %f\n"
-            "flag_ascent: %f\n"
-            "flag_burning: %f\n"
-            "flag_airbrakes: %f\n"
-            "flag_para1: %f\n"
-            "flag_para2: %f\n",
-            flag_flight, flag_ascent, flag_burning, flag_airbrakes, flag_para1,
-            flag_para2);
-    }
-};
-
 /**
  * @brief ADA data sent to the simulator
  */
@@ -318,11 +281,9 @@ struct ActuatorData
     AirBrakesStateHIL airBrakesState;
     MEAStateHIL meaState;
     ActuatorsStateHIL actuatorsState;
-    FlagsHIL flags;
 
     ActuatorData()
-        : adaState(), nasState(), airBrakesState(), meaState(),
-          actuatorsState(), flags()
+        : adaState(), nasState(), airBrakesState(), meaState(), actuatorsState()
     {
     }
 
@@ -333,7 +294,6 @@ struct ActuatorData
         airBrakesState.print();
         meaState.print();
         actuatorsState.print();
-        flags.print();
     }
 };
 
@@ -358,13 +318,44 @@ enum MainFlightPhases
     SIMULATION_STOPPED
 };
 
-using MainHILTransceiver =
-    Boardcore::HILTransceiver<MainFlightPhases, SimulatorData, ActuatorData>;
-using MainHIL = Boardcore::HIL<MainFlightPhases, SimulatorData, ActuatorData>;
+class MainHILTransceiver
+    : public Boardcore::HILTransceiver<MainFlightPhases, SimulatorData,
+                                       ActuatorData>,
+      public Boardcore::Module
+{
+public:
+    MainHILTransceiver(
+        Boardcore::USART& hilSerial,
+        Boardcore::HILPhasesManager<MainFlightPhases, SimulatorData,
+                                    ActuatorData>* hilPhasesManager)
+        : Boardcore::HILTransceiver<MainFlightPhases, SimulatorData,
+                                    ActuatorData>(hilSerial, hilPhasesManager)
+    {
+    }
+};
+
+class MainHIL
+    : public Boardcore::HIL<MainFlightPhases, SimulatorData, ActuatorData>,
+      public Boardcore::Module
+{
+public:
+    MainHIL(Boardcore::HILTransceiver<MainFlightPhases, SimulatorData,
+                                      ActuatorData>* hilTransceiver,
+            Boardcore::HILPhasesManager<MainFlightPhases, SimulatorData,
+                                        ActuatorData>* hilPhasesManager,
+            std::function<ActuatorData()> updateActuatorData,
+            int simulationPeriod)
+        : HIL<MainFlightPhases, SimulatorData, ActuatorData>(
+              hilTransceiver, hilPhasesManager, updateActuatorData,
+              simulationPeriod)
+    {
+    }
+};
 
 class MainHILPhasesManager
     : public Boardcore::HILPhasesManager<MainFlightPhases, SimulatorData,
-                                         ActuatorData>
+                                         ActuatorData>,
+      public Boardcore::Module
 {
 public:
     explicit MainHILPhasesManager(

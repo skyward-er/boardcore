@@ -32,7 +32,6 @@
 
 #include <iostream>
 #include <map>
-#include <utils/ModuleManager/ModuleManager.hpp>
 
 namespace Boardcore
 {
@@ -45,7 +44,7 @@ struct Outcomes
 
     Outcomes() : t(0), z(0), vz(0) {}
     Outcomes(float z, float vz)
-        : t(Boardcore::TimestampTimer::getTimestamp()), z(z), vz(vz)
+        : t(TimestampTimer::getTimestamp()), z(z), vz(vz)
     {
     }
 
@@ -57,13 +56,12 @@ struct Outcomes
     }
 };
 
-class HILPhasesManagerBase : public Boardcore::EventHandler,
-                             public Boardcore::Module
+class HILPhasesManagerBase : public EventHandler
 {
 public:
     explicit HILPhasesManagerBase(
-        std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition)
-        : Boardcore::EventHandler(), getCurrentPosition(getCurrentPosition)
+        std::function<TimedTrajectoryPoint()> getCurrentPosition)
+        : EventHandler(), getCurrentPosition(getCurrentPosition)
     {
     }
 
@@ -71,19 +69,19 @@ public:
 
     virtual void simulationStarted()
     {
-        t_start = Boardcore::TimestampTimer::getTimestamp();
+        t_start = TimestampTimer::getTimestamp();
         LOG_INFO(logger, "SIMULATION STARTED!");
     }
 
     virtual void liftoff()
     {
-        t_liftoff = Boardcore::TimestampTimer::getTimestamp();
+        t_liftoff = TimestampTimer::getTimestamp();
         LOG_INFO(logger, "LIFTOFF!");
     }
 
     virtual void simulationStopped()
     {
-        t_stop = Boardcore::TimestampTimer::getTimestamp();
+        t_stop = TimestampTimer::getTimestamp();
         LOG_INFO(logger, "SIMULATION STOPPED!");
     }
 
@@ -91,9 +89,8 @@ protected:
     uint64_t t_start   = 0;
     uint64_t t_liftoff = 0;
     uint64_t t_stop    = 0;
-    std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition;
-    Boardcore::PrintLogger logger =
-        Boardcore::Logging::getLogger("HILPhasesManager");
+    std::function<TimedTrajectoryPoint()> getCurrentPosition;
+    PrintLogger logger = Logging::getLogger("HILPhasesManager");
 };
 
 /**
@@ -108,7 +105,7 @@ public:
     using PhasesCallback = std::function<void()>;
 
     explicit HILPhasesManager(
-        std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition)
+        std::function<TimedTrajectoryPoint()> getCurrentPosition)
         : HILPhasesManagerBase(getCurrentPosition)
     {
     }
@@ -130,12 +127,12 @@ public:
     virtual void printOutcomes() = 0;
 
 protected:
-    virtual void handleEvent(const Boardcore::Event& e) = 0;
+    virtual void handleEvent(const Event& e) = 0;
 
     void registerOutcomes(FlightPhases phase)
     {
-        Boardcore::TimedTrajectoryPoint temp = getCurrentPosition();
-        outcomes[phase]                      = Outcomes(temp.z, temp.vz);
+        TimedTrajectoryPoint temp = getCurrentPosition();
+        outcomes[phase]           = Outcomes(temp.z, temp.vz);
     }
 
     bool isSetTrue(FlightPhases phase)

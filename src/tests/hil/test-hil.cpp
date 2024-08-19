@@ -60,9 +60,10 @@ int main()
     if (HIL_TEST)
     {
         // Create hil modules
-        auto* hilTransceiver   = new MainHILTransceiver(buses->usart2);
         auto* hilPhasesManager = new MainHILPhasesManager(
             []() { return Boardcore::TimedTrajectoryPoint(); });
+        auto* hilTransceiver =
+            new MainHILTransceiver(buses->usart2, hilPhasesManager);
 
         // Create HIL class where we specify how to use previous modules to
         // assemble ActuatorData

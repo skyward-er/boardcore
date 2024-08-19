@@ -27,8 +27,6 @@
 #include <utils/KernelTime.h>
 #include <utils/TimeUtils.h>
 
-#include <utils/ModuleManager/ModuleManager.hpp>
-
 #include "HILPhasesManager.h"
 #include "HILTransceiver.h"
 
@@ -39,12 +37,12 @@ namespace Boardcore
  * @brief Single interface to the hardware-in-the-loop framework.
  */
 template <class FlightPhases, class SimulatorData, class ActuatorData>
-class HIL : public Boardcore::Module, public Boardcore::ActiveObject
+class HIL : public Boardcore::ActiveObject
 {
 public:
     /**
      * @brief Constructor of the HIL framework.
-     * @param hilTransceiver The pointer to the already built HILTranceiver.
+     * @param hilTransceiver The pointer to the already built HILTransceiver.
      * @param hilPhasesManager The pointer to the already built
      * HILPhasesManager.
      * @param updateActuatorData Function which returns the current ActuatorData
@@ -62,17 +60,6 @@ public:
           updateActuatorData(updateActuatorData),
           simulationPeriod(simulationPeriod)
     {
-        if (!Boardcore::ModuleManager::getInstance().insert<HILTransceiverBase>(
-                hilTransceiver))
-        {
-            LOG_ERR(logger, "HILTransceiver not inserted correctly");
-        }
-
-        if (!Boardcore::ModuleManager::getInstance()
-                 .insert<HILPhasesManagerBase>(hilPhasesManager))
-        {
-            LOG_ERR(logger, "HILPhasesManager not inserted correctly");
-        }
     }
 
     /**

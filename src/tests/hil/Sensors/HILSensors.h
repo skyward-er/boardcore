@@ -159,8 +159,8 @@ private:
     {
         auto ts           = miosix::getTime();
         auto tsSensorData = Boardcore::ModuleManager::getInstance()
-                                .get<Boardcore::HILTransceiverBase>()
-                                ->getTimestampSimulatorData();
+                                .get<HILConfig::MainHIL>()
+                                ->hilTransceiver->getTimestampSimulatorData();
         auto simulationPeriod = Boardcore::ModuleManager::getInstance()
                                     .get<HILConfig::MainHIL>()
                                     ->getSimulationPeriod();
