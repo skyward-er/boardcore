@@ -28,10 +28,10 @@
 #include <events/Event.h>
 #include <events/EventHandler.h>
 #include <miosix.h>
+#include <utils/Debug.h>
 
 #include <iostream>
 #include <map>
-#include <utils/Debug.h>
 #include <utils/ModuleManager/ModuleManager.hpp>
 
 typedef std::function<void()> TCallback;
