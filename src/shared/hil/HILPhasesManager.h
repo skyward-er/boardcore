@@ -129,12 +129,6 @@ public:
 protected:
     virtual void handleEvent(const Boardcore::Event& e) = 0;
 
-    /**
-     * @brief Updates the flags of the object with the flags sent from
-     * matlab and checks for the apogee
-     */
-    virtual void updateSimulatorFlags(const SimulatorData& hil_flags) = 0;
-
     void registerOutcomes(FlightPhases phase)
     {
         Boardcore::TimedTrajectoryPoint temp = getCurrentPosition();
