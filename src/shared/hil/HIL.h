@@ -107,11 +107,17 @@ public:
         }
     }
 
-    int getSimulationPeriod() { return simulationPeriod; }
+    int getSimulationPeriod() const { return simulationPeriod; }
 
-    HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
-    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
-        *hilPhasesManager;
+    int64_t getTimestampSimulatorData() const
+    {
+        return hilTransceiver->getTimestampSimulatorData();
+    }
+
+    const SimulatorData *getSensorData() const
+    {
+        return hilTransceiver->getSensorData();
+    }
 
 private:
     void run() override
@@ -129,6 +135,10 @@ private:
     }
 
     Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("HIL");
+
+    HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
+    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
+        *hilPhasesManager;
     std::function<ActuatorData()> updateActuatorData;
     int simulationPeriod;  // Simulation period in milliseconds
 };

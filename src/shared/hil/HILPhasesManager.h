@@ -65,7 +65,7 @@ public:
     {
     }
 
-    bool isSimulationRunning() { return (t_start != 0) && (t_stop == 0); }
+    bool isSimulationRunning() const { return (t_start != 0) && (t_stop == 0); }
 
     virtual void simulationStarted()
     {
@@ -110,14 +110,18 @@ public:
     {
     }
 
-    bool isFlagActive(FlightPhases flag) { return flagsFlightPhases[flag]; }
+    bool isFlagActive(const FlightPhases& flag) const
+    {
+        return flagsFlightPhases.at(flag);
+    }
 
-    void registerToFlightPhase(FlightPhases flag, PhasesCallback func)
+    void registerToFlightPhase(const FlightPhases& flag,
+                               const PhasesCallback& func)
     {
         callbacks[flag].push_back(func);
     }
 
-    void setFlagFlightPhase(FlightPhases flag, bool isEnable)
+    void setFlagFlightPhase(const FlightPhases& flag, bool isEnable)
     {
         flagsFlightPhases[flag] = isEnable;
     }
@@ -129,20 +133,20 @@ public:
 protected:
     virtual void handleEvent(const Event& e) = 0;
 
-    void registerOutcomes(FlightPhases phase)
+    void registerOutcomes(const FlightPhases& phase)
     {
         TimedTrajectoryPoint temp = getCurrentPosition();
         outcomes[phase]           = Outcomes(temp.z, temp.vz);
     }
 
-    bool isSetTrue(FlightPhases phase)
+    bool isSetTrue(const FlightPhases& phase) const
     {
-        return flagsFlightPhases[phase] && !prev_flagsFlightPhases[phase];
+        return flagsFlightPhases.at(phase) && !prev_flagsFlightPhases.at(phase);
     }
 
-    bool isSetFalse(FlightPhases phase)
+    bool isSetFalse(const FlightPhases& phase) const
     {
-        return !flagsFlightPhases[phase] && prev_flagsFlightPhases[phase];
+        return !flagsFlightPhases.at(phase) && prev_flagsFlightPhases.at(phase);
     }
 
     std::map<FlightPhases, bool> flagsFlightPhases;

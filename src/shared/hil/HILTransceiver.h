@@ -49,13 +49,13 @@ public:
      * @return the number of updates lost due to communication with the
      * simulator.
      */
-    int getLostUpdates() { return nLostUpdates; }
+    int getLostUpdates() const { return nLostUpdates; }
 
     /**
      * @brief Returns the value in ns of the timestamp of the last received
      * simulatorData.
      */
-    const int64_t getTimestampSimulatorData() { return timestampSimulatorData; }
+    int64_t getTimestampSimulatorData() const { return timestampSimulatorData; }
 
 protected:
     /**
@@ -130,7 +130,7 @@ public:
      *
      * @return reference to the data simulated by matlab
      */
-    const SimulatorData *getSensorData() { return &simulatorData; }
+    const SimulatorData *getSensorData() const { return &simulatorData; }
 
 private:
     void run() override;
