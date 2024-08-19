@@ -80,7 +80,7 @@ int main()
         {
             initResult &= ModuleManager::getInstance().insert<MainHIL>(hil);
         }
-        sensors = new HILSensors(&scheduler, buses, hilTransceiver, false);
+        sensors = new HILSensors(&scheduler, buses, hil, false);
     }
     else
     {

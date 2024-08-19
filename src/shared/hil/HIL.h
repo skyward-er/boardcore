@@ -39,6 +39,10 @@ namespace Boardcore
 template <class FlightPhases, class SimulatorData, class ActuatorData>
 class HIL : public Boardcore::ActiveObject
 {
+    using PhasesCallback =
+        typename HILPhasesManager<FlightPhases, SimulatorData,
+                                  ActuatorData>::PhasesCallback;
+
 public:
     /**
      * @brief Constructor of the HIL framework.
@@ -107,6 +111,12 @@ public:
         }
     }
 
+    void registerToFlightPhase(const FlightPhases &flag,
+                               const PhasesCallback &func)
+    {
+        hilPhasesManager->registerToFlightPhase(flag, func);
+    }
+
     int getSimulationPeriod() const { return simulationPeriod; }
 
     int64_t getTimestampSimulatorData() const
@@ -118,6 +128,11 @@ public:
     {
         return hilTransceiver->getSensorData();
     }
+
+protected:
+    HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
+    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
+        *hilPhasesManager;
 
 private:
     void run() override
@@ -133,9 +148,6 @@ private:
 
     Boardcore::PrintLogger logger = Boardcore::Logging::getLogger("HIL");
 
-    HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
-    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
-        *hilPhasesManager;
     std::function<ActuatorData()> updateActuatorData;
     int simulationPeriod;  // Simulation period in milliseconds
 };
