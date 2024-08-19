@@ -222,14 +222,13 @@ struct CanDeviceStatus : DeviceStatus
 struct ServoCommand
 {
     uint64_t timestamp   = 0;
-    float aperture       = 0;
-    uint16_t openingTime = 0;
+    uint32_t openingTime = 0;
 
-    static std::string header() { return "timestamp,aperture,openingTime\n"; }
+    static std::string header() { return "timestamp,openingTime\n"; }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << aperture << "," << openingTime << "\n";
+        os << timestamp << "," << openingTime << "\n";
     }
 };
 
@@ -240,14 +239,13 @@ struct CanServoCommand : ServoCommand
 
     static std::string header()
     {
-        return "timestamp,aperture,openingTime,secondaryType,source\n";
+        return "timestamp,openingTime,secondaryType,source\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << aperture << "," << openingTime
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        os << timestamp << "," << openingTime << static_cast<int>(secondaryType)
+           << "," << static_cast<int>(source) << "\n";
     }
 };
 
@@ -396,8 +394,7 @@ inline Canbus::CanMessage toCanMessage(const ServoCommand& data)
     message.id         = -1;
     message.length     = 1;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= static_cast<uint16_t>(data.aperture * 65535);
-    message.payload[0] |= data.openingTime << 16;
+    message.payload[0] |= data.openingTime;
 
     return message;
 }
@@ -525,8 +522,7 @@ inline CanServoCommand servoCommandFromCanMessage(const Canbus::CanMessage& msg)
     CanServoCommand data;
 
     data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
-    data.aperture      = static_cast<uint16_t>(msg.payload[0]) / 65535.f;
-    data.openingTime   = static_cast<uint16_t>(msg.payload[0] >> 16);
+    data.openingTime   = static_cast<uint32_t>(msg.payload[0]);
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
 
