@@ -103,4 +103,5 @@ set(ARCH_SRC
     ${KPATH}/arch/common/drivers/sd_stm32f2_f4_f7.cpp
     ${KPATH}/arch/common/drivers/serial_stm32.cpp
     ${KPATH}/arch/common/drivers/stm32_hardware_rng.cpp
+    ${KPATH}/arch/common/drivers/stm32_bsram.cpp
 )

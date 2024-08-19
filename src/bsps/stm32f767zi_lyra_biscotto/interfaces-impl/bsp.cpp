@@ -37,7 +37,7 @@
 #include "drivers/sd_stm32f2_f4_f7.h"
 #include "drivers/serial.h"
 #include "drivers/serial_stm32.h"
-#include "drivers/stm32_sgm.h"
+#include "drivers/stm32_bsram.h"
 #include "filesystem/console/console_device.h"
 #include "filesystem/file_access.h"
 #include "hwmapping.h"
@@ -221,6 +221,28 @@ void configureSdram()
 #else
 #error No SDRAM refresh timings for this clock
 #endif
+}
+
+void configureBackupSram()
+{
+    // Initialize the backup SRAM device
+    BSRAM::init();
+
+    // Defined in the linker script
+    extern unsigned char _preserve_start asm("_preserve_start");
+    extern unsigned char _preserve_end asm("_preserve_end");
+    extern unsigned char _preserve_load asm("_preserve_load");
+
+    unsigned char *preserve_start = &_preserve_start;
+    unsigned char *preserve_end   = &_preserve_end;
+    unsigned char *preserve_load  = &_preserve_load;
+
+    // Load the .preserve section from flash if not a software reset
+    if (miosix::lastResetReason() != miosix::ResetReason::SOFTWARE)
+    {
+        BSRAM::EnableWriteLock l;
+        memcpy(preserve_start, preserve_load, preserve_end - preserve_start);
+    }
 }
 
 void IRQbspInit()

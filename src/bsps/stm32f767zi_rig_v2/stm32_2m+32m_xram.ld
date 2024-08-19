@@ -178,7 +178,7 @@ SECTIONS
     _end = .;
     PROVIDE(end = .);
     
-    .preserve(NOLOAD) : ALIGN(4)
+    .preserve : ALIGN(4)
     {
         _preserve_start = .;
         . = ALIGN(4);
@@ -186,5 +186,6 @@ SECTIONS
         *(.preserve*);
         . = ALIGN(4);
         _preserve_end = .;
-    } > bram
+    } > bram AT > flash
+    _preserve_load = LOADADDR(.preserve);
 }
