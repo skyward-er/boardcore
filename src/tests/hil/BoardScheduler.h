@@ -1,5 +1,5 @@
-/* Copyright (c) 2020-2023 Skyward Experimental Rocketry
- * Author: Emilio Corigliano
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Matteo Pignataro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,24 +19,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #pragma once
 
+#include <scheduler/TaskScheduler.h>
+
+#include <utils/ModuleManager/ModuleManager.hpp>
+
+namespace HILTest
+{
 /**
- * @brief Interface in order to reset the parameters of the SimSensor even if
- * they are templated on different SimSensorData
+ * @brief Class that wraps the 4 main task schedulers of the entire OBSW.
+ * There is a task scheduler for every miosix priority
  */
-class HILTimestampManagement
+class BoardScheduler : public Boardcore::Module
 {
 public:
-    HILTimestampManagement() {}
+    BoardScheduler();
 
     /**
-     * @brief sets the sample counter to 0.
+     * @brief Get the Scheduler object relative to the requested priority
      *
-     * Updates the reference timestamp, resets the sampleCounter and clears the
-     * last_error variable. Called by the MatlabTransceiver when receives a new
-     * simulated period
+     * @param priority The task scheduler priority
+     * @return Boardcore::TaskScheduler& Reference to the requested task
+     * scheduler.
+     * @note Min priority scheduler is returned in case of non valid priority.
      */
-    virtual void resetSampleCounter() = 0;
+    Boardcore::TaskScheduler* getScheduler(miosix::Priority priority);
+
+    [[nodiscard]] bool start();
+
+    /**
+     * @brief Returns if all the schedulers are up and running
+     */
+    bool isStarted();
+
+private:
+    Boardcore::TaskScheduler* scheduler1;
+    Boardcore::TaskScheduler* scheduler2;
+    Boardcore::TaskScheduler* scheduler3;
+    Boardcore::TaskScheduler* scheduler4;
 };
+}  // namespace HILTest

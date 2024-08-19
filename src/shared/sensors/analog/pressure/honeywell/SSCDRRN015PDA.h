@@ -33,7 +33,7 @@ namespace Boardcore
 /**
  * @brief Differential pressure sensor with a ±103kPa range (±15psi)
  */
-class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
+class SSCDRRN015PDA : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
     SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage,

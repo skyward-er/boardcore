@@ -55,9 +55,10 @@ public:
      */
     bool checkConnection();
 
-private:
+protected:
     TemperatureData sampleImpl() override;
 
+private:
     const SPISlave slave;
 
     PrintLogger logger = Logging::getLogger("max6675");
