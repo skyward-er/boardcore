@@ -23,6 +23,7 @@
 #include <fmt/format.h>
 
 #include <cassert>
+#include <chrono>
 
 #include "drivers/usart/USART.h"
 #include "miosix.h"
@@ -206,7 +207,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 bool testClearQueue(USART *src, USART *dst)
 {
     char buf[128];
-    size_t nReads{0};
+    unsigned int nReads{0};
     src->writeString("Transmitting useless stuff!");
     // miosix::delayUs(1000);
     dst->clearQueue();
@@ -214,7 +215,7 @@ bool testClearQueue(USART *src, USART *dst)
     // Can be commented to test without read
     if (dst->read(buf, 128, nReads))
     {
-        printf("### read something after the clearQueue: %s (%zu bytes)\n", buf,
+        printf("### read something after the clearQueue: %s (%u bytes)\n", buf,
                nReads);
         // Shouldn't read anything
         return false;
@@ -227,13 +228,92 @@ bool testClearQueue(USART *src, USART *dst)
     if (strcmp(buf, "Now transmitting the juicy stuff :P") != 0)
     {
         printf(
-            "### read something different than the things sent: %s (%zu "
+            "### read something different than the things sent: %s (%u "
             "bytes)\n",
             buf, nReads);
         return false;
     }
 
     printf("*** clearQueue test passed\n");
+    return true;
+}
+
+bool testReadTimeout(USART *src, USART *dst)
+{
+    using namespace std::chrono;
+
+    constexpr auto testString = "This is truly a string :-D";
+
+    constexpr auto timeout = 100ms;
+    char buf[64]           = {0};
+    unsigned int bytesRead = 0;
+
+    /************** Read with timeout without sending anything ***************/
+
+    printf("Reading with timeout %lldms\n", timeout.count());
+    printf("\t%d--> sent: \t'' (nothing being sent, force timeout)\n",
+           src->getId());
+
+    auto start  = steady_clock::now();
+    bool result = dst->readBlocking(buf, sizeof(buf), bytesRead, timeout);
+    auto end    = steady_clock::now();
+
+    auto measuredTime = duration_cast<milliseconds>(end - start);
+
+    printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf);
+    printf("\tTimed out after %lldms\n", measuredTime.count());
+
+    // Timeout should return false, if it returned true then the test failed
+    if (result)
+    {
+        printf("### readBlocking returned success on timeout: %s (%u bytes)\n",
+               buf, bytesRead);
+        return false;
+    }
+
+    // Check if the timeout is correct
+    if (measuredTime < timeout)
+    {
+        printf(
+            "### readBlocking returned before the timeout: expected: %lld ms, "
+            "measured: %lld ms (%u bytes)\n",
+            timeout.count(), measuredTime.count(), bytesRead);
+        return false;
+    }
+
+    src->clearQueue();
+    dst->clearQueue();
+
+    /************** Read with timeout after sending something ***************/
+
+    printf("Reading with timeout %lldms\n", timeout.count());
+    printf("\t%d--> sent: \t'%s'\n", src->getId(), testString);
+    src->writeString(testString);
+
+    start  = steady_clock::now();
+    result = dst->readBlocking(buf, sizeof(buf), bytesRead, timeout);
+    end    = steady_clock::now();
+
+    measuredTime = duration_cast<milliseconds>(end - start);
+
+    printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf);
+    if (!result)
+    {
+        printf("\tTimed out after %lldms\n", measuredTime.count());
+    }
+    else
+    {
+        printf("\tNo timeout\n");
+    }
+
+    if (strcmp(buf, testString) != 0)
+    {
+        printf("### readBlocking returned different string: %s (%u bytes)\n",
+               buf, bytesRead);
+        return false;
+    }
+
+    printf("*** ReadTimeout test passed\n");
     return true;
 }
 
@@ -255,57 +335,61 @@ int main()
     u6tx1::getPin().mode(miosix::Mode::ALTERNATE);
     u6tx1::getPin().alternateFunction(8);
 
-    u4rx2::getPin().mode(miosix::Mode::ALTERNATE);
-    u4rx2::getPin().alternateFunction(8);
-    u4tx2::getPin().mode(miosix::Mode::ALTERNATE);
-    u4tx2::getPin().alternateFunction(8);
+    u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u4rx1::getPin().alternateFunction(8);
+    u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u4tx1::getPin().alternateFunction(8);
 
-    for (;;)
+    bool testPassed = true;
+    printf("*** SERIAL 3 WORKING!\n");
+
+    for (int baudrate : baudrates)
     {
-        bool testPassed = true;
-        printf("*** SERIAL 3 WORKING!\n");
+        printf("\n\n########################### %d\n", baudrate);
+        // declaring the usart peripherals
+        USART usartx(USART6, baudrate);
+        // usartx.setBaudrate(baudrate);
+        // usartx.setOversampling(false);
+        // usartx.setStopBits(1);
+        // usartx.setWordLength(USART::WordLength::BIT8);
+        // usartx.setParity(USART::ParityBit::NO_PARITY);
 
-        for (int baudrate : baudrates)
-        {
-            printf("\n\n########################### %d\n", baudrate);
-            // declaring the usart peripherals
-            USART usartx(USART6, baudrate);
-            // usartx.setBaudrate(baudrate);
-            // usartx.setOversampling(false);
-            // usartx.setStopBits(1);
-            // usartx.setWordLength(USART::WordLength::BIT8);
-            // usartx.setParity(USART::ParityBit::NO_PARITY);
+        USART usarty(UART4, baudrate);
+        // STM32SerialWrapper usarty(UART4, baudrate, u4rx2::getPin(),
+        //                           u4tx2::getPin());
 
-            USART usarty(UART4, baudrate);
-            // STM32SerialWrapper usarty(UART4, baudrate, u4rx2::getPin(),
-            //                           u4tx2::getPin());
+        // testing transmission (both char and binary) "serial 1 <- serial
+        // 2"
+        testPassed &= testCommunicationSequential(&usartx, &usarty);
+        testPassed &= testClearQueue(&usartx, &usarty);
 
-            // testing transmission (both char and binary) "serial 1 <- serial
-            // 2"
-            testPassed &= testCommunicationSequential(&usartx, &usarty);
-            testPassed &= testClearQueue(&usartx, &usarty);
+        // testing transmission (both char and binary) "serial 1 -> serial
+        // 2"
+        testPassed &= testCommunicationSequential(&usarty, &usartx);
+        testPassed &= testClearQueue(&usarty, &usartx);
 
-            // testing transmission (both char and binary) "serial 1 -> serial
-            // 2"
-            testPassed &= testCommunicationSequential(&usarty, &usartx);
-            testPassed &= testClearQueue(&usarty, &usartx);
-        }
-
-        if (testPassed)
-        {
-            printf(
-                "********************************\n"
-                "***        TEST PASSED       ***\n"
-                "********************************\n");
-        }
-        else
-        {
-            printf(
-                "################################\n"
-                "###        TEST FAILED       ###\n"
-                "################################\n");
-        }
-        Thread::sleep(5000);
+        testPassed &= testReadTimeout(&usartx, &usarty);
     }
+
+    if (testPassed)
+    {
+        printf(
+            "********************************\n"
+            "***        TEST PASSED       ***\n"
+            "********************************\n");
+    }
+    else
+    {
+        printf(
+            "################################\n"
+            "###        TEST FAILED       ###\n"
+            "################################\n");
+    }
+
+    while (true)
+    {
+        Thread::wait();
+    }
+
     return 0;
 }

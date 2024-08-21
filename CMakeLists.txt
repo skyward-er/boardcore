@@ -136,6 +136,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-eventbroker.cpp
     src/tests/catch/test-gptimer.cpp
     src/tests/catch/test-kalman.cpp
+    src/tests/catch/test-numeric.cpp
     src/tests/catch/test-packetqueue.cpp
     src/tests/catch/test-sensormanager-catch.cpp
     src/tests/catch/xbee/test-xbee-parser.cpp

@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <utils/Debug.h>
+#include <utils/Numeric.h>
 
 #include <string>
 
@@ -366,15 +367,15 @@ void USART::IRQhandleInterrupt()
     if (error || idle || (rxQueue.size() >= rxQueue.capacity() / 2))
     {
         // Enough data in buffer or idle line, awake thread
-        if (rxWaiting)
+        if (rxWaiter)
         {
-            rxWaiting->IRQwakeup();
-            if (rxWaiting->IRQgetPriority() >
+            rxWaiter->IRQwakeup();
+            if (rxWaiter->IRQgetPriority() >
                 miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
             {
                 miosix::Scheduler::IRQfindNextThread();
             }
-            rxWaiting = nullptr;
+            rxWaiter = nullptr;
         }
     }
 }
@@ -500,13 +501,16 @@ void USART::setBaudrate(int baudrate)
 }
 
 bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
-                     const bool blocking)
+                     const bool blocking, std::chrono::nanoseconds timeout)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
     char *buf     = reinterpret_cast<char *>(buffer);
     size_t result = 0;
     error         = false;
+    // Whether we timed out while waiting
+    bool timedOut = false;
+
     miosix::FastInterruptDisableLock dLock;
     for (;;)
     {
@@ -523,23 +527,39 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
         // If blocking, we are waiting for at least one byte of data before
         // returning. If not blocking, in the case the bus is idle we return
         // anyway
-        if ((result == nBytes) || (idle && (!blocking || (result > 0))))
+        if ((result == nBytes) || (idle && (!blocking || (result > 0))) ||
+            timedOut)
             break;
 
         // Wait for data in the queue
         do
         {
-            rxWaiting = miosix::Thread::IRQgetCurrentThread();
-            miosix::Thread::IRQwait();
+            rxWaiter = miosix::Thread::IRQgetCurrentThread();
+
+            if (timeout == std::chrono::nanoseconds::zero())
             {
-                miosix::FastInterruptEnableLock eLock(dLock);
-                miosix::Thread::yield();
+                miosix::Thread::IRQenableIrqAndWait(dLock);
             }
-        } while (rxWaiting);
+            else
+            {
+                int64_t wakeup = add_sat(miosix::IRQgetTime(), timeout.count());
+                auto waitResult =
+                    miosix::Thread::IRQenableIrqAndTimedWait(dLock, wakeup);
+
+                if (waitResult == miosix::TimedWaitResult::Timeout)
+                {
+                    // De-register from wakeup by the IRQ
+                    rxWaiter = nullptr;
+                    // Make the outer for-loop quit after reading data from the
+                    // rxQueue, or we'd end up waiting again
+                    timedOut = true;
+                }
+            }
+        } while (rxWaiter);
     }
     nBytesRead = result;
 
-    return (result > 0);
+    return (result > 0) && !timedOut;
 }
 
 void USART::write(const void *buffer, size_t nBytes)
@@ -686,7 +706,8 @@ bool STM32SerialWrapper::serialCommSetup()
 }
 
 bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
-                                  size_t &nBytesRead, const bool blocking)
+                                  size_t &nBytesRead, const bool blocking,
+                                  std::chrono::nanoseconds timeout)
 {
     // non-blocking read not supported in STM32SerialWrapper
     if (!blocking)
@@ -695,6 +716,16 @@ bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
                 "STM32SerialWrapper::read doesn't support non-blocking read");
         D(assert(false &&
                  "STM32SerialWrapper::read doesn't support non-blocking read"));
+    }
+
+    // Timeout is not supported on STM32SerialWrapper, timeout is always set to
+    // std::chrono::nanoseconds::zero() unless specified by the user
+    if (timeout != std::chrono::nanoseconds::zero())
+    {
+        LOG_ERR(logger,
+                "STM32SerialWrapper::read doesn't support timeout on read");
+        D(assert(false &&
+                 "STM32SerialWrapper::read doesn't support timeout on read"));
     }
 
     size_t n   = ::read(fd, buffer, nBytes);
