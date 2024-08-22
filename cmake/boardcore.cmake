@@ -38,7 +38,6 @@ set(BOARDCORE_SRC
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakes.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp

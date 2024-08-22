@@ -29,21 +29,18 @@
 #include <functional>
 #include <vector>
 
-#include "AirBrakes.h"
-#include "AirBrakesData.h"
 #include "AirBrakesPIConfig.h"
 #include "TrajectorySet.h"
 
 namespace Boardcore
 {
 
-class AirBrakesPI : public AirBrakes
+class AirBrakesPI : public Algorithm
 {
 public:
     AirBrakesPI(std::function<TimedTrajectoryPoint()> getCurrentPosition,
                 const TrajectorySet &trajectorySet,
-                const AirBrakesConfig &config,
-                const AirBrakesPIConfig &configPI,
+                const AirBrakesPIConfig &config,
                 std::function<void(float)> setActuator);
 
     bool init() override;
@@ -61,6 +58,56 @@ public:
     void step() override;
 
 private:
+    /**
+     * @brief Returns the air density at the current altitude using the basic
+     * atmosphere model.
+     *
+     * @param z The current altitude [m].
+     * @return The density of air according to current altitude [Kg/m^3]
+     */
+    float getRho(float z);
+
+    /**
+     * @brief Compute the necessary airbrakes surface to match the
+     * given drag force from the Pid as closely as possible.
+     *
+     * @param currentPosition Current rocket position.
+     * @param rho Air density [kg/m^2].
+     * @param drag Target drag force.
+     * @return AirBrakes surface [m];
+     */
+    float getSurface(const TimedTrajectoryPoint &currentPosition, float rho,
+                     float drag);
+
+    /**
+     * @brief Computes the airbrakes extension given the desired area.
+     *
+     * @param surface Desired airbrakes surface [m^2].
+     * @return The radial extension [m].
+     */
+    float getExtension(float surface);
+
+    /**
+     * @brief Returns the coefficient of drag for the airbrakes at the given
+     * position and with the given extension.
+     *
+     * @param currentPosition Current rocket position.
+     * @param extension AirBrakes extension [m].
+     * @return The coefficient drag [1].
+     */
+    float getCD(TimedTrajectoryPoint currentPosition, float extension);
+
+    /**
+     * @brief Return the drag generated from the AirBrakes in the given
+     * conditions.
+     *
+     * @param currentPosition Current position of the rocket.
+     * @param cd Coefficient of drag [1].
+     * @param rho Air density [kg/m^2].
+     * @return Generated drag [N].
+     */
+    float getDrag(TimedTrajectoryPoint currentPosition, float cd, float rho);
+
     /**
      * @brief Searched all the trajectories and find the neares point to the
      * given position. The trajectory of this point is the one choosen.
@@ -83,6 +130,13 @@ private:
                  TrajectoryPoint reference, float rho);
 
 private:
+    std::function<TimedTrajectoryPoint()> getCurrentPosition;
+    const AirBrakesPIConfig &config;
+    std::function<void(float)> setActuator;
+
+    TimedTrajectoryPoint lastPosition;
+    uint32_t lastSelectedPointIndex = 0;
+
     PIController pi;
 
     // Trajectory set from which the used trajectory can be choosen

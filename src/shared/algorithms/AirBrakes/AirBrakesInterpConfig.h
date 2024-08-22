@@ -21,7 +21,6 @@
  */
 
 #pragma once
-#include "AirBrakesConfig.h"
 
 namespace Boardcore
 {

@@ -36,15 +36,13 @@ namespace Boardcore
 AirBrakesInterp::AirBrakesInterp(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
     const TrajectorySet &trajectoryOpenSet,
-    const TrajectorySet &trajectoryCloseSet, const AirBrakesConfig &config,
+    const TrajectorySet &trajectoryCloseSet,
     const AirBrakesInterpConfig &configInterp,
     std::function<void(float)> setActuator)
-    : AirBrakes(getCurrentPosition, config, setActuator),
+    : getCurrentPosition(getCurrentPosition), setActuator(setActuator),
       trajectoryOpenSet(trajectoryOpenSet),
       trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp)
 {
-    // Initial values to avoid UB
-    lastPercentage = 0;
 }
 
 bool AirBrakesInterp::init() { return true; }

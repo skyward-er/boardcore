@@ -22,27 +22,23 @@
 
 #pragma once
 
-#include <actuators/Servo/Servo.h>
-#include <algorithms/PIController.h>
+#include <algorithms/Algorithm.h>
 
 #include <functional>
 #include <vector>
 
-#include "AirBrakes.h"
-#include "AirBrakesData.h"
 #include "AirBrakesInterpConfig.h"
 #include "TrajectorySet.h"
 
 namespace Boardcore
 {
 
-class AirBrakesInterp : public AirBrakes
+class AirBrakesInterp : public Algorithm
 {
 public:
     AirBrakesInterp(std::function<TimedTrajectoryPoint()> getCurrentPosition,
                     const TrajectorySet &trajectoryOpenSet,
                     const TrajectorySet &trajectoryCloseSet,
-                    const AirBrakesConfig &config,
                     const AirBrakesInterpConfig &configInterp,
                     std::function<void(float)> setActuator);
 
@@ -70,6 +66,11 @@ private:
      */
     float controlInterp(TrajectoryPoint currentPosition);
 
+    std::function<TimedTrajectoryPoint()> getCurrentPosition;
+    std::function<void(float)> setActuator;
+
+    TimedTrajectoryPoint lastPosition;
+
     // Trajectory sets (open and closed) from which the algorithm will choose at
     // the beginning the tuple with which interpolate the data. The selection
     // depends on the rocket mass.
@@ -81,7 +82,7 @@ private:
     Trajectory *choosenOpenTrajectory  = nullptr;
 
     AirBrakesInterpConfig configInterp;  ///< specialized config
-    float lastPercentage;                ///< last opening of the airbrakes
+    float lastPercentage = 0;            ///< last opening of the airbrakes
 };
 
 }  // namespace Boardcore

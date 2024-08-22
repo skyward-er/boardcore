@@ -42,19 +42,6 @@ constexpr float INITIAL_MASS          = 28;
 constexpr float DM                    = 0.2f;
 constexpr uint16_t N_FORWARD          = 1;
 
-static const Boardcore::AirBrakesConfig ABK_CONFIG{
-    0.4884,      -1.4391,    6.6940,
-    -18.4272,    29.1044,    -24.5585,
-    8.6058,      9.0426,     159.5995,
-    4.8188,      -208.4471,  47.0771,
-    1.9433e+03,  -205.6689,  -6.4634e+03,
-    331.0332,    8.8763e+03, -161.8111,
-    -3.9917e+03, 2.8025e-06, 0.0373,
-    20,          -0.009216,  0.02492,
-    -0.01627,    0.03191,    0.017671458676443,
-    0,
-};
-
 AirBrakesInterpConfig getConfig()
 {
     AirBrakesInterpConfig config;
@@ -91,7 +78,7 @@ TEST_CASE("ABK Update Test")
 {
     AirBrakesInterp abk(
         []() { return static_cast<TimedTrajectoryPoint>(getState()); },
-        OPEN_TRAJECTORY_SET, CLOSED_TRAJECTORY_SET, ABK_CONFIG, getConfig(),
+        OPEN_TRAJECTORY_SET, CLOSED_TRAJECTORY_SET, getConfig(),
         [&](float position)
         {
             static int i = 0;
