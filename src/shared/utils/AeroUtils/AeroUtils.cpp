@@ -94,13 +94,29 @@ float computeRho(float d, float t0)
 float computeSoundSpeed(float d, float t0)
 {
     float T = t0 + Constants::a * d;
-    float c = sqrt(Constants::GAMMA_AIR * Constants::R * T);
+    float c = sqrtf(Constants::GAMMA_AIR * Constants::R * T);
     return c;
 }
 
 float computeMach(float d, float vtot, float t0)
 {
     return vtot / computeSoundSpeed(d, t0);
+}
+
+float computePitotMach(float pressureTotal, float pressureStatic)
+{
+    return sqrtf(((powf(pressureTotal / pressureStatic,
+                        (Constants::GAMMA_AIR - 1) / Constants::GAMMA_AIR)) -
+                  1) *
+                 (2 / (Constants::GAMMA_AIR - 1)));
+}
+
+float computePitotAirspeed(float pressureTotal, float pressureStatic, float d,
+                           float t0)
+{
+    float c = computeSoundSpeed(d, t0);
+    float M = computePitotMach(pressureTotal, pressureStatic);
+    return M * c;
 }
 
 }  // namespace Aeroutils

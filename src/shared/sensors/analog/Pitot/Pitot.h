@@ -64,14 +64,11 @@ protected:
         if (totalPressure > 0 && staticPressure > 0 &&
             totalPressure > staticPressure)
         {
-
-            float gamma = 1.4f;
-            float c     = sqrt(gamma * Constants::R * reference.refTemperature);
-            // clang-format off
-            float M             = sqrt(((pow(totalPressure / staticPressure, (gamma - 1) / gamma)) - 1) * (2 / (gamma - 1)));
-            // clang-format on
-            pitotSpeed.airspeed = M * c;
-            pitotSpeed.deltaP   = totalPressure - staticPressure;
+            // NOTE: Here we assume that we are always at refTemperature, so
+            // calculations might be wrong at higher elevations!
+            pitotSpeed.airspeed = Aeroutils::computePitotAirspeed(
+                totalPressure, staticPressure, 0, reference.refTemperature);
+            pitotSpeed.deltaP = totalPressure - staticPressure;
         }
         else
         {

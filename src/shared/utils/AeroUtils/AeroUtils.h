@@ -209,6 +209,28 @@ float computeSoundSpeed(float d, float t0);
  */
 float computeMach(float d, float vtot, float t0);
 
+/**
+ * @brief Computes the mach from total and static pressure measures from a pitot
+ * tube.
+ *
+ * @param pressureTotal Total pressure from the pitot tube [Pa].
+ * @param pressureStatic Static pressure from the pitot tube [Pa].
+ * @return Calculated mach.
+ */
+float computePitotMach(float pressureTotal, float pressureStatic);
+
+/**
+ * @brief Computes air speed relative to the pitot tube
+ *
+ * @param pressureTotal Total pressure from the pitot tube [Pa].
+ * @param pressureStatic Static pressure from the pitot tube [Pa].
+ * @param d Altitude agl in NED frame [m].
+ * @param t0 Temperature at ground level [K].
+ * @return Calculated airspeed [m/s].
+ */
+float computePitotAirspeed(float pressureTotal, float pressureStatic, float d,
+                           float t0);
+
 }  // namespace Aeroutils
 
 }  // namespace Boardcore
