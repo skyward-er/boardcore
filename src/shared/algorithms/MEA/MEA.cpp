@@ -42,7 +42,7 @@ void MEA::Step::withCCPressure(float ccPressure)
 
 void MEA::Step::withAcceleration(AccelerometerData acceleration)
 {
-    withAcceleration(acceleration);
+    withAcceleration(static_cast<Eigen::Vector<float, 3>>(acceleration));
 }
 
 void MEA::Step::withAcceleration(Eigen::Vector<float, 3> acceleration)
@@ -66,6 +66,7 @@ MEA::MEA(const Config &config)
       crossSection{config.crossSection}, ae{config.ae}, p0{config.p0},
       minMass{config.minMass}, maxMass{config.maxMass}
 {
+    updateState();
 }
 
 void MEA::update(const Step &step)
