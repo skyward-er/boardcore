@@ -128,8 +128,8 @@ private:
     float q     = 0.0f;  //< Latest computed dynamic pressure
     float force = 0.0f;  //< Latest computed force
 
-    float mass   = 0.0f;  //< Latest computed mass
     float apogee = 0.0f;  //< Latest computed apogee
+    float mass;           //< Latest computed mass
 
     float accelThresh;
     float speedThresh;

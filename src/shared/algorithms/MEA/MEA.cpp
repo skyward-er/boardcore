@@ -61,10 +61,11 @@ void MEA::Step::withSpeedAndAlt(float verticalSpeed, float mslAltitude)
 MEA::MEA(const Config &config)
     : F{config.F}, Q{config.Q}, G{config.G}, baroH{config.baroH},
       baroR{config.baroR}, P{config.P}, x{0, 0, config.initialMass},
-      accelThresh{config.accelThresh}, speedThresh{config.speedThresh},
-      Kt{config.Kt}, alpha{config.alpha}, c{config.c}, coeffs{config.coeffs},
-      crossSection{config.crossSection}, ae{config.ae}, p0{config.p0},
-      minMass{config.minMass}, maxMass{config.maxMass}
+      mass{config.initialMass}, accelThresh{config.accelThresh},
+      speedThresh{config.speedThresh}, Kt{config.Kt}, alpha{config.alpha},
+      c{config.c}, coeffs{config.coeffs}, crossSection{config.crossSection},
+      ae{config.ae}, p0{config.p0}, minMass{config.minMass}, maxMass{
+                                                                 config.maxMass}
 {
     updateState();
 }
@@ -181,13 +182,13 @@ void MEA::computeApogee(const Step &step)
     if (!step.hasSpeedAndAlt)
         return;
 
-    // TODO: Matlab uses CD_correction_shutDown, should we?
-    // Holy fuck, massive formula, split this for the love of god
-    apogee = step.mslAltitude +
-             1 / (2 * ((0.5f * rho * cd * crossSection) / mass)) *
-                 log1p(1 + (step.verticalSpeed * step.verticalSpeed *
-                            ((0.5f * rho * cd * crossSection) / mass)) /
-                               Constants::g);
+    // Simplified massive formula for apogee estimation.
+    // Warning: log1p(x) = log(1 + x)
+    float temp = ((rho * cd * crossSection) / mass);
+    apogee     = step.mslAltitude +
+             1 / temp *
+                 log1p(0.5 * (step.verticalSpeed * step.verticalSpeed * temp) /
+                       Constants::g);
 }
 
 void MEA::updateState()

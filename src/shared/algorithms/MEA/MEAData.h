@@ -32,20 +32,19 @@ struct MEAState
 {
     uint64_t timestamp;
 
-    float estimatedPressure;
-    float estimatedMass;
-    float estimatedApogee;
-    float estimatedForce;
+    float estimatedPressure;  ///< Estimated pressure in combustion chamber [Pa]
+    float estimatedMass;      ///< Estimated rocket mass [kg]
+    float estimatedApogee;    ///< Estimated apogee in msl [m]
+    float estimatedForce;     ///< Estimated drag force [N]
 
-    float x0;
-    float x1;
-    float x2;
+    float x0;  ///< first kalman state
+    float x1;  ///< second kalman state
+    float x2;  ///< third kalman state representing the mass
 
     static std::string header()
     {
         return "timestamp,estimatedPressure,estimatedMass,estimatedApogee,"
-               "estimatedForce,x0,"
-               "x1,x2\n";
+               "estimatedForce,x0,x1,x2\n";
     }
 
     void print(std::ostream &os) const
