@@ -75,11 +75,11 @@ void MEA::update(const Step &step)
     // First run the prediction step
     predict(step);
 
-    // Compute applied force/mach/CD/rho
-    computeForce(step);
-
     // Run cc pressure correction
     correctBaro(step);
+
+    // Compute applied force/mach/CD/rho
+    computeForce(step);
 
     // Run accelerometer correction
     correctAccel(step);
@@ -109,7 +109,7 @@ void MEA::computeForce(const Step &step)
 
     // NOTE: Here we assume that verticalSpeed roughly equals the total speed,
     // so that we don't depend on N/E speed components, which can be quite
-    // unreliable in case of no GPS fix
+    // unreliable in case of no GPS fix or during powered ascent
     mach = Aeroutils::computeMach(-step.mslAltitude, step.verticalSpeed,
                                   Constants::MSL_TEMPERATURE);
 
@@ -137,7 +137,12 @@ void MEA::correctBaro(const Step &step)
     if (!step.hasCCPressure)
         return;
 
-    float S               = baroH * P * baroH.transpose() + baroR;
+    float S = baroH * P * baroH.transpose() + baroR;
+
+    // If not invertible, do not invert it
+    if (S < 1e-3)
+        return;
+
     Matrix<float, 3, 1> K = (P * baroH.transpose()) / S;
 
     P = (Matrix<float, 3, 3>::Identity() - K * baroH) * P;
@@ -163,7 +168,12 @@ void MEA::correctAccel(const Step &step)
 
     float accelR = alpha * q + c;
 
-    float S               = accelH * P * accelH.transpose() + accelR;
+    float S = accelH * P * accelH.transpose() + accelR;
+
+    // If not invertible, do not invert it
+    if (S < 1e-3)
+        return;
+
     Matrix<float, 3, 1> K = (P * accelH.transpose()) / S;
 
     P = (Matrix<float, 3, 3>::Identity() - K * accelH) * P;
