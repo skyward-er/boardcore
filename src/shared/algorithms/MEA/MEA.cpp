@@ -63,9 +63,10 @@ MEA::MEA(const Config &config)
       baroR{config.baroR}, P{config.P}, x{0, 0, config.initialMass},
       mass{config.initialMass}, accelThresh{config.accelThresh},
       speedThresh{config.speedThresh}, Kt{config.Kt}, alpha{config.alpha},
-      c{config.c}, coeffs{config.coeffs}, crossSection{config.crossSection},
-      ae{config.ae}, p0{config.p0}, minMass{config.minMass}, maxMass{
-                                                                 config.maxMass}
+      c{config.c}, coeffs{config.coeffs},
+      crossSection{config.crossSection}, ae{config.ae}, p0{config.p0},
+      minMass{config.minMass}, maxMass{config.maxMass},
+      cdCorrectionFactor(config.cdCorrectionFactor)
 {
     updateState();
 }
@@ -113,7 +114,7 @@ void MEA::computeForce(const Step &step)
     mach = Aeroutils::computeMach(-step.mslAltitude, step.verticalSpeed,
                                   Constants::MSL_TEMPERATURE);
 
-    cd  = Aeroutils::computeCd(coeffs, mach);
+    cd  = cdCorrectionFactor * Aeroutils::computeCd(coeffs, mach);
     rho = Aeroutils::computeRho(-step.mslAltitude, Constants::MSL_TEMPERATURE);
 
     // Dynamic pressure

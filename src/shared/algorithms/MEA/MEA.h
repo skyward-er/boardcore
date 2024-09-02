@@ -64,6 +64,9 @@ public:
 
         float minMass;  //< Minimum mass used for predicted apogee
         float maxMass;  //< Maximum mass used for predicted apogee
+
+        float cdCorrectionFactor;  // Factor to account for extra drag generated
+                                   // by the plume
     };
 
     struct Step
@@ -146,6 +149,8 @@ private:
 
     float minMass;
     float maxMass;
+
+    float cdCorrectionFactor;
 
     MEAState state;
 };
