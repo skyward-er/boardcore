@@ -26,6 +26,7 @@
 #include <actuators/stepper/StepperData.h>
 #include <algorithms/ADA/ADAData.h>
 #include <algorithms/NAS/NASState.h>
+#include <algorithms/ReferenceValues.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLoggerData.h>
 #include <diagnostic/StackData.h>
@@ -155,6 +156,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<NASState>();
     ds.registerType<PitotData>();
     ds.registerType<PressureData>();
+    ds.registerType<ReferenceValues>();
     ds.registerType<QuaternionData>();
     ds.registerType<ServoCommand>();
     ds.registerType<ServoData>();
