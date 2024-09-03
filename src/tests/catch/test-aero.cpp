@@ -57,24 +57,25 @@ TEST_CASE("[AeroUtils] relAltitude")
 
 TEST_CASE("[AeroUtils] relPressure")
 {
-    REQUIRE(relPressure(35) == Approx(100905).epsilon(0.0001));
-    REQUIRE(relPressure(143) == Approx(99618).epsilon(0.0001));
-    REQUIRE(relPressure(450) == Approx(96034).epsilon(0.0001));
-    REQUIRE(relPressure(1765) == Approx(81842).epsilon(0.0001));
-    REQUIRE(relPressure(2210) == Approx(77444).epsilon(0.0001));
+    REQUIRE(relPressure(35, 101325.0f) == Approx(100905).epsilon(0.0001));
+    REQUIRE(relPressure(143, 101325.0f) == Approx(99618).epsilon(0.0001));
+    REQUIRE(relPressure(450, 101325.0f) == Approx(96034).epsilon(0.0001));
+    REQUIRE(relPressure(1765, 101325.0f) == Approx(81842).epsilon(0.0001));
+    REQUIRE(relPressure(2210, 101325.0f) == Approx(77444).epsilon(0.0001));
 }
 
 TEST_CASE("[AeroUtils] relDensity")
 {
 
-    REQUIRE(relDensity(101325) == Approx(1.225).epsilon(0.0001));
-    REQUIRE(relDensity(100129.438691069) ==
+    REQUIRE(relDensity(101325, 101325.0f) == Approx(1.225).epsilon(0.0001));
+    REQUIRE(relDensity(100129.438691069, 101325.0f) ==
             Approx(1.21328277727309).epsilon(0.0001));
-    REQUIRE(relDensity(89874.5715517214) ==
+    REQUIRE(relDensity(89874.5715517214, 101325.0f) ==
             Approx(1.11164259066989).epsilon(0.0001));
-    REQUIRE(relDensity(70108.5471843675) ==
+    REQUIRE(relDensity(70108.5471843675, 101325.0f) ==
             Approx(0.909122116038058).epsilon(0.0001));
-    REQUIRE_FALSE(relDensity(101325) == Approx(1.226).epsilon(0.0001));
+    REQUIRE_FALSE(relDensity(101325, 101325.0f) ==
+                  Approx(1.226).epsilon(0.0001));
 }
 
 TEST_CASE("[AeroUtils] mslPressure")

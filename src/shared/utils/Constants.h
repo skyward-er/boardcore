@@ -28,29 +28,33 @@ namespace Boardcore
 namespace Constants
 {
 
-static constexpr float PI                 = 3.14159265f;  // [rad]
-static constexpr float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr float RADIANS_TO_DEGREES = 180.0f / PI;
+constexpr float PI                 = 3.14159265f;  // [rad]
+constexpr float DEGREES_TO_RADIANS = PI / 180.0f;
+constexpr float RADIANS_TO_DEGREES = 180.0f / PI;
 
-static constexpr float g = 9.80665f;  // [m^s^2]
+constexpr float g = 9.80665f;  // [m^s^2]
 
-static constexpr float TROPOSPHERE_HEIGHT = 11000.f;  // Troposphere height [m]
-static constexpr float a = 0.0065f;  // Troposphere temperature gradient [deg/m]
-static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
-static constexpr float n = g / (R * a);
-static constexpr float nInv = (R * a) / g;
+constexpr float TROPOSPHERE_HEIGHT = 11000.f;  // Troposphere height [m]
+constexpr float a    = 0.0065f;  // Troposphere temperature gradient [deg/m]
+constexpr float R    = 287.05f;  // Air gas constant [J/Kg/K]
+constexpr float n    = g / (R * a);
+constexpr float nInv = (R * a) / g;
 
-static constexpr float CO    = 340.3;  // Sound speed at ground altitude [m/s]
-static constexpr float ALPHA = -3.871e-3;  // Sound speed gradient [1/s]
-static constexpr float RHO_0 = 1.225;      // Air density at sea level [kg/m^3]
-static constexpr float GAMMA_AIR = 1.4f;   // Adiabatic constant for air [1]
-static constexpr float Hn        = 10400.0;  // Scale height [m]
+constexpr float CO        = 340.3;      // Sound speed at ground altitude [m/s]
+constexpr float ALPHA     = -3.871e-3;  // Sound speed gradient [1/s]
+constexpr float RHO_0     = 1.225;      // Air density at sea level [kg/m^3]
+constexpr float GAMMA_AIR = 1.4f;       // Adiabatic constant for air [1]
+constexpr float Hn        = 10400.0;    // Scale height [m]
 
-static constexpr float MSL_PRESSURE    = 101325.0f;  // [Pa]
-static constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
+// This is the old value used for MSL pressure
+// static constexpr float MSL_PRESSURE    = 101325.0f;  // [Pa]
+// This is the new value, changed because this is the same on that the CATS
+// uses, even tho it's not quite right.
+constexpr float MSL_PRESSURE    = 101250.0f;  // [Pa]
+constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
 
-static constexpr float B21_LATITUDE  = 45.501141;
-static constexpr float B21_LONGITUDE = 9.156281;
+constexpr float B21_LATITUDE  = 45.501141;
+constexpr float B21_LONGITUDE = 9.156281;
 }  // namespace Constants
 
 }  // namespace Boardcore
