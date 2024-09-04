@@ -153,28 +153,35 @@ void NAS::predictGyro(const GyroscopeData& angularSpeed)
 
 void NAS::correctBaro(const float pressure)
 {
-    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
+    float altitude = -x(2);
 
-    // Temperature at current altitude. Since in NED the altitude is negative,
-    // mslTemperature returns temperature at current altitude and not at msl
-    float temp = Aeroutils::relTemperature(-x(2), reference.refTemperature);
+    float temp = Aeroutils::relTemperature(altitude, reference.refTemperature);
+
+    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
+    Matrix<float, 1, 1> R = Matrix<float, 1, 1>(powf(config.SIGMA_BAR, 2));
 
     // Compute gradient of the altitude-pressure function
     H[2] = Constants::a * Constants::n * reference.refPressure *
-           powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) / temp;
+           powf(1 + Constants::a * altitude / temp, Constants::n - 1) / temp;
 
     Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
-    Matrix<float, 1, 1> S =
-        H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_BAR);
-    Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
-    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
+    Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
+
+    // If not invertible, don't do the correction and return
+    if (S.determinant() < 1e-3)
+    {
+        return;
+    }
 
     float y_hat =
         Aeroutils::relPressure(reference.refAltitude - x(2),
                                reference.mslPressure, reference.mslTemperature);
+    Matrix<float, 1, 1> e = Matrix<float, 1, 1>(pressure - y_hat);
+    Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
+    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
 
     // Update the state
-    x.head<6>() = x.head<6>() + K * (pressure - y_hat);
+    x.head<6>() = x.head<6>() + K * e;
 }
 
 void NAS::correctGPS(const Vector4f& gps)

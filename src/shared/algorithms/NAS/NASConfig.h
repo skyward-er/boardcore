@@ -37,7 +37,7 @@ struct NASConfig
     Eigen::Vector4f SIGMA_GPS;  ///< [millideg^2, millideg^2, m^2/s^2, m^2/s^2]
                                 ///< estimated GPS variance. position from test,
                                 ///< velocity from datasheet
-    float SIGMA_BAR;            ///< [m^2]     Estimated altitude variance
+    float SIGMA_BAR;            ///< [Pa]     Estimated altitude variance
     float SIGMA_POS;    ///< [m^2]     Estimated variance of the position noise
     float SIGMA_VEL;    ///< [(m/s)^2] Estimated variance of the velocity noise
     float SIGMA_PITOT;  ///< [Pa^2]    Estimated variance of the pitot velocity
