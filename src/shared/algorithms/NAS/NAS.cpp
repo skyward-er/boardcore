@@ -23,6 +23,7 @@
 #include "NAS.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <math.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <iostream>
@@ -333,35 +334,50 @@ void NAS::correctAcc(const AccelerometerData& acc)
     correctAcc(accV.normalized());
 }
 
-void NAS::correctPitot(const float airspeed)
+void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
 {
-    // Correct with pitot airspeed only if the airspeed is greater than zero. Do
-    // not correct otherwise
-    if (airspeed > 0)
+    using namespace Constants;
+
+    const float d             = x(2);
+    const float vd            = x(5);
+    const float totalPressure = staticPressure + dynamicPressure;
+    const float relTemperature =
+        Aeroutils::relTemperature(-d, reference.refTemperature);
+
+    // Temporary value reused in two different formulas
+    float temp =
+        1 + (GAMMA_AIR - 1) / 2 * (vd * vd / (GAMMA_AIR * R * relTemperature));
+
+    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
+    H(0, 5)               = -GAMMA_AIR * temp * vd;
+
+    // If a nan is generated, don't do the correction
+    if (isnan(H(0, 5)))
     {
-        Matrix<float, 1, 1> R(config.SIGMA_PITOT);
-        // Take the already estimated velocities
-        Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
-
-        Matrix<float, 1, 3> H = Matrix<float, 1, 3>::Zero();
-        H.coeffRef(0, 2)      = -x[5] / airspeed;
-
-        // Take covariance matrix for the velocities
-        Matrix<float, 3, 3> Pl = P.block<3, 3>(IDX_VEL, IDX_VEL);
-        Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
-
-        // Correct with the pitot only if S is invertible
-        if (S[0] != 0)
-        {
-            // Compute the kalman Gain
-            Matrix<float, 3, 1> K = Pl * H.transpose() * S.inverse();
-
-            x.block<3, 1>(IDX_VEL, 0) = vel + K * (-airspeed - x[5]);
-
-            P.block<3, 3>(IDX_VEL, IDX_VEL) =
-                (Matrix<float, 3, 3>::Identity() - K * H) * Pl;
-        }
+        return;
     }
+
+    float R = config.SIGMA_PITOT * config.SIGMA_PITOT;
+
+    Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+    float S                = H * Pl * H.transpose() + R;
+
+    // If not invertible, don't do the correction and return
+    if (S < 1e-3)
+    {
+        return;
+    }
+
+    float y_hat =
+        std::pow(temp, (GAMMA_AIR / (GAMMA_AIR - 1))) - 1;  // pRatio_model
+    float y_measure = dynamicPressure / totalPressure;      // pRatio_measure
+
+    float e               = y_measure - y_hat;
+    Matrix<float, 6, 1> K = Pl * H.transpose() / S;
+    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
+
+    // Update the state
+    x.head<6>() = x.head<6>() + K * e;
 }
 
 NASState NAS::getState() const

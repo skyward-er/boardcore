@@ -130,13 +130,16 @@ public:
     void correctAcc(const AccelerometerData& acc);
 
     /**
-     * @brief Correction with pitot pressure.
+     * @brief Correction with pitot pressures.
      *
-     * Do not call this function after apogee!
+     * @warning Do not call this function after apogee!
      *
-     * @param airspeed Speed of air calculated by the Pitot.
+     * @param staticPressure Is the static pressure measured from the pitot
+     * sensor.
+     * @param dynamicPressure Is the dynamic pressure measured from the pitot
+     * sensor (difference pressure between total pressure and static pressure).
      */
-    void correctPitot(const float airspeed);
+    void correctPitot(const float staticPressure, const float dynamicPressure);
 
     /**
      * @return EKF state.
