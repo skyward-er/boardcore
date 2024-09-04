@@ -29,13 +29,15 @@ namespace Boardcore
 
 struct NASConfig
 {
-    float T;            ///< [s]       Sample period
-    float SIGMA_BETA;   ///< [rad/s^2] Estimated gyroscope bias variance
-    float SIGMA_W;      ///< [rad^2]   Estimated gyroscope variance
-    float SIGMA_ACC;    ///< [uT^2]    Estimated accelerometer variance
-    float SIGMA_MAG;    ///< [uT^2]    Estimated magnetometer variance
-    float SIGMA_GPS;    ///< [m^2]     Estimated GPS variance
-    float SIGMA_BAR;    ///< [m^2]     Estimated altitude variance
+    float T;                    ///< [s]       Sample period
+    float SIGMA_BETA;           ///< [rad/s^2] Estimated gyroscope bias variance
+    float SIGMA_W;              ///< [rad^2]   Estimated gyroscope variance
+    float SIGMA_ACC;            ///< [uT^2]    Estimated accelerometer variance
+    float SIGMA_MAG;            ///< [uT^2]    Estimated magnetometer variance
+    Eigen::Vector4f SIGMA_GPS;  ///< [millideg^2, millideg^2, m^2/s^2, m^2/s^2]
+                                ///< estimated GPS variance. position from test,
+                                ///< velocity from datasheet
+    float SIGMA_BAR;            ///< [m^2]     Estimated altitude variance
     float SIGMA_POS;    ///< [m^2]     Estimated variance of the position noise
     float SIGMA_VEL;    ///< [(m/s)^2] Estimated variance of the velocity noise
     float SIGMA_PITOT;  ///< [Pa^2]    Estimated variance of the pitot velocity

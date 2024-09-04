@@ -49,6 +49,11 @@ static constexpr float Hn        = 10400.0;  // Scale height [m]
 static constexpr float MSL_PRESSURE    = 101325.0f;  // [Pa]
 static constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
 
+static constexpr float gpsLatConst =
+    111132.95225;  ///< Constants used in GPS correction(lat)
+static constexpr float gpsLonConst =
+    111412.87733;  ///< Constants used in GPS correction(lon)
+
 static constexpr float B21_LATITUDE  = 45.501141;
 static constexpr float B21_LONGITUDE = 9.156281;
 }  // namespace Constants

@@ -69,7 +69,7 @@ NASConfig getEKConfig()
     config.SIGMA_W        = 0.3f;
     config.SIGMA_ACC      = 0.1f;
     config.SIGMA_MAG      = 0.1f;
-    config.SIGMA_GPS      = 10.0f;
+    config.SIGMA_GPS      = {0.002f, 0.002f, 0.01f / 30.0f, 0.01f / 30.0f};
     config.SIGMA_BAR      = 4.3f;
     config.SIGMA_POS      = 10.0;
     config.SIGMA_VEL      = 10.0;
