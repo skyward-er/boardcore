@@ -59,8 +59,8 @@ NAS::NAS(NASConfig config) : config(config)
     }
 
     // Utility matrixes
-    R_acc << config.SIGMA_ACC * Matrix3f::Identity();
-    R_mag << config.SIGMA_MAG * Matrix3f::Identity();
+    R_acc << config.SIGMA_ACC * config.SIGMA_ACC * Matrix3f::Identity();
+    R_mag << config.SIGMA_MAG * config.SIGMA_MAG * Matrix3f::Identity();
     {
         // clang-format off
         Q_quat << (config.SIGMA_W * config.SIGMA_W * config.T + (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) * Matrix3f::Identity(),
@@ -69,9 +69,11 @@ NAS::NAS(NASConfig config) : config(config)
             (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * Matrix3f::Identity();
         // clang-format on
 
-        Q_lin << config.SIGMA_POS * Matrix3f::Identity(), MatrixXf::Zero(3, 3),
+        Q_lin << config.SIGMA_POS * config.SIGMA_POS * Matrix3f::Identity(),
+            MatrixXf::Zero(3, 3),
             // cppcheck-suppress constStatement
-            MatrixXf::Zero(3, 3), config.SIGMA_VEL * Matrix3f::Identity();
+            MatrixXf::Zero(3, 3),
+            config.SIGMA_VEL * config.SIGMA_VEL * Matrix3f::Identity();
 
         F_lin                   = Matrix<float, 6, 6>::Identity();
         F_lin.block<3, 3>(0, 3) = config.T * Matrix3f::Identity();
@@ -159,17 +161,17 @@ void NAS::correctBaro(const float pressure)
     float temp = Aeroutils::relTemperature(altitude, reference.refTemperature);
 
     Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
-    Matrix<float, 1, 1> R = Matrix<float, 1, 1>(powf(config.SIGMA_BAR, 2));
+    float R               = config.SIGMA_BAR * config.SIGMA_BAR;
 
     // Compute gradient of the altitude-pressure function
     H[2] = Constants::a * Constants::n * reference.refPressure *
            powf(1 + Constants::a * altitude / temp, Constants::n - 1) / temp;
 
     Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
-    Matrix<float, 1, 1> S  = H * Pl * H.transpose() + R;
+    float S                = H * Pl * H.transpose() + R;
 
     // If not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S < 1e-3)
     {
         return;
     }
@@ -178,7 +180,7 @@ void NAS::correctBaro(const float pressure)
         Aeroutils::relPressure(reference.refAltitude - x(2),
                                reference.mslPressure, reference.mslTemperature);
     Matrix<float, 1, 1> e = Matrix<float, 1, 1>(pressure - y_hat);
-    Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
+    Matrix<float, 6, 1> K = Pl * H.transpose() / S;
     P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
 
     // Update the state
@@ -215,6 +217,7 @@ void NAS::correctGPS(const Vector4f& gps)
     Matrix<float, 1, 4> R_molt = {1, 1, std::max(std::abs(gps(2)), 30.0f),
                                   std::max(std::abs(gps(3)), 30.0f)};
     Matrix<float, 4, 4> R_gps  = config.SIGMA_GPS.asDiagonal().toDenseMatrix() *
+                                config.SIGMA_GPS.asDiagonal().toDenseMatrix() *
                                 R_molt.asDiagonal().toDenseMatrix();
 
     // Current state [n e vn ve]
