@@ -43,8 +43,15 @@ public:
                          const float supplyVoltage = 5.0,
                          const float maxPressure   = 0,
                          const float minPressure   = 0)
-        : getVoltage(getVoltage), supplyVoltage(supplyVoltage),
-          maxPressure(maxPressure), minPressure(minPressure)
+        : getVoltage{getVoltage}, supplyVoltage{supplyVoltage},
+          maxPressure{maxPressure}, minPressure{minPressure}
+    {
+    }
+
+    AnalogPressureSensor(AnalogPressureSensor&& other)
+        : getVoltage{std::move(other.getVoltage)}, offset{other.offset},
+          supplyVoltage{other.supplyVoltage}, maxPressure{other.maxPressure},
+          minPressure{other.minPressure}, offsetMutex{}
     {
     }
 
@@ -53,11 +60,33 @@ public:
     bool selfTest() override { return true; }
 
     /**
-     * @brief Sets the offset that will be removed from the measured pressure.
+     * @brief Set the current analog pressure sensor offset. Ignores any
+     * previous offsets.
      */
-    void setOffset(const float offset) { this->offset = offset; }
+    void setOffset(float value)
+    {
+        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
+        this->offset = value;
+    }
 
-    void updateOffset(float offset) { this->offset += offset; }
+    /**
+     * @brief Update the current analog pressure sensor offset. Adds the new
+     * value to the old offset.
+     */
+    void updateOffset(float value)
+    {
+        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
+        this->offset += value;
+    }
+
+    /**
+     * @brief Retrieve the current offset.
+     */
+    float getOffset()
+    {
+        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
+        return offset;
+    }
 
 protected:
     AnalogPressureData sampleImpl() override
@@ -77,7 +106,11 @@ protected:
         else if (pressure.pressure > maxPressure)
             pressure.pressure = maxPressure;
 
-        pressure.pressure -= offset;
+        // Apply offset correction
+        {
+            miosix::Lock<miosix::FastMutex> lock{offsetMutex};
+            pressure.pressure -= offset;
+        }
 
         return pressure;
     }
@@ -88,10 +121,13 @@ protected:
     ///< Function that returns the sensor voltage.
     std::function<ADCData()> getVoltage;
 
+    // std::atomic<float> does not support +=
+    miosix::FastMutex offsetMutex;
+    float offset = 0;
+
     const float supplyVoltage;
     const float maxPressure;
     const float minPressure;
-    float offset = 0;
 };
 
 }  // namespace Boardcore

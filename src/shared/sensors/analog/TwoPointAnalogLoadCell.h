@@ -53,6 +53,13 @@ public:
     {
     }
 
+    TwoPointAnalogLoadCell(TwoPointAnalogLoadCell&& other)
+        : getVoltage{std::move(other.getVoltage)},
+          dynamicOffset{other.dynamicOffset}, staticScale{other.staticScale},
+          staticOffset{other.staticOffset}, offsetMutex{}
+    {
+    }
+
     bool init() override { return true; }
 
     bool selfTest() override { return true; }
@@ -74,6 +81,15 @@ public:
     {
         miosix::Lock<miosix::FastMutex> lock{offsetMutex};
         dynamicOffset += value;
+    }
+
+    /**
+     * @brief Retrieve the current offset.
+     */
+    float getOffset()
+    {
+        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
+        return dynamicOffset;
     }
 
 protected:
