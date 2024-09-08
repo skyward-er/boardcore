@@ -78,7 +78,7 @@ struct CanPressureData : PressureData
 
     void print(std::ostream& os) const
     {
-        os << pressureTimestamp << "," << pressure
+        os << pressureTimestamp << "," << pressure << ","
            << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
            << "\n";
     }
@@ -96,7 +96,7 @@ struct CanTemperatureData : TemperatureData
 
     void print(std::ostream& os) const
     {
-        os << temperatureTimestamp << "," << temperature
+        os << temperatureTimestamp << "," << temperature << ","
            << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
            << "\n";
     }
@@ -114,7 +114,7 @@ struct CanCurrentData : CurrentData
 
     void print(std::ostream& os) const
     {
-        os << currentTimestamp << "," << current
+        os << currentTimestamp << "," << current << ","
            << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
            << "\n";
     }
@@ -133,7 +133,7 @@ struct CanServoData : ServoData
     void print(std::ostream& os) const
     {
         os << timestamp << "," << static_cast<int>(timer) << ","
-           << static_cast<int>(channel) << "," << position
+           << static_cast<int>(channel) << "," << position << ","
            << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
            << "\n";
     }
@@ -153,8 +153,9 @@ struct CanBatteryVoltageSensorData : BatteryVoltageSensorData
     void print(std::ostream& os) const
     {
         os << voltageTimestamp << "," << static_cast<int>(channelId) << ","
-           << voltage << "," << batVoltage << static_cast<int>(secondaryType)
-           << "," << static_cast<int>(source) << "\n";
+           << voltage << "," << batVoltage << ","
+           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
+           << "\n";
     }
 };
 
@@ -170,7 +171,7 @@ struct CanVoltageData : VoltageData
 
     void print(std::ostream& os) const
     {
-        os << voltageTimestamp << "," << voltage
+        os << voltageTimestamp << "," << voltage << ","
            << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
            << "\n";
     }
@@ -214,7 +215,7 @@ struct CanDeviceStatus : DeviceStatus
     {
         os << timestamp << "," << static_cast<int>(state) << "," << logNumber
            << "," << (armed ? 1 : 0) << "," << (hil ? 1 : 0) << ","
-           << (logGood ? 1 : 0) << static_cast<int>(secondaryType) << ","
+           << (logGood ? 1 : 0) << "," << static_cast<int>(secondaryType) << ","
            << static_cast<int>(source) << "\n";
     }
 };
@@ -244,8 +245,9 @@ struct CanServoCommand : ServoCommand
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << openingTime << static_cast<int>(secondaryType)
-           << "," << static_cast<int>(source) << "\n";
+        os << timestamp << "," << openingTime << ","
+           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
+           << "\n";
     }
 };
 
@@ -275,7 +277,7 @@ struct CanServoFeedback : ServoFeedback
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << aperture << "," << (open ? 1 : 0)
+        os << timestamp << "," << aperture << "," << (open ? 1 : 0) << ","
            << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
            << "\n";
     }
@@ -304,6 +306,7 @@ inline Canbus::CanMessage toCanMessage(const PressureData& data)
 
     return message;
 }
+
 inline Canbus::CanMessage toCanMessage(const TemperatureData& data)
 {
     Canbus::CanMessage message;
