@@ -49,9 +49,9 @@ public:
     }
 
     AnalogPressureSensor(AnalogPressureSensor&& other)
-        : getVoltage{std::move(other.getVoltage)}, offset{other.offset},
-          supplyVoltage{other.supplyVoltage}, maxPressure{other.maxPressure},
-          minPressure{other.minPressure}, offsetMutex{}
+        : getVoltage{std::move(other.getVoltage)}, offsetMutex{},
+          offset{other.offset}, supplyVoltage{other.supplyVoltage},
+          maxPressure{other.maxPressure}, minPressure{other.minPressure}
     {
     }
 
