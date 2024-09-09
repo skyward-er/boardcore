@@ -118,6 +118,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<CanServoFeedback>();
     ds.registerType<CanTemperatureData>();
     ds.registerType<CanVoltageData>();
+    ds.registerType<CanEvent>();
     ds.registerType<CpuMeterData>();
     ds.registerType<CurrentData>();
     ds.registerType<CurrentData>();
