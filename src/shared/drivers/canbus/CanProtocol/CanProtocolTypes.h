@@ -283,6 +283,22 @@ struct CanServoFeedback : ServoFeedback
     }
 };
 
+struct CanEvent
+{
+    uint64_t timestamp;
+    uint8_t source = 0;
+    uint8_t target = 0;
+    uint8_t event  = 0;
+
+    static std::string header() { return "timestamp,source,target,event"; }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << source << "," << target << "," << event
+           << "\n";
+    }
+};
+
 inline Canbus::CanMessage toCanMessage(const PitotData& data)
 {
     Canbus::CanMessage message;
