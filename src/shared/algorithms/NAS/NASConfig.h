@@ -31,16 +31,16 @@ struct NASConfig
 {
     float T;                    ///< [s]       Sample period
     float SIGMA_BETA;           ///< [rad/s^2] Estimated gyroscope bias variance
-    float SIGMA_W;              ///< [rad^2]   Estimated gyroscope variance
-    float SIGMA_ACC;            ///< [uT^2]    Estimated accelerometer variance
-    float SIGMA_MAG;            ///< [uT^2]    Estimated magnetometer variance
-    Eigen::Vector4f SIGMA_GPS;  ///< [millideg^2, millideg^2, m^2/s^2, m^2/s^2]
+    float SIGMA_W;              ///< [rad]   Estimated gyroscope variance
+    float SIGMA_ACC;            ///< [m/s^2]    Estimated accelerometer variance
+    float SIGMA_MAG;            ///< [uT]    Estimated magnetometer variance
+    Eigen::Vector4f SIGMA_GPS;  ///< [millideg, millideg, m/s, m/s]
                                 ///< estimated GPS variance. position from test,
                                 ///< velocity from datasheet
     float SIGMA_BAR;            ///< [Pa]     Estimated altitude variance
-    float SIGMA_POS;    ///< [m^2]     Estimated variance of the position noise
-    float SIGMA_VEL;    ///< [(m/s)^2] Estimated variance of the velocity noise
-    float SIGMA_PITOT;  ///< [Pa^2]    Estimated variance of the pitot velocity
+    float SIGMA_POS;    ///< [m]     Estimated variance of the position noise
+    float SIGMA_VEL;    ///< [m/s] Estimated variance of the velocity noise
+    float SIGMA_PITOT;  ///< [Pa]    Estimated variance of the pitot velocity
 
     float P_POS;           ///< Position prediction covariance horizontal
     float P_POS_VERTICAL;  ///< Position prediction covariance vertical
