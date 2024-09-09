@@ -54,9 +54,9 @@ public:
     }
 
     TwoPointAnalogLoadCell(TwoPointAnalogLoadCell&& other)
-        : getVoltage{std::move(other.getVoltage)},
+        : getVoltage{std::move(other.getVoltage)}, offsetMutex{},
           dynamicOffset{other.dynamicOffset}, staticScale{other.staticScale},
-          staticOffset{other.staticOffset}, offsetMutex{}
+          staticOffset{other.staticOffset}
     {
     }
 
