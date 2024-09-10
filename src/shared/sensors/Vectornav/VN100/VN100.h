@@ -58,6 +58,7 @@
 #include <string.h>
 #include <utils/Debug.h>
 
+#include "../VNCommonSerial.h"
 #include "VN100Data.h"
 #include "drivers/usart/USART.h"
 
@@ -67,16 +68,11 @@ namespace Boardcore
 /**
  * @brief Driver class for VN100 IMU.
  */
-class VN100 : public Sensor<VN100Data>, public ActiveObject
+class VN100 : public Sensor<VN100Data>,
+              public ActiveObject,
+              public VNCommonSerial
 {
 public:
-    enum class CRCOptions : uint8_t
-    {
-        CRC_NO        = 0x00,
-        CRC_ENABLE_8  = 0x08,
-        CRC_ENABLE_16 = 0x10
-    };
-
     /**
      * @brief Constructor.
      *
@@ -105,14 +101,6 @@ public:
      */
     string getLastRawSample();
 
-    /**
-     * @brief Method to reset the sensor to default values and to close
-     * the connection. Used if you need to close and re initialize the sensor.
-     *
-     * @return True if operation succeeded.
-     */
-    bool closeAndReset();
-
     bool selfTest() override;
 
 private:
@@ -134,119 +122,17 @@ private:
     VN100Data sampleData();
 
     /**
-     * @brief Disables the async messages that the vn100 is default configured
-     * to send at 40Hz on startup.
-     *
-     * @param waitResponse If true wait for a serial response.
-     *
-     * @return True if operation succeeded.
-     */
-    bool disableAsyncMessages(bool waitResponse = true);
-
-    /**
-     * @brief Configures the default serial communication.
-     *
-     * @return True if operation succeeded.
-     */
-    bool configDefaultSerialPort();
-
-    /**
-     * @brief Configures the user defined serial communication.
-     *
-     * @return True if operation succeeded.
-     */
-    bool configUserSerialPort();
-
-    /**
-     * @brief Sets the user selected crc method.
-     *
-     * @param waitResponse If true wait for a serial response.
-     *
-     * @return True if operation succeeded.
-     */
-    bool setCrc(bool waitResponse = true);
-
-    /**
      * @brief Method implementation of self test.
      *
      * @return True if operation succeeded.
      */
     bool selfTestImpl();
 
-    QuaternionData sampleQuaternion();
-
-    MagnetometerData sampleMagnetometer();
-
-    AccelerometerData sampleAccelerometer();
-
-    GyroscopeData sampleGyroscope();
-
     TemperatureData sampleTemperature();
 
     PressureData samplePressure();
 
-    /**
-     * @brief Sends the command to the sensor with the correct checksum added
-     * so '*' symbol is not needed at the end of the string as well as the '$'
-     * at the beginning of the command.
-     *
-     * @param command Command to send.
-     *
-     * @return True if operation succeeded.
-     */
-    bool sendStringCommand(std::string command);
-
-    /**
-     * @brief Receives a command from the VN100 serialInterface->recv() but
-     * swaps the first \n with a \0 to close the message.
-     *
-     * @param command The char array which will be filled with the command.
-     * @param maxLength Maximum length for the command array.
-     *
-     * @return True if operation succeeded.
-     */
-    bool recvStringCommand(char *command, int maxLength);
-
-    /**
-     * @brief Method to verify the crc validity of a command.
-     *
-     * @param command The char array which contains the command.
-     * @param maxLength Maximum length for the command array.
-     *
-     * @return True if operation succeeded.
-     */
-    bool verifyChecksum(char *command, int maxLength);
-
-    /**
-     * @brief Calculate the 8bit checksum on the given array.
-     *
-     * @param command Command on which compute the crc.
-     * @param length Array length.
-     *
-     * @return The 8 bit checksum.
-     */
-    uint8_t calculateChecksum8(uint8_t *message, int length);
-
-    /**
-     * @brief Calculate the 16bit array on the given array.
-     *
-     * @param command Command on which compute the crc.
-     * @param length Array length.
-     *
-     * @return The 16 bit CRC16-CCITT error check.
-     */
-    uint16_t calculateChecksum16(uint8_t *message, int length);
-
-    /**
-     * @brief Serial interface that is needed to communicate
-     * with the sensor via ASCII codes.
-     */
-    USART &usart;
-    int baudRate;
-
     uint16_t samplePeriod;
-    CRCOptions crc;
-    bool isInit = false;
 
     /**
      * @brief IMU pre-elaborated sample string for efficiency reasons.
@@ -260,24 +146,9 @@ private:
     string *preSampleTempPressString = nullptr;
 
     /**
-     * @brief Pointer to the received string by the sensor. Allocated 1 time
-     * only (200 bytes).
-     */
-    char *recvString = nullptr;
-
-    /**
-     * @brief Actual strlen() of the recvString.
-     */
-    unsigned int recvStringLength = 0;
-
-    /**
      * @brief Mutex to synchronize the reading and writing of the threadSample
      */
     mutable miosix::FastMutex mutex;
     VN100Data threadSample;
-
-    PrintLogger logger = Logging::getLogger("vn100");
-
-    static const unsigned int recvStringMaxDimension = 200;
 };
 }  // namespace Boardcore
