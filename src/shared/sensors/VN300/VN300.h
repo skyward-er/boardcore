@@ -79,6 +79,8 @@ public:
         CRC_ENABLE_16 = 0x10
     };
 
+    std::array<uint32_t, 9> BaudrateList = {9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
+    
     /**
      * @brief Constructor.
      *
@@ -90,7 +92,7 @@ public:
      * @param antPos antenna A position
      */
     VN300(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod   = 1,
+          uint16_t samplePeriod   = 20,
           AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           Eigen::Matrix3f rotMat  = Eigen::Matrix3f::Identity());
@@ -138,6 +140,20 @@ private:
      * @return VN300Data The sampled data
      */
     VN300Data sampleData();
+    
+    /**
+     * @brief Method to find the baudrate of the sensor at startup
+     *
+     * @return True if operation succeeded.
+     */
+    bool findBaudrate();
+
+    /**
+     * @brief pause asynchronous messages
+     *
+     * @return True if operation succeeded.
+     */
+    bool asyncPause();
 
     /**
      * @brief Disables the async messages that the VN300 is default configured
@@ -162,6 +178,13 @@ private:
      * @return True if operation succeeded.
      */
     bool configUserSerialPort();
+
+    /**
+     * @brief reset to factory settings.
+     * 
+     * @return True if operation succeeded.
+    */
+    bool resetFactorySettings();
 
     /**
      * @brief Sets the user selected crc method.
