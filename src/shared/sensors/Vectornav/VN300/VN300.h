@@ -74,14 +74,6 @@ namespace Boardcore
 class VN300 : public Sensor<VN300Data>, public VNCommonSerial
 {
 public:
-    enum class CRCOptions : uint8_t
-    {
-        CRC_ENABLE_8  = 0x08,
-        CRC_ENABLE_16 = 0x10
-        // TODO: add CRC_NO (handled by adding XX at the end of a command inside
-        // sendStringCommand())
-    };
-
     /**
      * @brief Constructor.
      *
@@ -126,14 +118,6 @@ private:
      */
     bool findBaudrate();
     // TODO: should we keep it? maybe in common files?
-
-    /**
-     * @brief pause asynchronous messages
-     *
-     * @return True if operation succeeded.
-     */
-    bool asyncPause();
-    // TODO: should we keep it? not needed with vn100... with vn300?
 
     /**
      * @brief Disables the async messages that the VN300 is default configured
@@ -301,23 +285,11 @@ private:
     // "check if ==VNERR" ... can be replaced with a function in common files?
 
     /**
-     * @brief Method to verify the crc validity of a command.
-     *
-     * @param command The char array which contains the command.
-     * @param maxLength Maximum length for the command array.
-     *
-     * @return True if operation succeeded.
-     */
-    bool verifyChecksum(char *command, int maxLength);
-    // TODO: put in common files
-
-    /**
      * @brief Default baudrate value for the usart communication.
      */
     static const int defaultBaudRate = 115200;
 
     VN300Defs::SamplingMethod samplingMethod;
-    CRCOptions crc;
     bool isInit = false;
 
     VN300Defs::AntennaPosition antPosA;

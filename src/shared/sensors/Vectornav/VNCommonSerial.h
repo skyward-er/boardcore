@@ -33,7 +33,15 @@ namespace Boardcore
 class VNCommonSerial
 {
 public:
-    VNCommonSerial(USART &usart, int baudrate, const std::string &sensorName);
+    enum class CRCOptions : uint8_t
+    {
+        CRC_NO        = 0x00,
+        CRC_ENABLE_8  = 0x08,
+        CRC_ENABLE_16 = 0x10
+    };
+
+    VNCommonSerial(USART &usart, int baudrate, const std::string &sensorName,
+                   CRCOptions crc);
 
     ~VNCommonSerial();
 
@@ -65,6 +73,16 @@ protected:
     uint16_t calculateChecksum16(const uint8_t *message, int length);
 
     /**
+     * @brief Method to verify the crc validity of a command.
+     *
+     * @param command The char array which contains the command.
+     * @param maxLength Maximum length for the command array.
+     *
+     * @return True if operation succeeded.
+     */
+    bool verifyChecksum(char *command, int maxLength);
+
+    /**
      * @brief Clear the buffer of the serial interface.
      *
      * This is a placeholder function for the serial interface.
@@ -74,11 +92,20 @@ protected:
     // TODO: remove and use the one in the usart driver
 
     /**
+     * @brief Pause asynchronous messages
+     *
+     * @return True if operation succeeded.
+     */
+    bool asyncPause();
+
+    /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
     USART &usart;
     int baudRate;
+
+    CRCOptions crc;
 
     PrintLogger logger;
 };
