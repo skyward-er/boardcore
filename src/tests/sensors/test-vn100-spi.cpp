@@ -21,7 +21,7 @@
  */
 
 #include <drivers/spi/SPIDriver.h>
-#include <sensors/VN100/VN100Spi.h>
+#include <sensors/Vectornav/VN100/VN100Spi.h>
 
 using namespace miosix;
 using namespace Boardcore;

@@ -63,6 +63,7 @@
 #include <sensors/UBXGPS/UBXGPSData.h>
 #include <sensors/Vectornav/VN100/VN100SerialData.h>
 #include <sensors/Vectornav/VN100/VN100SpiData.h>
+#include <sensors/Vectornav/VN300/VN300Data.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
@@ -173,6 +174,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<UBXGPSData>();
     ds.registerType<VN100SerialData>();
     ds.registerType<VN100SpiData>();
+    ds.registerType<VN300Data>();
     ds.registerType<VoltageData>();
     ds.registerType<Xbee::XbeeStatus>();
 }
