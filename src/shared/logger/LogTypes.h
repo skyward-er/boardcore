@@ -25,6 +25,7 @@
 #include <actuators/Servo/ServoData.h>
 #include <actuators/stepper/StepperData.h>
 #include <algorithms/ADA/ADAData.h>
+#include <algorithms/Follower/FollowerData.h>
 #include <algorithms/NAS/NASState.h>
 #include <algorithms/ReferenceValues.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
@@ -177,6 +178,9 @@ void registerTypes(Deserializer& ds)
     ds.registerType<VN300Data>();
     ds.registerType<VoltageData>();
     ds.registerType<Xbee::XbeeStatus>();
+    ds.registerType<FollowerState>();
+    ds.registerType<LogAntennasCoordinates>();
+    ds.registerType<LogRocketCoordinates>();
 }
 
 }  // namespace LogTypes
