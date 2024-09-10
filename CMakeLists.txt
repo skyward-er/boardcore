@@ -129,6 +129,7 @@ sbs_target(test-hil stm32f767zi_death_stack_v4)
 
 add_executable(catch-tests-boardcore
     src/tests/catch/catch-tests-entry.cpp
+    src/tests/catch/skyQuaternion/test-skyquaternion.cpp
     src/tests/catch/examples/example-test-factorial.cpp
     src/tests/catch/test-aero.cpp
     # src/tests/catch/test-buttonhandler.cpp

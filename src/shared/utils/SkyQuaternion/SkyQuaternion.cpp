@@ -24,6 +24,8 @@
 
 #include <utils/Constants.h>
 
+#include <cmath>
+
 #include "iostream"
 
 using namespace std;
@@ -80,6 +82,44 @@ Vector3f quat2eul(const Vector4f& quat)
                         powf(qw, 2) - powf(qx, 2) - powf(qy, 2) + powf(qz, 2));
 
     return Vector3f(roll, pitch, yaw) * Constants::RADIANS_TO_DEGREES;
+}
+
+Vector3f quat2stepperAngles(const Vector4f& q)
+{
+    float qx = q[0];
+    float qy = q[1];
+    float qz = q[2];
+    float qw = q[3];
+
+    Vector3f angles;
+
+    // clang-format off
+    //           DOWN                  EAST                    NORD
+    Matrix3f R{
+          {(2*(qw*qw + qx*qx)-1), -2*(qx*qy - qw*qz),     -2*(qx*qz + qw*qy)},
+          {2*(qx*qy + qw*qz),     -(2*(qw*qw + qy*qy)-1), -2*(qy*qz - qw*qx)},
+          {2*(qx*qz - qw*qy),     -2*(qy*qz + qw*qx),     -(2*(qw*qw + qz*qz)-1)}};
+    // clang-format on
+
+    // pitch: rotation of motor2 (how the Down-axis move on DN-fixed plane)
+    angles[1] = std::atan2(R(2, 0), R(0, 0)) * 180.0f / Constants::PI;
+
+    // yaw: rotation of motor1 (rotation angle of East-body-versor from
+    // East-fixed-versor seen from Down-body-versor )
+    Vector3f n = R.col(0);  // observing vector: normal to
+                            // East-body-vector and East-fixed-versor
+
+    Vector3f e = R.col(1);
+    Vector3f temp(0, 1, 0);
+
+    Vector3f x = temp.transpose().cross(e);
+
+    float sign = ((x.dot(n) > 0) ? 1.f : (x.dot(n) < 0) ? -1.f : 0.f);
+    float c    = sign * x.norm();
+    angles[0]  = -std::atan2(c, temp.dot(e)) * 180.0f / Constants::PI;
+
+    angles[2] = 0;  // Roll assumed 0
+    return angles;
 }
 
 Vector4f rotationMatrix2quat(const Matrix3f& rtm)
