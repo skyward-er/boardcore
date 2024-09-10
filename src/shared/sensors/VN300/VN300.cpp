@@ -182,10 +182,18 @@ bool VN300::closeAndReset()
 
 bool VN300::writeSettingsCommand()
 {
+    miosix::Thread::sleep(50);
     if (!sendStringCommand("VNWNV"))
     {
         LOG_WARN(logger, "Impossible to save settings");
     }
+
+    miosix::Thread::sleep(500);
+    // Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
+
+    if (checkErrorVN(recvString))
+        return false;
 
     // Send the reset command to the VN300 in order to restart the Kalman filter
     if (!sendStringCommand("VNRST"))
@@ -194,6 +202,13 @@ bool VN300::writeSettingsCommand()
 
         return false;
     }
+
+    miosix::Thread::sleep(500);
+    // Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
+
+    if (checkErrorVN(recvString))
+        return false;
 
     return true;
 }
@@ -288,6 +303,7 @@ bool VN300::disableAsyncMessages(bool waitResponse)
     std::string command =
         "VNWRG,06,00";  // Put 0 in register number 6 (ASYNC Config)
 
+    miosix::Thread::sleep(50);
     // Send the command
     if (!sendStringCommand(command))
     {
@@ -308,6 +324,7 @@ bool VN300::disableAsyncMessages(bool waitResponse)
 
 bool VN300::configDefaultSerialPort()
 {
+    miosix::Thread::sleep(50);
     // I can send the command
     if (!sendStringCommand("VNWRG,5,115200"))
     {
@@ -339,8 +356,10 @@ bool VN300::findBaudrate()
 
     for (uint32_t i = 0; i < BaudrateList.size(); i++)
     {
+
         usart.setBaudrate(BaudrateList[i]);
 
+        miosix::Thread::sleep(50);
         // I pause the async messages, we don't know if they are present.
         asyncPause();
 
@@ -348,11 +367,13 @@ bool VN300::findBaudrate()
         usart.clearQueue();
 
         // I check the model number
-        if (!sendStringCommand("VNRRG,01"))
-        {
-            LOG_WARN(logger, "Unable to send string command");
-            return false;
-        }
+        // if (!sendStringCommand("VNRRG,01"))
+        //{
+        //    LOG_WARN(logger, "Unable to send string command");
+        //    return false;
+        //}
+        miosix::Thread::sleep(50);
+        usart.writeString("$VNRRG,01*XX\n");
 
         if (recvStringCommand(recvString, recvStringMaxDimension))
         {
@@ -380,6 +401,7 @@ bool VN300::configUserSerialPort()
     // I format the command to change baud rate
     command = fmt::format("{}{}", "VNWRG,5,", baudRate);
 
+    miosix::Thread::sleep(50);
     // I can send the command
     if (!sendStringCommand(command))
     {
@@ -449,10 +471,10 @@ bool VN300::setCrc(bool waitResponse)
     }
 
     // I need to send the command in both crc because i don't know what type
-    // of crc is previously selected. So in order to get the command accepted
-    // i need to do it two times with different crc.
+    // of crc is previously selected
     crc = CRCOptions::CRC_ENABLE_8;
 
+    miosix::Thread::sleep(50);
     // Send the command
     if (!sendStringCommand(command))
     {
@@ -463,22 +485,44 @@ bool VN300::setCrc(bool waitResponse)
     if (waitResponse)
     {
         recvStringCommand(recvString, recvStringMaxDimension);
-        checkErrorVN(recvString);
+        uint8_t error = checkErrorVN(recvString);
+        if (error == 3)
+        {
+            crc = CRCOptions::CRC_ENABLE_16;
+
+            // Send the command
+            if (!sendStringCommand(command))
+            {
+                return false;
+            }
+            recvStringCommand(recvString, recvStringMaxDimension);
+            checkErrorVN(recvString);
+        }
+        else if (error != 0)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
-
-    crc = CRCOptions::CRC_ENABLE_16;
-
-    // Send the command
-    if (!sendStringCommand(command))
+    else
     {
-        return false;
-    }
+        crc = CRCOptions::CRC_ENABLE_16;
+        miosix::Thread::sleep(50);
+        // Send the command
+        if (!sendStringCommand(command))
+        {
+            return false;
+        }
 
-    // Read the answer
-    if (waitResponse)
-    {
-        recvStringCommand(recvString, recvStringMaxDimension);
-        checkErrorVN(recvString);
+        // Read the answer
+        if (waitResponse)
+        {
+            recvStringCommand(recvString, recvStringMaxDimension);
+            checkErrorVN(recvString);
+        }
     }
 
     // Restore the crc
@@ -494,10 +538,18 @@ bool VN300::setAntennaA(AntennaPosition antPos)
     command = fmt::format("{}{},{},{}", "VNWRG,57,", antPos.posX, antPos.posY,
                           antPos.posZ);
 
+    miosix::Thread::sleep(50);
     if (!sendStringCommand(command))
     {
         return false;
     }
+
+    // Read the answer
+
+    recvStringCommand(recvString, recvStringMaxDimension);
+
+    if (checkErrorVN(recvString))
+        return false;
 
     return true;
 }
@@ -510,10 +562,18 @@ bool VN300::setCompassBaseline(AntennaPosition antPos)
                           antPos.posY, antPos.posZ, antPos.uncX, antPos.uncY,
                           antPos.uncZ);
 
+    miosix::Thread::sleep(50);
     if (!sendStringCommand(command))
     {
         return false;
     }
+
+    // Read the answer
+
+    recvStringCommand(recvString, recvStringMaxDimension);
+
+    if (checkErrorVN(recvString))
+        return false;
 
     return true;
 }
@@ -527,11 +587,18 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
                     rotMat(0, 1), rotMat(0, 2), rotMat(1, 0), rotMat(1, 1),
                     rotMat(1, 2), rotMat(2, 0), rotMat(2, 1), rotMat(2, 2));
 
+    miosix::Thread::sleep(50);
     // I can send the command
     if (!sendStringCommand(command))
     {
         return false;
     }
+
+    // Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
+
+    if (checkErrorVN(recvString))
+        return false;
 
     return true;
 }
@@ -554,7 +621,7 @@ bool VN300::selfTestImpl()
     miosix::Thread::sleep(100);
 
     // removing junk
-    usart.clearQueue();
+    // usart.clearQueue();
 
     // I check the model number
     if (!sendStringCommand("VNRRG,01"))
@@ -807,7 +874,7 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     return true;
 }
 
-bool VN300::checkErrorVN(const char *message)
+uint8_t VN300::checkErrorVN(const char *message)
 {
     if (strncmp(message, "$VNERR,", 7) == 0)
     {
@@ -861,10 +928,10 @@ bool VN300::checkErrorVN(const char *message)
                 break;
         }
 
-        return true;  // Error detected
+        return errorCode;  // Error detected
     }
 
-    return false;  // No error detected
+    return 0;  // No error detected
 }
 
 bool VN300::verifyChecksum(char *command, int length)
