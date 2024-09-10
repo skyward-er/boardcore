@@ -92,15 +92,6 @@ protected:
     bool verifyChecksum(char *command, int maxLength);
 
     /**
-     * @brief Clear the buffer of the serial interface.
-     *
-     * This is a placeholder function for the serial interface.
-     * When the usart driver is corrected this must be changed.
-     */
-    void clearBuffer();
-    // TODO: remove and use the one in the usart driver
-
-    /**
      * @brief Pause asynchronous messages
      *
      * @return True if operation succeeded.
@@ -224,7 +215,7 @@ bool VNCommonSerial::getBinaryOutput(T &binaryData,
 
     // Remove any junk
     // TODO: needed? Or we can assume it is empty?
-    clearBuffer();
+    usart.clearQueue();
 
     usart.writeString(sampleCommand);
 
