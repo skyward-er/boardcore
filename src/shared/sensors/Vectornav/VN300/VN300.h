@@ -45,12 +45,14 @@ public:
      * 57600, 115200, 128000, 230400, 460800, 921600].
      * @param sampleOption The data packet we want to sample.
      * @param crc Checksum option.
+     * @param timeout The maximum time that will be waited when reading from the
+     * sensor.
      * @param antPosA Antenna position A.
      * @param antPosB Antenna position B.
      * @param rotMat Rotation matrix.
      */
     VN300(USART& usart, int userBaudRate, VN300Defs::SampleOptions sampleOption,
-          CRCOptions crc,
+          CRCOptions crc, std::chrono::milliseconds timeout,
           VN300Defs::AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           VN300Defs::AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           Eigen::Matrix3f rotMat             = Eigen::Matrix3f::Identity());
