@@ -1,5 +1,5 @@
 /* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Lorenzo Cucchi
+ * Author: Lorenzo Cucchi, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,8 @@ int main()
     dbg.mode(Mode::OUTPUT);
 
     USART usart(USART6, 115200);
-    VN300 sensor(usart, 115200, true, VN300::CRCOptions::CRC_ENABLE_8);
+    VN300 sensor(usart, 115200, VN300Defs::SamplingMethod::BINARY,
+                 VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
     Thread::sleep(1000);
