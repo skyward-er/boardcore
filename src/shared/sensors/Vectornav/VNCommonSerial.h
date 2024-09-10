@@ -24,6 +24,7 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/usart/USART.h>
+#include <sensors/SensorData.h>
 
 #include <string>
 
@@ -99,6 +100,30 @@ protected:
     bool asyncPause();
 
     /**
+     * @brief Utility function used to extract quaternion data from the
+     * receiving string.
+     */
+    QuaternionData sampleQuaternion();
+
+    /**
+     * @brief Utility function used to extract magnetometer data from the
+     * receiving string.
+     */
+    MagnetometerData sampleMagnetometer();
+
+    /**
+     * @brief Utility function used to extract accelerometer data from the
+     * receiving string.
+     */
+    AccelerometerData sampleAccelerometer();
+
+    /**
+     * @brief Utility function used to extract gyroscope data from the receiving
+     * string.
+     */
+    GyroscopeData sampleGyroscope();
+
+    /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
@@ -108,6 +133,21 @@ protected:
     CRCOptions crc;
 
     PrintLogger logger;
+
+    /**
+     * @brief Maximum size of the receiving string.
+     */
+    static const uint8_t recvStringMaxDimension = 200;
+
+    /**
+     * @brief Buffer used to store the string received from the sensor.
+     */
+    std::array<char, recvStringMaxDimension> recvString;
+
+    /**
+     * @brief Actual strlen() of the recvString.
+     */
+    uint8_t recvStringLength = 0;
 };
 
 }  // namespace Boardcore
