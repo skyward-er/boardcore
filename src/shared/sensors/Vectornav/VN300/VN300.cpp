@@ -269,9 +269,6 @@ bool VN300::disableAsyncMessages(bool waitResponse)
     std::string command =
         "VNWRG,06,00";  // Put 0 in register number 6 (ASYNC Config)
 
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
-    // Send the command
     usart.clearQueue();
     if (!sendStringCommand(command))
     {
@@ -297,8 +294,6 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
     command = fmt::format("{}{},{},{}", "VNWRG,57,", antPos.posX, antPos.posY,
                           antPos.posZ);
 
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
     usart.clearQueue();
     if (!sendStringCommand(command))
     {
@@ -323,8 +318,6 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
                           antPos.posY, antPos.posZ, antPos.uncX, antPos.uncY,
                           antPos.uncZ);
 
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
     usart.clearQueue();
     if (!sendStringCommand(command))
     {
@@ -349,8 +342,6 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
                     rotMat(0, 1), rotMat(0, 2), rotMat(1, 0), rotMat(1, 1),
                     rotMat(1, 2), rotMat(2, 0), rotMat(2, 1), rotMat(2, 2));
 
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
     usart.clearQueue();
     if (!sendStringCommand(command))
     {
@@ -399,13 +390,6 @@ bool VN300::setBinaryOutput()
     std::string command = fmt::format("{},{},{:x},{:x}", comp, outputGroup,
                                       commonGroup, gnssGroup);
 
-    // This sleep is used to wait for the VN300, in this phase there are
-    // problems with the deterministic times of the VN300 replies and receiving
-    // capabilities vary randomly. 50ms were found with various test, this wait
-    // can be reduced but sporadic problems could arise.
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
-
     usart.clearQueue();
 
     // Send the command
@@ -413,9 +397,6 @@ bool VN300::setBinaryOutput()
     {
         return false;
     }
-
-    miosix::Thread::sleep(
-        20);  // TODO: needed? I don't think so, but has to be checked
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
@@ -462,7 +443,6 @@ bool VN300::selfTestImpl()
         lastError = SELF_TEST_FAIL;
         return false;
     }
-    miosix::Thread::sleep(20);  // TODO: TO BE REMOVED ONLY FOR EMULATOR
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
