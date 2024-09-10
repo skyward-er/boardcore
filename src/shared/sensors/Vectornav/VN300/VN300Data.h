@@ -29,9 +29,6 @@
 namespace Boardcore
 {
 
-/**
- * @brief data type class
- */
 struct VN300Data : public QuaternionData,
                    public MagnetometerData,
                    public AccelerometerData,
@@ -39,9 +36,6 @@ struct VN300Data : public QuaternionData,
                    public VN300Defs::Ins_Lla
 {
 
-    /**
-     * @brief Void parameters constructor
-     */
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data()
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
@@ -51,11 +45,6 @@ struct VN300Data : public QuaternionData,
     {
     }
 
-    /**
-     * @brief Constructor with parameters
-     *
-     * @param single data structures for all the data
-     */
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data(const QuaternionData& quat, const MagnetometerData& magData,
               const AccelerometerData& accData, const GyroscopeData& gyro,

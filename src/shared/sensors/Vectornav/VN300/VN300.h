@@ -98,7 +98,7 @@ private:
     bool setReferenceFrame(Eigen::Matrix3f rotMat);
 
     /**
-     * @brief Set the binary output register
+     * @brief Set the binary output register.
      *
      * @return True if operation succeeded.
      */
