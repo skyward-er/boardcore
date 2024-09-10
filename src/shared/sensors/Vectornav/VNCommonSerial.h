@@ -115,6 +115,16 @@ protected:
     bool configUserSerialPort();
 
     /**
+     * @brief Verify the model number of the sensor.
+     *
+     * @param expectedModelNumber The expected model number.
+     *
+     *  @return True if the model number received from the sensor corresponds
+     * with the expected one.
+     */
+    bool verifyModelNumber(const char *expectedModelNumber);
+
+    /**
      * @brief Utility function used to retrieve the binary output from the
      * sensor.
      *

@@ -238,6 +238,45 @@ bool VNCommonSerial::configUserSerialPort()
     return true;
 }
 
+bool VNCommonSerial::verifyModelNumber(const char *expectedModelNumber)
+{
+    // The model number starts from the 10th position
+    const int modelNumberOffset = 10;
+
+    // Clear the receiving queue
+    usart.clearQueue();
+
+    if (!sendStringCommand("VNRRG,01"))
+    {
+        LOG_WARN(logger, "Unable to send string command");
+        return false;
+    }
+
+    miosix::Thread::sleep(100);
+
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to receive string command");
+        return false;
+    }
+
+    if (strncmp(expectedModelNumber, recvString.data() + modelNumberOffset,
+                strlen(expectedModelNumber)) != 0)
+    {
+        LOG_ERR(logger, "Model number not corresponding: {} != {}",
+                recvString.data(), expectedModelNumber);
+        return false;
+    }
+
+    if (!verifyChecksum(recvString.data(), recvStringLength))
+    {
+        LOG_ERR(logger, "Checksum verification failed: {}", recvString.data());
+        return false;
+    }
+
+    return true;
+}
+
 QuaternionData VNCommonSerial::sampleQuaternion()
 {
     unsigned int indexStart = 0;
