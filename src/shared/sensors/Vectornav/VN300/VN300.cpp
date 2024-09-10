@@ -30,14 +30,13 @@ namespace Boardcore
 {
 
 VN300::VN300(USART& usart, int userBaudRate,
-             VN300Defs::BinaryOutputPacket binaryOutputPacket,
-             VN300Defs::SamplingMethod samplingMethod, CRCOptions crc,
+             VN300Defs::BinaryOutputPacket binaryOutputPacket, CRCOptions crc,
              const VN300Defs::AntennaPosition antPosA,
              const VN300Defs::AntennaPosition antPosB,
              const Eigen::Matrix3f rotMat)
     : VNCommonSerial(usart, userBaudRate, "VN300", crc),
-      binaryOutputPacket(binaryOutputPacket), samplingMethod(samplingMethod),
-      antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
+      binaryOutputPacket(binaryOutputPacket), antPosA(antPosA),
+      antPosB(antPosB), rotMat(rotMat)
 {
 }
 
@@ -56,15 +55,11 @@ bool VN300::init()
     // Allocate the pre loaded strings based on the user selected crc
     if (crc == CRCOptions::CRC_ENABLE_16)
     {
-        preSampleImuString = "$VNRRG,15*92EA\n";
-        preSampleINSlla    = "$VNRRG,63*6BBB\n";
-        preSampleBin1      = "$VNBOM,1*749D\n";
+        preSampleBin1 = "$VNBOM,1*749D\n";
     }
     else
     {
-        preSampleImuString = "$VNRRG,15*77\n";
-        preSampleINSlla    = "$VNRRG,63*76\n";
-        preSampleBin1      = "$VNBOM,1*45\n";
+        preSampleBin1 = "$VNBOM,1*45\n";
     }
 
     // Set the error to init fail and if the init process goes without problem
@@ -162,14 +157,7 @@ VN300Data VN300::sampleImpl()
     // Reset any errors
     lastError = SensorErrors::NO_ERRORS;
 
-    if (samplingMethod == VN300Defs::SamplingMethod::BINARY)
-    {
-        return sampleBinary();
-    }
-    else
-    {
-        return sampleASCII();
-    }
+    return sampleBinary();
 }
 
 VN300Data VN300::sampleBinary()
@@ -224,55 +212,6 @@ VN300Data VN300::sampleBinary()
         lastError = NO_NEW_DATA;
         return lastSample;
     }
-}
-
-VN300Data VN300::sampleASCII()
-{
-    usart.clearQueue();
-    // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    usart.writeString(preSampleImuString);
-
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        lastError = BUS_FAULT;
-        return lastSample;
-    }
-
-    if (!verifyChecksum(recvString.data(), recvStringLength))
-    {
-        LOG_WARN(logger, "VN300 sampling message invalid checksum");
-        // If something goes wrong i return the last sampled data
-        lastError = BUS_FAULT;
-        return lastSample;
-    }
-
-    QuaternionData quat   = sampleQuaternion();
-    MagnetometerData mag  = sampleMagnetometer();
-    AccelerometerData acc = sampleAccelerometer();
-    GyroscopeData gyro    = sampleGyroscope();
-
-    usart.clearQueue();
-    // Returns INS LLA message
-    usart.writeString(preSampleINSlla);
-
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        lastError = BUS_FAULT;
-        return lastSample;
-    }
-
-    if (!verifyChecksum(recvString.data(), recvStringLength))
-    {
-        LOG_WARN(logger, "VN300 sampling message invalid checksum");
-        lastError = BUS_FAULT;
-        return lastSample;
-    }
-
-    VN300Defs::Ins_Lla ins = sampleIns();
-
-    return VN300Data(quat, mag, acc, gyro, ins);
 }
 
 void VN300::buildBinaryDataFull(const VN300Defs::BinaryDataFull& rawData,
@@ -539,46 +478,6 @@ bool VN300::selfTestImpl()
     }
 
     return true;
-}
-
-VN300Defs::Ins_Lla VN300::sampleIns()
-{
-    unsigned int indexStart = 0;
-    char* nextNumber;
-    VN300Defs::Ins_Lla data;
-
-    // Look for the second ',' in the string
-    // I can avoid the string control because it has already been done in
-    // sampleImpl
-    for (int i = 0; i < 2; i++)
-    {
-        while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
-            indexStart++;
-        }
-        indexStart++;
-    }
-
-    // Add the timestamp to the parsed data
-    data.insTimestamp = TimestampTimer::getTimestamp();
-    // Parse the data skipping time and week of the gps
-    strtod(recvString.data() + indexStart, &nextNumber);
-    strtol(nextNumber + 1, &nextNumber, 16);
-    data.status =
-        static_cast<uint16_t>(strtol(nextNumber + 1, &nextNumber, 16));
-    data.fix_ins   = data.status & 0x03;
-    data.fix_gps   = (data.status >> 2) & 0x01;
-    data.yaw       = strtof(nextNumber + 1, &nextNumber);
-    data.pitch     = strtof(nextNumber + 1, &nextNumber);
-    data.roll      = strtof(nextNumber + 1, &nextNumber);
-    data.latitude  = strtod(nextNumber + 1, &nextNumber);
-    data.longitude = strtod(nextNumber + 1, &nextNumber);
-    data.altitude  = strtod(nextNumber + 1, &nextNumber);
-    data.nedVelX   = strtof(nextNumber + 1, &nextNumber);
-    data.nedVelY   = strtof(nextNumber + 1, &nextNumber);
-    data.nedVelZ   = strtof(nextNumber + 1, NULL);
-
-    return data;
 }
 
 }  // namespace Boardcore
