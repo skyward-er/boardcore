@@ -91,6 +91,13 @@ bool VN300::init()
         return false;
     }
 
+    if (!verifyModelNumber("VN-300T-CR"))
+    {
+        LOG_ERR(logger, "Error, model number not corresponding");
+        lastError = INVALID_WHOAMI;
+        return false;
+    }
+
     if (!setBinaryOutput())
     {
         LOG_ERR(logger, "Unable to set binary output register");
