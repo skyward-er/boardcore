@@ -69,11 +69,12 @@ int main()
     }
 
     // Sample and print 10 samples
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 100; i++)
     {
         sensor.sample();
         sample = sensor.getLastSample();
 
+        printf("sample %d:\n", i + 1);
         printf("acc: %f, %f, %f\n", sample.accelerationX, sample.accelerationY,
                sample.accelerationZ);
         printf("gyr: %f, %f, %f\n", sample.angularSpeedX, sample.angularSpeedY,
@@ -81,6 +82,9 @@ int main()
         printf("magn: %f, %f, %f\n", sample.magneticFieldX,
                sample.magneticFieldY, sample.magneticFieldZ);
         printf("attitude: %f, %f, %f\n", sample.yaw, sample.pitch, sample.roll);
+        printf("latitude: %f\n", sample.latitude);
+        printf("longitude: %f\n", sample.longitude);
+        printf("gps-fix: %u\n\n", sample.fix_gps);
 
         Thread::sleep(500);
     }
