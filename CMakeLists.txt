@@ -109,7 +109,7 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_death_stack_v2)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f767zi_lyra_biscotto)
+sbs_target(test-serial stm32f767zi_lyra_gs)
 
 add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
@@ -301,6 +301,9 @@ sbs_target(test-wiz5500 stm32f767zi_gemini_gs)
 
 add_executable(test-bsram src/tests/drivers/test-bsram.cpp)
 sbs_target(test-bsram stm32f767zi_lyra_biscotto)
+
+add_executable(test-dipswitch src/tests/drivers/test-dipswitch.cpp)
+sbs_target(test-dipswitch stm32f767zi_lyra_gs)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #

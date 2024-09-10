@@ -174,6 +174,10 @@ void Follower::step()
     state.verticalSpeed   = verticalSpeed;
     setState(state);
 
+    // Log the target angles
+    Boardcore::Logger::getInstance().log(
+        static_cast<Boardcore::AntennaAngles>(targetAngles));
+
 #ifndef NDEBUG
     std::cout << "[FOLLOWER] STEPPER "
               << "Angles: [" << state.yaw << ", " << state.pitch << "] "
