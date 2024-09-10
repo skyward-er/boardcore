@@ -94,15 +94,6 @@ public:
 
     bool init() override;
 
-    /**
-     * @brief Method to reset the sensor to default values and to close
-     * the connection. Used if you need to close and re initialize the sensor.
-     *
-     * @return True if operation succeeded.
-     */
-    bool closeAndReset();
-    // TODO: move to common files
-
     bool selfTest() override;
 
 private:
@@ -110,14 +101,6 @@ private:
      * @brief Sample action implementation.
      */
     VN300Data sampleImpl() override;
-
-    /**
-     * @brief Method to find the baudrate of the sensor at startup
-     *
-     * @return True if operation succeeded.
-     */
-    bool findBaudrate();
-    // TODO: should we keep it? maybe in common files?
 
     /**
      * @brief Disables the async messages that the VN300 is default configured
@@ -143,24 +126,6 @@ private:
      */
     bool configUserSerialPort();
     // TODO: move to common files
-
-    /**
-     * @brief Sets the user selected crc method.
-     *
-     * @param waitResponse If true wait for a serial response.
-     *
-     * @return True if operation succeeded.
-     */
-    bool setCrc(bool waitResponse = true);
-    // TODO: move to common files
-
-    /**
-     * @brief Write the settings on the non volatile-memory.
-     *
-     * @return True if operation succeeded.
-     */
-    bool writeSettingsCommand();
-    // TODO: is it used? maybe can be placed in common files?
 
     /**
      * @brief Sets the antenna A offset.
@@ -215,24 +180,11 @@ private:
     VN300Data sampleASCII();
 
     /**
-     * @brief Receives binary data and parse directly into BinaryData struct
-     * which has the __attribute__(packed)
-     *
-     * @param bindata passed as reference
-     *
-     * @return true if operation succeeded
-     *
-     */
-    bool sampleBin(VN300Defs::BinaryData& bindata);
-    // TODO: can be removed and placed inside sampleBinary()
-
-    /**
      * @brief Default baudrate value for the usart communication.
      */
     static const int defaultBaudRate = 115200;
 
     VN300Defs::SamplingMethod samplingMethod;
-    bool isInit = false;
 
     VN300Defs::AntennaPosition antPosA;
     VN300Defs::AntennaPosition antPosB;

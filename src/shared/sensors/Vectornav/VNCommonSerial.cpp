@@ -142,6 +142,64 @@ bool VNCommonSerial::asyncPause()
     return true;
 }
 
+bool VNCommonSerial::setCrc(bool waitResponse)
+{
+    // Command for the crc change
+    std::string command;
+    CRCOptions backup = crc;
+
+    // Check what type of crc is selected
+    if (crc == CRCOptions::CRC_ENABLE_16)
+    {
+        // The 3 inside the command is the 16bit select. The others are default
+        // values
+        command = "VNWRG,30,0,0,0,0,3,0,1";
+    }
+    else
+    {
+        // Even if the CRC is not enabled i put the 8 bit
+        // checksum because i need to know how many 'X' add at the end
+        // of every command sent
+        command = "VNWRG,30,0,0,0,0,1,0,1";
+    }
+
+    // I need to send the command in both crc because i don't know what type
+    // of crc is previously selected. So in order to get the command accepted
+    // i need to do it two times with different crc.
+    crc = CRCOptions::CRC_ENABLE_8;
+
+    // Send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    // Read the answer
+    if (waitResponse)
+    {
+        recvStringCommand(recvString.data(), recvStringMaxDimension);
+    }
+
+    crc = CRCOptions::CRC_ENABLE_16;
+
+    // Send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    // Read the answer
+    if (waitResponse)
+    {
+        recvStringCommand(recvString.data(), recvStringMaxDimension);
+    }
+
+    // Restore the crc
+    crc = backup;
+
+    return true;
+}
+
 QuaternionData VNCommonSerial::sampleQuaternion()
 {
     unsigned int indexStart = 0;
@@ -264,6 +322,20 @@ uint8_t VNCommonSerial::checkErrorVN(const char *message)
     }
 
     return 0;  // No error detected
+}
+
+bool VNCommonSerial::closeAndReset()
+{
+    // Send the reset command to the VN300
+    if (!sendStringCommand("VNRST"))
+    {
+        LOG_WARN(logger, "Impossible to reset the VN300");
+        return false;
+    }
+
+    isInit = false;
+
+    return true;
 }
 
 bool VNCommonSerial::sendStringCommand(std::string command)
