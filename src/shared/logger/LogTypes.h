@@ -61,8 +61,8 @@
 #include <sensors/RotatedIMU/IMUData.h>
 #include <sensors/SensorData.h>
 #include <sensors/UBXGPS/UBXGPSData.h>
-#include <sensors/VN100/VN100SerialData.h>
-#include <sensors/VN100/VN100SpiData.h>
+#include <sensors/Vectornav/VN100/VN100SerialData.h>
+#include <sensors/Vectornav/VN100/VN100SpiData.h>
 #include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
