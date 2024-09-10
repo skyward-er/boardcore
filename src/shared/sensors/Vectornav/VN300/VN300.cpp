@@ -723,6 +723,7 @@ VN300Defs::Ins_Lla VN300::sampleIns()
 
 bool VN300::sampleBin(VN300Defs::BinaryData &bindata)
 {
+    // TODO: REMOVE READ-BLOCKING
     unsigned char initByte = 0;
 
     // Check the read of the 0xFA byte to find the start of the message
@@ -730,84 +731,6 @@ bool VN300::sampleBin(VN300Defs::BinaryData &bindata)
     {
         if (usart.readBlocking(&bindata, sizeof(VN300Defs::BinaryData)))
         {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool VN300::sendStringCommand(std::string command)
-{
-    if (crc == CRCOptions::CRC_ENABLE_8)
-    {
-        char checksum[4];  // 2 hex + \n + \0
-        // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()),
-             checksum, 16);
-        checksum[2] = '\n';
-        checksum[3] = '\0';
-        // I concatenate
-        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
-    }
-    else if (crc == CRCOptions::CRC_ENABLE_16)
-    {
-        char checksum[6];  // 4 hex + \n + \0
-        // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()),
-             checksum, 16);
-        checksum[4] = '\n';
-        checksum[5] = '\0';
-        // I concatenate
-        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
-    }
-    else
-    {
-        // No checksum, i add only 'XX' at the end and not 'XXXX' because
-        // in cas of CRC_NO the enabled crc is 8 bit
-        command = fmt::format("{}{}{}", "$", command, "*XX\n");
-    }
-
-    // I send the final command
-    usart.writeString(command.c_str());
-
-    miosix::Thread::sleep(500);
-
-    return true;
-}
-
-bool VN300::recvStringCommand(char *command, int maxLength)
-{
-    command[0] = '\0';
-
-    // This sleep of 2 ms is used to wait for the reply of the VN300 taking into
-    // account standard reply times, this free the thread waiting the message
-    miosix::Thread::sleep(2);
-
-    // This variable is used as an initial time reference for the while loop
-    uint64_t initTime = TimestampTimer::getTimestamp();
-
-    // The time condition is used to take into account time variation on the
-    // reply of the vn300, this takes into account the start of the reply
-    while (TimestampTimer::getTimestamp() - initTime <= 3)
-    {
-        char initChar;
-        // Read the first char
-        // TODO try to remove the if statement and test it with only the while
-        // loop
-        if (usart.read(&initChar, 1) && initChar == '$')
-        {
-            command[0] = '$';
-            int j      = 1;
-
-            while (usart.read(&initChar, 1) && initChar != '\n' &&
-                   j < maxLength)
-            {
-                command[j] = initChar;
-                j++;
-            }
-            command[j]       = '\0';
-            recvStringLength = j - 1;
             return true;
         }
     }
