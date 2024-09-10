@@ -48,7 +48,7 @@ bool VN300::init()
     if (isInit)
     {
         lastError = SensorErrors::ALREADY_INIT;
-        LOG_WARN(logger, "Sensor VN300 already initilized");
+        LOG_WARN(logger, "Sensor VN300 already initialized");
         return true;
     }
 
@@ -170,7 +170,7 @@ bool VN300::closeAndReset()
     if (!isInit)
     {
         lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger, "Sensor VN300 already not initilized");
+        LOG_WARN(logger, "Sensor VN300 already not initialized");
         return true;
     }
 
@@ -213,8 +213,9 @@ bool VN300::writeSettingsCommand()
         return false;
     }
 
-    miosix::Thread::sleep(500);  // TODO: needed? there is already a long sleep
-                                 // inside sendStringCommand()...?
+    // A long wait is needed in order to let the sensor startup
+    miosix::Thread::sleep(500);
+
     // Read the answer
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
@@ -242,49 +243,30 @@ bool VN300::selfTest()
 
 VN300Data VN300::sampleImpl()
 {
+    D(assert(isInit && "init() was not called"));
+    // Reset any errors
+    lastError = SensorErrors::NO_ERRORS;
 
-    if (!isInit)
-    {
-        lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger,
-                 "Unable to sample due to not initialized VN300 sensor");
-        return lastSample;
-    }
-
-    // Before sampling i check for errors
-    if (lastError != SensorErrors::NO_ERRORS)
-    {
-        return lastSample;
-    }
-
-    // Initialize data variable with VN300Data struct
-    VN300Data data;
-
-    // This condition is needed to discern between ASCII and Binary sampling.
-    // If true the binary sampling is used increasing sampling speed.
-    // else the ascii setup is used, both return VN300Data
     if (samplingMethod == VN300Defs::SamplingMethod::BINARY)
     {
-        data = sampleBinary();
+        return sampleBinary();
     }
     else
     {
-        data = sampleASCII();
+        return sampleASCII();
     }
-
-    return data;
 }
 
 VN300Data VN300::sampleBinary()
 {
     // This function is used to clear the usart buffer, it needs to be replaced
     // with the function from usart class
-    // TODO
+    // TODO: needed?
     clearBuffer();
 
     // The sample command is sent to the VN300
     // TODO: this or sendStringCommand()?
-    usart.writeString(preSampleBin1.c_str());
+    usart.writeString(preSampleBin1);
 
     // A BinaryData variable is created and it will be passed to the sampleBin()
     // function as a reference
@@ -333,7 +315,6 @@ VN300Data VN300::sampleBinary()
             bindata.vely,
             bindata.velz};
 
-        lastError = NO_ERRORS;
         return VN300Data(quat, mag, acc, gyro, ins);
     }
     else
@@ -347,14 +328,12 @@ VN300Data VN300::sampleASCII()
 {
     clearBuffer();
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    usart.writeString(preSampleImuString.c_str());
-
-    // Wait some time
+    usart.writeString(preSampleImuString);
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
-        // If something goes wrong i return the last sampled data
-        assert(false);
+        LOG_WARN(logger, "Unable to sample due to serial communication error");
+        lastError = BUS_FAULT;
         return lastSample;
     }
 
@@ -362,7 +341,7 @@ VN300Data VN300::sampleASCII()
     {
         LOG_WARN(logger, "VN300 sampling message invalid checksum");
         // If something goes wrong i return the last sampled data
-        assert(false);
+        lastError = BUS_FAULT;
         return lastSample;
     }
 
@@ -373,20 +352,19 @@ VN300Data VN300::sampleASCII()
 
     clearBuffer();
     // Returns INS LLA message
-    usart.writeString(preSampleINSlla.c_str());
-
-    // Wait some time
+    usart.writeString(preSampleINSlla);
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
         LOG_WARN(logger, "Unable to sample due to serial communication error");
+        lastError = BUS_FAULT;
         return lastSample;
     }
 
     if (!verifyChecksum(recvString.data(), recvStringLength))
     {
         LOG_WARN(logger, "VN300 sampling message invalid checksum");
-        assert(false);
+        lastError = BUS_FAULT;
         return lastSample;
     }
 
@@ -401,7 +379,8 @@ bool VN300::disableAsyncMessages(bool waitResponse)
     std::string command =
         "VNWRG,06,00";  // Put 0 in register number 6 (ASYNC Config)
 
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
     // Send the command
     clearBuffer();
     if (!sendStringCommand(command))
@@ -437,11 +416,13 @@ bool VN300::findBaudrate()
 
         usart.setBaudrate(baudrateList[i]);
 
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(
+            50);  // TODO: needed? I don't think so, but has to be checked
         // I pause the async messages, we don't know if they are present.
         asyncPause();
 
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(
+            50);  // TODO: needed? I don't think so, but has to be checked
 
         usart.writeString("$VNRRG,01*XX\n");
 
@@ -472,14 +453,15 @@ bool VN300::configBaudRate(int baudRate)
     std::string command         = fmt::format("{}{}", "VNWRG,05,", baudRate);
     const int modelNumberOffset = 1;
 
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
     clearBuffer();
     // I can send the command
     if (!sendStringCommand(command))
     {
         return false;
     }
-    miosix::Thread::sleep(20);
+    miosix::Thread::sleep(20);  // TODO: needed? If so dimension the time
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
         LOG_WARN(logger, "Unable to sample due to serial communication error");
@@ -526,7 +508,8 @@ bool VN300::setCrc(bool waitResponse)
     // of crc is previously selected
     crc = CRCOptions::CRC_ENABLE_8;
 
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
     clearBuffer();
     // Send the command
     if (!sendStringCommand(command))
@@ -545,7 +528,8 @@ bool VN300::setCrc(bool waitResponse)
             {
                 crc = CRCOptions::CRC_ENABLE_16;
 
-                miosix::Thread::sleep(50);
+                miosix::Thread::sleep(50);  // TODO: needed? I don't think so,
+                                            // but has to be checked
                 clearBuffer();
                 // Send the command
                 if (!sendStringCommand(command))
@@ -578,7 +562,8 @@ bool VN300::setCrc(bool waitResponse)
     else
     {
         crc = CRCOptions::CRC_ENABLE_16;
-        miosix::Thread::sleep(50);
+        miosix::Thread::sleep(
+            50);  // TODO: needed? I don't think so, but has to be checked
         // Send the command
         if (!sendStringCommand(command))
         {
@@ -606,7 +591,8 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
     command = fmt::format("{}{},{},{}", "VNWRG,57,", antPos.posX, antPos.posY,
                           antPos.posZ);
 
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
     clearBuffer();
     if (!sendStringCommand(command))
     {
@@ -631,7 +617,8 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
                           antPos.posY, antPos.posZ, antPos.uncX, antPos.uncY,
                           antPos.uncZ);
 
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
     clearBuffer();
     if (!sendStringCommand(command))
     {
@@ -656,7 +643,8 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
                     rotMat(0, 1), rotMat(0, 2), rotMat(1, 0), rotMat(1, 1),
                     rotMat(1, 2), rotMat(2, 0), rotMat(2, 1), rotMat(2, 2));
 
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
     clearBuffer();
     if (!sendStringCommand(command))
     {
@@ -698,7 +686,7 @@ bool VN300::setBinaryOutput()
     // type of communication "0" means that no asynchronous message is active
     // and "8" represents the divider at which the asynchronous message is sent
     // respect to the max rate
-    std::string comp = "VNWRG,75,0,8";
+    const char *comp = "VNWRG,75,0,8";
 
     // Using fmt::format it's possible to format the string also adding the
     // groups and their respective fields
@@ -709,7 +697,8 @@ bool VN300::setBinaryOutput()
     // problems with the deterministic times of the VN300 replies and receiving
     // capabilities vary randomly. 50ms were found with various test, this wait
     // can be reduced but sporadic problems could arise.
-    miosix::Thread::sleep(50);
+    miosix::Thread::sleep(
+        50);  // TODO: needed? I don't think so, but has to be checked
 
     // This function is used to clear the usart buffer, it needs to be replaced
     // with the function from usart class
@@ -722,7 +711,8 @@ bool VN300::setBinaryOutput()
         return false;
     }
 
-    miosix::Thread::sleep(20);  // TODO: TO BE REMOVED ONLY FOR EMULATOR
+    miosix::Thread::sleep(
+        20);  // TODO: needed? I don't think so, but has to be checked
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
@@ -733,7 +723,7 @@ bool VN300::setBinaryOutput()
     // The reply is compared with the comp variable and in case of an error the
     // received message is passed to the logger
     // TODO: why not using checkErrorVN()?
-    if (strncmp(comp.c_str(), recvString.data() + 1, strlen(comp.c_str())) != 0)
+    if (strncmp(comp, recvString.data() + 1, strlen(comp)) != 0)
     {
         LOG_WARN(logger, "The reply is wrong {}", recvString.data());
         return false;
@@ -767,6 +757,7 @@ bool VN300::selfTestImpl()
     if (!sendStringCommand("VNRRG,01"))
     {
         LOG_WARN(logger, "Unable to send string command");
+        lastError = SELF_TEST_FAIL;
         return false;
     }
     miosix::Thread::sleep(20);  // TODO: TO BE REMOVED ONLY FOR EMULATOR
@@ -774,6 +765,7 @@ bool VN300::selfTestImpl()
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
         LOG_WARN(logger, "Unable to receive string command");
+        lastError = SELF_TEST_FAIL;
         return false;
     }
 
@@ -784,6 +776,7 @@ bool VN300::selfTestImpl()
     {
         LOG_ERR(logger, "VN-300 not corresponding: {} != {}", recvString.data(),
                 modelNumber);
+        lastError = SELF_TEST_FAIL;
         return false;
     }
 
@@ -791,6 +784,7 @@ bool VN300::selfTestImpl()
     if (!verifyChecksum(recvString.data(), recvStringLength))
     {
         LOG_ERR(logger, "Checksum verification failed: {}", recvString.data());
+        lastError = SELF_TEST_FAIL;
         return false;
     }
 
@@ -842,7 +836,7 @@ bool VN300::sampleBin(VN300Defs::BinaryData &bindata)
     // This variable is used as an initial time reference for the while loop
     uint64_t initTime = TimestampTimer::getTimestamp();
 
-    unsigned char initByte;
+    unsigned char initByte = 0;
 
     // The time condition is used to take into account time variation on the
     // reply of the vn300, this takes into account the start of the reply
