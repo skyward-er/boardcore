@@ -38,18 +38,17 @@ int main()
     VN300Data sample;
     string sampleRaw;
 
-    GpioPin dbg(GPIOB_BASE, 4);
-    GpioPin u6tx1(GPIOG_BASE, 14);
-    GpioPin u6rx1(GPIOG_BASE, 9);
+    GpioPin u6tx1(GPIOA_BASE, 2);
+    GpioPin u6rx1(GPIOA_BASE, 3);
 
-    u6rx1.alternateFunction(8);
-    u6rx1.mode(Mode::ALTERNATE_PULL_UP);
-    u6tx1.alternateFunction(8);
+    u6rx1.alternateFunction(7);
+    u6rx1.mode(Mode::ALTERNATE);
+    u6tx1.alternateFunction(7);
     u6tx1.mode(Mode::ALTERNATE);
-    dbg.mode(Mode::OUTPUT);
 
-    USART usart(USART6, 115200);
-    VN300 sensor(usart, 115200, VN300Defs::SamplingMethod::BINARY,
+    const int baud = 921600;
+    USART usart(USART2, baud);
+    VN300 sensor(usart, baud, VN300Defs::SamplingMethod::BINARY,
                  VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
@@ -74,54 +73,19 @@ int main()
     {
         sensor.sample();
         sample = sensor.getLastSample();
-        printf("acc: %" PRIu64 ", %.6f, %.6f, %.6f\n",
-               sample.accelerationTimestamp, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
-        printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
-               sample.angularSpeedY, sample.angularSpeedZ);
-        printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
-               sample.roll);
+
+        printf("acc: %f, %f, %f\n", sample.accelerationX, sample.accelerationY,
+               sample.accelerationZ);
+        printf("gyr: %f, %f, %f\n", sample.angularSpeedX, sample.angularSpeedY,
+               sample.angularSpeedZ);
+        printf("magn: %f, %f, %f\n", sample.magneticFieldX,
+               sample.magneticFieldY, sample.magneticFieldZ);
+        printf("latitude: %f\n", sample.latitude);
+        printf("longitude: %f\n", sample.longitude);
+        printf("altitude: %f\n", sample.altitude);
+
+        Thread::sleep(500);
     }
-
-    CpuMeter::resetCpuStats();
-
-    Thread::sleep(1000);
-
-    uint64_t time_start = getTick();
-    CpuMeter::resetCpuStats();
-
-    for (int i = 0; i < 10000; i++)
-    {
-
-        dbg.high();
-        sensor.sample();
-        dbg.low();
-
-        sample = sensor.getLastSample();
-
-        // printf("Sample %i\n", i);
-        printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
-               sample.accelerationTimestamp, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
-        printf("ang: %.6f, %.6f, %.6f\n", sample.angularSpeedX,
-               sample.angularSpeedY, sample.angularSpeedZ);
-        // printf("ins: %.6f, %.6f, %.6f\n", sample.yaw, sample.pitch,
-        //        sample.roll);
-        // printf("gps: %.6f, %.6f, %.6f\n", sample.latitude,
-        // sample.longitude,
-        //        sample.altitude);
-        // sample.print(std::cout);
-
-        printf("CPU: %5.1f\n", CpuMeter::getCpuStats().mean);
-
-        Thread::sleep(10);
-    }
-    ledOff();
-
-    printf("Run done in %" PRIu64 " milliseconds\n", (getTick() - time_start));
-
-    CpuMeterData cpuData = Boardcore::CpuMeter::getCpuStats();
-    printf("CPU: %f\n", cpuData.mean);
 
     sensor.closeAndReset();
     printf("Sensor communication closed!\n");

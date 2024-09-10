@@ -131,11 +131,17 @@ private:
     // TODO: move to common files
 
     /**
+     * @brief Configures the default serial communication.
+     */
+    void configDefaultSerialPort();
+    // TODO: move to common files
+
+    /**
      * @brief Configures the user defined serial communication.
      *
      * @return True if operation succeeded.
      */
-    bool configBaudRate(int baud);
+    bool configUserSerialPort();
     // TODO: move to common files
 
     /**

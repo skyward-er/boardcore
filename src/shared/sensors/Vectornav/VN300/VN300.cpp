@@ -76,33 +76,23 @@ bool VN300::init()
         return false;
     }
 
-    if (!findBaudrate())
-    {
-        LOG_ERR(logger, "Unable to find the VN300 baudrate");
-        return false;
-    }
+    configDefaultSerialPort();
 
-    if (!asyncPause())
+    if (!setCrc(false))
     {
-        LOG_ERR(logger, "Unable to pause the async messages");
-        return false;
-    }
-
-    if (!setCrc(true))
-    {
-        LOG_ERR(logger, "Unable to set the VN300 user selected CRC");
-        return false;
-    }
-
-    if (!configBaudRate(defaultBaudRate))
-    {
-        LOG_ERR(logger, "Unable to config the default VN300 serial port");
+        LOG_ERR(logger, "Unable to set the vn300 user selected CRC");
         return false;
     }
 
     if (!disableAsyncMessages(false))
     {
-        LOG_ERR(logger, "Unable to disable async messages from VN300");
+        LOG_ERR(logger, "Unable to disable async messages from vn300");
+        return false;
+    }
+
+    if (!configUserSerialPort())
+    {
+        LOG_ERR(logger, "Unable to config the user vn300 serial port");
         return false;
     }
 
@@ -130,28 +120,17 @@ bool VN300::init()
         return false;
     }
 
-    if (!writeSettingsCommand())
-    {
-        LOG_ERR(logger, "Unable to save settings to non-volatile memory");
-        return false;
-    }
-    miosix::Thread::sleep(2000);  // TODO: needed? for so long?
-
-    if (!configBaudRate(baudRate))
-    {
-        LOG_ERR(logger, "Unable to config the user VN300 serial port");
-        return false;
-    }
-
+    // I need to repeat this in case of a non default
+    // serial port communication at the beginning
     if (!setCrc(true))
     {
-        LOG_ERR(logger, "Unable to set the VN300 user selected CRC");
+        LOG_ERR(logger, "Unable to set the vn300 user selected CRC");
         return false;
     }
 
     if (!disableAsyncMessages(true))
     {
-        LOG_ERR(logger, "Unable to disable async messages from VN300");
+        LOG_ERR(logger, "Unable to disable async messages from vn300");
         return false;
     }
 
@@ -272,10 +251,7 @@ VN300Data VN300::sampleBinary()
     // function as a reference
     VN300Defs::BinaryData bindata;
 
-    // This sleep of 2 ms is used to wait for the reply of the VN300 taking into
-    // account standard reply times, this free the thread waiting the message
-    // TODO: needed? should be resized?
-    miosix::Thread::sleep(2);
+    const uint64_t timestamp = TimestampTimer::getTimestamp();
 
     // The @if is necessary to check the result of the sampleBin function,
     // the sampleBin will return true and the modified bindata variable from
@@ -284,24 +260,22 @@ VN300Data VN300::sampleBinary()
                              // directly here (or at least change func names)
     {
 
-        QuaternionData quat{TimestampTimer::getTimestamp(), bindata.quatW_bin,
-                            bindata.quatX_bin, bindata.quatY_bin,
-                            bindata.quatZ_bin};
+        QuaternionData quat{timestamp, bindata.quatW_bin, bindata.quatX_bin,
+                            bindata.quatY_bin, bindata.quatZ_bin};
 
-        AccelerometerData acc{TimestampTimer::getTimestamp(), bindata.accx,
-                              bindata.accy, bindata.accz};
+        AccelerometerData acc{timestamp, bindata.accx, bindata.accy,
+                              bindata.accz};
 
-        MagnetometerData mag{TimestampTimer::getTimestamp(), bindata.magx,
-                             bindata.magy, bindata.magz};
+        MagnetometerData mag{timestamp, bindata.magx, bindata.magy,
+                             bindata.magz};
 
-        GyroscopeData gyro{TimestampTimer::getTimestamp(), bindata.angx,
-                           bindata.angy, bindata.angz};
+        GyroscopeData gyro{timestamp, bindata.angx, bindata.angy, bindata.angz};
 
         // The static_cast is necessary to cast the double variables into a
         // float, this cause less problem with floating point precision errors
         // and it's lighter on memory11
         VN300Defs::Ins_Lla ins{
-            TimestampTimer::getTimestamp(),
+            timestamp,
             bindata.fix,
             bindata.fix,  // add function to extract ins_fix from ins_status
             bindata.ins_status,
@@ -442,49 +416,8 @@ bool VN300::findBaudrate()
     return false;
 }
 
-/**
- * Even if the user configured baudrate is the default, I want to reset the
- * buffer to clean the junk.
- */
-bool VN300::configBaudRate(int baudRate)
-{
-
-    // I format the command to change baud rate
-    std::string command         = fmt::format("{}{}", "VNWRG,05,", baudRate);
-    const int modelNumberOffset = 1;
-
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
-    clearBuffer();
-    // I can send the command
-    if (!sendStringCommand(command))
-    {
-        return false;
-    }
-    miosix::Thread::sleep(20);  // TODO: needed? If so dimension the time
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
-
-    if (strncmp(command.c_str(), recvString.data() + modelNumberOffset,
-                strlen(command.c_str())) != 0)
-    {
-        LOG_WARN(logger, "The message is wrong {}", recvString.data());
-        return false;
-    }
-
-    // I can open the serial with user's baud rate
-    usart.setBaudrate(baudRate);
-
-    return true;
-}
-
 bool VN300::setCrc(bool waitResponse)
 {
-    // TODO: refactor this function
-
     // Command for the crc change
     std::string command;
     CRCOptions backup = crc;
@@ -505,12 +438,10 @@ bool VN300::setCrc(bool waitResponse)
     }
 
     // I need to send the command in both crc because i don't know what type
-    // of crc is previously selected
+    // of crc is previously selected. So in order to get the command accepted
+    // i need to do it two times with different crc.
     crc = CRCOptions::CRC_ENABLE_8;
 
-    miosix::Thread::sleep(
-        50);  // TODO: needed? I don't think so, but has to be checked
-    clearBuffer();
     // Send the command
     if (!sendStringCommand(command))
     {
@@ -520,62 +451,21 @@ bool VN300::setCrc(bool waitResponse)
     // Read the answer
     if (waitResponse)
     {
-        if (recvStringCommand(recvString.data(), recvStringMaxDimension))
-        {
-            uint8_t error = checkErrorVN(recvString.data());
-
-            if (error == 3)
-            {
-                crc = CRCOptions::CRC_ENABLE_16;
-
-                miosix::Thread::sleep(50);  // TODO: needed? I don't think so,
-                                            // but has to be checked
-                clearBuffer();
-                // Send the command
-                if (!sendStringCommand(command))
-                {
-                    return false;
-                }
-                if (!recvStringCommand(recvString.data(),
-                                       recvStringMaxDimension))
-                {
-                    return false;
-                }
-
-                uint8_t error2 = checkErrorVN(recvString.data());
-
-                if (error2 != 0)
-                {
-                    return false;
-                }
-            }
-            else if (error != 0)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
+        recvStringCommand(recvString.data(), recvStringMaxDimension);
     }
-    else
-    {
-        crc = CRCOptions::CRC_ENABLE_16;
-        miosix::Thread::sleep(
-            50);  // TODO: needed? I don't think so, but has to be checked
-        // Send the command
-        if (!sendStringCommand(command))
-        {
-            return false;
-        }
 
-        // Read the answer
-        if (waitResponse)
-        {
-            recvStringCommand(recvString.data(), recvStringMaxDimension);
-            checkErrorVN(recvString.data());
-        }
+    crc = CRCOptions::CRC_ENABLE_16;
+
+    // Send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    // Read the answer
+    if (waitResponse)
+    {
+        recvStringCommand(recvString.data(), recvStringMaxDimension);
     }
 
     // Restore the crc
@@ -833,24 +723,14 @@ VN300Defs::Ins_Lla VN300::sampleIns()
 
 bool VN300::sampleBin(VN300Defs::BinaryData &bindata)
 {
-    // This variable is used as an initial time reference for the while loop
-    uint64_t initTime = TimestampTimer::getTimestamp();
-
     unsigned char initByte = 0;
 
-    // The time condition is used to take into account time variation on the
-    // reply of the vn300, this takes into account the start of the reply
-    while (TimestampTimer::getTimestamp() - initTime <= 3)
+    // Check the read of the 0xFA byte to find the start of the message
+    if (usart.readBlocking(&initByte, 1) && initByte == 0xFA)
     {
-        // Check the read of the 0xFA byte to find the start of the message
-        if (usart.read(&initByte, 1) && initByte == 0xFA)
+        if (usart.readBlocking(&bindata, sizeof(VN300Defs::BinaryData)))
         {
-            // Reading all the message directly into the struct, this need to be
-            // packed in order to have contiguous memory addresses
-            if (usart.read(&bindata, sizeof(VN300Defs::BinaryData)))
-            {
-                return true;
-            }
+            return true;
         }
     }
 
@@ -890,6 +770,8 @@ bool VN300::sendStringCommand(std::string command)
 
     // I send the final command
     usart.writeString(command.c_str());
+
+    miosix::Thread::sleep(500);
 
     return true;
 }
@@ -931,6 +813,36 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     }
 
     return false;
+}
+
+void VN300::configDefaultSerialPort()
+{
+    // Initial default settings
+    usart.setBaudrate(defaultBaudRate);
+}
+
+/**
+ * Even if the user configured baudrate is the default, I want to reset the
+ * buffer to clean the junk.
+ */
+bool VN300::configUserSerialPort()
+{
+    std::string command;
+
+    // I format the command to change baud rate
+    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+
+    // I can send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    // I can open the serial with user's baud rate
+    usart.setBaudrate(baudRate);
+
+    // Check correct serial init
+    return true;
 }
 
 }  // namespace Boardcore
