@@ -133,7 +133,7 @@ bool VN300::init()
         LOG_ERR(logger, "Unable to save settings to non-volatile memory");
         return false;
     }
-    miosix::Thread::sleep(2000);
+    miosix::Thread::sleep(2000);  // TODO: needed? for so long?
 
     if (!configBaudRate(userBaudRate))
     {
@@ -211,7 +211,8 @@ bool VN300::writeSettingsCommand()
         return false;
     }
 
-    miosix::Thread::sleep(500);
+    miosix::Thread::sleep(500);  // TODO: needed? there is already a long sleep
+                                 // inside sendStringCommand()...?
     // Read the answer
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
@@ -274,11 +275,15 @@ VN300Data VN300::sampleImpl()
 
 VN300Data VN300::sampleBinary()
 {
+    // TODO: rewrite completely
+
     // This function is used to clear the usart buffer, it needs to be replaced
     // with the function from usart class
+    // TODO
     clearBuffer();
 
     // The sample command is sent to the VN300
+    // TODO: this or sendStringCommand()?
     usart.writeString(preSampleBin1->c_str());
 
     // A BinaryData variable is created and it will be passed to the sampleBin()
@@ -287,12 +292,14 @@ VN300Data VN300::sampleBinary()
 
     // This sleep of 2 ms is used to wait for the reply of the VN300 taking into
     // account standard reply times, this free the thread waiting the message
+    // TODO: needed? should be resized?
     miosix::Thread::sleep(2);
 
     // The @if is necessary to check the result of the sampleBin function,
     // the sampleBin will return true and the modified bindata variable from
     // which it's necessary to parse data into the VN300Data struct.
-    if (sampleBin(bindata))
+    if (sampleBin(bindata))  // TODO: this call is not needed, can be done
+                             // directly here (or at least change func names)
     {
 
         QuaternionData quat{TimestampTimer::getTimestamp(), bindata.quatW_bin,
@@ -319,7 +326,7 @@ VN300Data VN300::sampleBinary()
             bindata.yaw_bin,
             bindata.pitch_bin,
             bindata.roll_bin,
-            static_cast<float>(bindata.latitude_bin),
+            static_cast<float>(bindata.latitude_bin),  // TODO: is it safe?
             static_cast<float>(bindata.longitude_bin),
             static_cast<float>(bindata.altitude_bin),
             bindata.velx,
@@ -330,6 +337,7 @@ VN300Data VN300::sampleBinary()
     }
     else
     {
+        // TODO: set lastError to no new data
         return lastSample;
     }
 }
@@ -388,9 +396,7 @@ VN300Data VN300::sampleASCII()
 
 bool VN300::asyncPause()
 {
-
     usart.writeString("$VNASY,0*XX\n");
-
     return true;
 }
 
@@ -731,6 +737,7 @@ bool VN300::setBinaryOutput()
 
     // This function is used to clear the usart buffer, it needs to be replaced
     // with the function from usart class
+    // TODO
     clearBuffer();
 
     // Send the command
@@ -739,7 +746,7 @@ bool VN300::setBinaryOutput()
         return false;
     }
 
-    miosix::Thread::sleep(20);  // TO BE REMOVED ONLY FOR EMULATOR
+    miosix::Thread::sleep(20);  // TODO: TO BE REMOVED ONLY FOR EMULATOR
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
@@ -749,6 +756,7 @@ bool VN300::setBinaryOutput()
 
     // The reply is compared with the comp variable and in case of an error the
     // received message is passed to the logger
+    // TODO: why not using checkErrorVN()?
     if (strncmp(comp.c_str(), recvString.data() + 1, strlen(comp.c_str())) != 0)
     {
         LOG_WARN(logger, "The reply is wrong {}", recvString.data());
@@ -776,6 +784,7 @@ bool VN300::selfTestImpl()
     miosix::Thread::sleep(100);
 
     // removing junk
+    // TODO: change to usart.clear()
     clearBuffer();
 
     // I check the model number
@@ -784,7 +793,7 @@ bool VN300::selfTestImpl()
         LOG_WARN(logger, "Unable to send string command");
         return false;
     }
-    miosix::Thread::sleep(20);  // TO BE REMOVED ONLY FOR EMULATOR
+    miosix::Thread::sleep(20);  // TODO: TO BE REMOVED ONLY FOR EMULATOR
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
@@ -1112,6 +1121,9 @@ uint8_t VN300::checkErrorVN(const char *message)
         int errorCode = atoi(&message[7]);
         string error;
         // Handle the error based on the error code
+
+        // TODO: the error string is set but never used
+
         switch (errorCode)
         {
             case 1:
