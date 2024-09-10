@@ -22,35 +22,6 @@
 
 #pragma once
 
-/**
- * @brief Driver for the VN300S IMU.
- *
- * The VN300S sensor is a calibrated IMU which includes accelerometer,
- * magnetometer, gyroscope, barometer and temperature sensor. The device
- * provides also a calibration matrix and an anti-drift matrix for the gyroscope
- * values. The goal of this driver though is to interface the sensor in its
- * basic use. Things like asynchronous data and anti-drift techniques haven't
- * been implemented yet. The driver is intended to be used with the "Rugged
- * sensor" version (aka only UART communication) although the actual VN300S chip
- * is capable also of SPI communication.
- *
- * The VN300S supports both binary and ASCII encoding for communication but via
- * serial and with the asynchronous mode disabled only ASCII is available. The
- * protocol also provides two algorithms to verify the integrity of the messages
- * (8 bit checksum and 16 bit CRC-CCITT) both selectable by the user using the
- * constructor method. The serial communication also can be established with
- * various baud rates:
- * - 9600
- * - 19200
- * - 38400
- * - 57600
- * - 115200
- * - 128000
- * - 230400
- * - 460800
- * - 921600
- */
-
 #include <sensors/Sensor.h>
 #include <sensors/Vectornav/VNCommonSerial.h>
 
@@ -72,12 +43,14 @@ public:
      * @param usart Serial bus used for the sensor.
      * @param BaudRate different from the sensor's default [9600, 19200, 38400,
      * 57600, 115200, 128000, 230400, 460800, 921600].
-     * @param Redundancy check option.
-     * @param samplePeriod Sampling period in ms
-     * @param antPos antenna A position
+     * @param sampleOption The data packet we want to sample.
+     * @param crc Checksum option.
+     * @param antPosA Antenna position A.
+     * @param antPosB Antenna position B.
+     * @param rotMat Rotation matrix.
      */
     VN300(USART& usart, int userBaudRate, VN300Defs::SampleOptions sampleOption,
-          CRCOptions crc                     = CRCOptions::CRC_ENABLE_8,
+          CRCOptions crc,
           VN300Defs::AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           VN300Defs::AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           Eigen::Matrix3f rotMat             = Eigen::Matrix3f::Identity());
@@ -131,7 +104,19 @@ private:
      */
     bool setBinaryOutput();
 
-    VN300Data sampleBinary();
+    /**
+     * @brief Utility function for sampling data from the sensor (FULL packet).
+     *
+     * @return The sampled data.
+     */
+    VN300Data sampleFull();
+
+    /**
+     * @brief Utility function for sampling data from the sensor (ARP packet).
+     *
+     * @return The sampled data.
+     */
+    VN300Data sampleArp();
 
     /**
      * @brief Build output data packet starting from raw binary data received
@@ -166,4 +151,5 @@ private:
      */
     const char* preSampleBin1 = "";
 };
+
 }  // namespace Boardcore

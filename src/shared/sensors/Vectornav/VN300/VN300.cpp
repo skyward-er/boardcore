@@ -147,13 +147,67 @@ VN300Data VN300::sampleImpl()
     // Reset any errors
     lastError = SensorErrors::NO_ERRORS;
 
-    return sampleBinary();
+    if (sampleOption == VN300Defs::SampleOptions::FULL)
+    {
+        return sampleFull();
+    }
+    else if (sampleOption == VN300Defs::SampleOptions::ARP)
+    {
+        return sampleArp();
+    }
+    else
+    {
+        // Sample option not implemented
+        lastError = SensorErrors::COMMAND_FAILED;
+        return lastSample;
+    }
 }
 
-VN300Data VN300::sampleBinary()
+VN300Data VN300::sampleFull()
 {
     VN300Data data;
     VN300Defs::BinaryDataFull bindataFull;
+
+    const uint64_t timestamp = TimestampTimer::getTimestamp();
+
+    bool sampleOutcome =
+        false;  // True if a valid sample was retrieved from the sensor
+    bool validChecksum = false;
+
+    sampleOutcome =
+        getBinaryOutput<VN300Defs::BinaryDataFull>(bindataFull, preSampleBin1);
+    if (!sampleOutcome)
+    {
+        lastError = NO_NEW_DATA;
+    }
+
+    validChecksum =
+        crc == CRCOptions::CRC_NO ||
+        calculateChecksum16(reinterpret_cast<uint8_t*>(&bindataFull),
+                            sizeof(bindataFull)) == 0;
+    if (!validChecksum)
+    {
+        lastError = SensorErrors::BUS_FAULT;
+    }
+
+    // Verify if the sample is valid
+    sampleOutcome = sampleOutcome && validChecksum;
+
+    if (sampleOutcome)
+    {
+        buildBinaryDataFull(bindataFull, data, timestamp);
+        return data;
+    }
+    else
+    {
+        // Last error is already set
+        return lastSample;
+    }
+}
+
+VN300Data VN300::sampleArp()
+{
+    VN300Data data;
     VN300Defs::BinaryDataArp binDataArp;
 
     const uint64_t timestamp = TimestampTimer::getTimestamp();
@@ -162,48 +216,32 @@ VN300Data VN300::sampleBinary()
         false;  // True if a valid sample was retrieved from the sensor
     bool validChecksum = false;
 
-    // Sample data and calculate checksum
-    switch (sampleOption)
+    sampleOutcome =
+        getBinaryOutput<VN300Defs::BinaryDataArp>(binDataArp, preSampleBin1);
+    if (!sampleOutcome)
     {
-        case VN300Defs::SampleOptions::FULL:
-            sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataFull>(
-                bindataFull, preSampleBin1);
-
-            validChecksum =
-                crc == CRCOptions::CRC_NO ||
-                calculateChecksum16(reinterpret_cast<uint8_t*>(&bindataFull),
-                                    sizeof(bindataFull)) == 0;
-            break;
-        case VN300Defs::SampleOptions::ARP:
-            sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataArp>(
-                binDataArp, preSampleBin1);
-
-            validChecksum =
-                crc == CRCOptions::CRC_NO ||
-                calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataArp),
-                                    sizeof(binDataArp)) == 0;
-            break;
+        lastError = NO_NEW_DATA;
     }
 
-    // Verify if the sample was valid
+    validChecksum = crc == CRCOptions::CRC_NO ||
+                    calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataArp),
+                                        sizeof(binDataArp)) == 0;
+    if (!validChecksum)
+    {
+        lastError = SensorErrors::BUS_FAULT;
+    }
+
+    // Verify if the sample is valid
     sampleOutcome = sampleOutcome && validChecksum;
 
     if (sampleOutcome)
     {
-        switch (sampleOption)
-        {
-            case VN300Defs::SampleOptions::FULL:
-                buildBinaryDataFull(bindataFull, data, timestamp);
-                break;
-            case VN300Defs::SampleOptions::ARP:
-                buildBinaryDataArp(binDataArp, data, timestamp);
-                break;
-        }
+        buildBinaryDataArp(binDataArp, data, timestamp);
         return data;
     }
     else
     {
-        lastError = NO_NEW_DATA;
+        // Last error is already set
         return lastSample;
     }
 }
@@ -296,8 +334,6 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
         return false;
     }
 
-    // Read the answer
-
     recvStringCommand(recvString.data(), recvStringMaxDimension);
 
     if (checkErrorVN(recvString.data()))
@@ -319,8 +355,6 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
     {
         return false;
     }
-
-    // Read the answer
 
     recvStringCommand(recvString.data(), recvStringMaxDimension);
 
@@ -344,7 +378,6 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
         return false;
     }
 
-    // Read the answer
     recvStringCommand(recvString.data(), recvStringMaxDimension);
 
     if (checkErrorVN(recvString.data()))
@@ -355,14 +388,6 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
 
 bool VN300::setBinaryOutput()
 {
-    // Here the output groups and the elements of each group are declared.
-    // Reference to VN300Defs for all the possible groups and elements.
-    // In order to change this elements it's mandatory to modify the struct
-    // BinaryData, doing this is also necessary to modify the VN300Data struct,
-    // this cause also that the sampleBinary function needs to be modified.
-    // Another side effect it's that if a changed is done here it's highly
-    // probable that the ascii version can't sample all the same data.
-
     uint16_t outputGroup = 0, commonGroup = 0, gnssGroup = 0;
 
     switch (sampleOption)
@@ -393,12 +418,10 @@ bool VN300::setBinaryOutput()
             break;
     }
 
-    // The "comp" string it's created in order format the message and also
-    // compare the reply. The fields represents the binary register "75", the
-    // type of communication "0" means that no asynchronous message is active
-    // and "8" represents the divider at which the asynchronous message is sent
+    // "0" means that no asynchronous message is active
+    // "8" represents the divider at which the asynchronous message is sent with
     // respect to the max rate
-    const char* comp = "VNWRG,75,0,8";
+    const char* const comp = "VNWRG,75,0,8";
 
     std::string command = fmt::format("{},{},{:x},{:x}", comp, outputGroup,
                                       commonGroup, gnssGroup);

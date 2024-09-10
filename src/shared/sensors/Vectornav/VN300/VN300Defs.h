@@ -28,7 +28,9 @@ namespace Boardcore
 namespace VN300Defs
 {
 
-/// \brief The available binary output groups.
+/**
+ * @brief The groups of binary data available from the sensor.
+ */
 enum BinaryGroup
 {
     BINARYGROUP_COMMON   = 0x01,  ///< Common group.
@@ -40,114 +42,133 @@ enum BinaryGroup
     BINARYGROUP_GPS2     = 0x40   ///< GPS2 group.
 };
 
-/// \brief Flags for the binary group 1 'Common' in the binary output registers.
+/**
+ * @brief Values used to select data for the binary output from group 1 (common
+ * group).
+ */
 enum CommonGroup
 {
     COMMONGROUP_NONE         = 0x0000,  ///< None.
-    COMMONGROUP_TIMESTARTUP  = 0x0001,  ///< TimeStartup.
-    COMMONGROUP_TIMEGPS      = 0x0002,  ///< TimeGps.
-    COMMONGROUP_TIMESYNCIN   = 0x0004,  ///< TimeSyncIn.
-    COMMONGROUP_YAWPITCHROLL = 0x0008,  ///< YawPitchRoll.
+    COMMONGROUP_TIMESTARTUP  = 0x0001,  ///< Time since startup (nanoseconds).
+    COMMONGROUP_TIMEGPS      = 0x0002,  ///< Gps time.
+    COMMONGROUP_TIMESYNCIN   = 0x0004,  ///< Time since last sync in trigger.
+    COMMONGROUP_YAWPITCHROLL = 0x0008,  ///< Yaw pitch roll.
     COMMONGROUP_QUATERNION   = 0x0010,  ///< Quaternion.
-    COMMONGROUP_ANGULARRATE  = 0x0020,  ///< AngularRate.
+    COMMONGROUP_ANGULARRATE  = 0x0020,  ///< Angular Rate.
     COMMONGROUP_POSITION     = 0x0040,  ///< Position.
     COMMONGROUP_VELOCITY     = 0x0080,  ///< Velocity.
-    COMMONGROUP_ACCEL        = 0x0100,  ///< Accel.
-    COMMONGROUP_IMU          = 0x0200,  ///< Imu.
-    COMMONGROUP_MAGPRES      = 0x0400,  ///< MagPres.
-    COMMONGROUP_DELTATHETA   = 0x0800,  ///< DeltaTheta.
-    COMMONGROUP_INSSTATUS    = 0x1000,  ///< InsStatus.
-    COMMONGROUP_SYNCINCNT    = 0x2000,  ///< SyncInCnt.
-    COMMONGROUP_TIMEGPSPPS   = 0x4000   ///< TimeGpsPps.
+    COMMONGROUP_ACCEL        = 0x0100,  ///< Acceleration compensated (body).
+    COMMONGROUP_IMU = 0x0200,  ///< Uncompensated gyro and accelerometer.
+    COMMONGROUP_MAGPRES =
+        0x0400,  ///< Compensated magnetic, temperature and pressure.
+    COMMONGROUP_DELTATHETA = 0x0800,  ///< Delta time, theta and velocity.
+    COMMONGROUP_INSSTATUS  = 0x1000,  ///< Ins status.
+    COMMONGROUP_SYNCINCNT  = 0x2000,  ///< SyncIn count.
+    COMMONGROUP_TIMEGPSPPS = 0x4000   ///< Time since last GpsPps trigger.
 };
 
-/// \brief Flags for the binary group 2 'Time' in the binary output registers.
+/**
+ * @brief Values used to select data for the binary output from group 2 (time
+ * group).
+ */
 enum TimeGroup
 {
     TIMEGROUP_NONE        = 0x0000,  ///< None.
-    TIMEGROUP_TIMESTARTUP = 0x0001,  ///< TimeStartup.
-    TIMEGROUP_TIMEGPS     = 0x0002,  ///< TimeGps.
-    TIMEGROUP_GPSTOW      = 0x0004,  ///< GpsTow.
-    TIMEGROUP_GPSWEEK     = 0x0008,  ///< GpsWeek.
-    TIMEGROUP_TIMESYNCIN  = 0x0010,  ///< TimeSyncIn.
-    TIMEGROUP_TIMEGPSPPS  = 0x0020,  ///< TimeGpsPps.
-    TIMEGROUP_TIMEUTC     = 0x0040,  ///< TimeUTC.
-    TIMEGROUP_SYNCINCNT   = 0x0080,  ///< SyncInCnt.
-    TIMEGROUP_SYNCOUTCNT  = 0x0100,  ///< SyncOutCnt.
-    TIMEGROUP_TIMESTATUS  = 0x0200   ///< TimeStatus.
+    TIMEGROUP_TIMESTARTUP = 0x0001,  ///< Time since startup (nanoseconds).
+    TIMEGROUP_TIMEGPS     = 0x0002,  ///< Gps time.
+    TIMEGROUP_GPSTOW      = 0x0004,  ///< Time since start of gps week.
+    TIMEGROUP_GPSWEEK     = 0x0008,  ///< Gps week.
+    TIMEGROUP_TIMESYNCIN  = 0x0010,  ///< Time since last sync in trigger.
+    TIMEGROUP_TIMEGPSPPS  = 0x0020,  ///< Time since last GpsPps trigger.
+    TIMEGROUP_TIMEUTC     = 0x0040,  ///< UTC time.
+    TIMEGROUP_SYNCINCNT   = 0x0080,  ///< Sync in trigger count.
+    TIMEGROUP_SYNCOUTCNT  = 0x0100,  ///< Sync out trigger count.
+    TIMEGROUP_TIMESTATUS  = 0x0200   ///< Time valid status flag.
 };
 
-/// \brief Flags for the binary group 3 'IMU' in the binary output registers.
+/**
+ * @brief Values used to select data for the binary output from group 3 (imu
+ * group).
+ */
 enum ImuGroup
 {
     IMUGROUP_NONE        = 0x0000,  ///< None.
-    IMUGROUP_IMUSTATUS   = 0x0001,  ///< ImuStatus.
-    IMUGROUP_UNCOMPMAG   = 0x0002,  ///< UncompMag.
-    IMUGROUP_UNCOMPACCEL = 0x0004,  ///< UncompAccel.
-    IMUGROUP_UNCOMPGYRO  = 0x0008,  ///< UncompGyro.
-    IMUGROUP_TEMP        = 0x0010,  ///< Temp.
-    IMUGROUP_PRES        = 0x0020,  ///< Pres.
-    IMUGROUP_DELTATHETA  = 0x0040,  ///< DeltaTheta.
-    IMUGROUP_DELTAVEL    = 0x0080,  ///< DeltaVel.
-    IMUGROUP_MAG         = 0x0100,  ///< Mag.
-    IMUGROUP_ACCEL       = 0x0200,  ///< Accel.
-    IMUGROUP_ANGULARRATE = 0x0400,  ///< AngularRate.
-    IMUGROUP_SENSSAT     = 0x0800,  ///< SensSat.
+    IMUGROUP_IMUSTATUS   = 0x0001,  ///< Imu status.
+    IMUGROUP_UNCOMPMAG   = 0x0002,  ///< Uncompensated magnetic.
+    IMUGROUP_UNCOMPACCEL = 0x0004,  ///< Uncompensated accelerometer.
+    IMUGROUP_UNCOMPGYRO  = 0x0008,  ///< Uncompensated gyroscope.
+    IMUGROUP_TEMP        = 0x0010,  ///< Temperature.
+    IMUGROUP_PRES        = 0x0020,  ///< Pressure.
+    IMUGROUP_DELTATHETA  = 0x0040,  ///< Delta theta angles.
+    IMUGROUP_DELTAVEL    = 0x0080,  ///< Delta velocity.
+    IMUGROUP_MAG         = 0x0100,  ///< Compensated magnetometer.
+    IMUGROUP_ACCEL       = 0x0200,  ///< Compensated accelerometer.
+    IMUGROUP_ANGULARRATE = 0x0400,  ///< Compensated gyroscope.
 };
 
-/// \brief Flags for the binary group 4 'GPS' and group 7 'GPS2' in the binary
-/// output registers.
+/**
+ * @brief Values used to select data for the binary output from group 4
+ * and 7 (gps and gps2 group).
+ */
 enum GpsGroup
 {
-    GPSGROUP_NONE     = 0x0000,  ///< None.
-    GPSGROUP_UTC      = 0x0001,  ///< UTC.
-    GPSGROUP_TOW      = 0x0002,  ///< Tow.
-    GPSGROUP_WEEK     = 0x0004,  ///< Week.
-    GPSGROUP_NUMSATS  = 0x0008,  ///< NumSats.
-    GPSGROUP_FIX      = 0x0010,  ///< Fix.
-    GPSGROUP_POSLLA   = 0x0020,  ///< PosLla.
-    GPSGROUP_POSECEF  = 0x0040,  ///< PosEcef.
-    GPSGROUP_VELNED   = 0x0080,  ///< VelNed.
-    GPSGROUP_VELECEF  = 0x0100,  ///< VelEcef.
-    GPSGROUP_POSU     = 0x0200,  ///< PosU.
-    GPSGROUP_VELU     = 0x0400,  ///< VelU.
-    GPSGROUP_TIMEU    = 0x0800,  ///< TimeU.
-    GPSGROUP_TIMEINFO = 0x1000,  ///< TimeInfo.
-    GPSGROUP_DOP      = 0x2000,  ///< Dop.
+    GPSGROUP_NONE    = 0x0000,  ///< None.
+    GPSGROUP_UTC     = 0x0001,  ///< Gps UTC time.
+    GPSGROUP_TOW     = 0x0002,  ///< Gps time of week.
+    GPSGROUP_WEEK    = 0x0004,  ///< Gps week.
+    GPSGROUP_NUMSATS = 0x0008,  ///< Number of tracked satellites.
+    GPSGROUP_FIX     = 0x0010,  ///< Gps fix.
+    GPSGROUP_POSLLA =
+        0x0020,  ///< Gps position (latitude, longitude, altitude).
+    GPSGROUP_POSECEF  = 0x0040,  ///< Gps position (ECEF).
+    GPSGROUP_VELNED   = 0x0080,  ///< Gps velocity (NED).
+    GPSGROUP_VELECEF  = 0x0100,  ///< Gps velocity (ECEF).
+    GPSGROUP_POSU     = 0x0200,  ///< Position uncertainty (NED).
+    GPSGROUP_VELU     = 0x0400,  ///< Velocity uncertainty.
+    GPSGROUP_TIMEU    = 0x0800,  ///< Time uncertainty.
+    GPSGROUP_TIMEINFO = 0x1000,  ///< Gps time status and leap seconds.
+    GPSGROUP_DOP      = 0x2000,  ///< Dilution of precision values.
 };
 
-/// \brief Flags for the binary group 5 'Attitude' in the binary output
-/// registers.
+/**
+ * @brief Values used to select data for the binary output from group 5
+ * (attitude group).
+ */
 enum AttitudeGroup
 {
-    ATTITUDEGROUP_NONE            = 0x0000,  ///< None.
-    ATTITUDEGROUP_VPESTATUS       = 0x0001,  ///< VpeStatus.
-    ATTITUDEGROUP_YAWPITCHROLL    = 0x0002,  ///< YawPitchRoll.
-    ATTITUDEGROUP_QUATERNION      = 0x0004,  ///< Quaternion.
-    ATTITUDEGROUP_DCM             = 0x0008,  ///< DCM.
-    ATTITUDEGROUP_MAGNED          = 0x0010,  ///< MagNed.
-    ATTITUDEGROUP_ACCELNED        = 0x0020,  ///< AccelNed.
-    ATTITUDEGROUP_LINEARACCELBODY = 0x0040,  ///< LinearAccelBody.
-    ATTITUDEGROUP_LINEARACCELNED  = 0x0080,  ///< LinearAccelNed.
-    ATTITUDEGROUP_YPRU            = 0x0100,  ///< YprU.
-    ATTITUDEGROUP_HEAVE           = 0x1000,  ///< Heave.
+    ATTITUDEGROUP_NONE         = 0x0000,  ///< None.
+    ATTITUDEGROUP_VPESTATUS    = 0x0001,  ///< VpeStatus.
+    ATTITUDEGROUP_YAWPITCHROLL = 0x0002,  ///< Yaw pitch roll.
+    ATTITUDEGROUP_QUATERNION   = 0x0004,  ///< Quaternion.
+    ATTITUDEGROUP_DCM          = 0x0008,  ///< Directional cosine matrix.
+    ATTITUDEGROUP_MAGNED       = 0x0010,  ///< Compensated magnetic (NED).
+    ATTITUDEGROUP_ACCELNED     = 0x0020,  ///< Compensated acceleration (NED).
+    ATTITUDEGROUP_LINEARACCELBODY =
+        0x0040,  ///< Compensated linear acceleration (no gravity).
+    ATTITUDEGROUP_LINEARACCELNED =
+        0x0080,  ///< Compensated linear acceleration (no gravity) (NED).
+    ATTITUDEGROUP_YPRU = 0x0100,  ///< Yaw Pitch Roll uncertainty.
 };
 
-/// \brief Flags for the binary group 6 'INS' in the binary output registers.
+/**
+ * @brief Values used to select data for the binary output from group 6 (ins
+ * group).
+ */
 enum InsGroup
 {
-    INSGROUP_NONE            = 0x0000,  ///< None.
-    INSGROUP_INSSTATUS       = 0x0001,  ///< InsStatus.
-    INSGROUP_POSLLA          = 0x0002,  ///< PosLla.
-    INSGROUP_POSECEF         = 0x0004,  ///< PosEcef.
-    INSGROUP_VELBODY         = 0x0008,  ///< VelBody.
-    INSGROUP_VELNED          = 0x0010,  ///< VelNed.
-    INSGROUP_VELECEF         = 0x0020,  ///< VelEcef.
-    INSGROUP_MAGECEF         = 0x0040,  ///< MagEcef.
-    INSGROUP_ACCELECEF       = 0x0080,  ///< AccelEcef.
-    INSGROUP_LINEARACCELECEF = 0x0100,  ///< LinearAccelEcef.
-    INSGROUP_POSU            = 0x0200,  ///< PosU.
-    INSGROUP_VELU            = 0x0400,  ///< VelU.
+    INSGROUP_NONE      = 0x0000,  ///< None.
+    INSGROUP_INSSTATUS = 0x0001,  ///< Status.
+    INSGROUP_POSLLA    = 0x0002,  ///< Position (latitude, longitude, altitude).
+    INSGROUP_POSECEF   = 0x0004,  ///< Position (ECEF).
+    INSGROUP_VELBODY   = 0x0008,  ///< Velocity (body).
+    INSGROUP_VELNED    = 0x0010,  ///< Velocity (NED).
+    INSGROUP_VELECEF   = 0x0020,  ///< Velocity (ECEF).
+    INSGROUP_MAGECEF   = 0x0040,  ///< Compensated magnetic (ECEF).
+    INSGROUP_ACCELECEF = 0x0080,  ///< Compensated acceleration (ECEF).
+    INSGROUP_LINEARACCELECEF =
+        0x0100,              ///< Compensated linear acceleration (ECEF).
+    INSGROUP_POSU = 0x0200,  ///< Position uncertainty.
+    INSGROUP_VELU = 0x0400,  ///< Velocity uncertainty.
 };
 
 /**
@@ -155,16 +176,16 @@ enum InsGroup
  */
 struct AntennaPosition
 {
-    float posX;
+    float posX;  // Relative position of GPS antenna (X-axis)
     float posY;
     float posZ;
-    float uncX;
+    float uncX;  // Uncertainty in the X-axis position measurement
     float uncY;
     float uncZ;
 };
 
 /**
- * @brief Structure to handle INS data
+ * @brief Structure to handle INS data.
  */
 struct Ins_Lla
 {
@@ -183,10 +204,13 @@ struct Ins_Lla
     float nedVelZ;
 };
 
+/**
+ * @brief Sample options (data output packets) available.
+ */
 enum class SampleOptions : uint8_t
 {
-    FULL,
-    ARP,
+    FULL,  ///< All data is sampled
+    ARP,   ///< Only ARP needed data is sampled
 };
 
 /**
