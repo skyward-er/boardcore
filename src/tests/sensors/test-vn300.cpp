@@ -21,14 +21,7 @@
  */
 
 #include <drivers/timer/TimestampTimer.h>
-#include <inttypes.h>
 #include <sensors/Vectornav/VN300/VN300.h>
-#include <utils/Stats/Stats.h>
-
-#include <iostream>
-
-#include "diagnostic/CpuMeter/CpuMeter.h"
-#define ENABLE_CPU_METER
 
 using namespace miosix;
 using namespace Boardcore;
@@ -48,7 +41,8 @@ int main()
 
     const int baud = 921600;
     USART usart(USART2, baud);
-    VN300 sensor(usart, baud, VN300Defs::SamplingMethod::BINARY,
+    VN300 sensor(usart, baud, VN300Defs::BinaryOutputPacket::FULL,
+                 VN300Defs::SamplingMethod::BINARY,
                  VN300::CRCOptions::CRC_ENABLE_8);
 
     // Let the sensor start up
@@ -82,6 +76,8 @@ int main()
         printf("magn: %f, %f, %f\n", sample.magneticFieldX,
                sample.magneticFieldY, sample.magneticFieldZ);
         printf("attitude: %f, %f, %f\n", sample.yaw, sample.pitch, sample.roll);
+        printf("quaternion: %f, %f, %f, %f\n", sample.quaternionW,
+               sample.quaternionX, sample.quaternionY, sample.quaternionZ);
         printf("latitude: %f\n", sample.latitude);
         printf("longitude: %f\n", sample.longitude);
         printf("gps-fix: %u\n\n", sample.fix_gps);
