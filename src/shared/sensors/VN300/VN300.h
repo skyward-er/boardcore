@@ -69,7 +69,7 @@ namespace Boardcore
 /**
  * @brief Driver class for VN300 IMU.
  */
-class VN300 : public Sensor<VN300Data>, public ActiveObject
+class VN300 : public Sensor<VN300Data>
 {
 public:
     enum class CRCOptions : uint8_t
@@ -79,8 +79,9 @@ public:
         CRC_ENABLE_16 = 0x10
     };
 
-    std::array<uint32_t, 9> BaudrateList = {9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
-    
+    std::array<uint32_t, 9> BaudrateList = {
+        9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
+
     /**
      * @brief Constructor.
      *
@@ -92,26 +93,12 @@ public:
      * @param antPos antenna A position
      */
     VN300(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod   = 20,
+          uint16_t samplePeriod   = 15,
           AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           Eigen::Matrix3f rotMat  = Eigen::Matrix3f::Identity());
 
     bool init() override;
-
-    /**
-     * @brief Method to sample the raw data without parsing.
-     *
-     * @return True if operation succeeded.
-     */
-    bool sampleRaw();
-
-    /**
-     * @brief Method to get the raw sample.
-     *
-     * @return String that represents the sample.
-     */
-    string getLastRawSample();
 
     /**
      * @brief Method to reset the sensor to default values and to close
@@ -129,18 +116,6 @@ private:
      */
     VN300Data sampleImpl() override;
 
-    /**
-     * @brief Active object method, about the thread execution
-     */
-    void run() override;
-
-    /**
-     * @brief Sampling method used by the thread
-     *
-     * @return VN300Data The sampled data
-     */
-    VN300Data sampleData();
-    
     /**
      * @brief Method to find the baudrate of the sensor at startup
      *
@@ -181,9 +156,9 @@ private:
 
     /**
      * @brief reset to factory settings.
-     * 
+     *
      * @return True if operation succeeded.
-    */
+     */
     bool resetFactorySettings();
 
     /**
