@@ -42,7 +42,7 @@ public:
     /**
      * @brief Constructor of the propagator class.
      *
-     * @param updatePeriod The period of update of the predictor algorithm.
+     * @param updatePeriod The period of update of the predictor algorithm [ms].
      */
     explicit Propagator(float updatePeriod);
 
@@ -101,7 +101,7 @@ private:
      */
     void step() override;
 
-    float updatePeriod;               ///< Update period of the propagator
+    float updatePeriod;               ///< Update period of the propagator [s]
     PropagatorState state;            ///< State of the predictor
     NASState lastRocketNasState;      ///< Last received rocket NAS state
     miosix::FastMutex nasStateMutex;  ///< mutex to sync nasState accesses

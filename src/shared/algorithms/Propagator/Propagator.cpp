@@ -30,7 +30,8 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-Propagator::Propagator(float updatePeriod) : updatePeriod(updatePeriod), state()
+Propagator::Propagator(float updatePeriod)
+    : updatePeriod(updatePeriod / 1000), state()
 {
 }
 

@@ -24,7 +24,7 @@
 
 namespace TestPropagator0
 {
-float dt                  = 0.02;
+float dt                  = 20;
 int n                     = 50;
 Boardcore::NASState nas[] = {{1, {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}},
                              {2, {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}},
@@ -83,7 +83,7 @@ Boardcore::PropagatorState STATE0(0, 0, nas[0]);
 
 namespace TestPropagator1
 {
-float dt                  = 0.02;
+float dt                  = 20;
 int n                     = 100;
 Boardcore::NASState nas[] = {
     {1, {0, 42, 0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0}},
@@ -193,7 +193,7 @@ Boardcore::PropagatorState STATE0(0, 0, nas[0]);
 
 namespace TestPropagator2
 {
-float dt                  = 0.02;
+float dt                  = 20;
 int n                     = 100;
 Boardcore::NASState nas[] = {
     {1, {12, -24, -48, -0.3, 1.2, 3.4, 0, 0, 0, 1, 0, 0, 0}},
@@ -423,7 +423,7 @@ Boardcore::PropagatorState STATE0(0, 0, nas[0]);
 
 namespace TestPropagator3
 {
-float dt                  = 0.5;
+float dt                  = 500;
 int n                     = 100;
 Boardcore::NASState nas[] = {
     {1, {12, -24, -48, -0.3, 1.2, 3.4, 0.5, 0.5, 0.5, 0.5, 1, 2, 3}},
