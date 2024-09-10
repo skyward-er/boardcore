@@ -34,8 +34,9 @@ VN300::VN300(USART &usart, int userBaudRate,
              const VN300Defs::AntennaPosition antPosA,
              const VN300Defs::AntennaPosition antPosB,
              const Eigen::Matrix3f rotMat)
-    : usart(usart), userBaudRate(userBaudRate), samplingMethod(samplingMethod),
-      crc(crc), antPosA(antPosA), antPosB(antPosB), rotMat(rotMat)
+    : VNCommonSerial(usart, userBaudRate, "VN300"),
+      samplingMethod(samplingMethod), crc(crc), antPosA(antPosA),
+      antPosB(antPosB), rotMat(rotMat)
 {
 }
 
@@ -136,7 +137,7 @@ bool VN300::init()
     }
     miosix::Thread::sleep(2000);  // TODO: needed? for so long?
 
-    if (!configBaudRate(userBaudRate))
+    if (!configBaudRate(baudRate))
     {
         LOG_ERR(logger, "Unable to config the user VN300 serial port");
         return false;
@@ -531,6 +532,8 @@ bool VN300::configBaudRate(int baudRate)
 
 bool VN300::setCrc(bool waitResponse)
 {
+    // TODO: refactor this function
+
     // Command for the crc change
     std::string command;
     CRCOptions backup = crc;
@@ -1236,47 +1239,6 @@ bool VN300::verifyChecksum(char *command, int length)
     }
 
     return true;
-}
-
-uint8_t VN300::calculateChecksum8(uint8_t *message, int length)
-{
-    int i;
-    uint8_t result = 0x00;
-
-    // Iterate and XOR all of the elements
-    for (i = 0; i < length; i++)
-    {
-        //^ = XOR Operation
-        result ^= message[i];
-    }
-
-    return result;
-}
-
-uint16_t VN300::calculateChecksum16(uint8_t *message, int length)
-{
-    int i;
-    uint16_t result = 0x0000;
-
-    // Apply the datasheet definition of CRC16-CCITT
-    for (i = 0; i < length; i++)
-    {
-        result = (uint8_t)(result >> 8) | (result << 8);
-        result ^= message[i];
-        result ^= (uint8_t)(result & 0xff) >> 4;
-        result ^= result << 12;
-        result ^= (result & 0x00ff) << 5;
-    }
-
-    return result;
-}
-
-void VN300::clearBuffer()
-{
-    char c;
-    while (usart.read(&c, 1))
-    {
-    }
 }
 
 }  // namespace Boardcore
