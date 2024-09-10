@@ -192,6 +192,37 @@ bool VNCommonSerial::setCrc(bool waitResponse)
     return true;
 }
 
+void VNCommonSerial::configDefaultSerialPort()
+{
+    // Initial default settings
+    usart.setBaudrate(DEFAULT_BAUDRATE);
+}
+
+bool VNCommonSerial::configUserSerialPort()
+{
+    /**
+     * Even if the user configured baudrate is the default, I want to reset the
+     * buffer to clean the junk.
+     */
+
+    std::string command;
+
+    // I format the command to change baud rate
+    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+
+    // I can send the command
+    if (!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    // I can open the serial with user's baud rate
+    usart.setBaudrate(baudRate);
+
+    // Check correct serial init
+    return true;
+}
+
 QuaternionData VNCommonSerial::sampleQuaternion()
 {
     unsigned int indexStart = 0;
