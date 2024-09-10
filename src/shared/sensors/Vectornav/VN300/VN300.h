@@ -139,7 +139,6 @@ private:
      * @return True if operation succeeded.
      */
     bool setBinaryOutput();
-    // TODO: refactor
 
     /**
      * @brief Method implementation of self test.
