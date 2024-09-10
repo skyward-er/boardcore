@@ -143,71 +143,6 @@ bool VN300::init()
     return true;
 }
 
-bool VN300::closeAndReset()
-{
-    // Sensor not init
-    if (!isInit)
-    {
-        lastError = SensorErrors::NOT_INIT;
-        LOG_WARN(logger, "Sensor VN300 already not initialized");
-        return true;
-    }
-
-    // Send the reset command to the VN300
-    if (!sendStringCommand("VNRST"))
-    {
-        LOG_WARN(logger, "Impossible to reset the VN300");
-        return false;
-    }
-
-    isInit = false;
-
-    return true;
-}
-
-bool VN300::writeSettingsCommand()
-{
-    miosix::Thread::sleep(50);
-    clearBuffer();
-    if (!sendStringCommand("VNWNV"))
-    {
-        LOG_WARN(logger, "Impossible to save settings");
-    }
-
-    miosix::Thread::sleep(1000);
-    // Read the answer
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        return false;
-    }
-
-    if (checkErrorVN(recvString.data()))
-        return false;
-
-    // Send the reset command to the VN300 in order to restart the Kalman filter
-    if (!sendStringCommand("VNRST"))
-    {
-        LOG_WARN(logger, "Impossible to reset the VN300");
-
-        return false;
-    }
-
-    // A long wait is needed in order to let the sensor startup
-    miosix::Thread::sleep(500);
-
-    // Read the answer
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Impossible to reset the VN300");
-        return false;
-    }
-
-    if (checkErrorVN(recvString.data()))
-        return false;
-
-    return true;
-}
-
 bool VN300::selfTest()
 {
     if (!selfTestImpl())
@@ -238,28 +173,12 @@ VN300Data VN300::sampleImpl()
 
 VN300Data VN300::sampleBinary()
 {
-    // This function is used to clear the usart buffer, it needs to be replaced
-    // with the function from usart class
-    // TODO: needed?
-    clearBuffer();
-
-    // The sample command is sent to the VN300
-    // TODO: this or sendStringCommand()?
-    usart.writeString(preSampleBin1);
-
-    // A BinaryData variable is created and it will be passed to the sampleBin()
-    // function as a reference
     VN300Defs::BinaryData bindata;
 
     const uint64_t timestamp = TimestampTimer::getTimestamp();
 
-    // The @if is necessary to check the result of the sampleBin function,
-    // the sampleBin will return true and the modified bindata variable from
-    // which it's necessary to parse data into the VN300Data struct.
-    if (sampleBin(bindata))  // TODO: this call is not needed, can be done
-                             // directly here (or at least change func names)
+    if (getBinaryOutput<VN300Defs::BinaryData>(bindata, preSampleBin1))
     {
-
         QuaternionData quat{timestamp, bindata.quatW_bin, bindata.quatX_bin,
                             bindata.quatY_bin, bindata.quatZ_bin};
 
@@ -271,9 +190,6 @@ VN300Data VN300::sampleBinary()
 
         GyroscopeData gyro{timestamp, bindata.angx, bindata.angy, bindata.angz};
 
-        // The static_cast is necessary to cast the double variables into a
-        // float, this cause less problem with floating point precision errors
-        // and it's lighter on memory11
         VN300Defs::Ins_Lla ins{
             timestamp,
             bindata.fix,
@@ -282,7 +198,7 @@ VN300Data VN300::sampleBinary()
             bindata.yaw_bin,
             bindata.pitch_bin,
             bindata.roll_bin,
-            static_cast<float>(bindata.latitude_bin),  // TODO: is it safe?
+            static_cast<float>(bindata.latitude_bin),
             static_cast<float>(bindata.longitude_bin),
             static_cast<float>(bindata.altitude_bin),
             bindata.velx,
@@ -370,106 +286,6 @@ bool VN300::disableAsyncMessages(bool waitResponse)
         if (checkErrorVN(recvString.data()))
             return false;
     }
-
-    return true;
-}
-
-bool VN300::findBaudrate()
-{
-    char check[]                         = "VN";
-    const int checkOffset                = 1;
-    std::array<uint32_t, 9> baudrateList = {
-        9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
-
-    // The for loop change at every iteration the baudrate of the usart
-    // and sends a message to the VN300, then if the baudrate is correct the VN
-    // reply and the loop terminates. In this way at the end of the loop the
-    // correct baudrate is set.
-    for (uint32_t i = 0; i < baudrateList.size(); i++)
-    {
-
-        usart.setBaudrate(baudrateList[i]);
-
-        miosix::Thread::sleep(
-            50);  // TODO: needed? I don't think so, but has to be checked
-        // I pause the async messages, we don't know if they are present.
-        asyncPause();
-
-        miosix::Thread::sleep(
-            50);  // TODO: needed? I don't think so, but has to be checked
-
-        usart.writeString("$VNRRG,01*XX\n");
-
-        if (recvStringCommand(recvString.data(), recvStringMaxDimension))
-        {
-            if (strncmp(check, recvString.data() + checkOffset,
-                        strlen(check)) == 0)
-            {
-                return true;
-            }
-        }
-    }
-
-    // If I don't find the correct baudrate I set the default Baudrate
-    usart.setBaudrate(defaultBaudRate);
-    // If i'm here, i didn't find the correct baudrate
-    return false;
-}
-
-bool VN300::setCrc(bool waitResponse)
-{
-    // Command for the crc change
-    std::string command;
-    CRCOptions backup = crc;
-
-    // Check what type of crc is selected
-    if (crc == CRCOptions::CRC_ENABLE_16)
-    {
-        // The 3 inside the command is the 16bit select. The others are default
-        // values
-        command = "VNWRG,30,0,0,0,0,3,0,1";
-    }
-    else
-    {
-        // Even if the CRC is not enabled i put the 8 bit
-        // checksum because i need to know how many 'X' add at the end
-        // of every command sent
-        command = "VNWRG,30,0,0,0,0,1,0,1";
-    }
-
-    // I need to send the command in both crc because i don't know what type
-    // of crc is previously selected. So in order to get the command accepted
-    // i need to do it two times with different crc.
-    crc = CRCOptions::CRC_ENABLE_8;
-
-    // Send the command
-    if (!sendStringCommand(command))
-    {
-        return false;
-    }
-
-    // Read the answer
-    if (waitResponse)
-    {
-        recvStringCommand(recvString.data(), recvStringMaxDimension);
-    }
-
-    crc = CRCOptions::CRC_ENABLE_16;
-
-    // Send the command
-    if (!sendStringCommand(command))
-    {
-        return false;
-    }
-
-    // Read the answer
-    if (waitResponse)
-    {
-        recvStringCommand(recvString.data(), recvStringMaxDimension);
-    }
-
-    // Restore the crc
-    crc = backup;
 
     return true;
 }
@@ -719,23 +535,6 @@ VN300Defs::Ins_Lla VN300::sampleIns()
     data.nedVelZ   = strtof(nextNumber + 1, NULL);
 
     return data;
-}
-
-bool VN300::sampleBin(VN300Defs::BinaryData &bindata)
-{
-    // TODO: REMOVE READ-BLOCKING
-    unsigned char initByte = 0;
-
-    // Check the read of the 0xFA byte to find the start of the message
-    if (usart.readBlocking(&initByte, 1) && initByte == 0xFA)
-    {
-        if (usart.readBlocking(&bindata, sizeof(VN300Defs::BinaryData)))
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 void VN300::configDefaultSerialPort()
