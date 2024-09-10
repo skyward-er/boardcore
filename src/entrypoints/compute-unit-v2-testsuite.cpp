@@ -1,5 +1,5 @@
 /* Copyright (c) 2024 Skyward Experimental Rocketry
- * Author: Davide Mor, Emilio Corigliano
+ * Authors: Davide Mor, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
