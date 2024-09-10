@@ -40,4 +40,5 @@ set(BOARDCORE_BOARDS_OPTIONS_FILES
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_rig_v2/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_biscotto/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_motor/config/board_options.cmake
+    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_gs/config/board_options.cmake
 )

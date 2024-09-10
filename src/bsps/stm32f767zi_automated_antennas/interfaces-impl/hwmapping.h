@@ -95,7 +95,9 @@ using dio0      = Gpio<GPIOC_BASE, 6>;
 using dio1      = Gpio<GPIOD_BASE, 4>;
 using dio3      = Gpio<GPIOD_BASE, 5>;
 using rx_enable = Gpio<GPIOB_BASE, 9>;
+using rxen      = rx_enable;
 using tx_enable = Gpio<GPIOB_BASE, 8>;
+using txen      = tx_enable;
 }  // namespace radio
 
 namespace stepper1
