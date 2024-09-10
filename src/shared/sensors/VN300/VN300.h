@@ -74,7 +74,6 @@ class VN300 : public Sensor<VN300Data>
 public:
     enum class CRCOptions : uint8_t
     {
-        CRC_NO        = 0x00,
         CRC_ENABLE_8  = 0x08,
         CRC_ENABLE_16 = 0x10
     };
@@ -92,8 +91,8 @@ public:
      * @param samplePeriod Sampling period in ms
      * @param antPos antenna A position
      */
-    VN300(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod   = 15,
+    VN300(USART &usart, int userBaudRate,
+          CRCOptions crc = CRCOptions::CRC_ENABLE_8, uint16_t samplePeriod = 15,
           AntennaPosition antPosA = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           AntennaPosition antPosB = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
           Eigen::Matrix3f rotMat  = Eigen::Matrix3f::Identity());
@@ -141,18 +140,11 @@ private:
     bool disableAsyncMessages(bool waitResponse = true);
 
     /**
-     * @brief Configures the default serial communication.
-     *
-     * @return True if operation succeeded.
-     */
-    bool configDefaultSerialPort();
-
-    /**
      * @brief Configures the user defined serial communication.
      *
      * @return True if operation succeeded.
      */
-    bool configUserSerialPort();
+    bool configBaudRate(int baud);
 
     /**
      * @brief reset to factory settings.
@@ -289,11 +281,20 @@ private:
     uint16_t calculateChecksum16(uint8_t *message, int length);
 
     /**
+     * @brief Clear the buffer of the serial interface.
+     *
+     * This is a placeholder function for the serial interface.
+     * When the usart driver is corrected this must be changed.
+     */
+    void clearBuffer();
+
+    /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
     USART &usart;
-    int baudRate;
+    int userBaudRate;
+    const int defaultBaudRate = 115200;
 
     uint16_t samplePeriod;
     CRCOptions crc;
