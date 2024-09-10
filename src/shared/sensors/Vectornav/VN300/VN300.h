@@ -85,6 +85,7 @@ public:
      * @param antPos antenna A position
      */
     VN300(USART& usart, int userBaudRate,
+          VN300Defs::BinaryOutputPacket binaryOutputPacket,
           VN300Defs::SamplingMethod samplingMethod =
               VN300Defs::SamplingMethod::BINARY,
           CRCOptions crc                     = CRCOptions::CRC_ENABLE_8,
@@ -152,6 +153,30 @@ private:
     VN300Data sampleBinary();
 
     VN300Data sampleASCII();
+
+    /**
+     * @brief Build output data packet starting from raw binary data received
+     * from the sensor.
+     *
+     * @param rawData The raw data received from the sensor.
+     * @param data The structure that will contain the output.
+     * @param timestamp The timestamp of the extracted data.
+     */
+    void buildBinaryDataFull(const VN300Defs::BinaryDataFull& rawData,
+                             VN300Data& data, const uint64_t timestamp);
+
+    /**
+     * @brief Build output data packet starting from raw binary data received
+     * from the sensor.
+     *
+     * @param rawData The raw data received from the sensor.
+     * @param data The structure that will contain the output.
+     * @param timestamp The timestamp of the extracted data.
+     */
+    void buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
+                            VN300Data& data, const uint64_t timestamp);
+
+    VN300Defs::BinaryOutputPacket binaryOutputPacket;
 
     VN300Defs::SamplingMethod samplingMethod;
 
