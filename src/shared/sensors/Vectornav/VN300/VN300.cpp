@@ -30,10 +30,11 @@ namespace Boardcore
 
 VN300::VN300(USART& usart, int userBaudRate,
              VN300Defs::SampleOptions sampleOption, CRCOptions crc,
+             std::chrono::milliseconds timeout,
              const VN300Defs::AntennaPosition antPosA,
              const VN300Defs::AntennaPosition antPosB,
              const Eigen::Matrix3f rotMat)
-    : VNCommonSerial(usart, userBaudRate, "VN300", crc),
+    : VNCommonSerial(usart, userBaudRate, "VN300", crc, timeout),
       sampleOption(sampleOption), antPosA(antPosA), antPosB(antPosB),
       rotMat(rotMat)
 {

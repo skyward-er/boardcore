@@ -39,8 +39,18 @@ public:
         CRC_ENABLE_16 = 0x10
     };
 
+    /**
+     * @brief Constructor.
+     *
+     * @param usart Serial bus used for the sensor.
+     * @param BaudRate Selectd baudrate.
+     * @param sensorName The name of the sensor (VN100/VN300/...).
+     * @param crc Checksum option.
+     * @param timeout The maximum time that will be waited when reading from the
+     * sensor.
+     */
     VNCommonSerial(USART &usart, int baudrate, const char *sensorName,
-                   CRCOptions crc);
+                   CRCOptions crc, const std::chrono::milliseconds timeout);
 
     ~VNCommonSerial();
 
@@ -226,13 +236,19 @@ protected:
     uint8_t recvStringLength = 0;
 
     bool isInit = false;
+
+private:
+    /**
+     * @brief The maximum time that will be waited during
+     * a read from the serial channel.
+     */
+    const std::chrono::milliseconds maxTimeout;
 };
 
 template <typename T>
 bool VNCommonSerial::getBinaryOutput(T &binaryData,
                                      const char *const sampleCommand)
 {
-    // TODO: REMOVE READ-BLOCKING
     uint8_t initByte = 0;
 
     // Remove any junk
@@ -241,9 +257,9 @@ bool VNCommonSerial::getBinaryOutput(T &binaryData,
     usart.writeString(sampleCommand);
 
     // Check the read of the 0xFA byte to find the start of the message
-    if (usart.readBlocking(&initByte, 1) && initByte == 0xFA)
+    if (usart.readBlocking(&initByte, 1, maxTimeout) && initByte == 0xFA)
     {
-        if (usart.readBlocking(&binaryData, sizeof(T)))
+        if (usart.readBlocking(&binaryData, sizeof(T), maxTimeout))
         {
             return true;
         }

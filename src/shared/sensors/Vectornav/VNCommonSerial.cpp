@@ -29,9 +29,10 @@ namespace Boardcore
 {
 
 VNCommonSerial::VNCommonSerial(USART &usart, int baudrate,
-                               const char *sensorName, CRCOptions crc)
+                               const char *sensorName, CRCOptions crc,
+                               const std::chrono::milliseconds timeout)
     : usart(usart), baudRate(baudrate), crc(crc),
-      logger(Logging::getLogger(sensorName))
+      logger(Logging::getLogger(sensorName)), maxTimeout(timeout)
 {
 }
 
@@ -468,10 +469,9 @@ bool VNCommonSerial::sendStringCommand(std::string command)
 
 bool VNCommonSerial::recvStringCommand(char *command, int maxLength)
 {
-    // TODO: REMOVE READ-BLOCKING
     int i = 0;
     // Read the buffer
-    if (!usart.readBlocking(command, maxLength))
+    if (!usart.readBlocking(command, maxLength, maxTimeout))
     {
         return false;
     }
