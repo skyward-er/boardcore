@@ -92,11 +92,14 @@ protected:
     bool verifyChecksum(char *command, int maxLength);
 
     /**
-     * @brief Pause asynchronous messages
+     * @brief Disables the async messages that the vn100 is default configured
+     * to send at 40Hz on startup.
+     *
+     * @param waitResponse If true wait for a serial response.
      *
      * @return True if operation succeeded.
      */
-    bool asyncPause();
+    bool disableAsyncMessages(bool waitResponse);
 
     /**
      * @brief Sets the user selected crc method.

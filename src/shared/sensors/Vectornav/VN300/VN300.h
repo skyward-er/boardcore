@@ -103,17 +103,6 @@ private:
     VN300Data sampleImpl() override;
 
     /**
-     * @brief Disables the async messages that the VN300 is default configured
-     * to send at 40Hz on startup.
-     *
-     * @param waitResponse If true wait for a serial response.
-     *
-     * @return True if operation succeeded.
-     */
-    bool disableAsyncMessages(bool waitResponse = true);
-    // TODO: move to common files
-
-    /**
      * @brief Sets the antenna A offset.
      *
      * @param antPos antenna position.
