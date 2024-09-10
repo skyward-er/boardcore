@@ -254,9 +254,9 @@ private:
      *
      * @param message to be checked.
      *
-     * @return True if error are present.
+     * @return error code.
      */
-    bool checkErrorVN(const char *message);
+    uint8_t checkErrorVN(const char *message);
 
     /**
      * @brief Method to verify the crc validity of a command.
