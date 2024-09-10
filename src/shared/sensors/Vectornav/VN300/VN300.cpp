@@ -499,29 +499,6 @@ bool VN300::configBaudRate(int baudRate)
     return true;
 }
 
-[[maybe_unused]] bool VN300::resetFactorySettings()
-{
-    // Command string
-    std::string command =
-        "VNRFS";  // Put 0 in register number 0 (Factory Settings)
-
-    // Send the command
-    if (!sendStringCommand(command))
-    {
-        return false;
-    }
-
-    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
-
-    miosix::Thread::sleep(500);
-
-    return true;
-}
-
 bool VN300::setCrc(bool waitResponse)
 {
     // TODO: refactor this function
@@ -960,107 +937,6 @@ bool VN300::recvStringCommand(char *command, int maxLength)
     }
 
     return false;
-}
-
-[[maybe_unused]] int VN300::recvBinaryCommand(uint8_t *command)
-{
-    uint8_t initByte;
-    int i     = 0;
-    int j     = 1;
-    bool read = false;
-    memset(command, '-', sizeof(uint8_t));
-
-    miosix::Thread::sleep(2);
-    while (read == false && i < 10000)
-    {
-        if (usart.read(&initByte, 1))
-        {
-            command[0] = initByte;
-
-            while (usart.read(&initByte, 1) && j < 200)
-            {
-                command[j] = initByte;
-                j++;
-                read = true;
-            }
-
-            break;
-        }
-
-        i++;
-    }
-
-    if (read)
-    {
-        return --j;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-uint8_t VN300::checkErrorVN(const char *message)
-{
-    if (strncmp(message, "$VNERR,", 7) == 0)
-    {
-        // Extract the error code
-        int errorCode = atoi(&message[7]);
-        string error;
-        // Handle the error based on the error code
-
-        // TODO: the error string is set but never used
-
-        switch (errorCode)
-        {
-            case 1:
-                error = "VN300 Hard Fault";
-                break;
-            case 2:
-                error = "VN300 Serial Buffer Overflow";
-                break;
-            case 3:
-                error = "VN300 Invalid Checksum";
-                break;
-            case 4:
-                error = "VN300 Invalid Command";
-                break;
-            case 5:
-                error = "VN300 Not Enough Parameters";
-                break;
-            case 6:
-                error = "VN300 Too Many Parameters";
-                break;
-            case 7:
-                error = "VN300 Invalid Parameter";
-                break;
-            case 8:
-                error = "VN300 Invalid Register";
-                break;
-            case 9:
-                error = "VN300 Unauthorized Access";
-                break;
-            case 10:
-                error = "VN300 Watchdog Reset";
-                break;
-            case 11:
-                error = "VN300 Output Buffer Overflow";
-                break;
-            case 12:
-                error = "VN300 Insufficient Baud Rate";
-                break;
-            case 255:
-                error = "VN300 Error Buffer Overflow";
-                break;
-            default:
-                error = "VN300 Unknown error";
-                break;
-        }
-
-        return errorCode;  // Error detected
-    }
-
-    return 0;  // No error detected
 }
 
 }  // namespace Boardcore
