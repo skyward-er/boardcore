@@ -290,7 +290,7 @@ struct CanEvent
     uint8_t target = 0;
     uint8_t event  = 0;
 
-    static std::string header() { return "timestamp,source,target,event"; }
+    static std::string header() { return "timestamp,source,target,event\n"; }
 
     void print(std::ostream& os) const
     {
