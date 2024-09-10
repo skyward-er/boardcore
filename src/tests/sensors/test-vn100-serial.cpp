@@ -22,7 +22,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <inttypes.h>
-#include <sensors/VN100/VN100Serial.h>
+#include <sensors/Vectornav/VN100/VN100Serial.h>
 
 using namespace miosix;
 using namespace Boardcore;

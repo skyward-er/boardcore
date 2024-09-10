@@ -23,7 +23,8 @@
 #pragma once
 
 #include <sensors/SensorData.h>
-#include <sensors/VN300/VN300Defs.h>
+
+#include "VN300Defs.h"
 
 namespace Boardcore
 {
