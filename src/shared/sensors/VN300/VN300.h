@@ -78,7 +78,7 @@ public:
         CRC_ENABLE_8  = 0x08,
         CRC_ENABLE_16 = 0x10
     };
-    
+
     std::array<uint32_t, 9> BaudrateList = {
         9600, 19200, 38400, 57600, 115200, 128000, 230400, 460800, 921600};
 
@@ -203,9 +203,9 @@ private:
 
     /**
      * @brief Set the binary output register
-     * 
+     *
      * @return True if operation succeeded.
-    */
+     */
     bool setBinaryOutput();
     /**
      * @brief Method implementation of self test.
@@ -223,8 +223,6 @@ private:
     GyroscopeData sampleGyroscope();
 
     Ins_Lla sampleIns();
-
-    BinaryData sampleBin();
 
     VN300Data sampleBinary();
 
@@ -252,6 +250,24 @@ private:
      */
     bool recvStringCommand(char *command, int maxLength);
 
+    /**
+     * @brief Receives binary data and parse directly into BinaryData struct
+     * which has the __attribute__(packed)
+     *
+     * @param bindata passed as reference
+     *
+     * @return true if operation succeeded
+     *
+     */
+    bool sampleBin(BinaryData &bindata);
+
+    /**
+     * @brief Receives binary data and it parses it in a generic buffer
+     *
+     * @param command which will be filled with the message
+     *
+     * @return The length of the message in bytes
+     */
     int recvBinaryCommand(uint8_t *command);
 
     /**
@@ -312,10 +328,10 @@ private:
     int userBaudRate;
     const int defaultBaudRate = 115200;
 
+    bool isBinary;
     uint16_t samplePeriod;
     CRCOptions crc;
     bool isInit = false;
-    bool isBinary = true;
 
     AntennaPosition antPosA;
     AntennaPosition antPosB;
@@ -332,26 +348,21 @@ private:
      */
     string *preSampleINSlla = nullptr;
 
+    /**
+     * @brief Binary output polling command
+     */
     string *preSampleBin1 = nullptr;
 
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
      * only (200 bytes).
      */
-    char *recvString = nullptr;
-
-    unsigned char *recvBin = nullptr;
+    std::array<char, 200> recvString;
 
     /**
      * @brief Actual strlen() of the recvString.
      */
     unsigned int recvStringLength = 0;
-
-    /**
-     * @brief Mutex to synchronize the reading and writing of the threadSample
-     */
-    mutable miosix::FastMutex mutex;
-    VN300Data threadSample;
 
     PrintLogger logger = Logging::getLogger("VN300");
 
