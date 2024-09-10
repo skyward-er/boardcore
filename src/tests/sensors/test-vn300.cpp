@@ -28,7 +28,6 @@ using namespace Boardcore;
 int main()
 {
     VN300Data sample;
-    string sampleRaw;
 
     GpioPin u6tx1(GPIOA_BASE, 2);
     GpioPin u6rx1(GPIOA_BASE, 3);
