@@ -159,6 +159,7 @@ enum InsGroup
     INSGROUP_VELU            = 0x0400,  ///< VelU.
 };
 
+// TODO: used? should i keep it?
 const unsigned char
     BinaryGroupLengths[sizeof(uint8_t) * 8][sizeof(uint16_t) * 15] = {
         {8, 8, 8, 12, 16, 12, 24, 12, 12, 24, 20, 28, 2, 4, 8},     // Group 1
@@ -204,13 +205,17 @@ struct Ins_Lla
     float nedVelZ;
 };
 
+enum class BinaryOutputPacket : uint8_t
+{
+    FULL,
+    ARP,
+};
+
 /**
- * @brief Structure to handle binary message
- *
- * @property The struct needs the packed attribute in order to have contiguous
- * memory allocation in order to be able to parse directly the received message
+ * @brief Structure to handle binary message in case of full sampling (all
+ * available measurements are taken).
  */
-struct __attribute__((packed)) BinaryData
+struct __attribute__((packed)) BinaryDataFull
 {
     uint8_t group;
     uint16_t common;
@@ -242,6 +247,40 @@ struct __attribute__((packed)) BinaryData
     double latitude_bin;
     double longitude_bin;
     double altitude_bin;
+    uint16_t checksum;
+};
+
+/**
+ * @brief Structure to handle the custom data packet needed for the
+ * automated antennas.
+ * Selected data:
+ * - Common group:
+ *      - Yaw pitch and roll
+ *      - Quaternion
+ *      - Angular rate
+ * - Gps1:
+ *      - Fix
+ *      - PosLla
+ */
+struct __attribute__((packed)) BinaryDataArp
+{
+    uint8_t groupByte;
+    uint16_t groupField1;
+    uint16_t groupField2;
+    float yaw;
+    float pitch;
+    float roll;
+    float quaternionX;
+    float quaternionY;
+    float quaternionZ;
+    float quaternionW;
+    float angularX;
+    float angularY;
+    float angularZ;
+    uint8_t gpsFix;
+    double latitude;
+    double longitude;
+    double altitude;
     uint16_t checksum;
 };
 
