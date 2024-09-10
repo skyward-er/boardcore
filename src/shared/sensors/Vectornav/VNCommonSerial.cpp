@@ -300,9 +300,19 @@ bool VNCommonSerial::sendStringCommand(std::string command)
     // I send the final command
     usart.writeString(command.c_str());
 
-    // Wait some time
-    // TODO dimension the time
-    miosix::Thread::sleep(500);
+    /**
+     * Wait enough to let the message reach the sensor. The wait time is
+     * expressed in milliseconds. The baudrate is expressed in bps.
+     * As a safety measure 10ms are added to the wait time.
+     *
+     * Thus the command size is multiplied by 1000 to obtain milliseconds and by
+     * 8 because the baudrate is expressed in bit per second.
+     */
+    float waitTime = command.size() * 8000;
+    waitTime /= baudRate;
+    waitTime = ceil(waitTime);
+    waitTime += 10;
+    miosix::Thread::sleep(waitTime);
 
     return true;
 }
