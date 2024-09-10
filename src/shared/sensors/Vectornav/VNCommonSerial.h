@@ -26,8 +26,6 @@
 #include <drivers/usart/USART.h>
 #include <sensors/SensorData.h>
 
-#include <string>
-
 namespace Boardcore
 {
 
@@ -41,7 +39,7 @@ public:
         CRC_ENABLE_16 = 0x10
     };
 
-    VNCommonSerial(USART &usart, int baudrate, const std::string &sensorName,
+    VNCommonSerial(USART &usart, int baudrate, const char *sensorName,
                    CRCOptions crc);
 
     ~VNCommonSerial();
@@ -53,12 +51,6 @@ public:
      * @return True if operation succeeded.
      */
     bool closeAndReset();
-
-private:
-    /**
-     * @brief The name of the sensor, to be displayed inside the log.
-     */
-    const std::string sensorName;
 
 protected:
     /**

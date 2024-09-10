@@ -29,8 +29,8 @@ namespace Boardcore
 {
 
 VNCommonSerial::VNCommonSerial(USART &usart, int baudrate,
-                               const std::string &sensorName, CRCOptions crc)
-    : sensorName(sensorName), usart(usart), baudRate(baudrate), crc(crc),
+                               const char *sensorName, CRCOptions crc)
+    : usart(usart), baudRate(baudrate), crc(crc),
       logger(Logging::getLogger(sensorName))
 {
 }

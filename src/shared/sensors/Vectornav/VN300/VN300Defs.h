@@ -183,7 +183,7 @@ struct Ins_Lla
     float nedVelZ;
 };
 
-enum class BinaryOutputPacket : uint8_t
+enum class SampleOptions : uint8_t
 {
     FULL,
     ARP,
