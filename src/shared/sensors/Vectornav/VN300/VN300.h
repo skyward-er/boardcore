@@ -84,7 +84,7 @@ public:
      * @param samplePeriod Sampling period in ms
      * @param antPos antenna A position
      */
-    VN300(USART &usart, int userBaudRate,
+    VN300(USART& usart, int userBaudRate,
           VN300Defs::SamplingMethod samplingMethod =
               VN300Defs::SamplingMethod::BINARY,
           CRCOptions crc                     = CRCOptions::CRC_ENABLE_8,
@@ -229,7 +229,7 @@ private:
      *
      * @return True if operation succeeded.
      */
-    bool recvStringCommand(char *command, int maxLength);
+    bool recvStringCommand(char* command, int maxLength);
     // TODO: put in common files
 
     /**
@@ -241,7 +241,7 @@ private:
      * @return true if operation succeeded
      *
      */
-    bool sampleBin(VN300Defs::BinaryData &bindata);
+    bool sampleBin(VN300Defs::BinaryData& bindata);
     // TODO: can be removed and placed inside sampleBinary()
 
     /**
@@ -259,17 +259,17 @@ private:
     /**
      * @brief IMU pre-elaborated sample string for efficiency reasons.
      */
-    string preSampleImuString = "";
+    const char* preSampleImuString = "";
 
     /**
      * @brief Temperature and pressure pre-elaborated sample string for
      * efficiency reasons.
      */
-    string preSampleINSlla = "";
+    const char* preSampleINSlla = "";
 
     /**
-     * @brief Binary output polling command
+     * @brief Pre-elaborated binary output polling command.
      */
-    string preSampleBin1 = "";
+    const char* preSampleBin1 = "";
 };
 }  // namespace Boardcore
