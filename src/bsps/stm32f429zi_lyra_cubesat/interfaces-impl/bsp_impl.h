@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Vincenzo Tirolese
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,57 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+/***********************************************************************
+ * bsp_impl.h Part of the Miosix Embedded OS.
+ * Board support package, this file initializes hardware.
+ ************************************************************************/
 
-#include <sensors/analog/pressure/AnalogPressureSensor.h>
-#include <utils/Stats/Stats.h>
+#ifndef BSP_IMPL_H
+#define BSP_IMPL_H
 
-#include "MPXHZ6130AData.h"
+#include "config/miosix_settings.h"
+#include "drivers/stm32_hardware_rng.h"
+#include "hwmapping.h"
+#include "interfaces/gpio.h"
 
-namespace Boardcore
+namespace miosix
 {
 
 /**
- * @brief Driver for NXP's MPXHZ6130A pressure sensor
+\addtogroup Hardware
+\{
+*/
+
+/**
+ * \internal
+ * Called by stage_1_boot.cpp to enable the SDRAM before initializing .data/.bss
+ * Requires the CPU clock to be already configured (running from the PLL)
  */
-class MPXHZ6130A : public AnalogPressureSensor<MPXHZ6130AData>
+void configureSdram();
+
+/**
+ * \internal
+ * used by the ledOn() and ledOff() implementation
+ */
+
+inline void ledOn()
 {
-public:
-    MPXHZ6130A(std::function<ADCData()> getVoltage,
-               const float supplyVoltage = 5.0)
-        : AnalogPressureSensor(getVoltage, supplyVoltage, 130000, 15000)
-    {
-    }
+    leds::led_red1::high();
+    leds::led_green::high();
+    leds::led_ext::high();
+}
 
-private:
-    float voltageToPressure(float voltage) override
-    {
-        return (((voltage / supplyVoltage) + CONST_B) / CONST_A) * 1000.0;
-    }
+inline void ledOff()
+{
+    leds::led_red1::low();
+    leds::led_green::low();
+    leds::led_ext::low();
+}
 
-    // Constants from datasheet
-    static constexpr float CONST_A = 0.007826;
-    static constexpr float CONST_B = 0.07739;
-};
+/**
+\}
+*/
 
-}  // namespace Boardcore
+}  // namespace miosix
+
+#endif  // BSP_IMPL_H

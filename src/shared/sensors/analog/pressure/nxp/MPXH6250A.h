@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2024 Skyward Experimental Rocketry
+ * Author: Vincenzo Tirolese
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #include <sensors/analog/pressure/AnalogPressureSensor.h>
 #include <utils/Stats/Stats.h>
 
-#include "MPXHZ6130AData.h"
+#include "MPXH6250AData.h"
 
 namespace Boardcore
 {
@@ -33,12 +33,12 @@ namespace Boardcore
 /**
  * @brief Driver for NXP's MPXHZ6130A pressure sensor
  */
-class MPXHZ6130A : public AnalogPressureSensor<MPXHZ6130AData>
+class MPXH6250A final : public AnalogPressureSensor<MPXH6250AData>
 {
 public:
-    MPXHZ6130A(std::function<ADCData()> getVoltage,
-               const float supplyVoltage = 5.0)
-        : AnalogPressureSensor(getVoltage, supplyVoltage, 130000, 15000)
+    MPXH6250A(std::function<ADCData()> getVoltage,
+              const float supplyVoltage = 5.0)
+        : AnalogPressureSensor(getVoltage, supplyVoltage, 250000, 20000)
     {
     }
 
@@ -49,8 +49,8 @@ private:
     }
 
     // Constants from datasheet
-    static constexpr float CONST_A = 0.007826;
-    static constexpr float CONST_B = 0.07739;
+    static constexpr float CONST_A = 0.0040;
+    static constexpr float CONST_B = 0.040;
 };
 
 }  // namespace Boardcore

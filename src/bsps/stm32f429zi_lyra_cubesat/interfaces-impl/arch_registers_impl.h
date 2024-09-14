@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Vincenzo Tirolese
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,15 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#ifndef ARCH_REGISTERS_IMPL_H
+#define ARCH_REGISTERS_IMPL_H
 
-#include <sensors/analog/pressure/AnalogPressureSensor.h>
-#include <utils/Stats/Stats.h>
+// Always include stm32f4xx.h before core_cm4.h, there's some nasty dependency
+#define STM32F429xx
+#include "CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h"
+#include "CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h"
+#include "CMSIS/Include/core_cm4.h"
 
-#include "MPXHZ6130AData.h"
+#define RCC_SYNC() __DSB()  // Workaround for a bug in stm32f42x
 
-namespace Boardcore
-{
-
-/**
- * @brief Driver for NXP's MPXHZ6130A pressure sensor
- */
-class MPXHZ6130A : public AnalogPressureSensor<MPXHZ6130AData>
-{
-public:
-    MPXHZ6130A(std::function<ADCData()> getVoltage,
-               const float supplyVoltage = 5.0)
-        : AnalogPressureSensor(getVoltage, supplyVoltage, 130000, 15000)
-    {
-    }
-
-private:
-    float voltageToPressure(float voltage) override
-    {
-        return (((voltage / supplyVoltage) + CONST_B) / CONST_A) * 1000.0;
-    }
-
-    // Constants from datasheet
-    static constexpr float CONST_A = 0.007826;
-    static constexpr float CONST_B = 0.07739;
-};
-
-}  // namespace Boardcore
+#endif  // ARCH_REGISTERS_IMPL_H
