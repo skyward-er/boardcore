@@ -51,9 +51,9 @@ const unsigned int defaultSerialSpeed = 115200;
 static const unsigned char sdVoltage = 33;  // Board powered @ 3.3V
 #define SD_SDMMC 1                          // Select either SDMMC1 or SDMMC2
 
-// Disable 4bit wire mode and set speed to 6Mhz (48Mhz / (6 + 2))
+// Disable 4bit wire mode and set speed to 2Mhz (48Mhz / (22 + 2))
 #define SD_ONE_BIT_DATABUS
-#define OVERRIDE_SD_CLOCK_DIVIDER_MAX 6
+#define OVERRIDE_SD_CLOCK_DIVIDER_MAX 22
 
 /// Analog supply voltage for ADC, DAC, Reset blocks, RCs and PLL
 #define V_DDA_VOLTAGE 3.3f
