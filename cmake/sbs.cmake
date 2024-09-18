@@ -20,6 +20,7 @@
 # THE SOFTWARE.
 
 enable_language(C CXX ASM)
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 
 # Load in SBS_BASE the project path
 cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
@@ -46,9 +47,22 @@ function(sbs_target TARGET OPT_BOARD)
     # The only include directory of Boardcore is shared!
     target_include_directories(${TARGET} PRIVATE src/shared)
 
+    # Export compile commands for the current target
+    if(SBS_CURRENT_TARGET STREQUAL ${TARGET})
+        set_target_properties(${TARGET} PROPERTIES EXPORT_COMPILE_COMMANDS ON)
+    endif()
+
     if(CMAKE_CROSSCOMPILING)
         # Link the embedded Boardcore library
         target_link_libraries(${TARGET} PRIVATE Skyward::Boardcore::${OPT_BOARD})
+
+        # Export boardcore and kernel compile commands for the current target
+        if(SBS_CURRENT_TARGET STREQUAL ${TARGET})
+            set_target_properties(
+                boardcore-${OPT_BOARD} kernel-${OPT_BOARD} boot-${OPT_BOARD} 
+                PROPERTIES EXPORT_COMPILE_COMMANDS ON
+            )
+        endif()
 
         # Linker script and linking options are eredited from the kernel library
 

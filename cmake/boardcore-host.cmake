@@ -66,6 +66,9 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL ${BOARDCORE_HOST_SRC})
 # Only one include directory for Boardcore!
 target_include_directories(boardcore-host PUBLIC ${BOARDCORE_PATH}/src/shared)
 
+# Export compile commands
+set_target_properties(boardcore-host PROPERTIES EXPORT_COMPILE_COMMANDS ON)
+
 # Link libraries
 target_link_libraries(boardcore-host PUBLIC
     Miosix::Miosix::host

@@ -22,6 +22,9 @@
 # Miosix Kernel
 include(${SBS_BASE}/libs/miosix-kernel/miosix/cmake/miosix.cmake EXCLUDE_FROM_ALL)
 
+# Export compile commands for external libraries
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Miosix Host
 add_subdirectory(${SBS_BASE}/libs/miosix-host EXCLUDE_FROM_ALL)
 
@@ -50,3 +53,5 @@ include(Catch)
 
 # MavLink library
 add_subdirectory(${SBS_BASE}/libs/mavlink-skyward-lib EXCLUDE_FROM_ALL)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)

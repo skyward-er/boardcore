@@ -42,6 +42,10 @@ ohai() {
     printf "\n${TTY_BLUE}==>${TTY_RESET}${TTY_BOLD} %s${TTY_RESET}\n" "$@"
 }
 
+error() {
+    printf "${TTY_RED}Error: %s${TTY_RESET}\n" "$@"
+}
+
 init_dirs() {
     sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
     source_dir="$PWD"
@@ -75,8 +79,8 @@ find_deps() {
     printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" || \
                                         { [ "$found_stlink" = true ]      && echo "st-link"  || echo "no"; }
 
-    [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; return 1; }
-    [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; return 1; }
+    [ "$found_cmake" = true ]     || { error "CMake must be installed"; return 1; }
+    [ "$found_miosixgpp" = true ] || { error "arm-miosix-eabi-g++ must be installed"; return 1; }
 }
 
 # Workaround: Disable tests in excluded subdirectories
@@ -87,14 +91,21 @@ cmake_disable_excluded_tests() {
     [ ! -f "$build_dir/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$build_dir/$CTEST_FILENAME"
 }
 
+cmake_list_targets() {
+    cmake --build "$build_dir" "${opts[@]}" --target help \
+    | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+}
+
 configure() {
     declare build_dir="$1"
+    declare target="$2"
+
+    ohai "Configure $target"
     
-    ohai "Configure"
+    [ -f "$toolchain_file" ] || { error "CMake Toolchain File for Miosix was not found"; return 1; }
     
-    [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; return 1; }
-    
-    declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+    declare -a defs
+    defs+=(-DSBS_CURRENT_TARGET="$target")
     defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
     [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
     [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
@@ -106,7 +117,12 @@ configure() {
     
     cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
 
-    touch "$build_dir/$CMAKE_CONFIGURED"
+    # Ensure that the target exists if not building all
+    if [ "$target" != "all" ]; then
+        cmake_list_targets | grep -qE "^$target\$" || { error "target '$target' not found"; return 1; }
+    fi
+
+    echo "$target" > "$build_dir/$CMAKE_CONFIGURED"
 
     { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
     { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
@@ -114,6 +130,7 @@ configure() {
 
 check_configured() {
     declare build_dir="$1"
+    declare target="$2"
     
     declare to_reconfigure=false
 
@@ -121,6 +138,8 @@ check_configured() {
         to_reconfigure=true
     elif [ ! -f "$build_dir/$CMAKE_CONFIGURED" ]; then
         rm -rf "$build_dir"
+    elif [ "$(cat "$build_dir/$CMAKE_CONFIGURED")" != "$target" ]; then
+        # Current target is saved inside the CMAKE_CONFIGURED file
         to_reconfigure=true
     else
         [ -f "$build_dir/$DEBUG_FILENAME" ]   && found_debug=true   || found_debug=false
@@ -130,9 +149,9 @@ check_configured() {
             to_reconfigure=true
         fi
     fi
-    
+
     if [ "$to_reconfigure" = true ]; then
-        configure "$build_dir"
+        configure "$build_dir" "$target"
     fi
 }
 
@@ -140,9 +159,9 @@ build() {
     declare build_dir="$1"
     declare target="$2"
     
-    check_configured "$build_dir" || return
+    check_configured "$build_dir" "$target" || return
     
-    ohai "Build"
+    ohai "Build $target"
     
     declare -a opts
     get_build_opts opts
@@ -174,14 +193,14 @@ flash() {
     
     ohai "Flash"
     
-    [ -f "$build_dir/$target.bin" ] || { echo "Error: target '$target' is not flashable"; return 1; }
+    [ -f "$build_dir/$target.bin" ] || { error "target '$target' is not flashable"; return 1; }
     
     if [ "$found_stflash" = true ]; then
         st-flash --reset write "$build_dir/$target.bin" 0x8000000
         elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
-        echo "Error: No flashing software found!"
+        error "No flashing software found!"
         return 1
     fi
 }
@@ -206,13 +225,7 @@ list() {
     check_configured "$build_dir" || return
     
     ohai "List targets"
-    
-    declare -a opts
-    get_build_opts opts
-    
-    echo "[1/1] All SBS targets available:"
-    cmake --build "$build_dir" "${opts[@]}" --target help \
-    | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+    cmake_list_target
 }
 
 boards() {
@@ -348,7 +361,8 @@ OPTIONS:
                           Build and flash a specific target
     -t TEST, --test TEST  Build a specific test natively and run it
     -c, --clean           Clean the working tree
-    -u, --configure       Force configure and do not build
+    -u TARGET, --configure TARGET
+                          Configure a specific target but do not build it
     -d, --debug           Enable debug
     -v, --verbose         Print a verbose output
 
@@ -366,6 +380,7 @@ VERBOSE_FILENAME=".sbs_verbose"
 BUILD_DEFAULT_DIRNAME="build"
 BUILD_HOST_DIRNAME="cmake-build-host"
 TTY_BLUE="\033[34m"
+TTY_RED="\033[31m"
 TTY_BOLD="\033[1m"
 TTY_RESET="\033[0m"
 
@@ -414,7 +429,7 @@ for arg in "$@"; do
     esac
 done
 
-while getopts b:cdef:hj:lnrt:uv opt; do
+while getopts b:cdef:hj:lnrt:u:v opt; do
     case "$opt" in
         b) find_deps && build "$build_default_dir" "$OPTARG"; exit;;
         c) find_deps && clean_all; exit;;
@@ -427,7 +442,7 @@ while getopts b:cdef:hj:lnrt:uv opt; do
         n) find_deps && lint false; exit;;
         r) find_deps && boards; exit;;
         t) find_deps && run_tests "$OPTARG"; exit;;
-        u) find_deps && configure "$build_default_dir"; exit;;
+        u) find_deps && configure "$build_default_dir" "$OPTARG"; exit;;
         v) set_verbose;;
         ?) usage; exit 2;;
     esac
