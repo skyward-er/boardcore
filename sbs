@@ -72,9 +72,9 @@ find_deps() {
     printf "Found Cppcheck: ";            [ "$found_cppcheck" = true ]    && echo "yes" || echo "no"
     printf "Found clang-tidy: ";          [ "$found_clangtidy" = true ]   && echo "yes" || echo "no"
     printf "Found clang-format: ";        [ "$found_clangformat" = true ] && echo "yes" || echo "no"
-    printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" \
-    || { [ "$found_stlink" = true ] && echo "st-link" || echo "no"; }
-    
+    printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" || \
+                                        { [ "$found_stlink" = true ]      && echo "st-link"  || echo "no"; }
+
     [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; return 1; }
     [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; return 1; }
 }
@@ -105,7 +105,9 @@ configure() {
     [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
     
     cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
-    
+
+    touch "$build_dir/$CMAKE_CONFIGURED"
+
     { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
     { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
 }
@@ -114,9 +116,10 @@ check_configured() {
     declare build_dir="$1"
     
     declare to_reconfigure=false
+
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
-        elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
+    elif [ ! -f "$build_dir/$CMAKE_CONFIGURED" ]; then
         rm -rf "$build_dir"
         to_reconfigure=true
     else
@@ -153,26 +156,14 @@ build_all() {
     build "$build_dir" all
 }
 
-clean() {
-    declare build_desc="$1"
-    declare build_dir="$2"
-    
-    ohai "Clean ($build_desc)"
-    
-    if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
-        declare -a opts
-        get_build_opts opts
-        
-        cmake --build "$build_dir" "${opts[@]}" --target clean
-    fi
-    
-    echo "Removing build folder..."
-    rm -rf "$build_dir"
-}
-
 clean_all() {
-    clean "Default" "$build_default_dir"
-    clean "Host" "$build_host_dir"
+    ohai "Clean"
+
+    echo -n "Removing $(basename $build_default_dir) folder... "
+    rm -rf "$build_default_dir" && echo "Ok"
+
+    echo -n "Removing $(basename $build_host_dir) folder... "
+    rm -rf "$build_host_dir" && echo "Ok"
 }
 
 flash() {
@@ -368,7 +359,7 @@ OPTIONS:
 EOF
 }
 
-CMAKE_FILENAME="CMakeCache.txt"
+CMAKE_CONFIGURED=".sbs_cmake_configured"
 CTEST_FILENAME="CTestTestfile.cmake"
 DEBUG_FILENAME=".sbs_debug"
 VERBOSE_FILENAME=".sbs_verbose"
