@@ -1,0 +1,6 @@
+CompileFlags:
+  Add:
+    - "-I/opt/arm-miosix-eabi/arm-miosix-eabi/include"
+    - "-I/opt/arm-miosix-eabi/arm-miosix-eabi/include/c++/9.2.0"
+    - "-I/opt/arm-miosix-eabi/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi"
+    - "-D_MIOSIX_GCC_PATCH_MAJOR=3"
