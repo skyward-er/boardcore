@@ -33,15 +33,21 @@ namespace Boardcore
  * @brief Data class for VN300.
  *
  * Units of measurement:
- * - Magnetometer  [Gauss]
- * - Accelerometer [m/s^2]
- * - Gyroscope     [rad/s]
+ * - Magnetometer   [Gauss]
+ * - Accelerometer  [m/s^2]
+ * - Gyroscope      [rad/s]
+ * - Velocity (NED) [m/s]
+ * - Temperature    [°C]
+ * - Pressure       [kPa]
+ * - Latitude       [deg]
+ * - Longitude      [deg]
+ * - Altitude       [m]
  */
 struct VN300Data : public QuaternionData,
                    public MagnetometerData,
                    public AccelerometerData,
                    public GyroscopeData,
-                   public VN300Defs::Ins_Lla
+                   public VN300Defs::INSData
 {
 
     // cppcheck-suppress uninitDerivedMemberVar
@@ -49,16 +55,16 @@ struct VN300Data : public QuaternionData,
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
           AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
-          Ins_Lla{0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+          INSData{0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
     {
     }
 
     // cppcheck-suppress uninitDerivedMemberVar
     VN300Data(const QuaternionData& quat, const MagnetometerData& magData,
               const AccelerometerData& accData, const GyroscopeData& gyro,
-              const Ins_Lla& ins)
+              const INSData& ins)
         : QuaternionData(quat), MagnetometerData(magData),
-          AccelerometerData(accData), GyroscopeData(gyro), Ins_Lla(ins)
+          AccelerometerData(accData), GyroscopeData(gyro), INSData(ins)
     {
     }
 
@@ -70,7 +76,7 @@ struct VN300Data : public QuaternionData,
                "accelerationTimestamp,accelerationX,accelerationY,"
                "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
                "angularSpeedY,angularSpeedZ,insTimeStamp,"
-               "status,yaw,pitch,roll,latitude,"
+               "insStatus,yaw,pitch,roll,latitude,"
                "longitude,altitude,nedVelX,nedVelY,nedVelZ\n";
     }
 
@@ -84,9 +90,9 @@ struct VN300Data : public QuaternionData,
            << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
            << angularSpeedY << "," << angularSpeedZ << "," << insTimestamp
-           << "," << status << "," << yaw << "," << pitch << "," << roll << ","
-           << latitude << "," << longitude << "," << altitude << "," << nedVelX
-           << "," << nedVelY << "," << nedVelZ << "\n";
+           << "," << insStatus << "," << yaw << "," << pitch << "," << roll
+           << "," << latitude << "," << longitude << "," << altitude << ","
+           << velocityX << "," << velocityY << "," << velocityZ << "\n";
     }
 };
 

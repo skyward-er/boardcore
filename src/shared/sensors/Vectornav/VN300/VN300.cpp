@@ -158,9 +158,9 @@ VN300Data VN300::sampleImpl()
     {
         return sampleFull();
     }
-    else if (sampleOption == VN300Defs::SampleOptions::ARP)
+    else if (sampleOption == VN300Defs::SampleOptions::REDUCED)
     {
-        return sampleArp();
+        return sampleReduced();
     }
     else
     {
@@ -212,10 +212,10 @@ VN300Data VN300::sampleFull()
     }
 }
 
-VN300Data VN300::sampleArp()
+VN300Data VN300::sampleReduced()
 {
     VN300Data data;
-    VN300Defs::BinaryDataArp binDataArp;
+    VN300Defs::BinaryDataReduced binDataReduced;
 
     const uint64_t timestamp = TimestampTimer::getTimestamp();
 
@@ -223,16 +223,17 @@ VN300Data VN300::sampleArp()
         false;  // True if a valid sample was retrieved from the sensor
     bool validChecksum = false;
 
-    sampleOutcome =
-        getBinaryOutput<VN300Defs::BinaryDataArp>(binDataArp, preSampleBin1);
+    sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataReduced>(
+        binDataReduced, preSampleBin1);
     if (!sampleOutcome)
     {
         lastError = NO_NEW_DATA;
     }
 
-    validChecksum = crc == CRCOptions::CRC_NO ||
-                    calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataArp),
-                                        sizeof(binDataArp)) == 0;
+    validChecksum =
+        crc == CRCOptions::CRC_NO ||
+        calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataReduced),
+                            sizeof(binDataReduced)) == 0;
     if (sampleOutcome && !validChecksum)
     {
         lastError = SensorErrors::BUS_FAULT;
@@ -243,7 +244,7 @@ VN300Data VN300::sampleArp()
 
     if (sampleOutcome)
     {
-        buildBinaryDataArp(binDataArp, data, timestamp);
+        buildBinaryDataReduced(binDataReduced, data, timestamp);
         return data;
     }
     else
@@ -258,47 +259,46 @@ void VN300::buildBinaryDataFull(const VN300Defs::BinaryDataFull& rawData,
 {
     // Quaternion
     data.quaternionTimestamp = timestamp;
-    data.quaternionW         = rawData.quatW_bin;
-    data.quaternionX         = rawData.quatX_bin;
-    data.quaternionY         = rawData.quatY_bin;
-    data.quaternionZ         = rawData.quatZ_bin;
+    data.quaternionW         = rawData.quaternionW;
+    data.quaternionX         = rawData.quaternionX;
+    data.quaternionY         = rawData.quaternionY;
+    data.quaternionZ         = rawData.quaternionZ;
 
     // Accelerometer
     data.accelerationTimestamp = timestamp;
-    data.accelerationX         = rawData.accx;
-    data.accelerationY         = rawData.accy;
-    data.accelerationZ         = rawData.accz;
+    data.accelerationX         = rawData.accelX;
+    data.accelerationY         = rawData.accelY;
+    data.accelerationZ         = rawData.accelZ;
 
     // Magnetometer
     data.magneticFieldTimestamp = timestamp;
-    data.magneticFieldX         = rawData.magx;
-    data.magneticFieldY         = rawData.magy;
-    data.magneticFieldZ         = rawData.magz;
+    data.magneticFieldX         = rawData.magneticX;
+    data.magneticFieldY         = rawData.magneticY;
+    data.magneticFieldZ         = rawData.magneticZ;
 
     // Gyroscope
     data.angularSpeedTimestamp = timestamp;
-    data.angularSpeedX         = rawData.angx;
-    data.angularSpeedY         = rawData.angy;
-    data.angularSpeedZ         = rawData.angz;
+    data.angularSpeedX         = rawData.angularX;
+    data.angularSpeedY         = rawData.angularY;
+    data.angularSpeedZ         = rawData.angularZ;
 
     // Gps
     data.insTimestamp = timestamp;
-    data.fix_gps      = rawData.fix;
-    data.fix_ins      = rawData.fix;
-    data.status       = rawData.ins_status;
-    data.yaw          = rawData.yaw_bin;
-    data.pitch        = rawData.pitch_bin;
-    data.roll         = rawData.roll_bin;
-    data.latitude     = rawData.latitude_bin;
-    data.longitude    = rawData.longitude_bin;
-    data.altitude     = rawData.altitude_bin;
-    data.nedVelX      = rawData.velx;
-    data.nedVelY      = rawData.vely;
-    data.nedVelZ      = rawData.velz;
+    data.gpsFix       = rawData.gpsFix;
+    data.insStatus    = rawData.insStatus;
+    data.yaw          = rawData.yaw;
+    data.pitch        = rawData.pitch;
+    data.roll         = rawData.roll;
+    data.latitude     = rawData.latitude;
+    data.longitude    = rawData.longitude;
+    data.altitude     = rawData.altitude;
+    data.velocityX    = rawData.velocityX;
+    data.velocityY    = rawData.velocityY;
+    data.velocityZ    = rawData.velocityZ;
 }
 
-void VN300::buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
-                               VN300Data& data, const uint64_t timestamp)
+void VN300::buildBinaryDataReduced(const VN300Defs::BinaryDataReduced& rawData,
+                                   VN300Data& data, const uint64_t timestamp)
 {
     data = VN300Data();
 
@@ -307,7 +307,7 @@ void VN300::buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
     data.latitude     = rawData.latitude;
     data.longitude    = rawData.longitude;
     data.altitude     = rawData.altitude;
-    data.fix_gps      = rawData.gpsFix;
+    data.gpsFix       = rawData.gpsFix;
 
     // Angular
     data.angularSpeedTimestamp = timestamp;
@@ -414,7 +414,7 @@ bool VN300::setBinaryOutput()
             gnssGroup = VN300Defs::GPSGROUP_NUMSATS | VN300Defs::GPSGROUP_FIX |
                         VN300Defs::GPSGROUP_POSLLA;
             break;
-        case VN300Defs::SampleOptions::ARP:
+        case VN300Defs::SampleOptions::REDUCED:
             outputGroup =
                 VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
             commonGroup = VN300Defs::COMMONGROUP_YAWPITCHROLL |

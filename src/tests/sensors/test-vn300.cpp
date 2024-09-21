@@ -78,7 +78,7 @@ int main()
                sample.quaternionX, sample.quaternionY, sample.quaternionZ);
         printf("latitude: %f\n", sample.latitude);
         printf("longitude: %f\n", sample.longitude);
-        printf("gps-fix: %u\n\n", sample.fix_gps);
+        printf("gps-fix: %u\n\n", sample.gpsFix);
 
         Thread::sleep(500);
     }

@@ -185,23 +185,22 @@ struct AntennaPosition
 };
 
 /**
- * @brief Structure to handle INS data.
+ * @brief Structure to handle INS (inertial navigation system) data.
  */
-struct Ins_Lla
+struct INSData
 {
     uint64_t insTimestamp;
-    uint16_t fix_gps;
-    uint16_t fix_ins;
-    uint16_t status;
+    uint16_t gpsFix;
+    uint16_t insStatus;
     float yaw;
     float pitch;
     float roll;
     float latitude;
     float longitude;
     float altitude;
-    float nedVelX;
-    float nedVelY;
-    float nedVelZ;
+    float velocityX;  // Estimated velocity (NED) in m/s
+    float velocityY;
+    float velocityZ;
 };
 
 /**
@@ -209,8 +208,8 @@ struct Ins_Lla
  */
 enum class SampleOptions : uint8_t
 {
-    FULL,  ///< All data is sampled
-    ARP,   ///< Only ARP needed data is sampled
+    FULL,     ///< All data is sampled
+    REDUCED,  ///< Only data needed for the reduced data packet
 };
 
 /**
@@ -219,42 +218,41 @@ enum class SampleOptions : uint8_t
  */
 struct __attribute__((packed)) BinaryDataFull
 {
-    uint8_t group;
-    uint16_t common;
-    uint16_t gnss;
-    float yaw_bin;
-    float pitch_bin;
-    float roll_bin;
-    float quatX_bin;
-    float quatY_bin;
-    float quatZ_bin;
-    float quatW_bin;
-    float angx;
-    float angy;
-    float angz;
-    float velx;
-    float vely;
-    float velz;
-    float accx;
-    float accy;
-    float accz;
-    float magx;
-    float magy;
-    float magz;
-    float temp;
-    float pres;
-    uint16_t ins_status;
-    uint8_t numsats;
-    uint8_t fix;
-    double latitude_bin;
-    double longitude_bin;
-    double altitude_bin;
+    uint8_t selectedGroups;              // Indicates which groups are selected
+    uint16_t selectedFieldsCommonGroup;  // Indicates which fields are selected
+    uint16_t selectedFieldsGnssGroup;    // Indicates which fields are selected
+    float yaw;
+    float pitch;
+    float roll;
+    float quaternionX;
+    float quaternionY;
+    float quaternionZ;
+    float quaternionW;
+    float angularX;
+    float angularY;
+    float angularZ;
+    float velocityX;  // Estimated velocity (NED) in m/s
+    float velocityY;
+    float velocityZ;
+    float accelX;
+    float accelY;
+    float accelZ;
+    float magneticX;
+    float magneticY;
+    float magneticZ;
+    float temperature;
+    float pressure;
+    uint16_t insStatus;  // Status of the INS
+    uint8_t numsats;     // Number of tracked gps satellites
+    uint8_t gpsFix;
+    double latitude;
+    double longitude;
+    double altitude;
     uint16_t checksum;
 };
 
 /**
- * @brief Structure to handle the custom data packet needed for the
- * automated antennas.
+ * @brief Structure to handle the reduced data packet.
  * Selected data:
  * - Common group:
  *      - Yaw pitch and roll
@@ -264,11 +262,11 @@ struct __attribute__((packed)) BinaryDataFull
  *      - Fix
  *      - PosLla
  */
-struct __attribute__((packed)) BinaryDataArp
+struct __attribute__((packed)) BinaryDataReduced
 {
-    uint8_t groupByte;
-    uint16_t groupField1;
-    uint16_t groupField2;
+    uint8_t selectedGroups;              // Indicates which groups are selected
+    uint16_t selectedFieldsCommonGroup;  // Indicates which fields are selected
+    uint16_t selectedFieldsGnssGroup;    // Indicates which fields are selected
     float yaw;
     float pitch;
     float roll;

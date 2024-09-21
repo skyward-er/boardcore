@@ -114,11 +114,12 @@ private:
     VN300Data sampleFull();
 
     /**
-     * @brief Utility function for sampling data from the sensor (ARP packet).
+     * @brief Utility function for sampling data from the sensor (Reduced
+     * packet).
      *
      * @return The sampled data.
      */
-    VN300Data sampleArp();
+    VN300Data sampleReduced();
 
     /**
      * @brief Build output data packet starting from raw binary data received
@@ -139,8 +140,8 @@ private:
      * @param data The structure that will contain the output.
      * @param timestamp The timestamp of the extracted data.
      */
-    void buildBinaryDataArp(const VN300Defs::BinaryDataArp& rawData,
-                            VN300Data& data, const uint64_t timestamp);
+    void buildBinaryDataReduced(const VN300Defs::BinaryDataReduced& rawData,
+                                VN300Data& data, const uint64_t timestamp);
 
     VN300Defs::SampleOptions sampleOption;
 
