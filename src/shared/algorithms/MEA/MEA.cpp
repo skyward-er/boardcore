@@ -114,14 +114,14 @@ void MEA::computeForce(const Step &step)
     mach = Aeroutils::computeMach(-step.mslAltitude, step.verticalSpeed,
                                   Constants::MSL_TEMPERATURE);
 
-    cd  = cdCorrectionFactor * Aeroutils::computeCd(coeffs, mach);
+    cd  = Aeroutils::computeCd(coeffs, mach);
     rho = Aeroutils::computeRho(-step.mslAltitude, Constants::MSL_TEMPERATURE);
 
     // Dynamic pressure
     q = 0.5f * rho * (step.verticalSpeed * step.verticalSpeed);
 
     // Aerodynamic force component
-    force = q * crossSection * cd;
+    force = q * crossSection * (cd * cdCorrectionFactor);
 
     if (step.mslAltitude > 800)
     {
