@@ -144,7 +144,10 @@ bool VNCommonSerial::disableAsyncMessages(bool waitResponse)
 
     if (waitResponse)
     {
-        recvStringCommand(recvString.data(), recvStringMaxDimension);
+        if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+        {
+            return false;
+        }
 
         if (checkErrorVN(recvString.data()))
         {
@@ -190,7 +193,10 @@ bool VNCommonSerial::setCrc(bool waitResponse)
     // Read the answer
     if (waitResponse)
     {
-        recvStringCommand(recvString.data(), recvStringMaxDimension);
+        if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+        {
+            return false;
+        }
     }
 
     crc = CRCOptions::CRC_ENABLE_16;
@@ -204,7 +210,10 @@ bool VNCommonSerial::setCrc(bool waitResponse)
     // Read the answer
     if (waitResponse)
     {
-        recvStringCommand(recvString.data(), recvStringMaxDimension);
+        if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+        {
+            return false;
+        }
     }
 
     // Restore the crc

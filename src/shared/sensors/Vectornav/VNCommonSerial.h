@@ -94,7 +94,7 @@ protected:
     bool verifyChecksum(char *command, int maxLength);
 
     /**
-     * @brief Disables the async messages that the vn100 is default configured
+     * @brief Disables the async messages that the sensor is default configured
      * to send at 40Hz on startup.
      *
      * @param waitResponse If true wait for a serial response.
@@ -194,7 +194,7 @@ protected:
     bool sendStringCommand(std::string command);
 
     /**
-     * @brief Receives a command from the VN100 serialInterface->recv() but
+     * @brief Receives a command from the sensor but
      * swaps the first \n with a \0 to close the message.
      *
      * @param command The char array which will be filled with the command.

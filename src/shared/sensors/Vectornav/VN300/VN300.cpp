@@ -341,7 +341,10 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
         return false;
     }
 
-    recvStringCommand(recvString.data(), recvStringMaxDimension);
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        return false;
+    }
 
     if (checkErrorVN(recvString.data()))
         return false;
@@ -363,7 +366,10 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
         return false;
     }
 
-    recvStringCommand(recvString.data(), recvStringMaxDimension);
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        return false;
+    }
 
     if (checkErrorVN(recvString.data()))
         return false;
@@ -385,7 +391,10 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
         return false;
     }
 
-    recvStringCommand(recvString.data(), recvStringMaxDimension);
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        return false;
+    }
 
     if (checkErrorVN(recvString.data()))
         return false;
