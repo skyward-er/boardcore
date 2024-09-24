@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Lorenzo Cucchi, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,28 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
-#include <inttypes.h>
-#include <sensors/Vectornav/VN100/VN100Serial.h>
+#include <sensors/Vectornav/VN300/VN300.h>
 
 using namespace miosix;
 using namespace Boardcore;
 
 int main()
 {
-    VN100SerialData sample;
-    string sampleRaw;
+    VN300Data sample;
 
-    GpioPin u2tx1(GPIOA_BASE, 2);
-    GpioPin u2rx1(GPIOA_BASE, 3);
+    GpioPin u6tx1(GPIOA_BASE, 2);
+    GpioPin u6rx1(GPIOA_BASE, 3);
 
-    u2rx1.alternateFunction(7);
-    u2rx1.mode(Mode::ALTERNATE);
-    u2tx1.alternateFunction(7);
-    u2tx1.mode(Mode::ALTERNATE);
+    u6rx1.alternateFunction(7);
+    u6rx1.mode(Mode::ALTERNATE);
+    u6tx1.alternateFunction(7);
+    u6tx1.mode(Mode::ALTERNATE);
 
-    USART usart(USART2, 115200);
-    VN100Serial sensor{usart, 115200, VN100Serial::CRCOptions::CRC_ENABLE_16};
+    const int baud = 921600;
+    USART usart(USART2, baud);
+    VN300 sensor(usart, baud, VN300Defs::SampleOptions::FULL,
+                 VN300::CRCOptions::CRC_ENABLE_8,
+                 std::chrono::milliseconds(10));
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -60,30 +60,27 @@ int main()
         return 0;
     }
 
-    if (!sensor.start())
-    {
-        printf("Unable to start the sampling thread\n");
-        return 0;
-    }
-
-    printf("Sensor sampling thread started!\n");
-
-    // Sample and print 100 samples
+    // Sample and print 10 samples
     for (int i = 0; i < 100; i++)
     {
         sensor.sample();
         sample = sensor.getLastSample();
-        printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
-               sample.accelerationTimestamp, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
-        printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
-               sample.angularSpeedY, sample.angularSpeedZ);
 
-        sensor.sampleRaw();
-        sampleRaw = sensor.getLastRawSample();
-        printf("%s\n", sampleRaw.c_str());
-        // Thread::sleep(100);
-        printf("\n");
+        printf("sample %d:\n", i + 1);
+        printf("acc: %f, %f, %f\n", sample.accelerationX, sample.accelerationY,
+               sample.accelerationZ);
+        printf("gyr: %f, %f, %f\n", sample.angularSpeedX, sample.angularSpeedY,
+               sample.angularSpeedZ);
+        printf("magn: %f, %f, %f\n", sample.magneticFieldX,
+               sample.magneticFieldY, sample.magneticFieldZ);
+        printf("attitude: %f, %f, %f\n", sample.yaw, sample.pitch, sample.roll);
+        printf("quaternion: %f, %f, %f, %f\n", sample.quaternionW,
+               sample.quaternionX, sample.quaternionY, sample.quaternionZ);
+        printf("latitude: %f\n", sample.latitude);
+        printf("longitude: %f\n", sample.longitude);
+        printf("gps-fix: %u\n\n", sample.gpsFix);
+
+        Thread::sleep(500);
     }
 
     sensor.closeAndReset();
