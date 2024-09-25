@@ -61,36 +61,6 @@ public:
 
     bool selfTest() override;
 
-    /**
-     * @brief Set custom compensation parameters for the magnetometer.
-     *
-     * @param c TODO
-     * @param b TODO. Unit of measurement [Gauss]
-     * @return True if operation succeeded.
-     */
-    bool setMagnetometerCompensation(const Eigen::Matrix3f& c,
-                                     const Eigen::Vector3f& b);
-
-    /**
-     * @brief Set custom compensation parameters for the accelerometer.
-     *
-     * @param c TODO
-     * @param b TODO. Unit of measurement [m/s^2]
-     * @return True if operation succeeded.
-     */
-    bool setAccelerometerCompensation(const Eigen::Matrix3f& c,
-                                      const Eigen::Vector3f& b);
-
-    /**
-     * @brief Set custom compensation parameters for the gyroscope.
-     *
-     * @param c TODO
-     * @param b TODO. Unit of measurement [rad/s]
-     * @return True if operation succeeded.
-     */
-    bool setGyroscopeCompensation(const Eigen::Matrix3f& c,
-                                  const Eigen::Vector3f& b);
-
 protected:
     /**
      * @brief Sample action implementation.
