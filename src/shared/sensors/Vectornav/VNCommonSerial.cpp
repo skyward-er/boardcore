@@ -399,6 +399,108 @@ bool VNCommonSerial::closeAndReset()
     return true;
 }
 
+bool VNCommonSerial::startHSIEstimator(uint8_t convergeRate)
+{
+    D(assert((convergeRate >= 1 && convergeRate <= 5) &&
+             "convergeRate must be between 1 and 5"));
+
+    // Select HSI_RUN, runs the real-time hard/soft
+    // iron calibration.
+    const uint8_t hsiMode = 1;
+
+    // Select USE_ONBOARD, Onboard HSI is applied to
+    // the magnetic measurements.
+    const uint8_t hsiOutput = 3;
+
+    std::string command =
+        fmt::format("VNWRG,44,{},{},{}", hsiMode, hsiOutput, convergeRate);
+
+    return writeRegister(command);
+}
+
+bool VNCommonSerial::stopHSIEstimator()
+{
+    // Select HSI_OFF, real-time hard/soft iron calibration
+    // algorithm is turned off.
+    const uint8_t hsiMode = 0;
+
+    // Keep USE_ONBOARD, Onboard HSI is applied to
+    // the magnetic measurements.
+    const uint8_t hsiOutput = 3;
+
+    // Not influent, we are stopping the algorithm
+    const uint8_t convergeRate = 5;
+
+    std::string command =
+        fmt::format("VNWRG,44,{},{},{}", hsiMode, hsiOutput, convergeRate);
+
+    return writeRegister(command);
+}
+
+std::string VNCommonSerial::getHSIEstimatorValues()
+{
+    // Clear the receiving queue
+    usart.clearQueue();
+
+    if (!sendStringCommand("VNRRG,47"))
+    {
+        LOG_ERR(logger, "Unable to send string command");
+        return "";
+    }
+
+    miosix::Thread::sleep(100);
+
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "Unable to receive string command");
+        return "";
+    }
+
+    if (!verifyChecksum(recvString.data(), recvStringLength))
+    {
+        LOG_ERR(logger, "Checksum verification failed: {}", recvString.data());
+        return "";
+    }
+
+    return recvString.data();
+}
+
+bool VNCommonSerial::setMagnetometerCompensation(const Eigen::Matrix3f &c,
+                                                 const Eigen::Vector3f &b)
+{
+    std::string command;
+
+    command = fmt::format("VNWRG,23,{},{},{},{},{},{},{},{},{},{},{},{}",
+                          c(0, 0), c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2),
+                          c(2, 0), c(2, 1), c(2, 2), b(0), b(1), b(2));
+
+    return writeRegister(command);
+}
+
+bool VNCommonSerial::setAccelerometerCompensation(const Eigen::Matrix3f &c,
+                                                  const Eigen::Vector3f &b)
+{
+    std::string command;
+
+    command = fmt::format("VNWRG,25,{},{},{},{},{},{},{},{},{},{},{},{}",
+                          c(0, 0), c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2),
+                          c(2, 0), c(2, 1), c(2, 2), b(0), b(1), b(2));
+
+    return writeRegister(command);
+}
+
+bool VNCommonSerial::setGyroscopeCompensation(const Eigen::Matrix3f &c,
+                                              const Eigen::Vector3f &b)
+{
+    std::string command;
+
+    command = fmt::format("VNWRG,84,{},{},{},{},{},{},{},{},{},{},{},{}",
+                          c(0, 0), c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2),
+                          c(2, 0), c(2, 1), c(2, 2), b(0), b(1), b(2));
+
+    return writeRegister(command);
+}
+
 bool VNCommonSerial::sendStringCommand(std::string command)
 {
     if (crc == CRCOptions::CRC_ENABLE_8)
@@ -466,6 +568,30 @@ bool VNCommonSerial::recvStringCommand(char* command, int maxLength)
 
     // Assing the length
     recvStringLength = i - 1;
+
+    return true;
+}
+
+bool VNCommonSerial::writeRegister(const std::string &command)
+{
+    usart.clearQueue();
+    if (!sendStringCommand(command))
+    {
+        LOG_ERR(logger, "Write register failed: could not send the command");
+        return false;
+    }
+
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        LOG_ERR(logger, "Write register failed: recvStringCommand() failed");
+        return false;
+    }
+
+    if (checkErrorVN(recvString.data()))
+    {
+        LOG_ERR(logger, "Write register failed: {}", recvString.data());
+        return false;
+    }
 
     return true;
 }

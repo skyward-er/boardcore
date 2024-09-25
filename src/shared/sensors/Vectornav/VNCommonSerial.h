@@ -62,6 +62,63 @@ public:
      */
     bool closeAndReset();
 
+    /**
+     * @brief Start the real-time hard/soft iron calibration. The algorithm
+     * will continue until stopHSIEstimator() is called.
+     *
+     * @param convergeRate Controls how quickly the hard/soft iron solution
+     * is allowed to converge onto a new solution.
+     * Only values between 1 and 5 are allowed.
+     * 1 = Solution converges slowly over approximately 60-90 seconds.
+     * 5 = Solution converges rapidly over approximately 15-20 seconds.
+     *
+     * @return True if the algorithm started successfully.
+     */
+    bool startHSIEstimator(uint8_t convergeRate);
+
+    /**
+     * @brief Real-time hard/soft iron calibration algorithm is turned off.
+     *
+     * @return True if the command is accepted by the sensor.
+     */
+    bool stopHSIEstimator();
+
+    /**
+     * @return The raw string containing the calculated hard and soft
+     * iron compensation parameters.
+     */
+    std::string getHSIEstimatorValues();
+
+    /**
+     * @brief Set custom compensation parameters for the magnetometer.
+     *
+     * @param c TODO
+     * @param b TODO. Unit of measurement [Gauss]
+     * @return True if operation succeeded.
+     */
+    bool setMagnetometerCompensation(const Eigen::Matrix3f &c,
+                                     const Eigen::Vector3f &b);
+
+    /**
+     * @brief Set custom compensation parameters for the accelerometer.
+     *
+     * @param c TODO
+     * @param b TODO. Unit of measurement [m/s^2]
+     * @return True if operation succeeded.
+     */
+    bool setAccelerometerCompensation(const Eigen::Matrix3f &c,
+                                      const Eigen::Vector3f &b);
+
+    /**
+     * @brief Set custom compensation parameters for the gyroscope.
+     *
+     * @param c TODO
+     * @param b TODO. Unit of measurement [rad/s]
+     * @return True if operation succeeded.
+     */
+    bool setGyroscopeCompensation(const Eigen::Matrix3f &c,
+                                  const Eigen::Vector3f &b);
+
 protected:
     /**
      * @brief Calculate the 8bit checksum on the given array.
@@ -203,6 +260,17 @@ protected:
      * @return True if operation succeeded.
      */
     bool recvStringCommand(char* command, int maxLength);
+
+    /**
+     * @brief Utility function used to set a register on the sensor.
+     * This function relies on sendStringCommand: DO NOT USE THIS FUNCTION
+     * IF LOW EXECUTION TIME IS NEEDED.
+     *
+     * @param command Write command to be sent to the sensor.
+     *
+     * @return True if operation succeeded.
+     */
+    bool writeRegister(const std::string &command);
 
     /**
      * @brief Serial interface that is needed to communicate
