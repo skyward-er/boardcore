@@ -156,7 +156,8 @@ void NAS::predictGyro(const GyroscopeData& angularSpeed)
 
 void NAS::correctBaro(const float pressure)
 {
-    float altitude = -x(2);
+    float d        = x(2);
+    float altitude = -d;
 
     float temp = Aeroutils::relTemperature(altitude, reference.refTemperature);
 
@@ -165,7 +166,7 @@ void NAS::correctBaro(const float pressure)
 
     // Compute gradient of the altitude-pressure function
     H[2] = Constants::a * Constants::n * reference.refPressure *
-           powf(1 + Constants::a * altitude / temp, Constants::n - 1) / temp;
+           powf(1 + Constants::a * d / temp, Constants::n - 1) / temp;
 
     Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
     float S                = H * Pl * H.transpose() + R;
