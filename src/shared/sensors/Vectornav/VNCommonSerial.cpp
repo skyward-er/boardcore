@@ -444,7 +444,7 @@ std::string VNCommonSerial::getHSIEstimatorValues()
 
     if (!sendStringCommand("VNRRG,47"))
     {
-        LOG_ERR(logger, "Unable to send string command");
+        LOG_ERR(logger, "getHSIEstimatorValues: unable to send string command");
         return "";
     }
 
@@ -452,13 +452,16 @@ std::string VNCommonSerial::getHSIEstimatorValues()
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {
-        LOG_WARN(logger, "Unable to receive string command");
+        LOG_WARN(logger,
+                 "getHSIEstimatorValues: unable to receive string command");
         return "";
     }
 
     if (!verifyChecksum(recvString.data(), recvStringLength))
     {
-        LOG_ERR(logger, "Checksum verification failed: {}", recvString.data());
+        LOG_ERR(logger,
+                "getHSIEstimatorValues: checksum verification failed: {}",
+                recvString.data());
         return "";
     }
 

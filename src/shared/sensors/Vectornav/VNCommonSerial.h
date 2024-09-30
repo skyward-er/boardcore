@@ -84,7 +84,7 @@ public:
     bool stopHSIEstimator();
 
     /**
-     * @return The raw string containing the calculated hard and soft
+     * @return The raw string containing the estimated hard and soft
      * iron compensation parameters.
      */
     std::string getHSIEstimatorValues();
@@ -92,8 +92,10 @@ public:
     /**
      * @brief Set custom compensation parameters for the magnetometer.
      *
-     * @param c TODO
-     * @param b TODO. Unit of measurement [Gauss]
+     * @param c The hard and soft iron compensation parameters. See the
+     * datasheet for details.
+     * @param b The hard and soft iron compensation parameters. See the
+     * datasheet for details. Unit of measurement [Gauss]
      * @return True if operation succeeded.
      */
     bool setMagnetometerCompensation(const Eigen::Matrix3f &c,
@@ -102,8 +104,10 @@ public:
     /**
      * @brief Set custom compensation parameters for the accelerometer.
      *
-     * @param c TODO
-     * @param b TODO. Unit of measurement [m/s^2]
+     * @param c The accelerometer compensation parameters. See the
+     * datasheet for details.
+     * @param b The accelerometer compensation parameters. See the
+     * datasheet for details. Unit of measurement [m/s^2]
      * @return True if operation succeeded.
      */
     bool setAccelerometerCompensation(const Eigen::Matrix3f &c,
@@ -112,8 +116,10 @@ public:
     /**
      * @brief Set custom compensation parameters for the gyroscope.
      *
-     * @param c TODO
-     * @param b TODO. Unit of measurement [rad/s]
+     * @param c The gyroscope compensation parameters. See the
+     * datasheet for details.
+     * @param b The gyroscope compensation parameters. See the
+     * datasheet for details. Unit of measurement [rad/s]
      * @return True if operation succeeded.
      */
     bool setGyroscopeCompensation(const Eigen::Matrix3f &c,
