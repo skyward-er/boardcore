@@ -22,6 +22,11 @@
 
 #include <miosix.h>
 
+#include <chrono>
+
+namespace Boardcore
+{
+
 /**
  * @brief Dip switch driver to read the current status of the switch
  */
@@ -29,8 +34,8 @@ class DipSwitch
 {
 public:
     DipSwitch(miosix::GpioPin& sh, miosix::GpioPin& clk, miosix::GpioPin& qh,
-              uint32_t microSecClk)
-        : sh{sh}, clk{clk}, qh{qh}, microSecClk{microSecClk}
+              std::chrono::microseconds microSecClk)
+        : sh{sh}, clk{clk}, qh{qh}, microSecClk{microSecClk.count()}
     {
     }
 
@@ -47,13 +52,14 @@ public:
     uint8_t read();
 
 private:
-    miosix::GpioPin& sh;
-    miosix::GpioPin& clk;
-    miosix::GpioPin& qh;
-    uint32_t microSecClk;
+    miosix::GpioPin& sh;   ///< Shift pin / not load
+    miosix::GpioPin& clk;  ///< Clock pin
+    miosix::GpioPin& qh;   ///< Data output pin
+    int64_t microSecClk;
 
     /**
      * @brief Reads a bit from the dip switch shift register
      */
     uint8_t readBit();
 };
+}  // namespace Boardcore

@@ -30,6 +30,7 @@
 #include <sensors/Vectornav/VN300/VN300Data.h>
 
 #include <atomic>
+#include <chrono>
 #include <utils/ModuleManager/ModuleManager.hpp>
 
 #include "FollowerData.h"
@@ -43,9 +44,9 @@ public:
     /**
      * @brief Constructor of the follower class.
      *
-     * @param updatePeriod The period of update of the follower algorithm [s].
+     * @param updatePeriod The period of update of the follower algorithm [ms].
      */
-    explicit Follower(float updatePeriod);
+    explicit Follower(std::chrono::milliseconds updatePeriod);
 
     /**
      * @brief Check that both the antenna and rocket coordinates have been set.
@@ -68,7 +69,7 @@ public:
     /**
      * @brief Setter for the NAS state of the rocket.
      */
-    void setLastRocketNasState(const NASState nasState);
+    void setLastRocketNasState(const NASState& nasState);
 
     /**
      * @brief Setter for the attitude of the antenna.
@@ -113,14 +114,6 @@ private:
      * the antenna should point to.
      */
     AntennaAngles rocketPositionToAntennaAngles(const NEDCoords& ned);
-
-    /**
-     * @brief Minimize rotation angle.
-     *
-     * @param angle Angle of movement [deg]
-     * @return The minimized rotation angle [deg]
-     */
-    float minimizeRotation(float angle);
 
     /**
      * @brief Synchronized setter for the state of the follower algorithm.

@@ -34,8 +34,29 @@ using namespace miosix;
 namespace Boardcore
 {
 
-Follower::Follower(float updatePeriod)
-    : updatePeriod(updatePeriod), targetAngles({0, 0, 0})
+/**
+ * @brief Minimize rotation angle.
+ *
+ * @param angle Angle of movement [deg]
+ * @return The minimized rotation angle [deg]
+ */
+float minimizeRotation(float angle)
+{
+    if (angle > 180)
+    {
+        angle -= 360;
+    }
+    else if (angle < -180)
+    {
+        angle += 360;
+    }
+
+    return angle;
+}
+
+Follower::Follower(std::chrono::milliseconds updatePeriod)
+    : updatePeriod(static_cast<float>(updatePeriod.count()) / 1000),
+      targetAngles({0, 0, 0})
 {
 }
 
@@ -43,8 +64,7 @@ void Follower::setAntennaCoordinates(const Boardcore::GPSData& gpsData)
 {
     Lock<FastMutex> lock(lastAntennaAttitudeMutex);
     antennaCoordinates = {gpsData.latitude, gpsData.longitude, gpsData.height};
-    Boardcore::Logger::getInstance().log(
-        static_cast<LogAntennasCoordinates>(gpsData));
+    Boardcore::Logger::getInstance().log(LogAntennasCoordinates(gpsData));
     antennaCoordinatesSet = true;
 }
 
@@ -52,8 +72,7 @@ void Follower::setRocketNASOrigin(const Boardcore::GPSData& gpsData)
 {
     Lock<FastMutex> lock(lastAntennaAttitudeMutex);
     rocketNASOrigin = {gpsData.latitude, gpsData.longitude, gpsData.height};
-    Boardcore::Logger::getInstance().log(
-        static_cast<LogRocketCoordinates>(gpsData));
+    Boardcore::Logger::getInstance().log(LogRocketCoordinates(gpsData));
     rocketCoordinatesSet = true;
 }
 
@@ -69,7 +88,7 @@ VN300Data Follower::getLastAntennaAttitude()
     return lastAntennaAttitude;
 }
 
-void Follower::setLastRocketNasState(const NASState nasState)
+void Follower::setLastRocketNasState(const NASState& nasState)
 {
     Lock<FastMutex> lock(lastRocketNasStateMutex);
     lastRocketNasState      = nasState;
@@ -116,27 +135,13 @@ bool Follower::init()
     return true;
 }
 
-float Follower::minimizeRotation(float angle)
-{
-    if (angle > 180)
-    {
-        angle -= 360;
-    }
-    else if (angle < -180)
-    {
-        angle += 360;
-    }
-
-    return angle;
-}
-
 void Follower::step()
 {
-    NASState lastRocketNasState = getLastRocketNasState();
+    NASState lastRocketNas = getLastRocketNasState();
 
     // Getting the position of the rocket wrt the antennas in NED frame
-    NEDCoords rocketPosition = {lastRocketNasState.n, lastRocketNasState.e,
-                                lastRocketNasState.d};
+    NEDCoords rocketPosition = {lastRocketNas.n, lastRocketNas.e,
+                                lastRocketNas.d};
 
     // Calculate the antenna target angles from the NED rocket coordinates
     targetAngles = rocketPositionToAntennaAngles(rocketPosition);
@@ -166,23 +171,19 @@ void Follower::step()
         std::abs((diffAngles.pitch * 1000) / (360 * updatePeriod));
 
     // Update the state of the follower
-    FollowerState state;
-    state.timestamp       = TimestampTimer::getTimestamp();
-    state.yaw             = diffAngles.yaw;
-    state.pitch           = diffAngles.pitch;
-    state.horizontalSpeed = horizontalSpeed;
-    state.verticalSpeed   = verticalSpeed;
-    setState(state);
-
-    // Log the target angles
-    Boardcore::Logger::getInstance().log(
-        static_cast<Boardcore::AntennaAngles>(targetAngles));
+    FollowerState newState;
+    newState.timestamp       = TimestampTimer::getTimestamp();
+    newState.yaw             = diffAngles.yaw;
+    newState.pitch           = diffAngles.pitch;
+    newState.horizontalSpeed = horizontalSpeed;
+    newState.verticalSpeed   = verticalSpeed;
+    setState(newState);
 
 #ifndef NDEBUG
     std::cout << "[FOLLOWER] STEPPER "
-              << "Angles: [" << state.yaw << ", " << state.pitch << "] "
-              << "Speed: [" << state.horizontalSpeed << ", "
-              << state.verticalSpeed << "]   VN300 measure: [" << vn300.yaw
+              << "Angles: [" << newState.yaw << ", " << newState.pitch << "] "
+              << "Speed: [" << newState.horizontalSpeed << ", "
+              << newState.verticalSpeed << "]   VN300 measure: [" << vn300.yaw
               << ", " << vn300.pitch << "]\n";
 #endif
 }

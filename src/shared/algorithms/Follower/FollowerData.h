@@ -45,16 +45,31 @@ struct AntennaAngles
                   //!< on the XY plane (NE plane), positive anti-clockwise [deg]
     float pitch;  //!< Angle between the XY plane (NE plane) and the target
     //!< position [deg]
+
+    AntennaAngles() : timestamp{0}, yaw{0}, pitch{0} {};
+    AntennaAngles(uint64_t timestamp, float yaw, float pitch)
+        : timestamp{timestamp}, yaw(yaw), pitch(pitch){};
+    AntennaAngles(uint64_t timestamp, float yaw, float pitch,
+                  uint32_t nrPropagations)
+        : timestamp{timestamp}, yaw(yaw), pitch(pitch){};
+};
+
+/**
+ * @brief A structure for storing angles relative to the NED frame.
+ */
+struct AntennaAnglesLog : public AntennaAngles
+{
     uint32_t nrPropagations =
         0;  //!< Nr of propagations by the propagator (0 if no propagation)
 
-    AntennaAngles() : timestamp{0}, yaw(0), pitch(0), nrPropagations{0} {};
-    AntennaAngles(uint64_t timestamp, float yaw, float pitch)
-        : timestamp{timestamp}, yaw(yaw), pitch(pitch), nrPropagations{0} {};
-    AntennaAngles(uint64_t timestamp, float yaw, float pitch,
-                  uint32_t nrPropagations)
-        : timestamp{timestamp}, yaw(yaw),
-          pitch(pitch), nrPropagations{nrPropagations} {};
+    AntennaAnglesLog(uint64_t timestamp, float yaw, float pitch)
+        : AntennaAngles(timestamp, yaw, pitch), nrPropagations{0} {};
+    AntennaAnglesLog(uint64_t timestamp, float yaw, float pitch,
+                     uint32_t nrPropagations)
+        : AntennaAngles(timestamp, yaw, pitch), nrPropagations{
+                                                    nrPropagations} {};
+    AntennaAnglesLog(AntennaAngles angle, uint32_t nrPropagations)
+        : AntennaAngles(angle), nrPropagations{nrPropagations} {};
 
     static std::string header()
     {
@@ -99,9 +114,9 @@ struct FollowerState
  */
 struct LogAntennasCoordinates : public GPSData
 {
-    explicit LogAntennasCoordinates(const GPSData& data) : GPSData(data) {}
+    LogAntennasCoordinates() = default;
 
-    LogAntennasCoordinates() {}
+    explicit LogAntennasCoordinates(const GPSData& data) : GPSData(data) {}
 };
 
 /**
@@ -109,8 +124,8 @@ struct LogAntennasCoordinates : public GPSData
  */
 struct LogRocketCoordinates : public GPSData
 {
-    explicit LogRocketCoordinates(const GPSData& data) : GPSData(data) {}
+    LogRocketCoordinates() = default;
 
-    LogRocketCoordinates() {}
+    explicit LogRocketCoordinates(const GPSData& data) : GPSData(data) {}
 };
 }  // namespace Boardcore

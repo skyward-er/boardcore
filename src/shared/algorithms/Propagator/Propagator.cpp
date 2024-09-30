@@ -30,8 +30,8 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-Propagator::Propagator(float updatePeriod)
-    : updatePeriod(updatePeriod / 1000), state()
+Propagator::Propagator(std::chrono::milliseconds pUpdatePeriod)
+    : updatePeriod(static_cast<float>(pUpdatePeriod.count()) / 1000), state()
 {
 }
 
@@ -39,30 +39,28 @@ bool Propagator::init() { return true; }
 
 void Propagator::step()
 {
+    miosix::Lock<miosix::FastMutex> lock(stateMutex);
     // Take new rocket data only if it has been just updated, otherwise take
     // last state available
-    const PropagatorState& oldState = getState();
+    PropagatorState oldState = state;
 
     // updates with the last received NAS state if present, otherwise uses the
     // last Propagator state
-    PropagatorState newState =
-        (oldState.nPropagations == 0
-             ? PropagatorState(oldState.timestamp, oldState.nPropagations,
-                               getRocketNasState())
-             : oldState);
+    state = (oldState.nPropagations == 0
+                 ? PropagatorState(oldState.timestamp, oldState.nPropagations,
+                                   getRocketNasState())
+                 : oldState);
 
     // Update Position propagating it with velocity
-    newState.x_prop = newState.x_prop + newState.v_prop * updatePeriod;
-    newState.nPropagations++;
-    newState.timestamp = TimestampTimer::getTimestamp();
-
-    // set propagated state
-    setState(newState);
+    state.x_prop = state.x_prop + state.v_prop * updatePeriod;
+    state.nPropagations++;
+    state.timestamp = TimestampTimer::getTimestamp();
 }
 
 void Propagator::setRocketNasState(const NASState& newRocketNasState)
 {
-    miosix::Lock<miosix::FastMutex> lock(nasStateMutex);
+    miosix::Lock<miosix::FastMutex> lockState(stateMutex);
+    miosix::Lock<miosix::FastMutex> lockNAS(nasStateMutex);
 
     // Reset nPropagations to notify another received "real" packet
     state.nPropagations = 0;

@@ -24,19 +24,22 @@
 #include <interfaces-impl/hwmapping.h>
 #include <miosix.h>
 
+#include <chrono>
+
 using namespace miosix;
+using namespace std::chrono;
+using namespace Boardcore;
 
 /**
  * @brief Tests the read from a dipswitch using the DipSwitch driver
  */
 int main()
 {
-    uint32_t microSecClk = 100;
-    GpioPin sh           = dipSwitch::sh::getPin();
-    GpioPin clk          = dipSwitch::clk::getPin();
-    GpioPin qh           = dipSwitch::qh::getPin();
+    GpioPin sh  = dipSwitch::sh::getPin();
+    GpioPin clk = dipSwitch::clk::getPin();
+    GpioPin qh  = dipSwitch::qh::getPin();
 
-    DipSwitch dipSwitch(sh, clk, qh, microSecClk);
+    DipSwitch dipSwitch(sh, clk, qh, 100us);
     while (true)
     {
         uint8_t status;

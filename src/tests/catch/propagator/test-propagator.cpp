@@ -62,8 +62,8 @@ void checkPropagatorStates(const PropagatorState& currentState,
             Approx(expectedState.getNasState().bz).epsilon(0.0001));
 }
 
-void testPropagator(float dt, const PropagatorState& STATE0, NASState* nas,
-                    uint32_t n)
+void testPropagator(std::chrono::milliseconds dt, const PropagatorState& STATE0,
+                    NASState* nas, uint32_t n)
 {
     // Setting up the Propagator
     Propagator propagator(dt);

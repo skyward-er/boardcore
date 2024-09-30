@@ -25,6 +25,8 @@
 #include <algorithms/Algorithm.h>
 #include <miosix.h>
 
+#include <chrono>
+
 #include "PropagatorData.h"
 #include "algorithms/NAS/NASState.h"
 #include "sensors/SensorData.h"
@@ -44,7 +46,7 @@ public:
      *
      * @param updatePeriod The period of update of the predictor algorithm [ms].
      */
-    explicit Propagator(float updatePeriod);
+    explicit Propagator(std::chrono::milliseconds updatePeriod);
 
     /**
      * @brief Dummy init since we don't have to setup anything.
@@ -70,18 +72,6 @@ public:
     {
         miosix::Lock<miosix::FastMutex> lock(nasStateMutex);
         return lastRocketNasState;
-    }
-
-    /**
-     * @brief Synchronized setter for the predictor state.
-     * @warning Should NOT be called if not in a test.
-     *
-     * @param newState The state of the propagator to be set.
-     */
-    inline void setState(const PropagatorState& newState)
-    {
-        miosix::Lock<miosix::FastMutex> lock(stateMutex);
-        state = newState;
     }
 
     /**

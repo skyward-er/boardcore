@@ -22,6 +22,9 @@
 
 #include "DipSwitch.h"
 
+namespace Boardcore
+{
+
 uint8_t DipSwitch::read()
 {
     uint8_t read = 0;
@@ -34,7 +37,7 @@ uint8_t DipSwitch::read()
     sh.high();
     miosix::delayUs(microSecClk);
 
-    // Read first register GS(0)/ARP(1)
+    // Read the 8 values set on dipswitch
 
     read |= readBit();
     read |= readBit() << 1;
@@ -59,3 +62,4 @@ uint8_t DipSwitch::readBit()
     miosix::delayUs(microSecClk);
     return bit;
 }
+}  // namespace Boardcore
