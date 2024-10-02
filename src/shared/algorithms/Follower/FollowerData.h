@@ -62,6 +62,7 @@ struct AntennaAnglesLog : public AntennaAngles
     uint32_t nrPropagations =
         0;  //!< Nr of propagations by the propagator (0 if no propagation)
 
+    AntennaAnglesLog() : AntennaAngles(), nrPropagations(0){};
     AntennaAnglesLog(uint64_t timestamp, float yaw, float pitch)
         : AntennaAngles(timestamp, yaw, pitch), nrPropagations{0} {};
     AntennaAnglesLog(uint64_t timestamp, float yaw, float pitch,
