@@ -26,6 +26,7 @@
 #include <actuators/stepper/StepperData.h>
 #include <algorithms/ADA/ADAData.h>
 #include <algorithms/Follower/FollowerData.h>
+#include <algorithms/MEA/MEAData.h>
 #include <algorithms/NAS/NASState.h>
 #include <algorithms/ReferenceValues.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
@@ -151,6 +152,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<MavlinkStatus>();
     ds.registerType<MAX31856Data>();
     ds.registerType<MBLoadCellData>();
+    ds.registerType<MEAState>();
     ds.registerType<MPU9250Data>();
     ds.registerType<MPXH6115AData>();
     ds.registerType<MPXH6400AData>();
