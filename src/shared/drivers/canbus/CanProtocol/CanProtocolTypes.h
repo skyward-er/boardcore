@@ -294,7 +294,8 @@ struct CanEvent
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << source << "," << target << "," << event
+        os << timestamp << "," << static_cast<int>(source) << ","
+           << static_cast<int>(target) << "," << static_cast<int>(event)
            << "\n";
     }
 };
