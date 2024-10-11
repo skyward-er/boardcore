@@ -40,7 +40,7 @@ int main()
 
     USART usart(USART2, 115200);
     VN100Serial sensor{usart, 115200, VNCommonSerial::CRCOptions::CRC_ENABLE_16,
-                       std::chrono::milliseconds(50)};
+                       std::chrono::seconds(5)};
 
     // Let the sensor start up
     Thread::sleep(1000);
