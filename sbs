@@ -133,30 +133,27 @@ print_configuration() {
 # Returns a list of flags in the form "--flag=value" or "--flag"
 filter_flags() {
     flags=()
-    prev_flag=""
+    prev_is_flag=false
 
     for arg in "$@"; do
         if [[ "$arg" == -* ]]; then
-            if [[ "$arg" == *=* ]]; then
-                flags+=("$arg")
-            else
-                prev_flag="$arg"
+            flags+=("$arg")
+            prev_is_flag=true
+        else
+            if [ "$prev_is_flag" = true ]; then
+                # if the previous argument was a flag, then this is a flag value
+                flags[-1]="${flags[-1]}=$arg"
             fi
-        elif [ -n "$prev_flag" ]; then
-            flags+=("$prev_flag=$arg")
-            prev_flag=""
+
+            prev_is_flag=false
         fi
     done
-
-    if [ -n "$prev_flag" ]; then
-        flags+=("$prev_flag")
-    fi
 
     echo "${flags[@]}"
 }
 
 
-# Filer all the arguments that are not flags
+# Filter all the arguments that are not flags
 filter_args() {
     args=()
     prev_is_flag=false
@@ -214,7 +211,7 @@ cmd_flags() {
 cmd_args() {
     max_args=$1
     shift
-    args=("$@")
+    args=("${!1}")
     if [ "${#args[@]}" -gt "$max_args" ]; then
         echo ""$ERR": Too many arguments"
         return 1
@@ -226,7 +223,7 @@ cmd_args() {
 flag_exists() {
     flag=$1
     shift
-    flags=("$@")
+    flags=("${!1}")
 
     if [[ " ${flags[@]} " =~ " ${flag} " ]]; then
         echo "true"
@@ -426,20 +423,20 @@ lint_clangformat() {
 ################################################################################
 
 build() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     jobs_flag=("-j" "--jobs")
     known_flags=("-d" "-v" "-h" "-j=" "--debug" "--verbose" "--host" "--jobs=")
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 $args || return
+    cmd_args 1 args[@] || return
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
 
-    [ "$(flag_exists "-d" $flags)" = true ] || [ "$(flag_exists "--debug" $flags)" = true ] && config_debug=true || config_debug=false
-    [ "$(flag_exists "-v" $flags)" = true ] || [ "$(flag_exists "--verbose" $flags)" = true ] && config_verbose=true || config_verbose=false
-    [ "$(flag_exists "-h" $flags)" = true ] || [ "$(flag_exists "--host" $flags)" = true ] && config_host=true || config_host=false
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    [ "$(flag_exists "-h" flags[@])" = true ] || [ "$(flag_exists "--host"    flags[@])" = true ] && config_host=true    || config_host=false
     [ "$config_host" = true ] && build_dir="$build_host_dir" || build_dir="$build_default_dir"
 
     target=${args[0]:-all}
@@ -455,16 +452,16 @@ build() {
 }
 
 clean() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     known_flags=("-h" "--host")
 
     step "cleaning"
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 $args || return
+    cmd_args 0 args[@] || return
 
-    [ "$(flag_exists "-h" $flags)" = true ] || [ "$(flag_exists "--host" $flags)" = true ] && config_host=true || config_host=false
+    [ "$(flag_exists "-h" flags[@])" = true ] || [ "$(flag_exists "--host" flags[@])" = true ] && config_host=true || config_host=false
     
     if [ "$config_host" = true ]; then
         echo "Cleaning host build directory"
@@ -476,23 +473,23 @@ clean() {
 }
 
 flash() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     jobs_flag=("-j" "--jobs")
     known_flags=("-d" "-v" "-r" "-j=" "--debug" "--verbose" "--reset" "--jobs=")
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 $args || return
+    cmd_args 1 args[@] || return
 
     config_host=false # cannot flash host build
     build_dir="$build_default_dir"
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
 
-    [ "$(flag_exists "-d" $flags)" = true ] || [ "$(flag_exists "--debug" $flags)" = true ] && config_debug=true || config_debug=false
-    [ "$(flag_exists "-v" $flags)" = true ] || [ "$(flag_exists "--verbose" $flags)" = true ] && config_verbose=true || config_verbose=false
-    [ "$(flag_exists "-r" $flags)" = true ] || [ "$(flag_exists "--reset" $flags)" = true ] && reset=true || reset=false
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
 
     target=${args[0]}
 
@@ -531,14 +528,14 @@ flash() {
 }
 
 test() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     jobs_flag=("-j" "--jobs")
     known_flags=("-j=" "--jobs=")
 
     cmd_flags know_flags[@] flags[@] || return
-    cmd_args 1 $args || return
+    cmd_args 1 args[@] || return
 
     config_host=true
     config_debug=true
@@ -572,13 +569,13 @@ test() {
 }
 
 list() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     known_flags=()
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 $args || return
+    cmd_args 1 args[@] || return
 
     config_host=false
     config_debug=false
@@ -611,13 +608,13 @@ list() {
 }
 
 lint() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     known_flags=()
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 $args || return
+    cmd_args 0 args[@] || return
 
     if [ "$found_python" = true ]; then
         lint_copyright
@@ -647,13 +644,13 @@ lint() {
 }
 
 format() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     known_flags=()
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 $args || return
+    cmd_args 0 args[@] || return
 
     step "formatting"
 
@@ -700,13 +697,13 @@ help() {
 
 
 install() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     known_flags=()
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 $args || return
+    cmd_args 0 args[@] || return
 
     step "autocomplete"
 
@@ -734,13 +731,13 @@ install() {
 }
 
 uninstall() {
-    flags=$(filter_flags "$@")
-    args=$(filter_args "$@")
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     known_flags=()
 
     cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 $args || return
+    cmd_args 0 args[@] || return
 
     step "autocomplete"
 
