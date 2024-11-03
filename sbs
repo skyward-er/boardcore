@@ -480,7 +480,7 @@ flash() {
     args=$(filter_args "$@")
 
     jobs_flag=("-j" "--jobs")
-    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
+    known_flags=("-d" "-v" "-r" "-j=" "--debug" "--verbose" "--reset" "--jobs=")
 
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 1 $args || return
@@ -492,6 +492,7 @@ flash() {
 
     [ "$(flag_exists "-d" $flags)" = true ] || [ "$(flag_exists "--debug" $flags)" = true ] && config_debug=true || config_debug=false
     [ "$(flag_exists "-v" $flags)" = true ] || [ "$(flag_exists "--verbose" $flags)" = true ] && config_verbose=true || config_verbose=false
+    [ "$(flag_exists "-r" $flags)" = true ] || [ "$(flag_exists "--reset" $flags)" = true ] && reset=true || reset=false
 
     target=${args[0]}
 
@@ -516,9 +517,12 @@ flash() {
     # flash the target
     step "flashing"
 
+    flash_opts=()
+    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
+
     if [ "$found_stflash" = true ]; then
-        st-flash --reset write "$build_dir/$target.bin" 0x8000000
-        elif [ "$found_stlink" = true ]; then
+        st-flash --reset "${opts[@]}" write "$build_dir/$target.bin" 0x8000000 
+    elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
         echo ""$ERR": No flashing software found!"
@@ -671,7 +675,7 @@ help() {
     echo " clean     - Clean the build directory"
     echo "           -> [-h|--host]"
     echo " flash     - Flash the specified target"
-    echo "           -> <target> [-d|--debug] [-v|--verbose] [-j|--jobs=<jobs>]"
+    echo "           -> <target> [-d|--debug] [-v|--verbose] [-r|--reset] [-j|--jobs=<jobs>]"
     echo " test      - Run the tests for the specified target"
     echo "           -> <target> [-j|--jobs=<jobs>]"
     echo " list      - List the available targets or boards"
@@ -685,6 +689,7 @@ help() {
     echo " -d, --debug:   Build in debug mode"
     echo " -v, --verbose: Build in verbose mode"
     echo " -h, --host:    Build for the host"
+    echo " -r, --reset:   Reset the target before flashing"
     echo " -j, --jobs:    Number of jobs to run in parallel"
     echo ""
 }
