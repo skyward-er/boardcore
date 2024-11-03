@@ -539,7 +539,7 @@ test() {
 
     config_host=true
     config_debug=true
-    config_verbose=true
+    config_verbose=false
     build_dir="$build_host_dir"
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
