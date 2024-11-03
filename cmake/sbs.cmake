@@ -29,6 +29,12 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(boardcore)
 
 # Command to print all the available boards used by the sbs script
+string(REGEX MATCHALL "bsps\/[^\/]+" BOARDCORE_BOARDS ${BOARDCORE_BOARDS_OPTIONS_FILES})
+string(REGEX MATCHALL "arch\/[^\/]+" MIOSIX_BOARDS ${MIOSIX_BOARDS_OPTIONS_FILES})
+# Replace "/bsps" and "/arch" with empty string, as lookbehind is not supported
+string(REGEX REPLACE "bsps\/" "" BOARDCORE_BOARDS "${BOARDCORE_BOARDS}")
+string(REGEX REPLACE "arch\/" "" MIOSIX_BOARDS "${MIOSIX_BOARDS}")
+
 string(REPLACE ";" "\\n" BOARDS_STR "${MIOSIX_BOARDS};${BOARDCORE_BOARDS}")
 add_custom_target(
     help-boards
