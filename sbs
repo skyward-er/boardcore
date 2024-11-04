@@ -287,13 +287,13 @@ init_dirs() {
 # Get the build options for cmake
 # The syntax is: get_build_opts "opts" "jobs"
 get_build_opts() {
-    build_opts=$1
-    # jobs is $2 with a default value of NPROCESSORS_ONLN - 2
-    n_processors=$(getconf _NPROCESSORS_ONLN)
-    jobs=${2:-$((n_processors - 2))}
+    build_opts=()
+    jobs=$2
 
-    echo "- Building with $jobs jobs"
-    [ -n "$jobs" ] && build_opts=("-j $jobs")
+    if [ -n "$jobs" ]; then
+        echo "- Building with $jobs jobs"
+        build_opts+=("-j $jobs")
+    fi
 }
 
 # workaround: disable tests in excluded subdirectories
