@@ -586,7 +586,7 @@ list() {
     elif [ "$list_type" = "boards" ]; then
         step "List boards"
 
-        cmake --build "$build_dir" "${opts[@]}" --target help-boards
+        cmake --build "$build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
     else
         printf ""$ERR": Unknown list type $list_type\n"
         return 1
