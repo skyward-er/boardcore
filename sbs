@@ -46,7 +46,7 @@ CTEST_FILENAME="CTestTestfile.cmake"
 DEBUG_FILENAME=".sbs_debug"
 VERBOSE_FILENAME=".sbs_verbose"
 BUILD_DEFAULT_DIRNAME="build"
-BUILD_HOST_DIRNAME="cmake-build-host"
+BUILD_HOST_DIRNAME="build-host"
 
 ################################################################################
 ##############################    Global States   ##############################
@@ -285,8 +285,8 @@ get_build_opts() {
 # workaround: disable tests in excluded subdirectories
 # see: https://gitlab.kitware.com/cmake/cmake/-/issues/20212
 cmake_disable_excluded_tests() {
-    declare build_dir="$1"
-    
+    build_dir="$build_host_dir"
+
     [ ! -f "$build_dir/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$build_dir/$CTEST_FILENAME"
 }
 
@@ -295,7 +295,7 @@ cmake_disable_excluded_tests() {
 ################################################################################
 
 # Check if the project is configured
-# The syntax is: check_configured "build_dir" "config_debug" "config_verbose" "config_host"
+# The syntax is: check_configured "config_debug" "config_verbose" "config_host"
 check_configured() {
     build_dir="$1"
     config_debug="$2"
@@ -338,7 +338,7 @@ check_configured() {
         declare gen
         [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
         
-        cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
+        cmake -B "$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
         
         { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
         { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
@@ -362,7 +362,6 @@ lint_clangtidy() {
     
     step "Lint clang-tidy"
 
-    config_host=false
     config_debug=false
     config_verbose=false
 
@@ -413,7 +412,7 @@ build() {
     IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     jobs_flag=("-j" "--jobs")
-    known_flags=("-d" "-v" "-h" "-j=" "--debug" "--verbose" "--host" "--jobs=")
+    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
 
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 1 args[@] || return
@@ -422,8 +421,9 @@ build() {
 
     [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
     [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
-    [ "$(flag_exists "-h" flags[@])" = true ] || [ "$(flag_exists "--host"    flags[@])" = true ] && config_host=true    || config_host=false
-    [ "$config_host" = true ] && build_dir="$build_host_dir" || build_dir="$build_default_dir"
+    config_host=false
+
+    build_dir="$build_default_dir"
 
     target=${args[0]:-all}
 
@@ -441,21 +441,15 @@ clean() {
     IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
     IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
-    known_flags=("-h" "--host")
+    known_flags=()
 
     step "Clean"
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
-    [ "$(flag_exists "-h" flags[@])" = true ] || [ "$(flag_exists "--host" flags[@])" = true ] && config_host=true || config_host=false
-    
-    if [ "$config_host" = true ]; then
-        echo "Cleaning host build directory"
-        rm -rf "$build_host_dir"
-    else
-        echo "Cleaning default build directory"
-        rm -rf "$build_default_dir"
-    fi
+    echo "Cleaning build directories..."
+    rm -rf "$build_default_dir"
+    rm -rf "$build_host_dir"
 }
 
 flash() {
@@ -468,7 +462,6 @@ flash() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 1 args[@] || return
 
-    config_host=false # cannot flash host build
     build_dir="$build_default_dir"
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
@@ -476,6 +469,7 @@ flash() {
     [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
     [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
     [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
+    config_host=false
 
     target=${args[0]}
 
@@ -523,9 +517,9 @@ test() {
     cmd_flags know_flags[@] flags[@] || return
     cmd_args 1 args[@] || return
 
-    config_host=true
     config_debug=true
     config_verbose=false
+    config_host=true
     build_dir="$build_host_dir"
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
@@ -563,9 +557,9 @@ list() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 1 args[@] || return
 
-    config_host=false
     config_debug=false
     config_verbose=false
+    config_host=false
     build_dir="$build_default_dir"
 
     check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
@@ -649,15 +643,14 @@ help() {
     echo ""
     echo "Commands:"
     echo " build     - Build the specified target"
-    echo "           -> <target=all> [-d | --debug] [-v | --verbose] [-h | --host] [-j | --jobs=<jobs>]"
-    echo " clean     - Clean the build directory"
-    echo "           -> [-h | --host]"
+    echo "           -> <target=all> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
     echo " flash     - Flash the specified target"
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
     echo " test      - Run the tests for the specified target"
     echo "           -> <target> [-j | --jobs=<jobs>]"
     echo " list      - List the available targets or boards"
     echo "           -> <targets | boards>"
+    echo " clean     - Clean the build directory"
     echo " lint      - Lint the source code"
     echo " format    - Format the source code"
     echo " install   - Install autocomplete"
@@ -666,7 +659,6 @@ help() {
     echo "Options:"
     echo " -d, --debug:   Build in debug mode"
     echo " -v, --verbose: Build in verbose mode"
-    echo " -h, --host:    Build for the host"
     echo " -r, --reset:   Reset the target before flashing"
     echo " -j, --jobs:    Number of jobs to run in parallel"
     echo ""
@@ -693,10 +685,12 @@ install() {
         return 1
     fi
 
-    config_host=false
     config_debug=false
     config_verbose=false
+    config_host=false
     build_dir="$build_default_dir"
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
 
     echo "Retrieving targets..."
 
