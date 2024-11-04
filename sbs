@@ -578,14 +578,9 @@ list() {
     fi
 
     if [ "$list_type" = "targets" ]; then
-        step "List targets"
-
-        echo "[1/1] All targets available:"
         cmake --build "$build_dir" --target help \
             | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
     elif [ "$list_type" = "boards" ]; then
-        step "List boards"
-
         cmake --build "$build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
     else
         printf ""$ERR": Unknown list type $list_type\n"
@@ -739,6 +734,11 @@ uninstall() {
 ##############################        Main        ##############################
 ################################################################################
 
+init_no_output() {
+    find_deps
+    init_dirs
+}
+
 init() {
     printf "$banner"
 
@@ -754,11 +754,11 @@ for arg in "$@"; do
         clean)     init; clean "${@:2}"; exit ;;
         flash)     init; flash "${@:2}"; exit ;;
         test)      init; test  "${@:2}"; exit ;;
-        list)      init; list  "${@:2}"; exit ;;
         lint)      init; lint  "${@:2}"; exit ;;
         format)    init; format; exit ;;
         install)   init; install; exit ;;
         uninstall) init; uninstall; exit ;;
+        list)      init_no_output; list  "${@:2}"; exit ;;
         *)         help; exit ;;
     esac
 done
