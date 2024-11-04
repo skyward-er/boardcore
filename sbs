@@ -38,7 +38,7 @@ TTY_LOGO_4="\033[38;5;57m"
 TTY_LOGO_5="\033[38;5;27m"
 
 # Error message
-ERR=""$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
+ERR="\n"$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
 
 # Filenames/Dirnames
 CMAKE_FILENAME="CMakeCache.txt"
@@ -83,10 +83,10 @@ $TTY_RESET
 "
 
 print_configuration() {
-	step "dependencies"
+	step "Dependencies"
 
-	yf=""$TTY_SUCCESS""$TTY_BOLD"yes"$TTY_RESET""
-	nf=""$TTY_ERROR""$TTY_BOLD"no"$TTY_RESET""
+	yf=""$TTY_SUCCESS""$TTY_BOLD"Yes"$TTY_RESET""
+	nf=""$TTY_ERROR""$TTY_BOLD"No"$TTY_RESET""
 
 	printf "cmake:               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
 	printf "arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
@@ -319,7 +319,7 @@ check_configured() {
     fi
     
     if [ "$to_reconfigure" = true ]; then
-        step "configuring"
+        step "Configure"
 
         printf "Reconfiguring project with the following options:\n"
         printf "  - Debug:   %s\n" "$config_debug"
@@ -346,13 +346,13 @@ check_configured() {
 }
 
 lint_copyright() {
-    step "linting copyright"
+    step "Lint copyright"
 
     "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
 }
 
 lint_find() {
-    step "linting find"
+    step "Lint find"
 
     "$sbs_base/scripts/linter.py" --find "$source_dir/src"
 }
@@ -360,7 +360,7 @@ lint_find() {
 lint_clangtidy() {
     build_dir="$1"
     
-    step "linting clang-tidy"
+    step "Lint clang-tidy"
 
     config_host=false
     config_debug=false
@@ -382,7 +382,7 @@ lint_clangtidy() {
 }
 
 lint_cppcheck() {
-    step "linting cppcheck"
+    step "Lint cppcheck"
 
     echo "Running cppcheck..."
 
@@ -393,7 +393,7 @@ lint_cppcheck() {
 }
 
 lint_clangformat() {
-    step "linting clang-format"
+    step "Lint clang-format"
 
     echo "Running clang-format..."
 
@@ -429,7 +429,7 @@ build() {
 
     check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
     
-    step "building"
+    step "Build"
 
     declare opts
     get_build_opts opts $jobs
@@ -443,7 +443,7 @@ clean() {
 
     known_flags=("-h" "--host")
 
-    step "cleaning"
+    step "Clean"
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
@@ -487,7 +487,7 @@ flash() {
     check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
     
     # build the target
-    step "building"
+    step "Build"
 
     declare opts
     get_build_opts opts $jobs
@@ -498,7 +498,7 @@ flash() {
     [ -f "$build_dir/$target.bin" ] || { echo "Error: target '$target' is not flashable"; return 1; }
     
     # flash the target
-    step "flashing"
+    step "Flash"
 
     flash_opts=()
     [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
@@ -540,7 +540,7 @@ test() {
     check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
 
     # build the target
-    step "building"
+    step "Build"
 
     declare opts
     get_build_opts opts $jobs
@@ -548,7 +548,7 @@ test() {
     cmake --build "$build_dir" "${opts[@]}" --target "$target"
     
     # run the tests
-    step "testing"
+    step "Test"
     
     cmake_disable_excluded_tests "$build_dir"
     ( cd "$build_dir" || return; ctest )
@@ -578,13 +578,13 @@ list() {
     fi
 
     if [ "$list_type" = "targets" ]; then
-        step "listing targets"
+        step "List targets"
 
         echo "[1/1] All targets available:"
         cmake --build "$build_dir" --target help \
             | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
     elif [ "$list_type" = "boards" ]; then
-        step "listing boards"
+        step "List boards"
 
         cmake --build "$build_dir" "${opts[@]}" --target help-boards
     else
@@ -638,7 +638,7 @@ format() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
-    step "formatting"
+    step "Format"
 
     echo "Running clang-format..."
 
@@ -691,7 +691,7 @@ install() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
-    step "autocomplete"
+    step "Install autocomplete"
 
     if [ "$found_python" = false ]; then
         printf ""$ERR": Python is required to install autocomplete\n"
@@ -725,7 +725,7 @@ uninstall() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
-    step "autocomplete"
+    step "Uninstall autocomplete"
 
     if [ "$found_python" = false ]; then
         printf ""$ERR": Python is required to uninstall autocomplete\n"
