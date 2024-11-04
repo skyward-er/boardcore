@@ -69,14 +69,6 @@ found_clangformat=false
 found_stflash=false
 found_stlink=false
 
-if git status &> /dev/null; then
-  git_repo=$(basename `git rev-parse --show-toplevel`)
-  git_branch=$(git rev-parse --abbrev-ref HEAD)
-else
-  git_repo="unknown"
-  git_branch=""
-fi
-
 ################################################################################
 ##############################       Banner       ##############################
 ################################################################################
@@ -86,21 +78,15 @@ $TTY_LOGO_1              _____ ____ _____
 $TTY_LOGO_2 ___________ / ___// __ ) ___/  ________________________________
 $TTY_LOGO_3 __________  \__ \/ __  \__ \  _________________________________
 $TTY_LOGO_4 _________  ___/ / /_/ /__/ / ____________________________v4.0__
-$TTY_LOGO_5           /____/_____/____/                                    
-$TTY_RESET                                                                 
+$TTY_LOGO_5           /____/_____/____/                                        
+$TTY_RESET                                                                  
 "
 
 print_configuration() {
-	pre="SkywardBuildSystem @ $git_repo/$git_branch"
-  	pre_colored=""$TTY_LOGO_5""$TTY_BOLD"SkywardBuildSystem"$TTY_RESET" @ "$TTY_LOGO_5""$TTY_BOLD""$git_repo"/"$git_branch""$TTY_RESET"\n"
-	printf "$pre_colored"
+	step "dependencies"
 
 	yf=""$TTY_SUCCESS""$TTY_BOLD"yes"$TTY_RESET""
 	nf=""$TTY_ERROR""$TTY_BOLD"no"$TTY_RESET""
-	
-	# Print - for every letter in the pre string
-	for (( i=0; i<${#pre}; i++ )); do printf -- "-"; done;
-	printf "\n";
 
 	printf "cmake:               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
 	printf "arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
