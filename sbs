@@ -102,16 +102,16 @@ print_configuration() {
 	for (( i=0; i<${#pre}; i++ )); do printf -- "-"; done;
 	printf "\n";
 
-	printf ""$TTY_LOGO_5"cmake"$TTY_RESET":               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"arm-miosix-eabi-g++"$TTY_RESET": "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"ccache"$TTY_RESET":              "; [ "$found_ccache" = true      ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"ninja"$TTY_RESET":               "; [ "$found_ninja" = true       ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"python"$TTY_RESET":              "; [ "$found_python" = true      ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"cppcheck"$TTY_RESET":            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"clang-tidy"$TTY_RESET":          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
-	printf ""$TTY_LOGO_5"clang-format"$TTY_RESET":        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
+	printf "cmake:               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
+	printf "arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
+	printf "ccache:              "; [ "$found_ccache" = true      ] && printf "$yf\n" || printf "$nf\n"
+	printf "ninja:               "; [ "$found_ninja" = true       ] && printf "$yf\n" || printf "$nf\n"
+	printf "python:              "; [ "$found_python" = true      ] && printf "$yf\n" || printf "$nf\n"
+	printf "cppcheck:            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
+	printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
+	printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
 
-	printf ""$TTY_LOGO_5"flasher"$TTY_RESET":             "; 
+	printf "flasher:             "; 
 	if [ "$found_stflash" = true ]; then
 		printf ""$TTY_SUCCESS""$TTY_BOLD"st-flash"$TTY_RESET"\n"
 	elif [ "$found_stlink" = true ]; then
