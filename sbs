@@ -26,16 +26,16 @@
 ################################################################################
 
 # Terminal colors
-TTY_RESET="$(tput sgr0)"
-TTY_BOLD="$(tput bold)"
-TTY_SUCCESS="$(tput setaf 70)"
-TTY_ERROR="$(tput setaf 160)"
+TTY_RESET="\033[0m"
+TTY_BOLD="\033[1m"
+TTY_SUCCESS="\033[38;5;32m"
+TTY_ERROR="\033[38;5;160m"
 
-TTY_LOGO_1="$(tput setaf 200)"
-TTY_LOGO_2="$(tput setaf 164)"
-TTY_LOGO_3="$(tput setaf 93)"
-TTY_LOGO_4="$(tput setaf 57)"
-TTY_LOGO_5="$(tput setaf 27)"
+TTY_LOGO_1="\033[38;5;200m"
+TTY_LOGO_2="\033[38;5;164m"
+TTY_LOGO_3="\033[38;5;93m"
+TTY_LOGO_4="\033[38;5;57m"
+TTY_LOGO_5="\033[38;5;27m"
 
 # Error message
 ERR=""$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
@@ -102,26 +102,26 @@ print_configuration() {
 	for (( i=0; i<${#pre}; i++ )); do printf -- "-"; done;
 	printf "\n";
 
-	printf ""$TTY_LOGO_5"cmake"$TTY_RESET":               "; [ "$found_cmake" = true       ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"arm-miosix-eabi-g++"$TTY_RESET": "; [ "$found_miosixgpp" = true   ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"ccache"$TTY_RESET":              "; [ "$found_ccache" = true      ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"ninja"$TTY_RESET":               "; [ "$found_ninja" = true       ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"python"$TTY_RESET":              "; [ "$found_python" = true      ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"cppcheck"$TTY_RESET":            "; [ "$found_cppcheck" = true    ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"clang-tidy"$TTY_RESET":          "; [ "$found_clangtidy" = true   ] && echo "$yf" || echo "$nf"
-	printf ""$TTY_LOGO_5"clang-format"$TTY_RESET":        "; [ "$found_clangformat" = true ] && echo "$yf" || echo "$nf"
+	printf ""$TTY_LOGO_5"cmake"$TTY_RESET":               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"arm-miosix-eabi-g++"$TTY_RESET": "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"ccache"$TTY_RESET":              "; [ "$found_ccache" = true      ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"ninja"$TTY_RESET":               "; [ "$found_ninja" = true       ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"python"$TTY_RESET":              "; [ "$found_python" = true      ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"cppcheck"$TTY_RESET":            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"clang-tidy"$TTY_RESET":          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
+	printf ""$TTY_LOGO_5"clang-format"$TTY_RESET":        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
 
 	printf ""$TTY_LOGO_5"flasher"$TTY_RESET":             "; 
 	if [ "$found_stflash" = true ]; then
-		echo ""$TTY_SUCCESS""$TTY_BOLD"st-flash"$TTY_RESET""
+		printf ""$TTY_SUCCESS""$TTY_BOLD"st-flash"$TTY_RESET"\n"
 	elif [ "$found_stlink" = true ]; then
-		echo ""$TTY_SUCCESS""$TTY_BOLD"st-link"$TTY_RESET""
+		printf ""$TTY_SUCCESS""$TTY_BOLD"st-link"$TTY_RESET"\n"
 	else
-		echo "$nf"
+		printf "$nf"
 	fi
 
-	[ "$found_cmake" = true ]     || { echo ""$ERR": CMake must be installed"; return 1; }
-    [ "$found_miosixgpp" = true ] || { echo ""$ERR": arm-miosix-eabi-g++ must be installed"; return 1; }
+	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return 1; }
+    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return 1; }
 }
 
 ################################################################################
@@ -200,7 +200,7 @@ cmd_flags() {
         done
 
         if [ "$found" = false ]; then
-            echo ""$ERR": Unknown flag $flag"
+            printf ""$ERR": Unknown flag $flag\n"
             return 1
         fi
     done
@@ -213,7 +213,7 @@ cmd_args() {
     shift
     args=("${!1}")
     if [ "${#args[@]}" -gt "$max_args" ]; then
-        echo ""$ERR": Too many arguments"
+        printf ""$ERR": Too many arguments\n"
         return 1
     fi
 }
@@ -340,7 +340,7 @@ check_configured() {
         printf "  - Verbose: %s\n" "$config_verbose"
         printf "  - Host:    %s\n" "$config_host"
 
-        [ -f "$toolchain_file" ] || { echo ""$ERR": CMake Toolchain File for Miosix was not found"; return 1; }
+        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return 1; }
         
         declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
         defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
@@ -494,7 +494,7 @@ flash() {
     target=${args[0]}
 
     if [ -z "$target" ]; then
-        echo ""$ERR": No target specified"
+        printf ""$ERR": No target specified\n"
         return 1
     fi
 
@@ -522,7 +522,7 @@ flash() {
     elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
-        echo ""$ERR": No flashing software found!"
+        printf ""$ERR": No flashing software found!\n"
         return 1
     fi
 }
@@ -547,7 +547,7 @@ test() {
     target=${args[0]}
 
     if [ -z "$target" ]; then
-        echo ""$ERR": No target specified"
+        printf ""$ERR": No target specified\n"
         return 1
     fi
 
@@ -587,7 +587,7 @@ list() {
     list_type=${args[0]}
 
     if [ -z "$list_type" ]; then
-        echo ""$ERR": No list type specified"
+        printf ""$ERR": No list type specified\n"
         return 1
     fi
 
@@ -602,7 +602,7 @@ list() {
 
         cmake --build "$build_dir" "${opts[@]}" --target help-boards
     else
-        echo ""$ERR": Unknown list type $list_type"
+        printf ""$ERR": Unknown list type $list_type\n"
         return 1
     fi
 }
@@ -708,7 +708,7 @@ install() {
     step "autocomplete"
 
     if [ "$found_python" = false ]; then
-        echo ""$ERR": Python is required to install autocomplete"
+        printf ""$ERR": Python is required to install autocomplete\n"
         return 1
     fi
 
@@ -742,7 +742,7 @@ uninstall() {
     step "autocomplete"
 
     if [ "$found_python" = false ]; then
-        echo ""$ERR": Python is required to uninstall autocomplete"
+        printf ""$ERR": Python is required to uninstall autocomplete\n"
         return 1
     fi
 
@@ -754,7 +754,7 @@ uninstall() {
 ################################################################################
 
 init() {
-    echo "$banner"
+    printf "$banner"
 
     find_deps
     init_dirs
