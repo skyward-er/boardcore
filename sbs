@@ -694,8 +694,7 @@ install() {
 
     echo "Retrieving targets..."
 
-    targets=$(cmake --build "$build_dir" --target help \
-        | grep -o '^[^/]*\.bin' | cut -f 1 -d '.')
+    targets=$(list "targets")
 
     # split the targets on newlines
     IFS=$'\n' read -rd '' -a targets <<< "$targets"
