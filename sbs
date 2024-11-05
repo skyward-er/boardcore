@@ -489,7 +489,7 @@ flash() {
     cmake --build "$build_dir" "${opts[@]}" --target "$target"
     
     # check if the target is flashable
-    [ -f "$build_dir/$target.bin" ] || { echo "Error: target '$target' is not flashable"; return 1; }
+    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return 1; }
     
     # flash the target
     step "Flash"
