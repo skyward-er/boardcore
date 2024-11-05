@@ -498,7 +498,7 @@ flash() {
     [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
 
     if [ "$found_stflash" = true ]; then
-        st-flash --reset "${opts[@]}" write "$build_dir/$target.bin" 0x8000000 
+        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
     elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
