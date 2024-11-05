@@ -691,8 +691,6 @@ install() {
     config_host=false
     build_dir="$build_default_dir"
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
     echo "Retrieving targets..."
 
     targets=$(list "targets")
