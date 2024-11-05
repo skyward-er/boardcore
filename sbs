@@ -28,7 +28,8 @@
 # Terminal colors
 TTY_RESET="\033[0m"
 TTY_BOLD="\033[1m"
-TTY_SUCCESS="\033[38;5;32m"
+TTY_FOUND="\033[38;5;57m"
+TTY_SUCCESS="\033[38;5;40m"
 TTY_ERROR="\033[38;5;160m"
 
 TTY_LOGO_1="\033[38;5;200m"
@@ -99,9 +100,9 @@ print_configuration() {
 
 	printf "flasher:             "; 
 	if [ "$found_stflash" = true ]; then
-		printf ""$TTY_SUCCESS""$TTY_BOLD"st-flash"$TTY_RESET"\n"
+		printf ""$TTY_FOUND""$TTY_BOLD"st-flash"$TTY_RESET"\n"
 	elif [ "$found_stlink" = true ]; then
-		printf ""$TTY_SUCCESS""$TTY_BOLD"st-link"$TTY_RESET"\n"
+		printf ""$TTY_FOUND""$TTY_BOLD"st-link"$TTY_RESET"\n"
 	else
 		printf "$nf"
 	fi
