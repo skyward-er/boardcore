@@ -104,7 +104,7 @@ print_configuration() {
 	elif [ "$found_stlink" = true ]; then
 		printf ""$TTY_FOUND""$TTY_BOLD"st-link"$TTY_RESET"\n"
 	else
-		printf "$nf"
+		printf "$nf\n"
 	fi
 
 	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return 1; }
