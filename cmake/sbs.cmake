@@ -28,15 +28,6 @@ cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(boardcore)
 
-# Command to print all the available boards used by the sbs script
-string(REPLACE ";" "\\n" BOARDS_STR "${MIOSIX_BOARDS};${BOARDCORE_BOARDS}")
-add_custom_target(
-    help-boards
-    COMMAND printf ${BOARDS_STR}
-    COMMENT "All boards available:"
-    VERBATIM
-)
-
 # Function to link the Boardcore library to the target
 function(sbs_target TARGET OPT_BOARD)
     if(NOT OPT_BOARD)

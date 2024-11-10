@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2021 Skyward Experimental Rocketry
-# Author: Damiano Amatruda
+# Copyright (c) 2024 Skyward Experimental Rocketry
+# Author: Davide Basso
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,38 +21,235 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-print_banner() {
-    cat <<EOF
-+---------------------------------------------------------------+
-|   ____  _                                _                    |
-|  / ___|| | ___   ___      ____ _ _ __ __| |                   |
-|  \\___ \\| |/ / | | \\ \\ /\\ / / _\` | '__/ _\` |                   |
-|   ___) |   <| |_| |\\ V  V / (_| | | | (_| |                   |
-|  |____/|_|\\_\\\\__, | \\_/\\_/ \\__,_|_|  \\__,_|                   |
-|   ____       |___/    _   ____            _                   |
-|  | __ ) _   _(_) | __| | / ___| _   _ ___| |_ ___ _ __ ___    |
-|  |  _ \\| | | | | |/ _\` | \\___ \\| | | / __| __/ _ \\ '_ \` _ \\   |
-|  | |_) | |_| | | | (_| |  ___) | |_| \\__ \\ ||  __/ | | | | |  |
-|  |____/ \\__,_|_|_|\\__,_| |____/ \\__, |___/\\__\\___|_| |_| |_|  |
-+----------------------------------|___/-------------------v3.3-+
-EOF
+################################################################################
+##############################      Constants     ##############################
+################################################################################
+
+# Terminal colors
+TTY_RESET="\033[0m"
+TTY_BOLD="\033[1m"
+TTY_FOUND="\033[38;5;200m"
+TTY_SUCCESS="\033[38;5;40m"
+TTY_ERROR="\033[38;5;160m"
+
+TTY_LOGO_1="\033[38;5;200m"
+TTY_LOGO_2="\033[38;5;164m"
+TTY_LOGO_3="\033[38;5;93m"
+TTY_LOGO_4="\033[38;5;57m"
+TTY_LOGO_5="\033[38;5;27m"
+
+# Error message
+ERR="\n"$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
+
+# Filenames/Dirnames
+CMAKE_FILENAME="CMakeCache.txt"
+CTEST_FILENAME="CTestTestfile.cmake"
+DEBUG_FILENAME=".sbs_debug"
+VERBOSE_FILENAME=".sbs_verbose"
+BUILD_DEFAULT_DIRNAME="build"
+BUILD_HOST_DIRNAME="build-host"
+
+################################################################################
+##############################    Global States   ##############################
+################################################################################
+
+sbs_base=
+source_dir=
+build_default_dir=
+build_host_dir=
+toolchain_file=
+
+found_cmake=false
+found_miosixgpp=false
+found_ccache=false
+found_ninja=false
+found_python=false
+found_cppcheck=false
+found_clangtidy=false
+found_clangformat=false
+found_stflash=false
+found_stlink=false
+
+################################################################################
+##############################       Banner       ##############################
+################################################################################
+
+banner="
+$TTY_LOGO_1              _____ ____ _____                                  
+$TTY_LOGO_2 ___________ / ___// __ ) ___/  ________________________________
+$TTY_LOGO_3 __________  \__ \/ __  \__ \  _________________________________
+$TTY_LOGO_4 _________  ___/ / /_/ /__/ / ____________________________v4.0__
+$TTY_LOGO_5           /____/_____/____/                                        
+$TTY_RESET                                                                  
+"
+
+print_configuration() {
+	step "Dependencies"
+
+	yf=""$TTY_SUCCESS""$TTY_BOLD"Yes"$TTY_RESET""
+	nf=""$TTY_ERROR""$TTY_BOLD"No"$TTY_RESET""
+
+	printf "cmake:               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
+	printf "arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
+	printf "ccache:              "; [ "$found_ccache" = true      ] && printf "$yf\n" || printf "$nf\n"
+	printf "ninja:               "; [ "$found_ninja" = true       ] && printf "$yf\n" || printf "$nf\n"
+	printf "python:              "; [ "$found_python" = true      ] && printf "$yf\n" || printf "$nf\n"
+	printf "cppcheck:            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
+	printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
+	printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
+
+	printf "flasher:             "; 
+	if [ "$found_stflash" = true ]; then
+		printf ""$TTY_FOUND""$TTY_BOLD"st-flash"$TTY_RESET"\n"
+	elif [ "$found_stlink" = true ]; then
+		printf ""$TTY_FOUND""$TTY_BOLD"st-link"$TTY_RESET"\n"
+	else
+		printf "$nf\n"
+	fi
+
+	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return 1; }
+    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return 1; }
 }
 
-ohai() {
-    printf "\n${TTY_BLUE}==>${TTY_RESET}${TTY_BOLD} %s${TTY_RESET}\n" "$@"
+################################################################################
+##############################         CLI        ##############################
+################################################################################
+
+# Filter all the arguments that are flags
+# The syntax is: filter_flags "arg1" "arg2" ... "argN"
+# Returns a list of flags in the form "--flag=value" or "--flag"
+filter_flags() {
+    flags=()
+    prev_is_flag=false
+
+    for arg in "$@"; do
+        if [[ "$arg" == -* ]]; then
+            flags+=("$arg")
+            prev_is_flag=true
+        else
+            if [ "$prev_is_flag" = true ]; then
+                # if the previous argument was a flag, then this is a flag value
+                flags[-1]="${flags[-1]}=$arg"
+            fi
+
+            prev_is_flag=false
+        fi
+    done
+
+    echo "${flags[@]}"
 }
 
-init_dirs() {
-    sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
-    source_dir="$PWD"
-    build_default_dir="$source_dir/$BUILD_DEFAULT_DIRNAME"
-    build_host_dir="$source_dir/$BUILD_HOST_DIRNAME"
-    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/cmake/toolchain.cmake"
+
+# Filter all the arguments that are not flags
+filter_args() {
+    args=()
+    prev_is_flag=false
+
+    for arg in "$@"; do
+        if [[ "$arg" == -* ]]; then
+            prev_is_flag=true
+        elif [ "$prev_is_flag" = true ]; then
+            prev_is_flag=false
+        else
+            args+=("$arg")
+        fi
+    done
+
+    echo "${args[@]}"
 }
 
-find_deps() {
-    ohai "Find dependencies"
-    
+# Checks that no unknown flags are passed
+# The syntax is: cmd_flags "known_flags" "flags"
+cmd_flags() {    
+    known_flags=("${!1}")
+    flags=("${!2}")
+
+    for flag in "${flags[@]}"; do
+        # ignore ''
+        if [ -z "$flag" ]; then
+            continue
+        fi
+        
+        found=false
+        for known_flag in "${known_flags[@]}"; do
+            # if the know_flag is of type --flag=, allow flags with value
+            if [[ "$known_flag" == *= ]]; then
+                if [[ "$flag" == "$known_flag"* ]]; then
+                    found=true
+                    break
+                fi
+            else
+                if [ "$flag" == "$known_flag" ]; then
+                    found=true
+                    break
+                fi
+            fi
+        done
+
+        if [ "$found" = false ]; then
+            printf ""$ERR": Unknown flag $flag\n"
+            return 1
+        fi
+    done
+}
+
+# Checks that no more than a certain number of arguments are passed
+# The syntax is: cmd_args "max_args" "arg1" "arg2" ... "argN"
+cmd_args() {
+    max_args=$1
+    shift
+    args=("${!1}")
+    if [ "${#args[@]}" -gt "$max_args" ]; then
+        printf ""$ERR": Too many arguments\n"
+        return 1
+    fi
+}
+
+# Checks if a flag exists in the list of flags
+# The syntax is: flag_exists "flag" "flag1" "flag2" ... "flagN"
+flag_exists() {
+    flag=$1
+    shift
+    flags=("${!1}")
+
+    if [[ " ${flags[@]} " =~ " ${flag} " ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+# Get the value of a flag
+# The syntax is: get_flag_value "possible_flags" "flags"
+get_flag_value() {
+    possible_flags=("${!1}")
+    flags=("${!2}")
+
+    for flag in "${flags[@]}"; do
+        for possible_flag in "${possible_flags[@]}"; do
+            if [[ "$flag" == "$possible_flag"* ]]; then
+                # strip the value from the flag
+                echo "${flag#*=}"
+                return
+            fi
+        done
+    done
+}
+
+# Print a step message
+step() {
+	printf "\n"$TTY_LOGO_5""$TTY_BOLD"$1"$TTY_RESET"\n"
+	# Print - for every letter in the pre string
+	for (( i=0; i<${#1}; i++ )); do printf -- "-"; done;
+	printf "\n";
+}
+
+################################################################################
+##############################      Internals     ##############################
+################################################################################
+
+# Find all the dependencies
+find_deps() {    
     command -v cmake               > /dev/null 2>&1 && found_cmake=true
     command -v arm-miosix-eabi-g++ > /dev/null 2>&1 && found_miosixgpp=true
     command -v ccache              > /dev/null 2>&1 && found_ccache=true
@@ -63,57 +260,51 @@ find_deps() {
     command -v clang-format        > /dev/null 2>&1 && found_clangformat=true
     command -v st-flash            > /dev/null 2>&1 && found_stflash=true
     command -v ST-LINK_CLI.exe     > /dev/null 2>&1 && found_stlink=true
-    
-    printf "Found CMake: ";               [ "$found_cmake" = true ]       && echo "yes" || echo "no"
-    printf "Found arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true ]   && echo "yes" || echo "no"
-    printf "Found Ccache: ";              [ "$found_ccache" = true ]      && echo "yes" || echo "no"
-    printf "Found Ninja: ";               [ "$found_ninja" = true ]       && echo "yes" || echo "no"
-    printf "Found Python: ";              [ "$found_python" = true ]      && echo "yes" || echo "no"
-    printf "Found Cppcheck: ";            [ "$found_cppcheck" = true ]    && echo "yes" || echo "no"
-    printf "Found clang-tidy: ";          [ "$found_clangtidy" = true ]   && echo "yes" || echo "no"
-    printf "Found clang-format: ";        [ "$found_clangformat" = true ] && echo "yes" || echo "no"
-    printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" \
-    || { [ "$found_stlink" = true ] && echo "st-link" || echo "no"; }
-    
-    [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; return 1; }
-    [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; return 1; }
 }
 
-# Workaround: Disable tests in excluded subdirectories
-# See: https://gitlab.kitware.com/cmake/cmake/-/issues/20212
+# Initialize all the directories
+init_dirs() {
+    sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
+    source_dir="$PWD"
+    build_default_dir="$source_dir/$BUILD_DEFAULT_DIRNAME"
+    build_host_dir="$source_dir/$BUILD_HOST_DIRNAME"
+    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/cmake/toolchain.cmake"
+}
+
+# Get the build options for cmake
+# The syntax is: get_build_opts "opts" "jobs"
+get_build_opts() {
+    build_opts=()
+    jobs=$2
+
+    if [ -n "$jobs" ]; then
+        echo "- Building with $jobs jobs"
+        build_opts+=("-j $jobs")
+    fi
+}
+
+# workaround: disable tests in excluded subdirectories
+# see: https://gitlab.kitware.com/cmake/cmake/-/issues/20212
 cmake_disable_excluded_tests() {
-    declare build_dir="$1"
-    
+    build_dir="$build_host_dir"
+
     [ ! -f "$build_dir/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$build_dir/$CTEST_FILENAME"
 }
 
-configure() {
-    declare build_dir="$1"
-    
-    ohai "Configure"
-    
-    [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; return 1; }
-    
-    declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
-    defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
-    [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
-    [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
-    [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=(-DCMAKE_BUILD_TYPE=Release)
-    [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
-    
-    declare gen
-    [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
-    
-    cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
-    
-    { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
-    { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
-}
+################################################################################
+##############################     Subcommands    ##############################
+################################################################################
 
+# Check if the project is configured
+# The syntax is: check_configured "config_debug" "config_verbose" "config_host"
 check_configured() {
-    declare build_dir="$1"
+    build_dir="$1"
+    config_debug="$2"
+    config_verbose="$3"
+    config_host="$4"
+
+    to_reconfigure=false
     
-    declare to_reconfigure=false
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
         elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
@@ -129,318 +320,436 @@ check_configured() {
     fi
     
     if [ "$to_reconfigure" = true ]; then
-        configure "$build_dir"
+        step "Configure"
+
+        printf "Reconfiguring project with the following options:\n"
+        printf "  - Debug:   %s\n" "$config_debug"
+        printf "  - Verbose: %s\n" "$config_verbose"
+        printf "  - Host:    %s\n" "$config_host"
+
+        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return 1; }
+        
+        declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+        defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
+        [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
+        [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
+        [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=(-DCMAKE_BUILD_TYPE=Release)
+        [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
+        
+        declare gen
+        [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
+        
+        cmake -B "$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
+        
+        { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
+        { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
     fi
 }
 
+lint_copyright() {
+    step "Lint copyright"
+
+    "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
+}
+
+lint_find() {
+    step "Lint find"
+
+    "$sbs_base/scripts/linter.py" --find "$source_dir/src"
+}
+
+lint_clangtidy() {
+    build_dir="$1"
+    
+    step "Lint clang-tidy"
+
+    config_debug=false
+    config_verbose=false
+
+    defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1 \
+        --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
+    IFS=$'\n' read -rd '' -a incs < \
+        <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 \
+        | sed -n "s/^ /--extra-arg=-isystem/p")
+    
+    declare opts=()
+    [ "$to_edit" = true ] && opts+=(--fix-notes --fix-errors)
+    
+    find "$source_dir/src" \
+        -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+        -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" \
+        "${incs[@]}" "${opts[@]}" {} \;
+}
+
+lint_cppcheck() {
+    step "Lint cppcheck"
+
+    echo "Running cppcheck..."
+
+    cppcheck --language=c++ --std=c++14 --enable=all --inline-suppr \
+        --suppress=unmatchedSuppression --suppress=unusedFunction \
+        --suppress=missingInclude --error-exitcode=1 -q \
+        "$source_dir/src"
+}
+
+lint_clangformat() {
+    step "Lint clang-format"
+
+    echo "Running clang-format..."
+
+    opts=(--style=file --Werror --dry-run)
+
+    find "$source_dir/src" \
+    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+    -exec clang-format "${opts[@]}" {} \;
+}
+
+################################################################################
+##############################   Native Commands  ##############################
+################################################################################
+
 build() {
-    declare build_dir="$1"
-    declare target="$2"
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    jobs_flag=("-j" "--jobs")
+    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 1 args[@] || return
+
+    jobs=$(get_flag_value jobs_flag[@] flags[@])
+
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    config_host=false
+
+    build_dir="$build_default_dir"
+
+    target=${args[0]:-all}
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
     
-    check_configured "$build_dir" || return
-    
-    ohai "Build"
-    
-    declare -a opts
-    get_build_opts opts
+    step "Build"
+
+    declare opts
+    get_build_opts opts $jobs
     
     cmake --build "$build_dir" "${opts[@]}" --target "$target"
 }
 
-build_all() {
-    declare build_dir="$build_default_dir"
-    
-    build "$build_dir" all
-}
-
 clean() {
-    declare build_desc="$1"
-    declare build_dir="$2"
-    
-    ohai "Clean ($build_desc)"
-    
-    if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
-        declare -a opts
-        get_build_opts opts
-        
-        cmake --build "$build_dir" "${opts[@]}" --target clean
-    fi
-    
-    echo "Removing build folder..."
-    rm -rf "$build_dir"
-}
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
-clean_all() {
-    clean "Default" "$build_default_dir"
-    clean "Host" "$build_host_dir"
+    known_flags=()
+
+    step "Clean"
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 0 args[@] || return
+
+    echo "Cleaning build directories..."
+    rm -rf "$build_default_dir"
+    rm -rf "$build_host_dir"
 }
 
 flash() {
-    declare target="$1"
-    declare build_dir="$build_default_dir"
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    jobs_flag=("-j" "--jobs")
+    known_flags=("-d" "-v" "-r" "-j=" "--debug" "--verbose" "--reset" "--jobs=")
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 1 args[@] || return
+
+    build_dir="$build_default_dir"
+
+    jobs=$(get_flag_value jobs_flag[@] flags[@])
+
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
+    config_host=false
+
+    target=${args[0]}
+
+    if [ -z "$target" ]; then
+        printf ""$ERR": No target specified\n"
+        return 1
+    fi
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
     
-    build "$build_dir" "$target" || return
+    # build the target
+    step "Build"
+
+    declare opts
+    get_build_opts opts $jobs
     
-    ohai "Flash"
+    cmake --build "$build_dir" "${opts[@]}" --target "$target"
     
-    [ -f "$build_dir/$target.bin" ] || { echo "Error: target '$target' is not flashable"; return 1; }
+    # check if the target is flashable
+    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return 1; }
     
+    # flash the target
+    step "Flash"
+
+    flash_opts=()
+    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
+
     if [ "$found_stflash" = true ]; then
-        st-flash --reset write "$build_dir/$target.bin" 0x8000000
-        elif [ "$found_stlink" = true ]; then
+        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
+    elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
-        echo "Error: No flashing software found!"
+        printf ""$ERR": No flashing software found!\n"
         return 1
     fi
 }
 
-run_tests() {
-    declare target="$1"
-    declare build_dir="$build_host_dir"
-    
+test() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    jobs_flag=("-j" "--jobs")
+    known_flags=("-j=" "--jobs=")
+
+    cmd_flags know_flags[@] flags[@] || return
+    cmd_args 1 args[@] || return
+
+    config_debug=true
+    config_verbose=false
     config_host=true
+    build_dir="$build_host_dir"
+
+    jobs=$(get_flag_value jobs_flag[@] flags[@])
+
+    target=${args[0]}
+
+    if [ -z "$target" ]; then
+        printf ""$ERR": No target specified\n"
+        return 1
+    fi
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+
+    # build the target
+    step "Build"
+
+    declare opts
+    get_build_opts opts $jobs
     
-    build "$build_dir" "$target" || return
+    cmake --build "$build_dir" "${opts[@]}" --target "$target"
     
-    ohai "Test"
+    # run the tests
+    step "Test"
     
     cmake_disable_excluded_tests "$build_dir"
     ( cd "$build_dir" || return; ctest )
 }
 
 list() {
-    declare build_dir="$build_default_dir"
-    
-    check_configured "$build_dir" || return
-    
-    ohai "List targets"
-    
-    declare -a opts
-    get_build_opts opts
-    
-    echo "[1/1] All SBS targets available:"
-    cmake --build "$build_dir" "${opts[@]}" --target help \
-    | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    known_flags=()
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 1 args[@] || return
+
+    config_debug=false
+    config_verbose=false
+    config_host=false
+    build_dir="$build_default_dir"
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+
+    list_type=${args[0]}
+
+    if [ -z "$list_type" ]; then
+        printf ""$ERR": No list type specified\n"
+        return 1
+    fi
+
+    if [ "$list_type" = "targets" ]; then
+        cmake --build "$build_dir" --target help \
+            | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+    elif [ "$list_type" = "boards" ]; then
+        cmake --build "$build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
+    else
+        printf ""$ERR": Unknown list type $list_type\n"
+        return 1
+    fi
 }
 
-boards() {
-    declare build_dir="$build_default_dir"
-    
-    check_configured "$build_dir" || return
-    
-    ohai "List boards"
-    
-    declare -a opts
-    get_build_opts opts
-    
-    cmake --build "$build_dir" "${opts[@]}" --target help-boards
+lint() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    known_flags=()
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 0 args[@] || return
+
+    if [ "$found_python" = true ]; then
+        lint_copyright
+        lint_find
+    else
+        echo "Python not found, skipping copyright and find..."
+    fi
+
+    # Disable clang-tidy for now, as too many false positives
+    # if [ "$found_clangtidy" = true ]; then
+    #     lint_clangtidy "$build_default_dir"
+    # else
+    #     echo "Clang-tidy not found, skipping clang-tidy..."
+    # fi
+
+    if [ "$found_cppcheck" = true ]; then
+        lint_cppcheck
+    else
+        echo "Cppcheck not found, skipping cppcheck..."
+    fi
+
+    if [ "$found_clangformat" = true ]; then
+        lint_clangformat
+    else
+        echo "Clang-format not found, skipping clang-format..."
+    fi
 }
 
-lint_copyright() {
-    ohai "Lint (Copyright)"
-    
-    "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
-}
+format() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
-lint_find() {
-    ohai "Lint (Find)"
-    
-    "$sbs_base/scripts/linter.py" --find "$source_dir/src"
-}
+    known_flags=()
 
-lint_clangtidy() {
-    declare build_dir="$1"
-    
-    check_configured "$build_dir" || return
-    
-    ohai "Lint (clang-tidy)"
-    
-    defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1 \
-    --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
-    IFS=$'\n' read -rd '' -a incs < \
-    <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 \
-    | sed -n "s/^ /--extra-arg=-isystem/p")
-    
-    declare opts=()
-    [ "$to_edit" = true ] && opts+=(--fix-notes --fix-errors)
-    
-    find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" \
-    "${incs[@]}" "${opts[@]}" {} \;
-}
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 0 args[@] || return
 
-lint_cppcheck() {
-    ohai "Lint (Cppcheck)"
-    
-    declare -a opts=()
-    [ -n "$jobs" ] && opts+=("-j $jobs")
-    
-    cppcheck --language=c++ --std=c++14 --enable=all --inline-suppr \
-    --suppress=unmatchedSuppression --suppress=unusedFunction \
-    --suppress=missingInclude --error-exitcode=1 -q "${opts[@]}" \
-    "$source_dir/src"
-}
+    step "Format"
 
-lint_clangformat() {
-    declare to_edit="$1"
-    
-    ohai "Lint (clang-format)"
-    
-    declare -a opts=(--style=file --Werror)
-    [ "$to_edit" = true ] && opts+=(-i) || opts+=(--dry-run)
-    
+    echo "Running clang-format..."
+
+    opts=(--style=file --Werror -i)
+
     find "$source_dir/src" \
     -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
     -exec clang-format "${opts[@]}" {} \;
 }
 
-lint() {
-    declare to_edit="$1"
-    
-    if [ "$found_python" = true ]; then
-        lint_copyright
-        lint_find
+help() {
+    echo "Usage: sbs (command) <args> [options] "
+    echo ""
+    echo "Commands:"
+    echo " build     - Build the specified target"
+    echo "           -> <target=all> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
+    echo " flash     - Flash the specified target"
+    echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
+    echo " test      - Run the tests for the specified target"
+    echo "           -> <target> [-j | --jobs=<jobs>]"
+    echo " list      - List the available targets or boards"
+    echo "           -> <targets | boards>"
+    echo " clean     - Clean the build directory"
+    echo " lint      - Lint the source code"
+    echo " format    - Format the source code"
+    echo " install   - Install autocomplete"
+    echo " uninstall - Uninstall autocomplete"
+    echo ""
+    echo "Options:"
+    echo " -d, --debug:   Build in debug mode"
+    echo " -v, --verbose: Build in verbose mode"
+    echo " -r, --reset:   Reset the target before flashing"
+    echo " -j, --jobs:    Number of jobs to run in parallel"
+    echo ""
+}
+
+################################################################################
+##############################   Python Commands  ##############################
+################################################################################
+
+
+install() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    known_flags=()
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 0 args[@] || return
+
+    step "Install autocomplete"
+
+    if [ "$found_python" = false ]; then
+        printf ""$ERR": Python is required to install autocomplete\n"
+        return 1
     fi
-    
-    if [ "$found_clangtidy" = true ] && [ "$lint_clangtidy" = true ]; then
-        lint_clangtidy "$build_default_dir"
+
+    echo "Retrieving targets..."
+
+    targets=$(list "targets")
+
+    # split the targets on newlines
+    IFS=$'\n' read -rd '' -a targets <<< "$targets"
+
+    echo "Found ${#targets[@]} targets"
+
+    python "$sbs_base/scripts/autocomplete.py" "--install" "${targets[@]}"
+}
+
+uninstall() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+
+    known_flags=()
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 0 args[@] || return
+
+    step "Uninstall autocomplete"
+
+    if [ "$found_python" = false ]; then
+        printf ""$ERR": Python is required to uninstall autocomplete\n"
+        return 1
     fi
-    
-    if [ "$found_cppcheck" = true ]; then
-        lint_cppcheck
-    fi
-    
-    if [ "$found_clangformat" = true ]; then
-        lint_clangformat "$to_edit"
-    fi
+
+    python "$sbs_base/scripts/autocomplete.py" "--uninstall"
 }
 
-set_debug() {
-    config_debug=true
+################################################################################
+##############################        Main        ##############################
+################################################################################
+
+init_no_output() {
+    find_deps
+    init_dirs
 }
 
-set_verbose() {
-    config_verbose=true
+init() {
+    printf "$banner"
+
+    find_deps
+    init_dirs
+    print_configuration
 }
 
-set_jobs() {
-    jobs="$1"
-}
-
-get_build_opts() {
-    declare -n build_opts=$1
-    [ -n "$jobs" ] && build_opts=("-j $jobs")
-}
-
-set_clangtidy() {
-    lint_clangtidy=true
-}
-
-usage() {
-    echo
-    cat <<EOF
-Usage: $(basename "$0") [OPTIONS]
-
-OPTIONS:
-  General Options:
-    -h, --help            Show this help message and exit
-    -j JOBS, --jobs JOBS  Build or lint in parallel using a specific number of jobs
-    -l, --list            List all targets available
-    -r, --boards          List all boards available
-
-  Build Options:
-    -b TARGET, --build TARGET
-                          Build a specific target
-    -f TARGET, --flash TARGET
-                          Build and flash a specific target
-    -t TEST, --test TEST  Build a specific test natively and run it
-    -c, --clean           Clean the working tree
-    -u, --configure       Force configure and do not build
-    -d, --debug           Enable debug
-    -v, --verbose         Print a verbose output
-
-  Lint Options:
-    -n, --lint            Lint the code
-    -e, --edit            Lint and edit the code
-    --clang-tidy          Lint using also clang-tidy
-EOF
-}
-
-CMAKE_FILENAME="CMakeCache.txt"
-CTEST_FILENAME="CTestTestfile.cmake"
-DEBUG_FILENAME=".sbs_debug"
-VERBOSE_FILENAME=".sbs_verbose"
-BUILD_DEFAULT_DIRNAME="build"
-BUILD_HOST_DIRNAME="cmake-build-host"
-TTY_BLUE="\033[34m"
-TTY_BOLD="\033[1m"
-TTY_RESET="\033[0m"
-
-sbs_base=
-source_dir=
-build_default_dir=
-build_host_dir=
-toolchain_file=
-found_cmake=false
-found_miosixgpp=false
-found_ccache=false
-found_ninja=false
-found_python=false
-found_cppcheck=false
-found_clangtidy=false
-found_clangformat=false
-found_stflash=false
-found_stlink=false
-config_debug=false
-config_verbose=false
-config_host=false
-jobs=
-lint_clangtidy=false
-
-print_banner
-init_dirs
 
 for arg in "$@"; do
-    shift
-    case "$arg" in
-        --boards)     set -- "$@" "-r";;
-        --build)      set -- "$@" "-b";;
-        --clang-tidy) set_clangtidy;;
-        --clean)      set -- "$@" "-c";;
-        --configure)  set -- "$@" "-u";;
-        --debug)      set -- "$@" "-d";;
-        --edit)       set -- "$@" "-e";;
-        --flash)      set -- "$@" "-f";;
-        --help)       set -- "$@" "-h";;
-        --jobs)       set -- "$@" "-j";;
-        --lint)       set -- "$@" "-n";;
-        --list)       set -- "$@" "-l";;
-        --test)       set -- "$@" "-t";;
-        --verbose)    set -- "$@" "-v";;
-        *)            set -- "$@" "$arg"
+    case $arg in
+        build)     init; build "${@:2}"; exit ;;
+        clean)     init; clean "${@:2}"; exit ;;
+        flash)     init; flash "${@:2}"; exit ;;
+        test)      init; test  "${@:2}"; exit ;;
+        lint)      init; lint  "${@:2}"; exit ;;
+        format)    init; format; exit ;;
+        install)   init; install; exit ;;
+        uninstall) init; uninstall; exit ;;
+        list)      init_no_output; list  "${@:2}"; exit ;;
+        *)         help; exit ;;
     esac
 done
 
-while getopts b:cdef:hj:lnrt:uv opt; do
-    case "$opt" in
-        b) find_deps && build "$build_default_dir" "$OPTARG"; exit;;
-        c) find_deps && clean_all; exit;;
-        d) set_debug;;
-        e) find_deps && lint true; exit;;
-        f) find_deps && flash "$OPTARG"; exit;;
-        h) usage; exit 0;;
-        j) set_jobs "$OPTARG";;
-        l) find_deps && list; exit;;
-        n) find_deps && lint false; exit;;
-        r) find_deps && boards; exit;;
-        t) find_deps && run_tests "$OPTARG"; exit;;
-        u) find_deps && configure "$build_default_dir"; exit;;
-        v) set_verbose;;
-        ?) usage; exit 2;;
-    esac
-done
-shift $((OPTIND - 1))
-
-find_deps && build_all
+if [ "$#" -eq 0 ]; then
+    help
+fi
