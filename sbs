@@ -686,11 +686,6 @@ install() {
         return 1
     fi
 
-    config_debug=false
-    config_verbose=false
-    config_host=false
-    build_dir="$build_default_dir"
-
     echo "Retrieving targets..."
 
     targets=$(list "targets")
