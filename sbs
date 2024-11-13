@@ -42,6 +42,14 @@ TTY_LOGO_5="\033[38;5;27m"
 # Error message
 ERR="\n"$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
 
+# Error codes
+EPERM=1   # Operation not permitted
+ENOENT=2  # No such file or directory
+ENOEXEC=8 # Exec format error
+ENODEV=19 # No such device
+EINVAL=22 # Invalid argument
+ENOPKG=65 # Package not installed
+
 # Filenames/Dirnames
 CMAKE_FILENAME="CMakeCache.txt"
 CTEST_FILENAME="CTestTestfile.cmake"
@@ -108,8 +116,8 @@ print_configuration() {
 		printf "$nf\n"
 	fi
 
-	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return 1; }
-    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return 1; }
+	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return $ENOPKG; }
+    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return $ENOPKG; }
 }
 
 ################################################################################
@@ -189,7 +197,7 @@ cmd_flags() {
 
         if [ "$found" = false ]; then
             printf ""$ERR": Unknown flag $flag\n"
-            return 1
+            return $EINVAL
         fi
     done
 }
@@ -202,7 +210,7 @@ cmd_args() {
     args=("${!1}")
     if [ "${#args[@]}" -gt "$max_args" ]; then
         printf ""$ERR": Too many arguments\n"
-        return 1
+        return $EINVAL
     fi
 }
 
@@ -328,7 +336,7 @@ check_configured() {
         printf "  - Verbose: %s\n" "$config_verbose"
         printf "  - Host:    %s\n" "$config_host"
 
-        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return 1; }
+        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return $ENOPKG1; }
         
         declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
         defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
@@ -370,7 +378,7 @@ flash_impl() {
     reset="$3"
 
     # check if the target is flashable
-    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return 1; }
+    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return $ENOEXEC; }
     
     # flash the target
     step "Flash"
@@ -384,7 +392,7 @@ flash_impl() {
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
         printf ""$ERR": No flashing software found!\n"
-        return 1
+        return $ENOPKG
     fi
 }
 
@@ -511,7 +519,7 @@ flash() {
 
     if [ -z "$target" ]; then
         printf ""$ERR": No target specified\n"
-        return 1
+        return $ENOENT
     fi
 
     # build the target
@@ -546,7 +554,7 @@ run() {
 
     if [ -z "$target" ]; then
         printf ""$ERR": No target specified\n"
-        return 1
+        return $ENOENT
     fi
 
     build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
@@ -564,7 +572,7 @@ run() {
             device="/dev/ttyUSB0"
         else
             printf ""$ERR": No device specified and no default device found\n"
-            return 1
+            return $ENODEV
         fi
     fi
 
@@ -604,7 +612,7 @@ test() {
 
     if [ -z "$target" ]; then
         printf ""$ERR": No target specified\n"
-        return 1
+        return $ENOENT
     fi
 
     # build the target
@@ -637,7 +645,7 @@ list() {
 
     if [ -z "$list_type" ]; then
         printf ""$ERR": No list type specified\n"
-        return 1
+        return $EINVAL
     fi
 
     if [ "$list_type" = "targets" ]; then
@@ -647,7 +655,7 @@ list() {
         cmake --build "$build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
     else
         printf ""$ERR": Unknown list type $list_type\n"
-        return 1
+        return $EINVAL
     fi
 }
 
@@ -756,7 +764,7 @@ install() {
 
     if [ "$found_python" = false ]; then
         printf ""$ERR": Python is required to install autocomplete\n"
-        return 1
+        return $ENOPKG
     fi
 
     echo "Retrieving targets..."
@@ -784,7 +792,7 @@ uninstall() {
 
     if [ "$found_python" = false ]; then
         printf ""$ERR": Python is required to uninstall autocomplete\n"
-        return 1
+        return $ENOPKG
     fi
 
     python "$sbs_base/scripts/autocomplete.py" "--uninstall"
@@ -820,10 +828,11 @@ for arg in "$@"; do
         install)   init; install; exit ;;
         uninstall) init; uninstall; exit ;;
         list)      init_no_output; list  "${@:2}"; exit ;;
-        *)         help; exit ;;
+        *)         help; exit $EINVAL;;
     esac
 done
 
 if [ "$#" -eq 0 ]; then
     help
+    exit $EINVAL
 fi
