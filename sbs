@@ -160,7 +160,7 @@ filter_args() {
 
 # Checks that no unknown flags are passed
 # The syntax is: cmd_flags "known_flags" "flags"
-cmd_flags() {    
+cmd_flags() {
     known_flags=("${!1}")
     flags=("${!2}")
 
@@ -346,6 +346,47 @@ check_configured() {
     fi
 }
 
+build_impl() {
+    target="$1"
+    build_dir="$2"
+    config_debug="$3"
+    config_verbose="$4"
+    config_host="$5"
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+    
+    step "Build"
+
+    declare opts
+    get_build_opts opts $jobs
+
+    cmake --build "$build_dir" "${opts[@]}" --target "$target"
+}
+
+flash_impl() {
+    target="$1"
+    build_dir="$2"
+    reset="$3"
+
+    # check if the target is flashable
+    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return 1; }
+    
+    # flash the target
+    step "Flash"
+
+    declare -a flash_opts
+    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
+
+    if [ "$found_stflash" = true ]; then
+        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
+    elif [ "$found_stlink" = true ]; then
+        ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
+    else
+        printf ""$ERR": No flashing software found!\n"
+        return 1
+    fi
+}
+
 lint_copyright() {
     step "Lint copyright"
 
@@ -428,14 +469,7 @@ build() {
 
     target=${args[0]:-all}
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-    
-    step "Build"
-
-    declare opts
-    get_build_opts opts $jobs
-    
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host"
 }
 
 clean() {
@@ -479,33 +513,73 @@ flash() {
         return 1
     fi
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-    
     # build the target
-    step "Build"
-
-    declare opts
-    get_build_opts opts $jobs
-    
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
-    
-    # check if the target is flashable
-    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return 1; }
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
     
     # flash the target
-    step "Flash"
+    flash_impl "$target" "$build_dir" "$reset"
+}
 
-    flash_opts=()
-    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
+run() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
-    if [ "$found_stflash" = true ]; then
-        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
-    elif [ "$found_stlink" = true ]; then
-        ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
-    else
-        printf ""$ERR": No flashing software found!\n"
+    jobs_flag=("-j" "--jobs")
+    device_flag=("-D" "--device")
+    baudrate_flag=("-B" "--baudrate")
+    known_flags=("-d" "-v" "-r" "-D=" "-B=" "-j=" "--debug" "--verbose" "--reset" "--device=" "--baudrate=" "--jobs=")
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 1 args[@] || return
+
+    build_dir="$build_default_dir"
+
+    jobs=$(get_flag_value jobs_flag[@] flags[@])
+
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
+    config_host=false
+
+    target=${args[0]}
+
+    if [ -z "$target" ]; then
+        printf ""$ERR": No target specified\n"
         return 1
     fi
+
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+
+    flash_impl "$target" "$build_dir" "$reset" || return
+
+    device=$(get_flag_value device_flag[@] flags[@])
+    baudrate=$(get_flag_value baudrate_flag[@] flags[@])
+
+    # If no device was specified, try to find it based on what we commonly use
+    if [ -z "$device" ]; then
+        if [ -e "/dev/ttyACM0" ]; then
+            device="/dev/ttyACM0"
+        elif [ -e "/dev/ttyUSB0" ]; then
+            device="/dev/ttyUSB0"
+        else
+            printf ""$ERR": No device specified and no default device found\n"
+            return 1
+        fi
+    fi
+
+    # Set Skyward's default baudrate, if none was specified
+    if [ -z "$baudrate" ]; then
+        baudrate="115200"
+    fi
+
+    step "Run - $device @ $baudrate"
+
+    # tty devices use \r\n for newlines by default
+    # disable newlines on \r with `-icrnl` to avoid double newlines
+    stty --file $device $baudrate -icrnl || return
+    
+    # connect to the device
+    cat $device
 }
 
 test() {
@@ -532,16 +606,9 @@ test() {
         return 1
     fi
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
     # build the target
-    step "Build"
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
 
-    declare opts
-    get_build_opts opts $jobs
-    
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
-    
     # run the tests
     step "Test"
     
@@ -645,8 +712,11 @@ help() {
     echo "Commands:"
     echo " build     - Build the specified target"
     echo "           -> <target=all> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
-    echo " flash     - Flash the specified target"
+    echo " flash     - Build and flash the specified target"
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
+    echo " run       - Build and flash the specified target and connect to serial device"
+    echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
+    echo "                       [-D | --device=<device>] [-B | --baudrate=<baudrate>]"
     echo " test      - Run the tests for the specified target"
     echo "           -> <target> [-j | --jobs=<jobs>]"
     echo " list      - List the available targets or boards"
@@ -658,10 +728,12 @@ help() {
     echo " uninstall - Uninstall autocomplete"
     echo ""
     echo "Options:"
-    echo " -d, --debug:   Build in debug mode"
-    echo " -v, --verbose: Build in verbose mode"
-    echo " -r, --reset:   Reset the target before flashing"
-    echo " -j, --jobs:    Number of jobs to run in parallel"
+    echo " -d, --debug:    Build in debug mode"
+    echo " -v, --verbose:  Build in verbose mode"
+    echo " -r, --reset:    Reset the target before flashing"
+    echo " -j, --jobs:     Number of jobs to run in parallel"
+    echo " -D, --device:   Serial device to connect to (default: /dev/ttyACM0 or /dev/ttyUSB0)"
+    echo " -B, --baudrate: Baudrate for the serial device (default: 115200)"
     echo ""
 }
 
@@ -740,6 +812,7 @@ for arg in "$@"; do
         build)     init; build "${@:2}"; exit ;;
         clean)     init; clean "${@:2}"; exit ;;
         flash)     init; flash "${@:2}"; exit ;;
+        run)       init; run   "${@:2}"; exit ;;
         test)      init; test  "${@:2}"; exit ;;
         lint)      init; lint  "${@:2}"; exit ;;
         format)    init; format; exit ;;

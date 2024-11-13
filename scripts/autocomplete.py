@@ -33,6 +33,7 @@ COMMANDS = [
     "build",
     "clean",
     "flash",
+    "run",
     "list",
     "test",
     "lint",
@@ -40,7 +41,7 @@ COMMANDS = [
     "install",
     "uninstall",
 ]
-COMMANDS_WITH_TARGET = ["build", "flash", "test"]
+COMMANDS_WITH_TARGET = ["build", "flash", "run", "test"]
 
 
 def strip_extension(file: str):
