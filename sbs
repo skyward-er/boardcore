@@ -596,17 +596,18 @@ test() {
     IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     jobs_flag=("-j" "--jobs")
-    known_flags=("-j=" "--jobs=")
+    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
 
     cmd_flags know_flags[@] flags[@] || return
     cmd_args 1 args[@] || return
 
-    config_debug=true
-    config_verbose=false
-    config_host=true
     build_dir="$build_host_dir"
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
+
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    config_host=true
 
     target=${args[0]:-catch-tests-boardcore}
 
@@ -727,7 +728,7 @@ help() {
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
     echo "                       [-D | --device=<device>] [-B | --baudrate=<baudrate>]"
     echo " test      - Run the specified test. If none is specified, catch tests are run"
-    echo "           -> <target> [-j | --jobs=<jobs>]"
+    echo "           -> <target> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
     echo " list      - List the available targets or boards"
     echo "           -> <targets | boards>"
     echo " clean     - Clean the build directory"
