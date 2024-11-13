@@ -599,7 +599,7 @@ test() {
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
 
-    target=${args[0]}
+    target=${args[0]:-catch-tests-boardcore}
 
     if [ -z "$target" ]; then
         printf ""$ERR": No target specified\n"
@@ -710,14 +710,14 @@ help() {
     echo "Usage: sbs (command) <args> [options] "
     echo ""
     echo "Commands:"
-    echo " build     - Build the specified target"
+    echo " build     - Build the specified target. If none is specified, all targets are built"
     echo "           -> <target=all> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
     echo " flash     - Build and flash the specified target"
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
     echo " run       - Build and flash the specified target and connect to serial device"
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
     echo "                       [-D | --device=<device>] [-B | --baudrate=<baudrate>]"
-    echo " test      - Run the tests for the specified target"
+    echo " test      - Run the specified test. If none is specified, catch tests are run"
     echo "           -> <target> [-j | --jobs=<jobs>]"
     echo " list      - List the available targets or boards"
     echo "           -> <targets | boards>"
