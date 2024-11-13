@@ -66,7 +66,7 @@ build-debug:
     - cmake --version
     - ccache --version
     - ninja --version
-    - ./sbs --debug
+    - ./sbs build --debug
 
 build-release:
   stage: build
@@ -74,7 +74,7 @@ build-release:
     - cmake --version
     - ccache --version
     - ninja --version
-    - ./sbs
+    - ./sbs build
 
 logdecoder:
   stage: build
@@ -88,7 +88,7 @@ logdecoder:
 test:
   stage: test
   script:
-    - ./sbs --test catch-tests-boardcore
+    - ./sbs test
 
 # Stage documentation
 
