@@ -28,9 +28,10 @@
 # Terminal colors
 TTY_RESET="\033[0m"
 TTY_BOLD="\033[1m"
-TTY_FOUND="\033[38;5;200m"
-TTY_SUCCESS="\033[38;5;40m"
-TTY_ERROR="\033[38;5;160m"
+TTY_FOUND="\033[35m"
+TTY_SUCCESS="\033[32m"
+TTY_ERROR="\033[31m"
+TTY_STEP="\033[94m"
 
 TTY_LOGO_1="\033[38;5;200m"
 TTY_LOGO_2="\033[38;5;164m"
@@ -40,6 +41,14 @@ TTY_LOGO_5="\033[38;5;27m"
 
 # Error message
 ERR="\n"$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
+
+# Error codes
+EPERM=1   # Operation not permitted
+ENOENT=2  # No such file or directory
+ENOEXEC=8 # Exec format error
+ENODEV=19 # No such device
+EINVAL=22 # Invalid argument
+ENOPKG=65 # Package not installed
 
 # Filenames/Dirnames
 CMAKE_FILENAME="CMakeCache.txt"
@@ -107,8 +116,8 @@ print_configuration() {
 		printf "$nf\n"
 	fi
 
-	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return 1; }
-    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return 1; }
+	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return $ENOPKG; }
+    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return $ENOPKG; }
 }
 
 ################################################################################
@@ -160,7 +169,7 @@ filter_args() {
 
 # Checks that no unknown flags are passed
 # The syntax is: cmd_flags "known_flags" "flags"
-cmd_flags() {    
+cmd_flags() {
     known_flags=("${!1}")
     flags=("${!2}")
 
@@ -188,7 +197,7 @@ cmd_flags() {
 
         if [ "$found" = false ]; then
             printf ""$ERR": Unknown flag $flag\n"
-            return 1
+            return $EINVAL
         fi
     done
 }
@@ -201,7 +210,7 @@ cmd_args() {
     args=("${!1}")
     if [ "${#args[@]}" -gt "$max_args" ]; then
         printf ""$ERR": Too many arguments\n"
-        return 1
+        return $EINVAL
     fi
 }
 
@@ -238,7 +247,7 @@ get_flag_value() {
 
 # Print a step message
 step() {
-	printf "\n"$TTY_LOGO_5""$TTY_BOLD"$1"$TTY_RESET"\n"
+	printf "\n"$TTY_STEP""$TTY_BOLD"$1"$TTY_RESET"\n"
 	# Print - for every letter in the pre string
 	for (( i=0; i<${#1}; i++ )); do printf -- "-"; done;
 	printf "\n";
@@ -327,7 +336,7 @@ check_configured() {
         printf "  - Verbose: %s\n" "$config_verbose"
         printf "  - Host:    %s\n" "$config_host"
 
-        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return 1; }
+        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return $ENOPKG1; }
         
         declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
         defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
@@ -343,6 +352,47 @@ check_configured() {
         
         { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
         { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
+    fi
+}
+
+build_impl() {
+    target="$1"
+    build_dir="$2"
+    config_debug="$3"
+    config_verbose="$4"
+    config_host="$5"
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+    
+    step "Build"
+
+    declare opts
+    get_build_opts opts $jobs
+
+    cmake --build "$build_dir" "${opts[@]}" --target "$target"
+}
+
+flash_impl() {
+    target="$1"
+    build_dir="$2"
+    reset="$3"
+
+    # check if the target is flashable
+    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return $ENOEXEC; }
+    
+    # flash the target
+    step "Flash"
+
+    declare -a flash_opts
+    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
+
+    if [ "$found_stflash" = true ]; then
+        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
+    elif [ "$found_stlink" = true ]; then
+        ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
+    else
+        printf ""$ERR": No flashing software found!\n"
+        return $ENOPKG
     fi
 }
 
@@ -428,14 +478,7 @@ build() {
 
     target=${args[0]:-all}
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-    
-    step "Build"
-
-    declare opts
-    get_build_opts opts $jobs
-    
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host"
 }
 
 clean() {
@@ -476,36 +519,76 @@ flash() {
 
     if [ -z "$target" ]; then
         printf ""$ERR": No target specified\n"
-        return 1
+        return $ENOENT
     fi
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-    
     # build the target
-    step "Build"
-
-    declare opts
-    get_build_opts opts $jobs
-    
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
-    
-    # check if the target is flashable
-    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return 1; }
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
     
     # flash the target
-    step "Flash"
+    flash_impl "$target" "$build_dir" "$reset"
+}
 
-    flash_opts=()
-    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
+run() {
+    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
+    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
-    if [ "$found_stflash" = true ]; then
-        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
-    elif [ "$found_stlink" = true ]; then
-        ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
-    else
-        printf ""$ERR": No flashing software found!\n"
-        return 1
+    jobs_flag=("-j" "--jobs")
+    device_flag=("-D" "--device")
+    baudrate_flag=("-B" "--baudrate")
+    known_flags=("-d" "-v" "-r" "-D=" "-B=" "-j=" "--debug" "--verbose" "--reset" "--device=" "--baudrate=" "--jobs=")
+
+    cmd_flags known_flags[@] flags[@] || return
+    cmd_args 1 args[@] || return
+
+    build_dir="$build_default_dir"
+
+    jobs=$(get_flag_value jobs_flag[@] flags[@])
+
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
+    config_host=false
+
+    target=${args[0]}
+
+    if [ -z "$target" ]; then
+        printf ""$ERR": No target specified\n"
+        return $ENOENT
     fi
+
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+
+    flash_impl "$target" "$build_dir" "$reset" || return
+
+    device=$(get_flag_value device_flag[@] flags[@])
+    baudrate=$(get_flag_value baudrate_flag[@] flags[@])
+
+    # If no device was specified, try to find it based on what we commonly use
+    if [ -z "$device" ]; then
+        if [ -e "/dev/ttyACM0" ]; then
+            device="/dev/ttyACM0"
+        elif [ -e "/dev/ttyUSB0" ]; then
+            device="/dev/ttyUSB0"
+        else
+            printf ""$ERR": No device specified and no default device found\n"
+            return $ENODEV
+        fi
+    fi
+
+    # Set Skyward's default baudrate, if none was specified
+    if [ -z "$baudrate" ]; then
+        baudrate="115200"
+    fi
+
+    step "Run - $device @ $baudrate"
+
+    # tty devices use \r\n for newlines by default
+    # disable newlines on \r with `-icrnl` to avoid double newlines
+    stty --file $device $baudrate -icrnl || return
+    
+    # connect to the device
+    cat $device
 }
 
 test() {
@@ -513,35 +596,29 @@ test() {
     IFS=' ' read -r -a args <<< "$(filter_args "$@")"
 
     jobs_flag=("-j" "--jobs")
-    known_flags=("-j=" "--jobs=")
+    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
 
     cmd_flags know_flags[@] flags[@] || return
     cmd_args 1 args[@] || return
 
-    config_debug=true
-    config_verbose=false
-    config_host=true
     build_dir="$build_host_dir"
 
     jobs=$(get_flag_value jobs_flag[@] flags[@])
 
-    target=${args[0]}
+    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
+    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
+    config_host=true
+
+    target=${args[0]:-catch-tests-boardcore}
 
     if [ -z "$target" ]; then
         printf ""$ERR": No target specified\n"
-        return 1
+        return $ENOENT
     fi
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
     # build the target
-    step "Build"
+    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
 
-    declare opts
-    get_build_opts opts $jobs
-    
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
-    
     # run the tests
     step "Test"
     
@@ -569,7 +646,7 @@ list() {
 
     if [ -z "$list_type" ]; then
         printf ""$ERR": No list type specified\n"
-        return 1
+        return $EINVAL
     fi
 
     if [ "$list_type" = "targets" ]; then
@@ -579,7 +656,7 @@ list() {
         cmake --build "$build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
     else
         printf ""$ERR": Unknown list type $list_type\n"
-        return 1
+        return $EINVAL
     fi
 }
 
@@ -643,12 +720,15 @@ help() {
     echo "Usage: sbs (command) <args> [options] "
     echo ""
     echo "Commands:"
-    echo " build     - Build the specified target"
+    echo " build     - Build the specified target. If none is specified, all targets are built"
     echo "           -> <target=all> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
-    echo " flash     - Flash the specified target"
+    echo " flash     - Build and flash the specified target"
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
-    echo " test      - Run the tests for the specified target"
-    echo "           -> <target> [-j | --jobs=<jobs>]"
+    echo " run       - Build and flash the specified target and connect to serial device"
+    echo "           -> <target> [-d | --debug] [-v | --verbose] [-r | --reset] [-j | --jobs=<jobs>]"
+    echo "                       [-D | --device=<device>] [-B | --baudrate=<baudrate>]"
+    echo " test      - Run the specified test. If none is specified, catch tests are run"
+    echo "           -> <target> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
     echo " list      - List the available targets or boards"
     echo "           -> <targets | boards>"
     echo " clean     - Clean the build directory"
@@ -658,10 +738,12 @@ help() {
     echo " uninstall - Uninstall autocomplete"
     echo ""
     echo "Options:"
-    echo " -d, --debug:   Build in debug mode"
-    echo " -v, --verbose: Build in verbose mode"
-    echo " -r, --reset:   Reset the target before flashing"
-    echo " -j, --jobs:    Number of jobs to run in parallel"
+    echo " -d, --debug:    Build in debug mode"
+    echo " -v, --verbose:  Build in verbose mode"
+    echo " -r, --reset:    Reset the target before flashing"
+    echo " -j, --jobs:     Number of jobs to run in parallel"
+    echo " -D, --device:   Serial device to connect to (default: /dev/ttyACM0 or /dev/ttyUSB0)"
+    echo " -B, --baudrate: Baudrate for the serial device (default: 115200)"
     echo ""
 }
 
@@ -683,7 +765,7 @@ install() {
 
     if [ "$found_python" = false ]; then
         printf ""$ERR": Python is required to install autocomplete\n"
-        return 1
+        return $ENOPKG
     fi
 
     echo "Retrieving targets..."
@@ -711,7 +793,7 @@ uninstall() {
 
     if [ "$found_python" = false ]; then
         printf ""$ERR": Python is required to uninstall autocomplete\n"
-        return 1
+        return $ENOPKG
     fi
 
     python "$sbs_base/scripts/autocomplete.py" "--uninstall"
@@ -740,16 +822,18 @@ for arg in "$@"; do
         build)     init; build "${@:2}"; exit ;;
         clean)     init; clean "${@:2}"; exit ;;
         flash)     init; flash "${@:2}"; exit ;;
+        run)       init; run   "${@:2}"; exit ;;
         test)      init; test  "${@:2}"; exit ;;
         lint)      init; lint  "${@:2}"; exit ;;
         format)    init; format; exit ;;
         install)   init; install; exit ;;
         uninstall) init; uninstall; exit ;;
         list)      init_no_output; list  "${@:2}"; exit ;;
-        *)         help; exit ;;
+        *)         help; exit $EINVAL;;
     esac
 done
 
 if [ "$#" -eq 0 ]; then
     help
+    exit $EINVAL
 fi
