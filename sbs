@@ -449,9 +449,17 @@ lint_clangformat() {
 
     opts=(--style=file --Werror --dry-run)
 
-    find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-format "${opts[@]}" {} \;
+    # find all the source files
+    declare files=$(find "$source_dir/src" \
+    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \))
+
+    # count files and spread them evenly across cores: files / nproc + 1
+    declare files_per_proc=$(
+        echo "$files" | wc -l | \
+        xargs -I {} bash -c "expr \( {} / $(nproc) \) + 1"
+    )
+
+    echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
 }
 
 ################################################################################
@@ -711,9 +719,17 @@ format() {
 
     opts=(--style=file --Werror -i)
 
-    find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-format "${opts[@]}" {} \;
+    # find all the source files
+    declare files=$(find "$source_dir/src" \
+    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \))
+
+    # count files and spread them evenly across cores: files / nproc + 1
+    declare files_per_proc=$(
+        echo "$files" | wc -l | \
+        xargs -I {} bash -c "expr \( {} / $(nproc) \) + 1"
+    )
+
+    echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
 }
 
 help() {
