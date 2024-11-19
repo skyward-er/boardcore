@@ -640,14 +640,14 @@ list() {
     config_host=false
     build_dir="$build_default_dir"
 
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
     list_type=${args[0]}
 
     if [ -z "$list_type" ]; then
         printf ""$ERR": No list type specified\n"
         return $EINVAL
     fi
+
+    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" &> /dev/null || return
 
     if [ "$list_type" = "targets" ]; then
         cmake --build "$build_dir" --target help \
