@@ -688,9 +688,13 @@ lint() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
+    declare ret=0
+
     if [ "$found_python" = true ]; then
         lint_copyright
+        [ $? -ne 0 ] && ret=-1
         lint_find
+        [ $? -ne 0 ] && ret=-1
     else
         echo "Python not found, skipping copyright and find..."
     fi
@@ -704,15 +708,19 @@ lint() {
 
     if [ "$found_cppcheck" = true ]; then
         lint_cppcheck
+        [ $? -ne 0 ] && ret=-1
     else
         echo "Cppcheck not found, skipping cppcheck..."
     fi
 
     if [ "$found_clangformat" = true ]; then
         lint_clangformat
+        [ $? -ne 0 ] && ret=-1
     else
         echo "Clang-format not found, skipping clang-format..."
     fi
+
+    return $ret
 }
 
 format() {
