@@ -819,7 +819,8 @@ install() {
 
     echo "Found ${#targets[@]} targets"
 
-    python "$sbs_base/scripts/autocomplete.py" "--install" "${targets[@]}"
+    echo "Installing completion files..."
+    sudo python "$sbs_base/scripts/autocomplete.py" "--install" "${targets[@]}"
 }
 
 uninstall() {
@@ -838,7 +839,8 @@ uninstall() {
         return $ENOPKG
     fi
 
-    python "$sbs_base/scripts/autocomplete.py" "--uninstall"
+    echo "Uninstalling completion files..."
+    sudo python "$sbs_base/scripts/autocomplete.py" "--uninstall"
 }
 
 ################################################################################
