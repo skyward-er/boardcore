@@ -84,12 +84,12 @@ found_stlink=false
 ################################################################################
 
 banner="
-$TTY_LOGO_1              _____ ____ _____                                  
+$TTY_LOGO_1              _____ ____ _____
 $TTY_LOGO_2 ___________ / ___// __ ) ___/  ________________________________
 $TTY_LOGO_3 __________  \__ \/ __  \__ \  _________________________________
 $TTY_LOGO_4 _________  ___/ / /_/ /__/ / ____________________________v4.0__
-$TTY_LOGO_5           /____/_____/____/                                        
-$TTY_RESET                                                                  
+$TTY_LOGO_5           /____/_____/____/
+$TTY_RESET
 "
 
 print_configuration() {
@@ -107,7 +107,7 @@ print_configuration() {
 	printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
 	printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
 
-	printf "flasher:             "; 
+	printf "flasher:             ";
 	if [ "$found_stflash" = true ]; then
 		printf ""$TTY_FOUND""$TTY_BOLD"st-flash"$TTY_RESET"\n"
 	elif [ "$found_stlink" = true ]; then
@@ -115,9 +115,16 @@ print_configuration() {
 	else
 		printf "$nf\n"
 	fi
+}
 
-	[ "$found_cmake" = true ]     || { printf ""$ERR": CMake must be installed\n"; return $ENOPKG; }
-    [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return $ENOPKG; }
+check_build() {
+    declare host_build=$1
+
+    [ "$found_cmake" = true ] || { printf ""$ERR": CMake must be installed\n"; return $ENOPKG; }
+
+    if [ "$host_build" = false ]; then
+        [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return $ENOPKG; }
+    fi
 }
 
 ################################################################################
@@ -178,7 +185,7 @@ cmd_flags() {
         if [ -z "$flag" ]; then
             continue
         fi
-        
+
         found=false
         for known_flag in "${known_flags[@]}"; do
             # if the know_flag is of type --flag=, allow flags with value
@@ -258,7 +265,7 @@ step() {
 ################################################################################
 
 # Find all the dependencies
-find_deps() {    
+find_deps() {
     command -v cmake               > /dev/null 2>&1 && found_cmake=true
     command -v arm-miosix-eabi-g++ > /dev/null 2>&1 && found_miosixgpp=true
     command -v ccache              > /dev/null 2>&1 && found_ccache=true
@@ -313,7 +320,7 @@ check_configured() {
     config_host="$4"
 
     to_reconfigure=false
-    
+
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
         elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
@@ -327,7 +334,7 @@ check_configured() {
             to_reconfigure=true
         fi
     fi
-    
+
     if [ "$to_reconfigure" = true ]; then
         step "Configure"
 
@@ -337,19 +344,19 @@ check_configured() {
         printf "  - Host:    %s\n" "$config_host"
 
         [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return $ENOPKG1; }
-        
+
         declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
         defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
         [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
         [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
         [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=(-DCMAKE_BUILD_TYPE=Release)
         [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
-        
+
         declare gen
         [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
-        
+
         cmake -B "$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
-        
+
         { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
         { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
     fi
@@ -362,8 +369,10 @@ build_impl() {
     config_verbose="$4"
     config_host="$5"
 
+    check_build "$config_host" || return
+
     check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-    
+
     step "Build"
 
     declare opts
@@ -379,7 +388,7 @@ flash_impl() {
 
     # check if the target is flashable
     [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return $ENOEXEC; }
-    
+
     # flash the target
     step "Flash"
 
@@ -387,7 +396,7 @@ flash_impl() {
     [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
 
     if [ "$found_stflash" = true ]; then
-        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000 
+        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000
     elif [ "$found_stlink" = true ]; then
         ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
     else
@@ -410,7 +419,7 @@ lint_find() {
 
 lint_clangtidy() {
     build_dir="$1"
-    
+
     step "Lint clang-tidy"
 
     config_debug=false
@@ -421,10 +430,10 @@ lint_clangtidy() {
     IFS=$'\n' read -rd '' -a incs < \
         <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 \
         | sed -n "s/^ /--extra-arg=-isystem/p")
-    
+
     declare opts=()
     [ "$to_edit" = true ] && opts+=(--fix-notes --fix-errors)
-    
+
     find "$source_dir/src" \
         -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
         -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" \
@@ -449,9 +458,17 @@ lint_clangformat() {
 
     opts=(--style=file --Werror --dry-run)
 
-    find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-format "${opts[@]}" {} \;
+    # find all the source files
+    declare files=$(find "$source_dir/src" \
+    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \))
+
+    # count files and spread them evenly across cores: files / nproc + 1
+    declare files_per_proc=$(
+        echo "$files" | wc -l | \
+        xargs -I {} bash -c "expr \( {} / $(nproc) \) + 1"
+    )
+
+    echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
 }
 
 ################################################################################
@@ -524,7 +541,7 @@ flash() {
 
     # build the target
     build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-    
+
     # flash the target
     flash_impl "$target" "$build_dir" "$reset"
 }
@@ -586,7 +603,7 @@ run() {
     # tty devices use \r\n for newlines by default
     # disable newlines on \r with `-icrnl` to avoid double newlines
     stty --file $device $baudrate -icrnl || return
-    
+
     # connect to the device
     cat $device
 }
@@ -621,7 +638,7 @@ test() {
 
     # run the tests
     step "Test"
-    
+
     cmake_disable_excluded_tests "$build_dir"
     ( cd "$build_dir" || return; ctest )
 }
@@ -647,6 +664,8 @@ list() {
         return $EINVAL
     fi
 
+    check_build "$config_host" || return
+
     check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" &> /dev/null || return
 
     if [ "$list_type" = "targets" ]; then
@@ -669,9 +688,13 @@ lint() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
+    declare ret=0
+
     if [ "$found_python" = true ]; then
         lint_copyright
+        [ $? -ne 0 ] && ret=-1
         lint_find
+        [ $? -ne 0 ] && ret=-1
     else
         echo "Python not found, skipping copyright and find..."
     fi
@@ -685,15 +708,19 @@ lint() {
 
     if [ "$found_cppcheck" = true ]; then
         lint_cppcheck
+        [ $? -ne 0 ] && ret=-1
     else
         echo "Cppcheck not found, skipping cppcheck..."
     fi
 
     if [ "$found_clangformat" = true ]; then
         lint_clangformat
+        [ $? -ne 0 ] && ret=-1
     else
         echo "Clang-format not found, skipping clang-format..."
     fi
+
+    return $ret
 }
 
 format() {
@@ -705,15 +732,28 @@ format() {
     cmd_flags known_flags[@] flags[@] || return
     cmd_args 0 args[@] || return
 
+    if [ "$found_clangformat" = false ]; then
+        printf ""$ERR": clang-format must be installed\n"
+        return $ENOPKG
+    fi
+
     step "Format"
 
     echo "Running clang-format..."
 
     opts=(--style=file --Werror -i)
 
-    find "$source_dir/src" \
-    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-    -exec clang-format "${opts[@]}" {} \;
+    # find all the source files
+    declare files=$(find "$source_dir/src" \
+    -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \))
+
+    # count files and spread them evenly across cores: files / nproc + 1
+    declare files_per_proc=$(
+        echo "$files" | wc -l | \
+        xargs -I {} bash -c "expr \( {} / $(nproc) \) + 1"
+    )
+
+    echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
 }
 
 help() {
@@ -771,13 +811,16 @@ install() {
     echo "Retrieving targets..."
 
     targets=$(list "targets")
+    declare ret=$?
+    [ $ret -ne 0 ] && printf "$targets\n" && return $ret
 
     # split the targets on newlines
     IFS=$'\n' read -rd '' -a targets <<< "$targets"
 
     echo "Found ${#targets[@]} targets"
 
-    python "$sbs_base/scripts/autocomplete.py" "--install" "${targets[@]}"
+    echo "Installing completion files..."
+    sudo python "$sbs_base/scripts/autocomplete.py" "--install" "${targets[@]}"
 }
 
 uninstall() {
@@ -796,44 +839,41 @@ uninstall() {
         return $ENOPKG
     fi
 
-    python "$sbs_base/scripts/autocomplete.py" "--uninstall"
+    echo "Uninstalling completion files..."
+    sudo python "$sbs_base/scripts/autocomplete.py" "--uninstall"
 }
 
 ################################################################################
 ##############################        Main        ##############################
 ################################################################################
 
-init_no_output() {
-    find_deps
-    init_dirs
-}
-
-init() {
-    printf "$banner"
-
-    find_deps
-    init_dirs
-    print_configuration
-}
-
-
-for arg in "$@"; do
-    case $arg in
-        build)     init; build "${@:2}"; exit ;;
-        clean)     init; clean "${@:2}"; exit ;;
-        flash)     init; flash "${@:2}"; exit ;;
-        run)       init; run   "${@:2}"; exit ;;
-        test)      init; test  "${@:2}"; exit ;;
-        lint)      init; lint  "${@:2}"; exit ;;
-        format)    init; format; exit ;;
-        install)   init; install; exit ;;
-        uninstall) init; uninstall; exit ;;
-        list)      init_no_output; list  "${@:2}"; exit ;;
-        *)         help; exit $EINVAL;;
-    esac
-done
-
+# exit immediately if no argument was provided
 if [ "$#" -eq 0 ]; then
     help
     exit $EINVAL
 fi
+
+welcome() {
+    printf "$banner"
+    print_configuration
+}
+
+# populate global variables for all commands
+find_deps
+init_dirs
+
+for arg in "$@"; do
+    case $arg in
+        build)     welcome; build "${@:2}"; exit ;;
+        clean)     welcome; clean "${@:2}"; exit ;;
+        flash)     welcome; flash "${@:2}"; exit ;;
+        run)       welcome; run   "${@:2}"; exit ;;
+        test)      welcome; test  "${@:2}"; exit ;;
+        lint)      welcome; lint  "${@:2}"; exit ;;
+        format)    welcome; format; exit ;;
+        install)   welcome; install; exit ;;
+        uninstall) welcome; uninstall; exit ;;
+        list)      list  "${@:2}"; exit ;;
+        *)         help; exit $EINVAL;;
+    esac
+done
