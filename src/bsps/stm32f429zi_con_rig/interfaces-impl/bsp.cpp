@@ -226,6 +226,7 @@ void IRQbspInit()
     btns::release::mode(Mode::INPUT);
     btns::detach::mode(Mode::INPUT);
     btns::tars::mode(Mode::INPUT);
+    btns::nitrogen::mode(Mode::INPUT);
     btns::arm::mode(Mode::INPUT);
 
     radio::cs::mode(Mode::OUTPUT);

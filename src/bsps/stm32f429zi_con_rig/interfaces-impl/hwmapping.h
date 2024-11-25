@@ -45,13 +45,15 @@ using mosi = Gpio<GPIOA_BASE, 7>;
 
 namespace btns
 {
-using ignition = Gpio<GPIOB_BASE, 4>;
-using filling  = Gpio<GPIOE_BASE, 6>;
-using venting  = Gpio<GPIOE_BASE, 4>;
-using release  = Gpio<GPIOG_BASE, 9>;
-using detach   = Gpio<GPIOD_BASE, 7>;
-using tars     = Gpio<GPIOD_BASE, 5>;
-using arm      = Gpio<GPIOE_BASE, 2>;
+using n2o_filling = Gpio<GPIOE_BASE, 6>;
+using n2o_release = Gpio<GPIOE_BASE, 4>;
+using n2_release  = Gpio<GPIOG_BASE, 9>;
+using n2_venting  = Gpio<GPIOD_BASE, 7>;
+using n2_detach   = Gpio<GPIOD_BASE, 5>;
+using n2_filling  = Gpio<GPIOG_BASE, 11>;
+using nitrogen    = Gpio<GPIOD_BASE, 3>;
+using arm         = Gpio<GPIOE_BASE, 2>;
+using ignition    = Gpio<GPIOB_BASE, 4>;
 }  // namespace btns
 
 namespace radio
