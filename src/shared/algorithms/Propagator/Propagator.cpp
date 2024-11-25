@@ -52,9 +52,13 @@ void Propagator::step()
                  : oldState);
 
     // Update Position propagating it with velocity
-    state.x_prop = state.x_prop + state.v_prop * updatePeriod;
+    state.setXProp(state.getXProp() + state.getVProp() * updatePeriod);
     state.nPropagations++;
     state.timestamp = TimestampTimer::getTimestamp();
+
+    // Log propagator state
+    PropagatorState logState(state);
+    Boardcore::Logger::getInstance().log(logState);
 }
 
 void Propagator::setRocketNasState(const NASState& newRocketNasState)
