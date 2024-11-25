@@ -31,50 +31,22 @@ namespace Boardcore
 {
 
 /**
- * @brief Struct containing the state of the propagator. Stores the timestamp of
- * the propagation, the number of propagations since the last NAS rocket packet
- * and the propagated NAS state already divided in significant vectors so that
- * computations with the NAS state are easier.
- * It also exposes a method to retrieve the propagated NAS state as a NASState
- * structure.
+ * @brief State of the propagator, taking into account the prediction steps (0
+ * if true NAS state) and the propagated NAS
+ * @note Can be logged.
+ *
  */
 struct PropagatorState
 {
     uint64_t timestamp;      ///< Prediction timestamp [ms]
     uint32_t nPropagations;  ///< Predictions from last received NAS state
-    Eigen::Vector3f x_prop;  ///< Position propagation state NED [m]
-    Eigen::Vector3f v_prop;  ///< Speed propagation state NED [m]
-    Eigen::Vector4f q_prop;  ///< Quaternion propagation (scalar last)
-    Eigen::Vector3f b_prop;  ///< Gyroscope bias propagation
+    NASState nas;
 
-    PropagatorState()
-        : timestamp(0), nPropagations(0), x_prop(0, 0, 0), v_prop(0, 0, 0),
-          q_prop(0, 0, 0, 1), b_prop(0, 0, 0)
-    {
-    }
-
-    PropagatorState(const PropagatorState& newState)
-        : PropagatorState(newState.timestamp, newState.nPropagations,
-                          newState.x_prop, newState.v_prop, newState.q_prop,
-                          newState.b_prop)
-    {
-    }
-
-    PropagatorState(uint64_t timestamp, uint32_t nPropagations,
-                    Eigen::Vector3f x_prop, Eigen::Vector3f v_prop,
-                    Eigen::Vector4f q_prop, Eigen::Vector3f b_prop)
-        : timestamp(timestamp), nPropagations(nPropagations), x_prop(x_prop),
-          v_prop(v_prop), q_prop(q_prop), b_prop(b_prop)
-    {
-    }
+    PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
                     NASState nasState)
-        : timestamp(timestamp), nPropagations(nPropagations),
-          x_prop(nasState.n, nasState.e, nasState.d),
-          v_prop(nasState.vn, nasState.ve, nasState.vd),
-          q_prop(nasState.qx, nasState.qy, nasState.qz, nasState.qw),
-          b_prop(nasState.bx, nasState.by, nasState.bz)
+        : timestamp(timestamp), nPropagations(nPropagations), nas(nasState)
     {
     }
 
@@ -85,19 +57,87 @@ struct PropagatorState
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << nPropagations << "," << x_prop(0) << ","
-           << x_prop(1) << "," << x_prop(2) << "," << v_prop(0) << ","
-           << v_prop(1) << "," << v_prop(2) << "," << q_prop(0) << ","
-           << q_prop(1) << "," << q_prop(2) << "," << q_prop(3) << ","
-           << b_prop(0) << "," << b_prop(1) << "," << b_prop(2) << "\n";
+        os << timestamp << "," << nPropagations << "," << nas.n << "," << nas.e
+           << "," << nas.d << "," << nas.vn << "," << nas.ve << "," << nas.vd
+           << "," << nas.qx << "," << nas.qy << "," << nas.qz << "," << nas.qw
+           << "," << nas.bx << "," << nas.by << "," << nas.bz << "\n";
     }
 
-    NASState getNasState() const
+    NASState getNasState() const { return nas; }
+
+    /**
+     * @brief Getter for the vector of positions NED
+     *
+     * @return Eigen::Vector3f the NED position vector
+     */
+    Eigen::Vector3f getXProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+
+    /**
+     * @brief Setter for the vector of positions NED
+     */
+    void setXProp(Eigen::Vector3f xProp)
     {
-        Eigen::Matrix<float, 13, 1> nasState;
-        // cppcheck-suppress constStatement
-        nasState << x_prop, v_prop, q_prop, b_prop;
-        return NASState(timestamp, nasState);
+        nas.n = xProp(0);
+        nas.e = xProp(1);
+        nas.d = xProp(2);
+    }
+
+    /**
+     * @brief Getter for the vector of velocities NED
+     *
+     * @return Eigen::Vector3f the NED velocities vector
+     */
+    Eigen::Vector3f getVProp()
+    {
+        return Eigen::Vector3f(nas.vn, nas.ve, nas.vd);
+    }
+
+    /**
+     * @brief Setter for the vector of velocities NED
+     */
+    void setVProp(Eigen::Vector3f vProp)
+    {
+        nas.vn = vProp(0);
+        nas.ve = vProp(1);
+        nas.vd = vProp(2);
+    }
+
+    /**
+     * @brief Getter for the vector of quaternions
+     *
+     * @return Eigen::Vector3f the quaternions vector
+     */
+    Eigen::Vector4f getQProp()
+    {
+        return Eigen::Vector4f(nas.qx, nas.qy, nas.qz, nas.qw);
+    }
+
+    /**
+     * @brief Setter for the vector of quaternions
+     */
+    void setQProp(Eigen::Vector4f qProp)
+    {
+        nas.qx = qProp(0);
+        nas.qy = qProp(1);
+        nas.qz = qProp(2);
+        nas.qw = qProp(3);
+    }
+
+    /**
+     * @brief Getter for the vector of quaternions' bias
+     *
+     * @return Eigen::Vector3f the quaternions' bias vector
+     */
+    Eigen::Vector3f getBProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+
+    /**
+     * @brief Setter for the vector of quaternions' bias
+     */
+    void setBProp(Eigen::Vector3f bProp)
+    {
+        nas.bx = bProp(0);
+        nas.by = bProp(1);
+        nas.bz = bProp(2);
     }
 };
 

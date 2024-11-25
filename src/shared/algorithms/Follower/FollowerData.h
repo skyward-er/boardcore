@@ -42,9 +42,9 @@ struct AntennaAngles
     uint64_t timestamp = 0;
 
     float yaw;    //!< Angle between the X axis (N axis) and the target position
-                  //!< on the XY plane (NE plane), positive anti-clockwise [deg]
+                  //!< on the XY plane (NE plane), positive clockwise [deg]
     float pitch;  //!< Angle between the XY plane (NE plane) and the target
-    //!< position [deg]
+    //!< position, positive UP [deg]
 
     AntennaAngles() : timestamp{0}, yaw{0}, pitch{0} {};
     AntennaAngles(uint64_t timestamp, float yaw, float pitch)
@@ -55,7 +55,9 @@ struct AntennaAngles
 };
 
 /**
- * @brief A structure for storing angles relative to the NED frame.
+ * @brief A structure for storing angles relative to the NED frame and the
+ * number of propagations that produce such angle, 0 if no propagation step has
+ * been used. Used for logging.
  */
 struct AntennaAnglesLog : public AntennaAngles
 {
@@ -84,6 +86,10 @@ struct AntennaAnglesLog : public AntennaAngles
     }
 };
 
+/**
+ * @brief State of the Follower algorithm, with the angles and speeds
+ *
+ */
 struct FollowerState
 {
     uint64_t timestamp;

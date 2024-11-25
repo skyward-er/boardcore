@@ -24,6 +24,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/AeroUtils/AeroUtils.h>
+#include <utils/Debug.h>
 
 using namespace Eigen;
 
@@ -52,15 +53,19 @@ void Propagator::step()
                  : oldState);
 
     // Update Position propagating it with velocity
-    state.x_prop = state.x_prop + state.v_prop * updatePeriod;
+    state.setXProp(state.getXProp() + state.getVProp() * updatePeriod);
     state.nPropagations++;
     state.timestamp = TimestampTimer::getTimestamp();
+
+    // Log propagator state
+    PropagatorState logState(state);
+    Boardcore::Logger::getInstance().log(logState);
 }
 
 void Propagator::setRocketNasState(const NASState& newRocketNasState)
 {
     miosix::Lock<miosix::FastMutex> lockState(stateMutex);
-    miosix::Lock<miosix::FastMutex> lockNAS(nasStateMutex);
+    miosix::Lock<miosix::FastMutex> lock(nasStateMutex);
 
     // Reset nPropagations to notify another received "real" packet
     state.nPropagations = 0;

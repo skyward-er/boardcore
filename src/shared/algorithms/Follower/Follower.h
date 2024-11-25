@@ -38,6 +38,15 @@
 namespace Boardcore
 {
 
+static constexpr float YAW_GAIN   = 0.1;
+static constexpr float PITCH_GAIN = 1.0;
+
+/**
+ * @brief Follower class to output the yaw ad pitch necessary to track from the
+ * GPS origin the rocket. Computes the angle to follow the rocket using its NAS
+ * origin, NED position and velocity
+ *
+ */
 class Follower : public Algorithm
 {
 public:
@@ -57,12 +66,14 @@ public:
 
     /**
      * @brief Setter for the GPS coordinates of the antenna.
+     * @note No checks for the GPS fix are done
      */
     void setAntennaCoordinates(const GPSData& gpsData);
 
     /**
      * @brief Setter for the GPS coordinates of the rocket's NAS origin
      * reference.
+     * @note No checks for the GPS fix are done
      */
     void setRocketNASOrigin(const GPSData& gpsData);
 
@@ -88,7 +99,7 @@ public:
      * @brief Getter for the target antenna position computed by the algorithm.
      * @returns The target antenna positions.
      */
-    AntennaAngles getTargetAngles() { return targetAngles; }
+    AntennaAngles getTargetAngles();
 
 private:
     /**
@@ -112,6 +123,8 @@ private:
     /**
      * @brief Calculates the target angles from the given NED coordinates that
      * the antenna should point to.
+     *
+     * @note Called by a mutex-protected function
      */
     AntennaAngles rocketPositionToAntennaAngles(const NEDCoords& ned);
 
@@ -122,9 +135,9 @@ private:
     void setState(const FollowerState& newState);
 
     /**
-     * @brief Get for the GPS coordinates of the antenna.
+     * @brief Get for the [lat, lon] coordinates of the antenna.
      */
-    Eigen::Vector3f getAntennaCoordinates();
+    Eigen::Vector2f getAntennaCoordinates();
 
     /**
      * @brief Get for the GPS coordinates of the rocket's NAS origin reference.
@@ -133,38 +146,41 @@ private:
 
     // actuation update period [s]
     float updatePeriod;
+    // Initialization flag
+    std::atomic<bool> isInit{false};
 
     // max number of retries for GPS data acquisition
     const uint8_t maxInitRetries = 120;
 
-    bool antennaCoordinatesSet   = false;
-    bool rocketCoordinatesSet    = false;
-    bool firstAntennaAttitudeSet = false;
+    bool antennaCoordinatesSet = false;
+    bool rocketCoordinatesSet  = false;
+    bool lastRocketNasStateSet = false;
+    std::atomic<bool> firstAntennaAttitudeSet{false};
 
     VN300Data lastAntennaAttitude;
-    miosix::FastMutex lastAntennaAttitudeMutex;
 
     NASState lastRocketNasState;
-    miosix::FastMutex lastRocketNasStateMutex;
 
-    // GPS coordinates of the antenna [lat, lon, alt] [deg, deg, m]
-    Eigen::Vector3f antennaCoordinates;
-    miosix::FastMutex antennaCoordinatesMutex;
-    // GPS coordinates of the NAS origin taken from reference origin [lat, lon,
-    // alt] [deg, deg, m]
+    // TODO: See if assumption has sense...
+    /* GPS coordinates of the antenna [lat, lon] [deg, deg],
+     altitude is considered same as NAS Origin */
+    Eigen::Vector2f antennaCoordinates;
+    /* GPS coordinates of the NAS origin taken from reference origin [lat, lon,
+     alt] [deg, deg, m] */
     Eigen::Vector3f rocketNASOrigin;
-    miosix::FastMutex rocketNASOriginMutex;
-    // Initial distance between the antenna and the rocket while in ramp [lat,
-    // lon, alt] [deg, deg, m]
-    Eigen::Vector2f initialAntennaRocketDistance;
+    /* Distance between the antenna and the rocket [lat,
+     lon, alt] [deg, deg, m] */
+    Eigen::Vector2f antennaRocketDistance;
 
     // Target yaw and pitch of the system [deg, deg]
     AntennaAngles targetAngles;
 
     FollowerState state;
-    miosix::FastMutex stateMutex;
 
     PrintLogger logger = Logging::getLogger("Follower");
+
+    // General mutex for the follower
+    miosix::FastMutex followerMutex;
 };
 
 }  // namespace Boardcore

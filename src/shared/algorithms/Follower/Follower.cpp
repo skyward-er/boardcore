@@ -56,17 +56,17 @@ Follower::Follower(std::chrono::milliseconds updatePeriod)
 {
 }
 
-void Follower::setAntennaCoordinates(const Boardcore::GPSData& gpsData)
+void Follower::setAntennaCoordinates(const GPSData& gpsData)
 {
-    Lock<FastMutex> lock(lastAntennaAttitudeMutex);
-    antennaCoordinates = {gpsData.latitude, gpsData.longitude, gpsData.height};
+    Lock<FastMutex> lock(followerMutex);
+    antennaCoordinates = {gpsData.latitude, gpsData.longitude};
     Boardcore::Logger::getInstance().log(LogAntennasCoordinates(gpsData));
     antennaCoordinatesSet = true;
 }
 
-void Follower::setRocketNASOrigin(const Boardcore::GPSData& gpsData)
+void Follower::setRocketNASOrigin(const GPSData& gpsData)
 {
-    Lock<FastMutex> lock(lastAntennaAttitudeMutex);
+    Lock<FastMutex> lock(followerMutex);
     rocketNASOrigin = {gpsData.latitude, gpsData.longitude, gpsData.height};
     Boardcore::Logger::getInstance().log(LogRocketCoordinates(gpsData));
     rocketCoordinatesSet = true;
@@ -74,91 +74,97 @@ void Follower::setRocketNASOrigin(const Boardcore::GPSData& gpsData)
 
 void Follower::setLastAntennaAttitude(const VN300Data& attitudeData)
 {
-    Lock<FastMutex> lock(lastAntennaAttitudeMutex);
-    lastAntennaAttitude = attitudeData;
+    Lock<FastMutex> lock(followerMutex);
+    firstAntennaAttitudeSet = true;
+    lastAntennaAttitude     = attitudeData;
 }
 
 VN300Data Follower::getLastAntennaAttitude()
 {
-    Lock<FastMutex> lock(lastAntennaAttitudeMutex);
+    Lock<FastMutex> lock(followerMutex);
     return lastAntennaAttitude;
 }
 
 void Follower::setLastRocketNasState(const NASState& nasState)
 {
-    Lock<FastMutex> lock(lastRocketNasStateMutex);
-    lastRocketNasState      = nasState;
-    firstAntennaAttitudeSet = true;
+    Lock<FastMutex> lock(followerMutex);
+    lastRocketNasState    = nasState;
+    lastRocketNasStateSet = true;
 }
 
 NASState Follower::getLastRocketNasState()
 {
-    Lock<FastMutex> lock(lastRocketNasStateMutex);
+    Lock<FastMutex> lock(followerMutex);
     return lastRocketNasState;
 }
 
 FollowerState Follower::getState()
 {
-    miosix::Lock<miosix::FastMutex> lock(stateMutex);
+    miosix::Lock<miosix::FastMutex> lock(followerMutex);
     return state;
 }
 
 void Follower::setState(const FollowerState& newState)
 {
-    miosix::Lock<miosix::FastMutex> lock(stateMutex);
+    miosix::Lock<miosix::FastMutex> lock(followerMutex);
     state = newState;
+}
+
+AntennaAngles Follower::getTargetAngles()
+{
+    miosix::Lock<miosix::FastMutex> lock(followerMutex);
+    return targetAngles;
 }
 
 bool Follower::init()
 {
+    if (isInit)
+        return true;
     if (!antennaCoordinatesSet || !rocketCoordinatesSet)
     {
         LOG_ERR(logger, "Antenna or rocket coordinates not set");
         return false;
     }
-
-    // Antenna Coordinates
-    Eigen::Vector2f antennaCoord{getAntennaCoordinates().head<2>()};
-    // Rocket coordinates
-    Eigen::Vector2f rocketCoord{getRocketNASOrigin().head<2>()};
-
-    initialAntennaRocketDistance =
-        Aeroutils::geodetic2NED(rocketCoord, antennaCoord);
-
-    LOG_INFO(logger, "Initial antenna - rocket distance: [{}, {}] [m]\n",
-             initialAntennaRocketDistance[0], initialAntennaRocketDistance[1]);
-
     return true;
 }
 
 void Follower::step()
 {
-    NASState lastRocketNas = getLastRocketNasState();
+    AntennaAngles diffAngles;
+    VN300Data vn300;
+    NASState lastRocketNas;
+    NEDCoords rocketPosition;
 
-    // Getting the position of the rocket wrt the antennas in NED frame
-    NEDCoords rocketPosition = {lastRocketNas.n, lastRocketNas.e,
-                                lastRocketNas.d};
-
-    // Calculate the antenna target angles from the NED rocket coordinates
-    targetAngles = rocketPositionToAntennaAngles(rocketPosition);
-
-    // If attitude data has never been set, do not actuate the steppers
-    if (!firstAntennaAttitudeSet)
+    // Read the data for the step computation
     {
-        LOG_ERR(logger, "Antenna attitude not set");
-        return;
+        Lock<FastMutex> lock(followerMutex);
+
+        if (!firstAntennaAttitudeSet)
+        {
+            LOG_ERR(logger, "Antenna attitude not set\n");
+            return;
+        }
+        // TODO: See if needed to check the NAS or rather point to the NAS
+        // origin if missing
+
+        lastRocketNas = lastRocketNasState;
+        vn300         = lastAntennaAttitude;
+
+        // Local variable checks and updates
+        // Getting the position of the rocket wrt the antennas in NED frame
+        rocketPosition = {lastRocketNas.n, lastRocketNas.e, lastRocketNas.d};
+
+        // Calculate the antenna target angles from the NED rocket coordinates
+        targetAngles = rocketPositionToAntennaAngles(rocketPosition);
+
+        // Calculate the amount to move from the current position
+        diffAngles = {targetAngles.timestamp, targetAngles.yaw - vn300.yaw,
+                      targetAngles.pitch - vn300.pitch};
     }
 
-    VN300Data vn300 = getLastAntennaAttitude();
-
-    // Calculate the amount to move from the current position
-    AntennaAngles diffAngles{targetAngles.timestamp,
-                             targetAngles.yaw - vn300.yaw,
-                             targetAngles.pitch - vn300.pitch};
-
     // Rotate in the shortest direction
-    diffAngles.yaw   = 0.1 * minimizeRotation(diffAngles.yaw);
-    diffAngles.pitch = minimizeRotation(diffAngles.pitch);
+    diffAngles.yaw   = YAW_GAIN * minimizeRotation(diffAngles.yaw);
+    diffAngles.pitch = PITCH_GAIN * minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =
@@ -173,7 +179,12 @@ void Follower::step()
     newState.pitch           = diffAngles.pitch;
     newState.horizontalSpeed = horizontalSpeed;
     newState.verticalSpeed   = verticalSpeed;
-    setState(newState);
+
+    // Write the new state for the follower
+    {
+        Lock<FastMutex> lockWrite(followerMutex);
+        state = newState;
+    }
 
 #ifndef NDEBUG
     std::cout << "[FOLLOWER] STEPPER " << "Angles: [" << newState.yaw << ", "
@@ -184,15 +195,15 @@ void Follower::step()
 #endif
 }
 
-Eigen::Vector3f Follower::getAntennaCoordinates()
+Eigen::Vector2f Follower::getAntennaCoordinates()
 {
-    Lock<FastMutex> lock(antennaCoordinatesMutex);
-    return Eigen::Vector3f{antennaCoordinates};
+    Lock<FastMutex> lock(followerMutex);
+    return Eigen::Vector2f{antennaCoordinates};
 }
 
 Eigen::Vector3f Follower::getRocketNASOrigin()
 {
-    Lock<FastMutex> lock(rocketNASOriginMutex);
+    Lock<FastMutex> lock(followerMutex);
     return Eigen::Vector3f{rocketNASOrigin};
 }
 
@@ -200,18 +211,16 @@ AntennaAngles Follower::rocketPositionToAntennaAngles(
     const NEDCoords& rocketNed)
 {
     // Antenna Coordinates
-    Eigen::Vector2f antennaCoord = getAntennaCoordinates().head<2>();
+    Eigen::Vector2f antennaCoord = antennaCoordinates;
 
-    // Rocket coordinates
-    Eigen::Vector2f rocketCoord = getRocketNASOrigin().head<2>();
+    // Rocket coordinates, w/out altitude
+    Eigen::Vector2f rocketCoord = rocketNASOrigin.head<2>();
 
-    initialAntennaRocketDistance =
-        Aeroutils::geodetic2NED(rocketCoord, antennaCoord);
+    antennaRocketDistance = Aeroutils::geodetic2NED(rocketCoord, antennaCoord);
 
     // NED coordinates of the rocket in the NED antenna frame
-    NEDCoords ned = {rocketNed.n + initialAntennaRocketDistance.x(),
-                     rocketNed.e + initialAntennaRocketDistance.y(),
-                     rocketNed.d};
+    NEDCoords ned = {rocketNed.n + antennaRocketDistance.x(),
+                     rocketNed.e + antennaRocketDistance.y(), rocketNed.d};
 
     AntennaAngles angles;
     angles.timestamp = TimestampTimer::getTimestamp();
