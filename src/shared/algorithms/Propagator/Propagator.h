@@ -23,6 +23,7 @@
 #pragma once
 
 #include <algorithms/Algorithm.h>
+#include <logger/Logger.h>
 #include <miosix.h>
 
 #include <chrono>
