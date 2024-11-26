@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio, Arturo Benedetti
+/* Copyright (c) 2024 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio, Arturo Benedetti, Ettore Pane
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,9 +38,11 @@ class Pitot : public Sensor<PitotData>
 {
 public:
     Pitot(std::function<float()> getTotalPressure,
-          std::function<float()> getStaticPressure)
+          std::function<float()> getStaticPressure,
+          const ReferenceValues& initialReference)
         : getTotalPressure(getTotalPressure),
-          getStaticPressure(getStaticPressure)
+          getStaticPressure(getStaticPressure),
+          reference(initialReference)
     {
     }
 
@@ -48,7 +50,7 @@ public:
 
     bool selfTest() override { return true; }
 
-    void setReferenceValues(const ReferenceValues reference)
+    void setReferenceValues(const ReferenceValues& reference)
     {
         this->reference = reference;
     }
@@ -66,7 +68,7 @@ protected:
         {
             // NOTE: Here we assume that we are always at refTemperature, so
             // calculations might be wrong at higher elevations!
-            pitotSpeed.airspeed = Aeroutils::computePitotAirspeed(
+            pitotSpeed.airspeed = AeroUtils::computePitotAirspeed(
                 totalPressure, staticPressure, 0, reference.refTemperature);
             pitotSpeed.deltaP = totalPressure - staticPressure;
         }
