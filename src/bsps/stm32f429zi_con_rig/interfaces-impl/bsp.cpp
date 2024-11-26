@@ -220,14 +220,15 @@ void IRQbspInit()
     interfaces::spi1::mosi::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
 
-    btns::ignition::mode(Mode::INPUT);
-    btns::filling::mode(Mode::INPUT);
-    btns::venting::mode(Mode::INPUT);
-    btns::release::mode(Mode::INPUT);
-    btns::detach::mode(Mode::INPUT);
-    btns::tars::mode(Mode::INPUT);
+    btns::n2o_filling::mode(Mode::INPUT);
+    btns::n2o_release::mode(Mode::INPUT);
+    btns::n2o_venting::mode(Mode::INPUT);
+    btns::n2_filling::mode(Mode::INPUT);
+    btns::n2_release::mode(Mode::INPUT);
+    btns::n2_detach::mode(Mode::INPUT);
     btns::nitrogen::mode(Mode::INPUT);
     btns::arm::mode(Mode::INPUT);
+    btns::ignition::mode(Mode::INPUT);
 
     radio::cs::mode(Mode::OUTPUT);
     radio::cs::high();

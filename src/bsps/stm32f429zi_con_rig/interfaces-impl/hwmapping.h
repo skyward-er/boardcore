@@ -47,10 +47,10 @@ namespace btns
 {
 using n2o_filling = Gpio<GPIOE_BASE, 6>;
 using n2o_release = Gpio<GPIOE_BASE, 4>;
-using n2_release  = Gpio<GPIOG_BASE, 9>;
-using n2_venting  = Gpio<GPIOD_BASE, 7>;
-using n2_detach   = Gpio<GPIOD_BASE, 5>;
+using n2o_venting = Gpio<GPIOD_BASE, 7>;
 using n2_filling  = Gpio<GPIOG_BASE, 11>;
+using n2_release  = Gpio<GPIOG_BASE, 9>;
+using n2_detach   = Gpio<GPIOD_BASE, 5>;
 using nitrogen    = Gpio<GPIOD_BASE, 3>;
 using arm         = Gpio<GPIOE_BASE, 2>;
 using ignition    = Gpio<GPIOB_BASE, 4>;
