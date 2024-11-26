@@ -68,7 +68,7 @@ protected:
         {
             // NOTE: Here we assume that we are always at refTemperature, so
             // calculations might be wrong at higher elevations!
-            pitotSpeed.airspeed = AeroUtils::computePitotAirspeed(
+            pitotSpeed.airspeed = Aeroutils::computePitotAirspeed(
                 totalPressure, staticPressure, 0, reference.refTemperature);
             pitotSpeed.deltaP = totalPressure - staticPressure;
         }
