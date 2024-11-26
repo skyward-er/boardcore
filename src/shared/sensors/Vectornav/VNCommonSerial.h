@@ -223,30 +223,6 @@ protected:
     bool getBinaryOutput(T& binaryData, const char* const sampleCommand);
 
     /**
-     * @brief Utility function used to extract quaternion data from the
-     * receiving string.
-     */
-    QuaternionData sampleQuaternion();
-
-    /**
-     * @brief Utility function used to extract magnetometer data from the
-     * receiving string.
-     */
-    MagnetometerData sampleMagnetometer();
-
-    /**
-     * @brief Utility function used to extract accelerometer data from the
-     * receiving string.
-     */
-    AccelerometerData sampleAccelerometer();
-
-    /**
-     * @brief Utility function used to extract gyroscope data from the receiving
-     * string.
-     */
-    GyroscopeData sampleGyroscope();
-
-    /**
      * @brief Check if the message received from the sensor contains an error.
      *
      * @param message The message to be checked.
