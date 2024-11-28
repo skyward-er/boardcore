@@ -38,6 +38,15 @@
 namespace Boardcore
 {
 
+static constexpr float YAW_GAIN   = 0.1;
+static constexpr float PITCH_GAIN = 1.0;
+
+/**
+ * @brief Follower class to output the yaw ad pitch necessary to track from the
+ * GPS origin the rocket. Computes the angle to follow the rocket using its NAS
+ * origin, NED position and velocity
+ *
+ */
 class Follower : public Algorithm
 {
 public:
@@ -57,12 +66,14 @@ public:
 
     /**
      * @brief Setter for the GPS coordinates of the antenna.
+     * @note No checks for the GPS fix are done
      */
     void setAntennaCoordinates(const GPSData& gpsData);
 
     /**
      * @brief Setter for the GPS coordinates of the rocket's NAS origin
      * reference.
+     * @note No checks for the GPS fix are done
      */
     void setRocketNASOrigin(const GPSData& gpsData);
 
@@ -88,7 +99,7 @@ public:
      * @brief Getter for the target antenna position computed by the algorithm.
      * @returns The target antenna positions.
      */
-    AntennaAngles getTargetAngles() { return targetAngles; }
+    AntennaAngles getTargetAngles();
 
 private:
     /**
@@ -133,13 +144,15 @@ private:
 
     // actuation update period [s]
     float updatePeriod;
+    // Initialization flag
+    std::atomic<bool> isInit;
 
     // max number of retries for GPS data acquisition
     const uint8_t maxInitRetries = 120;
 
-    bool antennaCoordinatesSet   = false;
-    bool rocketCoordinatesSet    = false;
-    bool firstAntennaAttitudeSet = false;
+    bool antennaCoordinatesSet = false;
+    bool rocketCoordinatesSet  = false;
+    std::atomic<bool> firstAntennaAttitudeSet;
 
     VN300Data lastAntennaAttitude;
     miosix::FastMutex lastAntennaAttitudeMutex;
@@ -160,6 +173,7 @@ private:
 
     // Target yaw and pitch of the system [deg, deg]
     AntennaAngles targetAngles;
+    miosix::FastMutex targetAnglesMutex;
 
     FollowerState state;
     miosix::FastMutex stateMutex;
