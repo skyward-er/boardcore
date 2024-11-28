@@ -65,27 +65,56 @@ struct PropagatorState
 
     NASState getNasState() const { return nas; }
 
+    /**
+     * @brief Getter for the vector of positions NED
+     *
+     * @return Eigen::Vector3f the NED position vector
+     */
     Eigen::Vector3f getXProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+
+    /**
+     * @brief Setter for the vector of positions NED
+     */
     void setXProp(Eigen::Vector3f xProp)
     {
         nas.n = xProp(0);
         nas.e = xProp(1);
         nas.d = xProp(2);
     }
+
+    /**
+     * @brief Getter for the vector of velocities NED
+     *
+     * @return Eigen::Vector3f the NED velocities vector
+     */
     Eigen::Vector3f getVProp()
     {
         return Eigen::Vector3f(nas.vn, nas.ve, nas.vd);
     }
+
+    /**
+     * @brief Setter for the vector of velocities NED
+     */
     void setVProp(Eigen::Vector3f vProp)
     {
         nas.vn = vProp(0);
         nas.ve = vProp(1);
         nas.vd = vProp(2);
     }
+
+    /**
+     * @brief Getter for the vector of quaternions
+     *
+     * @return Eigen::Vector3f the quaternions vector
+     */
     Eigen::Vector4f getQProp()
     {
         return Eigen::Vector4f(nas.qx, nas.qy, nas.qz, nas.qw);
     }
+
+    /**
+     * @brief Setter for the vector of quaternions
+     */
     void setQProp(Eigen::Vector4f qProp)
     {
         nas.qx = qProp(0);
@@ -93,7 +122,17 @@ struct PropagatorState
         nas.qz = qProp(2);
         nas.qw = qProp(3);
     }
+
+    /**
+     * @brief Getter for the vector of quaternions' bias
+     *
+     * @return Eigen::Vector3f the quaternions' bias vector
+     */
     Eigen::Vector3f getBProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+
+    /**
+     * @brief Setter for the vector of quaternions' bias
+     */
     void setBProp(Eigen::Vector3f bProp)
     {
         nas.bx = bProp(0);
