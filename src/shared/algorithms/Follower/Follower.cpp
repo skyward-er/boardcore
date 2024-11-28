@@ -52,7 +52,7 @@ float minimizeRotation(float angle)
 
 Follower::Follower(std::chrono::milliseconds updatePeriod)
     : updatePeriod(static_cast<float>(updatePeriod.count()) / 1000),
-      targetAngles({0, 0, 0})
+      targetAngles({0, 0, 0}), firstAntennaAttitudeSet(false), isInit(false)
 {
 }
 
@@ -66,7 +66,7 @@ void Follower::setAntennaCoordinates(const Boardcore::GPSData& gpsData)
 
 void Follower::setRocketNASOrigin(const Boardcore::GPSData& gpsData)
 {
-    Lock<FastMutex> lock(lastAntennaAttitudeMutex);
+    Lock<FastMutex> lock(rocketNASOriginMutex);
     rocketNASOrigin = {gpsData.latitude, gpsData.longitude, gpsData.height};
     Boardcore::Logger::getInstance().log(LogRocketCoordinates(gpsData));
     rocketCoordinatesSet = true;
@@ -109,17 +109,25 @@ void Follower::setState(const FollowerState& newState)
     state = newState;
 }
 
+AntennaAngles Follower::getTargetAngles()
+{
+    miosix::Lock<miosix::FastMutex> lock(targetAnglesMutex);
+    return targetAngles;
+}
+
 bool Follower::init()
 {
+    if (isInit)
+        return true;
     if (!antennaCoordinatesSet || !rocketCoordinatesSet)
     {
         LOG_ERR(logger, "Antenna or rocket coordinates not set");
         return false;
     }
 
-    // Antenna Coordinates
+    // Antenna Coordinates (w/out altitude)
     Eigen::Vector2f antennaCoord{getAntennaCoordinates().head<2>()};
-    // Rocket coordinates
+    // Rocket coordinates (w/out altitude)
     Eigen::Vector2f rocketCoord{getRocketNASOrigin().head<2>()};
 
     initialAntennaRocketDistance =
@@ -128,37 +136,53 @@ bool Follower::init()
     LOG_INFO(logger, "Initial antenna - rocket distance: [{}, {}] [m]\n",
              initialAntennaRocketDistance[0], initialAntennaRocketDistance[1]);
 
+    isInit = true;
     return true;
 }
 
 void Follower::step()
 {
+    if (!isInit)
+    {
+        LOG_ERR(logger, "Not initialized Follower\n");
+        return;
+    }
+
     NASState lastRocketNas = getLastRocketNasState();
 
     // Getting the position of the rocket wrt the antennas in NED frame
     NEDCoords rocketPosition = {lastRocketNas.n, lastRocketNas.e,
                                 lastRocketNas.d};
 
-    // Calculate the antenna target angles from the NED rocket coordinates
-    targetAngles = rocketPositionToAntennaAngles(rocketPosition);
+    AntennaAngles diffAngles;
+    VN300Data vn300;
 
-    // If attitude data has never been set, do not actuate the steppers
-    if (!firstAntennaAttitudeSet)
     {
-        LOG_ERR(logger, "Antenna attitude not set");
-        return;
+        miosix::Lock<miosix::FastMutex> lockAngle(targetAnglesMutex);
+
+        // Calculate the antenna target angles from the NED rocket coordinates
+        targetAngles = rocketPositionToAntennaAngles(rocketPosition);
+
+        {
+            Lock<FastMutex> lockLastRocketNasState(lastRocketNasStateMutex);
+            // If attitude data has never been set, do not actuate the steppers
+            if (!firstAntennaAttitudeSet)
+            {
+                LOG_ERR(logger, "Antenna attitude not set\n");
+                return;
+            }
+        }
+
+        vn300 = getLastAntennaAttitude();
+
+        // Calculate the amount to move from the current position
+        diffAngles = {targetAngles.timestamp, targetAngles.yaw - vn300.yaw,
+                      targetAngles.pitch - vn300.pitch};
     }
 
-    VN300Data vn300 = getLastAntennaAttitude();
-
-    // Calculate the amount to move from the current position
-    AntennaAngles diffAngles{targetAngles.timestamp,
-                             targetAngles.yaw - vn300.yaw,
-                             targetAngles.pitch - vn300.pitch};
-
     // Rotate in the shortest direction
-    diffAngles.yaw   = 0.1 * minimizeRotation(diffAngles.yaw);
-    diffAngles.pitch = minimizeRotation(diffAngles.pitch);
+    diffAngles.yaw   = YAW_GAIN * minimizeRotation(diffAngles.yaw);
+    diffAngles.pitch = PITCH_GAIN * minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =
