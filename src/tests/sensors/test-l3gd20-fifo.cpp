@@ -127,13 +127,13 @@ void __attribute__((used)) EXTI2_IRQHandlerImpl()
 
 void configure()
 {
-    GpioSck::mode(Mode::ALTERNATE);
-    GpioMiso::mode(Mode::ALTERNATE);
-    GpioMosi::mode(Mode::ALTERNATE);
-
     GpioSck::alternateFunction(5);
     GpioMiso::alternateFunction(5);
     GpioMosi::alternateFunction(5);
+
+    GpioSck::mode(Mode::ALTERNATE);
+    GpioMiso::mode(Mode::ALTERNATE);
+    GpioMosi::mode(Mode::ALTERNATE);
 
     // Interrupt
     GpioINT2::mode(Mode::INPUT_PULL_DOWN);

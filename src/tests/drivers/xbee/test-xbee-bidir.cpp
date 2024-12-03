@@ -103,13 +103,14 @@ void configure()
         FastInterruptDisableLock dLock;
 
         // Set SPI pins to correct alternate mode
-        GpioSck::mode(Mode::ALTERNATE);
-        GpioMiso::mode(Mode::ALTERNATE);
-        GpioMosi::mode(Mode::ALTERNATE);
 
         GpioSck::alternateFunction(5);
         GpioMiso::alternateFunction(5);
         GpioMosi::alternateFunction(5);
+
+        GpioSck::mode(Mode::ALTERNATE);
+        GpioMiso::mode(Mode::ALTERNATE);
+        GpioMosi::mode(Mode::ALTERNATE);
 
         GpioATTN::mode(Mode::INPUT);
 

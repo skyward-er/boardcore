@@ -232,41 +232,41 @@ void IRQbspInit()
     userSwitch::mode(Mode::INPUT);
 
     using namespace interfaces;
-    spi1::sck::mode(Mode::ALTERNATE);
     spi1::sck::alternateFunction(5);
-    spi1::miso::mode(Mode::ALTERNATE);
+    spi1::sck::mode(Mode::ALTERNATE);
     spi1::miso::alternateFunction(5);
-    spi1::mosi::mode(Mode::ALTERNATE);
+    spi1::miso::mode(Mode::ALTERNATE);
     spi1::mosi::alternateFunction(5);
+    spi1::mosi::mode(Mode::ALTERNATE);
 
-    spi3::sck::mode(Mode::ALTERNATE);
     spi3::sck::alternateFunction(6);
-    spi3::miso::mode(Mode::ALTERNATE);
+    spi3::sck::mode(Mode::ALTERNATE);
     spi3::miso::alternateFunction(6);
-    spi3::mosi::mode(Mode::ALTERNATE);
+    spi3::miso::mode(Mode::ALTERNATE);
     spi3::mosi::alternateFunction(5);
+    spi3::mosi::mode(Mode::ALTERNATE);
 
-    spi4::sck::mode(Mode::ALTERNATE);
     spi4::sck::alternateFunction(5);
-    spi4::miso::mode(Mode::ALTERNATE);
+    spi4::sck::mode(Mode::ALTERNATE);
     spi4::miso::alternateFunction(5);
-    spi4::mosi::mode(Mode::ALTERNATE);
+    spi4::miso::mode(Mode::ALTERNATE);
     spi4::mosi::alternateFunction(5);
+    spi4::mosi::mode(Mode::ALTERNATE);
 
-    can2::rx::mode(Mode::ALTERNATE);
     can2::rx::alternateFunction(9);
-    can2::tx::mode(Mode::ALTERNATE);
+    can2::rx::mode(Mode::ALTERNATE);
     can2::tx::alternateFunction(9);
+    can2::tx::mode(Mode::ALTERNATE);
 
-    usart1::tx::mode(Mode::ALTERNATE);
     usart1::tx::alternateFunction(7);
-    usart1::rx::mode(Mode::ALTERNATE);
+    usart1::tx::mode(Mode::ALTERNATE);
     usart1::rx::alternateFunction(7);
+    usart1::rx::mode(Mode::ALTERNATE);
 
-    usart2::tx::mode(Mode::ALTERNATE);
     usart2::tx::alternateFunction(7);
-    usart2::rx::mode(Mode::ALTERNATE);
+    usart2::tx::mode(Mode::ALTERNATE);
     usart2::rx::alternateFunction(7);
+    usart2::rx::mode(Mode::ALTERNATE);
 
     using namespace radio;
     cs::mode(Mode::OUTPUT);
@@ -278,10 +278,10 @@ void IRQbspInit()
     rx_enable::mode(Mode::OUTPUT);
 
     using namespace timers;
-    tim3ch2::mode(Mode::ALTERNATE);
     tim3ch2::alternateFunction(2);
-    tim4ch1::mode(Mode::ALTERNATE);
+    tim3ch2::mode(Mode::ALTERNATE);
     tim4ch1::alternateFunction(2);
+    tim4ch1::mode(Mode::ALTERNATE);
 
     stepper1::enable::mode(Mode::OUTPUT);
     stepper1::direction::mode(Mode::OUTPUT);

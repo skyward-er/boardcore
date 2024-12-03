@@ -33,14 +33,14 @@ typedef Gpio<GPIOB_BASE, 8> ch4;
 
 int main()
 {
-    ch1::mode(Mode::ALTERNATE);
     ch1::alternateFunction(2);
-    ch2::mode(Mode::ALTERNATE);
+    ch1::mode(Mode::ALTERNATE);
     ch2::alternateFunction(2);
-    ch3::mode(Mode::ALTERNATE);
+    ch2::mode(Mode::ALTERNATE);
     ch3::alternateFunction(2);
-    ch4::mode(Mode::ALTERNATE);
+    ch3::mode(Mode::ALTERNATE);
     ch4::alternateFunction(3);
+    ch4::mode(Mode::ALTERNATE);
 
     PWM pwm(TIM3);
     PWM pwm2(TIM10);

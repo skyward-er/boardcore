@@ -201,19 +201,19 @@ void IRQbspInit()
 
     RCC_SYNC();
 
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::sck::alternateFunction(5);
-    interfaces::spi4::miso::mode(Mode::ALTERNATE);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::miso::alternateFunction(5);
-    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::mosi::alternateFunction(5);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
     peripherals::ra01::pc13::cs::mode(Mode::OUTPUT);
     peripherals::ra01::pc13::dio0::mode(Mode::INPUT);

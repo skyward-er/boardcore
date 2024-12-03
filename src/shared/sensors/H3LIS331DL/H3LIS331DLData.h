@@ -30,12 +30,12 @@ namespace Boardcore
 struct H3LIS331DLData : public AccelerometerData
 {
 
-    H3LIS331DLData() : AccelerometerData(0, 0, 0, 0){};
+    H3LIS331DLData() : AccelerometerData(0, 0, 0, 0) {};
 
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)
-        : AccelerometerData(ts, aX, aY, aZ){};
+        : AccelerometerData(ts, aX, aY, aZ) {};
 
-    explicit H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
+    explicit H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc) {};
 
     static std::string header()
     {

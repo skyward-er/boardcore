@@ -2833,8 +2833,8 @@ void __attribute__((noinline)) check32(unsigned int a, unsigned int b)
         fail("swapBytes32");
 }
 
-void __attribute__((noinline))
-check64(unsigned long long a, unsigned long long b)
+void __attribute__((noinline)) check64(unsigned long long a,
+                                       unsigned long long b)
 {
     if (swapBytes64(a) != b)
         fail("swapBytes64");

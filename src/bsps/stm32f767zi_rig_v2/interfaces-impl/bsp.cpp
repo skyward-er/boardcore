@@ -257,80 +257,80 @@ void IRQbspInit()
     userLed4::mode(Mode::OUTPUT);
 
     // RIG stuff
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi2::sck::mode(Mode::ALTERNATE);
     interfaces::spi2::sck::alternateFunction(5);
-    interfaces::spi2::miso::mode(Mode::ALTERNATE);
+    interfaces::spi2::sck::mode(Mode::ALTERNATE);
     interfaces::spi2::miso::alternateFunction(5);
-    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi2::miso::mode(Mode::ALTERNATE);
     interfaces::spi2::mosi::alternateFunction(5);
+    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi3::sck::mode(Mode::ALTERNATE);
     interfaces::spi3::sck::alternateFunction(6);
-    interfaces::spi3::miso::mode(Mode::ALTERNATE);
+    interfaces::spi3::sck::mode(Mode::ALTERNATE);
     interfaces::spi3::miso::alternateFunction(6);
-    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi3::miso::mode(Mode::ALTERNATE);
     interfaces::spi3::mosi::alternateFunction(5);
+    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
 
     /* Do not enable Flavio's bullshit
-    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::sck::alternateFunction(5);
-    interfaces::spi4::miso::mode(Mode::ALTERNATE);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::miso::alternateFunction(5);
-    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::mosi::alternateFunction(5);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
     */
 
-    interfaces::spi6::sck::mode(Mode::ALTERNATE);
     interfaces::spi6::sck::alternateFunction(5);
-    interfaces::spi6::miso::mode(Mode::ALTERNATE);
+    interfaces::spi6::sck::mode(Mode::ALTERNATE);
     interfaces::spi6::miso::alternateFunction(5);
-    interfaces::spi6::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi6::miso::mode(Mode::ALTERNATE);
     interfaces::spi6::mosi::alternateFunction(5);
+    interfaces::spi6::mosi::mode(Mode::ALTERNATE);
 
     // We do not need to setup the miosix usart
 
-    interfaces::uart4::tx::mode(Mode::ALTERNATE);
     interfaces::uart4::tx::alternateFunction(8);
-    interfaces::uart4::rx::mode(Mode::ALTERNATE);
+    interfaces::uart4::tx::mode(Mode::ALTERNATE);
     interfaces::uart4::rx::alternateFunction(8);
+    interfaces::uart4::rx::mode(Mode::ALTERNATE);
 
-    interfaces::can1::tx::mode(Mode::ALTERNATE);
     interfaces::can1::tx::alternateFunction(9);
-    interfaces::can1::rx::mode(Mode::ALTERNATE);
+    interfaces::can1::tx::mode(Mode::ALTERNATE);
     interfaces::can1::rx::alternateFunction(9);
+    interfaces::can1::rx::mode(Mode::ALTERNATE);
 
-    interfaces::can2::tx::mode(Mode::ALTERNATE);
     interfaces::can2::tx::alternateFunction(9);
-    interfaces::can2::rx::mode(Mode::ALTERNATE);
+    interfaces::can2::tx::mode(Mode::ALTERNATE);
     interfaces::can2::rx::alternateFunction(9);
+    interfaces::can2::rx::mode(Mode::ALTERNATE);
 
-    interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim1ch1::alternateFunction(1);
-    interfaces::timers::tim3ch3::mode(Mode::ALTERNATE);
+    interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim3ch3::alternateFunction(2);
-    interfaces::timers::tim4ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim3ch3::mode(Mode::ALTERNATE);
     interfaces::timers::tim4ch1::alternateFunction(2);
-    interfaces::timers::tim5ch3::mode(Mode::ALTERNATE);
+    interfaces::timers::tim4ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim5ch3::alternateFunction(2);
-    interfaces::timers::tim8ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim5ch3::mode(Mode::ALTERNATE);
     interfaces::timers::tim8ch1::alternateFunction(3);
-    interfaces::timers::tim8ch2::mode(Mode::ALTERNATE);
+    interfaces::timers::tim8ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim8ch2::alternateFunction(3);
-    interfaces::timers::tim9ch2::mode(Mode::ALTERNATE);
+    interfaces::timers::tim8ch2::mode(Mode::ALTERNATE);
     interfaces::timers::tim9ch2::alternateFunction(3);
-    interfaces::timers::tim10ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim9ch2::mode(Mode::ALTERNATE);
     interfaces::timers::tim10ch1::alternateFunction(3);
-    interfaces::timers::tim11ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim10ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim11ch1::alternateFunction(3);
-    interfaces::timers::tim12ch2::mode(Mode::ALTERNATE);
+    interfaces::timers::tim11ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim12ch2::alternateFunction(9);
+    interfaces::timers::tim12ch2::mode(Mode::ALTERNATE);
 
     interfaces::adcs::adc12in9::mode(Mode::INPUT_ANALOG);
     interfaces::adcs::adc123in11::mode(Mode::INPUT_ANALOG);

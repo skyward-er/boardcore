@@ -158,8 +158,7 @@ public:
     {
         std::vector<Data> fileData;
 
-        std::for_each(begin(), end(),
-                      [&fileData](const Data& data)
+        std::for_each(begin(), end(), [&fileData](const Data& data)
                       { fileData.push_back(data); });
 
         return fileData;

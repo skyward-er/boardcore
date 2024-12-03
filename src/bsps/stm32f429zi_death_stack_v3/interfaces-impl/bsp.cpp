@@ -338,65 +338,65 @@ void IRQbspInit()
 
     RCC_SYNC();
 
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi2::sck::mode(Mode::ALTERNATE);
     interfaces::spi2::sck::alternateFunction(5);
-    interfaces::spi2::miso::mode(Mode::ALTERNATE);
+    interfaces::spi2::sck::mode(Mode::ALTERNATE);
     interfaces::spi2::miso::alternateFunction(5);
-    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi2::miso::mode(Mode::ALTERNATE);
     interfaces::spi2::mosi::alternateFunction(5);
+    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::sck::alternateFunction(5);
-    interfaces::spi4::miso::mode(Mode::ALTERNATE);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::miso::alternateFunction(5);
-    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::mosi::alternateFunction(5);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi5::sck::mode(Mode::ALTERNATE);
     interfaces::spi5::sck::alternateFunction(5);
-    interfaces::spi5::miso::mode(Mode::ALTERNATE);
+    interfaces::spi5::sck::mode(Mode::ALTERNATE);
     interfaces::spi5::miso::alternateFunction(5);
-    interfaces::spi5::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi5::miso::mode(Mode::ALTERNATE);
     interfaces::spi5::mosi::alternateFunction(5);
+    interfaces::spi5::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi6::sck::mode(Mode::ALTERNATE);
     interfaces::spi6::sck::alternateFunction(5);
-    interfaces::spi6::miso::mode(Mode::ALTERNATE);
+    interfaces::spi6::sck::mode(Mode::ALTERNATE);
     interfaces::spi6::miso::alternateFunction(5);
-    interfaces::spi6::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi6::miso::mode(Mode::ALTERNATE);
     interfaces::spi6::mosi::alternateFunction(5);
+    interfaces::spi6::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::usart1::rx::mode(Mode::ALTERNATE);
     interfaces::usart1::rx::alternateFunction(7);
-    interfaces::usart1::tx::mode(Mode::ALTERNATE);
+    interfaces::usart1::rx::mode(Mode::ALTERNATE);
     interfaces::usart1::tx::alternateFunction(7);
+    interfaces::usart1::tx::mode(Mode::ALTERNATE);
 
-    interfaces::usart2::rx::mode(Mode::ALTERNATE);
     interfaces::usart2::rx::alternateFunction(7);
-    interfaces::usart2::tx::mode(Mode::ALTERNATE);
+    interfaces::usart2::rx::mode(Mode::ALTERNATE);
     interfaces::usart2::tx::alternateFunction(7);
+    interfaces::usart2::tx::mode(Mode::ALTERNATE);
 
-    interfaces::usart3::rx::mode(Mode::ALTERNATE);
     interfaces::usart3::rx::alternateFunction(7);
-    interfaces::usart3::tx::mode(Mode::ALTERNATE);
+    interfaces::usart3::rx::mode(Mode::ALTERNATE);
     interfaces::usart3::tx::alternateFunction(7);
+    interfaces::usart3::tx::mode(Mode::ALTERNATE);
 
-    interfaces::uart4::rx::mode(Mode::ALTERNATE);
     interfaces::uart4::rx::alternateFunction(8);
-    interfaces::uart4::tx::mode(Mode::ALTERNATE);
+    interfaces::uart4::rx::mode(Mode::ALTERNATE);
     interfaces::uart4::tx::alternateFunction(8);
+    interfaces::uart4::tx::mode(Mode::ALTERNATE);
 
-    interfaces::can1::rx::mode(Mode::ALTERNATE);
     interfaces::can1::rx::alternateFunction(9);
-    interfaces::can1::tx::mode(Mode::ALTERNATE);
+    interfaces::can1::rx::mode(Mode::ALTERNATE);
     interfaces::can1::tx::alternateFunction(9);
+    interfaces::can1::tx::mode(Mode::ALTERNATE);
 
     sensors::ads131m04::cs1::mode(Mode::OUTPUT);
     sensors::ads131m04::cs1::high();
@@ -430,8 +430,8 @@ void IRQbspInit()
 
     sensors::launchpad_detach::mode(Mode::INPUT);
 
-    expulsion::servo::mode(Mode::ALTERNATE);
     expulsion::servo::alternateFunction(2);
+    expulsion::servo::mode(Mode::ALTERNATE);
     expulsion::sense::mode(Mode::INPUT_PULL_UP);
     expulsion::nosecone_detach::mode(Mode::INPUT);
 
@@ -441,19 +441,19 @@ void IRQbspInit()
     cutter::enable_backup::low();
     cutter::sense::mode(Mode::INPUT_ANALOG);
 
-    airbrakes::servo::mode(Mode::ALTERNATE);
     airbrakes::servo::alternateFunction(3);
+    airbrakes::servo::mode(Mode::ALTERNATE);
     airbrakes::sensor::mode(Mode::INPUT_ANALOG);
 
     leds::red::mode(Mode::OUTPUT);
     leds::green::mode(Mode::OUTPUT);
     leds::blue::mode(Mode::OUTPUT);
 
-    buzzer::drive::mode(Mode::ALTERNATE);
     buzzer::drive::alternateFunction(3);
+    buzzer::drive::mode(Mode::ALTERNATE);
 
-    aux::servo::mode(Mode::ALTERNATE);
     aux::servo::alternateFunction(3);
+    aux::servo::mode(Mode::ALTERNATE);
     aux::sense_1::mode(Mode::INPUT);
     aux::sense_2::mode(Mode::INPUT);
 

@@ -47,11 +47,11 @@ int main()
     GpioPin tx(GPIOB_BASE, 6);
     GpioPin rx(GPIOB_BASE, 7);
 
-    tx.mode(Mode::ALTERNATE);
-    rx.mode(Mode::ALTERNATE);
-
     tx.alternateFunction(7);
     rx.alternateFunction(7);
+
+    tx.mode(Mode::ALTERNATE);
+    rx.mode(Mode::ALTERNATE);
 
     USART usart1(USART1, 115200);
 

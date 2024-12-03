@@ -231,26 +231,26 @@ void IRQbspInit()
     userLed4::mode(Mode::OUTPUT);
     userSwitch::mode(Mode::INPUT);
 
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
 
-    interfaces::spi3::miso::mode(Mode::ALTERNATE);
     interfaces::spi3::miso::alternateFunction(6);
-    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi3::miso::mode(Mode::ALTERNATE);
     interfaces::spi3::mosi::alternateFunction(5);
-    interfaces::spi3::sck::mode(Mode::ALTERNATE);
+    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
     interfaces::spi3::sck::alternateFunction(6);
+    interfaces::spi3::sck::mode(Mode::ALTERNATE);
 
-    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::miso::alternateFunction(5);
-    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::mosi::alternateFunction(5);
-    interfaces::spi4::sck::mode(Mode::ALTERNATE);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
     interfaces::spi4::sck::alternateFunction(5);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
 
     radio1::cs::mode(Mode::OUTPUT);
     radio1::cs::high();
