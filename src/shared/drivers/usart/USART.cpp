@@ -511,6 +511,8 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
     // Whether we timed out while waiting
     bool timedOut = false;
 
+    assert(nBytes <= rxQueue.size() && "Attempt to read more bytes than available in the internal queue");
+
     miosix::FastInterruptDisableLock dLock;
     for (;;)
     {
