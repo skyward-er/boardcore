@@ -41,8 +41,7 @@ public:
           std::function<float()> getStaticPressure,
           const ReferenceValues& initialReference)
         : getTotalPressure(getTotalPressure),
-          getStaticPressure(getStaticPressure),
-          reference(initialReference)
+          getStaticPressure(getStaticPressure), reference(initialReference)
     {
     }
 
