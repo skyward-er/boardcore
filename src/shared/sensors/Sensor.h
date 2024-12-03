@@ -1,5 +1,5 @@
 /* Copyright (c) 2016-2020 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano
+ * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano, Giovanni Annaloro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -143,30 +143,33 @@ class SensorFIFO : public Sensor<Data>
 {
 protected:
     std::array<Data, FifoSize> lastFifo;
-    uint16_t lastFifoLevel = 1;  ///< number of samples in lastFifo
-
+    uint16_t lastFifoLevel = 1;  //< number of samples in lastFifo
+    miosix::FastMutex fifoMutex; //Sensor mutex
     uint64_t lastInterruptTimestamp = 0;
-    uint64_t interruptTimestampDelta =
-        0;  ///< delta between previous interrupt timestamp and the last
-            ///< received one
+    uint64_t interruptTimestampDelta = 0;  //< delta between previous interrupt timestamp and the last received one
+    uint32_t maxFifoSize = 1000; //The maximum fifo size (!!!to select after performance tests)
+    static_assert(FifoSize <= maxFifoSIze, "The sensor's fifo size must be equal or smaller than maxFifoSize"); 
 
 public:
     /**
+     * @param actualFifoSize output parameter that returns the actual fifo size of the sensor's fifo
      * @return last FIFO sampled from the sensor
      */
-    const std::array<Data, FifoSize>& getLastFifo() { return lastFifo; }
+    const std::array<Data, FifoSize> getLastFifo(size_t* actualFifoSize) {
+        miosix::Lock<FastMutex> l(fifoMutex);
+        *actualFifoSize = lastFifoLevel;
+        return lastFifo; 
+    }
 
     /**
      * @param i index of the requested item inside the FIFO
      *
      * @return the i-th element of the FIFO
      */
-    const Data& getFifoElement(uint32_t i) const { return lastFifo[i]; }
-
-    /**
-     * @return number of elements in the last FIFO sampled from the sensor
-     */
-    uint16_t getLastFifoSize() const { return lastFifoLevel; }
+    const Data getFifoElement(uint32_t i) const {
+        miosix::Lock<FastMutex> l(fifoMutex);
+        return lastFifo[i]; 
+    }
 
     /**
      * @brief Called by the interrupt handling routine: provides the timestamp
