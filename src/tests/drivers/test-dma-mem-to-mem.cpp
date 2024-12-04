@@ -24,6 +24,8 @@
 #include <miosix.h>
 #include <util/util.h>
 
+#include <chrono>
+
 using namespace miosix;
 using namespace Boardcore;
 
@@ -40,6 +42,7 @@ int main()
     uint8_t buffer1[8] = {1, 2, 3, 4, 5, 6, 7, 8};
     uint8_t buffer2[8] = {0};
 
+    printf("Before:\n");
     printf("Buffer 1:\n");
     printBuffer(buffer1, sizeof(buffer1));
     printf("Buffer 2:\n");
@@ -54,18 +57,27 @@ int main()
         .numberOfDataItems = sizeof(buffer1),
         .srcIncrement      = true,
         .dstIncrement      = true,
+        .enableTransferCompleteInterrupt = true,
     };
     stream.setup(trn);
     stream.enable();
-    // stream.waitForTransferComplete();
-    delayMs(10);
 
-    delayMs(100);
+    auto begin = std::chrono::steady_clock::now();
+    stream.waitForTransferComplete();
+    auto end = std::chrono::steady_clock::now();
 
+    printf("After:\n");
     printf("Buffer 1:\n");
     printBuffer(buffer1, sizeof(buffer1));
     printf("Buffer 2:\n");
     printBuffer(buffer2, sizeof(buffer2));
+
+    const auto elapsedTime =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+            .count();
+    printf("Elapsed time: %lld [us]\n", elapsedTime);
+
+    return 0;
 }
 
 void printBuffer(uint8_t *buffer, size_t size)

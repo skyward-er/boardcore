@@ -37,10 +37,9 @@ namespace Boardcore
 inline bool timedPollingFlag(std::function<bool()> readFlag,
                              uint64_t timeout_ns)
 {
-    // TODO: When Miosix 2.7 will be supported, change this with getTime() in ns
-    uint64_t start = miosix::getTick();
+    uint64_t start = miosix::getTime();
 
-    while (miosix::getTick() - start < timeout_ns * 1e6)
+    while (miosix::getTime() - start < timeout_ns)
     {
         if (readFlag())
         {
