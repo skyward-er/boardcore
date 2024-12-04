@@ -33,24 +33,45 @@
 namespace Boardcore
 {
 
-enum class DMAStreamId
+// TODO: remove and find a better solution for stm32f407
+#ifndef DMA_SxCR_MSIZE_Pos
+#define DMA_SxCR_MSIZE_Pos (13U)
+#endif
+// TODO: remove and find a better solution for stm32f407
+#ifndef DMA_SxCR_PSIZE_Pos
+#define DMA_SxCR_PSIZE_Pos (11U)
+#endif
+
+enum class DMAStreamId : uint8_t
 {
     DMA1_Str0 = 0,
-    DMA1_Str1,
-    DMA1_Str2,
-    DMA1_Str3,
-    DMA1_Str4,
-    DMA1_Str5,
-    DMA1_Str6,
-    DMA1_Str7,
-    DMA2_Str0,
-    DMA2_Str1,
-    DMA2_Str2,
-    DMA2_Str3,
-    DMA2_Str4,
-    DMA2_Str5,
-    DMA2_Str6,
-    DMA2_Str7,
+    DMA1_Str1 = 1,
+    DMA1_Str2 = 2,
+    DMA1_Str3 = 3,
+    DMA1_Str4 = 4,
+    DMA1_Str5 = 5,
+    DMA1_Str6 = 6,
+    DMA1_Str7 = 7,
+    DMA2_Str0 = 8,
+    DMA2_Str1 = 9,
+    DMA2_Str2 = 10,
+    DMA2_Str3 = 11,
+    DMA2_Str4 = 12,
+    DMA2_Str5 = 13,
+    DMA2_Str6 = 14,
+    DMA2_Str7 = 15,
+};
+
+/**
+ * @brief Mapping between `DMAStreamId` and the corresponding irq number.
+ * This is needed because irq number values are not contiguous and they are
+ * architecture dependent.
+ */
+const IRQn_Type irqNumberMapping[] = {
+    DMA1_Stream0_IRQn, DMA1_Stream1_IRQn, DMA1_Stream2_IRQn, DMA1_Stream3_IRQn,
+    DMA1_Stream4_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream7_IRQn,
+    DMA2_Stream0_IRQn, DMA2_Stream1_IRQn, DMA2_Stream2_IRQn, DMA2_Stream3_IRQn,
+    DMA2_Stream4_IRQn, DMA2_Stream5_IRQn, DMA2_Stream6_IRQn, DMA2_Stream7_IRQn,
 };
 
 struct DMATransaction
@@ -144,8 +165,15 @@ class DMAStream
     friend DMADriver;
 
 public:
+    /**
+     * @brief Setup the stream with the given configuration.
+     */
     void setup(DMATransaction transaction);
 
+    /**
+     * @brief Activate the stream. As soon as the stream is enabled, it
+     * can serve any DMA request from the peripheral connected to the stream.
+     */
     void enable();
 
     void disable();
@@ -241,6 +269,10 @@ public:
         *IFCR |= DMA_LIFCR_CDMEIF0 << IFindex;
     }
 
+    /**
+     * @brief Clear all the flags for the selected stream in the DMA ISR
+     * register (LISR or HISR depending on the selected stream id).
+     */
     inline void clearAllFlags()
     {
         *IFCR |= (DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTCIF0 | DMA_LIFCR_CTEIF0 |
@@ -252,6 +284,11 @@ private:
     DMAStream(DMAStreamId id);
 
     DMATransaction currentSetup;
+
+    /**
+     * @brief Used to determine if the user thread is
+     * waiting to be awaked by an interrupt.
+     */
     miosix::Thread* waitingThread = nullptr;
 
     // These flags are set by the interrupt routine and tells the user
@@ -308,25 +345,22 @@ private:
                 {
                     do
                     {
-                        // TODO: Wait Miosix 2.7 or do in another way?
-                        // if (miosix::Thread::IRQenableIrqAndTimedWait(
-                        //         dLock, timeout_ns + miosix::getTime()) ==
-                        //     miosix::TimedWaitResult::Timeout)
-                        // {
-                        //     result = false;
+                        if (miosix::Thread::IRQenableIrqAndTimedWait(
+                                dLock, timeout_ns + miosix::getTime()) ==
+                            miosix::TimedWaitResult::Timeout)
+                        {
+                            result = false;
 
-                        //     // If the timeout expired we clear the thread
-                        //     // pointer so that the interrupt, if it will
-                        //     occur,
-                        //     // will not wake up the thread (and we can exit
-                        //     the
-                        //     // while loop)
-                        //     waitingThread = nullptr;
-                        // }
-                        // else
-                        // {
-                        //     result = true;
-                        // }
+                            // If the timeout expired we clear the thread
+                            // pointer so that the interrupt, if it will occur,
+                            // will not wake up the thread (and we can exit the
+                            // while loop)
+                            waitingThread = nullptr;
+                        }
+                        else
+                        {
+                            result = true;
+                        }
                     } while (waitingThread);
                 }
                 else
@@ -348,12 +382,20 @@ private:
             // Pool the flag if the user did not enable the interrupt
             if (timeout_ns >= 0)
             {
+                // TODO: this doesn't work, because the methods passed as
+                // getEventStatus do not update the flags (reading them
+                // by calling readFlags()).
+                // This means that it always polls a value that will
+                // never become true, then exit when the timeout is
+                // reached.
                 result = timedPollingFlag(getEventStatus, timeout_ns);
             }
             else
             {
                 while (!getEventStatus())
-                    ;
+                {
+                    readFlags();
+                }
                 result = true;
             }
 
