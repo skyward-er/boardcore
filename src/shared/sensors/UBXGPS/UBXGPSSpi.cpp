@@ -109,6 +109,21 @@ bool UBXGPSSpi::selfTest() { return true; }
 
 UBXGPSData UBXGPSSpi::sampleImpl()
 {
+/**
+*PARTE AGGIUNTA
+*
+**/
+    long long currentTimestamp = Kernel::getOldTick();
+
+    // Controlla se è passato abbastanza tempo dall'ultimo campione
+    if (currentTimestamp - lastSampleTimestamp < 1)
+    {
+        return lastSample; // Restituisce l'ultimo campione se la differenza è < 1ms
+    }
+
+
+
+
     UBXPvtFrame pvt;
 
     if (!readUBXFrame(pvt))
@@ -137,6 +152,16 @@ UBXGPSData UBXGPSSpi::sampleImpl()
                             .second     = pvtP.sec,
                             .nanosecond = pvtP.nano,
                             .accuracy   = pvtP.tAcc};
+
+
+
+
+
+    // Aggiorna il timestamp dell'ultimo campione
+    lastSampleTimestamp = currentTimestamp;
+
+
+
 
     return sample;
 }
