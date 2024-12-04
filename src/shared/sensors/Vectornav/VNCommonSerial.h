@@ -125,6 +125,20 @@ public:
     bool setGyroscopeCompensation(const Eigen::Matrix3f &c,
                                   const Eigen::Vector3f &b);
 
+    /**
+     * @brief Write the current register settings into non-volatile
+     * memory. Once the settings are stored in non-volatile (Flash)
+     * memory, the VN module can be power cycled or reset, and
+     * the register will be reloaded from non-volatile memory.
+     */
+    bool saveConfiguration();
+
+    /**
+     * @brief Restore the VN module’s factory default settings and
+     * reset the module.
+     */
+    bool restoreFactorySettings();
+
 protected:
     /**
      * @brief Calculate the 8bit checksum on the given array.
