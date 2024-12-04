@@ -203,8 +203,16 @@ void VN100Serial::buildBinaryData(const BinaryData& binData,
 
 bool VN100Serial::setBinaryOutput()
 {
-    // This command samples quaternion data, accelerometer, angular rate,
-    // magnetometer, temperature and pressure (with async messages disabled)
+    /**
+     * This command samples quaternion data, accelerometer, angular rate,
+     * magnetometer, temperature, and pressure (with asynchronous messages
+     * disabled).
+     *
+     * Refer to the datasheet to modify the sampled data. Note that
+     * changing the sampled data also requires updating VN100SerialData
+     * and BinaryData.
+     */
+
     const char* setBinarySampleCommand = "";
     switch (this->crc)
     {
