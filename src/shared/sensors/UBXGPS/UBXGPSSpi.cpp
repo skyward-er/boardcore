@@ -118,7 +118,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     // Controlla se è passato abbastanza tempo dall'ultimo campione
     if (currentTimestamp - lastSampleTimestamp < 1)
     {
-        return lastSample; // Restituisce l'ultimo campione se la differenza è < 1ms
+        return NO_NEW_DATA; // Restituisce l'ultimo campione se la differenza è < 1ms
     }
 
 
