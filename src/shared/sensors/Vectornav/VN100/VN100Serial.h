@@ -25,30 +25,16 @@
 /**
  * @brief Driver for the VN100S IMU.
  *
- * The VN100S sensor is a calibrated IMU which includes accelerometer,
- * magnetometer, gyroscope, barometer and temperature sensor. The device
- * provides also a calibration matrix and an anti-drift matrix for the gyroscope
- * values. The goal of this driver though is to interface the sensor in its
- * basic use. Things like asynchronous data and anti-drift techniques haven't
- * been implemented yet. The driver is intended to be used with the "Rugged
- * sensor" version (aka only UART communication) although the actual VN100S chip
- * is capable also of SPI communication.
+ * The VN100 sensor is a calibrated IMU which includes accelerometer,
+ * magnetometer, gyroscope, barometer and temperature sensor. It also provides
+ * attitude data (yaw, pith, roll, quaternion). The device provides also a
+ * calibration matrix and an anti-drift matrix for the gyroscope values.
  *
- * The VN100S supports both binary and ASCII encoding for communication but via
- * serial and with the asynchronous mode disabled only ASCII is available. The
- * protocol also provides two algorithms to verify the integrity of the messages
- * (8 bit checksum and 16 bit CRC-CCITT) both selectable by the user using the
- * constructor method. The serial communication also can be established with
- * various baud rates:
- * - 9600
- * - 19200
- * - 38400
- * - 57600
- * - 115200
- * - 128000
- * - 230400
- * - 460800
- * - 921600
+ * This driver samples IMU compensated data (accelerometer, gyroscope and
+ * magnetometer), quaternion data, temperature and pressure data.
+ * The sampling rate is 400Hz.
+ *
+ * This driver only supports binary encoding for communication.
  */
 
 #include <sensors/Sensor.h>
