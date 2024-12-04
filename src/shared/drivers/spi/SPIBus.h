@@ -144,16 +144,6 @@ public:
      */
     void configure(SPIBusConfig newConfig) override;
 
-    /**
-     * @brief See SPIBusInterface::select().
-     */
-    void select(GpioType cs) override;
-
-    /**
-     * @brief See SPIBusInterface::deselect().
-     */
-    void deselect(GpioType cs) override;
-
     // Read, write and transfer operations
 
     /**
@@ -444,26 +434,6 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
         // Enable the peripheral
         enable();
     }
-}
-
-inline void SPIBus::select(GpioType cs)
-{
-    cs.low();
-
-    if (config.csSetupTimeUs > 0)
-    {
-        miosix::delayUs(config.csSetupTimeUs);
-    }
-}
-
-inline void SPIBus::deselect(GpioType cs)
-{
-    if (config.csHoldTimeUs > 0)
-    {
-        miosix::delayUs(config.csHoldTimeUs);
-    }
-
-    cs.high();
 }
 
 inline uint8_t SPIBus::read() { return transfer(0); }

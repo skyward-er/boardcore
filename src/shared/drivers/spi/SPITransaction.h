@@ -23,6 +23,7 @@
 #pragma once
 
 #include "SPIBusInterface.h"
+#include "SPISlave.h"
 
 namespace Boardcore
 {
@@ -62,7 +63,7 @@ public:
      *
      * @param slave Slave to communicate with.
      */
-    explicit SPITransaction(const SPISlave &slave);
+    explicit SPITransaction(SPISlave &slave);
 
     // /**
     //  * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -305,7 +306,7 @@ public:
     void writeRegisters(uint8_t reg, uint8_t *data, size_t size);
 
 private:
-    const SPISlave &slave;
+    SPISlave &slave;
 };
 
 }  // namespace Boardcore

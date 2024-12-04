@@ -299,15 +299,15 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint8_t regId,
         (regId << 16);                    // Id of the register
 
     // Send request packet
-    spiSlave.bus.select(spiSlave.cs);
+    spiSlave.select();
     spiSlave.bus.write32(requestPacket);
-    spiSlave.bus.deselect(spiSlave.cs);
+    spiSlave.deselect();
 
     // Wait at least 100us
     miosix::delayUs(100);
 
     // Read response
-    spiSlave.bus.select(spiSlave.cs);
+    spiSlave.select();
 
     // Discard the first 3 bytes of the response
     VN100SpiDefs::VNErrors err =
@@ -316,13 +316,13 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint8_t regId,
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while attempting to service the request
-        spiSlave.bus.deselect(spiSlave.cs);
+        spiSlave.deselect();
         return err;
     }
 
     spiSlave.bus.read(payloadBuf, payloadSize);
 
-    spiSlave.bus.deselect(spiSlave.cs);
+    spiSlave.deselect();
 
     return VN100SpiDefs::VNErrors::NO_ERROR;
 }
@@ -353,21 +353,21 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint8_t regId,
         (regId << 16);                     // Id of the register
 
     // Send request packet
-    spiSlave.bus.select(spiSlave.cs);
+    spiSlave.select();
     spiSlave.bus.write32(requestPacket);
     spiSlave.bus.write(payloadBuf, payloadSize);
-    spiSlave.bus.deselect(spiSlave.cs);
+    spiSlave.deselect();
 
     // Wait at least 100us
     miosix::delayUs(100);
 
     // Read response
-    spiSlave.bus.select(spiSlave.cs);
+    spiSlave.select();
 
     // Discard the first 3 bytes of the response
     uint8_t err = spiSlave.bus.read32() & 255;
 
-    spiSlave.bus.deselect(spiSlave.cs);
+    spiSlave.deselect();
 
     return (VN100SpiDefs::VNErrors)err;
 }

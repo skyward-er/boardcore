@@ -245,7 +245,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
 
     {
         spiSlave.bus.configure(spiSlave.config);
-        spiSlave.bus.select(spiSlave.cs);
+        spiSlave.select();
 
         // Search UBX frame preamble byte by byte
         size_t i     = 0;
@@ -255,7 +255,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             if (Kernel::getOldTick() >= end)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
-                spiSlave.bus.deselect(spiSlave.cs);
+                spiSlave.deselect();
                 Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
             }
@@ -296,7 +296,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
         spiSlave.bus.read(frame.checksum, 2);
 
-        spiSlave.bus.deselect(spiSlave.cs);
+        spiSlave.deselect();
         Thread::sleep(1);  // GPS minimum time after deselect
     }
 

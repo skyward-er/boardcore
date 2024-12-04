@@ -134,20 +134,6 @@ public:
      */
     virtual void configure(SPIBusConfig config) = 0;
 
-    /**
-     * @brief Selects the slave.
-     *
-     * @param cs Chip select pin for the slave.
-     */
-    virtual void select(GpioType cs) = 0;
-
-    /**
-     * @brief Deselects the slave.
-     *
-     * @param cs Chip select pin for the slave.
-     */
-    virtual void deselect(GpioType cs) = 0;
-
     // Read, write and transfer operations
 
     /**
@@ -285,65 +271,6 @@ public:
      * @param size Size of the buffer.
      */
     virtual void transfer16(uint16_t* data, size_t size) = 0;
-};
-
-/**
- * @brief Contains information about a single SPI slave device.
- */
-struct SPISlave
-{
-    SPIBusInterface& bus;  ///< Bus on which the slave is connected.
-    SPIBusConfig config;   ///< How the bus should be configured to communicate
-                           ///< with the slave.
-    GpioType cs;           ///< Chip select pin
-
-    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
-        : bus(bus), config(config), cs(cs)
-    {
-    }
-};
-
-/**
- * @brief RAII Interface for SPI bus acquisition
- *
- */
-class SPIAcquireLock
-{
-public:
-    explicit SPIAcquireLock(SPISlave slave)
-        : SPIAcquireLock(slave.bus, slave.config)
-    {
-    }
-
-    SPIAcquireLock(SPIBusInterface& bus, SPIBusConfig cfg) : bus(bus)
-    {
-        bus.configure(cfg);
-    }
-
-private:
-    SPIBusInterface& bus;
-};
-
-/**
- * @brief RAII Interface for SPI chip selection.
- */
-class SPISelectLock
-{
-public:
-    explicit SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs)
-    {
-    }
-
-    SPISelectLock(SPIBusInterface& bus, GpioType cs) : bus(bus), cs(cs)
-    {
-        bus.select(cs);
-    }
-
-    ~SPISelectLock() { bus.deselect(cs); }
-
-private:
-    SPIBusInterface& bus;
-    GpioType& cs;
 };
 
 }  // namespace Boardcore

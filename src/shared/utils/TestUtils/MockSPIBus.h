@@ -139,13 +139,13 @@ public:
      * @brief See SPIBusInterface::select()
      *
      */
-    virtual void select(GpioType& cs) override;
+    void select(GpioType& cs);
 
     /**
      * @brief See SPIBusInterface::deselect()
      *
      */
-    virtual void deselect(GpioType& cs) override;
+    void deselect(GpioType& cs);
 
     /**
      * @brief See SPIBusInterface::acquire()

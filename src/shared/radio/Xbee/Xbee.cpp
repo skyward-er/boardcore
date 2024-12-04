@@ -184,10 +184,8 @@ void Xbee::reset()
         // Assert SSEL on every iteration as we don't exactly know when the
         // xbee will be ready.
         {
-            SPIAcquireLock acq(spiXbee);
-            spiXbee.cs.low();
+            SPIAcquireLock sel(spiXbee);
             miosix::delayUs(10);
-            spiXbee.cs.high();
         }
 
         miosix::delayUs(50);

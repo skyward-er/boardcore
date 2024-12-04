@@ -295,7 +295,7 @@ private:
         REG_HUM_LSB    = 0x7E,
     };
 
-    const SPISlave spiSlave;
+    SPISlave spiSlave;
     BME280Config config;
     BME280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm

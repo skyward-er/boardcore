@@ -632,11 +632,11 @@ void Wiz5500::spiRead(uint8_t block, uint16_t address, uint8_t *data,
     // Do a manual SPI transaction
     slave.bus.configure(slave.config);
 
-    slave.bus.select(slave.cs);
+    slave.select();
     slave.bus.write16(address);
     slave.bus.write(Wiz::buildControlWord(block, false));
     slave.bus.read(data, len);
-    slave.bus.deselect(slave.cs);
+    slave.deselect();
 }
 
 void Wiz5500::spiWrite(uint8_t block, uint16_t address, const uint8_t *data,
@@ -645,11 +645,11 @@ void Wiz5500::spiWrite(uint8_t block, uint16_t address, const uint8_t *data,
     // Do a manual SPI transaction
     slave.bus.configure(slave.config);
 
-    slave.bus.select(slave.cs);
+    slave.select();
     slave.bus.write16(address);
     slave.bus.write(Wiz::buildControlWord(block, true));
     slave.bus.write(data, len);
-    slave.bus.deselect(slave.cs);
+    slave.deselect();
 }
 
 uint8_t Wiz5500::spiRead8(uint8_t block, uint16_t address)
