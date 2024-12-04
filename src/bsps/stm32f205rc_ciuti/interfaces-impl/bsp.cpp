@@ -67,7 +67,6 @@ void IRQbspInit()
     GPIOD->OSPEEDR = 0xaaaaaaaa;
 
     using namespace interfaces;
-
     spi1::cs::mode(Mode::OUTPUT);
     spi1::cs::high();
     spi1::sck::alternateFunction(5);
