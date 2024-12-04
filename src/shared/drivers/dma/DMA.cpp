@@ -29,9 +29,6 @@
 
 using namespace miosix;
 
-namespace Boardcore
-{
-
 void __attribute__((naked)) DMA1_Stream0_IRQHandler()
 {
     saveContext();
@@ -41,20 +38,21 @@ void __attribute__((naked)) DMA1_Stream0_IRQHandler()
 
 void __attribute__((used)) DMA1_Stream0_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str0);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA1_Str0);
 }
 
-void __attribute__((naked)) DMA1_Stream1_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream1_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream1_IRQImpl()
-{
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str1);
-}
+// Commented because already used elsewhere by miosix
+// void __attribute__((naked)) DMA1_Stream1_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z20DMA1_Stream1_IRQImplv");
+//     restoreContext();
+// }
+// void __attribute__((used)) DMA1_Stream1_IRQImpl()
+// {
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(Boardcore::DMAStreamId::DMA1_Str1);
+// }
 
 void __attribute__((naked)) DMA1_Stream2_IRQHandler()
 {
@@ -65,20 +63,21 @@ void __attribute__((naked)) DMA1_Stream2_IRQHandler()
 
 void __attribute__((used)) DMA1_Stream2_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str2);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA1_Str2);
 }
 
-void __attribute__((naked)) DMA1_Stream3_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream3_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream3_IRQImpl()
-{
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str3);
-}
+// Commented because already used elsewhere by miosix
+// void __attribute__((naked)) DMA1_Stream3_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z20DMA1_Stream3_IRQImplv");
+//     restoreContext();
+// }
+// void __attribute__((used)) DMA1_Stream3_IRQImpl()
+// {
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(Boardcore::DMAStreamId::DMA1_Str3);
+// }
 
 void __attribute__((naked)) DMA1_Stream4_IRQHandler()
 {
@@ -89,7 +88,8 @@ void __attribute__((naked)) DMA1_Stream4_IRQHandler()
 
 void __attribute__((used)) DMA1_Stream4_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str4);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA1_Str4);
 }
 
 void __attribute__((naked)) DMA1_Stream5_IRQHandler()
@@ -101,7 +101,8 @@ void __attribute__((naked)) DMA1_Stream5_IRQHandler()
 
 void __attribute__((used)) DMA1_Stream5_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str5);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA1_Str5);
 }
 
 void __attribute__((naked)) DMA1_Stream6_IRQHandler()
@@ -113,7 +114,8 @@ void __attribute__((naked)) DMA1_Stream6_IRQHandler()
 
 void __attribute__((used)) DMA1_Stream6_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str6);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA1_Str6);
 }
 
 void __attribute__((naked)) DMA1_Stream7_IRQHandler()
@@ -125,7 +127,8 @@ void __attribute__((naked)) DMA1_Stream7_IRQHandler()
 
 void __attribute__((used)) DMA1_Stream7_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA1_Str7);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA1_Str7);
 }
 
 void __attribute__((naked)) DMA2_Stream0_IRQHandler()
@@ -137,7 +140,8 @@ void __attribute__((naked)) DMA2_Stream0_IRQHandler()
 
 void __attribute__((used)) DMA2_Stream0_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str0);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str0);
 }
 
 void __attribute__((naked)) DMA2_Stream1_IRQHandler()
@@ -149,7 +153,8 @@ void __attribute__((naked)) DMA2_Stream1_IRQHandler()
 
 void __attribute__((used)) DMA2_Stream1_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str1);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str1);
 }
 
 void __attribute__((naked)) DMA2_Stream2_IRQHandler()
@@ -161,7 +166,8 @@ void __attribute__((naked)) DMA2_Stream2_IRQHandler()
 
 void __attribute__((used)) DMA2_Stream2_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str2);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str2);
 }
 
 // void __attribute__((naked)) DMA2_Stream3_IRQHandler() {
@@ -183,7 +189,8 @@ void __attribute__((naked)) DMA2_Stream4_IRQHandler()
 
 void __attribute__((used)) DMA2_Stream4_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str4);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str4);
 }
 
 // void __attribute__((naked)) DMA2_Stream5_IRQHandler() {
@@ -205,7 +212,8 @@ void __attribute__((naked)) DMA2_Stream6_IRQHandler()
 
 void __attribute__((used)) DMA2_Stream6_IRQImpl()
 {
-    DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str6);
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str6);
 }
 
 // void __attribute__((naked)) DMA2_Stream7_IRQHandler() {
@@ -217,6 +225,9 @@ void __attribute__((used)) DMA2_Stream6_IRQImpl()
 // void __attribute__((used)) DMA2_Stream7_IRQImpl() {
 //     DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str7);
 // }
+
+namespace Boardcore
+{
 
 void DMADriver::IRQhandleInterrupt(DMAStreamId id)
 {
@@ -320,9 +331,9 @@ DMADriver::DMADriver()
     ClockUtils::enablePeripheralClock(DMA1);
     ClockUtils::enablePeripheralClock(DMA2);
 
-    // Reset interrupts flags
+    // Reset interrupts flags by setting the clear bits to 1
     // TODO: Change this magic number
-    DMA1->HIFCR = 0x0f7d0f7d;
+    DMA1->HIFCR = 0x0f7d0f7d;  // = 0b 0000 1111 0111 1101 0000 1111 0111 1101
     DMA1->LIFCR = 0x0f7d0f7d;
     DMA2->HIFCR = 0x0f7d0f7d;
     DMA2->LIFCR = 0x0f7d0f7d;
@@ -443,6 +454,11 @@ void DMAStream::enable()
     fifoErrorFlag        = false;
     directModeErrorFlag  = false;
 
+    // Before setting EN bit to '1' to start a new transfer, the event
+    //  flags corresponding to the stream in DMA_LISR or DMA_HISR
+    //  register must be cleared.
+    clearAllFlags();
+
     // Enable the peripheral
     registers->CR |= DMA_SxCR_EN;
 }
@@ -532,15 +548,17 @@ DMAStream::DMAStream(DMAStreamId id) : id(id)
     if (id < DMAStreamId::DMA2_Str0)
     {
         registers = reinterpret_cast<DMA_Stream_TypeDef*>(
-            DMA1_BASE + 0x10 + 0x18 * static_cast<int>(id));
+            DMA1_BASE + 0x10 + 0x18 * static_cast<uint8_t>(id));
 
         if (id < DMAStreamId::DMA1_Str4)
         {
+            // Streams from 0 to 3 use low registers (LIFCR and LISR)
             IFCR = &DMA1->LIFCR;
             ISR  = &DMA1->LISR;
         }
         else
         {
+            // Streams from 4 to 7 use high registers (HIFCR and HISR)
             IFCR = &DMA1->HIFCR;
             ISR  = &DMA1->HISR;
         }
@@ -548,15 +566,17 @@ DMAStream::DMAStream(DMAStreamId id) : id(id)
     else
     {
         registers = reinterpret_cast<DMA_Stream_TypeDef*>(
-            DMA2_BASE + 0x10 + 0x18 * (static_cast<int>(id) - 8));
+            DMA2_BASE + 0x10 + 0x18 * (static_cast<uint8_t>(id) - 8));
 
         if (id < DMAStreamId::DMA2_Str4)
         {
+            // Streams from 0 to 3 use low registers (LIFCR and LISR)
             IFCR = &DMA2->LIFCR;
             ISR  = &DMA2->LISR;
         }
         else
         {
+            // Streams from 4 to 7 use high registers (HIFCR and HISR)
             IFCR = &DMA2->HIFCR;
             ISR  = &DMA2->HISR;
         }
@@ -564,12 +584,11 @@ DMAStream::DMAStream(DMAStreamId id) : id(id)
 
     // Compute the index for the interrupt flags clear register
     // Refer to reference manual for the register bits structure
-    int offset = static_cast<int>(id) % 4;
+    int offset = static_cast<uint8_t>(id) % 4;
     IFindex    = (offset % 2) * 6 + (offset / 2) * 16;
 
     // Select the interrupt
-    irqNumber = static_cast<IRQn_Type>(
-        static_cast<int>(IRQn_Type::DMA1_Stream0_IRQn) + static_cast<int>(id));
+    irqNumber = irqNumberMapping[static_cast<uint8_t>(id)];
 }
 
 }  // namespace Boardcore
