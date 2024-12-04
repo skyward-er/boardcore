@@ -504,6 +504,71 @@ bool VNCommonSerial::setGyroscopeCompensation(const Eigen::Matrix3f &c,
     return writeRegister(command);
 }
 
+bool VNCommonSerial::saveConfiguration()
+{
+    // Clear the receiving queue
+    usart.clearQueue();
+
+    if (!sendStringCommand("VNWNV"))
+    {
+        LOG_ERR(logger, "saveConfiguration: unable to send string command");
+        return false;
+    }
+
+    // The write settings command takes ~500ms to complete
+    miosix::Thread::sleep(500);
+
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        LOG_WARN(logger, "saveConfiguration: unable to receive string command");
+        return false;
+    }
+
+    if (!verifyChecksum(recvString.data(), recvStringLength))
+    {
+        LOG_ERR(logger, "saveConfiguration: checksum verification failed: {}",
+                recvString.data());
+        return false;
+    }
+
+    return true;
+}
+
+bool VNCommonSerial::restoreFactorySettings()
+{
+    // Clear the receiving queue
+    usart.clearQueue();
+
+    if (!sendStringCommand("VNRFS"))
+    {
+        LOG_ERR(logger,
+                "restoreFactorySettings: unable to send string command");
+        return false;
+    }
+
+    miosix::Thread::sleep(100);
+
+    if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+    {
+        LOG_WARN(logger,
+                 "restoreFactorySettings: unable to receive string command");
+        return false;
+    }
+
+    if (!verifyChecksum(recvString.data(), recvStringLength))
+    {
+        LOG_ERR(logger,
+                "restoreFactorySettings: checksum verification failed: {}",
+                recvString.data());
+        return false;
+    }
+
+    // Everything is fine, let the sensor restart
+    miosix::Thread::sleep(2000);
+
+    return true;
+}
+
 bool VNCommonSerial::sendStringCommand(std::string command)
 {
     if (crc == CRCOptions::CRC_ENABLE_8)
