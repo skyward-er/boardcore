@@ -46,7 +46,7 @@ struct ReferenceValues
     float mslPressure    = Constants::MSL_PRESSURE;
     float mslTemperature = Constants::MSL_TEMPERATURE;
 
-    ReferenceValues() {};
+    ReferenceValues(){};
 
     ReferenceValues(float altitude, float pressure, float temperature,
                     float refLatitude    = Constants::B21_LATITUDE,

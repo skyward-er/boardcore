@@ -39,9 +39,9 @@ static const float CAL_V_DDA    = 3.3f;
 #elif defined(STM32F767xx) || defined(STM32F769xx) || defined(STM32F756xx)
 #define CAL_PT1_VALUE ((uint16_t volatile *)((uint32_t)0x1FF0F44C))
 #define CAL_PT2_VALUE ((uint16_t volatile *)((uint32_t)0x1FF0F44E))
-static const float CAL_PT1_TEMP = 30;
-static const float CAL_PT2_TEMP = 110;
-static const float CAL_V_DDA    = 3.3f;
+static const float CAL_PT1_TEMP           = 30;
+static const float CAL_PT2_TEMP           = 110;
+static const float CAL_V_DDA              = 3.3f;
 #else
 #warning This micro controller does not have a calibrated temperature sensor or is not currently supported by this driver
 #endif

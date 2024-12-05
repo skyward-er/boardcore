@@ -34,7 +34,7 @@ protected:
 
 public:
     virtual int getDummy() { return dummy; };
-    virtual void toggleDummy() {};
+    virtual void toggleDummy(){};
 };
 
 class HILSensors : public SensorsModule

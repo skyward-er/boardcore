@@ -47,8 +47,8 @@ public:
      */
     TwoPointAnalogLoadCell(std::function<ADCData()> getVoltage, float p0Voltage,
                            float p0Mass, float p1Voltage, float p1Mass)
-        : getVoltage{getVoltage},
-          staticScale{(p1Mass - p0Mass) / (p1Voltage - p0Voltage)},
+        : getVoltage{getVoltage}, staticScale{(p1Mass - p0Mass) /
+                                              (p1Voltage - p0Voltage)},
           staticOffset{p0Mass - staticScale * p0Voltage}
     {
     }

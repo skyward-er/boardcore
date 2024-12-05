@@ -49,8 +49,8 @@ public:
                          float shuntResistance, float maxPressure,
                          float minCurrent = 4, float maxCurrent = 20)
         : getVoltage{getVoltage}, shuntResistance{shuntResistance},
-          maxPressure{maxPressure}, minCurrent{minCurrent},
-          maxCurrent{maxCurrent}
+          maxPressure{maxPressure}, minCurrent{minCurrent}, maxCurrent{
+                                                                maxCurrent}
     {
     }
 

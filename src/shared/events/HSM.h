@@ -66,7 +66,7 @@ public:
         temp  = initialState;
     }
 
-    virtual ~HSM() {};
+    virtual ~HSM(){};
 
     bool start() override
     {

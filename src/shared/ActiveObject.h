@@ -48,7 +48,7 @@ public:
     ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
                  miosix::Priority priority = miosix::MAIN_PRIORITY);
 
-    virtual ~ActiveObject() {};
+    virtual ~ActiveObject(){};
 
     /**
      * @brief Start the thread associated with this active object.

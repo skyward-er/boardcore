@@ -48,10 +48,10 @@ struct AntennaAngles
 
     AntennaAngles() : timestamp{0}, yaw{0}, pitch{0} {};
     AntennaAngles(uint64_t timestamp, float yaw, float pitch)
-        : timestamp{timestamp}, yaw(yaw), pitch(pitch) {};
+        : timestamp{timestamp}, yaw(yaw), pitch(pitch){};
     AntennaAngles(uint64_t timestamp, float yaw, float pitch,
                   uint32_t nrPropagations)
-        : timestamp{timestamp}, yaw(yaw), pitch(pitch) {};
+        : timestamp{timestamp}, yaw(yaw), pitch(pitch){};
 };
 
 /**
@@ -62,13 +62,13 @@ struct AntennaAnglesLog : public AntennaAngles
     uint32_t nrPropagations =
         0;  //!< Nr of propagations by the propagator (0 if no propagation)
 
-    AntennaAnglesLog() : AntennaAngles(), nrPropagations(0) {};
+    AntennaAnglesLog() : AntennaAngles(), nrPropagations(0){};
     AntennaAnglesLog(uint64_t timestamp, float yaw, float pitch)
         : AntennaAngles(timestamp, yaw, pitch), nrPropagations{0} {};
     AntennaAnglesLog(uint64_t timestamp, float yaw, float pitch,
                      uint32_t nrPropagations)
-        : AntennaAngles(timestamp, yaw, pitch),
-          nrPropagations{nrPropagations} {};
+        : AntennaAngles(timestamp, yaw, pitch), nrPropagations{
+                                                    nrPropagations} {};
     AntennaAnglesLog(AntennaAngles angle, uint32_t nrPropagations)
         : AntennaAngles(angle), nrPropagations{nrPropagations} {};
 

@@ -93,7 +93,7 @@ public:
 
 protected:
     // Do nothing
-    void handleEvent(const Event& ev __attribute__((unused))) override {};
+    void handleEvent(const Event& ev __attribute__((unused))) override{};
 
 private:
     EventBroker& broker;
