@@ -243,53 +243,53 @@ void IRQbspInit()
 
     // Setting AF, mode for interfaces
 
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi2::sck::mode(Mode::ALTERNATE);
     interfaces::spi2::sck::alternateFunction(5);
-    interfaces::spi2::miso::mode(Mode::ALTERNATE);
+    interfaces::spi2::sck::mode(Mode::ALTERNATE);
     interfaces::spi2::miso::alternateFunction(5);
-    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi2::miso::mode(Mode::ALTERNATE);
     interfaces::spi2::mosi::alternateFunction(5);
+    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::sck::alternateFunction(5);
-    interfaces::spi4::miso::mode(Mode::ALTERNATE);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::miso::alternateFunction(5);
-    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::mosi::alternateFunction(5);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
     // We do not need to setup the miosix usart
 
-    interfaces::usart2::tx::mode(Mode::ALTERNATE_PULL_UP);
     interfaces::usart2::tx::alternateFunction(7);
-    interfaces::usart2::rx::mode(Mode::ALTERNATE_OD_PULL_UP);
+    interfaces::usart2::tx::mode(Mode::ALTERNATE_PULL_UP);
     interfaces::usart2::rx::alternateFunction(7);
+    interfaces::usart2::rx::mode(Mode::ALTERNATE_OD_PULL_UP);
 
-    interfaces::uart4::tx::mode(Mode::ALTERNATE);
     interfaces::uart4::tx::alternateFunction(8);
-    interfaces::uart4::rx::mode(Mode::ALTERNATE);
+    interfaces::uart4::tx::mode(Mode::ALTERNATE);
     interfaces::uart4::rx::alternateFunction(8);
+    interfaces::uart4::rx::mode(Mode::ALTERNATE);
 
-    interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim1ch1::alternateFunction(1);
-    // interfaces::timers::tim2ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
     // interfaces::timers::tim2ch1::alternateFunction(1);
-    // interfaces::timers::tim2ch4::mode(Mode::ALTERNATE);
+    // interfaces::timers::tim2ch1::mode(Mode::ALTERNATE);
     // interfaces::timers::tim2ch4::alternateFunction(1);
-    interfaces::timers::tim3ch2::mode(Mode::ALTERNATE);
+    // interfaces::timers::tim2ch4::mode(Mode::ALTERNATE);
     interfaces::timers::tim3ch2::alternateFunction(2);
-    interfaces::timers::tim4ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim3ch2::mode(Mode::ALTERNATE);
     interfaces::timers::tim4ch1::alternateFunction(2);
-    interfaces::timers::tim8ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim4ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim8ch1::alternateFunction(3);
-    // interfaces::timers::tim10ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim8ch1::mode(Mode::ALTERNATE);
     // interfaces::timers::tim10ch1::alternateFunction(3);
+    // interfaces::timers::tim10ch1::mode(Mode::ALTERNATE);
 
     commBox::ledTimY1::mode(Mode::OUTPUT);
     commBox::ledTimY1::low();

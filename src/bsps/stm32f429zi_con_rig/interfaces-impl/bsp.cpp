@@ -213,12 +213,12 @@ void IRQbspInit()
     RCC_SYNC();
 
     // Initialize everything
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
 
     btns::n2o_filling::mode(Mode::INPUT);
     btns::n2o_release::mode(Mode::INPUT);

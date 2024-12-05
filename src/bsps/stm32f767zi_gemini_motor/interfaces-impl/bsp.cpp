@@ -224,38 +224,38 @@ void IRQbspInit()
     // Enable USART1 pins port
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
+    interfaces::spi1::sck::mode(Mode::ALTERNATE);
     interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi1::miso::mode(Mode::ALTERNATE);
     interfaces::spi1::mosi::alternateFunction(5);
+    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi3::sck::mode(Mode::ALTERNATE);
     interfaces::spi3::sck::alternateFunction(6);
-    interfaces::spi3::miso::mode(Mode::ALTERNATE);
+    interfaces::spi3::sck::mode(Mode::ALTERNATE);
     interfaces::spi3::miso::alternateFunction(6);
-    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi3::miso::mode(Mode::ALTERNATE);
     interfaces::spi3::mosi::alternateFunction(5);
+    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::sck::alternateFunction(5);
-    interfaces::spi4::miso::mode(Mode::ALTERNATE);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
     interfaces::spi4::miso::alternateFunction(5);
-    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
     interfaces::spi4::mosi::alternateFunction(5);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
     // USART1 configured by the miosix serial driver
 
-    interfaces::usart2::tx::mode(Mode::ALTERNATE);
     interfaces::usart2::tx::alternateFunction(7);
-    interfaces::usart2::rx::mode(Mode::ALTERNATE);
+    interfaces::usart2::tx::mode(Mode::ALTERNATE);
     interfaces::usart2::rx::alternateFunction(7);
+    interfaces::usart2::rx::mode(Mode::ALTERNATE);
 
-    interfaces::can2::tx::mode(Mode::ALTERNATE);
     interfaces::can2::tx::alternateFunction(9);
-    interfaces::can2::rx::mode(Mode::ALTERNATE);
+    interfaces::can2::tx::mode(Mode::ALTERNATE);
     interfaces::can2::rx::alternateFunction(9);
+    interfaces::can2::rx::mode(Mode::ALTERNATE);
 
     peripherals::leds::userLed1::mode(Mode::OUTPUT);
     peripherals::leds::userLed2::mode(Mode::OUTPUT);
@@ -287,10 +287,10 @@ void IRQbspInit()
     peripherals::max31856::cs::mode(Mode::OUTPUT);
     peripherals::max31856::cs::high();
 
-    peripherals::servos::servo1::mode(Mode::ALTERNATE);
     peripherals::servos::servo1::alternateFunction(3);
-    peripherals::servos::servo2::mode(Mode::ALTERNATE);
+    peripherals::servos::servo1::mode(Mode::ALTERNATE);
     peripherals::servos::servo2::alternateFunction(3);
+    peripherals::servos::servo2::mode(Mode::ALTERNATE);
 
     peripherals::tank_level::lvl1::mode(Mode::INPUT);
     peripherals::tank_level::lvl2::mode(Mode::INPUT);

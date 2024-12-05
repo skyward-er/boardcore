@@ -99,13 +99,13 @@ void __attribute__((used)) EXTI2_IRQHandlerImpl()
 void configure()
 {
     // Set SPI pins to correct alternate mode
-    GpioSck::mode(Mode::ALTERNATE);
-    GpioMiso::mode(Mode::ALTERNATE);
-    GpioMosi::mode(Mode::ALTERNATE);
-
     GpioSck::alternateFunction(5);
     GpioMiso::alternateFunction(5);
     GpioMosi::alternateFunction(5);
+
+    GpioSck::mode(Mode::ALTERNATE);
+    GpioMiso::mode(Mode::ALTERNATE);
+    GpioMosi::mode(Mode::ALTERNATE);
 
     // Setup interrupt pin (sensors pulls INT2 up, so we set it to PULL_DOWN
     // to avoid spurious interrupts)

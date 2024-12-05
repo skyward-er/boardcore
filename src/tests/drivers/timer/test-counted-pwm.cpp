@@ -39,11 +39,11 @@ typedef Gpio<GPIOD_BASE, 12> tim4ch1;  // AF2
 
 int main()
 {
-    tim3ch1::mode(Mode::ALTERNATE);
     tim3ch1::alternateFunction(2);
+    tim3ch1::mode(Mode::ALTERNATE);
 
-    tim4ch1::mode(Mode::ALTERNATE);
     tim4ch1::alternateFunction(2);
+    tim4ch1::mode(Mode::ALTERNATE);
 
     CountedPWM pwm(
         TIM3, TimerUtils::Channel::CHANNEL_1, TimerUtils::TriggerSource::ITR3,

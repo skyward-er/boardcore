@@ -327,19 +327,19 @@ void IRQbspInit()
 #endif  //__ENABLE_XRAM
 
     using namespace interfaces;
-    spi1::sck::mode(Mode::ALTERNATE);
     spi1::sck::alternateFunction(5);
-    spi1::miso::mode(Mode::ALTERNATE);
+    spi1::sck::mode(Mode::ALTERNATE);
     spi1::miso::alternateFunction(5);
-    spi1::mosi::mode(Mode::ALTERNATE);
+    spi1::miso::mode(Mode::ALTERNATE);
     spi1::mosi::alternateFunction(5);
+    spi1::mosi::mode(Mode::ALTERNATE);
 
-    spi2::sck::mode(Mode::ALTERNATE);
     spi2::sck::alternateFunction(5);
-    spi2::miso::mode(Mode::ALTERNATE);
+    spi2::sck::mode(Mode::ALTERNATE);
     spi2::miso::alternateFunction(5);
-    spi2::mosi::mode(Mode::ALTERNATE);
+    spi2::miso::mode(Mode::ALTERNATE);
     spi2::mosi::alternateFunction(5);
+    spi2::mosi::mode(Mode::ALTERNATE);
 
     // Software I2C
     i2c::scl::high();
@@ -347,21 +347,21 @@ void IRQbspInit()
     i2c::sda::high();
     i2c::sda::mode(Mode::OPEN_DRAIN);
 
-    uart4::rx::mode(Mode::ALTERNATE);
     uart4::rx::alternateFunction(8);
-    uart4::tx::mode(Mode::ALTERNATE);
+    uart4::rx::mode(Mode::ALTERNATE);
     uart4::tx::alternateFunction(8);
+    uart4::tx::mode(Mode::ALTERNATE);
 
-    can::rx::mode(Mode::ALTERNATE);
     can::rx::alternateFunction(9);
-    can::tx::mode(Mode::ALTERNATE);
+    can::rx::mode(Mode::ALTERNATE);
     can::tx::alternateFunction(9);
+    can::tx::mode(Mode::ALTERNATE);
 
     using namespace sensors;
     adis16405::cs::mode(Mode::OUTPUT);
     adis16405::cs::high();
-    adis16405::ckIn::mode(Mode::ALTERNATE);
     adis16405::ckIn::alternateFunction(2);
+    adis16405::ckIn::mode(Mode::ALTERNATE);
     adis16405::dio1::mode(Mode::INPUT);
     adis16405::rst::mode(Mode::OUTPUT);
     adis16405::rst::high();
@@ -396,11 +396,11 @@ void IRQbspInit()
     motP2::mode(Mode::OUTPUT);
     motP2::low();
 
-    rogP1::mode(Mode::ALTERNATE);
     rogP1::alternateFunction(2);
+    rogP1::mode(Mode::ALTERNATE);
 
-    rogP2::mode(Mode::ALTERNATE);
     rogP2::alternateFunction(2);
+    rogP2::mode(Mode::ALTERNATE);
 
     nc_dtch::mode(Mode::INPUT);
     motor_act::mode(Mode::INPUT);
@@ -412,8 +412,8 @@ void IRQbspInit()
     motor_gnd::low();
 
     using namespace actuators;
-    tcPwm::mode(Mode::ALTERNATE);
     tcPwm::alternateFunction(3);
+    tcPwm::mode(Mode::ALTERNATE);
 
     thCut1::ena::mode(Mode::OUTPUT);
     thCut1::ena::low();

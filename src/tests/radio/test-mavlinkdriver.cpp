@@ -47,10 +47,10 @@ void payloadGenerator();
 
 int main()
 {
-    u2rx::mode(Mode::ALTERNATE);
     u2rx::alternateFunction(7);
-    u2tx::mode(Mode::ALTERNATE);
+    u2rx::mode(Mode::ALTERNATE);
     u2tx::alternateFunction(7);
+    u2tx::mode(Mode::ALTERNATE);
 
     TaskScheduler scheduler;
     scheduler.addTask(payloadGenerator, 2000);

@@ -63,11 +63,11 @@ int main()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        CanRX::mode(Mode::ALTERNATE);
-        CanTX::mode(Mode::ALTERNATE);
-
         CanRX::alternateFunction(9);
         CanTX::alternateFunction(9);
+
+        CanRX::mode(Mode::ALTERNATE);
+        CanTX::mode(Mode::ALTERNATE);
     }
 
     CanbusDriver::CanbusConfig cfg;

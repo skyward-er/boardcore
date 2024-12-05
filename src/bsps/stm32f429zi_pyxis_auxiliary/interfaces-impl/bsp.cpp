@@ -62,29 +62,29 @@ void IRQbspInit()
 
     using namespace interfaces;
 
-    debug::rx::mode(Mode::ALTERNATE);
     debug::rx::alternateFunction(8);
-    debug::tx::mode(Mode::ALTERNATE);
+    debug::rx::mode(Mode::ALTERNATE);
     debug::tx::alternateFunction(8);
+    debug::tx::mode(Mode::ALTERNATE);
 
-    cam1::rx::mode(Mode::ALTERNATE);
     cam1::rx::alternateFunction(7);
-    cam1::tx::mode(Mode::ALTERNATE);
+    cam1::rx::mode(Mode::ALTERNATE);
     cam1::tx::alternateFunction(7);
+    cam1::tx::mode(Mode::ALTERNATE);
 
-    cam2::tx::mode(Mode::ALTERNATE);
     cam2::tx::alternateFunction(8);
+    cam2::tx::mode(Mode::ALTERNATE);
 
-    cam3::tx::mode(Mode::ALTERNATE);
     cam3::tx::alternateFunction(8);
+    cam3::tx::mode(Mode::ALTERNATE);
 
     camMosfet::mode(Mode::OUTPUT);
     camMosfet::low();
 
-    can1::rx::mode(Mode::ALTERNATE);
     can1::rx::alternateFunction(9);
-    can1::tx::mode(Mode::ALTERNATE);
+    can1::rx::mode(Mode::ALTERNATE);
     can1::tx::alternateFunction(9);
+    can1::tx::mode(Mode::ALTERNATE);
 
     using namespace leds;
 

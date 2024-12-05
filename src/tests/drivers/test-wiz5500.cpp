@@ -45,12 +45,13 @@ SPIBus bus(SPI4);
 
 void setupBoard()
 {
-    sck::mode(Mode::ALTERNATE);
     sck::alternateFunction(5);
-    miso::mode(Mode::ALTERNATE);
+    sck::mode(Mode::ALTERNATE);
     miso::alternateFunction(5);
-    mosi::mode(Mode::ALTERNATE);
+    miso::mode(Mode::ALTERNATE);
     mosi::alternateFunction(5);
+    mosi::mode(Mode::ALTERNATE);
+
     cs::mode(Mode::OUTPUT);
     cs::high();
     intn::mode(Mode::INPUT);

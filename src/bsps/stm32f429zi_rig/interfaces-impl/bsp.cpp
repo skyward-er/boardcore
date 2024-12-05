@@ -214,62 +214,62 @@ void IRQbspInit()
 
     using namespace interfaces;
 
-    spi1::sck::mode(Mode::ALTERNATE);
     spi1::sck::alternateFunction(5);
-    spi1::miso::mode(Mode::ALTERNATE);
+    spi1::sck::mode(Mode::ALTERNATE);
     spi1::miso::alternateFunction(5);
-    spi1::mosi::mode(Mode::ALTERNATE);
+    spi1::miso::mode(Mode::ALTERNATE);
     spi1::mosi::alternateFunction(5);
+    spi1::mosi::mode(Mode::ALTERNATE);
 
-    spi2::sck::mode(Mode::ALTERNATE);
     spi2::sck::alternateFunction(5);
-    spi2::miso::mode(Mode::ALTERNATE);
+    spi2::sck::mode(Mode::ALTERNATE);
     spi2::miso::alternateFunction(5);
-    spi2::mosi::mode(Mode::ALTERNATE);
+    spi2::miso::mode(Mode::ALTERNATE);
     spi2::mosi::alternateFunction(5);
+    spi2::mosi::mode(Mode::ALTERNATE);
 
-    spi4::sck::mode(Mode::ALTERNATE);
     spi4::sck::alternateFunction(5);
-    spi4::miso::mode(Mode::ALTERNATE);
+    spi4::sck::mode(Mode::ALTERNATE);
     spi4::miso::alternateFunction(5);
-    spi4::mosi::mode(Mode::ALTERNATE);
+    spi4::miso::mode(Mode::ALTERNATE);
     spi4::mosi::alternateFunction(5);
+    spi4::mosi::mode(Mode::ALTERNATE);
 
-    spi5::sck::mode(Mode::ALTERNATE);
     spi5::sck::alternateFunction(5);
-    spi5::miso::mode(Mode::ALTERNATE);
+    spi5::sck::mode(Mode::ALTERNATE);
     spi5::miso::alternateFunction(5);
-    spi5::mosi::mode(Mode::ALTERNATE);
+    spi5::miso::mode(Mode::ALTERNATE);
     spi5::mosi::alternateFunction(5);
+    spi5::mosi::mode(Mode::ALTERNATE);
 
-    spi6::sck::mode(Mode::ALTERNATE);
     spi6::sck::alternateFunction(5);
-    spi6::miso::mode(Mode::ALTERNATE);
+    spi6::sck::mode(Mode::ALTERNATE);
     spi6::miso::alternateFunction(5);
-    spi6::mosi::mode(Mode::ALTERNATE);
+    spi6::miso::mode(Mode::ALTERNATE);
     spi6::mosi::alternateFunction(5);
+    spi6::mosi::mode(Mode::ALTERNATE);
 
-    uart1::rx::mode(Mode::ALTERNATE);
     uart1::rx::alternateFunction(7);
-    uart1::tx::mode(Mode::ALTERNATE);
+    uart1::rx::mode(Mode::ALTERNATE);
     uart1::tx::alternateFunction(7);
+    uart1::tx::mode(Mode::ALTERNATE);
 
-    can1::rx::mode(Mode::ALTERNATE);
     can1::rx::alternateFunction(9);
-    can1::tx::mode(Mode::ALTERNATE);
+    can1::rx::mode(Mode::ALTERNATE);
     can1::tx::alternateFunction(9);
-
-    timers::tim4ch2::mode(Mode::ALTERNATE);
-    timers::tim11ch1::mode(Mode::ALTERNATE);
-    timers::tim3ch1::mode(Mode::ALTERNATE);
-    timers::tim10ch1::mode(Mode::ALTERNATE);
-    timers::tim8ch1::mode(Mode::ALTERNATE);
+    can1::tx::mode(Mode::ALTERNATE);
 
     timers::tim4ch2::alternateFunction(2);
     timers::tim11ch1::alternateFunction(3);
     timers::tim3ch1::alternateFunction(2);
     timers::tim10ch1::alternateFunction(3);
     timers::tim8ch1::alternateFunction(3);
+
+    timers::tim4ch2::mode(Mode::ALTERNATE);
+    timers::tim11ch1::mode(Mode::ALTERNATE);
+    timers::tim3ch1::mode(Mode::ALTERNATE);
+    timers::tim10ch1::mode(Mode::ALTERNATE);
+    timers::tim8ch1::mode(Mode::ALTERNATE);
 
     using namespace sensors;
     ADS131_1::cs::mode(Mode::OUTPUT);
