@@ -52,7 +52,7 @@ float minimizeRotation(float angle)
 
 Follower::Follower(std::chrono::milliseconds updatePeriod)
     : updatePeriod(static_cast<float>(updatePeriod.count()) / 1000),
-      targetAngles({0, 0, 0}), firstAntennaAttitudeSet(false), isInit(false)
+      targetAngles({0, 0, 0})
 {
 }
 
