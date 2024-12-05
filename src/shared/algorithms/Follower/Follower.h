@@ -145,14 +145,14 @@ private:
     // actuation update period [s]
     float updatePeriod;
     // Initialization flag
-    std::atomic<bool> isInit;
+    std::atomic<bool> isInit{false};
 
     // max number of retries for GPS data acquisition
     const uint8_t maxInitRetries = 120;
 
     bool antennaCoordinatesSet = false;
     bool rocketCoordinatesSet  = false;
-    std::atomic<bool> firstAntennaAttitudeSet;
+    std::atomic<bool> firstAntennaAttitudeSet{false};
 
     VN300Data lastAntennaAttitude;
     miosix::FastMutex lastAntennaAttitudeMutex;
