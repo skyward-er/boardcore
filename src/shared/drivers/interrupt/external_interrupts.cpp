@@ -379,11 +379,15 @@ void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
 
     if (trigger == InterruptTrigger::RISING_EDGE ||
         trigger == InterruptTrigger::RISING_FALLING_EDGE)
+    {
         EXTI->RTSR |= 1 << gpioNum;
+    }
 
     if (trigger == InterruptTrigger::FALLING_EDGE ||
         trigger == InterruptTrigger::RISING_FALLING_EDGE)
+    {
         EXTI->FTSR |= 1 << gpioNum;
+    }
 
     NVIC_EnableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)));
     NVIC_SetPriority(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)), priority);

@@ -131,11 +131,11 @@ public:
         MEM_TO_MEM    = DMA_SxCR_DIR_1,
     };
 
-    DMAStream(DMA_Stream_TypeDef *dmaStream);
+    DMAStream(DMA_Stream_TypeDef* dmaStream);
 
-    DMA_TypeDef *getController();
+    DMA_TypeDef* getController();
 
-    DMA_Stream_TypeDef *getStream();
+    DMA_Stream_TypeDef* getStream();
 
     void reset();
 
@@ -210,64 +210,47 @@ public:
 
     uint16_t readNumberOfDataItems();
 
-    void setPeripheralAddress(uint32_t *address);
+    void setPeripheralAddress(uint32_t* address);
 
-    void setMemory0Address(uint32_t *address);
+    void setMemory0Address(uint32_t* address);
 
     /**
      * @brief Sets the memory address used only in double buffer mode.
      */
-    void setMemory1Address(uint32_t *address);
+    void setMemory1Address(uint32_t* address);
 
     void clearStatusRegister();
 
 private:
-    DMA_TypeDef *dmaController;
-    DMA_Stream_TypeDef *dmaStream;
+    DMA_TypeDef* dmaController;
+    DMA_Stream_TypeDef* dmaStream;
 
     // Interrupt status flags
-    volatile uint32_t *IFCR;  ///< Interrupt flags clear register
+    volatile uint32_t* IFCR;  ///< Interrupt flags clear register
     uint32_t IFCR_MASK;       ///< Clear mask for all interrupt flags
 
     PrintLogger logger = Logging::getLogger("DMAStream");
 };
 
-inline DMAStream::DMAStream(DMA_Stream_TypeDef *dmaStream)
+inline DMAStream::DMAStream(DMA_Stream_TypeDef* dmaStream)
     : dmaStream(dmaStream)
 {
     // Find the correct DMA controller
-    if (reinterpret_cast<uint32_t *>(dmaStream) < &(DMA2->LISR))
-    {
+    if (reinterpret_cast<uint32_t*>(dmaStream) < &(DMA2->LISR))
         dmaController = DMA1;
-    }
     else
-    {
         dmaController = DMA2;
-    }
 
     // Find the corret interrupt flags clear register
     if (dmaController == DMA1)
-    {
         if (dmaStream <= DMA1_Stream3)
-        {
             IFCR = &(DMA1->LIFCR);
-        }
         else
-        {
             IFCR = &(DMA1->HIFCR);
-        }
-    }
+    else if (dmaStream <= DMA2_Stream3)
+        IFCR = &(DMA2->LIFCR);
     else
-    {
-        if (dmaStream <= DMA2_Stream3)
-        {
-            IFCR = &(DMA2->LIFCR);
-        }
-        else
-        {
-            IFCR = &(DMA2->HIFCR);
-        }
-    }
+        IFCR = &(DMA2->HIFCR);
 
     // Find the correct clear mask
     if (dmaStream == DMA1_Stream0 || dmaStream == DMA2_Stream0)
@@ -317,9 +300,9 @@ inline DMAStream::DMAStream(DMA_Stream_TypeDef *dmaStream)
     }
 }
 
-inline DMA_TypeDef *DMAStream::getController() { return dmaController; }
+inline DMA_TypeDef* DMAStream::getController() { return dmaController; }
 
-inline DMA_Stream_TypeDef *DMAStream::getStream() { return dmaStream; }
+inline DMA_Stream_TypeDef* DMAStream::getStream() { return dmaStream; }
 
 inline void DMAStream::reset()
 {
@@ -507,17 +490,17 @@ inline void DMAStream::setNumberOfDataItems(uint16_t numberOfDataItems)
 
 inline uint16_t DMAStream::readNumberOfDataItems() { return dmaStream->NDTR; }
 
-inline void DMAStream::setPeripheralAddress(uint32_t *address)
+inline void DMAStream::setPeripheralAddress(uint32_t* address)
 {
     dmaStream->PAR = reinterpret_cast<uint32_t>(address);
 }
 
-inline void DMAStream::setMemory0Address(uint32_t *address)
+inline void DMAStream::setMemory0Address(uint32_t* address)
 {
     dmaStream->M0AR = reinterpret_cast<uint32_t>(address);
 }
 
-inline void DMAStream::setMemory1Address(uint32_t *address)
+inline void DMAStream::setMemory1Address(uint32_t* address)
 {
     dmaStream->M1AR = reinterpret_cast<uint32_t>(address);
 }

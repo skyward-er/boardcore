@@ -74,9 +74,7 @@ public:
         {
             Lock<FastMutex> l(mutex);
             for (auto it = stacks.begin(); it != stacks.end(); it++)
-            {
                 Logger::getInstance().log(it->second);
-            }
         }
     }
 

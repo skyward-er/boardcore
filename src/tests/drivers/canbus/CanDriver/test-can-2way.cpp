@@ -98,9 +98,7 @@ void sendNewRequest()
     packet.id = seq++;
 
     if (packet.id % 2 == 0)
-    {
         packet.id = 0xFFFFFFF - packet.id;
-    }
 
     packet.ext    = 1;
     packet.length = 8;
@@ -108,9 +106,7 @@ void sendNewRequest()
 
     packet.data[0] = 0x44;
     for (int i = 1; i < 8; ++i)
-    {
         packet.data[i] = seq + i;
-    }
 
     {
         Lock<FastMutex> l(mutexMsgs);
@@ -132,9 +128,7 @@ public:
             {
                 Lock<FastMutex> l(mutexMsgs);
                 if (msgs.isFull())
-                {
                     ++bufferFull;
-                }
                 while (!msgs.isEmpty())
                 {
                     CanMsg msg = msgs.get();
@@ -147,9 +141,7 @@ public:
                         {
                             msgstats.add(msg.ts * 1.0f);
                             if (msg.ts > MSG_DEADLINE)
-                            {
                                 ++missedDeadline;
-                            }
                         }
                         else
                         {

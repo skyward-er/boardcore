@@ -167,9 +167,7 @@ struct APIFrame
         // significant byte.
         uint8_t sum = checksum + frameType;
         for (uint16_t i = 0; i < getFrameDataLength(); ++i)
-        {
             sum += frameData[i];
-        }
         return sum == 0xFF;
     }
 
@@ -177,9 +175,7 @@ struct APIFrame
     {
         checksum = frameType;
         for (uint16_t i = 0; i < getFrameDataLength(); ++i)
-        {
             checksum += frameData[i];
-        }
 
         checksum = 0xFF - checksum;
     }

@@ -44,9 +44,7 @@ int main()
     Thread::sleep(100);
 
     if (!sensor.init())
-    {
         printf("MS5803 Init failed\n");
-    }
 
     Thread::sleep(100);
     printf("pressureTimestamp,press,temperatureTimestamp,temp\n");

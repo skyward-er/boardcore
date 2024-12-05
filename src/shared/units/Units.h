@@ -51,7 +51,7 @@ public:
     constexpr explicit Unit(float val) : _value(val) {}
 
     template <UnitKind FromKind, class FromRatio>
-    constexpr explicit Unit(Unit<FromKind, FromRatio> const &from)
+    constexpr explicit Unit(Unit<FromKind, FromRatio> const& from)
         : _value(from.template value<Ratio>())
     {
     }
@@ -80,112 +80,112 @@ private:
 
 // Sum, Subtraction, Multiplication, Division
 template <UnitKind Kind, class Ratio>
-constexpr auto operator+(const Unit<Kind, Ratio> &lhs,
-                         const Unit<Kind, Ratio> &rhs)
+constexpr auto operator+(const Unit<Kind, Ratio>& lhs,
+                         const Unit<Kind, Ratio>& rhs)
 {
     return Unit<Kind, Ratio>(lhs.template value() + rhs.template value());
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr auto operator-(const Unit<Kind, Ratio> &lhs,
-                         const Unit<Kind, Ratio> &rhs)
+constexpr auto operator-(const Unit<Kind, Ratio>& lhs,
+                         const Unit<Kind, Ratio>& rhs)
 {
     return Unit<Kind, Ratio>(lhs.template value() - rhs.template value());
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr auto operator*(const Unit<Kind, Ratio> &lhs, float rhs)
+constexpr auto operator*(const Unit<Kind, Ratio>& lhs, float rhs)
 {
     return Unit<Kind, Ratio>(lhs.template value() * rhs);
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr auto operator*(float lhs, const Unit<Kind, Ratio> &rhs)
+constexpr auto operator*(float lhs, const Unit<Kind, Ratio>& rhs)
 {
     return Unit<Kind, Ratio>(lhs * rhs.template value());
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr auto operator/(const Unit<Kind, Ratio> &lhs, float rhs)
+constexpr auto operator/(const Unit<Kind, Ratio>& lhs, float rhs)
 {
     return Unit<Kind, Ratio>(lhs.template value() / rhs);
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr auto operator/(float lhs, const Unit<Kind, Ratio> &rhs)
+constexpr auto operator/(float lhs, const Unit<Kind, Ratio>& rhs)
 {
     return Unit<Kind, Ratio>(lhs / rhs.template value());
 }
 
 // Comparison operators
 template <UnitKind Kind, class Ratio>
-constexpr bool operator==(const Unit<Kind, Ratio> &lhs,
-                          const Unit<Kind, Ratio> &rhs)
+constexpr bool operator==(const Unit<Kind, Ratio>& lhs,
+                          const Unit<Kind, Ratio>& rhs)
 {
     return lhs.template value() == rhs.template value();
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr bool operator!=(const Unit<Kind, Ratio> &lhs,
-                          const Unit<Kind, Ratio> &rhs)
+constexpr bool operator!=(const Unit<Kind, Ratio>& lhs,
+                          const Unit<Kind, Ratio>& rhs)
 {
     return lhs.template value() != rhs.template value();
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr bool operator<(const Unit<Kind, Ratio> &lhs,
-                         const Unit<Kind, Ratio> &rhs)
+constexpr bool operator<(const Unit<Kind, Ratio>& lhs,
+                         const Unit<Kind, Ratio>& rhs)
 {
     return lhs.template value() < rhs.template value();
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr bool operator>(const Unit<Kind, Ratio> &lhs,
-                         const Unit<Kind, Ratio> &rhs)
+constexpr bool operator>(const Unit<Kind, Ratio>& lhs,
+                         const Unit<Kind, Ratio>& rhs)
 {
     return lhs.template value() > rhs.template value();
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr bool operator<=(const Unit<Kind, Ratio> &lhs,
-                          const Unit<Kind, Ratio> &rhs)
+constexpr bool operator<=(const Unit<Kind, Ratio>& lhs,
+                          const Unit<Kind, Ratio>& rhs)
 {
     return lhs.template value() <= rhs.template value();
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr bool operator>=(const Unit<Kind, Ratio> &lhs,
-                          const Unit<Kind, Ratio> &rhs)
+constexpr bool operator>=(const Unit<Kind, Ratio>& lhs,
+                          const Unit<Kind, Ratio>& rhs)
 {
     return lhs.template value() >= rhs.template value();
 }
 
 // Direct assignment operators
 template <UnitKind Kind, class Ratio>
-constexpr Unit<Kind, Ratio> &operator+=(Unit<Kind, Ratio> &lhs,
-                                        const Unit<Kind, Ratio> &rhs)
+constexpr Unit<Kind, Ratio>& operator+=(Unit<Kind, Ratio>& lhs,
+                                        const Unit<Kind, Ratio>& rhs)
 {
     lhs = lhs + rhs;
     return lhs;
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr Unit<Kind, Ratio> &operator-=(Unit<Kind, Ratio> &lhs,
-                                        const Unit<Kind, Ratio> &rhs)
+constexpr Unit<Kind, Ratio>& operator-=(Unit<Kind, Ratio>& lhs,
+                                        const Unit<Kind, Ratio>& rhs)
 {
     lhs = lhs - rhs;
     return lhs;
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr Unit<Kind, Ratio> &operator*=(Unit<Kind, Ratio> &lhs, float rhs)
+constexpr Unit<Kind, Ratio>& operator*=(Unit<Kind, Ratio>& lhs, float rhs)
 {
     lhs = lhs * rhs;
     return lhs;
 }
 
 template <UnitKind Kind, class Ratio>
-constexpr Unit<Kind, Ratio> &operator/=(Unit<Kind, Ratio> &lhs, float rhs)
+constexpr Unit<Kind, Ratio>& operator/=(Unit<Kind, Ratio>& lhs, float rhs)
 {
     lhs = lhs / rhs;
     return lhs;

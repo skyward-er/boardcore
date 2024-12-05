@@ -38,12 +38,12 @@ template <class Ratio = std::ratio<1>>
 using Time = Unit<UnitKind::Time, Ratio>;
 
 template <class ToTime, class FromTime>
-ToTime time_cast(FromTime const &from)
+ToTime time_cast(FromTime const& from)
 {
     return ToTime(from);
 }
 
-std::chrono::duration<float> to_chrono(Time<> const &from)
+std::chrono::duration<float> to_chrono(Time<> const& from)
 {
     return std::chrono::duration<float>(from.value());
 }

@@ -29,7 +29,7 @@
 namespace Boardcore
 {
 
-HX711::HX711(SPIBusInterface &bus, miosix::GpioPin sckPin, SPIBusConfig config,
+HX711::HX711(SPIBusInterface& bus, miosix::GpioPin sckPin, SPIBusConfig config,
              unsigned char sckAlternateFunction)
     : bus(bus), sckPin(sckPin), config(config),
       sckAlternateFunction(sckAlternateFunction)

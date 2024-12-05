@@ -92,7 +92,9 @@ public:
             return buffer[ptr];
         }
         else
+        {
             throw range_error("Circular buffer index out of range");
+        }
     }
 
     /**
@@ -123,7 +125,9 @@ public:
             return buffer[ptr];
         }
         else
+        {
             throw range_error("Circular buffer is empty!");
+        }
     }
 
     /**
@@ -136,13 +140,9 @@ public:
         if (empty)
             return 0;
         if (writePtr > readPtr)
-        {
             return writePtr - readPtr;
-        }
         else
-        {
             return Size - readPtr + writePtr;
-        }
     }
 
     bool isEmpty() const { return empty; }

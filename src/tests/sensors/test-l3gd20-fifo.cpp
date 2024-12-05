@@ -120,9 +120,7 @@ void __attribute__((used)) EXTI2_IRQHandlerImpl()
 
     // Pass timestamp to the sensor
     if (gyro != nullptr)
-    {
         gyro->IRQupdateTimestamp(currentTimestamp);
-    }
 }
 
 void configure()
@@ -195,9 +193,7 @@ int main()
 
             // Stop if we have enough data
             if (dataCounter >= NUM_SAMPLES)
-            {
                 break;
-            }
         }
         ++fifoNum;
 
@@ -230,7 +226,5 @@ int main()
 
     printf("\n\n\nend.\n");
     for (;;)
-    {
         Thread::sleep(1000);
-    }
 }

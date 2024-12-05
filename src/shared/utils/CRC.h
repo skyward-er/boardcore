@@ -39,7 +39,7 @@ namespace CRCUtils
  * @return Computed CRC value
  */
 template <uint16_t poly, uint16_t init>
-uint16_t generiCrc16(const uint8_t *buffer, size_t count)
+uint16_t generiCrc16(const uint8_t* buffer, size_t count)
 {
     uint16_t crc = init;
 
@@ -48,12 +48,10 @@ uint16_t generiCrc16(const uint8_t *buffer, size_t count)
         crc ^= static_cast<uint16_t>(buffer[i]) << 8;
 
         for (uint8_t ii = 0; ii < 8; ii++)
-        {
             if (crc & 0x8000)
                 crc = (crc << 1) ^ poly;
             else
                 crc <<= 1;
-        }
     }
 
     return crc;

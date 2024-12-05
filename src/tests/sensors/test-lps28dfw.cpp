@@ -46,7 +46,7 @@ uint8_t nSamples = 10;
  * ODR1     | AVG4   : 127.8 us/samp (W1+R1+W1+R5)      @1Hz: 2.5  uA [FROM DS]
  * ODR1     | AVG512 : 127.8 us/samp (W1+R1+W1+R5)      @1Hz: 32.8 uA [FROM DS]
  */
-miosix::Thread *waiting = 0;
+miosix::Thread* waiting = 0;
 bool sampleAvailable    = false;
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
@@ -57,7 +57,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
     }
 }
 
-void sampleOneShotMode(I2C &i2c)
+void sampleOneShotMode(I2C& i2c)
 {
     printf("Start One-Shot\n");
 
@@ -77,20 +77,16 @@ void sampleOneShotMode(I2C &i2c)
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-        {
             lps28dfw.getLastSample().print(std::cout);
-        }
         else
-        {
             printf("Error: %d\n", lps28dfw.getLastError());
-        }
         Thread::sleep(100);
     }
 
     printf("End One-Shot\n");
 }
 
-void sampleContinuousMode(I2C &i2c)
+void sampleContinuousMode(I2C& i2c)
 {
     printf("Start Continuous\n");
 
@@ -112,19 +108,15 @@ void sampleContinuousMode(I2C &i2c)
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-        {
             lps28dfw.getLastSample().print(std::cout);
-        }
         else
-        {
             printf("Error: %d\n", lps28dfw.getLastError());
-        }
     }
 
     printf("End Continuous\n");
 }
 
-void sampleInterruptMode(I2C &i2c)
+void sampleInterruptMode(I2C& i2c)
 {
     printf("Start Interrupt\n");
     // Setting up the Sensor
@@ -140,23 +132,16 @@ void sampleInterruptMode(I2C &i2c)
 
     for (uint8_t i = 0; i < nSamples; i++)
     {
-
         while (!sampleAvailable)
-        {
             waiting->wait();
-        }
 
         sampleAvailable = false;
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-        {
             lps28dfw.getLastSample().print(std::cout);
-        }
         else
-        {
             printf("Error: %d\n", lps28dfw.getLastError());
-        }
     }
 
     printf("End Interrupt\n");

@@ -115,13 +115,9 @@ State HSMUTTest::state_S(const Event& e)
             break;
         case EV_I:
             if (this->foo == false)
-            {
                 this->foo = true;
-            }
             else
-            {
                 retState = UNHANDLED;
-            }
             break;
         case EV_E:
             retState = transition(&HSMUTTest::state_S11);
@@ -236,13 +232,9 @@ State HSMUTTest::state_S2(const Event& e)
             break;
         case EV_I:
             if (this->foo == false)
-            {
                 this->foo = true;
-            }
             else
-            {
                 retState = UNHANDLED;
-            }
             break;
         default:
             retState = tranSuper(&HSMUTTest::state_S);
@@ -307,7 +299,6 @@ State HSMUTTest::state_S211(const Event& e)
 
 int main()
 {
-
     EventBroker::getInstance().start();
 
     HSMUTTest& hsm = HSMUTTest::getInstance();

@@ -28,7 +28,7 @@
 namespace Boardcore
 {
 
-VN100Serial::VN100Serial(USART &usart, int baudRate, CRCOptions crc,
+VN100Serial::VN100Serial(USART& usart, int baudRate, CRCOptions crc,
                          uint16_t samplePeriod)
     : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc)
 {
@@ -165,9 +165,7 @@ string VN100Serial::getLastRawSample()
 {
     // If not init i return the void string
     if (!isInit)
-    {
         return string("");
-    }
 
     return string(recvString, recvStringLength);
 }
@@ -227,9 +225,7 @@ VN100SerialData VN100Serial::sampleData()
 
     // Before sampling i check for errors
     if (lastError != SensorErrors::NO_ERRORS)
-    {
         return lastSample;
-    }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
     usart.writeString(preSampleImuString->c_str());
@@ -294,15 +290,11 @@ bool VN100Serial::disableAsyncMessages(bool waitResponse)
 
     // Send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // Read the answer
     if (waitResponse)
-    {
         recvStringCommand(recvString, recvStringMaxDimension);
-    }
 
     return true;
 }
@@ -329,9 +321,7 @@ bool VN100Serial::configUserSerialPort()
 
     // I can send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // I can open the serial with user's baud rate
     usart.setBaudrate(baudRate);
@@ -368,29 +358,21 @@ bool VN100Serial::setCrc(bool waitResponse)
 
     // Send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // Read the answer
     if (waitResponse)
-    {
         recvStringCommand(recvString, recvStringMaxDimension);
-    }
 
     crc = CRCOptions::CRC_ENABLE_16;
 
     // Send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // Read the answer
     if (waitResponse)
-    {
         recvStringCommand(recvString, recvStringMaxDimension);
-    }
 
     // Restore the crc
     crc = backup;
@@ -454,7 +436,7 @@ bool VN100Serial::selfTestImpl()
 QuaternionData VN100Serial::sampleQuaternion()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     QuaternionData data;
 
     // Look for the second ',' in the string
@@ -463,9 +445,7 @@ QuaternionData VN100Serial::sampleQuaternion()
     for (int i = 0; i < 2; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -482,7 +462,7 @@ QuaternionData VN100Serial::sampleQuaternion()
 MagnetometerData VN100Serial::sampleMagnetometer()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     MagnetometerData data;
 
     // Look for the sixth ',' in the string
@@ -491,9 +471,7 @@ MagnetometerData VN100Serial::sampleMagnetometer()
     for (int i = 0; i < 6; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -509,7 +487,7 @@ MagnetometerData VN100Serial::sampleMagnetometer()
 AccelerometerData VN100Serial::sampleAccelerometer()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     AccelerometerData data;
 
     // Look for the ninth ',' in the string
@@ -518,9 +496,7 @@ AccelerometerData VN100Serial::sampleAccelerometer()
     for (int i = 0; i < 9; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -536,7 +512,7 @@ AccelerometerData VN100Serial::sampleAccelerometer()
 GyroscopeData VN100Serial::sampleGyroscope()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     GyroscopeData data;
 
     // Look for the twelfth ',' in the string
@@ -545,9 +521,7 @@ GyroscopeData VN100Serial::sampleGyroscope()
     for (int i = 0; i < 12; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -571,9 +545,7 @@ TemperatureData VN100Serial::sampleTemperature()
     for (int i = 0; i < 11; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -595,9 +567,7 @@ PressureData VN100Serial::samplePressure()
     for (int i = 0; i < 12; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -614,7 +584,7 @@ bool VN100Serial::sendStringCommand(std::string command)
     {
         char checksum[4];  // 2 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()),
+        itoa(calculateChecksum8((uint8_t*)command.c_str(), command.length()),
              checksum, 16);
         checksum[2] = '\n';
         checksum[3] = '\0';
@@ -625,7 +595,7 @@ bool VN100Serial::sendStringCommand(std::string command)
     {
         char checksum[6];  // 4 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()),
+        itoa(calculateChecksum16((uint8_t*)command.c_str(), command.length()),
              checksum, 16);
         checksum[4] = '\n';
         checksum[5] = '\0';
@@ -649,20 +619,16 @@ bool VN100Serial::sendStringCommand(std::string command)
     return true;
 }
 
-bool VN100Serial::recvStringCommand(char *command, int maxLength)
+bool VN100Serial::recvStringCommand(char* command, int maxLength)
 {
     int i = 0;
     // Read the buffer
     if (!usart.readBlocking(command, maxLength))
-    {
         return false;
-    }
 
     // Iterate until i reach the end or i find \n then i substitute it with a \0
     while (i < maxLength && command[i] != '\n')
-    {
         i++;
-    }
 
     // Terminate the string
     command[i] = '\0';
@@ -673,15 +639,13 @@ bool VN100Serial::recvStringCommand(char *command, int maxLength)
     return true;
 }
 
-bool VN100Serial::verifyChecksum(char *command, int length)
+bool VN100Serial::verifyChecksum(char* command, int length)
 {
     int checksumOffset = 0;
 
     // I look for the checksum position
     while (checksumOffset < length && command[checksumOffset] != '*')
-    {
         checksumOffset++;
-    }
 
     if (checksumOffset == length)
     {
@@ -703,7 +667,7 @@ bool VN100Serial::verifyChecksum(char *command, int length)
         // Calculate the checksum and verify (comparison between numerical
         // checksum to avoid string bugs e.g 0856 != 865)
         if (strtol(command + checksumOffset + 1, NULL, 16) !=
-            calculateChecksum16((uint8_t *)(command + 1), checksumOffset - 1))
+            calculateChecksum16((uint8_t*)(command + 1), checksumOffset - 1))
         {
             TRACE("Different checksum: %s\n", command);
             return false;
@@ -721,7 +685,7 @@ bool VN100Serial::verifyChecksum(char *command, int length)
         // Calculate the checksum and verify (comparison between numerical
         // checksum to avoid string bugs e.g 0856 != 865)
         if (strtol(command + checksumOffset + 1, NULL, 16) !=
-            calculateChecksum8((uint8_t *)(command + 1), checksumOffset - 1))
+            calculateChecksum8((uint8_t*)(command + 1), checksumOffset - 1))
         {
             TRACE("Different checksum: %s\n", command);
             return false;
@@ -731,7 +695,7 @@ bool VN100Serial::verifyChecksum(char *command, int length)
     return true;
 }
 
-uint8_t VN100Serial::calculateChecksum8(uint8_t *message, int length)
+uint8_t VN100Serial::calculateChecksum8(uint8_t* message, int length)
 {
     int i;
     uint8_t result = 0x00;
@@ -746,7 +710,7 @@ uint8_t VN100Serial::calculateChecksum8(uint8_t *message, int length)
     return result;
 }
 
-uint16_t VN100Serial::calculateChecksum16(uint8_t *message, int length)
+uint16_t VN100Serial::calculateChecksum16(uint8_t* message, int length)
 {
     int i;
     uint16_t result = 0x0000;

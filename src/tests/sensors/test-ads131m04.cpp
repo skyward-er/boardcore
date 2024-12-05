@@ -65,13 +65,9 @@ int main()
 
     printf("Now performing self test...\n");
     if (ads131.selfTest())
-    {
         printf("Self test succeeded\n");
-    }
     else
-    {
         printf("Self test failed!\n");
-    }
 
     // ads131.calibrateOffset(ADS131M04Defs::Channel::CHANNEL_0);
     // ads131.calibrateOffset(ADS131M04Defs::Channel::CHANNEL_1);

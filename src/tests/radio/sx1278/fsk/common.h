@@ -24,7 +24,7 @@
 
 #include <radio/SX1278/SX1278Fsk.h>
 
-static const char *stringFromErr(Boardcore::SX1278Fsk::Error err)
+static const char* stringFromErr(Boardcore::SX1278Fsk::Error err)
 {
     switch (err)
     {
@@ -39,7 +39,7 @@ static const char *stringFromErr(Boardcore::SX1278Fsk::Error err)
     }
 }
 
-static const char *stringFromRxBw(Boardcore::SX1278Fsk::Config::RxBw rx_bw)
+static const char* stringFromRxBw(Boardcore::SX1278Fsk::Config::RxBw rx_bw)
 {
     switch (rx_bw)
     {
@@ -90,7 +90,7 @@ static const char *stringFromRxBw(Boardcore::SX1278Fsk::Config::RxBw rx_bw)
     }
 }
 
-static void printConfig(const Boardcore::SX1278Fsk::Config &config)
+static void printConfig(const Boardcore::SX1278Fsk::Config& config)
 {
     printf("config.freq_rf = %d\n", config.freq_rf);
     printf("config.freq_dev = %d\n", config.freq_dev);

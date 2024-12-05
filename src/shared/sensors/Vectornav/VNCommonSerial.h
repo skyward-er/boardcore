@@ -49,7 +49,7 @@ public:
      * @param timeout The maximum time that will be waited when reading from the
      * sensor.
      */
-    VNCommonSerial(USART &usart, int baudrate, const char *sensorName,
+    VNCommonSerial(USART& usart, int baudrate, const char* sensorName,
                    CRCOptions crc, const std::chrono::milliseconds timeout);
 
     ~VNCommonSerial();
@@ -71,7 +71,7 @@ protected:
      *
      * @return The 8 bit checksum.
      */
-    uint8_t calculateChecksum8(const uint8_t *message, int length);
+    uint8_t calculateChecksum8(const uint8_t* message, int length);
 
     /**
      * @brief Calculate the 16bit array on the given array.
@@ -81,7 +81,7 @@ protected:
      *
      * @return The 16 bit CRC16-CCITT error check.
      */
-    uint16_t calculateChecksum16(const uint8_t *message, int length);
+    uint16_t calculateChecksum16(const uint8_t* message, int length);
 
     /**
      * @brief Method to verify the crc validity of a command.
@@ -91,7 +91,7 @@ protected:
      *
      * @return True if operation succeeded.
      */
-    bool verifyChecksum(char *command, int maxLength);
+    bool verifyChecksum(char* command, int maxLength);
 
     /**
      * @brief Disables the async messages that the sensor is default configured
@@ -132,7 +132,7 @@ protected:
      *  @return True if the model number received from the sensor corresponds
      * with the expected one.
      */
-    bool verifyModelNumber(const char *expectedModelNumber);
+    bool verifyModelNumber(const char* expectedModelNumber);
 
     /**
      * @brief Utility function used to retrieve the binary output from the
@@ -143,7 +143,7 @@ protected:
      * @return True if operation successful, false otherwise.
      */
     template <typename T>
-    bool getBinaryOutput(T &binaryData, const char *const sampleCommand);
+    bool getBinaryOutput(T& binaryData, const char* const sampleCommand);
 
     /**
      * @brief Utility function used to extract quaternion data from the
@@ -177,7 +177,7 @@ protected:
      * @return Returns 0 if no error was found, else returns the actual error
      * code.
      */
-    uint8_t checkErrorVN(const char *message);
+    uint8_t checkErrorVN(const char* message);
 
     /**
      * @brief Sends the command to the sensor with the correct checksum added
@@ -202,13 +202,13 @@ protected:
      *
      * @return True if operation succeeded.
      */
-    bool recvStringCommand(char *command, int maxLength);
+    bool recvStringCommand(char* command, int maxLength);
 
     /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
-    USART &usart;
+    USART& usart;
     int baudRate;
 
     CRCOptions crc;
@@ -246,8 +246,8 @@ private:
 };
 
 template <typename T>
-bool VNCommonSerial::getBinaryOutput(T &binaryData,
-                                     const char *const sampleCommand)
+bool VNCommonSerial::getBinaryOutput(T& binaryData,
+                                     const char* const sampleCommand)
 {
     uint8_t initByte = 0;
 
@@ -260,9 +260,7 @@ bool VNCommonSerial::getBinaryOutput(T &binaryData,
     if (usart.readBlocking(&initByte, 1, maxTimeout) && initByte == 0xFA)
     {
         if (usart.readBlocking(&binaryData, sizeof(T), maxTimeout))
-        {
             return true;
-        }
     }
 
     return false;

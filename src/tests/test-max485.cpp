@@ -79,12 +79,12 @@ int baudrates[] = {2400,   9600,   19200,  38400,  57600,
                    115200, 230400, 256000, 460800, 921600};
 
 // function for the thread that has to read from serial
-void readSer(USARTInterface &s) {}
+void readSer(USARTInterface& s) {}
 
 // Communicatio: src -> dst
 template <typename GPIO1_src, typename GPIO2_src, typename GPIO1_dst,
           typename GPIO2_dst>
-void testCommunication(char *data, USARTInterface &src, USARTInterface &dst)
+void testCommunication(char* data, USARTInterface& src, USARTInterface& dst)
 {
     // resetting the buffer so precedent tests won't affect this one
     memset(rcv, 0, strlen(rcv) + 1);
@@ -110,13 +110,9 @@ void testCommunication(char *data, USARTInterface &src, USARTInterface &dst)
     t.join();
 
     if (strcmp(data, rcv) == 0)
-    {
         printf("*** %d -> %d WORKING!\n", src.getId(), dst.getId());
-    }
     else
-    {
         printf("### ERROR: %d -> %d!\n", src.getId(), dst.getId());
-    }
 }
 
 int main()

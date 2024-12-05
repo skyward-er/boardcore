@@ -31,7 +31,7 @@
 
 namespace I2CConsts
 {
-static Boardcore::I2CDriver *ports[N_I2C_PORTS] =
+static Boardcore::I2CDriver* ports[N_I2C_PORTS] =
     {};  ///< Pointer to serial port classes to
          ///< let interrupts access the classes
 static const int MAX_N_POLLING =
@@ -59,11 +59,9 @@ void __attribute__((naked)) I2C1_EV_IRQHandler()
  */
 void __attribute__((used)) I2C1HandlerImpl()
 {
-    auto *port = I2CConsts::ports[0];
+    auto* port = I2CConsts::ports[0];
     if (port)
-    {
         port->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -81,11 +79,9 @@ void __attribute__((naked)) I2C1_ER_IRQHandler()
  */
 void __attribute__((used)) I2C1errHandlerImpl()
 {
-    auto *port = I2CConsts::ports[0];
+    auto* port = I2CConsts::ports[0];
     if (port)
-    {
         port->IRQhandleErrInterrupt();
-    }
 }
 #endif
 
@@ -105,11 +101,9 @@ void __attribute__((naked)) I2C2_EV_IRQHandler()
  */
 void __attribute__((used)) I2C2HandlerImpl()
 {
-    auto *port = I2CConsts::ports[1];
+    auto* port = I2CConsts::ports[1];
     if (port)
-    {
         port->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -127,11 +121,9 @@ void __attribute__((naked)) I2C2_ER_IRQHandler()
  */
 void __attribute__((used)) I2C2errHandlerImpl()
 {
-    auto *port = I2CConsts::ports[1];
+    auto* port = I2CConsts::ports[1];
     if (port)
-    {
         port->IRQhandleErrInterrupt();
-    }
 }
 #endif
 
@@ -151,11 +143,9 @@ void __attribute__((naked)) I2C3_EV_IRQHandler()
  */
 void __attribute__((used)) I2C3HandlerImpl()
 {
-    auto *port = I2CConsts::ports[2];
+    auto* port = I2CConsts::ports[2];
     if (port)
-    {
         port->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -173,11 +163,9 @@ void __attribute__((naked)) I2C3_ER_IRQHandler()
  */
 void __attribute__((used)) I2C3errHandlerImpl()
 {
-    auto *port = I2CConsts::ports[2];
+    auto* port = I2CConsts::ports[2];
     if (port)
-    {
         port->IRQhandleErrInterrupt();
-    }
 }
 #endif
 
@@ -197,11 +185,9 @@ void __attribute__((naked)) I2C4_EV_IRQHandler()
  */
 void __attribute__((used)) I2C4HandlerImpl()
 {
-    auto *port = I2CConsts::ports[3];
+    auto* port = I2CConsts::ports[3];
     if (port)
-    {
         port->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -219,18 +205,16 @@ void __attribute__((naked)) I2C4_ER_IRQHandler()
  */
 void __attribute__((used)) I2C4errHandlerImpl()
 {
-    auto *port = I2CConsts::ports[3];
+    auto* port = I2CConsts::ports[3];
     if (port)
-    {
         port->IRQhandleErrInterrupt();
-    }
 }
 #endif
 
 namespace Boardcore
 {
 
-I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
+I2CDriver::I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     : i2c(i2c), scl(scl), sda(sda), transaction()
 {
     // Setting the id and irqn of the right i2c peripheral
@@ -341,7 +325,7 @@ void I2CDriver::init()
                I2C_CR2_ITBUFEN;  // enabling interrupts for rx/tx byte
 }
 
-void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
+void I2CDriver::setupPeripheral(const I2CSlaveConfig& slaveConfig)
 {
     // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed by
     // the peripheral
@@ -387,13 +371,13 @@ void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
     i2c->CR1 |= I2C_CR1_PE;
 }
 
-bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
-                     const size_t &nBytes)
+bool I2CDriver::read(const I2CSlaveConfig& slaveConfig, void* buffer,
+                     const size_t& nBytes)
 {
     // Setting up the read transaction
     transaction.operation    = Operation::READ;
     transaction.buffWrite    = nullptr;
-    transaction.buffRead     = static_cast<uint8_t *>(buffer);
+    transaction.buffRead     = static_cast<uint8_t*>(buffer);
     transaction.nBytes       = nBytes;
     transaction.nBytesDone   = 0;
     transaction.generateStop = true;
@@ -407,12 +391,12 @@ bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
     return doOperation(slaveConfig);
 };
 
-bool I2CDriver::write(const I2CSlaveConfig &slaveConfig, const void *buffer,
-                      const size_t &nBytes, bool generateStop)
+bool I2CDriver::write(const I2CSlaveConfig& slaveConfig, const void* buffer,
+                      const size_t& nBytes, bool generateStop)
 {
     // Setting up the write transaction
     transaction.operation    = Operation::WRITE;
-    transaction.buffWrite    = static_cast<const uint8_t *>(buffer);
+    transaction.buffWrite    = static_cast<const uint8_t*>(buffer);
     transaction.buffRead     = nullptr;
     transaction.nBytes       = nBytes;
     transaction.nBytesDone   = 0;
@@ -422,7 +406,7 @@ bool I2CDriver::write(const I2CSlaveConfig &slaveConfig, const void *buffer,
     return doOperation(slaveConfig);
 };
 
-bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
+bool I2CDriver::doOperation(const I2CSlaveConfig& slaveConfig)
 {
     // Not yet supported
     D(assert(slaveConfig.addressing == Addressing::BIT7 &&
@@ -512,9 +496,7 @@ void I2CDriver::flushBus()
 {
     // If there isn't any locked state return immediately
     if (!(lastError & Errors::BUS_LOCKED))
-    {
         return;
-    }
 
     // Set the period of the bit-banged clock (Default to standard mode)
     uint8_t toggleDelay = 5;
@@ -557,7 +539,7 @@ void I2CDriver::flushBus()
 uint16_t I2CDriver::getLastError() { return lastError; }
 
 inline bool I2CDriver::IRQwaitForOperationCompletion(
-    miosix::FastInterruptDisableLock &dLock)
+    miosix::FastInterruptDisableLock& dLock)
 {
     // Saving the current thread in order to be waken up by interrupts
     waiting = miosix::Thread::IRQgetCurrentThread();
@@ -644,9 +626,7 @@ void I2CDriver::IRQhandleInterrupt()
             // Clearing the ACK flag in order to send a NACK on the last byte
             // that will be read
             if (transaction.nBytesDone >= transaction.nBytes - 2)
-            {
                 i2c->CR1 &= ~I2C_CR1_ACK;
-            }
 
             if (transaction.nBytesDone < transaction.nBytes)
             {
@@ -700,9 +680,7 @@ void I2CDriver::IRQhandleErrInterrupt()
     // lines. Do not send STOP condition. In the other cases, the software must
     // issue the STOP condition.
     if (!(error & I2C_SR1_ARLO))
-    {
         i2c->CR1 |= I2C_CR1_STOP;
-    }
 
     // Waking up the waiting thread
     IRQwakeUpWaitingThread();

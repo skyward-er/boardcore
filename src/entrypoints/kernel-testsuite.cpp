@@ -83,9 +83,9 @@ using namespace Boardcore;
 const unsigned int STACK_SMALL = 512;
 
 // Functions common to all tests
-static void test_name(const char *name);
+static void test_name(const char* name);
 static void pass();
-static void fail(const char *cause);
+static void fail(const char* cause);
 // Kernel test functions
 static void test_1();
 static void test_2();
@@ -145,12 +145,12 @@ void syscall_test_mpu_read();
 void syscall_test_mpu_write();
 #endif  // WITH_FILESYSTEM
 
-unsigned int *memAllocation(unsigned int size);
-bool memCheck(unsigned int *base, unsigned int size);
-void runElfTest(const char *name, const unsigned char *filename,
+unsigned int* memAllocation(unsigned int size);
+bool memCheck(unsigned int* base, unsigned int size);
+void runElfTest(const char* name, const unsigned char* filename,
                 unsigned int file_length);
 
-int runProgram(const unsigned char *filename, unsigned int file_length);
+int runProgram(const unsigned char* filename, unsigned int file_length);
 bool isSignaled(int exit_code);
 void mpuTest1();
 void mpuTest2();
@@ -190,7 +190,7 @@ int main()
                 break;
         }
         // For testing mpu
-        unsigned int *m __attribute__((unused));
+        unsigned int* m __attribute__((unused));
         switch (c)
         {
             case 't':
@@ -360,7 +360,7 @@ int main()
  * Called @ the beginning of a test
  * \param name test name
  */
-static void test_name(const char *name) { iprintf("Testing %s...\n", name); }
+static void test_name(const char* name) { iprintf("Testing %s...\n", name); }
 
 /**
  * Called @ the end of a successful test
@@ -371,7 +371,7 @@ static void pass() { iprintf("Ok.\n"); }
  * Called if a test fails
  * \param cause cause of the failure
  */
-static void fail(const char *cause)
+static void fail(const char* cause)
 {
     // Can't use iprintf here because fail() may be used in threads
     // with 256 bytes of stack, and iprintf may cause stack overflow
@@ -390,12 +390,10 @@ void process_test_file_concurrency()
     remove("/file1.bin");
     remove("/file2.bin");
 
-    ElfProgram prog1(
-        reinterpret_cast<const unsigned int *>(testsuite_file1_elf),
-        testsuite_file1_elf_len);
-    ElfProgram prog2(
-        reinterpret_cast<const unsigned int *>(testsuite_file2_elf),
-        testsuite_file2_elf_len);
+    ElfProgram prog1(reinterpret_cast<const unsigned int*>(testsuite_file1_elf),
+                     testsuite_file1_elf_len);
+    ElfProgram prog2(reinterpret_cast<const unsigned int*>(testsuite_file2_elf),
+                     testsuite_file2_elf_len);
 
     pid_t p1 = Process::create(prog1);
     pid_t p2 = Process::create(prog2);
@@ -405,8 +403,8 @@ void process_test_file_concurrency()
     Process::waitpid(p1, &res1, 0);
     Process::waitpid(p2, &res2, 0);
 
-    FILE *f1 = fopen("/file1.bin", "rb");
-    FILE *f2 = fopen("/file2.bin", "rb");
+    FILE* f1 = fopen("/file1.bin", "rb");
+    FILE* f2 = fopen("/file2.bin", "rb");
 
     if (!f1)
         fail("Unable to open first file");
@@ -438,9 +436,8 @@ void process_test_file_concurrency()
 void process_test_process_ret()
 {
     test_name("Process return value");
-    ElfProgram prog(
-        reinterpret_cast<const unsigned int *>(testsuite_simple_elf),
-        testsuite_simple_elf_len);
+    ElfProgram prog(reinterpret_cast<const unsigned int*>(testsuite_simple_elf),
+                    testsuite_simple_elf_len);
     int ret = 0;
     pid_t p = Process::create(prog);
     Process::waitpid(p, &ret, 0);
@@ -454,7 +451,7 @@ void syscall_test_mpu_open()
 {
     test_name("open and MPU");
     ElfProgram prog(
-        reinterpret_cast<const unsigned int *>(testsuite_syscall_mpu_open_elf),
+        reinterpret_cast<const unsigned int*>(testsuite_syscall_mpu_open_elf),
         testsuite_syscall_mpu_open_elf_len);
     int ret = 0;
     pid_t p = Process::create(prog);
@@ -469,7 +466,7 @@ void syscall_test_mpu_read()
 {
     test_name("read calls and MPU");
     ElfProgram prog(
-        reinterpret_cast<const unsigned int *>(testsuite_syscall_mpu_read_elf),
+        reinterpret_cast<const unsigned int*>(testsuite_syscall_mpu_read_elf),
         testsuite_syscall_mpu_read_elf_len);
     int ret = 0;
     pid_t p = Process::create(prog);
@@ -484,7 +481,7 @@ void syscall_test_mpu_write()
 {
     test_name("write and MPU");
     ElfProgram prog(
-        reinterpret_cast<const unsigned int *>(testsuite_syscall_mpu_write_elf),
+        reinterpret_cast<const unsigned int*>(testsuite_syscall_mpu_write_elf),
         testsuite_syscall_mpu_write_elf_len);
     int ret = 0;
     pid_t p = Process::create(prog);
@@ -504,7 +501,7 @@ void syscall_test_system()
         iprintf("The system lookup table is empty. Correct.\n");
 
     SystemMap::instance().addElfProgram(
-        "test", reinterpret_cast<const unsigned int *>(testsuite_simple_elf),
+        "test", reinterpret_cast<const unsigned int*>(testsuite_simple_elf),
         testsuite_simple_elf_len);
 
     if (SystemMap::instance().getElfCount() != 1)
@@ -512,17 +509,18 @@ void syscall_test_system()
     else
         iprintf("The system lookup table contain one program. Correct.\n");
 
-    std::pair<const unsigned int *, unsigned int> sysret =
+    std::pair<const unsigned int*, unsigned int> sysret =
         SystemMap::instance().getElfProgram("test");
 
     if (sysret.first == 0 || sysret.second == 0)
+    {
         fail(
             "The system lookup table has returned an invalid process size or "
             "an invalid elf pointer for the process");
+    }
 
-    ElfProgram prog(
-        reinterpret_cast<const unsigned int *>(testsuite_system_elf),
-        testsuite_system_elf_len);
+    ElfProgram prog(reinterpret_cast<const unsigned int*>(testsuite_system_elf),
+                    testsuite_system_elf_len);
 
     int ret = 0;
     pid_t p = Process::create(prog);
@@ -545,7 +543,7 @@ void syscall_test_system()
 void syscall_test_sleep()
 {
     test_name("System Call: sleep");
-    ElfProgram prog(reinterpret_cast<const unsigned int *>(testsuite_sleep_elf),
+    ElfProgram prog(reinterpret_cast<const unsigned int*>(testsuite_sleep_elf),
                     testsuite_sleep_elf_len);
 
     int ret        = 0;
@@ -566,7 +564,7 @@ void syscall_test_files()
     test_name("System Call: open, read, write, seek, close, system");
 
     ElfProgram prog(
-        reinterpret_cast<const unsigned int *>(testsuite_syscall_elf),
+        reinterpret_cast<const unsigned int*>(testsuite_syscall_elf),
         testsuite_syscall_elf_len);
     int ret = 0;
 
@@ -636,7 +634,7 @@ and test argv pointer passing
 
 static volatile bool t1_v1;
 
-static void t1_p1(void *argv __attribute__((unused)))
+static void t1_p1(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -649,13 +647,13 @@ static void t1_p1(void *argv __attribute__((unused)))
     }
 }
 
-static void t1_p3(void *argv)
+static void t1_p3(void* argv)
 {
     if (reinterpret_cast<unsigned int>(argv) != 0xdeadbeef)
         fail("argv passing");
 }
 
-static void t1_f1(Thread *p)
+static void t1_f1(Thread* p)
 {
     // This test is very strict and sometimes might fail. To see why consider
     // this: yield() moves control flow to the second thread, but a preemption
@@ -708,18 +706,18 @@ static void test_1()
 {
     test_name("thread creation/deletion");
     // Testing getStackBottom()
-    const unsigned int *y = Thread::getStackBottom();
+    const unsigned int* y = Thread::getStackBottom();
     if (*y != STACK_FILL)
         fail("getStackBottom() (1)");
     y--;  // Now should point to last word of watermark
     if (*y != WATERMARK_FILL)
         fail("getStackBottom() (2)");
     // Testing thread termination
-    Thread *p = Thread::create(t1_p1, STACK_SMALL, 0, NULL);
+    Thread* p = Thread::create(t1_p1, STACK_SMALL, 0, NULL);
     t1_f1(p);
     // Testing argv passing
     p = Thread::create(t1_p3, STACK_SMALL, 0,
-                       reinterpret_cast<void *>(0xdeadbeef));
+                       reinterpret_cast<void*>(0xdeadbeef));
     Thread::sleep(5);
     if (Thread::exists(p))
         fail("thread not deleted (2)");
@@ -737,9 +735,9 @@ Thread::getCurrentThread
 */
 
 static volatile bool t2_v1;
-static Thread *t2_p_v1;
+static Thread* t2_p_v1;
 
-static void t2_p1(void *argv __attribute__((unused)))
+static void t2_p1(void* argv __attribute__((unused)))
 {
     // This is to fix a race condition: the immediately after the thread
     // creation a yield occurs, t2_p_v1 is not yet assigned so the check fails
@@ -757,7 +755,7 @@ static void t2_p1(void *argv __attribute__((unused)))
     }
 }
 
-static void t2_p2(void *argv __attribute__((unused)))
+static void t2_p2(void* argv __attribute__((unused)))
 {
     while (Thread::testTerminate() == false)
         t2_v1 = true;
@@ -830,7 +828,7 @@ getTime()
 also tests creation of multiple instances of the same thread
 */
 
-static void t3_p1(void *argv __attribute__((unused)))
+static void t3_p1(void* argv __attribute__((unused)))
 {
     const int SLEEP_TIME = 100;  // ms
     for (;;)
@@ -849,7 +847,7 @@ static void t3_p1(void *argv __attribute__((unused)))
 static volatile bool t3_v2;       // Set to true by t3_p2
 static volatile bool t3_deleted;  // Set when an instance of t3_p2 is deleted
 
-static void t3_p2(void *argv __attribute__((unused)))
+static void t3_p2(void* argv __attribute__((unused)))
 {
     const int SLEEP_TIME = 15;
     for (;;)
@@ -867,7 +865,7 @@ static void t3_p2(void *argv __attribute__((unused)))
 static void test_3()
 {
     test_name("time and sleep");
-    Thread *p = Thread::create(t3_p1, STACK_SMALL, 0, NULL);
+    Thread* p = Thread::create(t3_p1, STACK_SMALL, 0, NULL);
     for (int i = 0; i < 4; i++)
     {
         // The other thread is running getTime() test
@@ -896,7 +894,7 @@ static void test_3()
     t3_v2 = false;
     // Creating another instance of t3_p2 to check what happens when 3 threads
     // are sleeping
-    Thread *p2 = Thread::create(t3_p2, STACK_SMALL, 0, NULL);
+    Thread* p2 = Thread::create(t3_p2, STACK_SMALL, 0, NULL);
     // p will wake @ t=45, main will wake @ t=47 and p2 @ t=50ms
     // this will test proper sorting of sleeping_list in the kernel
     Thread::sleep(12);
@@ -952,7 +950,7 @@ Thread::IRQgetPriority
 
 static volatile bool t4_v1;
 
-static void t4_p1(void *argv __attribute__((unused)))
+static void t4_p1(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -967,7 +965,7 @@ static void t4_p1(void *argv __attribute__((unused)))
 
 #ifdef SCHED_TYPE_EDF
 // This takes .014/.03=47% of CPU time
-static void t4_p2(void *argv)
+static void t4_p2(void* argv)
 {
     const long long period = msInNs(30);  // 30ms
     long long time         = getTime();
@@ -987,13 +985,13 @@ static void t4_p2(void *argv)
 static void test_4()
 {
     test_name("disableInterrupts and priority");
-    Thread *p = Thread::create(t4_p1, STACK_SMALL, 0, NULL);
+    Thread* p = Thread::create(t4_p1, STACK_SMALL, 0, NULL);
     // Check getPriority()
     if (p->getPriority() != 0)
         fail("getPriority (0)");
     // Check that getCurrentThread() and IRQgetCurrentThread() return the
     // same value
-    Thread *q = Thread::getCurrentThread();
+    Thread* q = Thread::getCurrentThread();
     disableInterrupts();  //
     if (q != Thread::IRQgetCurrentThread())
         fail("IRQgetCurrentThread");
@@ -1102,7 +1100,7 @@ static volatile bool t5_v1;
 static volatile bool
     t5_v2;  // False=testing Thread::wait() else Thread::IRQwait()
 
-static void t5_p1(void *argv __attribute__((unused)))
+static void t5_p1(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -1110,7 +1108,9 @@ static void t5_p1(void *argv __attribute__((unused)))
             break;
         t5_v1 = true;
         if (t5_v2)
+        {
             Thread::wait();
+        }
         else
         {
             disableInterrupts();
@@ -1126,7 +1126,7 @@ static void test_5()
     test_name("wait, wakeup, IRQwait, IRQwakeup");
     t5_v2     = false;  // Testing wait
     t5_v1     = false;
-    Thread *p = Thread::create(t5_p1, STACK_SMALL, 0, NULL);
+    Thread* p = Thread::create(t5_p1, STACK_SMALL, 0, NULL);
     // Should not happen, since already tested
     Thread::sleep(5);
     if (t5_v1 == false)
@@ -1208,7 +1208,7 @@ public:
         strcat(s, t);
     }
 
-    char *read() { return s; }
+    char* read() { return s; }
 
     void clear() { s[0] = '\0'; }
 
@@ -1220,7 +1220,7 @@ static Sequence seq;
 static Mutex t6_m1;
 static FastMutex t6_m1a;
 
-static void t6_p1(void *argv __attribute__((unused)))
+static void t6_p1(void* argv __attribute__((unused)))
 {
     t6_m1.lock();
     seq.add('1');
@@ -1232,7 +1232,7 @@ static void t6_p1(void *argv __attribute__((unused)))
     t6_m1.unlock();
 }
 
-static void t6_p2(void *argv __attribute__((unused)))
+static void t6_p2(void* argv __attribute__((unused)))
 {
     t6_m1.lock();
     seq.add('2');
@@ -1243,7 +1243,7 @@ static void t6_p2(void *argv __attribute__((unused)))
     t6_m1.unlock();
 }
 
-static void t6_p3(void *argv __attribute__((unused)))
+static void t6_p3(void* argv __attribute__((unused)))
 {
     t6_m1.lock();
     seq.add('3');
@@ -1254,7 +1254,7 @@ static void t6_p3(void *argv __attribute__((unused)))
     t6_m1.unlock();
 }
 
-static void t6_p4(void *argv __attribute__((unused)))
+static void t6_p4(void* argv __attribute__((unused)))
 {
     t6_m1.lock();
     for (;;)
@@ -1272,7 +1272,7 @@ static void t6_p4(void *argv __attribute__((unused)))
     }
 }
 
-static void t6_p1a(void *argv __attribute__((unused)))
+static void t6_p1a(void* argv __attribute__((unused)))
 {
     t6_m1a.lock();
     seq.add('1');
@@ -1280,7 +1280,7 @@ static void t6_p1a(void *argv __attribute__((unused)))
     t6_m1a.unlock();
 }
 
-static void t6_p2a(void *argv __attribute__((unused)))
+static void t6_p2a(void* argv __attribute__((unused)))
 {
     t6_m1a.lock();
     seq.add('2');
@@ -1288,7 +1288,7 @@ static void t6_p2a(void *argv __attribute__((unused)))
     t6_m1a.unlock();
 }
 
-static void t6_p3a(void *argv __attribute__((unused)))
+static void t6_p3a(void* argv __attribute__((unused)))
 {
     t6_m1a.lock();
     seq.add('3');
@@ -1296,7 +1296,7 @@ static void t6_p3a(void *argv __attribute__((unused)))
     t6_m1a.unlock();
 }
 
-static void t6_p4a(void *argv __attribute__((unused)))
+static void t6_p4a(void* argv __attribute__((unused)))
 {
     t6_m1a.lock();
     for (;;)
@@ -1318,7 +1318,7 @@ static volatile bool t6_v1;
 static Mutex t6_m2;
 static FastMutex t6_m2a;
 
-static void t6_p5(void *argv __attribute__((unused)))
+static void t6_p5(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -1334,7 +1334,7 @@ static void t6_p5(void *argv __attribute__((unused)))
     }
 }
 
-static void t6_p5a(void *argv __attribute__((unused)))
+static void t6_p5a(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -1353,18 +1353,18 @@ static void t6_p5a(void *argv __attribute__((unused)))
 static Mutex t6_m3;
 static Mutex t6_m4;
 
-static void t6_p6(void *argv)
+static void t6_p6(void* argv)
 {
-    Mutex *m = reinterpret_cast<Mutex *>(argv);
+    Mutex* m = reinterpret_cast<Mutex*>(argv);
     {
         Lock<Mutex> l(*m);
         Thread::sleep(1);
     }
 }
 
-static void t6_p6a(void *argv)
+static void t6_p6a(void* argv)
 {
-    FastMutex *m = reinterpret_cast<FastMutex *>(argv);
+    FastMutex* m = reinterpret_cast<FastMutex*>(argv);
     {
         Lock<FastMutex> l(*m);
         Thread::sleep(1);
@@ -1374,34 +1374,34 @@ static void t6_p6a(void *argv)
 static Mutex t6_m5(Mutex::RECURSIVE);
 static FastMutex t6_m5a(FastMutex::RECURSIVE);
 
-static void *t6_p7(void *argv __attribute__((unused)))
+static void* t6_p7(void* argv __attribute__((unused)))
 {
     if (t6_m5.tryLock() == false)
-        return reinterpret_cast<void *>(1);  // 1 = locked
+        return reinterpret_cast<void*>(1);  // 1 = locked
     t6_m5.unlock();
-    return reinterpret_cast<void *>(0);  // 0 = unlocked
+    return reinterpret_cast<void*>(0);  // 0 = unlocked
 }
 
 bool checkIft6_m5IsLocked()
 {
-    Thread *t = Thread::create(t6_p7, STACK_SMALL, 0, 0, Thread::JOINABLE);
-    void *result;
+    Thread* t = Thread::create(t6_p7, STACK_SMALL, 0, 0, Thread::JOINABLE);
+    void* result;
     t->join(&result);
     return reinterpret_cast<int>(result) == 0 ? false : true;
 }
 
-static void *t6_p7a(void *argv __attribute__((unused)))
+static void* t6_p7a(void* argv __attribute__((unused)))
 {
     if (t6_m5a.tryLock() == false)
-        return reinterpret_cast<void *>(1);  // 1 = locked
+        return reinterpret_cast<void*>(1);  // 1 = locked
     t6_m5a.unlock();
-    return reinterpret_cast<void *>(0);  // 0 = unlocked
+    return reinterpret_cast<void*>(0);  // 0 = unlocked
 }
 
 bool checkIft6_m5aIsLocked()
 {
-    Thread *t = Thread::create(t6_p7a, STACK_SMALL, 0, 0, Thread::JOINABLE);
-    void *result;
+    Thread* t = Thread::create(t6_p7a, STACK_SMALL, 0, 0, Thread::JOINABLE);
+    void* result;
     t->join(&result);
     return reinterpret_cast<int>(result) == 0 ? false : true;
 }
@@ -1448,7 +1448,7 @@ static void test_6()
     //
 
     // This thread will hold the lock until we terminate it
-    Thread *t = Thread::create(t6_p4, STACK_SMALL, 0);
+    Thread* t = Thread::create(t6_p4, STACK_SMALL, 0);
     Thread::yield();
     if (t6_m1.tryLock() == true)
         fail("Mutex::tryLock() (1)");
@@ -1466,7 +1466,7 @@ static void test_6()
         fail("Mutex::tryLock() (3)");
     t6_m1.unlock();
     t6_v1      = false;
-    Thread *t2 = Thread::create(t6_p5, STACK_SMALL, 1);
+    Thread* t2 = Thread::create(t6_p5, STACK_SMALL, 1);
     Thread::sleep(30);
     if (t6_v1 == false)
         fail("Thread not created");
@@ -1485,8 +1485,8 @@ static void test_6()
     //
     // Testing full priority inheritance algorithm
     //
-    Thread *t3;
-    Thread *t4;
+    Thread* t3;
+    Thread* t4;
     {
         Lock<Mutex> l1(t6_m3);
         {
@@ -1496,21 +1496,21 @@ static void test_6()
                 fail("priority inheritance (5)");
             // This thread will increase priority to 1
             t = Thread::create(t6_p6, STACK_SMALL, priorityAdapter(1),
-                               reinterpret_cast<void *>(&t6_m4),
+                               reinterpret_cast<void*>(&t6_m4),
                                Thread::JOINABLE);
             Thread::sleep(10);
             if (Thread::getCurrentThread()->getPriority() != priorityAdapter(1))
                 fail("priority inheritance (6)");
             // This thread will do nothing
             t2 = Thread::create(t6_p6, STACK_SMALL, priorityAdapter(1),
-                                reinterpret_cast<void *>(&t6_m3),
+                                reinterpret_cast<void*>(&t6_m3),
                                 Thread::JOINABLE);
             Thread::sleep(10);
             if (Thread::getCurrentThread()->getPriority() != priorityAdapter(1))
                 fail("priority inheritance (7)");
             // This thread will increase priority to 2
             t3 = Thread::create(t6_p6, STACK_SMALL, priorityAdapter(2),
-                                reinterpret_cast<void *>(&t6_m4),
+                                reinterpret_cast<void*>(&t6_m4),
                                 Thread::JOINABLE);
             Thread::sleep(10);
             if (Thread::getCurrentThread()->getPriority() != priorityAdapter(2))
@@ -1536,7 +1536,7 @@ static void test_6()
         Thread::setPriority(priorityAdapter(1));
         // This thread will increase priority to 2
         t4 = Thread::create(t6_p6, STACK_SMALL, priorityAdapter(2),
-                            reinterpret_cast<void *>(&t6_m3), Thread::JOINABLE);
+                            reinterpret_cast<void*>(&t6_m3), Thread::JOINABLE);
         Thread::sleep(10);
         if (Thread::getCurrentThread()->getPriority() != priorityAdapter(2))
             fail("priority inheritance (13)");
@@ -1563,7 +1563,7 @@ static void test_6()
             {
                 Lock<Mutex> l3(t6_m5);
                 t = Thread::create(t6_p6, STACK_SMALL, 0,
-                                   reinterpret_cast<void *>(&t6_m5));
+                                   reinterpret_cast<void*>(&t6_m5));
                 Thread::sleep(10);
                 // If thread does not exist it means it has locked the mutex
                 // even if we locked it first
@@ -1694,7 +1694,7 @@ static void test_6()
             {
                 Lock<FastMutex> l3(t6_m5a);
                 t = Thread::create(t6_p6a, STACK_SMALL, 0,
-                                   reinterpret_cast<void *>(&t6_m5a));
+                                   reinterpret_cast<void*>(&t6_m5a));
                 Thread::sleep(10);
                 // If thread does not exist it means it has locked the mutex
                 // even if we locked it first
@@ -1758,7 +1758,7 @@ std::chrono::system_clock
 std::chrono::steady_clock
 */
 
-static void fail_time(const char *msg, long long time)  // time in ms
+static void fail_time(const char* msg, long long time)  // time in ms
 {
     fail((std::string(msg) + std::to_string(time)).c_str());
 }
@@ -1779,7 +1779,9 @@ static void test_7()
 
         if (llabs(duration_cast<milliseconds>(steadyEnd - steadyStart).count() -
                   i) > 4)
+        {
             fail_time("steady_clock not precise ", i);
+        }
 
         auto sysStart = system_clock::now();
         Thread::sleep(i);
@@ -1787,7 +1789,9 @@ static void test_7()
 
         if (llabs(duration_cast<milliseconds>(sysEnd - sysStart).count() - i) >
             4)
+        {
             fail_time("system_clock not precise ", i);
+        }
     }
 
     pass();
@@ -1813,7 +1817,7 @@ FIXME: The overloaded versions of IRQput and IRQget are not tested
 static Queue<char, 4> t8_q1;
 static Queue<char, 4> t8_q2;
 
-static void t8_p1(void *argv __attribute__((unused)))
+static void t8_p1(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -1895,7 +1899,7 @@ static void test_8()
     // Test queue between threads
     t8_q1.reset();
     t8_q2.reset();
-    Thread *p  = Thread::create(t8_p1, STACK_SMALL, 0, NULL);
+    Thread* p  = Thread::create(t8_p1, STACK_SMALL, 0, NULL);
     char write = 'A', read = 'A';
     for (int i = 1; i <= 8; i++)
     {
@@ -2037,13 +2041,13 @@ void t10_f2()
         t10_f1();
         fail("Exception not thrown (1)");
     }
-    catch (std::logic_error &e)
+    catch (std::logic_error& e)
     {
         throw;
     }
 }
 
-void t10_p1(void *argv __attribute__((unused)))
+void t10_p1(void* argv __attribute__((unused)))
 {
     t10_f2();
     fail("Exception not thrown");
@@ -2053,7 +2057,7 @@ void test_10()
 {
     test_name("Exception handling");
     Thread::sleep(10);
-    Thread *t = Thread::create(t10_p1, 1024 + 512, 0, NULL);
+    Thread* t = Thread::create(t10_p1, 1024 + 512, 0, NULL);
     Thread::sleep(80);
     if (Thread::exists(t))
         fail("Thread not deleted");
@@ -2070,7 +2074,7 @@ tests class MemoryProfiling
 
 static volatile unsigned int t11_v1;  // Free heap after spawning thread
 
-void t11_p1(void *argv __attribute__((unused)))
+void t11_p1(void* argv __attribute__((unused)))
 {
     if (MemoryProfiling::getStackSize() != STACK_SMALL)
         fail("getStackSize (2)");
@@ -2103,7 +2107,7 @@ void test_11()
     if (MemoryProfiling::getAbsoluteFreeHeap() > heapSize)
         fail("getAbsoluteFreeHeap");
     // Multithread test
-    Thread *t = Thread::create(t11_p1, STACK_SMALL, 0, 0, Thread::JOINABLE);
+    Thread* t = Thread::create(t11_p1, STACK_SMALL, 0, 0, Thread::JOINABLE);
     t11_v1    = MemoryProfiling::getCurrentFreeHeap();
     t->join(0);
     Thread::sleep(
@@ -2121,20 +2125,20 @@ Additional test for priority inheritance
 Mutex t12_m1;
 Mutex t12_m2;
 
-void t12_p1(void *argv __attribute__((unused)))
+void t12_p1(void* argv __attribute__((unused)))
 {
     Lock<Mutex> l1(t12_m1);
     Lock<Mutex> l2(t12_m2);
 }
 
-void t12_p2(void *argv __attribute__((unused))) { Lock<Mutex> l(t12_m1); }
+void t12_p2(void* argv __attribute__((unused))) { Lock<Mutex> l(t12_m1); }
 
 void test_12()
 {
     test_name("Priority inheritance 2");
     Thread::setPriority(priorityAdapter(0));  // For EDF
-    Thread *t1;
-    Thread *t2;
+    Thread* t1;
+    Thread* t2;
     {
         // First, we lock the second Mutex
         Lock<Mutex> l(t12_m2);
@@ -2191,7 +2195,7 @@ Tests:
 - Thread::detach
 */
 
-void *t14_p1(void *argv)
+void* t14_p1(void* argv)
 {
     for (;;)
     {
@@ -2206,16 +2210,16 @@ void *t14_p1(void *argv)
     return argv;
 }
 
-void *t14_p2(void *argv)
+void* t14_p2(void* argv)
 {
     Thread::sleep(50);
     return argv;
 }
 
-void t14_p3(void *argv)
+void t14_p3(void* argv)
 {
     Thread::sleep(20);
-    Thread *t = reinterpret_cast<Thread *>(argv);
+    Thread* t = reinterpret_cast<Thread*>(argv);
     t->detach();
 }
 
@@ -2230,7 +2234,7 @@ void test_14()
     //
 
     // Test 1: detached thread that returns void*
-    Thread *t = Thread::create(t14_p1, STACK_SMALL, 0, 0);
+    Thread* t = Thread::create(t14_p1, STACK_SMALL, 0, 0);
     t->terminate();
     Thread::sleep(10);
     if (Thread::exists(t))
@@ -2252,7 +2256,7 @@ void test_14()
     Thread::sleep(10);
     // Test 5: detaching a thread on which some other thread called join
     t = Thread::create(t14_p2, STACK_SMALL, 0, 0, Thread::JOINABLE);
-    Thread::create(t14_p3, STACK_SMALL, 0, reinterpret_cast<void *>(t));
+    Thread::create(t14_p3, STACK_SMALL, 0, reinterpret_cast<void*>(t));
     if (t->join() == true)
         fail("thread not detached (1)");
 
@@ -2262,8 +2266,8 @@ void test_14()
     //
 
     // Test 1: join on joinable, not already deleted
-    void *result = 0;
-    t            = Thread::create(t14_p2, STACK_SMALL, 0, (void *)0xdeadbeef,
+    void* result = 0;
+    t            = Thread::create(t14_p2, STACK_SMALL, 0, (void*)0xdeadbeef,
                                   Thread::JOINABLE);
     Thread::yield();
     if (t->join(&result) == false)
@@ -2284,7 +2288,7 @@ void test_14()
 
     // Test 3: join on joinable, but detach called after
     t = Thread::create(t14_p1, STACK_SMALL, 0, 0, Thread::JOINABLE);
-    Thread::create(t14_p3, STACK_SMALL, 0, reinterpret_cast<void *>(t));
+    Thread::create(t14_p3, STACK_SMALL, 0, reinterpret_cast<void*>(t));
     if (t->join() == true)
         fail("Thread::join (3)");
     t->terminate();
@@ -2303,7 +2307,7 @@ void test_14()
 
     // Test 6: join on already deleted
     result = 0;
-    t      = Thread::create(t14_p1, STACK_SMALL, 0, (void *)0xdeadbeef,
+    t      = Thread::create(t14_p1, STACK_SMALL, 0, (void*)0xdeadbeef,
                             Thread::JOINABLE);
     t->terminate();
     Thread::sleep(10);
@@ -2345,7 +2349,7 @@ static int t15_v3;
 static ConditionVariable t15_c1;
 static Mutex t15_m1;
 
-void t15_p1(void *argv __attribute__((unused)))
+void t15_p1(void* argv __attribute__((unused)))
 {
     for (int i = 0; i < 10; i++)
     {
@@ -2356,7 +2360,7 @@ void t15_p1(void *argv __attribute__((unused)))
     }
 }
 
-void t15_p2(void *argv __attribute__((unused)))
+void t15_p2(void* argv __attribute__((unused)))
 {
     for (int i = 0; i < 10; i++)
     {
@@ -2374,8 +2378,8 @@ static void test_15()
     t15_v1     = false;
     t15_v2     = false;
     t15_v3     = 0;
-    Thread *p1 = Thread::create(t15_p1, STACK_SMALL, 0);
-    Thread *p2 = Thread::create(t15_p2, STACK_SMALL, 0);
+    Thread* p1 = Thread::create(t15_p1, STACK_SMALL, 0);
+    Thread* p2 = Thread::create(t15_p2, STACK_SMALL, 0);
     for (int i = 0; i < 20; i++)
     {
         Thread::sleep(10);
@@ -2455,9 +2459,9 @@ posix threads API
  pthread_once
 */
 
-inline Thread *toThread(pthread_t t) { return reinterpret_cast<Thread *>(t); }
+inline Thread* toThread(pthread_t t) { return reinterpret_cast<Thread*>(t); }
 
-void *t16_p1(void *argv)
+void* t16_p1(void* argv)
 {
     toThread(pthread_self())->wait();
     return argv;
@@ -2466,9 +2470,9 @@ void *t16_p1(void *argv)
 volatile bool t16_v1;
 pthread_mutex_t t16_m1 = PTHREAD_MUTEX_INITIALIZER;
 
-void *t16_p2(void *argv)
+void* t16_p2(void* argv)
 {
-    pthread_mutex_t *mutex = (pthread_mutex_t *)argv;
+    pthread_mutex_t* mutex = (pthread_mutex_t*)argv;
     if (pthread_mutex_lock(mutex) != 0)
         fail("mutex_lock (2)");
     t16_v1 = true;
@@ -2480,7 +2484,7 @@ void *t16_p2(void *argv)
 
 pthread_cond_t t16_c1 = PTHREAD_COND_INITIALIZER;
 
-void *t16_p3(void *argv __attribute__((unused)))
+void* t16_p3(void* argv __attribute__((unused)))
 {
     Thread::sleep(30);
     if (pthread_mutex_trylock(&t16_m1) != 0)
@@ -2495,7 +2499,7 @@ void *t16_p3(void *argv __attribute__((unused)))
 
 pthread_cond_t t16_c2;
 
-void *t16_p4(void *argv __attribute__((unused)))
+void* t16_p4(void* argv __attribute__((unused)))
 {
     Thread::sleep(30);
     if (pthread_mutex_trylock(&t16_m1) != 0)
@@ -2567,7 +2571,7 @@ static void test_16()
     pthread_t thread;
     if (pthread_create(&thread, &attr, t16_p1, NULL) != 0)
         fail("pthread_create (1)");
-    Thread *t = toThread(thread);
+    Thread* t = toThread(thread);
     if (Thread::exists(t) == false)
         fail("thread not created");
     if (t->isDetached() == false)
@@ -2591,7 +2595,7 @@ static void test_16()
     //
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, STACK_SMALL);
-    if (pthread_create(&thread, &attr, t16_p1, (void *)0xdeadbeef) != 0)
+    if (pthread_create(&thread, &attr, t16_p1, (void*)0xdeadbeef) != 0)
         fail("pthread_create (2)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -2600,7 +2604,7 @@ static void test_16()
         fail("detached by mistake (1)");
     Thread::sleep(10);  // Give the other thread time to call wait()
     t->wakeup();
-    void *res;
+    void* res;
     if (pthread_join(thread, &res) != 0)
         fail("join return value");
     if (((unsigned)res) != 0xdeadbeef)
@@ -2631,7 +2635,7 @@ static void test_16()
     if (pthread_mutex_lock(&t16_m1) != 0)
         fail("mutex lock");
     t16_v1 = false;
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&t16_m1) != 0)
+    if (pthread_create(&thread, NULL, t16_p2, (void*)&t16_m1) != 0)
         fail("pthread_create (4)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -2650,7 +2654,7 @@ static void test_16()
     Thread::sleep(10);
     // testing trylock, after the thread is created it will lock the mutex
     // for 50ms
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&t16_m1) != 0)
+    if (pthread_create(&thread, NULL, t16_p2, (void*)&t16_m1) != 0)
         fail("pthread_create (5)");
     Thread::sleep(10);
     if (pthread_mutex_trylock(&t16_m1) == 0)
@@ -2668,7 +2672,7 @@ static void test_16()
     if (pthread_mutex_lock(&mutex) != 0)
         fail("mutex lock (4)");
     t16_v1 = false;
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&mutex) != 0)
+    if (pthread_create(&thread, NULL, t16_p2, (void*)&mutex) != 0)
         fail("pthread_create (6)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -2686,7 +2690,7 @@ static void test_16()
     pthread_join(thread, NULL);
     Thread::sleep(10);
     // testing pthread_mutex_destroy
-    if (pthread_create(&thread, NULL, t16_p2, (void *)&mutex) != 0)
+    if (pthread_create(&thread, NULL, t16_p2, (void*)&mutex) != 0)
         fail("pthread_create (7)");
     t = toThread(thread);
     if (Thread::exists(t) == false)
@@ -2785,7 +2789,7 @@ public:
     unsigned int a, b;
 };
 
-static TestStaticConstructor &instance()
+static TestStaticConstructor& instance()
 {
     static TestStaticConstructor singleton;
     return singleton;
@@ -2833,8 +2837,8 @@ void __attribute__((noinline)) check32(unsigned int a, unsigned int b)
         fail("swapBytes32");
 }
 
-void __attribute__((noinline))
-check64(unsigned long long a, unsigned long long b)
+void __attribute__((noinline)) check64(unsigned long long a,
+                                       unsigned long long b)
 {
     if (swapBytes64(a) != b)
         fail("swapBytes64");
@@ -2847,10 +2851,14 @@ static void test_18()
         fail("swapBytes16");
     if (swapBytes32(0x12345678) != 0x78563412 ||
         swapBytes32(0x55aa00ff) != 0xff00aa55)
+    {
         fail("swapBytes32");
+    }
     if (swapBytes64(0x0123456789abcdefull) != 0xefcdab8967452301ull ||
         swapBytes64(0x55aa00ffcc33ab56ull) != 0x56ab33ccff00aa55ull)
+    {
         fail("swapBytes64");
+    }
     check16(0x1234, 0x3412);
     check16(0x55aa, 0xaa55);
     check32(0x12345678, 0x78563412);
@@ -2869,19 +2877,27 @@ static void test_18()
         if (toBigEndian16(0x0123) != 0x0123 ||
             toBigEndian32(0x01234567) != 0x01234567 ||
             toBigEndian64(0x0123456789abcdef) != 0x0123456789abcdef)
+        {
             fail("toBigEndian");
+        }
         if (fromBigEndian16(0x0123) != 0x0123 ||
             fromBigEndian32(0x01234567) != 0x01234567 ||
             fromBigEndian64(0x0123456789abcdef) != 0x0123456789abcdef)
+        {
             fail("fromBigEndian");
+        }
         if (toLittleEndian16(0x0123) != 0x2301 ||
             toLittleEndian32(0x01234567) != 0x67452301 ||
             toLittleEndian64(0x0123456789abcdef) != 0xefcdab8967452301)
+        {
             fail("toLittleEndian");
+        }
         if (fromLittleEndian16(0x0123) != 0x2301 ||
             fromLittleEndian32(0x01234567) != 0x67452301 ||
             fromLittleEndian64(0x0123456789abcdef) != 0xefcdab8967452301)
+        {
             fail("fromLittleEndian");
+        }
     }
     else
     {
@@ -2889,19 +2905,27 @@ static void test_18()
         if (toLittleEndian16(0x0123) != 0x0123 ||
             toLittleEndian32(0x01234567) != 0x01234567 ||
             toLittleEndian64(0x0123456789abcdef) != 0x0123456789abcdef)
+        {
             fail("toLittleEndian");
+        }
         if (fromLittleEndian16(0x0123) != 0x0123 ||
             fromLittleEndian32(0x01234567) != 0x01234567 ||
             fromLittleEndian64(0x0123456789abcdef) != 0x0123456789abcdef)
+        {
             fail("fromLittleEndian");
+        }
         if (toBigEndian16(0x0123) != 0x2301 ||
             toBigEndian32(0x01234567) != 0x67452301 ||
             toBigEndian64(0x0123456789abcdef) != 0xefcdab8967452301)
+        {
             fail("toBigEndian");
+        }
         if (fromBigEndian16(0x0123) != 0x2301 ||
             fromBigEndian32(0x01234567) != 0x67452301 ||
             fromBigEndian64(0x0123456789abcdef) != 0xefcdab8967452301)
+        {
             fail("fromBigEndian");
+        }
     }
     pass();
 }
@@ -2915,16 +2939,16 @@ class BufferQueue
 */
 
 BufferQueue<char, 10, 3> bq;
-Thread *t19_v1;
+Thread* t19_v1;
 
 static const char b1c[] = "b1c----";
 static const char b2c[] = "b2c----x";
 static const char b3c[] = "b3c----xx";
 static const char b4c[] = "";
 
-static char *IRQgbw(FastInterruptDisableLock &dLock)
+static char* IRQgbw(FastInterruptDisableLock& dLock)
 {
-    char *buffer = 0;
+    char* buffer = 0;
     if (bq.tryGetWritableBuffer(buffer) == false)
     {
         FastInterruptEnableLock eLock(dLock);
@@ -2933,7 +2957,7 @@ static char *IRQgbw(FastInterruptDisableLock &dLock)
     return buffer;
 }
 
-static void gbr(const char *&buffer, unsigned int &size)
+static void gbr(const char*& buffer, unsigned int& size)
 {
     FastInterruptDisableLock dLock;
     while (bq.tryGetReadableBuffer(buffer, size) == false)
@@ -2952,12 +2976,12 @@ static void be()
     bq.bufferEmptied();
 }
 
-static void t19_p1(void *argv __attribute__((unused)))
+static void t19_p1(void* argv __attribute__((unused)))
 {
     Thread::sleep(50);
     {
         FastInterruptDisableLock dLock;
-        char *buffer = IRQgbw(dLock);
+        char* buffer = IRQgbw(dLock);
         strcpy(buffer, b1c);
         bq.bufferFilled(strlen(b1c));
         t19_v1->IRQwakeup();
@@ -3003,8 +3027,8 @@ static void test_19()
         fail("IRQisFull");
 
     // Test filling only one slot
-    char *buf          = 0;
-    const char *buffer = 0;
+    char* buf          = 0;
+    const char* buffer = 0;
     unsigned int size;
     if (bq.tryGetReadableBuffer(buffer, size) == true)
         fail("IRQgetReadableBuffer");
@@ -3105,7 +3129,7 @@ static void test_19()
 
     // Now real multithreaded test
     t19_v1    = Thread::getCurrentThread();
-    Thread *t = Thread::create(t19_p1, STACK_MIN, 0, 0, Thread::JOINABLE);
+    Thread* t = Thread::create(t19_p1, STACK_MIN, 0, 0, Thread::JOINABLE);
     gbr(buffer, size);
     if (size != strlen(b1c))
         fail("returned size");
@@ -3184,9 +3208,9 @@ private:
 
 void thrower() { throw 5; }
 
-void t20_t1(void *arg)
+void t20_t1(void* arg)
 {
-    EventQueue *eq = reinterpret_cast<EventQueue *>(arg);
+    EventQueue* eq = reinterpret_cast<EventQueue*>(arg);
     t20_v1         = 0;
     eq->post(t20_f1);
     Thread::sleep(10);
@@ -3203,9 +3227,9 @@ void t20_t1(void *arg)
     eq->post(thrower);
 }
 
-void t20_t2(void *arg)
+void t20_t2(void* arg)
 {
-    FixedEventQueue<2> *eq = reinterpret_cast<FixedEventQueue<2> *>(arg);
+    FixedEventQueue<2>* eq = reinterpret_cast<FixedEventQueue<2>*>(arg);
     t20_v1                 = 0;
     eq->post(t20_f1);
     eq->post(t20_f1);
@@ -3309,7 +3333,7 @@ static void test_20()
         fail("Empty EventQueue");
 
 #ifndef __NO_EXCEPTIONS
-    Thread *t = Thread::create(t20_t1, STACK_SMALL, 0, &eq, Thread::JOINABLE);
+    Thread* t = Thread::create(t20_t1, STACK_SMALL, 0, &eq, Thread::JOINABLE);
     try
     {
         eq.run();
@@ -3436,7 +3460,7 @@ static float t21_f2()
     return result;
 }
 
-static void *t21_t1(void *)
+static void* t21_t1(void*)
 {
     for (int i = 0; i < 5; i++)
     {
@@ -3486,7 +3510,7 @@ struct t22_s1
     int b;
 };
 
-static void t22_t2(void *argv __attribute__((unused)))
+static void t22_t2(void* argv __attribute__((unused)))
 {
     while (Thread::testTerminate() == false)
     {
@@ -3495,7 +3519,7 @@ static void t22_t2(void *argv __attribute__((unused)))
     }
 }
 
-static void *t22_t1(void *)
+static void* t22_t1(void*)
 {
     for (int i = 0; i < 100000; i++)
     {
@@ -3556,9 +3580,9 @@ static void test_22()
         fail("atomicCompareAndSwap 4");
 
     t22_s1 data1;
-    t22_s1 *dataPtr1 = &data1;
-    void *const volatile *ptr1 =
-        reinterpret_cast<void *const volatile *>(&dataPtr1);
+    t22_s1* dataPtr1 = &data1;
+    void* const volatile* ptr1 =
+        reinterpret_cast<void* const volatile*>(&dataPtr1);
     data1.a = 0;
     data1.b = 10;
 
@@ -3573,7 +3597,7 @@ static void test_22()
 
     // Check that the implementation works with interrupts disabled too
     bool error = false;
-    Thread *t2 = Thread::create(t22_t2, STACK_MIN, 0, 0, Thread::JOINABLE);
+    Thread* t2 = Thread::create(t22_t2, STACK_MIN, 0, 0, Thread::JOINABLE);
     {
         FastInterruptDisableLock dLock;
         t22_v5 = false;
@@ -3614,9 +3638,9 @@ static void test_22()
         delayMs(5);  // Wait to check that interrupts are disabled
 
         t22_s1 data2;
-        t22_s1 *dataPtr2 = &data2;
-        void *const volatile *ptr2 =
-            reinterpret_cast<void *const volatile *>(&dataPtr2);
+        t22_s1* dataPtr2 = &data2;
+        void* const volatile* ptr2 =
+            reinterpret_cast<void* const volatile*>(&dataPtr2);
         data2.a = 0;
         data2.b = 10;
         if (atomicFetchAndIncrement(ptr2, 0, 2) != dataPtr2)
@@ -3658,19 +3682,19 @@ static ConditionVariable t23_c2;
 static pthread_mutex_t t23_m3 = PTHREAD_MUTEX_RECURSIVE_INITIALIZER_NP;
 static pthread_cond_t t23_c3  = PTHREAD_COND_INITIALIZER;
 
-static void t23_f1(void *)
+static void t23_f1(void*)
 {
     Lock<Mutex> l(t23_m1);
     t23_c1.signal();
 }
 
-static void t23_f2(void *)
+static void t23_f2(void*)
 {
     Lock<FastMutex> l(t23_m2);
     t23_c2.signal();
 }
 
-static void t23_f3(void *)
+static void t23_f3(void*)
 {
     pthread_mutex_lock(&t23_m3);
     pthread_cond_signal(&t23_c3);
@@ -3684,7 +3708,7 @@ static void test_23()
     {
         Lock<Mutex> l(t23_m1);
         Lock<Mutex> l2(t23_m1);
-        Thread *t =
+        Thread* t =
             Thread::create(t23_f1, 2 * STACK_MIN, 1, 0, Thread::JOINABLE);
         t23_c1.wait(l2);
         t->join();
@@ -3692,14 +3716,14 @@ static void test_23()
     {
         Lock<FastMutex> l(t23_m2);
         Lock<FastMutex> l2(t23_m2);
-        Thread *t =
+        Thread* t =
             Thread::create(t23_f2, 2 * STACK_MIN, 1, 0, Thread::JOINABLE);
         t23_c2.wait(l2);
         t->join();
     }
     pthread_mutex_lock(&t23_m3);
     pthread_mutex_lock(&t23_m3);
-    Thread *t = Thread::create(t23_f3, 2 * STACK_MIN, 1, 0, Thread::JOINABLE);
+    Thread* t = Thread::create(t23_f3, 2 * STACK_MIN, 1, 0, Thread::JOINABLE);
     pthread_cond_wait(&t23_c3, &t23_m3);
     t->join();
     pthread_mutex_unlock(&t23_m3);
@@ -3899,10 +3923,10 @@ static void test_24()
         intrusive_ref_ptr<Base0> ptr1(new Base0);
         ptr1->check();
 
-        Base0 *p = ptr1.get();
+        Base0* p = ptr1.get();
         p->check();
 
-        Base0 &r = *ptr1;
+        Base0& r = *ptr1;
         r.check();
     }
     assert(dtorCalled);
@@ -3922,9 +3946,9 @@ static void test_24()
     // Copy construction, interleaved
     dtorCalled = false;
     {
-        intrusive_ref_ptr<Base0> *ptr1 =
+        intrusive_ref_ptr<Base0>* ptr1 =
             new intrusive_ref_ptr<Base0>(new Base0);
-        intrusive_ref_ptr<Base0> *ptr2 = new intrusive_ref_ptr<Base0>(*ptr1);
+        intrusive_ref_ptr<Base0>* ptr2 = new intrusive_ref_ptr<Base0>(*ptr1);
         (*ptr2)->check();
         delete ptr1;
         assert(dtorCalled == false);
@@ -4085,7 +4109,7 @@ static void test_24()
 }
 
 #if defined(_ARCH_CORTEXM7_STM32F7) || defined(_ARCH_CORTEXM7_STM32H7)
-static Thread *waiting = nullptr;  /// Thread waiting on DMA completion IRQ
+static Thread* waiting = nullptr;  /// Thread waiting on DMA completion IRQ
 
 /**
  * DMA completion IRQ
@@ -4107,16 +4131,18 @@ void dma2s0irq()
         waiting->IRQwakeup();
     if (waiting->IRQgetPriority() >
         Thread::IRQgetCurrentThread()->IRQgetPriority())
+    {
         Scheduler::IRQfindNextThread();
+    }
     waiting = nullptr;
 }
 
 /**
  * Copy memory to memory using DMA, used to test cache and DMA consistency
  */
-void dmaMemcpy(void *dest, const void *source, int size, void *slackBeforeDest,
-               void *slackBeforeSource, int slackBeforeSize,
-               void *slackAfterDest, void *slackAfterSource, int slackAfterSize)
+void dmaMemcpy(void* dest, const void* source, int size, void* slackBeforeDest,
+               void* slackBeforeSource, int slackBeforeSize,
+               void* slackAfterDest, void* slackAfterSource, int slackAfterSize)
 {
     FastInterruptDisableLock dLock;
     DMA2_Stream1->NDTR = size;
@@ -4152,21 +4178,21 @@ void testOneDmaTransaction(unsigned int size, unsigned int offset)
 {
     // Pointer to buffer where the DMA will write, with the desired offset from
     // perfect cache line alignment
-    char *source = src + offset;
-    char *dest   = dst + offset;
+    char* source = src + offset;
+    char* dest   = dst + offset;
 
     // If the DMA memory buffer beginning is misaligned, get pointer and size to
     // the cache line that includes the buffer beginning
-    char *slackBeforeSource = reinterpret_cast<char *>(
+    char* slackBeforeSource = reinterpret_cast<char*>(
         reinterpret_cast<unsigned int>(source) & (~(cacheLine - 1)));
-    char *slackBeforeDest = reinterpret_cast<char *>(
+    char* slackBeforeDest = reinterpret_cast<char*>(
         reinterpret_cast<unsigned int>(dest) & (~(cacheLine - 1)));
     unsigned int slackBeforeSize = source - slackBeforeSource;
 
     // If the DMA memory buffer end is misaligned, get pointer and size to
     // the cache line that includes the buffer end
-    char *slackAfterSource = source + size;
-    char *slackAfterDest   = dest + size;
+    char* slackAfterSource = source + size;
+    char* slackAfterDest   = dest + size;
     unsigned int slackAfterSize =
         cacheLine -
         (reinterpret_cast<unsigned int>(slackAfterSource) & (cacheLine - 1));
@@ -4285,16 +4311,16 @@ Also tests concurrent write by opening and writing 3 files from 3 threads
 */
 static volatile bool fs_1_error;
 
-static void fs_t1_p1(void *argv __attribute__((unused)))
+static void fs_t1_p1(void* argv __attribute__((unused)))
 {
-    FILE *f;
+    FILE* f;
     if ((f = fopen("/sd/testdir/file_1.txt", "w")) == NULL)
     {
         fs_1_error = true;
         return;
     }
     setbuf(f, NULL);
-    char *buf = new char[512];
+    char* buf = new char[512];
     memset(buf, '1', 512);
     for (int i = 0; i < 512; i++)
     {
@@ -4316,16 +4342,16 @@ static void fs_t1_p1(void *argv __attribute__((unused)))
     }
 }
 
-static void fs_t1_p2(void *argv __attribute__((unused)))
+static void fs_t1_p2(void* argv __attribute__((unused)))
 {
-    FILE *f;
+    FILE* f;
     if ((f = fopen("/sd/testdir/file_2.txt", "w")) == NULL)
     {
         fs_1_error = true;
         return;
     }
     setbuf(f, NULL);
-    char *buf = new char[512];
+    char* buf = new char[512];
     memset(buf, '2', 512);
     for (int i = 0; i < 512; i++)
     {
@@ -4347,16 +4373,16 @@ static void fs_t1_p2(void *argv __attribute__((unused)))
     }
 }
 
-static void fs_t1_p3(void *argv __attribute__((unused)))
+static void fs_t1_p3(void* argv __attribute__((unused)))
 {
-    FILE *f;
+    FILE* f;
     if ((f = fopen("/sd/testdir/file_3.txt", "w")) == NULL)
     {
         fs_1_error = true;
         return;
     }
     setbuf(f, NULL);
-    char *buf = new char[512];
+    char* buf = new char[512];
     memset(buf, '3', 512);
     for (int i = 0; i < 512; i++)
     {
@@ -4402,11 +4428,11 @@ static void fs_test_1()
     }
     // Test concurrent file write access
     fs_1_error = false;
-    Thread *t1 =
+    Thread* t1 =
         Thread::create(fs_t1_p1, 2048 + 512, 1, NULL, Thread::JOINABLE);
-    Thread *t2 =
+    Thread* t2 =
         Thread::create(fs_t1_p2, 2048 + 512, 1, NULL, Thread::JOINABLE);
-    Thread *t3 =
+    Thread* t3 =
         Thread::create(fs_t1_p3, 2048 + 512, 1, NULL, Thread::JOINABLE);
     t1->join();
     t2->join();
@@ -4414,9 +4440,9 @@ static void fs_test_1()
     if (fs_1_error)
         fail("Concurrent write");
     // Testing file read
-    char *buf = new char[1024];
+    char* buf = new char[1024];
     int i, j, k;
-    FILE *f;
+    FILE* f;
     // file_1.txt
     if ((f = fopen("/sd/testdir/file_1.txt", "r")) == NULL)
         fail("can't open file_1.txt");
@@ -4528,7 +4554,9 @@ static void fs_test_1()
     fseek(f, 21 + 17, SEEK_SET);  // Seek to 002\n
     if ((fgetc(f) != '0') | (fgetc(f) != '0') | (fgetc(f) != '2') |
         (fgetc(f) != '\n'))
+    {
         fail("fgetc SEEK_SET");
+    }
     if (ftell(f) != (21 * 2))
     {
         iprintf("ftell=%ld\n", ftell(f));
@@ -4537,7 +4565,9 @@ static void fs_test_1()
     fseek(f, 21 * 50 + 17, SEEK_CUR);  // Seek to 053\n
     if ((fgetc(f) != '0') | (fgetc(f) != '5') | (fgetc(f) != '3') |
         (fgetc(f) != '\n'))
+    {
         fail("fgetc SEEK_CUR");
+    }
     if (ftell(f) != (21 * 53))
     {
         iprintf("ftell=%ld\n", ftell(f));
@@ -4570,13 +4600,13 @@ mkdir/unlink/rename
  * \param b if not null, this file most not be in the directory
  * \return true on success, false on failure
  */
-static bool checkDirContent(const std::string &d, const char *a, const char *b)
+static bool checkDirContent(const std::string& d, const char* a, const char* b)
 {
-    DIR *dir   = opendir(d.c_str());
+    DIR* dir   = opendir(d.c_str());
     bool found = false;
     for (;;)
     {
-        struct dirent *de = readdir(dir);
+        struct dirent* de = readdir(dir);
         if (de == NULL)
             break;
         if (a && !strcasecmp(de->d_name, a))
@@ -4594,7 +4624,7 @@ static bool checkDirContent(const std::string &d, const char *a, const char *b)
         return true;
 }
 
-static void checkInDir(const std::string &d, bool createFile)
+static void checkInDir(const std::string& d, bool createFile)
 {
     using namespace std;
     const char dirname1[] = "test1";
@@ -4615,7 +4645,7 @@ static void checkInDir(const std::string &d, bool createFile)
     if (createFile == false)
         return;
     const char filename1[] = "test.txt";
-    FILE *f;
+    FILE* f;
     if ((f = fopen((d + filename1).c_str(), "w")) == NULL)
         fail("fopen");
     const char teststr[] = "Testing\n";
@@ -4647,7 +4677,7 @@ static void fs_test_2()
 {
     test_name("mkdir/rename/unlink");
     checkInDir("/", false);
-    DIR *d = opendir("/sd");
+    DIR* d = opendir("/sd");
     if (d != NULL)
     {
         // the /sd mountpoint exists, check mkdir/rename/unlink also here
@@ -4674,11 +4704,11 @@ static void fs_test_3()
     const unsigned int size      = 1024;
     const unsigned int numBlocks = 2048;
 
-    FILE *f;
+    FILE* f;
     if ((f = fopen(name, "w")) == NULL)
         fail("open 1");
     setbuf(f, NULL);  // cppcheck-suppress nullPointerRedundantCheck
-    char *buf               = new char[size];
+    char* buf               = new char[size];
     unsigned short checksum = 0;
     for (unsigned int i = 0; i < numBlocks; i++)
     {
@@ -4721,14 +4751,14 @@ tests:
 opendir()/readdir()
 */
 
-unsigned int checkInodes(const char *dir, unsigned int curInode,
+unsigned int checkInodes(const char* dir, unsigned int curInode,
                          unsigned int parentInode, short curDev,
                          short parentDev)
 {
     if (chdir(dir))
         fail("chdir");
 
-    DIR *d = opendir(".");
+    DIR* d = opendir(".");
     if (d == NULL)
         fail("opendir");
     puts(dir);
@@ -4736,7 +4766,7 @@ unsigned int checkInodes(const char *dir, unsigned int curInode,
     unsigned int result = 0;
     for (;;)
     {
-        struct dirent *de = readdir(d);
+        struct dirent* de = readdir(d);
         if (de == NULL)
             break;
 
@@ -4772,7 +4802,9 @@ unsigned int checkInodes(const char *dir, unsigned int curInode,
                 fail("parent dev");
         }
         else if (st.st_dev != curDev)
+        {
             fail("cur dev");
+        }
 
         if (mustBeDir)
         {
@@ -4781,20 +4813,17 @@ unsigned int checkInodes(const char *dir, unsigned int curInode,
             if (!S_ISDIR(st.st_mode))
                 fail("st_mode");
         }
-        else
+        else if (!S_ISDIR(st.st_mode))
         {
-            if (!S_ISDIR(st.st_mode))
-            {
-                int fd = open(de->d_name, O_RDONLY);
-                if (fd < 0)
-                    fail("open");
-                struct stat st2;
-                if (fstat(fd, &st2))
-                    fail("fstat");
-                close(fd);
-                if (memcmp(&st, &st2, sizeof(struct stat)))
-                    fail("stat/fstat mismatch");
-            }
+            int fd = open(de->d_name, O_RDONLY);
+            if (fd < 0)
+                fail("open");
+            struct stat st2;
+            if (fstat(fd, &st2))
+                fail("fstat");
+            close(fd);
+            if (memcmp(&st, &st2, sizeof(struct stat)))
+                fail("stat/fstat mismatch");
         }
 
         if ((de->d_type == DT_DIR) ^ (S_ISDIR(st.st_mode)))
@@ -4822,13 +4851,13 @@ static void fs_test_4()
     unsigned int curInode = 0, parentInode = 0, devFsInode = 0, sdInode = 0;
     // cppcheck-suppress unreadVariable
     short curDevice = 0, devDevice = 0, sdDevice = 0;
-    DIR *d = opendir("/");
+    DIR* d = opendir("/");
     if (d == NULL)
         fail("opendir");
     puts("/");
     for (;;)
     {
-        struct dirent *de = readdir(d);
+        struct dirent* de = readdir(d);
         if (de == NULL)
             break;
         // de->d_ino may differ from st.st_ino across mountpoints, such as /dev
@@ -4905,11 +4934,11 @@ static void fs_test_4()
 const int nThreads = 8;
 bool flags[nThreads];
 
-static int throwable(std::vector<int> &v) __attribute__((noinline));
+static int throwable(std::vector<int>& v) __attribute__((noinline));
 // cppcheck-suppress containerOutOfBounds
-static int throwable(std::vector<int> &v) { return v.at(10); }
+static int throwable(std::vector<int>& v) { return v.at(10); }
 
-static void test(void *argv)
+static void test(void* argv)
 {
     const int n = reinterpret_cast<int>(argv);
     for (;;)
@@ -4921,7 +4950,7 @@ static void test(void *argv)
             throwable(v);
             fail("Exception not thrown");
         }
-        catch (std::out_of_range &e)
+        catch (std::out_of_range& e)
         {
             flags[n] = true;
         }
@@ -4933,7 +4962,7 @@ static void exception_test()
     test_name("C++ exception thread safety");
     iprintf("Note: test never ends. Reset the board when you are satisfied\n");
     for (int i = 0; i < nThreads; i++)
-        Thread::create(test, 1024 + 512, 0, reinterpret_cast<void *>(i));
+        Thread::create(test, 1024 + 512, 0, reinterpret_cast<void*>(i));
     bool toggle = false;
     for (int j = 0;; j++)
     {
@@ -4973,7 +5002,7 @@ serial write speed
 static void benchmark_1()
 {
     extern unsigned long _data asm("_data");
-    char *data = reinterpret_cast<char *>(&_data);
+    char* data = reinterpret_cast<char*>(&_data);
 
     using namespace std::chrono;
     auto start = system_clock::now();
@@ -5007,7 +5036,7 @@ tests:
 context switch speed
 */
 
-static void b2_p1(void *argv __attribute__((unused)))
+static void b2_p1(void* argv __attribute__((unused)))
 {
     for (;;)
     {
@@ -5037,7 +5066,7 @@ static void benchmark_2()
 #ifndef SCHED_TYPE_EDF
     // Test context switch time at maximum priority
     Thread::setPriority(3);  // Using max priority
-    Thread *p = Thread::create(b2_p1, STACK_SMALL, 3, NULL);
+    Thread* p = Thread::create(b2_p1, STACK_SMALL, 3, NULL);
     int i     = b2_f1();
     p->terminate();
     iprintf("%d context switch per second (max priority)\n", i);
@@ -5069,9 +5098,9 @@ static void benchmark_3()
     // Write benchmark
     const char FILENAME[]      = "/sd/speed.txt";
     const unsigned int BUFSIZE = 1024;
-    char *buf                  = new char[BUFSIZE];
-    memset((void *)buf, '0', BUFSIZE);
-    FILE *f;
+    char* buf                  = new char[BUFSIZE];
+    memset((void*)buf, '0', BUFSIZE);
+    FILE* f;
     if ((f = fopen(FILENAME, "w")) == NULL)
     {
         iprintf("Filesystem write benchmark not made. Can't open file\n");
@@ -5131,11 +5160,13 @@ static void benchmark_3()
         if (diff > max)
             max = diff;
         for (unsigned j = 0; j < BUFSIZE; j++)
+        {
             if (buf[j] != '0')
             {
                 iprintf("Read error 2\n");
                 goto quit;
             }
+        }
     }
 quit:
     endTotal = system_clock::now();
@@ -5161,7 +5192,7 @@ Mutex lock/unlock time
 
 volatile bool b4_end = false;
 
-void b4_t1(void *argv __attribute__((unused)))
+void b4_t1(void* argv __attribute__((unused)))
 {
     Thread::sleep(1000);
     b4_end = true;
@@ -5254,9 +5285,9 @@ static void benchmark_4()
 
 #ifdef WITH_PROCESSES
 
-unsigned int *memAllocation(unsigned int size)
+unsigned int* memAllocation(unsigned int size)
 {
-    unsigned int *p = ProcessPool::instance().allocate(size);
+    unsigned int* p = ProcessPool::instance().allocate(size);
     memset(p, WATERMARK_FILL, size);
     iprintf("Allocated %d bytes. Base: %p. Size: 0x%x.\n\n", size, p, size);
     return p;
@@ -5264,37 +5295,35 @@ unsigned int *memAllocation(unsigned int size)
 
 // Returns true if a watermark filled memory zone is not corrupted.
 // 'base' must be 4-byte aligned
-bool memCheck(unsigned int *base, unsigned int size)
+bool memCheck(unsigned int* base, unsigned int size)
 {
     for (unsigned int i = 0; i < size / 4; i++)
-    {
         if (*(base + i) != WATERMARK_FILL)
             return false;
-    }
     return true;
 }
 
-void runElfTest(const char *name, const unsigned char *filename,
+void runElfTest(const char* name, const unsigned char* filename,
                 unsigned int file_length)
 {
     iprintf("Executing %s...", name);
     try
     {
-        ElfProgram prog(reinterpret_cast<const unsigned int *>(filename),
+        ElfProgram prog(reinterpret_cast<const unsigned int*>(filename),
                         file_length);
         iprintf("not passed.\n");
     }
-    catch (std::runtime_error &err)
+    catch (std::runtime_error& err)
     {
         iprintf("passed.\n");
     }
 }
 
 // It runs the program, waits for its exit, and returns the exit code
-int runProgram(const unsigned char *filename, unsigned int file_length)
+int runProgram(const unsigned char* filename, unsigned int file_length)
 {
     int ec;
-    ElfProgram prog(reinterpret_cast<const unsigned int *>(filename),
+    ElfProgram prog(reinterpret_cast<const unsigned int*>(filename),
                     file_length);
     pid_t child = Process::create(prog);
     Process::waitpid(child, &ec, 0);
@@ -5305,28 +5334,32 @@ int runProgram(const unsigned char *filename, unsigned int file_length)
 bool isSignaled(int exit_code)
 {
     if (WIFSIGNALED(exit_code) && WTERMSIG(exit_code) == SIGSEGV)
-    {
         return true;
-    }
     return false;
 }
 
 void mpuTest1()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64100000;
+    unsigned int* addr = (unsigned int*)0x64100000;
     iprintf("Executing MPU Test 1...\n");
     ec = runProgram(test1_elf, test1_elf_len);
     if (isSignaled(ec))
     {
         if (*addr == 0xbbbbbbbb)
+        {
             iprintf(
                 "...not passed! The process has written a forbidden memory "
                 "location.\n\n");
+        }
         else if (*addr == WATERMARK_FILL)
+        {
             iprintf("...passed!\n\n");
+        }
         else
+        {
             iprintf("...not passed! Memory has been somehow corrupted.\n\n");
+        }
     }
     else
     {
@@ -5337,36 +5370,36 @@ void mpuTest1()
 void mpuTest2()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64100200;
+    unsigned int* addr = (unsigned int*)0x64100200;
     iprintf("Executing MPU Test 2...\n");
     ec = runProgram(test2_elf, test2_elf_len);
     if (isSignaled(ec))
-    {
         if (*addr == WATERMARK_FILL)
             iprintf("...passed!\n\n");
         else
             iprintf("...not passed! Memory has been somehow corrupted.\n\n");
-    }
     else
-    {
         iprintf("...not passed! Process exited normally.\n\n");
-    }
 }
 
 void mpuTest3()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64100200;
+    unsigned int* addr = (unsigned int*)0x64100200;
     iprintf("Executing MPU Test 3...\n");
     ec = runProgram(test3_elf, test3_elf_len);
     if (isSignaled(ec))
     {
         if (*addr == 0xbbbbbbbb)
+        {
             iprintf(
                 "...not passed! The process has written a forbidden memory "
                 "location.\n\n");
+        }
         else
+        {
             iprintf("...passed!\n\n");
+        }
     }
     else
     {
@@ -5380,29 +5413,29 @@ void mpuTest4()
     iprintf("Executing MPU Test 4...\n");
     ec = runProgram(test4_elf, test4_elf_len);
     if (isSignaled(ec))
-    {
         iprintf("...passed!.\n\n");
-    }
     else
-    {
         iprintf("...not passed! Process exited normally.\n\n");
-    }
 }
 
 void mpuTest5()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64101000;
+    unsigned int* addr = (unsigned int*)0x64101000;
     iprintf("Executing MPU Test 5...\n");
     ec = runProgram(test5_elf, test5_elf_len);
     if (isSignaled(ec))
     {
         if (*addr == 0xbbbbbbbb)
+        {
             iprintf(
                 "...not passed! The process has written a forbidden memory "
                 "location.\n\n");
+        }
         else
+        {
             iprintf("...passed!.\n\n");
+        }
     }
     else
     {
@@ -5413,17 +5446,21 @@ void mpuTest5()
 void mpuTest6()
 {
     int ec;
-    unsigned int *addr = (unsigned int *)0x64101404;
+    unsigned int* addr = (unsigned int*)0x64101404;
     iprintf("Executing MPU Test 6...\n");
     ec = runProgram(test6_elf, test6_elf_len);
     if (isSignaled(ec))
     {
         if (*addr == 0xbbbbbbbb)
+        {
             iprintf(
                 "...not passed! The process has written a forbidden memory "
                 "location.\n\n");
+        }
         else
+        {
             iprintf("...passed!.\n\n");
+        }
     }
     else
     {
@@ -5437,9 +5474,9 @@ void mpuTest7()
     unsigned int memSize = 8192;
 
     iprintf("Executing MPU Test 7...\n");
-    unsigned int *p = ProcessPool::instance().allocate(memSize);
+    unsigned int* p = ProcessPool::instance().allocate(memSize);
     memset(p, WATERMARK_FILL, memSize);
-    ElfProgram prog(reinterpret_cast<const unsigned int *>(test7_elf),
+    ElfProgram prog(reinterpret_cast<const unsigned int*>(test7_elf),
                     test7_elf_len);
     pid_t child = Process::create(prog);
     delayMs(1000);
@@ -5464,11 +5501,11 @@ void mpuTest8()
     // We create two processes. The first goes to sleep for 2 seconds,
     // while the second process tries to access the data region of the
     // first.
-    unsigned int *addr = (unsigned int *)0x64104004;
+    unsigned int* addr = (unsigned int*)0x64104004;
     iprintf("Executing MPU Test 8...\n");
-    ElfProgram prog1(reinterpret_cast<const unsigned int *>(test8_1_elf),
+    ElfProgram prog1(reinterpret_cast<const unsigned int*>(test8_1_elf),
                      test8_1_elf_len);
-    ElfProgram prog2(reinterpret_cast<const unsigned int *>(test8_2_elf),
+    ElfProgram prog2(reinterpret_cast<const unsigned int*>(test8_2_elf),
                      test8_2_elf_len);
     pid_t child1 = Process::create(prog1);
     pid_t child2 = Process::create(prog2);
@@ -5478,11 +5515,15 @@ void mpuTest8()
     if (WIFSIGNALED(ec2) && (WTERMSIG(ec2) == SIGSEGV) && WIFEXITED(ec1))
     {
         if (*addr == 0xbbbbbbbb)
+        {
             iprintf(
                 "...not passed! The process has written a forbidden memory "
                 "location.\n\n");
+        }
         else
+        {
             iprintf("...passed!.\n\n");
+        }
     }
     else
     {
@@ -5493,7 +5534,7 @@ void mpuTest8()
 void mpuTest9()
 {
     iprintf("Executing MPU Test 9...\n");
-    ElfProgram prog(reinterpret_cast<const unsigned int *>(test9_elf),
+    ElfProgram prog(reinterpret_cast<const unsigned int*>(test9_elf),
                     test9_elf_len);
     std::vector<pid_t> pids;
     int ec;
@@ -5505,7 +5546,7 @@ void mpuTest9()
             pid = Process::create(prog);
             pids.push_back(pid);
         }
-        catch (std::bad_alloc &ex)
+        catch (std::bad_alloc& ex)
         {
             iprintf("Bad alloc raised: %s\nIteration is: %d\n", ex.what(), i);
             break;
@@ -5530,9 +5571,9 @@ void mpuTest10()
     // should end properly, the second process should fault.
     int ec1, ec2;
     iprintf("Executing MPU Test 10...\n");
-    ElfProgram prog1(reinterpret_cast<const unsigned int *>(test10_1_elf),
+    ElfProgram prog1(reinterpret_cast<const unsigned int*>(test10_1_elf),
                      test10_1_elf_len);
-    ElfProgram prog2(reinterpret_cast<const unsigned int *>(test10_2_elf),
+    ElfProgram prog2(reinterpret_cast<const unsigned int*>(test10_2_elf),
                      test10_2_elf_len);
     pid_t child1 = Process::create(prog1);
     pid_t child2 = Process::create(prog2);
@@ -5540,12 +5581,8 @@ void mpuTest10()
     Process::waitpid(child2, &ec2, 0);
 
     if (!isSignaled(ec1) && isSignaled(ec2))
-    {
         iprintf("...passed!.\n\n");
-    }
     else
-    {
         iprintf("...not passed!\n\n");
-    }
 }
 #endif  // WITH_PROCESSES

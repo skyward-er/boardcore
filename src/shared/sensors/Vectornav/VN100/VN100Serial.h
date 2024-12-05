@@ -86,7 +86,7 @@ public:
      * @param Redundancy check option.
      * @param samplePeriod Sampling period in ms
      */
-    VN100Serial(USART &usart, int baudrate,
+    VN100Serial(USART& usart, int baudrate,
                 CRCOptions crc        = CRCOptions::CRC_ENABLE_8,
                 uint16_t samplePeriod = 20);
 
@@ -207,7 +207,7 @@ private:
      *
      * @return True if operation succeeded.
      */
-    bool recvStringCommand(char *command, int maxLength);
+    bool recvStringCommand(char* command, int maxLength);
 
     /**
      * @brief Method to verify the crc validity of a command.
@@ -217,7 +217,7 @@ private:
      *
      * @return True if operation succeeded.
      */
-    bool verifyChecksum(char *command, int maxLength);
+    bool verifyChecksum(char* command, int maxLength);
 
     /**
      * @brief Calculate the 8bit checksum on the given array.
@@ -227,7 +227,7 @@ private:
      *
      * @return The 8 bit checksum.
      */
-    uint8_t calculateChecksum8(uint8_t *message, int length);
+    uint8_t calculateChecksum8(uint8_t* message, int length);
 
     /**
      * @brief Calculate the 16bit array on the given array.
@@ -237,13 +237,13 @@ private:
      *
      * @return The 16 bit CRC16-CCITT error check.
      */
-    uint16_t calculateChecksum16(uint8_t *message, int length);
+    uint16_t calculateChecksum16(uint8_t* message, int length);
 
     /**
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
-    USART &usart;
+    USART& usart;
     int baudRate;
 
     uint16_t samplePeriod;
@@ -253,19 +253,19 @@ private:
     /**
      * @brief IMU pre-elaborated sample string for efficiency reasons.
      */
-    string *preSampleImuString = nullptr;
+    string* preSampleImuString = nullptr;
 
     /**
      * @brief Temperature and pressure pre-elaborated sample string for
      * efficiency reasons.
      */
-    string *preSampleTempPressString = nullptr;
+    string* preSampleTempPressString = nullptr;
 
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
      * only (200 bytes).
      */
-    char *recvString = nullptr;
+    char* recvString = nullptr;
 
     /**
      * @brief Actual strlen() of the recvString.

@@ -82,9 +82,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 #endif
 {
     if (xbeeDriver != nullptr)
-    {
         xbeeDriver->handleATTNInterrupt();
-    }
 }
 
 int getUserBtnValue()
@@ -139,17 +137,13 @@ void setupXbee(XbeeConfig config)
         if (config.dataRate80k)
         {
             if (!Xbee::setDataRate(*xbeeDriver, true))
-            {
                 TRACE("[main] Error setting xbeeDriver data rate!\n");
-            }
         }
 
         if (!config.freqHop)
         {
             if (!Xbee::disableFrequencyHopping(*xbeeDriver))
-            {
                 TRACE("[main] Error disabling frequency hop!\n");
-            }
         }
     }
 }
@@ -199,13 +193,9 @@ int main()
     XbeeTransceiver* trans =
         new XbeeTransceiver(*xbeeDriver, logger, intv, 256, 333);
     if (!config.txEnabled)
-    {
         trans->disableSender();
-    }
     if (!RUN_RECEIVER)
-    {
         trans->disableReceiver();
-    }
     trans->start();
 
     // cppcheck-suppress knownConditionTrueFalse

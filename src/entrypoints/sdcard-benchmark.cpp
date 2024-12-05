@@ -76,10 +76,14 @@ int main()
     for (size_t bufferSize : BUFFER_SIZES)
     {
         if (benchmark(bufferSize, data))
+        {
             printResults(bufferSize, data);
+        }
         else
+        {
             printf("Error while performing the benchmark (buffer size: %lu)\n",
                    (unsigned long)bufferSize);
+        }
     }
 
     printf("Test completed\n");

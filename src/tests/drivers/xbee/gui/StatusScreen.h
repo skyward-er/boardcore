@@ -209,17 +209,13 @@ struct StatusScreen
         tvLogBufDropped.setText(to_string(stats.droppedSamples));
 
         if (stats.droppedSamples > 0)
-        {
             tvLogBufDropped.setBackgroundColor(mxgui::red);
-        }
 
         tvLogBufFailed.setText(to_string(stats.writesFailed) + "   (" +
                                to_string(stats.lastWriteError) + ")");
 
         if (stats.lastWriteError != 0)
-        {
             tvLogBufFailed.setBackgroundColor(mxgui::red);
-        }
 
         tvLogBufWritten.setText(to_string(stats.buffersWritten));
         tvLogBufTtw.setText(to_string(stats.averageWriteTime) + " ms");

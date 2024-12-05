@@ -57,7 +57,7 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #error "Target not supported"
 #endif
 
-SX1278Lora *sx1278 = nullptr;
+SX1278Lora* sx1278 = nullptr;
 
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
@@ -89,7 +89,6 @@ void initBoard()
 
 int main()
 {
-
     initBoard();
 
     SX1278Lora::Config config = {};

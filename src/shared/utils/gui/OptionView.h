@@ -46,9 +46,7 @@ public:
     {
         uint8_t numRows = options.size() / numCols;
         if (options.size() % numCols != 0)
-        {
             ++numRows;
-        }
 
         gridOptions = new GridLayout(numRows, numCols);
 
@@ -69,9 +67,7 @@ public:
             gridOptions->setCell(tvOpt, gridPos++);
 
             if (i == defaultOption)
-            {
                 selectOption(tvOpt);
-            }
 
             ++i;
         }
@@ -82,9 +78,7 @@ public:
         delete gridOptions;
         delete tvTitle;
         for (auto it = mapOptions.begin(); it != mapOptions.end(); it++)
-        {
             delete it->first;
-        }
     }
 
     void setBounds(Bounds bounds) override
@@ -132,9 +126,7 @@ private:
     void selectOption(TextView* opt)
     {
         if (selectedOption != nullptr)
-        {
             selectedOption->setBackgroundColor(colBgNormal);
-        }
 
         selectedOption = opt;
 
@@ -150,12 +142,8 @@ private:
             selectOption(textview);
 
             for (auto l : optListeners)
-            {
                 if (l != nullptr)
-                {
                     l(mapOptions[textview]);
-                }
-            }
         }
     }
 

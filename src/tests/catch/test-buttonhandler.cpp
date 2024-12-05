@@ -87,7 +87,6 @@ using ButtonHandler_t = ButtonHandler<ButtonMock>;
 
 class ButtonHandlerTestFixture
 {
-
 public:
     ButtonHandlerTestFixture() : handler(nullptr)
     {
@@ -118,9 +117,7 @@ protected:
     void callback(int id, ButtonPress pressType)
     {
         if (id != 0x5E)
-        {
             return;
-        }
         switch (pressType)
         {
             case ButtonPress::DOWN:

@@ -68,7 +68,7 @@ void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
     enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
 }
 
-ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
+ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode& guard, IrqFlags set_irq,
                                            IrqFlags reset_irq, bool unlock)
 {
     IrqFlags ret_irq = 0;
@@ -83,9 +83,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
 
         // Check that this hasn't already happened
         if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
-        {
             break;
-        }
 
         if (!waitForIrqInner(guard, unlock))
         {
@@ -100,7 +98,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
     return ret_irq;
 }
 
-ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
+ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode& _guard,
                                                IrqFlags set_irq,
                                                IrqFlags reset_irq, int timeout)
 {
@@ -121,9 +119,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
         {
             // Check if some of the interrupts triggered
             if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
-            {
                 return ret_irq;
-            }
 
             miosix::delayUs(DELAY);
         }
@@ -132,7 +128,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
     return 0;
 }
 
-bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
+bool SX1278Common::waitForIrqInner(LockMode& _guard, bool unlock)
 {
     // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
     // otherwise don't do anything with it
@@ -140,9 +136,7 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
 
     // Release the lock for others to take
     if (unlock)
-    {
         mutex.unlock();
-    }
 
     int start                      = Kernel::getOldTick();
     miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
@@ -159,9 +153,7 @@ bool SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
 
     // Regain ownership of the lock
     if (unlock)
-    {
         mutex.lock();
-    }
 
     // Check that we didn't have a timeout
     return result == miosix::TimedWaitResult::NoTimeout;
@@ -180,9 +172,9 @@ ISX1278::IrqFlags SX1278Common::checkForIrqAndReset(IrqFlags set_irq,
     return (cur_irq & set_irq) | (~cur_irq & reset_irq);
 }
 
-ISX1278Frontend &SX1278Common::getFrontend() { return *frontend; }
+ISX1278Frontend& SX1278Common::getFrontend() { return *frontend; }
 
-SPISlave &SX1278Common::getSpiSlave() { return slave; }
+SPISlave& SX1278Common::getSpiSlave() { return slave; }
 
 SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
                                                  InterruptTrigger dio1_trigger,
@@ -219,25 +211,17 @@ void SX1278Common::enterMode(Mode mode, DioMapping mapping,
 
     // First disable all of the frontend if necessary
     if (set_tx_frontend_on != state.is_tx_frontend_on && !set_tx_frontend_on)
-    {
         getFrontend().disableTx();
-    }
 
     if (set_rx_frontend_on != state.is_rx_frontend_on && !set_rx_frontend_on)
-    {
         getFrontend().disableRx();
-    }
 
     // Then enable the newly requested ones
     if (set_tx_frontend_on != state.is_tx_frontend_on && set_tx_frontend_on)
-    {
         getFrontend().enableTx();
-    }
 
     if (set_rx_frontend_on != state.is_rx_frontend_on && set_rx_frontend_on)
-    {
         getFrontend().enableRx();
-    }
 
     state.is_tx_frontend_on = set_tx_frontend_on;
     state.is_rx_frontend_on = set_rx_frontend_on;

@@ -32,7 +32,7 @@ using namespace Eigen;
 using namespace Boardcore;
 using namespace SkyQuaternion;
 
-void testEulerAngles(const Vector3f &actual, const Vector3f &expected)
+void testEulerAngles(const Vector3f& actual, const Vector3f& expected)
 {
     REQUIRE(actual[0] == Approx(expected[0]).margin(0.0001));
     REQUIRE(actual[1] == Approx(expected[1]).margin(0.0001));

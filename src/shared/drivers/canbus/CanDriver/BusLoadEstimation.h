@@ -62,9 +62,7 @@ public:
     {
         Lock<FastMutex> l(mutex);
         if (c.count() < 2)
-        {
             return {0, 0, 0};
-        }
 
         float dt =
             (c.get(c.count() - 1).timestamp - c.get(0).timestamp) / 1000.0f;
@@ -72,9 +70,7 @@ public:
         uint32_t sizeFrames  = 0;
 
         for (size_t i = 0; i < c.count(); ++i)
-        {
             sizePayload += c.get(i).dataLength * 8;
-        }
         sizeFrames = sizePayload + (64 + 8) * c.count();
 
         return BusLoadInfo{(sizePayload / dt), (sizeFrames / dt),

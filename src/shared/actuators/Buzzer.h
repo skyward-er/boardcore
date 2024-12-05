@@ -42,7 +42,7 @@ public:
      * @param timer Timer used to provide the alternating on and off signal.
      * @param channel Timer channel to output the signal.
      */
-    Buzzer(TIM_TypeDef *timer, TimerUtils::Channel channel);
+    Buzzer(TIM_TypeDef* timer, TimerUtils::Channel channel);
 
     /**
      * @brief Turns on the buzzer.
@@ -80,7 +80,7 @@ private:
     TimerUtils::Channel channel;
 };
 
-inline Buzzer::Buzzer(TIM_TypeDef *timer, TimerUtils::Channel channel)
+inline Buzzer::Buzzer(TIM_TypeDef* timer, TimerUtils::Channel channel)
     : timer(timer), channel(channel)
 {
 }

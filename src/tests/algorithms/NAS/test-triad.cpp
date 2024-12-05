@@ -70,8 +70,10 @@ int main()
 
         auto kalmanState = state.getInitX();
         if (!std::isnan(kalmanState(9)))
+        {
             printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
                    kalmanState(7), kalmanState(8));
+        }
 
         Kernel::Thread::sleepUntil(lastTick + 20);
         lastTick = Kernel::getOldTick();

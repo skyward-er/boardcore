@@ -57,9 +57,7 @@ protected:
         ADCData adc_data = getVoltage();
 
         if (lastSample.current == 0)
-        {
             lastSample.current = voltageToCurrent(adc_data.voltage);
-        }
 
         CurrentData current_data;
         current_data.currentTimestamp = adc_data.voltageTimestamp;

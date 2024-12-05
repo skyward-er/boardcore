@@ -48,7 +48,7 @@ const BME280I2C::BME280Config BME280I2C::BME280_CONFIG_TEMP_SINGLE = {
     SKIPPED,        0, 0,          FORCED_MODE, SKIPPED,
     OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BME280I2C::BME280I2C(I2C &bus, BME280Config config) : bus(bus), config(config)
+BME280I2C::BME280I2C(I2C& bus, BME280Config config) : bus(bus), config(config)
 {
 }
 
@@ -63,9 +63,7 @@ bool BME280I2C::init()
     }
 
     if (!reset())
-    {
         return false;
-    }
     miosix::Thread::sleep(3);
 
     loadCompensationParameters();
@@ -143,7 +141,6 @@ HumidityData BME280I2C::readHumidity()
     uint8_t buffer[2];
     if (bus.readFromRegister(slaveConfig, REG_HUM_MSB, buffer, 2))
     {
-
         int32_t adc_H = ((uint32_t)buffer[0] << 8);
         adc_H |= buffer[1];
 
@@ -166,7 +163,6 @@ PressureData BME280I2C::readPressure()
     uint8_t buffer[3];
     if (bus.readFromRegister(slaveConfig, REG_PRESS_MSB, buffer, 3))
     {
-
         int32_t adc_P = ((uint32_t)buffer[0]) << 12;
         adc_P |= ((uint32_t)buffer[1]) << 4;
         adc_P |= (buffer[2] >> 4) & 0x0F;
@@ -286,7 +282,6 @@ bool BME280I2C::checkWhoAmI()
 
     if (bus.readRegister(slaveConfig, REG_ID, whoAmIValue))
     {
-
         return whoAmIValue == REG_ID_VAL;
     }
     else
@@ -325,7 +320,7 @@ BME280I2C::BME280Config BME280I2C::readConfiguration()
 {
     BME280Config tmp;
 
-    if (bus.readFromRegister(slaveConfig, REG_CTRL_HUM, (uint8_t *)&tmp, 4))
+    if (bus.readFromRegister(slaveConfig, REG_CTRL_HUM, (uint8_t*)&tmp, 4))
     {
         return tmp;
     }
@@ -339,7 +334,7 @@ BME280I2C::BME280Config BME280I2C::readConfiguration()
 void BME280I2C::loadCompensationParameters()
 {
     // Read first batch of compensation parameters
-    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0, (uint8_t *)&compParams,
+    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0, (uint8_t*)&compParams,
                               25))
     {
         lastError = SensorErrors::BUS_FAULT;
@@ -348,7 +343,7 @@ void BME280I2C::loadCompensationParameters()
 
     // Read second batch of compensation parameters
     if (!bus.readFromRegister(slaveConfig, REG_CALIB_26,
-                              (uint8_t *)&compParams.bits.dig_H2, 7))
+                              (uint8_t*)&compParams.bits.dig_H2, 7))
     {
         lastError = SensorErrors::BUS_FAULT;
         return;
@@ -392,9 +387,7 @@ uint32_t BME280I2C::compensatePressure(int32_t adc_P)
     var1 =
         ((((int64_t)1) << 47) + var1) * ((int64_t)compParams.bits.dig_P1) >> 33;
     if (var1 == 0)
-    {
         return 0;  // avoid exception caused by division by zero
-    }
     p    = 1048576 - adc_P;
     p    = (((p << 31) - var2) * 3125) / var1;
     var1 = (((int64_t)compParams.bits.dig_P9) * (p >> 13) * (p >> 13)) >> 25;

@@ -74,9 +74,7 @@ public:
         Lock<FastMutex> l(mutex);
 
         if (mapCounter.count(ev) == 1)
-        {
             return mapCounter.at(ev);
-        }
 
         return 0;
     }
@@ -93,7 +91,7 @@ public:
 
 protected:
     // Do nothing
-    void handleEvent(const Event& ev __attribute__((unused))) override{};
+    void handleEvent(const Event& ev __attribute__((unused))) override {};
 
 private:
     EventBroker& broker;

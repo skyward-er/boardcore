@@ -107,7 +107,7 @@ public:
      * resets the timer configuration but automatically enables the timer
      * peripheral clock.
      */
-    explicit GeneralPurposeTimer(TIM_TypeDef *timer);
+    explicit GeneralPurposeTimer(TIM_TypeDef* timer);
 
     /**
      * @brief Disables the peripheral clock.
@@ -221,7 +221,7 @@ using GP16bitTimer = GeneralPurposeTimer<uint16_t>;
 using GP32bitTimer = GeneralPurposeTimer<uint32_t>;
 
 template <typename T>
-inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
+inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef* timer)
     : BasicTimer(timer)
 {
 }
@@ -263,9 +263,7 @@ inline void GeneralPurposeTimer<T>::enable()
     // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
     // register is set
     if (timer == TIM1 || timer == TIM8)
-    {
         timer->BDTR |= TIM_BDTR_MOE;
-    }
 }
 
 template <typename T>
@@ -276,9 +274,7 @@ inline void GeneralPurposeTimer<T>::disable()
     // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
     // register is set
     if (timer == TIM1 || timer == TIM8)
-    {
         timer->BDTR |= TIM_BDTR_MOE;
-    }
 }
 
 template <typename T>

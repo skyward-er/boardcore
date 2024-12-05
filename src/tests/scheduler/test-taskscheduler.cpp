@@ -52,9 +52,7 @@ void task2Hz()
     pin1.low();
 
     if (taskLogEnabled)
-    {
         printf("2 Hz tick\n");
-    }
 }
 
 void task5Hz()
@@ -64,9 +62,7 @@ void task5Hz()
     pin2.low();
 
     if (taskLogEnabled)
-    {
         printf("5 Hz tick\n");
-    }
 }
 
 void task500Hz()
@@ -216,9 +212,7 @@ void test_fill_scheduler()
         size_t lastId =
             scheduler.addTask(f2Hz, 500, TaskScheduler::Policy::ONE_SHOT);
         if (!lastId)
-        {
             break;
-        }
         taskCount++;
     } while (true);
 
@@ -271,9 +265,7 @@ void test_runtime_add_task()
 
     printf("Adding a new task (5Hz)\n");
     if (!scheduler.addTask(f5Hz, 200))
-    {
         printf("Error adding task while the scheduler is running\n");
-    }
 
     Thread::sleep(4 * 1000);
 
@@ -338,9 +330,7 @@ void test_edge_cases()
 
     printf("Starting the scheduler again\n");
     if (scheduler.start())
-    {
         printf("Error: started the scheduler twice\n");
-    }
 
     Thread::sleep(1000);
 

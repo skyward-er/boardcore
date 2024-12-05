@@ -70,7 +70,7 @@ public:
      *
      * @param injector Proxy class used to obtain dependencies.
      */
-    virtual void inject(DependencyInjector &injector) {}
+    virtual void inject(DependencyInjector& injector) {}
 };
 
 /**
@@ -119,9 +119,9 @@ private:
     struct ModuleInfo
     {
         std::string name;  //< Name of the type.
-        void *raw;  ///< Pointer to the dependency's concrete type, returned
+        void* raw;  ///< Pointer to the dependency's concrete type, returned
                     ///< when retrieving this dependency
-        Injectable *injectable;  ///< Pointer to the dependency as an
+        Injectable* injectable;  ///< Pointer to the dependency as an
                                  ///< Injectable, needed for dynamic dispatching
                                  ///< of the inject method
         std::vector<int32_t> deps;  ///< List of dependencies
@@ -140,11 +140,11 @@ public:
      */
     template <typename T, typename = std::enable_if_t<
                               std::is_base_of<Injectable, T>::value>>
-    [[nodiscard]] bool insert(T *dependency)
+    [[nodiscard]] bool insert(T* dependency)
     {
         return insertImpl(
-            getDependencyId<T>(), reinterpret_cast<void *>(dependency),
-            static_cast<Injectable *>(dependency), typeid(T).name());
+            getDependencyId<T>(), reinterpret_cast<void*>(dependency),
+            static_cast<Injectable*>(dependency), typeid(T).name());
     }
 
     /**
@@ -153,7 +153,7 @@ public:
      *
      * @param os Output stream to write to.
      */
-    void graphviz(std::ostream &os);
+    void graphviz(std::ostream& os);
 
     /**
      * @brief Inject all dependencies into all inserted .
@@ -163,10 +163,10 @@ public:
     [[nodiscard]] bool inject();
 
 private:
-    [[nodiscard]] bool insertImpl(int32_t id, void *raw, Injectable *injectable,
-                                  const char *name);
+    [[nodiscard]] bool insertImpl(int32_t id, void* raw, Injectable* injectable,
+                                  const char* name);
 
-    void *getImpl(int32_t id);
+    void* getImpl(int32_t id);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
@@ -184,8 +184,8 @@ class DependencyInjector
     friend class DependencyManager;
 
 private:
-    DependencyInjector(DependencyManager &manager,
-                       DependencyManager::ModuleInfo &info)
+    DependencyInjector(DependencyManager& manager,
+                       DependencyManager::ModuleInfo& info)
         : manager(manager), info(info)
     {
     }
@@ -198,19 +198,19 @@ public:
      * @returns The requested dependency or nullptr if not found.
      */
     template <typename T>
-    T *get()
+    T* get()
     {
-        return reinterpret_cast<T *>(getImpl(getDependencyId<T>()));
+        return reinterpret_cast<T*>(getImpl(getDependencyId<T>()));
     }
 
 private:
-    void *getImpl(int32_t id);
+    void* getImpl(int32_t id);
 
     Boardcore::PrintLogger logger =
         Boardcore::Logging::getLogger("DependencyManager");
 
-    DependencyManager &manager;
-    DependencyManager::ModuleInfo &info;
+    DependencyManager& manager;
+    DependencyManager::ModuleInfo& info;
 };
 
 namespace DependencyManagerDetails
@@ -221,11 +221,11 @@ template <typename... Types>
 struct Storage
 {
     // No-op, base case
-    void inject(DependencyInjector &injector) {}
+    void inject(DependencyInjector& injector) {}
 
     // No-op, dummy get (this should never be reached)
     template <typename T>
-    T *get()
+    T* get()
     {
         return nullptr;
     }
@@ -237,9 +237,9 @@ struct Storage<Type, Types...> : public Storage<Types...>
     using Super = Storage<Types...>;
 
     // Recursive implementation
-    Type *item = nullptr;
+    Type* item = nullptr;
 
-    void inject(DependencyInjector &injector)
+    void inject(DependencyInjector& injector)
     {
         item = injector.get<Type>();
         // Call parent function
@@ -247,13 +247,13 @@ struct Storage<Type, Types...> : public Storage<Types...>
     }
 
     template <typename T>
-    typename std::enable_if_t<std::is_same<T, Type>::value, T *> get()
+    typename std::enable_if_t<std::is_same<T, Type>::value, T*> get()
     {
         return item;
     }
 
     template <typename T>
-    typename std::enable_if_t<!std::is_same<T, Type>::value, T *> get()
+    typename std::enable_if_t<!std::is_same<T, Type>::value, T*> get()
     {
         return Super::template get<T>();
     }
@@ -293,7 +293,7 @@ protected:
     using Super = InjectableWithDeps<Types...>;
 
 public:
-    virtual void inject(DependencyInjector &injector) override
+    virtual void inject(DependencyInjector& injector) override
     {
         storage.inject(injector);
     }
@@ -307,7 +307,7 @@ public:
     template <typename T,
               typename = std::enable_if_t<
                   DependencyManagerDetails::Contains<T, Types...>::value>>
-    T *getModule()
+    T* getModule()
     {
         return storage.template get<T>();
     }
@@ -337,7 +337,7 @@ public:
     static_assert(std::is_base_of<Injectable, Base>::value,
                   "Base must be Injectable");
 
-    virtual void inject(DependencyInjector &injector) override
+    virtual void inject(DependencyInjector& injector) override
     {
         Base::inject(injector);
         storage.inject(injector);
@@ -352,7 +352,7 @@ public:
     template <typename T,
               typename = std::enable_if_t<
                   DependencyManagerDetails::Contains<T, Types...>::value>>
-    T *getModule()
+    T* getModule()
     {
         return storage.template get<T>();
     }

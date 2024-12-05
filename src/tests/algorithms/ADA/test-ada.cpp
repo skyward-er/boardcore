@@ -41,7 +41,7 @@ uint64_t currentTimestamp       = 0;
 constexpr uint64_t DELTA_T      = 50 * 1e3;  // 50ms = 20Hz
 constexpr float SAMPLING_PERIOD = 0.05;
 
-ADA *ada;
+ADA* ada;
 
 void step()
 {

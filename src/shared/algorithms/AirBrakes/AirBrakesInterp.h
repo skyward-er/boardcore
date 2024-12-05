@@ -37,9 +37,9 @@ class AirBrakesInterp : public Algorithm
 {
 public:
     AirBrakesInterp(std::function<TimedTrajectoryPoint()> getCurrentPosition,
-                    const TrajectorySet &trajectoryOpenSet,
-                    const TrajectorySet &trajectoryCloseSet,
-                    const AirBrakesInterpConfig &configInterp,
+                    const TrajectorySet& trajectoryOpenSet,
+                    const TrajectorySet& trajectoryCloseSet,
+                    const AirBrakesInterpConfig& configInterp,
                     std::function<void(float)> setActuator);
 
     bool init() override;
@@ -74,12 +74,12 @@ private:
     // Trajectory sets (open and closed) from which the algorithm will choose at
     // the beginning the tuple with which interpolate the data. The selection
     // depends on the rocket mass.
-    const TrajectorySet &trajectoryOpenSet;
-    const TrajectorySet &trajectoryCloseSet;
+    const TrajectorySet& trajectoryOpenSet;
+    const TrajectorySet& trajectoryCloseSet;
 
     // Choosen trajectories from the begin function
-    Trajectory *choosenCloseTrajectory = nullptr;
-    Trajectory *choosenOpenTrajectory  = nullptr;
+    Trajectory* choosenCloseTrajectory = nullptr;
+    Trajectory* choosenOpenTrajectory  = nullptr;
 
     AirBrakesInterpConfig configInterp;  ///< specialized config
     float lastPercentage = 0;            ///< last opening of the airbrakes

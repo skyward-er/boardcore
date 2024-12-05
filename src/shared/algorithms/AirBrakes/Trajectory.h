@@ -31,7 +31,7 @@ class Trajectory
 {
 public:
     float extension;  ///< AirBrakes target extension for this trajectory [m].
-    TrajectoryPoint *points;
+    TrajectoryPoint* points;
     uint16_t trjSize;
 
     Trajectory(float extension, TrajectoryPoint points[], uint16_t trjSize)

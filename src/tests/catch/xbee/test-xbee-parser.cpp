@@ -51,18 +51,14 @@ void calcChecksum(uint8_t* frame, size_t frameSize)
 {
     frame[frameSize - 1] = 0;
     for (size_t i = 3; i < frameSize - 1; i++)
-    {
         frame[frameSize - 1] += frame[i];
-    }
     frame[frameSize - 1] = 0xFF - frame[frameSize - 1];
 }
 
 void printHex(uint8_t* frame, size_t frameSize)
 {
     for (size_t i = 0; i < frameSize; i++)
-    {
         printf("%02X ", frame[i]);
-    }
     printf("\n");
 }
 
@@ -79,9 +75,7 @@ void printu64(uint64_t v)
 void printBuf(uint8_t* buf, size_t size)
 {
     for (size_t i = 0; i < size; i++)
-    {
         printf("%02X ", buf[i]);
-    }
 
     printf("\n");
 }
@@ -538,9 +532,7 @@ TEST_CASE("Parser edge cases")
             REQUIRE_FALSE(res == APIFrameParser::ParseResult::SUCCESS);
 
             if (i == len - 1)
-            {
                 REQUIRE(res == APIFrameParser::ParseResult::FAIL);
-            }
         }
     }
 

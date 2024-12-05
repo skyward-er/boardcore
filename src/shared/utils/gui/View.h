@@ -148,9 +148,7 @@ public:
     void invalidate()
     {
         if (!invalidated)
-        {
             invalidated = true;
-        }
     }
 
     /**
@@ -162,9 +160,7 @@ public:
 
         std::vector<View*> childs = getChilds();
         for (auto child : childs)
-        {
             child->invalidateTree();
-        }
     }
 
     /**
@@ -234,12 +230,8 @@ public:
     virtual void performInteraction(Interaction action)
     {
         for (auto lst : listeners)
-        {
             if (lst)
-            {
                 lst(this, action);
-            }
-        }
     }
 
 protected:

@@ -35,10 +35,8 @@ int32_t Boardcore::getNextDependencyId()
 
     int32_t next_id = NEXT_ID;
     while (next_id <= 256)
-    {
         if (NEXT_ID.compare_exchange_weak(next_id, next_id + 1))
             return next_id;
-    }
 
     return -1;
 }
@@ -58,9 +56,7 @@ void DependencyManager::graphviz(std::ostream& os)
 
     // First print out all of the nodes
     for (auto& module : modules)
-    {
         os << fmt::format("  \"{}\"", module.second.name) << std::endl;
-    }
 
     // Then print out the arcs
     for (auto& module : modules)
@@ -88,13 +84,9 @@ bool DependencyManager::inject()
     }
 
     if (load_success)
-    {
         LOG_INFO(logger, "Configuring successful!");
-    }
     else
-    {
         LOG_ERR(logger, "Failed to inject modules!");
-    }
 
     return load_success;
 }
@@ -115,13 +107,9 @@ void* DependencyManager::getImpl(int32_t id)
 {
     auto iter = modules.find(id);
     if (iter == modules.end())
-    {
         return nullptr;
-    }
     else
-    {
         return iter->second.raw;
-    }
 }
 
 void* DependencyInjector::getImpl(int32_t id)

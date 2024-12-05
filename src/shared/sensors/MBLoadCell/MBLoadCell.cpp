@@ -33,7 +33,7 @@ using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< Control R/W pin 2
 namespace Boardcore
 {
 
-MBLoadCell::MBLoadCell(USARTInterface &serial, LoadCellModes mode)
+MBLoadCell::MBLoadCell(USARTInterface& serial, LoadCellModes mode)
     : serial(serial)
 {
     this->settings.mode = mode;
@@ -250,7 +250,7 @@ MBLoadCellData MBLoadCell::sampleAsciiModTd()
     }
 }
 
-void MBLoadCell::generateRequest(DataAsciiRequest &req,
+void MBLoadCell::generateRequest(DataAsciiRequest& req,
                                  const LoadCellValuesEnum toRequest, int value)
 {
     strcpy(req.req, loadCellValues[toRequest].c_str());
@@ -272,7 +272,7 @@ void MBLoadCell::generateRequest(DataAsciiRequest &req,
     req.setChecksum();
 }
 
-void MBLoadCell::transmitASCII(const std::string &buf)
+void MBLoadCell::transmitASCII(const std::string& buf)
 {
     // Setting both the control pins to high in order to transmit
     ctrlPin1::high();
@@ -295,7 +295,7 @@ std::string MBLoadCell::receiveASCII()
 }
 
 template <typename T>
-void MBLoadCell::receive(T *buf)
+void MBLoadCell::receive(T* buf)
 {
     // Setting both the control pins to low in order to receive
     ctrlPin1::low();

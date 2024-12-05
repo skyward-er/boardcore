@@ -87,7 +87,6 @@ enum class RegistryError
  */
 struct EntryStructsUnion
 {
-
     /**
      * @brief Default constructor to construct a new Entry Structs Union object
      */

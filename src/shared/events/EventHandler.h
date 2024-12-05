@@ -36,7 +36,7 @@ class EventHandlerBase
 public:
     EventHandlerBase() {}
 
-    virtual ~EventHandlerBase(){};
+    virtual ~EventHandlerBase() {};
 
     virtual void postEvent(const Event& ev) = 0;
 };
@@ -67,7 +67,7 @@ inline EventHandler::EventHandler(unsigned int stacksize,
 {
 }
 
-inline EventHandler::~EventHandler(){};
+inline EventHandler::~EventHandler() {};
 
 inline void EventHandler::postEvent(const Event& ev) { eventList.put(ev); }
 

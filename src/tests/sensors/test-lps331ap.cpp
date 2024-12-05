@@ -35,14 +35,10 @@ int main()
     LPS331AP lps331(bus);
 
     if (!lps331.init())
-    {
         printf("Init failed\n");
-    }
 
     if (!lps331.selfTest())
-    {
         printf("Self test failed\n");
-    }
 
     while (true)
     {

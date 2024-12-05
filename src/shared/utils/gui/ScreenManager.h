@@ -61,9 +61,7 @@ public:
         root->setBounds({{0, 0}, {dc.getWidth(), dc.getHeight()}});
 
         if (screens.size() == 1)
-        {
             showScreen(id);
-        }
     }
 
     void onButtonEvent(ButtonEvent press) { controller.onButtonEvent(press); }
@@ -112,9 +110,7 @@ private:
             view->draw(dc);
 
             for (View* c : view->getChilds())
-            {
                 viewsDc.push_back(c);
-            }
         }
     }
 

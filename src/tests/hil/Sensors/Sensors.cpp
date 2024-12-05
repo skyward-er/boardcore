@@ -447,16 +447,13 @@ Sensors::getSensorInfo()
     {
         // Check wether the lambda is existent
         if (sensorsInit[i])
-        {
             sensorState[i] = sensorsInit[i]();
-        }
     }
     return sensorState;
 }
 
 void Sensors::lps22dfCreation()
 {
-
     // Get the correct SPI configuration
     SPIBusConfig config = LPS22DF::getDefaultSPIConfig();
     config.clockDivider = SPI::ClockDivider::DIV_16;
@@ -473,7 +470,6 @@ void Sensors::lps22dfCreation()
 }
 void Sensors::lps28dfw_1Creation()
 {
-
     // Configure the sensor
     LPS28DFW::SensorConfig config{false, LPS28DFW_FSR, LPS28DFW_AVG,
                                   LPS28DFW_ODR, false};
@@ -483,7 +479,6 @@ void Sensors::lps28dfw_1Creation()
 }
 void Sensors::lps28dfw_2Creation()
 {
-
     // Configure the sensor
     LPS28DFW::SensorConfig config{true, LPS28DFW_FSR, LPS28DFW_AVG,
                                   LPS28DFW_ODR, false};
@@ -493,7 +488,6 @@ void Sensors::lps28dfw_2Creation()
 }
 void Sensors::h3lis331dlCreation()
 {
-
     // Get the correct SPI configuration
     SPIBusConfig config = H3LIS331DL::getDefaultSPIConfig();
     config.clockDivider = SPI::ClockDivider::DIV_16;
@@ -505,7 +499,6 @@ void Sensors::h3lis331dlCreation()
 }
 void Sensors::lis2mdlCreation()
 {
-
     // Get the correct SPI configuration
     SPIBusConfig config = LIS2MDL::getDefaultSPIConfig();
     config.clockDivider = SPI::ClockDivider::DIV_16;
@@ -524,7 +517,6 @@ void Sensors::lis2mdlCreation()
 
 void Sensors::ubxgpsCreation()
 {
-
     // Get the correct SPI configuration
     SPIBusConfig config = UBXGPSSpi::getDefaultSPIConfig();
     config.clockDivider = SPI::ClockDivider::DIV_64;
@@ -536,7 +528,6 @@ void Sensors::ubxgpsCreation()
 
 void Sensors::lsm6dsrxCreation()
 {
-
     // Configure the SPI
     SPIBusConfig config;
     config.clockDivider = SPI::ClockDivider::DIV_32;
@@ -569,7 +560,6 @@ void Sensors::lsm6dsrxCreation()
 
 void Sensors::ads131m08Creation()
 {
-
     // Configure the SPI
     SPIBusConfig config;
     config.clockDivider = SPI::ClockDivider::DIV_32;
@@ -690,9 +680,7 @@ void Sensors::lsm6dsrxCallback()
 
     // For every instance inside the fifo log the sample
     for (uint16_t i = 0; i < fifoSize; i++)
-    {
         Logger::getInstance().log(fifo.at(i));
-    }
 }
 void Sensors::ads131m08Callback()
 {

@@ -48,18 +48,12 @@ constexpr auto add_sat(T x, T y) noexcept ->
     bool overflow = __builtin_add_overflow(x, y, &result);
 
     if (!overflow)
-    {
         return result;
-    }
 
     if (x < 0)
-    {
         return std::numeric_limits<T>::min();
-    }
     else
-    {
         return std::numeric_limits<T>::max();
-    }
 }
 
 }  // namespace Boardcore

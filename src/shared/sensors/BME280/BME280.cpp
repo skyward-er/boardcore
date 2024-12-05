@@ -289,7 +289,7 @@ BME280::BME280Config BME280::readConfiguration()
     BME280Config tmp;
     SPITransaction transaction(spiSlave);
 
-    transaction.readRegisters(REG_CTRL_HUM, (uint8_t *)&tmp, 4);
+    transaction.readRegisters(REG_CTRL_HUM, (uint8_t*)&tmp, 4);
 
     return tmp;
 }
@@ -300,7 +300,7 @@ void BME280::loadCompensationParameters()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.readRegisters(REG_CALIB_0, (uint8_t *)&compParams, 25);
+        transaction.readRegisters(REG_CALIB_0, (uint8_t*)&compParams, 25);
     }
 
     // Read second batch of compensation parameters
@@ -308,7 +308,7 @@ void BME280::loadCompensationParameters()
         SPITransaction transaction(spiSlave);
 
         transaction.readRegisters(REG_CALIB_26,
-                                  (uint8_t *)&compParams.bits.dig_H2, 7);
+                                  (uint8_t*)&compParams.bits.dig_H2, 7);
     }
 
     // Adjust unaligned data
@@ -349,9 +349,7 @@ uint32_t BME280::compensatePressure(int32_t adc_P)
     var1 =
         ((((int64_t)1) << 47) + var1) * ((int64_t)compParams.bits.dig_P1) >> 33;
     if (var1 == 0)
-    {
         return 0;  // avoid exception caused by division by zero
-    }
     p    = 1048576 - adc_P;
     p    = (((p << 31) - var2) * 3125) / var1;
     var1 = (((int64_t)compParams.bits.dig_P9) * (p >> 13) * (p >> 13)) >> 25;

@@ -132,13 +132,13 @@ public:
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
      * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
-    I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
+    I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
     ///< Delete copy/move constructors/operators.
-    I2CDriver(const I2CDriver &)            = delete;
-    I2CDriver &operator=(const I2CDriver &) = delete;
-    I2CDriver(I2CDriver &&)                 = delete;
-    I2CDriver &operator=(I2CDriver &&)      = delete;
+    I2CDriver(const I2CDriver&)            = delete;
+    I2CDriver& operator=(const I2CDriver&) = delete;
+    I2CDriver(I2CDriver&&)                 = delete;
+    I2CDriver& operator=(I2CDriver&&)      = delete;
 
     /**
      * @brief Disables the peripheral, the interrupts in the NVIC and the
@@ -156,8 +156,8 @@ public:
      * @param nBytes Number of bytes to read.
      * @return True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(const I2CSlaveConfig &slaveConfig, void *buffer,
-                            const size_t &nBytes);
+    [[nodiscard]] bool read(const I2CSlaveConfig& slaveConfig, void* buffer,
+                            const size_t& nBytes);
 
     /**
      * @brief Write operation to write nBytes. In case of an error during the
@@ -170,8 +170,8 @@ public:
      * @param generateStop Flag for the stop condition generation.
      * @return True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(const I2CSlaveConfig &slaveConfig,
-                             const void *buffer, const size_t &nBytes,
+    [[nodiscard]] bool write(const I2CSlaveConfig& slaveConfig,
+                             const void* buffer, const size_t& nBytes,
                              bool generateStop = true);
 
     /**
@@ -232,8 +232,8 @@ private:
     typedef struct
     {
         Operation operation;       ///< Operation to be performed (R/W)
-        uint8_t *buffRead;         ///< Buffer with the data to read
-        const uint8_t *buffWrite;  ///< Buffer with the data to write
+        uint8_t* buffRead;         ///< Buffer with the data to read
+        const uint8_t* buffWrite;  ///< Buffer with the data to write
         size_t nBytes;             ///< Number of bytes of the buffer
         size_t nBytesDone;         ///< Number of bytes already processed
         bool generateStop;         ///< Whether to generate stop condition
@@ -250,7 +250,7 @@ private:
      * the speed and the addressing mode specified.
      * @param slaveConfig The configuration struct of the slave device.
      */
-    void setupPeripheral(const I2CSlaveConfig &slaveConfig);
+    void setupPeripheral(const I2CSlaveConfig& slaveConfig);
 
 #ifdef _ARCH_CORTEXM7_STM32F7
     /**
@@ -277,7 +277,7 @@ private:
      * @param slaveConfig The configuration struct of the slave device.
      * @return True if the operation succeeded, False otherwise.
      */
-    [[nodiscard]] bool doOperation(const I2CSlaveConfig &slaveConfig);
+    [[nodiscard]] bool doOperation(const I2CSlaveConfig& slaveConfig);
 
     /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
@@ -293,7 +293,7 @@ private:
      * @return True if waken up by an event, false if an error occurred.
      */
     inline bool IRQwaitForOperationCompletion(
-        miosix::FastInterruptDisableLock &dLock);
+        miosix::FastInterruptDisableLock& dLock);
 
     /**
      * @brief This function has the logic to wake up and reschedule the thread
@@ -302,7 +302,7 @@ private:
      */
     inline void IRQwakeUpWaitingThread();
 
-    I2C_TypeDef *i2c;
+    I2C_TypeDef* i2c;
     uint8_t id;
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
@@ -312,7 +312,7 @@ private:
     uint16_t lastError = NO_ERROR;  ///< Flag for the last error occurred
     uint32_t error     = 0;         ///< Flag that tells if an error occurred
     bool reStarting = false;    ///< Flag true if not generated a STOP condition
-    miosix::Thread *waiting{};  ///< Pointer to the waiting for event thread
+    miosix::Thread* waiting{};  ///< Pointer to the waiting for event thread
     I2CTransaction transaction;  ///< Struct storing the transaction info
 
     PrintLogger logger = Logging::getLogger("i2c");

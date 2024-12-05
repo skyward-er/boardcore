@@ -37,7 +37,7 @@ template <class Ratio = std::ratio<1>>
 using Angle = Unit<UnitKind::Angle, Ratio>;
 
 template <class ToAngle, class FromAngle>
-ToAngle angle_cast(FromAngle const &from)
+ToAngle angle_cast(FromAngle const& from)
 {
     return ToAngle(from);
 }

@@ -136,9 +136,7 @@ CanbusDriver::~CanbusDriver()
 {
     ClockUtils::disablePeripheralClock(can);
     if (can == CAN2)
-    {
         ClockUtils::disablePeripheralClock(CAN1);
-    }
 }
 
 CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
@@ -239,9 +237,7 @@ bool CanbusDriver::addFilter(FilterBank filter)
 
     // CAN2 filters start from the 15th position
     if (can == CAN2)
-    {
         index = index + 14;
-    }
 
     if (isInit)
     {
@@ -341,12 +337,10 @@ uint32_t CanbusDriver::send(CanPacket packet)
 
     // Fill data registers
     for (uint8_t i = 0; i < packet.length; ++i)
-    {
         if (i < 4)
             mailbox->TDLR |= packet.data[i] << i * 8;
         else
             mailbox->TDHR |= packet.data[i] << (i - 4) * 8;
-    }
 
     // Finally send the packet
     can->sTxMailBox[mbxCode].TIR |= CAN_TI0R_TXRQ;
@@ -395,12 +389,10 @@ void CanbusDriver::handleRXInterrupt(int fifo)
         p.length = mailbox->RDTR & CAN_RDT0R_DLC;
 
         for (uint8_t i = 0; i < p.length; i++)
-        {
             if (i < 4)  // Low register
                 p.data[i] = (mailbox->RDLR >> (i * 8)) & 0xFF;
             else  // High register
                 p.data[i] = (mailbox->RDHR >> ((i - 4) * 8)) & 0xFF;
-        }
 
         *RFR |= CAN_RF0R_RFOM0;
 

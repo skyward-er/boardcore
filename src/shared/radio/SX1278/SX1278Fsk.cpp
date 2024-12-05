@@ -43,13 +43,11 @@ long long now() { return Kernel::getOldTick(); }
 // - TxReady on DIO3 (mode 01)
 constexpr DioMapping DEFAULT_MAPPING = DioMapping(0, 0, 0, 1, 0, 0, false);
 
-SX1278Fsk::Error SX1278Fsk::init(const Config &config)
+SX1278Fsk::Error SX1278Fsk::init(const Config& config)
 {
     // First probe for the device
     if (!checkVersion())
-    {
         return Error::BAD_VALUE;
-    }
 
     Error err;
     if ((err = configure(config)) != Error::NONE)
@@ -75,7 +73,7 @@ bool SX1278Fsk::checkVersion()
     }
 }
 
-SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
+SX1278Fsk::Error SX1278Fsk::configure(const Config& config)
 {
     // Check that the configuration is actually valid
     bool pa_boost = getFrontend().isOnPaBoost();
@@ -153,17 +151,11 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
 
         // Setup reg over-current protection
         if (config.ocp == 0)
-        {
             spi.writeRegister(REG_OCP, RegOcp::make(0, false));
-        }
         else if (ocp <= 120)
-        {
             spi.writeRegister(REG_OCP, RegOcp::make((ocp - 45) / 5, true));
-        }
         else
-        {
             spi.writeRegister(REG_OCP, RegOcp::make((ocp + 30) / 10, true));
-        }
 
         // Setup sync word
         spi.writeRegister(
@@ -256,7 +248,7 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     return Error::NONE;
 }
 
-ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
+ssize_t SX1278Fsk::receive(uint8_t* pkt, size_t max_len)
 {
     Lock guard(*this);
     LockMode guard_mode(*this, guard, RegOpMode::MODE_RX, DEFAULT_MAPPING,
@@ -281,9 +273,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
                            RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY,
                            0, true);
         if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
-        {
             crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
-        }
 
         // Record RSSI here, it's where it is the most accurate
         last_rx_rssi = getRssi();
@@ -308,9 +298,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
                 guard_mode,
                 RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0);
             if ((flags & RegIrqFlags::PAYLOAD_READY) != 0 && crc_enabled)
-            {
                 crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
-            }
 
             SPITransaction spi(getSpiSlave());
 
@@ -324,16 +312,14 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
     } while (len == 0);
 
     if (len > max_len || (!crc_ok && crc_enabled))
-    {
         return -1;
-    }
 
     // Finally copy the packet to the destination
     memcpy(pkt, tmp_pkt, len);
     return len;
 }
 
-bool SX1278Fsk::send(uint8_t *pkt, size_t len)
+bool SX1278Fsk::send(uint8_t* pkt, size_t len)
 {
     if (len > MTU)
         return false;
@@ -422,9 +408,7 @@ void SX1278Fsk::rateLimitTx()
 
     long long delta = now() - last_tx;
     if (delta <= RATE_LIMIT)
-    {
         miosix::Thread::sleep(RATE_LIMIT - delta);
-    }
 }
 
 ISX1278::IrqFlags SX1278Fsk::getIrqFlags()

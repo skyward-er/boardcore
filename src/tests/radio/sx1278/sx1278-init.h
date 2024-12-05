@@ -146,10 +146,10 @@ using rst  = miosix::radio2::nrst;
 
 #ifdef SX1278_IS_LORA
 static constexpr size_t SX1278_MTU = Boardcore::SX1278Lora::MTU;
-Boardcore::SX1278Lora *sx1278      = nullptr;
+Boardcore::SX1278Lora* sx1278      = nullptr;
 #else
 static constexpr size_t SX1278_MTU = Boardcore::SX1278Fsk::MTU;
-Boardcore::SX1278Fsk *sx1278       = nullptr;
+Boardcore::SX1278Fsk* sx1278       = nullptr;
 #endif
 
 volatile int dio0_cnt = 0;

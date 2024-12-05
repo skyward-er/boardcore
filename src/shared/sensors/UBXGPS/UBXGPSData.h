@@ -51,7 +51,7 @@ struct UBXDateTime
         return "year,month,day,hour,minute,second,nanosecond,accuracy";
     }
 
-    void print(std::ostream &os) const
+    void print(std::ostream& os) const
     {
         os << year << "," << (int)month << "," << (int)day << "," << (int)hour
            << "," << (int)minute << "," << (int)second << "," << nanosecond
@@ -71,7 +71,7 @@ struct UBXGPSData : public GPSData
                UBXDateTime::header() + "\n";
     }
 
-    void print(std::ostream &os) const
+    void print(std::ostream& os) const
     {
         os << gpsTimestamp << "," << latitude << "," << longitude << ","
            << height << "," << velocityNorth << "," << velocityEast << ","

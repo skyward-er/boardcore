@@ -135,12 +135,8 @@ public:
 
         /* calling the callbacks subscribed to the changed flags */
         for (unsigned int i = 0; i < changed_flags.size(); i++)
-        {
             for (const auto& callback : callbacks[changed_flags[i]])
-            {
                 callback();
-            }
-        }
 
         prev_flagsFlightPhases = flagsFlightPhases;
     }
@@ -162,12 +158,8 @@ protected:
 
         /* calling the callbacks subscribed to the changed flags */
         for (unsigned int i = 0; i < changed_flags.size(); i++)
-        {
             for (const auto& callback : callbacks[changed_flags[i]])
-            {
                 callback();
-            }
-        }
 
         prev_flagsFlightPhases = flagsFlightPhases;
     }

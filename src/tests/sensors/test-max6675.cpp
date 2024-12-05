@@ -53,9 +53,7 @@ int main()
     printf("Starting process verification!\n");
 
     if (!sensor.selfTest())
-    {
         printf("Sensor self test failed!\n");
-    }
 
     while (true)
     {

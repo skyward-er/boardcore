@@ -119,7 +119,9 @@ ssize_t Xbee::receive(uint8_t* buf, size_t bufMaxSize)
     {
         // We have data in the buffer pending to be returned
         if (!rxFramesBuffer.isEmpty() || currRxPayloadPointer >= 0)
+        {
             return fillReceiveBuf(buf, bufMaxSize);
+        }
 
         // No data in the buffer, but the xbee has data to return via SPI
         else if (attn.value() == 0)
@@ -222,7 +224,9 @@ void Xbee::handleATTNInterrupt()
         receiveThread->IRQwakeup();
         if (receiveThread->IRQgetPriority() >
             miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
             miosix::Scheduler::IRQfindNextThread();
+        }
 
         receiveThread = 0;
     }

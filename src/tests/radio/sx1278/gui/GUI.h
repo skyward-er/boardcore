@@ -112,7 +112,7 @@ public:
         status.setText("READY");
     }
 
-    void updateStats(Data &stats)
+    void updateStats(Data& stats)
     {
         tx_bitrate.setText(format_link_speed(stats.tx_bitrate));
         sent_count.setText(fmt::format("{}", stats.sent_count));

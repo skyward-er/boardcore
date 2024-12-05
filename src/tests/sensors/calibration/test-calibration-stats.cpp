@@ -192,9 +192,7 @@ int main()
                            data.accelerationY, data.accelerationZ);
 
                     if (sleepTime > 0)
-                    {
                         Thread::sleep(sleepTime);
-                    }
                 }
             }
         }

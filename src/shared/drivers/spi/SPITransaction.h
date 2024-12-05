@@ -62,7 +62,7 @@ public:
      *
      * @param slave Slave to communicate with.
      */
-    explicit SPITransaction(const SPISlave &slave);
+    explicit SPITransaction(const SPISlave& slave);
 
     // /**
     //  * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -75,17 +75,17 @@ public:
     // SPITransaction(SPIBusInterface &bus, GpioType cs, SPIBusConfig config);
 
     ///< Delete copy/move constructors/operators.
-    SPITransaction(const SPITransaction &)            = delete;
-    SPITransaction &operator=(const SPITransaction &) = delete;
-    SPITransaction(SPITransaction &&)                 = delete;
-    SPITransaction &operator=(SPITransaction &&)      = delete;
+    SPITransaction(const SPITransaction&)            = delete;
+    SPITransaction& operator=(const SPITransaction&) = delete;
+    SPITransaction(SPITransaction&&)                 = delete;
+    SPITransaction& operator=(SPITransaction&&)      = delete;
 
     /**
      * @brief Returns the underlying bus for low level access.
      *
      * @return SPIBusInterface associated with this transaction.
      */
-    SPIBusInterface &getBus();
+    SPIBusInterface& getBus();
 
     // Read, write and transfer operations
 
@@ -123,7 +123,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void read(uint8_t *data, size_t size);
+    void read(uint8_t* data, size_t size);
 
     /**
      * @brief Reads multiple half words from the bus
@@ -131,7 +131,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void read16(uint16_t *data, size_t size);
+    void read16(uint16_t* data, size_t size);
 
     /**
      * @brief Writes a single byte to the bus.
@@ -167,7 +167,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void write(uint8_t *data, size_t size);
+    void write(uint8_t* data, size_t size);
 
     /**
      * @brief Writes multiple half words to the bus.
@@ -175,7 +175,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void write16(uint16_t *data, size_t size);
+    void write16(uint16_t* data, size_t size);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -215,7 +215,7 @@ public:
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
      */
-    void transfer(uint8_t *data, size_t size);
+    void transfer(uint8_t* data, size_t size);
 
     /**
      * @brief Full duplex transmission of multiple half words on the bus.
@@ -223,7 +223,7 @@ public:
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
      */
-    void transfer16(uint16_t *data, size_t size);
+    void transfer16(uint16_t* data, size_t size);
 
     // Read, write and transfer operations with registers
 
@@ -261,7 +261,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void readRegisters(uint8_t reg, uint8_t *data, size_t size);
+    void readRegisters(uint8_t reg, uint8_t* data, size_t size);
 
     /**
      * @brief Writes an 8 bit register.
@@ -302,10 +302,10 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void writeRegisters(uint8_t reg, uint8_t *data, size_t size);
+    void writeRegisters(uint8_t reg, uint8_t* data, size_t size);
 
 private:
-    const SPISlave &slave;
+    const SPISlave& slave;
 };
 
 }  // namespace Boardcore

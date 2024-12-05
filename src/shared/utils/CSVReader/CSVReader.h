@@ -142,8 +142,10 @@ public:
     {
         // If the file has the header, ignore everithing in the first line
         if (hasHeader)
+        {
             fileStream.ignore(std::numeric_limits<std::streamsize>::max(),
                               '\n');
+        }
     }
 
     ~CSVParser() { fileStream.close(); }
@@ -158,8 +160,7 @@ public:
     {
         std::vector<Data> fileData;
 
-        std::for_each(begin(), end(),
-                      [&fileData](const Data& data)
+        std::for_each(begin(), end(), [&fileData](const Data& data)
                       { fileData.push_back(data); });
 
         return fileData;

@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-Runcam::Runcam(USARTInterface &usart) : usart(usart) {}
+Runcam::Runcam(USARTInterface& usart) : usart(usart) {}
 
 bool Runcam::init()
 {

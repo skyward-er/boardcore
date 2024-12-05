@@ -46,7 +46,7 @@ const BMP280I2C::BMP280Config BMP280I2C::BMP280_CONFIG_ALL_ENABLED = {
 const BMP280I2C::BMP280Config BMP280I2C::BMP280_CONFIG_TEMP_SINGLE = {
     0, 0, FORCED_MODE, SKIPPED, OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BMP280I2C::BMP280I2C(I2C &bus, BMP280Config config) : bus(bus), config(config)
+BMP280I2C::BMP280I2C(I2C& bus, BMP280Config config) : bus(bus), config(config)
 {
 }
 
@@ -61,9 +61,7 @@ bool BMP280I2C::init()
     }
 
     if (!reset())
-    {
         return false;
-    }
     miosix::Thread::sleep(3);
 
     loadCompensationParameters();
@@ -133,7 +131,6 @@ PressureData BMP280I2C::readPressure()
     uint8_t buffer[3];
     if (bus.readFromRegister(slaveConfig, REG_PRESS_MSB, buffer, 3))
     {
-
         int32_t adc_P = ((uint32_t)buffer[0]) << 12;
         adc_P |= ((uint32_t)buffer[1]) << 4;
         adc_P |= (buffer[2] >> 4) & 0x0F;
@@ -246,7 +243,6 @@ bool BMP280I2C::checkWhoAmI()
 
     if (bus.readRegister(slaveConfig, REG_ID, whoAmIValue))
     {
-
         return whoAmIValue == REG_ID_VAL;
     }
     else
@@ -278,7 +274,7 @@ BMP280I2C::BMP280Config BMP280I2C::readConfiguration()
 {
     BMP280Config tmp;
 
-    if (bus.readFromRegister(slaveConfig, REG_STATUS, (uint8_t *)&tmp, 3))
+    if (bus.readFromRegister(slaveConfig, REG_STATUS, (uint8_t*)&tmp, 3))
     {
         return tmp;
     }
@@ -292,7 +288,7 @@ BMP280I2C::BMP280Config BMP280I2C::readConfiguration()
 void BMP280I2C::loadCompensationParameters()
 {
     // Read first batch of compensation parameters
-    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0, (uint8_t *)&compParams,
+    if (!bus.readFromRegister(slaveConfig, REG_CALIB_0, (uint8_t*)&compParams,
                               25))
     {
         lastError = SensorErrors::BUS_FAULT;
@@ -331,9 +327,7 @@ uint32_t BMP280I2C::compensatePressure(int32_t adc_P)
     var1 =
         ((((int64_t)1) << 47) + var1) * ((int64_t)compParams.bits.dig_P1) >> 33;
     if (var1 == 0)
-    {
         return 0;  // avoid exception caused by division by zero
-    }
     p    = 1048576 - adc_P;
     p    = (((p << 31) - var2) * 3125) / var1;
     var1 = (((int64_t)compParams.bits.dig_P9) * (p >> 13) * (p >> 13)) >> 25;

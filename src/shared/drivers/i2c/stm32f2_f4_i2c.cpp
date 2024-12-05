@@ -30,7 +30,7 @@
 using namespace miosix;
 
 static volatile bool error;  ///< Set to true by IRQ on error
-static Thread *waiting = 0;  ///< Thread waiting for an operation to complete
+static Thread* waiting = 0;  ///< Thread waiting for an operation to complete
 
 /* In non-DMA mode the variables below are used to
  * handle the reception of 2 or more bytes through
@@ -39,7 +39,7 @@ static Thread *waiting = 0;  ///< Thread waiting for an operation to complete
  */
 
 #ifndef I2C_WITH_DMA
-static uint8_t *rxBuf         = 0;
+static uint8_t* rxBuf         = 0;
 static unsigned int rxBufCnt  = 0;
 static unsigned int rxBufSize = 0;
 #endif
@@ -68,7 +68,9 @@ void __attribute__((used)) I2C1rxDmaHandlerImpl()
     waiting->IRQwakeup();
     if (waiting->IRQgetPriority() >
         Thread::IRQgetCurrentThread()->IRQgetPriority())
+    {
         Scheduler::IRQfindNextThread();
+    }
     waiting = 0;
 }
 
@@ -149,7 +151,9 @@ void __attribute__((used)) I2C1HandlerImpl()
     waiting->IRQwakeup();
     if (waiting->IRQgetPriority() >
         Thread::IRQgetCurrentThread()->IRQgetPriority())
+    {
         Scheduler::IRQfindNextThread();
+    }
     waiting = 0;
 }
 
@@ -175,7 +179,9 @@ void __attribute__((used)) I2C1errHandlerImpl()
     waiting->IRQwakeup();
     if (waiting->IRQgetPriority() >
         Thread::IRQgetCurrentThread()->IRQgetPriority())
+    {
         Scheduler::IRQfindNextThread();
+    }
     waiting = 0;
 }
 
@@ -186,7 +192,7 @@ namespace miosix
 // class I2C
 //
 
-I2C1Driver &I2C1Driver::instance()
+I2C1Driver& I2C1Driver::instance()
 {
     static I2C1Driver singleton;
     return singleton;
@@ -245,7 +251,7 @@ void I2C1Driver::init()
     I2C1->CR1   = I2C_CR1_PE;  // Enable peripheral
 }
 
-bool I2C1Driver::send(unsigned char address, const void *data, int len,
+bool I2C1Driver::send(unsigned char address, const void* data, int len,
                       bool sendStop)
 {
     /* if sendStop is true user is requesting to have the stop condition sent,
@@ -299,7 +305,7 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len,
 
     I2C1->CR2 |= I2C_CR2_ITERREN;
 
-    const uint8_t *txData = reinterpret_cast<const uint8_t *>(data);
+    const uint8_t* txData = reinterpret_cast<const uint8_t*>(data);
     for (int i = 0; i < len; i++)
     {
         I2C1->DR = txData[i];
@@ -350,7 +356,7 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len,
     return true;
 }
 
-bool I2C1Driver::recv(unsigned char address, void *data, int len)
+bool I2C1Driver::recv(unsigned char address, void* data, int len)
 {
     address |= 0x01;
     if (start(address, len == 1) == false || I2C1->SR2 & I2C_SR2_TRA)
@@ -402,7 +408,7 @@ bool I2C1Driver::recv(unsigned char address, void *data, int len)
      * greater than one.
      */
 
-    rxBuf = reinterpret_cast<uint8_t *>(data);
+    rxBuf = reinterpret_cast<uint8_t*>(data);
 
     if (len > 1)
     {

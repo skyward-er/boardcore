@@ -34,7 +34,7 @@ void printInputClock(APB bus);
 
 void testGetTimerInputClock();
 
-void testTimerUtils(TIM_TypeDef *timer);
+void testTimerUtils(TIM_TypeDef* timer);
 
 int main()
 {
@@ -98,16 +98,12 @@ int main()
 void printInputClock(APB bus)
 {
     if (bus == APB::APB1)
-    {
         printf("APB1");
-    }
     else
-    {
         printf("APB2");
-    }
 }
 
-void testTimerUtils(TIM_TypeDef *timer)
+void testTimerUtils(TIM_TypeDef* timer)
 {
     // Print the timer clock source
     printInputClock(getTimerInputClock(timer));

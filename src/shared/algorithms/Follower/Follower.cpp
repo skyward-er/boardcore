@@ -43,13 +43,9 @@ namespace Boardcore
 float minimizeRotation(float angle)
 {
     if (angle > 180)
-    {
         angle -= 360;
-    }
     else if (angle < -180)
-    {
         angle += 360;
-    }
 
     return angle;
 }
@@ -180,11 +176,11 @@ void Follower::step()
     setState(newState);
 
 #ifndef NDEBUG
-    std::cout << "[FOLLOWER] STEPPER "
-              << "Angles: [" << newState.yaw << ", " << newState.pitch << "] "
-              << "Speed: [" << newState.horizontalSpeed << ", "
-              << newState.verticalSpeed << "]   VN300 measure: [" << vn300.yaw
-              << ", " << vn300.pitch << "]\n";
+    std::cout << "[FOLLOWER] STEPPER " << "Angles: [" << newState.yaw << ", "
+              << newState.pitch << "] " << "Speed: ["
+              << newState.horizontalSpeed << ", " << newState.verticalSpeed
+              << "]   VN300 measure: [" << vn300.yaw << ", " << vn300.pitch
+              << "]\n";
 #endif
 }
 

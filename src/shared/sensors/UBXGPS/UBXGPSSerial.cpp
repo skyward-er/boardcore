@@ -174,9 +174,8 @@ bool UBXGPSSerial::setSerialCommunication()
         miosix::Thread::sleep(100);
         // Change baudrate
         if (!setBaudrateAndUBX(false))
-        {
             return false;
-        };
+        ;
     }
 
     miosix::Thread::sleep(100);
@@ -275,7 +274,9 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
         usart.read(&frame.payloadLength, 2) <= 0 ||
         usart.read(frame.payload, frame.getRealPayloadLength()) <= 0 ||
         usart.read(frame.checksum, 2) <= 0)
+    {
         return false;
+    }
 
     if (!frame.isValid())
     {
@@ -307,8 +308,10 @@ bool UBXGPSSerial::safeWriteUBXFrame(const UBXFrame& frame)
     for (unsigned int i = 0; i < MAX_TRIES; i++)
     {
         if (i > 0)
+        {
             LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
                       MAX_TRIES);
+        }
 
         if (!writeUBXFrame(frame))
             return false;
@@ -321,10 +324,14 @@ bool UBXGPSSerial::safeWriteUBXFrame(const UBXFrame& frame)
         if (ack.isNack())
         {
             if (ack.getAckMessage() == frame.getMessage())
+            {
                 LOG_DEBUG(logger, "Received NAK");
+            }
             else
+            {
                 LOG_DEBUG(logger, "Received NAK for different UBX frame {:04x}",
                           static_cast<uint16_t>(ack.getPayload().ackMessage));
+            }
             continue;
         }
 

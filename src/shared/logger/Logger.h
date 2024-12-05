@@ -115,7 +115,7 @@ public:
      * \return Whether the class has been logged.
      */
     template <typename T>
-    LoggerResult log(const T &t);
+    LoggerResult log(const T& t);
 
     /**
      * @brief Log logger stats using the logger itself.
@@ -137,9 +137,9 @@ private:
 
     static std::string getFileName(int logNumber);
 
-    static void packThreadLauncher(void *argv);
+    static void packThreadLauncher(void* argv);
 
-    static void writeThreadLauncher(void *argv);
+    static void writeThreadLauncher(void* argv);
 
     /**
      * This thread packs logged data into buffers
@@ -158,7 +158,7 @@ private:
      * \param data Pointer to class data.
      * \param size Class size.
      */
-    LoggerResult logImpl(const char *name, const void *data, unsigned int size);
+    LoggerResult logImpl(const char* name, const void* data, unsigned int size);
 
     static constexpr unsigned int maxFilenameNumber =
         10000;  ///< Limit on files
@@ -204,24 +204,24 @@ private:
 
     int fileNumber = -1;
 
-    miosix::Queue<Record *, numRecords> fullRecordsQueue;
-    miosix::Queue<Record *, numRecords> emptyRecordsQueue;
-    std::queue<Buffer *, std::list<Buffer *>> fullBufferList;
-    std::queue<Buffer *, std::list<Buffer *>> emptyBufferList;
+    miosix::Queue<Record*, numRecords> fullRecordsQueue;
+    miosix::Queue<Record*, numRecords> emptyRecordsQueue;
+    std::queue<Buffer*, std::list<Buffer*>> fullBufferList;
+    std::queue<Buffer*, std::list<Buffer*>> emptyBufferList;
     miosix::FastMutex mutex;  ///< To allow concurrent access to the queues.
     miosix::ConditionVariable cond;  ///< To lock when buffers are all empty.
 
-    miosix::Thread *packTh  = nullptr;  ///< Thread packing logged data.
-    miosix::Thread *writeTh = nullptr;  ///< Thread writing data to disk.
+    miosix::Thread* packTh  = nullptr;  ///< Thread packing logged data.
+    miosix::Thread* writeTh = nullptr;  ///< Thread writing data to disk.
 
     volatile bool started = false;  ///< Logger is started and accepting data.
 
-    FILE *file = nullptr;  ///< Log file.
+    FILE* file = nullptr;  ///< Log file.
     LoggerStats stats;     ///< Logger stats.
 };
 
 template <typename T>
-LoggerResult Logger::log(const T &t)
+LoggerResult Logger::log(const T& t)
 {
     static_assert(
         std::is_trivially_copyable<T>::value,

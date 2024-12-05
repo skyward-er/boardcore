@@ -138,7 +138,7 @@ public:
     /**
      * @brief Construct a new SX1278
      */
-    explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
+    explicit SX1278Lora(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin dio0,
                         miosix::GpioPin dio1, miosix::GpioPin dio3,
                         SPI::ClockDivider clock_divider,
                         std::unique_ptr<SX1278::ISX1278Frontend> frontend)
@@ -151,7 +151,7 @@ public:
     /**
      * @brief Setup the device.
      */
-    [[nodiscard]] virtual Error init(const Config &config);
+    [[nodiscard]] virtual Error init(const Config& config);
 
     /*
      * @brief Check if this device is connected.
@@ -161,7 +161,7 @@ public:
     /**
      * @brief Configure this device on the fly.
      */
-    [[nodiscard]] virtual Error configure(const Config &config);
+    [[nodiscard]] virtual Error configure(const Config& config);
 
     /**
      * @brief Wait until a new packet is received.
@@ -170,7 +170,7 @@ public:
      * @param pkt_len   Maximum length of the received data.
      * @return          Size of the data received or -1 if failure
      */
-    ssize_t receive(uint8_t *pkt, size_t max_len) override;
+    ssize_t receive(uint8_t* pkt, size_t max_len) override;
 
     /**
      * @brief Send a packet.
@@ -181,7 +181,7 @@ public:
      * @param pkt_len   Length of the packet to be sent.
      * @return          True if the message was sent correctly.
      */
-    bool send(uint8_t *pkt, size_t len) override;
+    bool send(uint8_t* pkt, size_t len) override;
 
     /**
      * @brief Get the RSSI in dBm, during last packet receive.
@@ -196,8 +196,8 @@ public:
 private:
     void enterLoraMode();
 
-    void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);
-    void writeFifo(uint8_t addr, uint8_t *src, uint8_t size);
+    void readFifo(uint8_t addr, uint8_t* dst, uint8_t size);
+    void writeFifo(uint8_t addr, uint8_t* src, uint8_t size);
 
     IrqFlags getIrqFlags() override;
     void resetIrqFlags(IrqFlags flags) override;

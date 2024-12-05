@@ -57,9 +57,7 @@ int main()
 
     Runcam test(usart1);
     if (!test.init())
-    {
         return -1;
-    }
     char c;
 
     while (true)
@@ -72,17 +70,11 @@ int main()
         test.selectSetting();
         test.openMenu();
         if (c == 'd')
-        {
             test.moveDown();
-        }
         else if (c == 'c')
-        {
             test.selectSetting();
-        }
         else if (c == 'o')
-        {
             test.openMenu();
-        }
     }
 
     test.close();

@@ -158,12 +158,12 @@ public:
         std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
         T returnValue;
         if (getUnsafe(configurationIndex, returnValue) == RegistryError::OK)
-        {
             return returnValue;
-        }
         if (setUnsafe(configurationIndex, defaultValue) != RegistryError::OK)
+        {
             LOG_ERR(logger,
                     "Registry - Could not insert the default configuration");
+        }
         return defaultValue;
     }
 

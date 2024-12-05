@@ -66,7 +66,6 @@ TEST_CASE("[AeroUtils] relPressure")
 
 TEST_CASE("[AeroUtils] relDensity")
 {
-
     REQUIRE(relDensity(101325) == Approx(1.225).epsilon(0.0001));
     REQUIRE(relDensity(100129.438691069) ==
             Approx(1.21328277727309).epsilon(0.0001));
@@ -186,12 +185,13 @@ TEST_CASE("[AeroUtils] computeMach")
         float mach[] = {0, 0.2955, 0.2972, 0.2990, 0.3007, 0.3025, 0.3043, 0};
 
         for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        {
             REQUIRE(computeMach(d[i], vtot[i], t0) ==
                     Approx(mach[i]).epsilon(0.001));
+        }
     }
 
     {
-
         // Test for a different t0 from atmosisa
         const float t0 = 287.11;
         float d[]      = {0,         -315.556,  -631.111,  -946.667,  -1262.222,
@@ -219,7 +219,9 @@ TEST_CASE("[AeroUtils] computeMach")
                         1.14129591962841};
 
         for (int i = 0; i < sizeof(d) / sizeof(float); i++)
+        {
             REQUIRE(computeMach(d[i], vtot[i], t0) ==
                     Approx(mach[i]).epsilon(0.001));
+        }
     }
 }

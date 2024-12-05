@@ -128,7 +128,7 @@ int baudrates[]        = {2400,   9600,   19200,  38400,  57600,
  * Communication: src -> dst
  * tests the writeString, write and read methods of the USART drivers
  */
-bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
+bool testCommunicationSequential(USARTInterface* src, USARTInterface* dst)
 {
     char buf_rx[64] = {0};
     StructToSend struct_rx{0};
@@ -195,8 +195,8 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     }
 
     // Testing the non blocking read only if USART class
-    if ((dynamic_cast<const USART *>(dst) != nullptr) &&
-        !dynamic_cast<USART *>(dst)->read(&struct_rx, sizeof(StructToSend)))
+    if ((dynamic_cast<const USART*>(dst) != nullptr) &&
+        !dynamic_cast<USART*>(dst)->read(&struct_rx, sizeof(StructToSend)))
     {
         printf("Non blocking read passed!\n");
     }
@@ -204,7 +204,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     return passed;
 }
 
-bool testClearQueue(USART *src, USART *dst)
+bool testClearQueue(USART* src, USART* dst)
 {
     char buf[128];
     unsigned int nReads{0};
@@ -238,7 +238,7 @@ bool testClearQueue(USART *src, USART *dst)
     return true;
 }
 
-bool testReadTimeout(USART *src, USART *dst)
+bool testReadTimeout(USART* src, USART* dst)
 {
     using namespace std::chrono;
 
@@ -298,13 +298,9 @@ bool testReadTimeout(USART *src, USART *dst)
 
     printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf);
     if (!result)
-    {
         printf("\tTimed out after %lldms\n", measuredTime.count());
-    }
     else
-    {
         printf("\tNo timeout\n");
-    }
 
     if (strcmp(buf, testString) != 0)
     {
@@ -387,9 +383,7 @@ int main()
     }
 
     while (true)
-    {
         Thread::wait();
-    }
 
     return 0;
 }

@@ -54,23 +54,15 @@ int main()
 
     // Init the gps
     if (gps.init())
-    {
         printf("Successful gps initialization\n");
-    }
     else
-    {
         printf("Failed gps initialization\n");
-    }
 
     // Perform the selftest
     if (gps.selfTest())
-    {
         printf("Successful gps selftest\n");
-    }
     else
-    {
         printf("Failed gps selftest\n");
-    }
 
     // Start the gps thread
     gps.start();

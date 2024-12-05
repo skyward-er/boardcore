@@ -232,9 +232,9 @@ void configureBackupSram()
     extern unsigned char _preserve_end asm("_preserve_end");
     extern unsigned char _preserve_load asm("_preserve_load");
 
-    unsigned char *preserve_start = &_preserve_start;
-    unsigned char *preserve_end   = &_preserve_end;
-    unsigned char *preserve_load  = &_preserve_load;
+    unsigned char* preserve_start = &_preserve_start;
+    unsigned char* preserve_end   = &_preserve_end;
+    unsigned char* preserve_load  = &_preserve_load;
 
     // Load the .preserve section from flash if not a software reset
     if (miosix::lastResetReason() != miosix::ResetReason::SOFTWARE)

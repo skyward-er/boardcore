@@ -62,9 +62,7 @@ int main()
     printf("End\n");
 
     for (;;)
-    {
         Thread::sleep(10000);
-    }
 
     // Stop the threds, even though we will never reach this point, but just for
     // correctness ;)

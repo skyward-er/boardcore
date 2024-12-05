@@ -112,7 +112,9 @@ RegistryError RegistrySerializer::deserializeConfiguration(
     // Case the vector is empty/not have even the vector size
     if (serializationVector.size() <
         sizeof(RegistryHeader) + sizeof(RegistryFooter))
+    {
         return RegistryError::MALFORMED_SERIALIZED_DATA;
+    }
 
     RegistryHeader header;
     success &= (deserialize(header) == RegistryError::OK);
@@ -120,9 +122,7 @@ RegistryError RegistrySerializer::deserializeConfiguration(
         return RegistryError::MALFORMED_SERIALIZED_DATA;
 
     if (header.startBytes != 1)
-    {
         return RegistryError::WRONG_ENDIANESS;
-    }
 
     // Save the current vector position before jumping to the footer
     uint32_t previousPos = vectorWritePosition;

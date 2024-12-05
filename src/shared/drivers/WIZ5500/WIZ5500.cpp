@@ -46,7 +46,7 @@ SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
     return bus_config;
 }
 
-Wiz5500::Wiz5500(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin intn,
+Wiz5500::Wiz5500(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
                  SPI::ClockDivider clock_divider)
     : intn(intn), slave(bus, cs, getSpiBusConfig(clock_divider))
 {
@@ -114,9 +114,7 @@ void Wiz5500::reset()
 
     // Reset all socketsOSI
     for (int i = 0; i < NUM_SOCKETS; i++)
-    {
         spiWrite8(Wiz::getSocketRegBlock(i), Wiz::Socket::REG_MR, 0);
-    }
 }
 
 void Wiz5500::handleINTn()
@@ -163,9 +161,7 @@ bool Wiz5500::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
 
     // Check that we are closed
     if (socket_infos[sock_n].mode != Wiz5500::SocketMode::CLOSED)
-    {
         return false;
-    }
 
     // Setup the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
@@ -182,9 +178,7 @@ bool Wiz5500::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
     // Ok now check that we actually went into that mode
     int status = spiRead8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_SR);
     if (status != Wiz::Socket::STAT_INIT)
-    {
         return false;
-    }
 
     // Connect the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
@@ -196,24 +190,20 @@ bool Wiz5500::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
 
     // Connection failed
     if ((irq & Wiz::Socket::Irq::CON) == 0)
-    {
         return false;
-    }
 
     socket_infos[sock_n].mode = Wiz5500::SocketMode::TCP;
     return true;
 }
 
-bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip,
-                        uint16_t &dst_port, int timeout)
+bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp& dst_ip,
+                        uint16_t& dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
     // Check that we are closed
     if (socket_infos[sock_n].mode != Wiz5500::SocketMode::CLOSED)
-    {
         return false;
-    }
 
     // Setup the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
@@ -227,9 +217,7 @@ bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip,
     // Ok now check that we actually went into that mode
     int status = spiRead8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_SR);
     if (status != Wiz::Socket::STAT_INIT)
-    {
         return false;
-    }
 
     // Connect the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
@@ -244,9 +232,7 @@ bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp &dst_ip,
 
     // Connection failed
     if ((irq & Wiz::Socket::Irq::CON) == 0)
-    {
         return false;
-    }
 
     // Read remote side infos
     dst_ip = spiReadIp(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_DIPR);
@@ -264,9 +250,7 @@ bool Wiz5500::openUdp(int sock_n, uint16_t src_port, WizIp dst_ip,
 
     // Check that we are closed
     if (socket_infos[sock_n].mode != Wiz5500::SocketMode::CLOSED)
-    {
         return false;
-    }
 
     // Setup the socket
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_MR,
@@ -283,23 +267,19 @@ bool Wiz5500::openUdp(int sock_n, uint16_t src_port, WizIp dst_ip,
     // Ok now check that we actually went into that mode
     int status = spiRead8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_SR);
     if (status != Wiz::Socket::STAT_UDP)
-    {
         return false;
-    }
 
     socket_infos[sock_n].mode = Wiz5500::SocketMode::UDP;
     return true;
 }
 
-bool Wiz5500::send(int sock_n, const uint8_t *data, size_t len, int timeout)
+bool Wiz5500::send(int sock_n, const uint8_t* data, size_t len, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
     // We cannot send through a closed socket
     if (socket_infos[sock_n].mode == Wiz5500::SocketMode::CLOSED)
-    {
         return false;
-    }
 
     // First get the start write address
     uint16_t start_addr =
@@ -319,31 +299,25 @@ bool Wiz5500::send(int sock_n, const uint8_t *data, size_t len, int timeout)
 
     // It didn't signal it as an error
     if ((irq & Wiz::Socket::Irq::SEND_OK) == 0)
-    {
         return false;
-    }
 
     return true;
 }
 
-ssize_t Wiz5500::recv(int sock_n, uint8_t *data, size_t len, int timeout)
+ssize_t Wiz5500::recv(int sock_n, uint8_t* data, size_t len, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
     // This is only valid for TCP
     if (socket_infos[sock_n].mode != Wiz5500::SocketMode::TCP)
-    {
         return -1;
-    }
 
     // Wait for the device to signal that we received something, or a
     // disconnection
     int irq = waitForSocketIrq(
         l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, timeout);
     if ((irq & Wiz::Socket::Irq::RECV) == 0)
-    {
         return -1;
-    }
 
     // Ok we received something, get the received length
     uint16_t recv_len =
@@ -353,9 +327,7 @@ ssize_t Wiz5500::recv(int sock_n, uint8_t *data, size_t len, int timeout)
 
     // Check if we actually have space
     if (recv_len < len)
-    {
         spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, recv_len);
-    }
 
     addr += recv_len;
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
@@ -367,25 +339,21 @@ ssize_t Wiz5500::recv(int sock_n, uint8_t *data, size_t len, int timeout)
     return recv_len < len ? recv_len : -1;
 }
 
-ssize_t Wiz5500::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp &dst_ip,
-                          uint16_t &dst_port, int timeout)
+ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
+                          uint16_t& dst_port, int timeout)
 {
     Lock<FastMutex> l(mutex);
 
     // This is only valid for UDP
     if (socket_infos[sock_n].mode != Wiz5500::SocketMode::UDP)
-    {
         return -1;
-    }
 
     // Wait for the device to signal that we received something, or a
     // disconnection
     int irq = waitForSocketIrq(
         l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, timeout);
     if ((irq & Wiz::Socket::Irq::RECV) == 0)
-    {
         return -1;
-    }
 
     // Ok we received something, get the received length
     uint16_t recv_len =
@@ -395,16 +363,16 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp &dst_ip,
 
     // First read the internal header
     spiRead(Wiz::getSocketRxBlock(sock_n), addr,
-            reinterpret_cast<uint8_t *>(&dst_ip), sizeof(WizIp));
+            reinterpret_cast<uint8_t*>(&dst_ip), sizeof(WizIp));
     addr += sizeof(WizIp);
     spiRead(Wiz::getSocketRxBlock(sock_n), addr,
-            reinterpret_cast<uint8_t *>(&dst_port), sizeof(uint16_t));
+            reinterpret_cast<uint8_t*>(&dst_port), sizeof(uint16_t));
     addr += sizeof(uint16_t);
 
     // Now, what's this?
     uint16_t what = 0;
     spiRead(Wiz::getSocketRxBlock(sock_n), addr,
-            reinterpret_cast<uint8_t *>(&what), sizeof(uint16_t));
+            reinterpret_cast<uint8_t*>(&what), sizeof(uint16_t));
     addr += sizeof(uint16_t);
 
     // Remove what we have already read.
@@ -412,9 +380,7 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t *data, size_t len, WizIp &dst_ip,
 
     // Check if we actually have space
     if (recv_len < len)
-    {
         spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, recv_len);
-    }
 
     addr += recv_len;
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
@@ -432,9 +398,7 @@ void Wiz5500::close(int sock_n, int timeout)
 
     // We cannot receive close a closed socket
     if (socket_infos[sock_n].mode == Wiz5500::SocketMode::CLOSED)
-    {
         return;
-    }
 
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
               Wiz::Socket::CMD_DISCON);
@@ -443,7 +407,7 @@ void Wiz5500::close(int sock_n, int timeout)
     socket_infos[sock_n].mode = Wiz5500::SocketMode::CLOSED;
 }
 
-void Wiz5500::waitForINTn(Lock<FastMutex> &l)
+void Wiz5500::waitForINTn(Lock<FastMutex>& l)
 {
     long long start        = Kernel::getOldTick();
     TimedWaitResult result = TimedWaitResult::NoTimeout;
@@ -457,21 +421,19 @@ void Wiz5500::waitForINTn(Lock<FastMutex> &l)
     }
 }
 
-int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
+int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
                               uint8_t irq_mask, int timeout)
 {
     // Check that someone else isn't already waiting for one of ours interrupts
     if ((socket_infos[sock_n].irq_mask & irq_mask) != 0)
-    {
         return 0;
-    }
 
     // Enable the interrupts requested, updating the IRQ mask
     socket_infos[sock_n].irq_mask |= irq_mask;
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_IMR,
               socket_infos[sock_n].irq_mask);
 
-    Thread *this_thread = Thread::getCurrentThread();
+    Thread* this_thread = Thread::getCurrentThread();
 
     // Find a free slot in the data structure
     int i = 0;
@@ -491,9 +453,7 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
 
     // We didn't find any, return with failure
     if (i == NUM_THREAD_WAIT_INFOS)
-    {
         return 0;
-    }
 
     long long start        = Kernel::getOldTick();
     TimedWaitResult result = TimedWaitResult::NoTimeout;
@@ -561,7 +521,7 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex> &l, int sock_n,
     return wait_infos[i].irq;
 }
 
-void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex> &l)
+void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l)
 {
     // Other threads might wake us up in order to
     waitForINTn(l);
@@ -626,7 +586,7 @@ void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex> &l)
     }
 }
 
-void Wiz5500::spiRead(uint8_t block, uint16_t address, uint8_t *data,
+void Wiz5500::spiRead(uint8_t block, uint16_t address, uint8_t* data,
                       size_t len)
 {
     // Do a manual SPI transaction
@@ -639,7 +599,7 @@ void Wiz5500::spiRead(uint8_t block, uint16_t address, uint8_t *data,
     slave.bus.deselect(slave.cs);
 }
 
-void Wiz5500::spiWrite(uint8_t block, uint16_t address, const uint8_t *data,
+void Wiz5500::spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
                        size_t len)
 {
     // Do a manual SPI transaction
@@ -662,7 +622,7 @@ uint8_t Wiz5500::spiRead8(uint8_t block, uint16_t address)
 uint16_t Wiz5500::spiRead16(uint8_t block, uint16_t address)
 {
     uint16_t data;
-    spiRead(block, address, reinterpret_cast<uint8_t *>(&data),
+    spiRead(block, address, reinterpret_cast<uint8_t*>(&data),
             sizeof(uint16_t));
     return fromBigEndian16(data);
 }
@@ -670,7 +630,7 @@ uint16_t Wiz5500::spiRead16(uint8_t block, uint16_t address)
 WizIp Wiz5500::spiReadIp(uint8_t block, uint16_t address)
 {
     WizIp data;
-    spiRead(block, address, reinterpret_cast<uint8_t *>(&data), sizeof(WizIp));
+    spiRead(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizIp));
     return data;
 }
 
@@ -689,17 +649,16 @@ void Wiz5500::spiWrite8(uint8_t block, uint16_t address, uint8_t data)
 void Wiz5500::spiWrite16(uint8_t block, uint16_t address, uint16_t data)
 {
     data = toBigEndian16(data);
-    spiWrite(block, address, reinterpret_cast<uint8_t *>(&data),
+    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data),
              sizeof(uint16_t));
 }
 
 void Wiz5500::spiWriteIp(uint8_t block, uint16_t address, WizIp data)
 {
-    spiWrite(block, address, reinterpret_cast<uint8_t *>(&data), sizeof(WizIp));
+    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizIp));
 }
 
 void Wiz5500::spiWriteMac(uint8_t block, uint16_t address, WizMac data)
 {
-    spiWrite(block, address, reinterpret_cast<uint8_t *>(&data),
-             sizeof(WizMac));
+    spiWrite(block, address, reinterpret_cast<uint8_t*>(&data), sizeof(WizMac));
 }

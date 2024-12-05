@@ -42,7 +42,7 @@ public:
     /**
      * @brief Construct a serial connection attached to a control algorithm
      */
-    explicit HILTransceiverBase(USART &hilSerial) : hilSerial(hilSerial) {}
+    explicit HILTransceiverBase(USART& hilSerial) : hilSerial(hilSerial) {}
 
     /**
      * @brief Returns the number of lost updates.
@@ -65,13 +65,11 @@ protected:
     {
         miosix::Lock<miosix::FastMutex> l(mutex);
         while (!updated)
-        {
             condVar.wait(l);
-        }
         updated = false;
     }
 
-    USART &hilSerial;
+    USART& hilSerial;
     bool receivedFirstPacket       = false;
     bool updated                   = false;
     int nLostUpdates               = 0;
@@ -95,9 +93,9 @@ public:
      *
      * @param hilSerial Serial port for the HIL communication.
      */
-    explicit HILTransceiver(USART &hilSerial,
+    explicit HILTransceiver(USART& hilSerial,
                             HILPhasesManager<FlightPhases, SimulatorData,
-                                             ActuatorData> *hilPhasesManager)
+                                             ActuatorData>* hilPhasesManager)
         : HILTransceiverBase(hilSerial), actuatorData(),
           hilPhasesManager(hilPhasesManager)
     {
@@ -116,9 +114,7 @@ public:
 
         // If already updated increment lost updates
         if (updated)
-        {
             nLostUpdates++;
-        }
 
         this->actuatorData = actuatorData;
         updated            = true;
@@ -130,15 +126,15 @@ public:
      *
      * @return reference to the data simulated by matlab
      */
-    const SimulatorData *getSensorData() const { return &simulatorData; }
+    const SimulatorData* getSensorData() const { return &simulatorData; }
 
 private:
     void run() override;
 
     SimulatorData simulatorData;
     ActuatorData actuatorData;
-    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
-        *hilPhasesManager;
+    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>*
+        hilPhasesManager;
 };
 
 /**

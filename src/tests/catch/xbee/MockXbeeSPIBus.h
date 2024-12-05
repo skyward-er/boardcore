@@ -87,9 +87,7 @@ protected:
         uint8_t r = MockSPIBus::_read();
 
         if (inBufPosCntr == inBuf.size())
-        {
             resetATTN();
-        }
 
         return r;
     }

@@ -99,19 +99,19 @@ public:
         void withSpeedAndAlt(float verticalSpeed, float mslAltitude);
     };
 
-    explicit MEA(const Config &config);
+    explicit MEA(const Config& config);
 
-    void update(const Step &step);
+    void update(const Step& step);
 
     MEAState getState();
 
 private:
-    void predict(const Step &step);
-    void computeForce(const Step &step);
-    void correctBaro(const Step &step);
-    void correctAccel(const Step &step);
+    void predict(const Step& step);
+    void computeForce(const Step& step);
+    void correctBaro(const Step& step);
+    void correctAccel(const Step& step);
     void computeMass();
-    void computeApogee(const Step &step);
+    void computeApogee(const Step& step);
     void updateState();
 
     Eigen::Matrix<float, 3, 3> F;  //< State propagation matrix

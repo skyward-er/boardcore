@@ -54,17 +54,13 @@ void SensorSampler::toggleSensor(AbstractSensor* sensor, bool isEnabled)
 void SensorSampler::enableAllSensors()
 {
     for (auto& s : sensors)
-    {
         s.second.isEnabled = true;
-    }
 }
 
 void SensorSampler::disableAllSensors()
 {
     for (auto& s : sensors)
-    {
         s.second.isEnabled = false;
-    }
 }
 
 void SensorSampler::sampleAndCallback()
@@ -91,12 +87,8 @@ unsigned int SensorSampler::getNumSensors() { return sensors.size(); }
 const SensorInfo SensorSampler::getSensorInfo(AbstractSensor* sensor)
 {
     for (auto it = sensors.begin(); it != sensors.end(); ++it)
-    {
         if (it->first == sensor)
-        {
             return it->second;
-        }
-    }
 
     LOG_ERR(logger, "Sampler {}: sensor {} not found", this->id,
             static_cast<void*>(sensor));

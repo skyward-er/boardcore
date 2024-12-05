@@ -69,9 +69,7 @@ int main()
     {
         printf("Failed init!\n");
         if (sensor.getLastError() == SensorErrors::INVALID_WHOAMI)
-        {
             printf("Invalid WHOAMI\n");
-        }
         return -1;
     }
 

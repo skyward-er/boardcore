@@ -119,9 +119,9 @@ struct Mapping
         }
     }
 
-    bool operator==(const Mapping &other) const { return raw == other.raw; }
+    bool operator==(const Mapping& other) const { return raw == other.raw; }
 
-    bool operator!=(const Mapping &other) const { return raw != other.raw; }
+    bool operator!=(const Mapping& other) const { return raw != other.raw; }
 
     uint16_t raw;
 };

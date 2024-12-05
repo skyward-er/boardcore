@@ -35,16 +35,14 @@ GpioPin spiSck(GPIOA_BASE, 5);
 GpioPin spiMiso(GPIOA_BASE, 6);
 GpioPin spiMosi(GPIOA_BASE, 7);
 
-BMX160 *sensor = nullptr;
+BMX160* sensor = nullptr;
 uint32_t tick  = 0;
 
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     tick = TimestampTimer::getTimestamp();
     if (sensor)
-    {
         sensor->IRQupdateTimestamp(tick);
-    }
 }
 
 int main()

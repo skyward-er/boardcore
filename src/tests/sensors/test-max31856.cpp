@@ -52,13 +52,9 @@ int main()
     sensor.init();
 
     if (!sensor.checkConnected())
-    {
         printf("The thermocouple is not connected\n");
-    }
     else
-    {
         printf("The thermocouple is connected\n");
-    }
 
     // Wait for one sample to be made
     Thread::sleep(100);

@@ -47,7 +47,7 @@ struct MEAState
                "estimatedForce,x0,x1,x2\n";
     }
 
-    void print(std::ostream &os) const
+    void print(std::ostream& os) const
     {
         os << timestamp << "," << estimatedPressure << "," << estimatedMass
            << "," << estimatedApogee << "," << estimatedForce << "," << x0

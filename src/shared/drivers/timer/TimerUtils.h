@@ -256,7 +256,7 @@ enum class Channel : uint8_t
  *
  * @return Timer input clock, APB1 or ABP2.
  */
-ClockUtils::APB getTimerInputClock(const TIM_TypeDef *timer);
+ClockUtils::APB getTimerInputClock(const TIM_TypeDef* timer);
 
 /**
  * @brief Returns the timer clock frequency before the prescaler.
@@ -266,7 +266,7 @@ ClockUtils::APB getTimerInputClock(const TIM_TypeDef *timer);
  * @param timer Timer to use.
  * @return Prescaler input frequency.
  */
-uint32_t getPrescalerInputFrequency(const TIM_TypeDef *timer);
+uint32_t getPrescalerInputFrequency(const TIM_TypeDef* timer);
 
 /**
  * @brief Return the timer clock frequency.
@@ -274,7 +274,7 @@ uint32_t getPrescalerInputFrequency(const TIM_TypeDef *timer);
  * @param timer Timer to use.
  * @return Timer frequency.
  */
-uint32_t getFrequency(TIM_TypeDef *timer);
+uint32_t getFrequency(TIM_TypeDef* timer);
 
 /**
  * @brief Returns the specified value converted in microseconds based on the
@@ -282,7 +282,7 @@ uint32_t getFrequency(TIM_TypeDef *timer);
  *
  * @returns Timer counter in microseconds.
  */
-float toMicroSeconds(TIM_TypeDef *timer, uint32_t value);
+float toMicroSeconds(TIM_TypeDef* timer, uint32_t value);
 
 /**
  * @brief Returns the timer counter converted in microseconds based on the
@@ -290,7 +290,7 @@ float toMicroSeconds(TIM_TypeDef *timer, uint32_t value);
  *
  * @returns Timer counter in microseconds.
  */
-float toMicroSeconds(TIM_TypeDef *timer);
+float toMicroSeconds(TIM_TypeDef* timer);
 
 /**
  * @brief Returns the specified value converted in microseconds based on the
@@ -300,7 +300,7 @@ float toMicroSeconds(TIM_TypeDef *timer);
  *
  * @returns Timer counter in microseconds.
  */
-uint64_t toIntMicroSeconds(TIM_TypeDef *timer, uint32_t value);
+uint64_t toIntMicroSeconds(TIM_TypeDef* timer, uint32_t value);
 
 /**
  * @brief Returns the timer counter converted in microseconds based on the
@@ -310,7 +310,7 @@ uint64_t toIntMicroSeconds(TIM_TypeDef *timer, uint32_t value);
  *
  * @returns Timer counter in microseconds.
  */
-uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
+uint64_t toIntMicroSeconds(TIM_TypeDef* timer);
 
 /**
  * @brief Returns the specified value converted in milliseconds based on the
@@ -318,7 +318,7 @@ uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
  *
  * @returns Timer counter in milliseconds.
  */
-float toMilliSeconds(TIM_TypeDef *timer, uint32_t value);
+float toMilliSeconds(TIM_TypeDef* timer, uint32_t value);
 
 /**
  * @brief Returns the timer counter converted in milliseconds based on the
@@ -326,7 +326,7 @@ float toMilliSeconds(TIM_TypeDef *timer, uint32_t value);
  *
  * @returns Timer counter in milliseconds.
  */
-float toMilliSeconds(TIM_TypeDef *timer);
+float toMilliSeconds(TIM_TypeDef* timer);
 
 /**
  * @brief Returns the timer counter converted in seconds based on the timer
@@ -334,21 +334,21 @@ float toMilliSeconds(TIM_TypeDef *timer);
  *
  * @returns Timer counter in seconds.
  */
-float toSeconds(TIM_TypeDef *timer);
+float toSeconds(TIM_TypeDef* timer);
 
 /**
  * @brief Computes the timer resolution in microseconds.
  *
  * @return Microseconds per timer tick.
  */
-float getResolution(TIM_TypeDef *timer);
+float getResolution(TIM_TypeDef* timer);
 
 /**
  * @brief Computes the number of seconds for timer reset.
  *
  * @return Timer duration before counter reset in seconds.
  */
-float getMaxDuration(TIM_TypeDef *timer);
+float getMaxDuration(TIM_TypeDef* timer);
 
 /**
  * @brief Compute the prescaler value for the specified target frequency.
@@ -358,7 +358,7 @@ float getMaxDuration(TIM_TypeDef *timer);
  *
  * @return Prescaler value for the target frequency.
  */
-uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
+uint16_t computePrescalerValue(TIM_TypeDef* timer, int targetFrequency);
 
 /**
  * @brief Returns the corresponding master for for the given channel.
@@ -367,7 +367,7 @@ MasterMode masterModeFromChannel(const Channel channel);
 
 }  // namespace TimerUtils
 
-inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef *timer)
+inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef* timer)
 {
     // Timers can be connected to APB1 or APB2 clocks.
     // APB1: TIM2-7,12-15
@@ -384,68 +384,68 @@ inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef *timer)
     }
 }
 
-inline uint32_t TimerUtils::getPrescalerInputFrequency(const TIM_TypeDef *timer)
+inline uint32_t TimerUtils::getPrescalerInputFrequency(const TIM_TypeDef* timer)
 {
     return ClockUtils::getAPBTimersClock(getTimerInputClock(timer));
 }
 
-inline uint32_t TimerUtils::getFrequency(TIM_TypeDef *timer)
+inline uint32_t TimerUtils::getFrequency(TIM_TypeDef* timer)
 {
     return getPrescalerInputFrequency(timer) / (1 + timer->PSC);
 }
 
-inline float TimerUtils::toMicroSeconds(TIM_TypeDef *timer, uint32_t value)
+inline float TimerUtils::toMicroSeconds(TIM_TypeDef* timer, uint32_t value)
 {
     return (1.0f * value * 1e6 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
-inline float TimerUtils::toMicroSeconds(TIM_TypeDef *timer)
+inline float TimerUtils::toMicroSeconds(TIM_TypeDef* timer)
 {
     return toMicroSeconds(timer, timer->CNT);
 }
 
-inline uint64_t TimerUtils::toIntMicroSeconds(TIM_TypeDef *timer,
+inline uint64_t TimerUtils::toIntMicroSeconds(TIM_TypeDef* timer,
                                               uint32_t value)
 {
     return ((uint64_t)value * 1e6 * (uint64_t)(1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
-inline uint64_t TimerUtils::toIntMicroSeconds(TIM_TypeDef *timer)
+inline uint64_t TimerUtils::toIntMicroSeconds(TIM_TypeDef* timer)
 {
     return toIntMicroSeconds(timer, timer->CNT);
 }
 
-inline float TimerUtils::toMilliSeconds(TIM_TypeDef *timer, uint32_t value)
+inline float TimerUtils::toMilliSeconds(TIM_TypeDef* timer, uint32_t value)
 {
     return (1.0f * value * 1e3 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
-inline float TimerUtils::toMilliSeconds(TIM_TypeDef *timer)
+inline float TimerUtils::toMilliSeconds(TIM_TypeDef* timer)
 {
     return toMilliSeconds(timer, timer->CNT);
 }
 
-inline float TimerUtils::toSeconds(TIM_TypeDef *timer)
+inline float TimerUtils::toSeconds(TIM_TypeDef* timer)
 {
     return (1.0f * timer->CNT * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
-inline float TimerUtils::getResolution(TIM_TypeDef *timer)
+inline float TimerUtils::getResolution(TIM_TypeDef* timer)
 {
     return (1.0e6f * (1 + timer->PSC)) / getPrescalerInputFrequency(timer);
 }
 
-inline float TimerUtils::getMaxDuration(TIM_TypeDef *timer)
+inline float TimerUtils::getMaxDuration(TIM_TypeDef* timer)
 {
     return (1.0f * timer->ARR * 1e6 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
-inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
+inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef* timer,
                                                   int targetFrequency)
 {
     int32_t targetPrescaler =

@@ -38,7 +38,7 @@ namespace Boardcore
 
 AirBrakesPI::AirBrakesPI(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
-    const TrajectorySet &trajectorySet, const AirBrakesPIConfig &config,
+    const TrajectorySet& trajectorySet, const AirBrakesPIConfig& config,
     std::function<void(float)> setActuator)
     : getCurrentPosition(getCurrentPosition), config(config),
       setActuator(setActuator), pi(config.KP, config.KI, config.TS),
@@ -81,7 +81,7 @@ float AirBrakesPI::getRho(float z)
     return Constants::RHO_0 * expf(-z / Constants::Hn);
 }
 
-float AirBrakesPI::getSurface(const TimedTrajectoryPoint &currentPosition,
+float AirBrakesPI::getSurface(const TimedTrajectoryPoint& currentPosition,
                               float rho, float targetDrag)
 {
     float bestDDrag   = numeric_limits<float>::infinity();
@@ -168,7 +168,7 @@ void AirBrakesPI::chooseTrajectory(TrajectoryPoint currentPosition)
 
     for (uint8_t trjIndex = 0; trjIndex < trajectorySet.length(); trjIndex++)
     {
-        Trajectory &trajectory = trajectorySet.trajectories[trjIndex];
+        Trajectory& trajectory = trajectorySet.trajectories[trjIndex];
 
         for (uint32_t ptIndex = 0; ptIndex < trajectory.size(); ptIndex++)
         {

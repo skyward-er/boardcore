@@ -35,7 +35,7 @@
 #include "miosix.h"
 
 ///< Pointer to serial port classes to let interrupts access the classes
-Boardcore::USART *ports[N_USART_PORTS];
+Boardcore::USART* ports[N_USART_PORTS];
 
 #ifdef USART1
 /**
@@ -48,15 +48,11 @@ void usart1irqImpl();
  */
 void __attribute__((used)) usart1irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[0];
+    Boardcore::USART* port_boardcore = ports[0];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
     else
-    {
         usart1irqImpl();
-    }
 }
 
 /**
@@ -81,15 +77,11 @@ void usart2irqImpl();
  */
 void __attribute__((used)) usart2irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[1];
+    Boardcore::USART* port_boardcore = ports[1];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
     else
-    {
         usart2irqImpl();
-    }
 }
 
 /**
@@ -114,15 +106,11 @@ void usart3irqImpl();
  */
 void __attribute__((used)) usart3irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[2];
+    Boardcore::USART* port_boardcore = ports[2];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
     else
-    {
         usart3irqImpl();
-    }
 }
 
 /**
@@ -142,11 +130,9 @@ void __attribute__((naked, used)) USART3_IRQHandler()
  */
 void __attribute__((used)) uart4irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[3];
+    Boardcore::USART* port_boardcore = ports[3];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -166,11 +152,9 @@ void __attribute__((naked, used)) UART4_IRQHandler()
  */
 void __attribute__((used)) uart5irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[4];
+    Boardcore::USART* port_boardcore = ports[4];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -190,11 +174,9 @@ void __attribute__((naked, used)) UART5_IRQHandler()
  */
 void __attribute__((used)) usart6irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[5];
+    Boardcore::USART* port_boardcore = ports[5];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -214,11 +196,9 @@ void __attribute__((naked, used)) USART6_IRQHandler()
  */
 void __attribute__((used)) uart7irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[6];
+    Boardcore::USART* port_boardcore = ports[6];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -238,11 +218,9 @@ void __attribute__((naked, used)) UART7_IRQHandler()
  */
 void __attribute__((used)) uart8irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = ports[7];
+    Boardcore::USART* port_boardcore = ports[7];
     if (port_boardcore)
-    {
         port_boardcore->IRQhandleInterrupt();
-    }
 }
 
 /**
@@ -259,7 +237,7 @@ void __attribute__((naked, used)) UART8_IRQHandler()
 namespace Boardcore
 {
 
-USARTInterface::USARTInterface(USARTType *usart, int baudrate)
+USARTInterface::USARTInterface(USARTType* usart, int baudrate)
     : usart(usart), baudrate(baudrate)
 {
     // Setting the id of the serial port
@@ -358,9 +336,7 @@ void USART::IRQhandleInterrupt()
     // If we received some data without framing error but the tryPut failed,
     // report a FIFO overflow
     if (framingError || (received && !rxQueue.tryPut(c)))
-    {
         error = true;
-    }
 
     // Wake up thread if communication finished (idle state), buffer reached
     // half of his capacity or error occurred
@@ -380,7 +356,7 @@ void USART::IRQhandleInterrupt()
     }
 }
 
-USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
+USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
     : USARTInterface(usart, baudrate), rxQueue(queueLen)
 {
     // Enabling the peripheral on the right APB
@@ -456,9 +432,7 @@ void USART::setStopBits(int stopBits)
     this->stopBits = stopBits;
     usart->CR2 &= ~USART_CR2_STOP;
     if (stopBits == 2)
-    {
         usart->CR2 |= USART_CR2_STOP_1;
-    }
 }
 
 void USART::setOversampling(bool oversampling)
@@ -500,12 +474,12 @@ void USART::setBaudrate(int baudrate)
     this->baudrate = baudrate;
 }
 
-bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
                      const bool blocking, std::chrono::nanoseconds timeout)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
-    char *buf     = reinterpret_cast<char *>(buffer);
+    char* buf     = reinterpret_cast<char*>(buffer);
     size_t result = 0;
     error         = false;
     // Whether we timed out while waiting
@@ -529,7 +503,9 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
         // anyway
         if ((result == nBytes) || (idle && (!blocking || (result > 0))) ||
             timedOut)
+        {
             break;
+        }
 
         // Wait for data in the queue
         do
@@ -562,13 +538,13 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
     return (result > 0) && !timedOut;
 }
 
-void USART::write(const void *buffer, size_t nBytes)
+void USART::write(const void* buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
     // TODO: Use the send complete interrupt in order not to have a busy while
     // loop waiting
-    const char *buf = reinterpret_cast<const char *>(buffer);
+    const char* buf = reinterpret_cast<const char*>(buffer);
     size_t i;
     for (i = 0; i < nBytes; i++)
     {
@@ -584,7 +560,7 @@ void USART::write(const void *buffer, size_t nBytes)
     }
 }
 
-void USART::writeString(const char *buffer)
+void USART::writeString(const char* buffer)
 {
     int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
@@ -625,7 +601,7 @@ void USART::clearQueue()
     rxQueue.reset();
 }
 
-STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
+STM32SerialWrapper::STM32SerialWrapper(USARTType* usart, int baudrate)
     : USARTInterface(usart, baudrate)
 {
     if (this->id < 1 || this->id > 4)
@@ -648,7 +624,7 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
     }
 }
 
-STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate,
+STM32SerialWrapper::STM32SerialWrapper(USARTType* usart, int baudrate,
                                        miosix::GpioPin tx, miosix::GpioPin rx)
     : USARTInterface(usart, baudrate)
 {
@@ -705,8 +681,8 @@ bool STM32SerialWrapper::serialCommSetup()
     return true;
 }
 
-bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
-                                  size_t &nBytesRead, const bool blocking,
+bool STM32SerialWrapper::readImpl(void* buffer, size_t nBytes,
+                                  size_t& nBytesRead, const bool blocking,
                                   std::chrono::nanoseconds timeout)
 {
     // non-blocking read not supported in STM32SerialWrapper
@@ -734,12 +710,12 @@ bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
     return (n > 0);
 }
 
-void STM32SerialWrapper::write(const void *buffer, size_t nBytes)
+void STM32SerialWrapper::write(const void* buffer, size_t nBytes)
 {
     ::write(fd, buffer, nBytes);
 }
 
-void STM32SerialWrapper::writeString(const char *buffer)
+void STM32SerialWrapper::writeString(const char* buffer)
 {
     // strlen + 1 in order to send the '/0' terminated string
     ::write(fd, buffer, strlen(buffer) + 1);

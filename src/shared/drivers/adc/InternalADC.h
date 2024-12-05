@@ -98,7 +98,7 @@ public:
      * @brief Resets the ADC configuration and automatically enables the
      * peripheral clock.
      */
-    explicit InternalADC(ADC_TypeDef *adc);
+    explicit InternalADC(ADC_TypeDef* adc);
 
     ~InternalADC();
 
@@ -140,7 +140,7 @@ private:
 
     uint16_t readChannel(Channel channel);
 
-    ADC_TypeDef *adc;
+    ADC_TypeDef* adc;
 
     bool channelsEnabled[CH_NUM];
     bool tempEnabled = false;

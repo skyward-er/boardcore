@@ -56,9 +56,7 @@ void wait()
         t = Kernel::getOldTick();
 
         if (print)
-        {
             TRACE("Elapsed time : %.2f \n", (t - t0) / 1000.0);
-        }
     }
 
     measuredTime = t - t0;
@@ -88,9 +86,7 @@ int main()
             stringstream(temp) >> duty;
 
             if (!(freq >= 1 && freq <= 30000 && duty >= 0.0f && duty <= 100.0f))
-            {
                 TRACE("Invalid inputs!\n");
-            }
         } while (
             !(freq >= 1 && freq <= 30000 && duty >= 0.0f && duty <= 100.0f));
 

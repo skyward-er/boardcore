@@ -66,7 +66,7 @@ public:
         temp  = initialState;
     }
 
-    virtual ~HSM(){};
+    virtual ~HSM() {};
 
     bool start() override
     {
@@ -350,8 +350,10 @@ protected:
                                     // Exit target unhandled?
                                     if ((static_cast<T*>(this)->*target)(
                                             {EV_EXIT}) == HANDLED)
+                                    {
                                         (static_cast<T*>(this)->*target)(
                                             {EV_EMPTY});
+                                    }
 
                                     // Set to super of target
                                     target    = this->temp;

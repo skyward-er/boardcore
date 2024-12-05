@@ -106,9 +106,7 @@ void BMX160::IRQupdateTimestamp(uint64_t ts)
 {
     // Prevent interrupts while reading fifo
     if (irqEnabled)
-    {
         SensorFIFO::IRQupdateTimestamp(ts);
-    }
 }
 
 BMX160Data BMX160::sampleImpl()
@@ -122,7 +120,9 @@ BMX160Data BMX160::sampleImpl()
     // Read temperature
     if (config.temperatureDivider != 0 &&
         tempCounter % config.temperatureDivider == 0)
+    {
         readTemp();
+    }
 
     tempCounter++;
 
@@ -432,13 +432,9 @@ void BMX160::initInt()
                    BMX160Defs::INT_OUT_CTRL_INT1_OUT_EN;
 
         if (config.interrupt1Mode == BMX160Config::IntMode::OPEN_DRAIN)
-        {
             outCtrl |= BMX160Defs::INT_OUT_CTRL_INT1_OD;
-        }
         if (config.interrupt2Mode == BMX160Config::IntMode::OPEN_DRAIN)
-        {
             outCtrl |= BMX160Defs::INT_OUT_CTRL_INT2_OD;
-        }
 
         // Enable both interrupt pins, otherwise they'll just float.
         // We configure both of them as push-pull and active-low
@@ -618,13 +614,17 @@ GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
     using namespace Constants;
 
     if (config.gyroscopeUnit == BMX160Config::GyroscopeMeasureUnit::DEG)
+    {
         return GyroscopeData{timestamp, data.x * gyrSensibility,
                              data.y * gyrSensibility, data.z * gyrSensibility};
+    }
     else
+    {
         return GyroscopeData{timestamp,
                              data.x * gyrSensibility * DEGREES_TO_RADIANS,
                              data.y * gyrSensibility * DEGREES_TO_RADIANS,
                              data.z * gyrSensibility * DEGREES_TO_RADIANS};
+    }
 }
 
 const char* BMX160::debugErr(SPITransaction& spi)
@@ -754,7 +754,6 @@ void BMX160::readFifo(bool headerless)
     int idx = 0;
     while (idx < len && buf[idx] != BMX160Defs::FIFO_STOP_BYTE)
     {
-
         if (headerless)
         {
             auto magRaw = parseStruct<BMX160Defs::MagRaw>(buf, idx);
@@ -769,9 +768,7 @@ void BMX160::readFifo(bool headerless)
             pushSample(BMX160Data{oldAcc, oldGyr, oldMag});
 
             if (watermarkTimestamp == 0 && idx >= (config.fifoWatermark * 4))
-            {
                 watermarkTimestamp = timestamp;
-            }
 
             timestamp += timeOffset;
         }

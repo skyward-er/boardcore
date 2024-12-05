@@ -220,9 +220,7 @@ struct DataAsciiRequest
         str.append(req);
 
         for (unsigned int i = 0; i < str.length(); i++)
-        {
             checksum ^= str[i];
-        }
 
         sprintf(ck, "%x", checksum);
     }

@@ -54,13 +54,9 @@ bool VN300::init()
 
     // Allocate the pre loaded strings based on the user selected crc
     if (crc == CRCOptions::CRC_ENABLE_16)
-    {
         preSampleBin1 = "$VNBOM,1*749D\n";
-    }
     else
-    {
         preSampleBin1 = "$VNBOM,1*45\n";
-    }
 
     // Set the error to init fail and if the init process goes without problem
     // i restore it to the last error
@@ -184,18 +180,14 @@ VN300Data VN300::sampleFull()
     sampleOutcome =
         getBinaryOutput<VN300Defs::BinaryDataFull>(bindataFull, preSampleBin1);
     if (!sampleOutcome)
-    {
         lastError = NO_NEW_DATA;
-    }
 
     validChecksum =
         crc == CRCOptions::CRC_NO ||
         calculateChecksum16(reinterpret_cast<uint8_t*>(&bindataFull),
                             sizeof(bindataFull)) == 0;
     if (sampleOutcome && !validChecksum)
-    {
         lastError = SensorErrors::BUS_FAULT;
-    }
 
     // Verify if the sample is valid
     sampleOutcome = sampleOutcome && validChecksum;
@@ -226,18 +218,14 @@ VN300Data VN300::sampleReduced()
     sampleOutcome = getBinaryOutput<VN300Defs::BinaryDataReduced>(
         binDataReduced, preSampleBin1);
     if (!sampleOutcome)
-    {
         lastError = NO_NEW_DATA;
-    }
 
     validChecksum =
         crc == CRCOptions::CRC_NO ||
         calculateChecksum16(reinterpret_cast<uint8_t*>(&binDataReduced),
                             sizeof(binDataReduced)) == 0;
     if (sampleOutcome && !validChecksum)
-    {
         lastError = SensorErrors::BUS_FAULT;
-    }
 
     // Verify if the sample is valid
     sampleOutcome = sampleOutcome && validChecksum;
@@ -337,14 +325,10 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
 
     usart.clearQueue();
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
         return false;
-    }
 
     if (checkErrorVN(recvString.data()))
         return false;
@@ -362,14 +346,10 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
 
     usart.clearQueue();
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
         return false;
-    }
 
     if (checkErrorVN(recvString.data()))
         return false;
@@ -379,7 +359,6 @@ bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
 
 bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
 {
-
     std::string command =
         fmt::format("{}{},{},{},{},{},{},{},{},{}", "VNWRG,26,", rotMat(0, 0),
                     rotMat(0, 1), rotMat(0, 2), rotMat(1, 0), rotMat(1, 1),
@@ -387,14 +366,10 @@ bool VN300::setReferenceFrame(Eigen::Matrix3f rotMat)
 
     usart.clearQueue();
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-    {
         return false;
-    }
 
     if (checkErrorVN(recvString.data()))
         return false;
@@ -445,9 +420,7 @@ bool VN300::setBinaryOutput()
     usart.clearQueue();
 
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
     {

@@ -65,13 +65,9 @@ protected:
     {
         uint32_t reg = 0;
         if (isExt)
-        {
             reg = ((id & 0x1FFFFFFF) << 3);
-        }
         else
-        {
             reg = ((id & 0x7FF) << 21);
-        }
 
         reg |= ((ide & 0x1) << 2) | ((rtr & 0x1) << 1);
         return reg;

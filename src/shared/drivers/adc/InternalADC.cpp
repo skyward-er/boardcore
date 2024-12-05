@@ -31,17 +31,17 @@ namespace Boardcore
 {
 
 #if defined(STM32F407xx) || defined(STM32F429xx)
-#define CAL_PT1_VALUE ((uint16_t volatile *)((uint32_t)0x1FFF7A2C))
-#define CAL_PT2_VALUE ((uint16_t volatile *)((uint32_t)0x1FFF7A2E))
+#define CAL_PT1_VALUE ((uint16_t volatile*)((uint32_t)0x1FFF7A2C))
+#define CAL_PT2_VALUE ((uint16_t volatile*)((uint32_t)0x1FFF7A2E))
 static const float CAL_PT1_TEMP = 30;
 static const float CAL_PT2_TEMP = 110;
 static const float CAL_V_DDA    = 3.3f;
 #elif defined(STM32F767xx) || defined(STM32F769xx) || defined(STM32F756xx)
-#define CAL_PT1_VALUE ((uint16_t volatile *)((uint32_t)0x1FF0F44C))
-#define CAL_PT2_VALUE ((uint16_t volatile *)((uint32_t)0x1FF0F44E))
-static const float CAL_PT1_TEMP           = 30;
-static const float CAL_PT2_TEMP           = 110;
-static const float CAL_V_DDA              = 3.3f;
+#define CAL_PT1_VALUE ((uint16_t volatile*)((uint32_t)0x1FF0F44C))
+#define CAL_PT2_VALUE ((uint16_t volatile*)((uint32_t)0x1FF0F44E))
+static const float CAL_PT1_TEMP = 30;
+static const float CAL_PT2_TEMP = 110;
+static const float CAL_V_DDA    = 3.3f;
 #else
 #warning This micro controller does not have a calibrated temperature sensor or is not currently supported by this driver
 #endif
@@ -65,7 +65,7 @@ static const float VBAT_DIV               = 4.0f;
 #define V_DDA_VOLTAGE 3.0f
 #endif
 
-InternalADC::InternalADC(ADC_TypeDef *adc) : adc(adc)
+InternalADC::InternalADC(ADC_TypeDef* adc) : adc(adc)
 {
 #ifndef INTERNAL_ADC_WITHOUT_CALIBRATION
     loadCalibrationValues();
@@ -84,9 +84,7 @@ InternalADC::InternalADC(ADC_TypeDef *adc) : adc(adc)
     ADC->CCR |= ADC_CCR_ADCPRE_1 | ADC_CCR_ADCPRE_0;
 
     for (int i = 0; i < CH_NUM; i++)
-    {
         channelsEnabled[i] = false;
-    }
 }
 
 InternalADC::~InternalADC()

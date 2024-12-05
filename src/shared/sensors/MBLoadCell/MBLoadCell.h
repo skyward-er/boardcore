@@ -56,7 +56,7 @@ public:
      * @param mode the mode in which the load cell is in
      * @param serial the serial port to be used
      */
-    MBLoadCell(USARTInterface &serial, LoadCellModes mode);
+    MBLoadCell(USARTInterface& serial, LoadCellModes mode);
 
     /**
      * @brief Initializes the serial communication with the load cell.
@@ -126,7 +126,7 @@ protected:
      * @param value The value used in the forging of the "set point"
      * requests.
      */
-    void generateRequest(DataAsciiRequest &req,
+    void generateRequest(DataAsciiRequest& req,
                          const LoadCellValuesEnum toRequest, int value = 0);
 
     /**
@@ -135,7 +135,7 @@ protected:
      *
      * @param buf The message to send.
      */
-    void transmitASCII(const std::string &buf);
+    void transmitASCII(const std::string& buf);
 
     /**
      * @brief Wrapper to the serial recvString method. This also sets the
@@ -153,7 +153,7 @@ protected:
      * stored.
      */
     template <typename T>
-    void receive(T *buf);
+    void receive(T* buf);
 
 private:
     MBLoadCellSettings settings;  ///< Contains all the configuration
@@ -165,7 +165,7 @@ private:
     bool minPrint;
 
     ///< Pointer to the instance of the serial port used for the connection
-    USARTInterface &serial;
+    USARTInterface& serial;
 };
 
 }  // namespace Boardcore

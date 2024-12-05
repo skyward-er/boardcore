@@ -58,7 +58,7 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #error "Target not supported"
 #endif
 
-SX1278Fsk *sx1278 = nullptr;
+SX1278Fsk* sx1278 = nullptr;
 
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
@@ -103,7 +103,7 @@ void recvLoop()
     while (1)
     {
         ssize_t res =
-            sx1278->receive(reinterpret_cast<uint8_t *>(buf), sizeof(buf));
+            sx1278->receive(reinterpret_cast<uint8_t*>(buf), sizeof(buf));
         if (res != -1)
         {
             // Make sure there is a terminator somewhere
@@ -114,7 +114,7 @@ void recvLoop()
     }
 }
 
-void sendLoop(int interval, const char *data)
+void sendLoop(int interval, const char* data)
 {
     char buf[SX1278Fsk::MTU];
     strncpy(buf, data, sizeof(buf) - 1);
@@ -123,7 +123,7 @@ void sendLoop(int interval, const char *data)
     {
         miosix::Thread::sleep(interval);
 
-        sx1278->send(reinterpret_cast<uint8_t *>(buf), strlen(buf) + 1);
+        sx1278->send(reinterpret_cast<uint8_t*>(buf), strlen(buf) + 1);
         printf("[sx1278] Sent '%s'\n", buf);
     }
 }
@@ -156,7 +156,7 @@ int main()
 
     printf("\n[sx1278] Initialization complete!\n");
 
-    const char *msg =
+    const char* msg =
         "Very very very very very very very very very very very "
         "very very very very very very very very very very very "
         "very very very very very very very very very very very "

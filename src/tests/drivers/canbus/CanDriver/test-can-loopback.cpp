@@ -121,7 +121,6 @@ int main()
         p.data[i] = 1 << i;
     for (;;)
     {
-
         // printPacket("TX", p);
         p.timestamp = Kernel::getOldTick();
         c->send(p);
@@ -133,9 +132,7 @@ int main()
         // c->send(p);
 
         while (!c->getRXBuffer().isEmpty())
-        {
             load.addPacket(c->getRXBuffer().pop().packet);
-        }
         // c->getRXBuffer().waitUntilNotEmpty();
         // CanRXPacket prx = c->getRXBuffer().pop();
         // printRXPacket("RX", prx);

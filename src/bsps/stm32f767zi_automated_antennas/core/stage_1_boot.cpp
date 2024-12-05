@@ -49,8 +49,7 @@ void program_startup()
     // enabled
     __disable_irq();
 
-    miosix::IRQconfigureCache((const unsigned int *)0xd0000000,
-                              8 * 1024 * 1024);
+    miosix::IRQconfigureCache((const unsigned int*)0xd0000000, 8 * 1024 * 1024);
 
     // These are defined in the linker script
     extern unsigned char _etext asm("_etext");
@@ -60,11 +59,11 @@ void program_startup()
     extern unsigned char _bss_end asm("_bss_end");
 
     // Initialize .data section, clear .bss section
-    unsigned char *etext     = &_etext;
-    unsigned char *data      = &_data;
-    unsigned char *edata     = &_edata;
-    unsigned char *bss_start = &_bss_start;
-    unsigned char *bss_end   = &_bss_end;
+    unsigned char* etext     = &_etext;
+    unsigned char* data      = &_data;
+    unsigned char* edata     = &_edata;
+    unsigned char* bss_start = &_bss_start;
+    unsigned char* bss_end   = &_bss_end;
     memcpy(data, etext, edata - data);
     memset(bss_start, 0, bss_end - bss_start);
 

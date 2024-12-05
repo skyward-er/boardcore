@@ -27,7 +27,7 @@
 
 using namespace mxgui;
 
-GUI *gui = nullptr;
+GUI* gui = nullptr;
 
 void initGUI()
 {
@@ -46,10 +46,8 @@ int main()
     initBoard();
     initGUI();
     if (!initRadio())
-    {
         while (1)
             ;
-    }
 
     // Set display to ready
     gui->stats_screen.updateReady();

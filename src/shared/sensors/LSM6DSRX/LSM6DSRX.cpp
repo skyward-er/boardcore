@@ -52,9 +52,7 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
     // check that ACC_ODR is set to HZ_1_6 only if OPERATING_MODE is equal to
     // NORMAL
     if (config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6)
-    {
         config.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
-    }
 }
 
 bool LSM6DSRX::init()
@@ -680,9 +678,7 @@ LSM6DSRXData LSM6DSRX::sampleImpl()
     lastError = SensorErrors::NO_ERRORS;
 
     if (config.fifoMode == LSM6DSRXConfig::FIFO_MODE::BYPASS)
-    {
         return getSensorData();
-    }
 
     readFromFifo();
 
@@ -831,9 +827,7 @@ void LSM6DSRX::readFromFifo()
 
                 // Check if we can push into fifo (both samples are present)
                 if (timestamps[timeslotTag].accPresent)
-                {
                     pushIntoFifo(timestamps[timeslotTag], idxFifo);
-                }
 
                 break;
             case 0x02:
@@ -852,9 +846,7 @@ void LSM6DSRX::readFromFifo()
 
                 // Check if we can push into fifo (both samples are present)
                 if (timestamps[timeslotTag].gyrPresent)
-                {
                     pushIntoFifo(timestamps[timeslotTag], idxFifo);
-                }
 
                 break;
             case 0x04:

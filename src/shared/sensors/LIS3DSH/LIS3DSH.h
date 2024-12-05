@@ -250,9 +250,7 @@ public:
 
         float delta[3] = {0};
         for (uint8_t i = 0; i < 3; i++)
-        {
             delta[i] = fabs(AVG_NO_ST[i] - AVG_ST[i]);
-        }
 
         LOG_INFO(logger,
                  "Selftest: delta[x] = {}, delta[y] = {}, delta[z] = {}",
@@ -336,13 +334,9 @@ private:
         TemperatureData tempData    = readTemperature();
 
         if (lastError != SensorErrors::NO_ERRORS)
-        {
             return lastSample;
-        }
         else
-        {
             return LIS3DSHData(accelData, tempData);
-        }
     }
 
     /**

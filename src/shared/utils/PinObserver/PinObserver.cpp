@@ -44,9 +44,13 @@ bool PinObserver::registerPinCallback(miosix::GpioPin pin, PinCallback callback,
         if (scheduler.addTask(
                 std::bind(&PinObserver::periodicPinValueCheck, this, pin),
                 pollInterval, TaskScheduler::Policy::RECOVER))
+        {
             return true;
+        }
         else
+        {
             callbacks.erase(pin);
+        }
     }
 
     return false;
@@ -65,10 +69,10 @@ void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
     if (callbacks.find(pin) == callbacks.end())
         return;
 
-    auto &pinData = callbacks[pin];
+    auto& pinData = callbacks[pin];
 
     // Retrieve the pin information
-    uint32_t &count = pinData.periodCount;
+    uint32_t& count = pinData.periodCount;
 
     // Read the current pin status
     const bool newState = pin.value() != pinData.reverted;

@@ -34,14 +34,10 @@ int main()
     MS5803I2C ms5803(bus, 10);
 
     if (!ms5803.init())
-    {
         printf("MS5803 Init failed\n");
-    }
 
     if (!ms5803.selfTest())
-    {
         printf("Self test failed\n");
-    }
 
     while (true)
     {

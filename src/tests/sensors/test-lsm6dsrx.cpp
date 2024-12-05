@@ -56,7 +56,6 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
 
 int main()
 {
-
     SPIBus bus(SPI3);
 
     GpioPin csPin(GPIOE_BASE, 3);  // PE3 CS
@@ -115,9 +114,7 @@ int main()
     // testFifoFillingTime(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
     while (true)
-    {
         Thread::sleep(5000);
-    }
 
     return 0;
 }
@@ -205,9 +202,7 @@ void testSampleImplTime(SPIBus& bus, miosix::GpioPin csPin,
     {
         TRACE("Self test failed\n\n");
         while (true)
-        {
             Thread::sleep(2000);
-        }
     }
 
     std::cout << "sensor initialized\n";
@@ -255,9 +250,7 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
     {
         std::cout << "Self test failed\n\n";
         while (true)
-        {
             Thread::sleep(2000);
-        }
     }
 
     while (true)
@@ -299,9 +292,7 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
 
             // Check that gyr and acc timestamps are equal
             if (buf[i].accelerationTimestamp != buf[i].angularSpeedTimestamp)
-            {
                 std::cout << "Error, timestamps not equal\n\n";
-            }
         }
 
         std::cout << "Extraction completed\n\n" << std::endl;

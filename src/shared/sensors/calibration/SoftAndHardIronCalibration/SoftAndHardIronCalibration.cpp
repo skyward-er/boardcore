@@ -63,11 +63,13 @@ SixParametersCorrector SoftAndHardIronCalibration::computeResult()
     int minIdx     = 0;
 
     for (int i = 0; i < eigenValues.rows(); i++)
+    {
         if (minValue > eigenValues[i])
         {
             minValue = eigenValues[i];
             minIdx   = i;
         }
+    }
     Eigen::Matrix<float, 7, 1> vec = solver.eigenvectors().col(minIdx);
 
     // Invert the vector if necessary

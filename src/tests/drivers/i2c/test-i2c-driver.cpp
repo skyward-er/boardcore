@@ -98,7 +98,7 @@ I2CDriver::I2CSlaveConfig OLEDConfig{OLED.addressSensor,
 I2CDriver::I2CSlaveConfig LPSConfig{
     LPS.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::STANDARD};
 
-bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
+bool i2cDriver(I2CDriver& i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
 {
     const size_t nRead    = 300;

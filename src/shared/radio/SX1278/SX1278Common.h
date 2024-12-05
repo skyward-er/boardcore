@@ -110,7 +110,7 @@ private:
         // Current Dio mapping
         DioMapping mapping = DioMapping();
         // Thread waiting listening for interrupts
-        miosix::Thread *irq_wait_thread = nullptr;
+        miosix::Thread* irq_wait_thread = nullptr;
         // True if the RX frontend is enabled
         bool is_rx_frontend_on = false;
         // True if the TX frontend is enabled
@@ -129,7 +129,7 @@ public:
     void handleDioIRQ();
 
 protected:
-    explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
+    explicit SX1278Common(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin dio0,
                           miosix::GpioPin dio1, miosix::GpioPin dio3,
                           SPI::ClockDivider clock_divider,
                           std::unique_ptr<ISX1278Frontend> frontend)
@@ -147,12 +147,12 @@ protected:
     class Lock
     {
     public:
-        explicit Lock(SX1278Common &driver) : driver(driver) { driver.lock(); }
+        explicit Lock(SX1278Common& driver) : driver(driver) { driver.lock(); }
 
         ~Lock() { driver.unlock(); }
 
     private:
-        SX1278Common &driver;
+        SX1278Common& driver;
     };
 
     /**
@@ -161,7 +161,7 @@ protected:
     class LockMode
     {
     public:
-        LockMode(SX1278Common &driver, Lock &lock, Mode mode,
+        LockMode(SX1278Common& driver, Lock& lock, Mode mode,
                  DioMapping mapping, InterruptTrigger dio1_trigger,
                  bool set_tx_frontend_on = false,
                  bool set_rx_frontend_on = false)
@@ -175,8 +175,8 @@ protected:
         ~LockMode() { driver.unlockMode(old_state); }
 
     private:
-        SX1278Common &driver;
-        Lock &lock;
+        SX1278Common& driver;
+        Lock& lock;
         DeviceState old_state;
     };
 
@@ -192,7 +192,7 @@ protected:
     /**
      * @brief Wait for generic irq.
      */
-    IrqFlags waitForIrq(LockMode &guard, IrqFlags set_irq, IrqFlags reset_irq,
+    IrqFlags waitForIrq(LockMode& guard, IrqFlags set_irq, IrqFlags reset_irq,
                         bool unlock = false);
 
     /**
@@ -200,7 +200,7 @@ protected:
      *
      * USE ONLY DURING INITIALIZATION! BAD THINGS *HAVE* HAPPENED DUE TO THIS!
      */
-    IrqFlags waitForIrqBusy(LockMode &guard, IrqFlags set_irq,
+    IrqFlags waitForIrqBusy(LockMode& guard, IrqFlags set_irq,
                             IrqFlags reset_irq, int timeout);
 
     /**
@@ -216,15 +216,15 @@ protected:
      */
     IrqFlags checkForIrqAndReset(IrqFlags set_irq, IrqFlags reset_irq);
 
-    ISX1278Frontend &getFrontend();
+    ISX1278Frontend& getFrontend();
 
-    SPISlave &getSpiSlave();
+    SPISlave& getSpiSlave();
 
 private:
     void enableIrqs();
     void disableIrqs();
 
-    bool waitForIrqInner(LockMode &guard, bool unlock);
+    bool waitForIrqInner(LockMode& guard, bool unlock);
 
     DeviceState lockMode(Mode mode, DioMapping mapping,
                          InterruptTrigger dio1_trigger, bool set_tx_frontend_on,

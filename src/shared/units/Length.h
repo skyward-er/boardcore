@@ -37,7 +37,7 @@ template <class Ratio = std::ratio<1>>
 using Length = Unit<UnitKind::Length, Ratio>;
 
 template <class ToLength, class FromLength>
-ToLength length_cast(FromLength const &from)
+ToLength length_cast(FromLength const& from)
 {
     return ToLength(from);
 }

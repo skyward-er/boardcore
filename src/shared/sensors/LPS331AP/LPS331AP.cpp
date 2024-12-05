@@ -33,9 +33,7 @@ LPS331AP::LPS331AP(I2C& bus, ODR odr) : bus(bus), odr(odr) {}
 bool LPS331AP::init()
 {
     if (!checkWhoAmI())
-    {
         return false;
-    }
 
     uint8_t ctrlReg1 = 0;
     ctrlReg1 |= 0x80;  // Active mode
@@ -43,7 +41,6 @@ bool LPS331AP::init()
 
     if (!bus.writeRegister(slaveConfig, REG_CTRL_REG1, ctrlReg1))
     {
-
         lastError = SensorErrors::BUS_FAULT;
         return false;
     }

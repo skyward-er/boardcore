@@ -75,9 +75,7 @@ TEST_CASE("Packet tests")
         REQUIRE(p.getMsgCount() == 0);
         // REQUIRE(p.dump(buf) == 0);
         for (int i = 0; i < BUF_LEN; i++)
-        {
             REQUIRE(buf[i] == 0);
-        }
     }
 
     SECTION("Adding stuff to packet")

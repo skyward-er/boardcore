@@ -76,7 +76,7 @@ void setupBoard() {}
 #error "Target not supported"
 #endif
 
-Wiz5500 *wiz = nullptr;
+Wiz5500* wiz = nullptr;
 
 #ifdef INTN_IRQ
 void __attribute__((used)) INTN_IRQ()
@@ -95,7 +95,7 @@ void socket0SendLoop()
         size_t len = sprintf(msg, "Suca palle (DIO0) (0 %d)\n", i);
 
         printf("[wiz5500] Sending though socket 0...\n");
-        wiz->send(0, reinterpret_cast<uint8_t *>(msg), len);
+        wiz->send(0, reinterpret_cast<uint8_t*>(msg), len);
         Thread::sleep(2000);
         i += 1;
     }
@@ -107,7 +107,7 @@ void socket0RecvLoop()
     {
         char msg[1024];
         ssize_t len =
-            wiz->recv(0, reinterpret_cast<uint8_t *>(msg), sizeof(msg));
+            wiz->recv(0, reinterpret_cast<uint8_t*>(msg), sizeof(msg));
 
         if (len != -1)
         {
@@ -149,7 +149,7 @@ void socket1SendLoop()
         size_t len = sprintf(msg, "Suca palle (DIO0) (1 %d)\n", i);
 
         printf("[wiz5500] Sending though socket 1...\n");
-        wiz->send(1, reinterpret_cast<uint8_t *>(msg), len);
+        wiz->send(1, reinterpret_cast<uint8_t*>(msg), len);
         Thread::sleep(1333);
         i += 1;
     }
@@ -161,7 +161,7 @@ void socket1RecvLoop()
     {
         char msg[1024];
         ssize_t len =
-            wiz->recv(1, reinterpret_cast<uint8_t *>(msg), sizeof(msg));
+            wiz->recv(1, reinterpret_cast<uint8_t*>(msg), sizeof(msg));
 
         if (len != -1)
         {
@@ -199,7 +199,7 @@ void socket2SendLoop()
         size_t len = sprintf(msg, "Suca palle (DIO0) (2 %d)\n", i);
 
         printf("[wiz5500] Sending though socket 2...\n");
-        wiz->send(2, reinterpret_cast<uint8_t *>(msg), len);
+        wiz->send(2, reinterpret_cast<uint8_t*>(msg), len);
         Thread::sleep(1666);
         i += 1;
     }
@@ -212,7 +212,7 @@ void socket2RecvLoop()
         char msg[1024];
         WizIp dst_ip;
         uint16_t dst_port;
-        ssize_t len = wiz->recvfrom(2, reinterpret_cast<uint8_t *>(msg),
+        ssize_t len = wiz->recvfrom(2, reinterpret_cast<uint8_t*>(msg),
                                     sizeof(msg), dst_ip, dst_port);
 
         std::cout << dst_ip << " " << dst_port << std::endl;

@@ -54,7 +54,6 @@ namespace Boardcore
 template <unsigned int len>
 class Packet
 {
-
 public:
     /**
      * @brief Reserves a fixed length for the packet.
@@ -328,10 +327,14 @@ public:
         Lock<FastMutex> l(mutex);
 
         if (!buffer.isEmpty())
+        {
             return buffer.last().isReady() ? buffer.count()
                                            : buffer.count() - 1;
+        }
         else
+        {
             return 0;
+        }
     }
 
     /**

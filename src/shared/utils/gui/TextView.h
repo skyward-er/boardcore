@@ -159,13 +159,9 @@ protected:
             if (c >= font.getStartChar() && c <= font.getEndChar())
             {
                 if (font.isFixedWidth())
-                {
                     w += font.getWidth();
-                }
                 else
-                {
                     w += font.getWidths()[c - font.getStartChar()];
-                }
             }
         }
         return w;

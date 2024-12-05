@@ -61,7 +61,7 @@ public:
         GAIN_32 = 0x9,
     };
 
-    MAX31856(SPIBusInterface &bus, miosix::GpioPin cs,
+    MAX31856(SPIBusInterface& bus, miosix::GpioPin cs,
              SPIBusConfig config   = getDefaultSPIConfig(),
              ThermocoupleType type = ThermocoupleType::K_TYPE);
 

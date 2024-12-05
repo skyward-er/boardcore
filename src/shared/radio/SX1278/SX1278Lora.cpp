@@ -130,13 +130,11 @@ struct ErrataRegistersValues
     }
 };
 
-SX1278Lora::Error SX1278Lora::init(const Config &config)
+SX1278Lora::Error SX1278Lora::init(const Config& config)
 {
     // First probe for the device
     if (!checkVersion())
-    {
         return Error::BAD_VALUE;
-    }
 
     Error err;
     if ((err = configure(config)) != Error::NONE)
@@ -162,7 +160,7 @@ bool SX1278Lora::checkVersion()
     }
 }
 
-SX1278Lora::Error SX1278Lora::configure(const Config &config)
+SX1278Lora::Error SX1278Lora::configure(const Config& config)
 {
     // Check that the configuration is actually valid
     bool pa_boost = getFrontend().isOnPaBoost();
@@ -250,17 +248,11 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
 
         // Setup reg over-current protection
         if (config.ocp == 0)
-        {
             spi.writeRegister(REG_OCP, RegOcp::make(0, false));
-        }
         else if (ocp <= 120)
-        {
             spi.writeRegister(REG_OCP, RegOcp::make((ocp - 45) / 5, true));
-        }
         else
-        {
             spi.writeRegister(REG_OCP, RegOcp::make((ocp + 30) / 10, true));
-        }
 
         // Setup generic configuration registers
         spi.writeRegister(REG_MODEM_CONFIG_1,
@@ -281,11 +273,15 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
 
         // Setup weird errata registers (see errata note)
         if (errata_values.reg_high_bw_optimize_1 != -1)
+        {
             spi.writeRegister(REG_HIGH_BW_OPTIMIZE_1,
                               errata_values.reg_high_bw_optimize_1);
+        }
         if (errata_values.reg_high_bw_optimize_2 != -1)
+        {
             spi.writeRegister(REG_HIGH_BW_OPTIMIZE_2,
                               errata_values.reg_high_bw_optimize_2);
+        }
         if (errata_values.reg_if_freq_1 != -1)
             spi.writeRegister(REG_IF_FREQ_1, errata_values.reg_if_freq_1);
         if (errata_values.reg_if_freq_2 != -1)
@@ -295,7 +291,7 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     return Error::NONE;
 }
 
-ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
+ssize_t SX1278Lora::receive(uint8_t* pkt, size_t max_len)
 {
     Lock guard(*this);
 
@@ -316,14 +312,16 @@ ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
     if (len > max_len ||
         (crc_enabled &&
          checkForIrqAndReset(RegIrqFlags::PAYLOAD_CRC_ERROR, 0) != 0))
+    {
         return -1;
+    }
 
     // Finally read the contents of the fifo
     readFifo(FIFO_RX_BASE_ADDR, pkt, len);
     return len;
 }
 
-bool SX1278Lora::send(uint8_t *pkt, size_t len)
+bool SX1278Lora::send(uint8_t* pkt, size_t len)
 {
     if (len > MTU)
         return false;
@@ -393,14 +391,14 @@ void SX1278Lora::enterLoraMode()
     miosix::Thread::sleep(1);
 }
 
-void SX1278Lora::readFifo(uint8_t addr, uint8_t *dst, uint8_t size)
+void SX1278Lora::readFifo(uint8_t addr, uint8_t* dst, uint8_t size)
 {
     SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.readRegisters(REG_FIFO, dst, size);
 }
 
-void SX1278Lora::writeFifo(uint8_t addr, uint8_t *src, uint8_t size)
+void SX1278Lora::writeFifo(uint8_t addr, uint8_t* src, uint8_t size)
 {
     SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);

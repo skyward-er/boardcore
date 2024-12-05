@@ -100,9 +100,7 @@ protected:
                 array<int, 30> scan;
 
                 for (uint16_t i = 0; i < response.getCommandDataLength(); i++)
-                {
                     scan[i] = -(int)(*(response.getCommandDataPointer() + i));
-                }
 
                 gui->screenEnergy.updateScan(scan);
 
@@ -218,7 +216,6 @@ void onStartButtonClick(View* btn __attribute__((unused)), Interaction action)
 {
     if (action == Interaction::CLICK)
     {
-
         XbeeConfig cfg = gui->screenConfig.config;
         cfg.timestamp  = Kernel::getOldTick();
         logger.log(cfg);
@@ -242,19 +239,13 @@ void onStopButtonClick(View* btn, Interaction action)
         TextView* tvBtn = dynamic_cast<TextView*>(btn);
 
         if (tvBtn)
-        {
             tvBtn->setText("Stopping...");
-        }
 
         if (trans)
-        {
             trans->stop();
-        }
 
         if (energyScanner.isRunning())
-        {
             energyScanner.stop();
-        }
 
         logger.stop();
 
@@ -271,9 +262,7 @@ void onMarkButtonClick(View* btn __attribute__((unused)), Interaction action)
 
         TextView* tvBtn = dynamic_cast<TextView*>(btn);
         if (tvBtn)
-        {
             tvBtn->setText("Mark Log (" + to_string(markCounter) + ")");
-        }
     }
 }
 
@@ -293,9 +282,7 @@ void startTransceiver(XbeeConfig config)
                                 config.sendInterval);
 
     if (!config.txEnabled)
-    {
         trans->disableSender();
-    }
 
     trans->start();
 }
@@ -352,7 +339,5 @@ void configure()
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (xbee)
-    {
         xbee->handleATTNInterrupt();
-    }
 }

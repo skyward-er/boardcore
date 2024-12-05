@@ -33,8 +33,8 @@ struct BMP280Data : public TemperatureData, public PressureData
 
     BMP280Data(uint64_t timestamp, float temperature, float pressure,
                float humidity)
-        : TemperatureData{timestamp, temperature}, PressureData{timestamp,
-                                                                pressure}
+        : TemperatureData{timestamp, temperature},
+          PressureData{timestamp, pressure}
 
     {
     }
@@ -47,8 +47,7 @@ struct BMP280Data : public TemperatureData, public PressureData
     void print(std::ostream& os) const
     {
         os << temperatureTimestamp << "," << temperature << ","
-           << pressureTimestamp << "," << pressure << ","
-           << "\n";
+           << pressureTimestamp << "," << pressure << "," << "\n";
     }
 };
 

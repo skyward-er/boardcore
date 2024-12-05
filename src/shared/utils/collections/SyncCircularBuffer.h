@@ -126,9 +126,7 @@ public:
     {
         Lock<FastMutex> l(mutex);
         while (buffer.isEmpty())
-        {
             cv.wait(l);
-        }
     }
 
     /**

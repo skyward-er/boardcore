@@ -41,15 +41,17 @@ const uint8_t btnUserId = 1;
  * button is pressed for a long time, resets the minimum and maximum values of
  * the recorded weights
  */
-void buttonCallback(ButtonEvent btnPress, MBLoadCell *loadcell)
+void buttonCallback(ButtonEvent btnPress, MBLoadCell* loadcell)
 {
     if (btnPress == ButtonEvent::PRESSED)
+    {
         TRACE(
             "## MAX: %.2f [Kg] (ts: %.3f)\t##\tMIN: %.2f [Kg] (ts: %.3f) ##\n",
             loadcell->getMaxWeight().load,
             loadcell->getMaxWeight().loadTimestamp / 1000000.0,
             loadcell->getMinWeight().load,
             loadcell->getMinWeight().load / 1000000.0);
+    }
 
     if (btnPress == ButtonEvent::LONG_PRESS)
         loadcell->resetMaxMinWeights();

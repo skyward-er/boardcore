@@ -165,7 +165,9 @@ void step()
     nas->predictGyro(angularSpeed);
     if (gpsPos[0] < 1e3 && gpsPos[0] > -1e3 && gpsPos[1] < 1e3 &&
         gpsPos[1] > -1e3)
+    {
         nas->predictAcc(acceleration);
+    }
 
     // Correct step
     magneticField.normalize();

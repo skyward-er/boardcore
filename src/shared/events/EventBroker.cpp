@@ -86,9 +86,7 @@ uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
     }
 
     if (!added)  // In case this is the last/only event in the list
-    {
         delayedEvents.push_back(dev);
-    }
 
     return dev.schedId;
 }
@@ -123,9 +121,7 @@ void EventBroker::unsubscribe(EventHandlerBase* subscriber)
 {
     Lock<FastMutex> lock(mtxSubscribers);
     for (auto it = subscribers.begin(); it != subscribers.end(); it++)
-    {
         deleteSubscriber(it->second, subscriber);
-    }
 }
 
 void EventBroker::clearDelayedEvents()
@@ -162,9 +158,7 @@ void EventBroker::run()
         {
             // If a deadline expires earlier, sleep until the deadline instead
             if (delayedEvents.front().deadline < sleepUntil)
-            {
                 sleepUntil = delayedEvents.front().deadline;
-            }
         }
 
         {
@@ -183,16 +177,10 @@ void EventBroker::deleteSubscriber(vector<EventHandlerBase*>& subs,
     auto it = subs.begin();
 
     while (it != subs.end())
-    {
         if (*it == subscriber)
-        {
             it = subs.erase(it);
-        }
         else
-        {
             ++it;
-        }
-    }
 }
 
 }  // namespace Boardcore

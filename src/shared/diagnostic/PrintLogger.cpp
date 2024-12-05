@@ -55,9 +55,7 @@ static string truncateFileName(const string& name, int depth = 0)
 
     // Now traverse the path until we reach the end or the required depth
     for (int i = 0; i < depth && start != string::npos; i++)
-    {
         start = name.find_last_of("\\/", start - 1);
-    }
 
     // Truncate the path if needed
     return start == string::npos
@@ -143,12 +141,8 @@ void PrintLogger::vlogAsync(uint8_t level, const string& function,
 void Logging::log(const LogRecord& record)
 {
     for (auto& s : sinks)
-    {
         if (s->isEnabled())
-        {
             s->log(record);
-        }
-    }
 }
 
 void Logging::logAsync(const LogRecord& record) { asyncLog.log(record); }
@@ -173,9 +167,7 @@ void Logging::AsyncLogger::run()
         {
             Lock<FastMutex> l(mutex);
             while (records.isEmpty())
-            {
                 cv.wait(mutex);
-            }
 
             rec = records.pop();
         }

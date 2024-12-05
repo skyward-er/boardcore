@@ -103,13 +103,9 @@ int main()
 
     // Self test
     if (ads1118.selfTest())
-    {
         TRACE("Self test successful!\n");
-    }
     else
-    {
         TRACE("Self test failed :( error: %d\n", ads1118.getLastError());
-    }
 
     // Read the two channels indipendently
     TRACE("\nNow reading the two channels with 'readInputAndWait()'\n");

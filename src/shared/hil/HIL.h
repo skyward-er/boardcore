@@ -53,10 +53,10 @@ public:
      * situation.
      * @param simulationPeriod Period of the simulation [ms].
      */
-    HIL(HILTransceiver<FlightPhases, SimulatorData, ActuatorData>
-            *hilTransceiver,
-        HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
-            *hilPhasesManager,
+    HIL(HILTransceiver<FlightPhases, SimulatorData, ActuatorData>*
+            hilTransceiver,
+        HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>*
+            hilPhasesManager,
         std::function<ActuatorData()> updateActuatorData, int simulationPeriod)
         : Boardcore::ActiveObject(Boardcore::STACK_MIN_FOR_SKYWARD,
                                   miosix::PRIORITY_MAX - 1),
@@ -106,13 +106,11 @@ public:
     {
         LOG_INFO(logger, "Waiting for simulation to start...");
         while (!hilPhasesManager->isSimulationRunning())
-        {
             miosix::Thread::sleep(1);
-        }
     }
 
-    void registerToFlightPhase(const FlightPhases &flag,
-                               const PhasesCallback &func)
+    void registerToFlightPhase(const FlightPhases& flag,
+                               const PhasesCallback& func)
     {
         hilPhasesManager->registerToFlightPhase(flag, func);
     }
@@ -124,15 +122,15 @@ public:
         return hilTransceiver->getTimestampSimulatorData();
     }
 
-    const SimulatorData *getSensorData() const
+    const SimulatorData* getSensorData() const
     {
         return hilTransceiver->getSensorData();
     }
 
 protected:
-    HILTransceiver<FlightPhases, SimulatorData, ActuatorData> *hilTransceiver;
-    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>
-        *hilPhasesManager;
+    HILTransceiver<FlightPhases, SimulatorData, ActuatorData>* hilTransceiver;
+    HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>*
+        hilPhasesManager;
 
 private:
     void run() override

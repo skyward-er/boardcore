@@ -300,7 +300,9 @@ void Logger::writeThread()
                 stats.lastWriteError = ferror(file);
             }
             else
+            {
                 stats.buffersWritten++;
+            }
 
             auto interval = system_clock::now() - start;
             stats.averageWriteTime =

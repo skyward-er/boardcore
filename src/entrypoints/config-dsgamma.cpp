@@ -85,13 +85,9 @@ int main()
 
         bool configStatus = gamma.configure(newConf);
         if (configStatus == true)
-        {
             printf("New configuration set!\n");
-        }
         else
-        {
             printf("Failed to set new configuration!\n");
-        }
         Thread::sleep(500);
     }
 
@@ -104,8 +100,6 @@ int main()
 void waitForButton()
 {
     while (1)
-    {
         if (button::value() == 1)
             break;  // Wait for button
-    }
 }

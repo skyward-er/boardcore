@@ -43,7 +43,7 @@ namespace Boardcore
 class MAX31855 : public Sensor<TemperatureData>
 {
 public:
-    MAX31855(SPIBusInterface &bus, miosix::GpioPin cs,
+    MAX31855(SPIBusInterface& bus, miosix::GpioPin cs,
              SPIBusConfig config = getDefaultSPIConfig());
 
     static SPIBusConfig getDefaultSPIConfig();

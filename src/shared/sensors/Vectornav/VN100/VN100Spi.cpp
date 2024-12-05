@@ -78,9 +78,7 @@ bool VN100Spi::checkModelNumber()
     int i = 0;
     char buf[VN100SpiDefs::MODEL_NUMBER_SIZE];
     for (i = 0; i < VN100SpiDefs::MODEL_NUMBER_SIZE; ++i)
-    {
         buf[i] = 0;
-    }
 
     VN100SpiDefs::VNErrors err = readRegister(VN100SpiDefs::REG_MODEL_NUMBER,
                                               reinterpret_cast<uint8_t*>(buf),

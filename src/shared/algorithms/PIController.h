@@ -32,7 +32,6 @@ namespace Boardcore
  * */
 class PIController
 {
-
 public:
     PIController(float Kp, float Ki, float Ts = 1,
                  float uMin = -std::numeric_limits<float>::infinity(),

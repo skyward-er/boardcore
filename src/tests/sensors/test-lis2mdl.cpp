@@ -68,9 +68,7 @@ int main()
 
     printf("Doing self test!\n");
     if (!sensor.selfTest())
-    {
         printf("Error: selfTest() returned false!\n");
-    }
     printf("selfTest returned true\n");
     printf("Now printing some sensor data:\n");
 

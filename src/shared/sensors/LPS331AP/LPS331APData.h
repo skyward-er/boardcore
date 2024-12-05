@@ -29,14 +29,12 @@ namespace Boardcore
 
 struct LPS331APData : public PressureData, TemperatureData
 {
-
     LPS331APData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
     LPS331APData(uint64_t pressureTimestamp, float pressure,
                  uint64_t temperatureTimestamp, float temperature)
-        : PressureData{pressureTimestamp, pressure}, TemperatureData{
-                                                         temperatureTimestamp,
-                                                         temperature}
+        : PressureData{pressureTimestamp, pressure},
+          TemperatureData{temperatureTimestamp, temperature}
     {
     }
 

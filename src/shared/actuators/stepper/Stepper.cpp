@@ -45,26 +45,18 @@ Stepper::Stepper(miosix::GpioPin stepPin, miosix::GpioPin directionPin,
 void Stepper::enable()
 {
     if (pinConfig == PinConfiguration::COMMON_CATHODE)
-    {
         enablePin.low();
-    }
     else
-    {
         enablePin.high();
-    }
     enabled = true;
 }
 
 void Stepper::disable()
 {
     if (pinConfig == PinConfiguration::COMMON_CATHODE)
-    {
         enablePin.high();
-    }
     else
-    {
         enablePin.low();
-    }
     enabled = false;
 }
 
@@ -138,24 +130,16 @@ void Stepper::move(int16_t steps)
     for (int i = 0; i < stepsAbs; i++)
     {
         if (pinConfig == PinConfiguration::COMMON_CATHODE)
-        {
             stepPin.high();
-        }
         else
-        {
             stepPin.low();
-        }
 
         miosix::delayUs(halfStepDelay);
 
         if (pinConfig == PinConfiguration::COMMON_CATHODE)
-        {
             stepPin.low();
-        }
         else
-        {
             stepPin.high();
-        }
         miosix::delayUs(halfStepDelay);
     }
 

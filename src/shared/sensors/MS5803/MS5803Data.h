@@ -42,14 +42,12 @@ struct MS5803CalibrationData
 
 struct MS5803Data : public PressureData, TemperatureData
 {
-
     MS5803Data() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
     MS5803Data(uint64_t pressureTimestamp, float pressure,
                uint64_t temperatureTimestamp, float temperature)
-        : PressureData{pressureTimestamp, pressure}, TemperatureData{
-                                                         temperatureTimestamp,
-                                                         temperature}
+        : PressureData{pressureTimestamp, pressure},
+          TemperatureData{temperatureTimestamp, temperature}
     {
     }
 

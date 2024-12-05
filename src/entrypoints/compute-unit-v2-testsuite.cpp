@@ -33,10 +33,10 @@ using namespace miosix;
 struct PinDef
 {
     GpioPin pin;
-    const char *gpio_name;
-    const char *conan_name;
+    const char* gpio_name;
+    const char* conan_name;
     // ADRIANOOOOOOOOOOOOOOOO
-    const char *breakout_v1_name;
+    const char* breakout_v1_name;
 };
 
 std::array<PinDef, 53> PIN_DEFS{{
@@ -271,7 +271,7 @@ void sd_test()
     puts("*** Starting SD test...");
     bool ok = true;
 
-    FILE *f = fopen("/sd/test.bin", "wb");
+    FILE* f = fopen("/sd/test.bin", "wb");
     if (f == NULL)
     {
         puts("Failed to open test.bin");
@@ -299,9 +299,7 @@ void sd_test()
     }
 
     if (f != NULL)
-    {
         fclose(f);
-    }
 
     if (ok)
     {
@@ -344,37 +342,29 @@ void sd_test()
     }
 
     if (f != NULL)
-    {
         fclose(f);
-    }
 
     if (ok)
-    {
         puts("*** SD test succesfull!");
-    }
     else
-    {
         puts("*** SD test failed!");
-    }
 }
 
 void xram_test()
 {
-    volatile uint16_t *const START = (volatile uint16_t *)0xd0000000;
-    volatile uint16_t *const END   = START + (16 * 1024 * 1024);
+    volatile uint16_t* const START = (volatile uint16_t*)0xd0000000;
+    volatile uint16_t* const END   = START + (16 * 1024 * 1024);
 
     // First clear the whole RAM
-    for (volatile uint16_t *iter = START; iter != END; iter++)
-    {
+    for (volatile uint16_t* iter = START; iter != END; iter++)
         *iter = 0;
-    }
 
     __DMB();  // Flush cache
 
     puts("*** Starting basic XRAM test...");
     bool ok = true;
 
-    for (volatile uint16_t *iter = START; iter != END; iter++)
+    for (volatile uint16_t* iter = START; iter != END; iter++)
     {
         // Set a marker value at this address
         *iter = 0xffff;
@@ -392,13 +382,9 @@ void xram_test()
     }
 
     if (ok)
-    {
         puts("*** XRAM basic test succesfull!");
-    }
     else
-    {
         puts("*** XRAM basic test failed!");
-    }
 
     puts("*** Starting XRAM mirroring test...");
     ok = true;
@@ -406,20 +392,18 @@ void xram_test()
     // Generate addresses to test every line
     for (int i = 1; i < 25; i++)
     {
-        volatile uint16_t *other =
-            (volatile uint16_t *)((size_t)START | (1 << i));
+        volatile uint16_t* other =
+            (volatile uint16_t*)((size_t)START | (1 << i));
 
         // Write something
         *other = 0xdead;
         __DMB();  // Flush cache
 
-        for (volatile uint16_t *iter = START; iter != END; iter++)
+        for (volatile uint16_t* iter = START; iter != END; iter++)
         {
             // Skip the written address
             if (iter == other)
-            {
                 continue;
-            }
 
             // Check for mirroring
             if (*iter == 0xdead)
@@ -435,31 +419,25 @@ void xram_test()
     }
 
     if (ok)
-    {
         puts("*** XRAM mirror test succesfull!");
-    }
     else
-    {
         puts("*** XRAM mirror test failed!");
-    }
 }
 
 void pin_continuity_test()
 {
-    for (auto &a : PIN_DEFS)
-    {
+    for (auto& a : PIN_DEFS)
         a.pin.mode(Mode::INPUT_PULL_DOWN);
-    }
 
     puts("*** Starting pin continuity test...");
     bool ok = true;
 
     // Ok now start testing
-    for (auto &a : PIN_DEFS)
+    for (auto& a : PIN_DEFS)
     {
         a.pin.mode(Mode::OUTPUT);
         a.pin.high();
-        for (auto &b : PIN_DEFS)
+        for (auto& b : PIN_DEFS)
         {
             if (a.pin.getNumber() == b.pin.getNumber() &&
                 a.pin.getPort() == b.pin.getPort())
@@ -479,18 +457,14 @@ void pin_continuity_test()
     }
 
     if (ok)
-    {
         puts("*** Pin continuity test succesfull!");
-    }
     else
-    {
         puts("*** Pin continuity test failed!");
-    }
 }
 
 void pin_semi_test()
 {
-    for (auto &a : PIN_DEFS)
+    for (auto& a : PIN_DEFS)
     {
         a.pin.mode(Mode::OUTPUT);
         a.pin.low();
@@ -523,7 +497,7 @@ void pin_semi_test()
 
     for (size_t i = 0; i < PIN_DEFS.size(); i++)
     {
-        PinDef &a = PIN_DEFS[i];
+        PinDef& a = PIN_DEFS[i];
 
         // Pause waiting for keys
         while (getchar() != '\n')

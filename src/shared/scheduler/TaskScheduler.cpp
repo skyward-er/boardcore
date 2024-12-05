@@ -68,9 +68,7 @@ size_t TaskScheduler::addTask(function_t function, nanoseconds period,
     }
 
     if (policy == Policy::ONE_SHOT)
-    {
         startTime += period;
-    }
 
     // Insert a new task with the given parameters
     tasks.emplace_back(function, period.count(), policy,
@@ -80,9 +78,7 @@ size_t TaskScheduler::addTask(function_t function, nanoseconds period,
     // Only add the task to the agenda if the scheduler is running
     // Otherwise, the agenda will be populated when the scheduler is started
     if (isRunning())
-    {
         agenda.emplace(id, startTime.time_since_epoch().count());
-    }
     condvar.broadcast();  // Signals the run thread
 
     return id;
@@ -139,9 +135,7 @@ bool TaskScheduler::start()
     // This check is necessary to prevent task normalization if the scheduler is
     // already stopped
     if (running)
-    {
         return false;
-    }
 
     // Populate the agenda with the tasks we have so far
     populateAgenda();
@@ -167,9 +161,7 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
     {
         const Task& task = tasks[id];
         if (task.enabled)
-        {
             result.push_back(fromTaskIdPairToStatsResult(task, id));
-        }
     }
 
     return result;
@@ -205,15 +197,11 @@ void TaskScheduler::run()
     while (true)
     {
         while (agenda.empty() && !shouldStop())
-        {
             condvar.wait(mutex);
-        }
 
         // Exit if the ActiveObject has been stopped
         if (shouldStop())
-        {
             return;
-        }
 
         int64_t startTime = miosix::getTime();
         Event nextEvent   = agenda.top();

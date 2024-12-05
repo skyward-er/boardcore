@@ -54,9 +54,7 @@ public:
     void update()
     {
         if (running)
-        {
             step();
-        }
     }
 
     bool isRunning() { return running; }

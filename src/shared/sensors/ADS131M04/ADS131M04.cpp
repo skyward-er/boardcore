@@ -32,8 +32,8 @@ using namespace Boardcore::ADS131M04Defs;
 namespace Boardcore
 {
 
-ADS131M04::ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
-                     SPIBusConfig spiConfig, const Config &config)
+ADS131M04::ADS131M04(SPIBusInterface& bus, miosix::GpioPin cs,
+                     SPIBusConfig spiConfig, const Config& config)
     : spiSlave(bus, cs, spiConfig), config(config)
 {
     // Impose the correct spi mode
@@ -77,19 +77,13 @@ bool ADS131M04::reset()
 void ADS131M04::applyConfig(Config config)
 {
     for (int i = 0; i < CHANNELS_NUM; i++)
-    {
         applyChannelConfig(static_cast<Channel>(i), config.channelsConfig[i]);
-    }
 
     setOversamplingRatio(config.oversamplingRatio);
     if (config.globalChopModeEnabled)
-    {
         enableGlobalChopMode();
-    }
     else
-    {
         disableGlobalChopMode();
-    }
 
     // Save the newly applied configuration
     this->config = config;
@@ -191,9 +185,7 @@ bool ADS131M04::selfTest()
         }
 
         for (int j = 0; j < CHANNELS_NUM; j++)
-        {
             averageValues[j] += rawValues[j];
-        }
 
         realSampleCount++;
     }
@@ -234,9 +226,7 @@ bool ADS131M04::selfTest()
 
     // Connect all channels to the negative DC test signal
     for (int i = 0; i < CHANNELS_NUM; i++)
-    {
         setChannelInput(static_cast<Channel>(i), Input::NEGATIVE_DC_TEST);
-    }
 
     // Take some samples
     realSampleCount = 0;
@@ -254,9 +244,7 @@ bool ADS131M04::selfTest()
         }
 
         for (int j = 0; j < CHANNELS_NUM; j++)
-        {
             averageValues[j] += rawValues[j];
-        }
 
         realSampleCount++;
     }
@@ -294,9 +282,7 @@ bool ADS131M04::selfTest()
 
     // Reset channels input to default
     for (int i = 0; i < CHANNELS_NUM; i++)
-    {
         setChannelInput(static_cast<Channel>(i), Input::DEFAULT);
-    }
 
     // Reset to previous configuration
     applyConfig(config);
@@ -378,13 +364,9 @@ void ADS131M04::setChannelGain(Channel channel, double gain)
 {
     // If the user passes a value outside the range [0, 2] we cap it.
     if (gain < 0)
-    {
         gain = 0;
-    }
     else if (gain > 2)
-    {
         gain = 2;
-    }
 
     // The ADS131M04 corrects for gain errors by multiplying the ADC conversion
     // result using the gain calibration registers.
@@ -612,7 +594,7 @@ void ADS131M04::changeRegister(Register reg, uint16_t newValue, uint16_t mask)
     writeRegister(reg, regValue);
 }
 
-void ADS131M04::sendCommand(SPITransaction &transaction, Command command,
+void ADS131M04::sendCommand(SPITransaction& transaction, Command command,
                             uint8_t data[FULL_FRAME_SIZE])
 {
     // All commands (a part from read and write) needs the full 10 words

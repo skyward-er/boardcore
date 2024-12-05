@@ -57,9 +57,7 @@ void RegistryFrontend::forEach(const EntryFunc& predicate)
 {
     const std::lock_guard<std::recursive_mutex> lock(mutexForRegistry);
     for (auto& it : configuration)
-    {
         predicate(it.first, it.second);
-    }
 }
 
 RegistryError RegistryFrontend::load()

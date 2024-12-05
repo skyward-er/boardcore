@@ -148,7 +148,6 @@ bool LIS3MDL::selfTest()
 
 bool LIS3MDL::applyConfig(Config config)
 {
-
     SPITransaction spi(slave);
     uint8_t reg = 0, err = 0;
 
@@ -156,9 +155,7 @@ bool LIS3MDL::applyConfig(Config config)
 
     // CTRL_REG1
     if (config.temperatureDivider != 0)
-    {
         reg = ENABLE_TEMPERATURE;
-    }
     reg |= config.odr;
 
     // odr <= 80Hz

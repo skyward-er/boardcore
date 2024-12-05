@@ -67,9 +67,7 @@ inline bool setChannelMask(Xbee& xbee, bool channels[30],
     uint32_t val = 0;
 
     for (int i = 0; i < 30; i++)
-    {
         val &= ((uint32_t)channels[i]) << i;
-    }
 
     return setChannelMask(xbee, val, timeout);
 }

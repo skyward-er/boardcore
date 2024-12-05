@@ -27,10 +27,8 @@ int main()
 {
     initBoard();
     if (!initRadio())
-    {
         while (1)
             ;
-    }
 
     // Initialize backgrounds threads
     spawnThreads();

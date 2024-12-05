@@ -173,9 +173,7 @@ void NAS::correctBaro(const float pressure)
 
     // If not invertible, don't do the correction and return
     if (S < 1e-3)
-    {
         return;
-    }
 
     float y_hat =
         Aeroutils::relPressure(reference.refAltitude - x(2),
@@ -236,9 +234,7 @@ void NAS::correctGPS(const Vector4f& gps)
 
     // If not invertible, don't do the correction and return
     if (S.determinant() < 1e-3)
-    {
         return;
-    }
 
     Matrix<float, 6, 4> K = Pl * H_gps_tr * S.inverse();
 
@@ -357,9 +353,7 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
 
     // If a nan is generated, don't do the correction
     if (isnan(H(0, 5)))
-    {
         return;
-    }
 
     float R = config.SIGMA_PITOT * config.SIGMA_PITOT;
 
@@ -368,9 +362,7 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
 
     // If not invertible, don't do the correction and return
     if (S < 1e-3)
-    {
         return;
-    }
 
     float y_hat =
         std::pow(temp, (GAMMA_AIR / (GAMMA_AIR - 1))) - 1;  // pRatio_model

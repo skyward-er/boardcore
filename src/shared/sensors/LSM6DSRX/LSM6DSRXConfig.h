@@ -29,7 +29,6 @@ namespace Boardcore
 
 struct LSM6DSRXConfig
 {
-
     /**
      * @brief Output data rate definitions for the accelerometer.
      *

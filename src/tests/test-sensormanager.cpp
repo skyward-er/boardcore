@@ -40,7 +40,6 @@ using namespace std;
 // Data produced by the MySensor sensor.
 struct MySensorData : public PressureData, public TemperatureData
 {
-
     MySensorData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
     MySensorData(float p, float t)
@@ -95,7 +94,6 @@ private:
 
 struct MySensorDataFIFO : public AccelerometerData, public GyroscopeData
 {
-
     MySensorDataFIFO()
         : AccelerometerData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0},
           GyroscopeData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0}
@@ -166,9 +164,7 @@ public:
     FIFOData getLastSample() override
     {
         if (index < FifoSize - 1)
-        {
             index++;
-        }
 
         TRACE("Index : %d \n", index);
 

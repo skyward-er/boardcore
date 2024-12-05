@@ -233,9 +233,7 @@ private:
             while (i <= (int)packetSize - (int)sizeof(expectedNum))
             {
                 if (memcmp(packet + i, &expectedNum, sizeof(expectedNum)) != 0)
-                {
                     return false;
-                }
                 i += sizeof(expectedNum);
             }
             memcpy(packet + i, &expectedNum, packetSize % sizeof(expectedNum));
@@ -286,13 +284,9 @@ public:
     void start()
     {
         if (senderEnabled)
-        {
             sender->start();
-        }
         if (receiverEnabled)
-        {
             receiver->start();
-        }
     }
 
     void stop()
@@ -317,9 +311,7 @@ private:
         logAPIFrame(frame);
 
         if (frameListener)
-        {
             frameListener(frame);
-        }
 
         if (frame.frameType == Xbee::FTYPE_AT_COMMAND_RESPONSE)
         {
@@ -327,9 +319,7 @@ private:
                 frame.toFrameType<Xbee::ATCommandResponseFrame>();
 
             if (strncmp(at->getATCommand(), "DB", 2) == 0)
-            {
                 receiver->data.RSSI = -*at->getCommandDataPointer();
-            }
 
             if (strncmp(at->getATCommand(), "ER", 2) == 0)
             {
@@ -351,9 +341,7 @@ private:
                 ATCommandFrameLog dest;
                 logged = ATCommandFrameLog::toFrameType(frame, &dest);
                 if (logged)
-                {
                     logger.log(dest);
-                }
                 break;
             }
             case FTYPE_AT_COMMAND_RESPONSE:
@@ -361,9 +349,7 @@ private:
                 ATCommandResponseFrameLog dest;
                 logged = ATCommandResponseFrameLog::toFrameType(frame, &dest);
                 if (logged)
-                {
                     logger.log(dest);
-                }
                 break;
             }
             case FTYPE_MODEM_STATUS:
@@ -371,9 +357,7 @@ private:
                 ModemStatusFrameLog dest;
                 logged = ModemStatusFrameLog::toFrameType(frame, &dest);
                 if (logged)
-                {
                     logger.log(dest);
-                }
                 break;
             }
             case FTYPE_TX_REQUEST:
@@ -381,9 +365,7 @@ private:
                 TXRequestFrameLog dest;
                 logged = TXRequestFrameLog::toFrameType(frame, &dest);
                 if (logged)
-                {
                     logger.log(dest);
-                }
                 break;
             }
             case FTYPE_TX_STATUS:
@@ -391,9 +373,7 @@ private:
                 TXStatusFrameLog dest;
                 logged = TXStatusFrameLog::toFrameType(frame, &dest);
                 if (logged)
-                {
                     logger.log(dest);
-                }
                 break;
             }
             case FTYPE_RX_PACKET_FRAME:
@@ -401,9 +381,7 @@ private:
                 RXPacketFrameLog dest;
                 logged = RXPacketFrameLog::toFrameType(frame, &dest);
                 if (logged)
-                {
                     logger.log(dest);
-                }
                 break;
             }
         }

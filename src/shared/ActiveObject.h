@@ -37,7 +37,6 @@ namespace Boardcore
  */
 class ActiveObject
 {
-
 public:
     /**
      * Constructor. This will create the AO, but will NOT start the thread
@@ -48,7 +47,7 @@ public:
     ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
                  miosix::Priority priority = miosix::MAIN_PRIORITY);
 
-    virtual ~ActiveObject(){};
+    virtual ~ActiveObject() {};
 
     /**
      * @brief Start the thread associated with this active object.
@@ -125,9 +124,7 @@ inline bool ActiveObject::start()
                                         miosix::Thread::JOINABLE);
 
         if (thread == nullptr)
-        {
             running = false;
-        }
 
         return running;
     }

@@ -49,7 +49,7 @@ public:
      * @param revertDirection Whether or not revert the direction signal.
      */
     StepperPWM(
-        CountedPWM &pwm, miosix::GpioPin stepPin, miosix::GpioPin directionPin,
+        CountedPWM& pwm, miosix::GpioPin stepPin, miosix::GpioPin directionPin,
         float speed = 1, float stepAngle = 1.8, bool revertDirection = false,
         uint16_t microStep                = 1,
         PinConfiguration pinConfiguration = PinConfiguration::COMMON_CATHODE,
@@ -93,12 +93,12 @@ public:
 
 private:
     // This class is not copyable!
-    StepperPWM &operator=(const StepperPWM &) = delete;
-    StepperPWM(const StepperPWM &p)           = delete;
+    StepperPWM& operator=(const StepperPWM&) = delete;
+    StepperPWM(const StepperPWM& p)          = delete;
 
     void setDirection();
 
-    CountedPWM &pwm;
+    CountedPWM& pwm;
 };
 
 }  // namespace Boardcore

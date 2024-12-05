@@ -44,7 +44,6 @@ SPIBusConfig MAX31856::getDefaultSPIConfig()
 
 bool MAX31856::init()
 {
-
     // Set thermocouple type
     setThermocoupleType(type);
 

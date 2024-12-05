@@ -114,8 +114,7 @@ struct HSCMRNN015PA_1Data : Boardcore::HSCMRNN015PAData
 
     void print(std::ostream& os) const
     {
-        os << pressureTimestamp << "," << pressure << ","
-           << "\n";
+        os << pressureTimestamp << "," << pressure << "," << "\n";
     }
 };
 
@@ -132,8 +131,7 @@ struct HSCMRNN015PA_2Data : Boardcore::HSCMRNN015PAData
 
     void print(std::ostream& os) const
     {
-        os << pressureTimestamp << "," << pressure << ","
-           << "\n";
+        os << pressureTimestamp << "," << pressure << "," << "\n";
     }
 };
 

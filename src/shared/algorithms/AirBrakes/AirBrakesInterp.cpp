@@ -35,9 +35,9 @@ namespace Boardcore
 
 AirBrakesInterp::AirBrakesInterp(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
-    const TrajectorySet &trajectoryOpenSet,
-    const TrajectorySet &trajectoryCloseSet,
-    const AirBrakesInterpConfig &configInterp,
+    const TrajectorySet& trajectoryOpenSet,
+    const TrajectorySet& trajectoryCloseSet,
+    const AirBrakesInterpConfig& configInterp,
     std::function<void(float)> setActuator)
     : getCurrentPosition(getCurrentPosition), setActuator(setActuator),
       trajectoryOpenSet(trajectoryOpenSet),
@@ -149,12 +149,18 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
     //       trjPointOpen.vz);
 
     if (currentPosition.vz <= trjPointClosed.vz)
+    {
         return 0;
+    }
     else if (currentPosition.vz >= trjPointOpen.vz)
+    {
         return 1;
+    }
     else
+    {
         return (currentPosition.vz - trjPointClosed.vz) /
                (trjPointOpen.vz - trjPointClosed.vz);
+    }
 }
 
 }  // namespace Boardcore

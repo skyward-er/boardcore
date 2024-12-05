@@ -54,11 +54,11 @@ void program_startup()
     extern unsigned char _bss_end asm("_bss_end");
 
     // Initialize .data section, clear .bss section
-    unsigned char *etext     = &_etext;
-    unsigned char *data      = &_data;
-    unsigned char *edata     = &_edata;
-    unsigned char *bss_start = &_bss_start;
-    unsigned char *bss_end   = &_bss_end;
+    unsigned char* etext     = &_etext;
+    unsigned char* data      = &_data;
+    unsigned char* edata     = &_edata;
+    unsigned char* bss_start = &_bss_start;
+    unsigned char* bss_end   = &_bss_end;
     // The memcpy is usually enclosed in an #ifndef __ENABLE_XRAM, in other
     // boards but in this case it is not, since the *_code_in_xram.ld linker
     // script puts code in XRAM, but data in the internal one, so there's still

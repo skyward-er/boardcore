@@ -40,9 +40,7 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
         case ParserState::FIND_START:
 
             if (byte == START_DELIMITER)
-            {
                 parserState = ParserState::READ_LENGTH_1;
-            }
             break;
         // Read most significant byte of the length
         case ParserState::READ_LENGTH_1:
@@ -101,13 +99,9 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
     }
 
     if (parserState != ParserState::FIND_START)
-    {
         return ParseResult::PARSING;
-    }
     else
-    {
         return ParseResult::IDLE;
-    }
 }
 
 }  // namespace Xbee

@@ -58,20 +58,19 @@ void MEA::Step::withSpeedAndAlt(float verticalSpeed, float mslAltitude)
     hasSpeedAndAlt      = true;
 }
 
-MEA::MEA(const Config &config)
+MEA::MEA(const Config& config)
     : F{config.F}, Q{config.Q}, G{config.G}, baroH{config.baroH},
       baroR{config.baroR}, P{config.P}, x{0, 0, config.initialMass},
       mass{config.initialMass}, accelThresh{config.accelThresh},
       speedThresh{config.speedThresh}, Kt{config.Kt}, alpha{config.alpha},
-      c{config.c}, coeffs{config.coeffs},
-      crossSection{config.crossSection}, ae{config.ae}, p0{config.p0},
-      minMass{config.minMass}, maxMass{config.maxMass},
-      cdCorrectionFactor(config.cdCorrectionFactor)
+      c{config.c}, coeffs{config.coeffs}, crossSection{config.crossSection},
+      ae{config.ae}, p0{config.p0}, minMass{config.minMass},
+      maxMass{config.maxMass}, cdCorrectionFactor(config.cdCorrectionFactor)
 {
     updateState();
 }
 
-void MEA::update(const Step &step)
+void MEA::update(const Step& step)
 {
     // First run the prediction step
     predict(step);
@@ -97,13 +96,13 @@ void MEA::update(const Step &step)
 
 MEAState MEA::getState() { return state; }
 
-void MEA::predict(const Step &step)
+void MEA::predict(const Step& step)
 {
     x = F * x + G * step.mainValveOpen;
     P = F * P * F.transpose() + Q;
 }
 
-void MEA::computeForce(const Step &step)
+void MEA::computeForce(const Step& step)
 {
     if (!step.hasSpeedAndAlt)
         return;
@@ -133,7 +132,7 @@ void MEA::computeForce(const Step &step)
     }
 }
 
-void MEA::correctBaro(const Step &step)
+void MEA::correctBaro(const Step& step)
 {
     if (!step.hasCCPressure)
         return;
@@ -150,7 +149,7 @@ void MEA::correctBaro(const Step &step)
     x = x + K * (step.ccPressure - baroH * x);
 }
 
-void MEA::correctAccel(const Step &step)
+void MEA::correctAccel(const Step& step)
 {
     if (!step.hasAcceleration || !step.hasSpeedAndAlt)
         return;
@@ -158,7 +157,9 @@ void MEA::correctAccel(const Step &step)
     // Do not correct at low speed/acceleration
     if (step.acceleration.norm() < accelThresh ||
         step.verticalSpeed < speedThresh)
+    {
         return;
+    }
 
     float y = (Kt * (float)(baroH * x) - force) / x(2);
 
@@ -188,7 +189,7 @@ void MEA::computeMass()
     mass = std::max(std::min(x(2), maxMass), minMass);
 }
 
-void MEA::computeApogee(const Step &step)
+void MEA::computeApogee(const Step& step)
 {
     if (!step.hasSpeedAndAlt)
         return;

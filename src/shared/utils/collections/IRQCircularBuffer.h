@@ -146,7 +146,9 @@ public:
     {
         if (waiting && (waiting->IRQgetPriority() >
                         Thread::IRQgetCurrentThread()->IRQgetPriority()))
+        {
             hppw = true;
+        }
 
         IRQwakeWaitingThread();
         buffer.put(elem);

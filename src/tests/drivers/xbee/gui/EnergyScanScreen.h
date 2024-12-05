@@ -118,9 +118,7 @@ struct EnergyScanScreen
     ~EnergyScanScreen()
     {
         for (unsigned int i = 0; i < NUM_COLS; i++)
-        {
             delete colTitles[i];
-        }
 
         for (unsigned int i = 0; i < NUM_CHANNELS; ++i)
         {
@@ -161,9 +159,7 @@ struct EnergyScanScreen
     void resetStats()
     {
         for (unsigned int i = 0; i < NUM_CHANNELS; i++)
-        {
             chStats[i].reset();
-        }
 
         absMax = std::numeric_limits<float>::lowest();
         absMin = std::numeric_limits<float>::max();
@@ -198,17 +194,11 @@ private:
     {
         float delta = absMax - absMin;
         if (val >= absMax - delta * COLOR_PERCENTILE)
-        {
             tv->setTextColor(mxgui::green);
-        }
         else if (val <= absMin + delta * COLOR_PERCENTILE)
-        {
             tv->setTextColor(0xFDC0);  // Light orange
-        }
         else
-        {
             tv->setTextColor(mxgui::white);
-        }
     }
     float absMax = std::numeric_limits<float>::lowest();
     float absMin = std::numeric_limits<float>::max();

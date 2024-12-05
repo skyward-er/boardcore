@@ -40,10 +40,10 @@ public:
 
     bool bong_a() { return value; }
 
-    void inject(DependencyInjector &getter) { b = getter.get<B>(); }
+    void inject(DependencyInjector& getter) { b = getter.get<B>(); }
 
 private:
-    B *b       = nullptr;
+    B* b       = nullptr;
     bool value = false;
 };
 
@@ -134,8 +134,8 @@ TEST_CASE("DependencyManager - Circular dependencies")
 {
     DependencyManager manager;
 
-    Boardcore::A *a = new Boardcore::A();
-    Boardcore::B *b = new Boardcore::B();
+    Boardcore::A* a = new Boardcore::A();
+    Boardcore::B* b = new Boardcore::B();
 
     REQUIRE(manager.insert(a));
     REQUIRE(manager.insert(b));
@@ -160,10 +160,10 @@ TEST_CASE("DependencyManager - Virtual Dependencies")
 {
     DependencyManager manager;
 
-    Boardcore::A *a = new Boardcore::A();
-    Boardcore::B *b = new Boardcore::B();
-    Boardcore::C *c = new Boardcore::C();
-    Boardcore::D *d = new Boardcore::D();
+    Boardcore::A* a = new Boardcore::A();
+    Boardcore::B* b = new Boardcore::B();
+    Boardcore::C* c = new Boardcore::C();
+    Boardcore::D* d = new Boardcore::D();
 
     REQUIRE(manager.insert<Boardcore::A>(a));
     REQUIRE(manager.insert<Boardcore::B>(b));
@@ -194,7 +194,7 @@ TEST_CASE("DependencyManager - Inject fail")
 {
     DependencyManager manager;
 
-    Boardcore::A *a = new Boardcore::A();
+    Boardcore::A* a = new Boardcore::A();
 
     REQUIRE(manager.insert(a));
     REQUIRE_FALSE(manager.inject());
@@ -204,8 +204,8 @@ TEST_CASE("DependencyManager - Insert two instances fail")
 {
     DependencyManager manager;
 
-    Boardcore::A *a1 = new Boardcore::A();
-    Boardcore::A *a2 = new Boardcore::A();
+    Boardcore::A* a1 = new Boardcore::A();
+    Boardcore::A* a2 = new Boardcore::A();
 
     REQUIRE(manager.insert(a1));
     REQUIRE_FALSE(manager.insert(a2));
@@ -215,10 +215,10 @@ TEST_CASE("DependencyManager - Dependency tree")
 {
     DependencyManager manager;
 
-    Boardcore::E *e = new Boardcore::E();
-    Boardcore::F *f = new Boardcore::F();
-    Boardcore::H *h = new Boardcore::H();
-    Boardcore::I *i = new Boardcore::I();
+    Boardcore::E* e = new Boardcore::E();
+    Boardcore::F* f = new Boardcore::F();
+    Boardcore::H* h = new Boardcore::H();
+    Boardcore::I* i = new Boardcore::I();
 
     REQUIRE(manager.insert(e));
     REQUIRE(manager.insert(f));

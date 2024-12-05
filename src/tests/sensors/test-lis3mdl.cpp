@@ -66,9 +66,7 @@ int main()
     TRACE("Doing self test!\n");
     bool ok = sensor.selfTest();
     if (!ok)
-    {
         TRACE("Error: selfTest() returned false!\n");
-    }
 
     TRACE("Now printing some sensor data:\n");
     Thread::sleep(100);

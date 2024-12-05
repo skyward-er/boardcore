@@ -61,7 +61,7 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #error "Target not supported"
 #endif
 
-SX1278Lora *sx1278 = nullptr;
+SX1278Lora* sx1278 = nullptr;
 
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
@@ -91,26 +91,22 @@ void initBoard()
 #endif
 }
 
-bool isByteBuf(uint8_t *buf, ssize_t len)
+bool isByteBuf(uint8_t* buf, ssize_t len)
 {
     for (ssize_t i = 0; i < len; i++)
-    {
         if (!isprint(buf[i]))
             return true;
-    }
 
     return false;
 }
 
-void formatByteBuf(uint8_t *buf, ssize_t len, char *out)
+void formatByteBuf(uint8_t* buf, ssize_t len, char* out)
 {
     for (ssize_t i = 0; i < len; i++)
-    {
         if (i == 0)
             out += sprintf(out, "%02X", buf[i]);
         else
             out += sprintf(out, ":%02X", buf[i]);
-    }
 
     // Put terminator at the end
     *out = '\0';
@@ -144,7 +140,7 @@ void recvLoop()
     }
 }
 
-void sendLoop(int interval, const char *data)
+void sendLoop(int interval, const char* data)
 {
     char buf[SX1278Lora::MTU];
     strncpy(buf, data, sizeof(buf) - 1);
@@ -153,7 +149,7 @@ void sendLoop(int interval, const char *data)
     {
         miosix::Thread::sleep(interval);
 
-        sx1278->send(reinterpret_cast<uint8_t *>(buf), strlen(buf));
+        sx1278->send(reinterpret_cast<uint8_t*>(buf), strlen(buf));
         printf("[sx1278] Sent '%s'\n", buf);
     }
 }
@@ -192,7 +188,7 @@ int main()
 
     printf("\n[sx1278] Initialization complete!\n");
 
-    const char *msg =
+    const char* msg =
         "Very very very very very very very very very very very "
         "very very very very very very very very very very very "
         "very very very very very very very very very very very "

@@ -125,9 +125,7 @@ struct EnergyScanData
     EnergyScanData(long long ts, const array<int, 30> scan)
     {
         for (int i = 0; i < 30; i++)
-        {
             channelData[i] = scan[i];
-        }
 
         timestamp = ts;
     }
@@ -136,9 +134,7 @@ struct EnergyScanData
     {
         string out = "timestamp";
         for (int i = 0; i < 30; i++)
-        {
             out += ",channel_" + to_string(i);
-        }
         return out + "\n";
     }
 
@@ -147,9 +143,7 @@ struct EnergyScanData
         os << timestamp;
 
         for (int i = 0; i < 30; i++)
-        {
             os << "," << channelData[i];
-        }
 
         os << "\n";
     }

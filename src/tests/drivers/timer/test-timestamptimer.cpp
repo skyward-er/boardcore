@@ -32,7 +32,7 @@ using namespace ClockUtils;
 
 void printInputClock(APB bus);
 
-void testTimerUtils(TIM_TypeDef *timer);
+void testTimerUtils(TIM_TypeDef* timer);
 
 int main()
 {
@@ -72,16 +72,12 @@ int main()
 void printInputClock(APB bus)
 {
     if (bus == APB::APB1)
-    {
         printf("Timer input clock from APB1\n");
-    }
     else
-    {
         printf("Timer input clock from APB2\n");
-    }
 }
 
-void testTimerUtils(TIM_TypeDef *timer)
+void testTimerUtils(TIM_TypeDef* timer)
 {
     // Print the timer clock source
     printInputClock(getTimerInputClock(timer));

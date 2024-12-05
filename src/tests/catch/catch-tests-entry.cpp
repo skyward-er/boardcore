@@ -105,9 +105,7 @@ static vector<string> splitSpaces(const string& str)
         size_t len = p2 - p;  // Length of the substring
 
         if (len > 0)
-        {
             out.push_back(str.substr(p, len));
-        }
 
         p = p2 + 1;
     } while (!end);
@@ -152,18 +150,14 @@ int main()
 
     // Clear memory
     for (size_t i = 0; i < argc; i++)
-    {
         delete[] argv[i];
-    }
     delete[] argv;
 
     printf("End.\n");
 
     // Infinite loop to avoid board reset each time we return
     while (true)
-    {
         Thread::sleep(10000);
-    }
 }
 
 #endif  // COMPILE_FOR_HOST

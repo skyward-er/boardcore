@@ -82,14 +82,14 @@ public:
      * @brief Create a BasicTimer object. Note that this does not resets the
      * timer configuration but automatically enables the timer peripheral clock.
      */
-    explicit BasicTimer(TIM_TypeDef *timer);
+    explicit BasicTimer(TIM_TypeDef* timer);
 
     /**
      * @brief Disables the peripheral clock.
      */
     ~BasicTimer();
 
-    TIM_TypeDef *getTimer();
+    TIM_TypeDef* getTimer();
 
     uint8_t getTimerNumber();
 
@@ -198,20 +198,20 @@ public:
 
     virtual void setMasterMode(TimerUtils::MasterMode masterMode);
 
-    static void clearUpdateInterruptFlag(TIM_TypeDef *timer);
+    static void clearUpdateInterruptFlag(TIM_TypeDef* timer);
 
 protected:
-    TIM_TypeDef *timer;
+    TIM_TypeDef* timer;
 };
 
-inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer)
+inline BasicTimer::BasicTimer(TIM_TypeDef* timer) : timer(timer)
 {
     ClockUtils::enablePeripheralClock(timer);
 }
 
 inline BasicTimer::~BasicTimer() { ClockUtils::disablePeripheralClock(timer); }
 
-inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
+inline TIM_TypeDef* BasicTimer::getTimer() { return timer; }
 
 inline uint8_t BasicTimer::getTimerNumber()
 {
@@ -360,7 +360,7 @@ inline void BasicTimer::setMasterMode(TimerUtils::MasterMode masterMode)
     timer->CR2 |= static_cast<uint32_t>(masterMode);
 }
 
-inline void BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef *timer)
+inline void BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef* timer)
 {
     timer->SR &= ~TIM_SR_UIF;
 }

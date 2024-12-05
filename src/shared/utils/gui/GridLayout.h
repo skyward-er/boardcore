@@ -64,9 +64,7 @@ public:
     void setCell(View* child, uint8_t row, uint8_t col)
     {
         if (row >= numRows || col >= numCols)
-        {
             return;
-        }
 
         mapChilds[GridPosition(row, col)] = child;
 
@@ -162,9 +160,7 @@ public:
     {
         std::vector<View*> out;
         for (auto it = mapChilds.begin(); it != mapChilds.end(); it++)
-        {
             out.push_back(it->second);
-        }
         return out;
     }
 
@@ -192,9 +188,7 @@ private:
 
                 mapChildBounds[pos] = childBounds;
                 if (mapChilds.count(pos) > 0)
-                {
                     mapChilds[pos]->setBounds(childBounds);
-                }
             }
         }
     }

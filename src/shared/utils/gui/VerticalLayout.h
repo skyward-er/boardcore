@@ -73,9 +73,7 @@ public:
         View::draw(dc);
 
         for (auto view : childs)
-        {
             view.drawable->draw(dc);
-        }
     }
 
     virtual std::vector<View*> getChilds() override
@@ -83,9 +81,7 @@ public:
         std::vector<View*> out;
         out.reserve(childs.size());
         for (auto v : childs)
-        {
             out.push_back(v.drawable);
-        }
         return out;
     }
 

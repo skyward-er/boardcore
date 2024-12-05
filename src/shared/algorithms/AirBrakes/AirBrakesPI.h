@@ -39,8 +39,8 @@ class AirBrakesPI : public Algorithm
 {
 public:
     AirBrakesPI(std::function<TimedTrajectoryPoint()> getCurrentPosition,
-                const TrajectorySet &trajectorySet,
-                const AirBrakesPIConfig &config,
+                const TrajectorySet& trajectorySet,
+                const AirBrakesPIConfig& config,
                 std::function<void(float)> setActuator);
 
     bool init() override;
@@ -76,7 +76,7 @@ private:
      * @param drag Target drag force.
      * @return AirBrakes surface [m];
      */
-    float getSurface(const TimedTrajectoryPoint &currentPosition, float rho,
+    float getSurface(const TimedTrajectoryPoint& currentPosition, float rho,
                      float drag);
 
     /**
@@ -131,7 +131,7 @@ private:
 
 private:
     std::function<TimedTrajectoryPoint()> getCurrentPosition;
-    const AirBrakesPIConfig &config;
+    const AirBrakesPIConfig& config;
     std::function<void(float)> setActuator;
 
     TimedTrajectoryPoint lastPosition;
@@ -140,9 +140,9 @@ private:
     PIController pi;
 
     // Trajectory set from which the used trajectory can be choosen
-    const TrajectorySet &trajectorySet;
+    const TrajectorySet& trajectorySet;
 
-    Trajectory *chosenTrajectory = nullptr;
+    Trajectory* chosenTrajectory = nullptr;
 };
 
 }  // namespace Boardcore

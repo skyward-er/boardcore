@@ -80,9 +80,7 @@ bool MPU9250::init()
 
     // Init the AK8963
     if (!initAk())
-    {
         return false;
-    }
 
     // Set full scale resolution for gyroscope and accelerometer (they are
     // enabled by default)

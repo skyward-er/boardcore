@@ -65,13 +65,9 @@ int main()
     if (!sensor.init())
     {
         if (sensor.getLastError() == SensorErrors::INVALID_WHOAMI)
-        {
             printf("TEST FAILED: invalid WHO_AM_I value, init failed \n");
-        }
         else
-        {
             printf("TEST FAILED: init failed \n");
-        }
         return -1;
     }
 
@@ -91,9 +87,7 @@ int main()
         sensor.sample();
 
         if (sensor.getLastError() == SensorErrors::NO_NEW_DATA)
-        {
             printf("\nWarning: no new data to be read \n");
-        }
 
         data = sensor.getLastSample();
 

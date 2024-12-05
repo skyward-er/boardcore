@@ -85,7 +85,7 @@ inline void sleepUntil(long long absoluteTimeMs)
  * migrate to using nanoseconds.
  */
 inline miosix::TimedWaitResult IRQenableIrqAndTimedWaitMs(
-    miosix::FastInterruptDisableLock &dLock, long long absoluteTimeMs)
+    miosix::FastInterruptDisableLock& dLock, long long absoluteTimeMs)
 {
     return miosix::Thread::IRQenableIrqAndTimedWait(dLock,
                                                     msToNs(absoluteTimeMs));

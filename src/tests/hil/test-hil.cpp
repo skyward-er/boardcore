@@ -77,9 +77,7 @@ int main()
             SIMULATION_PERIOD);
 
         if (HIL_TEST)
-        {
             initResult &= ModuleManager::getInstance().insert<MainHIL>(hil);
-        }
         sensors = new HILSensors(&scheduler, buses, hil, false);
     }
     else

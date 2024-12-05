@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-MAX6675::MAX6675(SPIBusInterface &bus, miosix::GpioPin cs, SPIBusConfig config)
+MAX6675::MAX6675(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig config)
     : slave(bus, cs, config)
 {
 }

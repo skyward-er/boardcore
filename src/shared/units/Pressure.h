@@ -37,7 +37,7 @@ template <class Ratio = std::ratio<1>>
 using Pressure = Unit<UnitKind::Pressure, Ratio>;
 
 template <class ToPressure, class FromPressure>
-ToPressure pressure_cast(FromPressure const &from)
+ToPressure pressure_cast(FromPressure const& from)
 {
     return ToPressure(from);
 }

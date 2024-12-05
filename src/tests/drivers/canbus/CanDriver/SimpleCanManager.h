@@ -84,9 +84,7 @@ private:
                 parent.txPackets.waitUntilNotEmpty();
 
                 if (shouldStop())
-                {
                     return;
-                }
                 Boardcore::Canbus::CanPacket p = parent.txPackets.pop();
                 parent.canbus.send(p);
                 p.timestamp = Boardcore::Kernel::getOldTick();

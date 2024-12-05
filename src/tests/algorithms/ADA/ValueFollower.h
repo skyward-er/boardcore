@@ -28,7 +28,7 @@
 class ValueFollower
 {
 public:
-    ValueFollower(Boardcore::PressureData *data, size_t length,
+    ValueFollower(Boardcore::PressureData* data, size_t length,
                   uint64_t timestampOffset = 0, float pressureOffset = 0)
         : data(data), length(length), timestampOffset(timestampOffset),
           pressureOffset(pressureOffset)
@@ -48,9 +48,13 @@ public:
             return data[currentIndex].pressure + pressureOffset;
 
         for (; currentIndex < length; currentIndex++)
+        {
             if (data[currentIndex + 1].pressureTimestamp + timestampOffset >
                 timestamp)
+            {
                 return data[currentIndex].pressure + pressureOffset;
+            }
+        }
 
         return data[length - 1].pressure + pressureOffset;
     }
@@ -60,7 +64,7 @@ public:
     u_int64_t getDataDuration() { return dataDuration; }
 
 private:
-    Boardcore::PressureData *data;
+    Boardcore::PressureData* data;
     size_t length;
 
     uint64_t timestampOffset;

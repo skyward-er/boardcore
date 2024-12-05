@@ -75,7 +75,7 @@ public:
      * @param baudrate Baudrate in bit per second. Default values are [2400,
      * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    explicit USARTInterface(USARTType *usart, int baudrate);
+    explicit USARTInterface(USARTType* usart, int baudrate);
 
     virtual ~USARTInterface() = 0;
 
@@ -89,7 +89,7 @@ public:
      * @return Whether bytes were read and no timeout occurred.
      */
     [[nodiscard]] virtual bool readBlocking(
-        void *buffer, size_t nBytes,
+        void* buffer, size_t nBytes,
         std::chrono::nanoseconds timeout = std::chrono::nanoseconds::zero())
     {
         size_t temp;
@@ -107,7 +107,7 @@ public:
      * @return Whether bytes were read and no timeout occurred.
      */
     [[nodiscard]] virtual bool readBlocking(
-        void *buffer, size_t nBytes, size_t &nBytesRead,
+        void* buffer, size_t nBytes, size_t& nBytesRead,
         std::chrono::nanoseconds timeout = std::chrono::nanoseconds::zero())
     {
         return readImpl(buffer, nBytes, nBytesRead, true, timeout);
@@ -118,13 +118,13 @@ public:
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
      */
-    virtual void write(const void *buf, size_t nBytes) = 0;
+    virtual void write(const void* buf, size_t nBytes) = 0;
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      * @param buffer Buffer that contains the string to be sent.
      */
-    virtual void writeString(const char *buffer) = 0;
+    virtual void writeString(const char* buffer) = 0;
 
     /**
      * @brief Returns the id of the serial.
@@ -144,11 +144,11 @@ protected:
      * mode, 0 to disable the timeout and wait forever.
      * @return Whether bytes were read and no timeout occurred.
      */
-    virtual bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+    virtual bool readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
                           const bool blocking,
                           std::chrono::nanoseconds timeout) = 0;
 
-    USARTType *usart;
+    USARTType* usart;
     int id = -1;                 ///< Can be from 1 to 8, -1 is invalid.
     IRQn_Type irqn;              ///< IRQ number
     std::string serialPortName;  ///< Port name of the port that has to be
@@ -201,14 +201,14 @@ public:
      * @param baudrate Baudrate in bit per second. Default values are [2400,
      * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    USART(USARTType *usart, int baudrate,
+    USART(USARTType* usart, int baudrate,
           unsigned int queueLen = usart_queue_default_capacity);
 
     ///< Delete copy/move constructors/operators.
-    USART(const USART &)            = delete;
-    USART &operator=(const USART &) = delete;
-    USART(USART &&)                 = delete;
-    USART &operator=(USART &&)      = delete;
+    USART(const USART&)            = delete;
+    USART& operator=(const USART&) = delete;
+    USART(USART&&)                 = delete;
+    USART& operator=(USART&&)      = delete;
 
     /**
      * @brief Disables the flags for the generation of the interrupts, the IRQ
@@ -226,7 +226,7 @@ public:
      * @param nBytes Maximum size of the buffer.
      * @return If operation succeeded.
      */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes)
+    [[nodiscard]] bool read(void* buffer, size_t nBytes)
     {
         size_t temp;
         auto timeout = std::chrono::nanoseconds::zero();
@@ -243,7 +243,7 @@ public:
      * @param nBytesRead Number of bytes read.
      * @return If operation succeeded.
      */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead)
+    [[nodiscard]] bool read(void* buffer, size_t nBytes, size_t& nBytesRead)
     {
         auto timeout = std::chrono::nanoseconds::zero();
         return readImpl(buffer, nBytes, nBytesRead, false, timeout);
@@ -254,13 +254,13 @@ public:
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
      */
-    void write(const void *buf, size_t nBytes);
+    void write(const void* buf, size_t nBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      * @param buffer Buffer that contains the string to be sent.
      */
-    void writeString(const char *buffer);
+    void writeString(const char* buffer);
 
     /**
      * @brief Set the length of the word to 8 or to 9.
@@ -318,14 +318,14 @@ private:
      * mode, 0 to disable the timeout and wait forever.
      * @return Whether bytes were read and no timeout occurred.
      */
-    [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+    [[nodiscard]] bool readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
                                 const bool blocking,
                                 std::chrono::nanoseconds timeout) override;
 
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
 
-    miosix::Thread *rxWaiter =
+    miosix::Thread* rxWaiter =
         nullptr;  ///< The thread that is waiting to receive data
 
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
@@ -357,7 +357,7 @@ public:
      * @param baudrate baudrate in bit per second. Default values are [2400,
      * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    STM32SerialWrapper(USARTType *usart, int baudrate);
+    STM32SerialWrapper(USARTType* usart, int baudrate);
 
     /**
      * @brief Initializes the serialPortName and initializes the serial port
@@ -369,14 +369,14 @@ public:
      * @param tx Tranmission pin
      * @param rx Reception pin
      */
-    STM32SerialWrapper(USARTType *usart, int baudrate, miosix::GpioPin tx,
+    STM32SerialWrapper(USARTType* usart, int baudrate, miosix::GpioPin tx,
                        miosix::GpioPin rx);
 
     ///< Delete copy/move constructors/operators.
-    STM32SerialWrapper(const STM32SerialWrapper &)            = delete;
-    STM32SerialWrapper &operator=(const STM32SerialWrapper &) = delete;
-    STM32SerialWrapper(STM32SerialWrapper &&)                 = delete;
-    STM32SerialWrapper &operator=(STM32SerialWrapper &&)      = delete;
+    STM32SerialWrapper(const STM32SerialWrapper&)            = delete;
+    STM32SerialWrapper& operator=(const STM32SerialWrapper&) = delete;
+    STM32SerialWrapper(STM32SerialWrapper&&)                 = delete;
+    STM32SerialWrapper& operator=(STM32SerialWrapper&&)      = delete;
 
     /**
      * @brief Removes the device from the list of the devices and closes the
@@ -389,13 +389,13 @@ public:
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
      */
-    void write(const void *buf, size_t nBytes);
+    void write(const void* buf, size_t nBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      * @param buffer Buffer that contains the string to be sent.
      */
-    void writeString(const char *buffer);
+    void writeString(const char* buffer);
 
 private:
     /**
@@ -410,7 +410,7 @@ private:
      * mode.
      * @return Whether bytes were read and no timeout occurred.
      */
-    [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+    [[nodiscard]] bool readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
                                 const bool blocking,
                                 std::chrono::nanoseconds timeout) override;
 
@@ -420,7 +420,7 @@ private:
      */
     bool serialCommSetup();
 
-    miosix::STM32Serial *serial;  ///< Pointer to the serial object
+    miosix::STM32Serial* serial;  ///< Pointer to the serial object
 
     ///< File descriptor of the serial port file opened for transmission
     int fd;

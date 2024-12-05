@@ -46,9 +46,7 @@ int main()
         LOG_ERR(logger, "This is a message {}", 52);
         LOG_INFO(log2, "Ops, there was an {}!", "error");
         for (int i = 0; i < 4; i++)
-        {
             LOG_INFO(log4, "This is an async log! {:d}", asyncCtr++);
-        }
         LOG_DEBUG(log3, "This is a verbose debug message {:.3f}", 1.234f);
         LOG_CRIT(log3, "Float {:.1f} {:05.2f} {:f}", 1.234f, 1234.1234,
                  -9876.98765432f);

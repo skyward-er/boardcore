@@ -81,7 +81,7 @@ public:
         MUX_AIN1_GND  = 0x5,  ///< AINp is AIN1 and AINn is GND
         MUX_AIN2_GND  = 0x6,  ///< AINp is AIN2 and AINn is GND
         MUX_AIN3_GND  = 0x7   ///< AINp is AIN3 and AINn is GND
-    };                        ///< Multiplexer values
+    };  ///< Multiplexer values
 
     enum ADS1118Pga
     {
@@ -91,13 +91,13 @@ public:
         FSR_1_024 = 0x3,  ///< FSR is ±1.024 V
         FSR_0_512 = 0x4,  ///< FSR is ±0.512 V
         FSR_0_256 = 0x5   ///< FSR is ±0.256 V
-    };                    ///< Programmable gain amplifier values
+    };  ///< Programmable gain amplifier values
 
     enum ADS1118Mode
     {
         CONTINUOUS_CONV_MODE = 0x0,  ///< Continuous-conversion mode
         SINGLE_SHOT_MODE = 0x1  ///< Power-down and single-shot mode (default)
-    };                          ///< Conversion mode values
+    };  ///< Conversion mode values
 
     enum ADS1118DataRate
     {
@@ -109,19 +109,19 @@ public:
         DR_250 = 0x5,  ///< 250 SPS
         DR_475 = 0x6,  ///< 475 SPS
         DR_860 = 0x7   ///< 860 SPS
-    };                 ///< Data rate configuration values
+    };  ///< Data rate configuration values
 
     enum ADS1118TempMode
     {
         ADC_MODE         = 0x0,  ///< ADC mode (default)
         TEMP_SENSOR_MODE = 0x1   ///< Temperature sensor mode
-    };                           ///< Temperature or ADC mode values
+    };  ///< Temperature or ADC mode values
 
     enum ADS1118PullUp
     {
         PULL_UP_DIS = 0x0,  ///< Pullup resistor disabled on DOUT pin
         PULL_UP_EN  = 0x1   ///< Pullup resistor enabled on DOUT pin (default)
-    };                      ///< Pull up enable or disable values
+    };  ///< Pull up enable or disable values
 
     union ADS1118Config
     {
@@ -145,13 +145,13 @@ public:
         } byte;           ///< Includes the msb and lsb bytes
 
         uint16_t word;  ///< Representation in word (16-bits) format
-    };                  ///< Structure of configuration word
+    };  ///< Structure of configuration word
 
     struct ADS1118InputConfig
     {
         ADS1118Mux mux       = MUX_AIN0_AIN1;  ///< Input's mux configuration
         ADS1118DataRate rate = DR_128;  ///< Input's data rate configuration
-    };                                  ///< Driver's input config
+    };  ///< Driver's input config
 
     static constexpr uint8_t VALID_OPERATION =
         0x1;  ///< Indicates a valid configuration
@@ -169,7 +169,7 @@ public:
      * @brief Construct a new ADS1118 object specifying spi bus, spi config and
      * cs pin as well as device configuration.
      */
-    ADS1118(SPIBusInterface &bus, miosix::GpioPin cs, ADS1118Config config_,
+    ADS1118(SPIBusInterface& bus, miosix::GpioPin cs, ADS1118Config config_,
             SPIBusConfig spiConfig = getDefaultSPIConfig());
 
     /**

@@ -451,17 +451,13 @@ inline void SPIBus::select(GpioType cs)
     cs.low();
 
     if (config.csSetupTimeUs > 0)
-    {
         miosix::delayUs(config.csSetupTimeUs);
-    }
 }
 
 inline void SPIBus::deselect(GpioType cs)
 {
     if (config.csHoldTimeUs > 0)
-    {
         miosix::delayUs(config.csHoldTimeUs);
-    }
 
     cs.high();
 }

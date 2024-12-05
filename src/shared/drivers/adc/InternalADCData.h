@@ -49,9 +49,7 @@ struct InternalADCData
         os << timestamp << ",";
 
         for (int i = 0; i < 16; i++)
-        {
             os << voltage[i] << ",";
-        }
 
         os << temperature << "," << vBat << "\n";
     }

@@ -157,7 +157,6 @@ public:
      */
     virtual bool isSelected()
     {
-
         Lock<FastMutex> l(mutex);
         return selected;
     }
@@ -211,13 +210,9 @@ inline bool MockSPIBus::canCommunicate()
     {
         TRACE("Error, cannot communicato on MockSPIBus: ");
         if (!selected)
-        {
             TRACE("Chip select not asserted\n");
-        }
         else
-        {
             TRACE("Incorrect configuration\n");
-        }
     }
     return result;
 }
@@ -225,13 +220,9 @@ inline bool MockSPIBus::canCommunicate()
 inline void MockSPIBus::_write(uint8_t byte)
 {
     if (canCommunicate())
-    {
         outBuffer.push_back(byte);
-    }
     else
-    {
         outBuffer.push_back(0);
-    }
 }
 
 inline void MockSPIBus::write(uint8_t byte)
@@ -252,9 +243,7 @@ inline void MockSPIBus::write(uint8_t* data, size_t size)
     Lock<FastMutex> l(mutex);
 
     for (size_t i = 0; i < size; i++)
-    {
         _write(data[i]);
-    }
 }
 
 inline void MockSPIBus::write(uint16_t* data, size_t size)
@@ -262,9 +251,7 @@ inline void MockSPIBus::write(uint16_t* data, size_t size)
     Lock<FastMutex> l(mutex);
 
     for (size_t i = 0; i < size * 2; i++)
-    {
         _write(((uint8_t*)data)[i]);
-    }
 }
 
 inline uint8_t MockSPIBus::_read()
@@ -272,9 +259,7 @@ inline uint8_t MockSPIBus::_read()
     if (canCommunicate())
     {
         if (inBufPosCntr < inBuf.size())
-        {
             return inBuf[inBufPosCntr++];
-        }
     }
     return 0;
 }
@@ -295,19 +280,14 @@ inline void MockSPIBus::read(uint8_t* data, size_t size)
 {
     Lock<FastMutex> l(mutex);
     for (size_t i = 0; i < size; i++)
-    {
         data[i] = _read();
-    }
 }
 
 inline void MockSPIBus::read(uint16_t* data, size_t size)
 {
-
     Lock<FastMutex> l(mutex);
     for (size_t i = 0; i < size * 2; i++)
-    {
         data[i] = _read();
-    }
 }
 
 inline uint8_t MockSPIBus::transfer(uint8_t data)
@@ -319,7 +299,6 @@ inline uint8_t MockSPIBus::transfer(uint8_t data)
 
 inline uint16_t MockSPIBus::transfer(uint16_t data)
 {
-
     Lock<FastMutex> l(mutex);
     _write(data >> 8);
     _write(data);

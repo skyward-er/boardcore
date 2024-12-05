@@ -116,7 +116,7 @@ namespace Boardcore
 class Runcam
 {
 public:
-    explicit Runcam(USARTInterface &serial);
+    explicit Runcam(USARTInterface& serial);
 
     Runcam() = delete;
 
@@ -149,7 +149,7 @@ private:
      */
     uint32_t OPEN_MENU = 0xCC01024D;
 
-    USARTInterface &usart;
+    USARTInterface& usart;
 
     PrintLogger logger = Logging::getLogger("runcam");
 };

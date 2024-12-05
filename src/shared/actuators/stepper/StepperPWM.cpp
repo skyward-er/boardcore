@@ -24,7 +24,7 @@
 namespace Boardcore
 {
 
-StepperPWM::StepperPWM(CountedPWM &pwm, miosix::GpioPin stepPin,
+StepperPWM::StepperPWM(CountedPWM& pwm, miosix::GpioPin stepPin,
                        miosix::GpioPin directionPin, float speed,
                        float stepAngle, bool revertDirection,
                        uint16_t microStep, PinConfiguration pinConfiguration,

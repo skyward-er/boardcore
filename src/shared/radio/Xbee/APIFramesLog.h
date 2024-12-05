@@ -81,9 +81,7 @@ struct ATCommandFrameLog
     static bool toFrameType(APIFrame& api, ATCommandFrameLog* dest)
     {
         if (api.frameType != FTYPE_AT_COMMAND)
-        {
             return false;
-        }
 
         if (api.getFrameDataLength() < MIN_AT_COMMAND_FRAME_SIZE ||
             api.getFrameDataLength() >
@@ -118,16 +116,10 @@ struct ATCommandFrameLog
            << commandDataLength << ",";
 
         if (commandDataLength > 0)
-        {
             for (uint16_t i = 0; i < commandDataLength; i++)
-            {
                 os << (int)commandData[i] << " ";
-            }
-        }
         else
-        {
             os << "-";
-        }
 
         os << "\n";
     }
@@ -149,9 +141,7 @@ struct TXRequestFrameLog
     static bool toFrameType(APIFrame& api, TXRequestFrameLog* dest)
     {
         if (api.frameType != FTYPE_TX_REQUEST)
-        {
             return false;
-        }
 
         if (api.getFrameDataLength() < MIN_TX_REQUEST_FRAME_SIZE ||
             api.getFrameDataLength() >
@@ -205,9 +195,7 @@ struct ATCommandResponseFrameLog
     static bool toFrameType(APIFrame& api, ATCommandResponseFrameLog* dest)
     {
         if (api.frameType != FTYPE_AT_COMMAND_RESPONSE)
-        {
             return false;
-        }
 
         if (api.getFrameDataLength() < MIN_AT_COMMAND_FRAME_SIZE ||
             api.getFrameDataLength() >
@@ -247,16 +235,10 @@ struct ATCommandResponseFrameLog
            << (int)commandStatus << "," << commandDataLength << ",";
 
         if (commandDataLength > 0)
-        {
             for (uint16_t i = 0; i < commandDataLength; i++)
-            {
                 os << (int)commandData[i] << " ";
-            }
-        }
         else
-        {
             os << "-";
-        }
 
         os << "\n";
     }
@@ -270,14 +252,10 @@ struct ModemStatusFrameLog
     static bool toFrameType(APIFrame& api, ModemStatusFrameLog* dest)
     {
         if (api.frameType != FTYPE_MODEM_STATUS)
-        {
             return false;
-        }
 
         if (api.getFrameDataLength() != MODEM_STATUS_FRAME_SIZE)
-        {
             return false;
-        }
 
         ModemStatusFrame* modem = api.toFrameType<ModemStatusFrame>();
 
@@ -306,14 +284,10 @@ struct TXStatusFrameLog
     static bool toFrameType(APIFrame& api, TXStatusFrameLog* dest)
     {
         if (api.frameType != FTYPE_TX_STATUS)
-        {
             return false;
-        }
 
         if (api.getFrameDataLength() != TX_STATUS_FRAME_SIZE)
-        {
             return false;
-        }
 
         TXStatusFrame* tx = api.toFrameType<TXStatusFrame>();
 
@@ -353,9 +327,7 @@ struct RXPacketFrameLog
     static bool toFrameType(APIFrame& api, RXPacketFrameLog* dest)
     {
         if (api.frameType != FTYPE_RX_PACKET_FRAME)
-        {
             return false;
-        }
 
         if (api.getFrameDataLength() < MIN_RX_PACKET_FRAME_SIZE ||
             api.getFrameDataLength() >

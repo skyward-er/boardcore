@@ -80,9 +80,7 @@ public:
 
         unsigned int interval = 0;
         if (packets.size() > 0)
-        {
             interval = static_cast<unsigned int>(ts - packets.back().timestamp);
-        }
 
         packets.push_back({ts, packetSize, interval});
 
@@ -102,9 +100,7 @@ public:
 
         float sum = 0;
         for (size_t i = 0; i < packets.size(); i++)
-        {
             sum += packets[i].size;
-        }
         return sum / (windowDuration / 1000.0f);
     }
 
@@ -123,9 +119,7 @@ public:
         {
             avgInterval = packets[0].interval;
             for (size_t i = 1; i < packets.size(); i++)
-            {
                 avgInterval += packets[i].interval;
-            }
 
             avgInterval /= packets.size();
         }

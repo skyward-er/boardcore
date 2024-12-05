@@ -37,7 +37,7 @@ template <class Ratio = std::ratio<1>>
 using Acceleration = Unit<UnitKind::Acceleration, Ratio>;
 
 template <class ToAcceleration, class FromAcceleration>
-ToAcceleration acceleration_cast(FromAcceleration const &from)
+ToAcceleration acceleration_cast(FromAcceleration const& from)
 {
     return ToAcceleration(from);
 }

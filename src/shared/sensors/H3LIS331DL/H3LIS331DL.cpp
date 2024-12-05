@@ -97,7 +97,6 @@ bool H3LIS331DL::init()
 
         if (!initialized)
         {
-
             LOG_ERR(logger,
                     "Control Register 1 After init: {:X}, expected "
                     "value:{:X}",
@@ -125,7 +124,6 @@ bool H3LIS331DL::init()
 
         if (!initialized)
         {
-
             LOG_ERR(logger,
                     "Control Register 1 After init: {:X}, expected "
                     "value:{:X}",

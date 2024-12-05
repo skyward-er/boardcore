@@ -51,9 +51,7 @@ public:
     void updateViewTree(View* root)
     {
         if (selectedIndex < vecSelectable.size())
-        {
             vecSelectable.at(selectedIndex)->setSelected(false);
-        }
 
         vecSelectable.clear();
         selectedIndex = 0;
@@ -61,9 +59,7 @@ public:
         updateSelectableViews(root);
 
         if (vecSelectable.size() > 0)
-        {
             vecSelectable.at(0)->setSelected(true);
-        }
     }
 
     void onButtonEvent(ButtonEvent press)
@@ -72,29 +68,37 @@ public:
         {
             case ButtonEvent::PRESSED:
                 if (selectedIndex < vecSelectable.size())
+                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::BTN_DOWN);
+                }
                 if (vecSelectable.size() > 0)
                     selectNext();
                 break;
             case ButtonEvent::SHORT_PRESS:
                 if (selectedIndex < vecSelectable.size())
+                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::BTN_UP);
+                }
                 if (vecSelectable.size() > 0)
                     selectNext();
                 break;
             case ButtonEvent::LONG_PRESS:
                 if (selectedIndex < vecSelectable.size())
+                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::CLICK);
+                }
                 if (vecSelectable.size() > 0)
                     selectNext();
                 break;
             case ButtonEvent::VERY_LONG_PRESS:
                 if (selectedIndex < vecSelectable.size())
+                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::LONG_CLICK);
+                }
                 if (vecSelectable.size() > 0)
                     selectNext();
                 break;
@@ -108,9 +112,7 @@ private:
     {
         // Deselect old drawble
         if (selectedIndex < vecSelectable.size())
-        {
             vecSelectable.at(selectedIndex)->setSelected(false);
-        }
 
         if (vecSelectable.size() > 0)
         {
@@ -122,9 +124,7 @@ private:
                 dynamic_cast<TextView*>(vecSelectable.at(selectedIndex));
 
             if (text)
-            {
                 LOG_DEBUG(logger, "{}", text->getText().c_str());
-            }
         }
     }
 
@@ -134,9 +134,7 @@ private:
         for (auto child : childs)
         {
             if (child->isSelectable())
-            {
                 vecSelectable.push_back(child);
-            }
             updateSelectableViews(child);
         }
     }

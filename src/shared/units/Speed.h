@@ -37,7 +37,7 @@ template <class Ratio = std::ratio<1>>
 using Speed = Unit<UnitKind::Speed, Ratio>;
 
 template <class ToSpeed, class FromSpeed>
-ToSpeed speed_cast(FromSpeed const &from)
+ToSpeed speed_cast(FromSpeed const& from)
 {
     return ToSpeed(from);
 }

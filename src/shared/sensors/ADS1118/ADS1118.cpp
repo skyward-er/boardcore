@@ -32,7 +32,7 @@ const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
     SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
     VALID_OPERATION,  PULL_UP_EN, ADC_MODE,      DR_128};
 
-ADS1118::ADS1118(SPIBusInterface &bus, miosix::GpioPin cs,
+ADS1118::ADS1118(SPIBusInterface& bus, miosix::GpioPin cs,
                  ADS1118Config config_, SPIBusConfig spiConfig)
     : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
 {
@@ -93,9 +93,7 @@ void ADS1118::disableInput(ADS1118Mux mux) { channelsConfig[mux].word = 0; }
 void ADS1118::disableAllInputs()
 {
     for (auto i = 0; i < NUM_OF_CHANNELS; i++)
-    {
         channelsConfig[i].word = 0;
-    }
 }
 
 void ADS1118::enableTemperature()
@@ -136,13 +134,9 @@ TemperatureData ADS1118::getTemperature()
 int ADS1118::getConversionTime(int8_t channel)
 {
     if (channel >= 0 && channel <= TEMP_CHANNEL)
-    {
         return CONV_TIME[channelsConfig[channel].bits.rate];
-    }
     else
-    {
         return 0;
-    }
 }
 
 bool ADS1118::selfTest()
@@ -216,7 +210,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     transferData = writeData;
     {
         SPITransaction transaction(spiSlave);
-        transaction.transfer((uint8_t *)&transferData, configCheck ? 4 : 2);
+        transaction.transfer((uint8_t*)&transferData, configCheck ? 4 : 2);
     }
 
     // If enabled and a valid configuration has just been written, check the
@@ -286,15 +280,13 @@ void ADS1118::readChannel(int8_t channel)
  */
 int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
 {
-    int8_t &channel = startChannel;  // Just a change of name
+    int8_t& channel = startChannel;  // Just a change of name
 
     for (auto i = 0; i < 2; i++)
     {
         // Go to the first channel if channel is too big
         if (channel >= NUM_OF_CHANNELS)
-        {
             channel = 0;
-        }
 
         // Find next enabled mux config
         for (; channel < NUM_OF_CHANNELS && channelsConfig[channel].word == 0;
@@ -305,13 +297,9 @@ int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
         // have to read it based on sampleCounter and tempDivider
         // If invalid try to search again starting from the first channel
         if (channel == TEMP_CHANNEL && sampleCounter % tempDivider != 0)
-        {
             continue;
-        }
         if (channel < NUM_OF_CHANNELS)
-        {
             return channel;
-        }
     }
 
     // If no valid channel has been fount return an invalid channel

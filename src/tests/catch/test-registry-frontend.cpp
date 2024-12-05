@@ -51,7 +51,7 @@ static constexpr uint32_t FLOAT_VALUE_ID                 = 13;
  * @param entryId The id of the configuration entry
  * @param entry The EntryStructsUnion structure of the configuration entry
  */
-void visitFunction(ConfigurationId entryId, EntryStructsUnion &entry)
+void visitFunction(ConfigurationId entryId, EntryStructsUnion& entry)
 {
     switch (entryId)
     {
@@ -88,7 +88,7 @@ class FakeBackend : public RegistryBackend
 public:
     int &startCount, &saveCount, &loadCount;
 
-    FakeBackend(int &startCount, int &saveCount, int &loadCount)
+    FakeBackend(int& startCount, int& saveCount, int& loadCount)
         : startCount(startCount), saveCount(saveCount), loadCount(loadCount)
     {
     }
@@ -99,13 +99,13 @@ public:
         return true;
     }
 
-    bool load(std::vector<uint8_t> &) override
+    bool load(std::vector<uint8_t>&) override
     {
         loadCount++;
         return true;
     }
 
-    bool save(std::vector<uint8_t> &) override
+    bool save(std::vector<uint8_t>&) override
     {
         saveCount++;
         return true;

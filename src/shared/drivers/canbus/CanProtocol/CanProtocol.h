@@ -195,7 +195,9 @@ bool CanProtocol::enqueueData(uint8_t priority, uint8_t primaryType,
 {
     if (priority > 0xF || primaryType > 0x3F || source > 0xF ||
         destination > 0xF || secondaryType > 0xF)
+    {
         return false;
+    }
 
     CanMessage msg = toCanMessage(t);
 

@@ -28,8 +28,8 @@
 namespace Boardcore
 {
 
-VNCommonSerial::VNCommonSerial(USART &usart, int baudrate,
-                               const char *sensorName, CRCOptions crc,
+VNCommonSerial::VNCommonSerial(USART& usart, int baudrate,
+                               const char* sensorName, CRCOptions crc,
                                const std::chrono::milliseconds timeout)
     : usart(usart), baudRate(baudrate), crc(crc),
       logger(Logging::getLogger(sensorName)), maxTimeout(timeout)
@@ -38,7 +38,7 @@ VNCommonSerial::VNCommonSerial(USART &usart, int baudrate,
 
 VNCommonSerial::~VNCommonSerial() {}
 
-uint8_t VNCommonSerial::calculateChecksum8(const uint8_t *message, int length)
+uint8_t VNCommonSerial::calculateChecksum8(const uint8_t* message, int length)
 {
     int i;
     uint8_t result = 0x00;
@@ -53,7 +53,7 @@ uint8_t VNCommonSerial::calculateChecksum8(const uint8_t *message, int length)
     return result;
 }
 
-uint16_t VNCommonSerial::calculateChecksum16(const uint8_t *message, int length)
+uint16_t VNCommonSerial::calculateChecksum16(const uint8_t* message, int length)
 {
     int i;
     uint16_t result = 0x0000;
@@ -71,15 +71,13 @@ uint16_t VNCommonSerial::calculateChecksum16(const uint8_t *message, int length)
     return result;
 }
 
-bool VNCommonSerial::verifyChecksum(char *command, int length)
+bool VNCommonSerial::verifyChecksum(char* command, int length)
 {
     int checksumOffset = 0;
 
     // I look for the checksum position
     while (checksumOffset < length && command[checksumOffset] != '*')
-    {
         checksumOffset++;
-    }
 
     if (checksumOffset == length)
     {
@@ -101,7 +99,7 @@ bool VNCommonSerial::verifyChecksum(char *command, int length)
         // Calculate the checksum and verify (comparison between numerical
         // checksum to avoid string bugs e.g 0856 != 865)
         if (strtol(command + checksumOffset + 1, NULL, 16) !=
-            calculateChecksum16((uint8_t *)(command + 1), checksumOffset - 1))
+            calculateChecksum16((uint8_t*)(command + 1), checksumOffset - 1))
         {
             TRACE("Different checksum: %s\n", command);
             return false;
@@ -119,7 +117,7 @@ bool VNCommonSerial::verifyChecksum(char *command, int length)
         // Calculate the checksum and verify (comparison between numerical
         // checksum to avoid string bugs e.g 0856 != 865)
         if (strtol(command + checksumOffset + 1, NULL, 16) !=
-            calculateChecksum8((uint8_t *)(command + 1), checksumOffset - 1))
+            calculateChecksum8((uint8_t*)(command + 1), checksumOffset - 1))
         {
             TRACE("Different checksum: %s\n", command);
             return false;
@@ -138,21 +136,15 @@ bool VNCommonSerial::disableAsyncMessages(bool waitResponse)
     usart.clearQueue();
 
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     if (waitResponse)
     {
         if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-        {
             return false;
-        }
 
         if (checkErrorVN(recvString.data()))
-        {
             return false;
-        }
     }
 
     return true;
@@ -186,34 +178,26 @@ bool VNCommonSerial::setCrc(bool waitResponse)
 
     // Send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // Read the answer
     if (waitResponse)
     {
         if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-        {
             return false;
-        }
     }
 
     crc = CRCOptions::CRC_ENABLE_16;
 
     // Send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // Read the answer
     if (waitResponse)
     {
         if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
-        {
             return false;
-        }
     }
 
     // Restore the crc
@@ -237,9 +221,7 @@ bool VNCommonSerial::configUserSerialPort()
 
     // I can send the command
     if (!sendStringCommand(command))
-    {
         return false;
-    }
 
     // I can open the serial with user's baud rate
     usart.setBaudrate(baudRate);
@@ -248,7 +230,7 @@ bool VNCommonSerial::configUserSerialPort()
     return true;
 }
 
-bool VNCommonSerial::verifyModelNumber(const char *expectedModelNumber)
+bool VNCommonSerial::verifyModelNumber(const char* expectedModelNumber)
 {
     // The model number starts from the 10th position
     const int modelNumberOffset = 10;
@@ -290,7 +272,7 @@ bool VNCommonSerial::verifyModelNumber(const char *expectedModelNumber)
 QuaternionData VNCommonSerial::sampleQuaternion()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     QuaternionData data;
 
     // Look for the second ',' in the string
@@ -299,9 +281,7 @@ QuaternionData VNCommonSerial::sampleQuaternion()
     for (int i = 0; i < 2; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -318,7 +298,7 @@ QuaternionData VNCommonSerial::sampleQuaternion()
 MagnetometerData VNCommonSerial::sampleMagnetometer()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     MagnetometerData data;
 
     // Look for the sixth ',' in the string
@@ -327,9 +307,7 @@ MagnetometerData VNCommonSerial::sampleMagnetometer()
     for (int i = 0; i < 6; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -346,7 +324,7 @@ MagnetometerData VNCommonSerial::sampleMagnetometer()
 AccelerometerData VNCommonSerial::sampleAccelerometer()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     AccelerometerData data;
 
     // Look for the ninth ',' in the string
@@ -355,9 +333,7 @@ AccelerometerData VNCommonSerial::sampleAccelerometer()
     for (int i = 0; i < 9; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -374,7 +350,7 @@ AccelerometerData VNCommonSerial::sampleAccelerometer()
 GyroscopeData VNCommonSerial::sampleGyroscope()
 {
     unsigned int indexStart = 0;
-    char *nextNumber;
+    char* nextNumber;
     GyroscopeData data;
 
     // Look for the twelfth ',' in the string
@@ -383,9 +359,7 @@ GyroscopeData VNCommonSerial::sampleGyroscope()
     for (int i = 0; i < 12; i++)
     {
         while (indexStart < recvStringLength && recvString[indexStart] != ',')
-        {
             indexStart++;
-        }
         indexStart++;
     }
 
@@ -399,7 +373,7 @@ GyroscopeData VNCommonSerial::sampleGyroscope()
     return data;
 }
 
-uint8_t VNCommonSerial::checkErrorVN(const char *message)
+uint8_t VNCommonSerial::checkErrorVN(const char* message)
 {
     if (strncmp(message, "$VNERR,", 7) == 0)
     {
@@ -431,7 +405,7 @@ bool VNCommonSerial::sendStringCommand(std::string command)
     {
         char checksum[4];  // 2 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()),
+        itoa(calculateChecksum8((uint8_t*)command.c_str(), command.length()),
              checksum, 16);
         checksum[2] = '\n';
         checksum[3] = '\0';
@@ -442,7 +416,7 @@ bool VNCommonSerial::sendStringCommand(std::string command)
     {
         char checksum[6];  // 4 hex + \n + \0
         // I convert the calculated checksum in hex using itoa
-        itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()),
+        itoa(calculateChecksum16((uint8_t*)command.c_str(), command.length()),
              checksum, 16);
         checksum[4] = '\n';
         checksum[5] = '\0';
@@ -476,20 +450,16 @@ bool VNCommonSerial::sendStringCommand(std::string command)
     return true;
 }
 
-bool VNCommonSerial::recvStringCommand(char *command, int maxLength)
+bool VNCommonSerial::recvStringCommand(char* command, int maxLength)
 {
     int i = 0;
     // Read the buffer
     if (!usart.readBlocking(command, maxLength, maxTimeout))
-    {
         return false;
-    }
 
     // Iterate until i reach the end or i find \n then i substitute it with a \0
     while (i < maxLength && command[i] != '\n')
-    {
         i++;
-    }
 
     // Terminate the string
     command[i] = '\0';

@@ -40,7 +40,6 @@ namespace Boardcore
  */
 class H3LIS331DL : public Sensor<H3LIS331DLData>
 {
-
 public:
     /**
      * @brief Creates an instance of an H3LIS331DL sensor

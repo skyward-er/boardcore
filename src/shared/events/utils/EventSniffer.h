@@ -57,9 +57,7 @@ public:
         : broker(broker), onEventReceived(onEventReceived)
     {
         for (uint8_t t : topics)
-        {
             sniffers.push_back(new Sniffer(*this, t));
-        }
     }
 
     /**
@@ -71,17 +69,13 @@ public:
         : broker(broker), onEventReceived(onEventReceived)
     {
         for (int t = 0; t <= 255; t++)
-        {
             sniffers.push_back(new Sniffer(*this, (uint8_t)t));
-        }
     }
 
     ~EventSniffer()
     {
         for (Sniffer* s : sniffers)
-        {
             delete s;
-        }
     }
 
 private:

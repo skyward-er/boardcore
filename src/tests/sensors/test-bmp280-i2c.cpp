@@ -35,14 +35,10 @@ int main()
     BMP280I2C bmp280(bus);
 
     if (!bmp280.init())
-    {
         printf("Init failed\n");
-    }
 
     if (!bmp280.selfTest())
-    {
         printf("Self test failed\n");
-    }
 
     while (true)
     {
