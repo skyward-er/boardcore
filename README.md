@@ -29,11 +29,17 @@ The project is built with the CMake build system. We also have our own script th
 
 ### Dependencies
 
+The following are required to build the project:
 * `CMake` 3.25
 * `Git`
 * `Miosix` Toolchain
 
-We also recommend to install `Ccache`, `Ninja`, `OpenOCD`, `Cppcheck`,`ClangFormat` and `pre-commit` for a smoother development experience.
+You will also need the following tools for linting and formatting:
+* `Python3`
+* `Cppcheck 2.7`
+* `ClangFormat 18`
+
+We also recommend to install `Ccache`, `Ninja`, `OpenOCD`, and `pre-commit` for a smoother development experience.
 
 ### Cloning the repo
 
