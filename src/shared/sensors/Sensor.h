@@ -144,31 +144,20 @@ class SensorFIFO : public Sensor<Data>
 protected:
     std::array<Data, FifoSize> lastFifo;
     uint16_t lastFifoLevel = 1;  //< number of samples in lastFifo
-    miosix::FastMutex fifoMutex; //Sensor mutex
     uint64_t lastInterruptTimestamp = 0;
     uint64_t interruptTimestampDelta = 0;  //< delta between previous interrupt timestamp and the last received one
-    uint32_t maxFifoSize = 1000; //The maximum fifo size (!!!to select after performance tests)
-    static_assert(FifoSize <= maxFifoSIze, "The sensor's fifo size must be equal or smaller than maxFifoSize"); 
+    miosix::FastMutex fifoMutex; //thread safe mutex to read FIFO 
+
 
 public:
     /**
-     * @param actualFifoSize output parameter that returns the actual fifo size of the sensor's fifo
+     * @param actualFifoSize output parameter for last FIFO size 
      * @return last FIFO sampled from the sensor
      */
-    const std::array<Data, FifoSize> getLastFifo(size_t* actualFifoSize) {
+    const std::array<Data, FifoSize> getLastFifo(uint16_t& lastFifoSize) {
         miosix::Lock<FastMutex> l(fifoMutex);
-        *actualFifoSize = lastFifoLevel;
+        actualFifoSize = lastFifoLevel;
         return lastFifo; 
-    }
-
-    /**
-     * @param i index of the requested item inside the FIFO
-     *
-     * @return the i-th element of the FIFO
-     */
-    const Data getFifoElement(uint32_t i) const {
-        miosix::Lock<FastMutex> l(fifoMutex);
-        return lastFifo[i]; 
     }
 
     /**
