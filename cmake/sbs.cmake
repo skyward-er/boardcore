@@ -21,6 +21,9 @@
 
 enable_language(C CXX ASM)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Load in SBS_BASE the project path
 cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
 
