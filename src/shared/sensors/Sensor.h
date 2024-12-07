@@ -151,12 +151,12 @@ protected:
 
 public:
     /**
-     * @param actualFifoSize output parameter for last FIFO size 
+     * @param lastFifoSize output parameter for last FIFO size 
      * @return last FIFO sampled from the sensor
      */
     const std::array<Data, FifoSize> getLastFifo(uint16_t& lastFifoSize) {
-        miosix::Lock<FastMutex> l(fifoMutex);
-        actualFifoSize = lastFifoLevel;
+        miosix::Lock<miosix::FastMutex> l(fifoMutex);
+        lastFifoSize = lastFifoLevel;
         return lastFifo; 
     }
 

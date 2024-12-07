@@ -34,6 +34,11 @@ namespace BMX160Defs
 {
 
 /**
+ * @brief Driver's fifo size expressed as number of samples.
+ */
+const uint16_t FIFO_SIZE = 200;
+
+/**
  * @brief Temperature sensor sensibility.
  */
 const float TEMP_SENSIBILITY = 64.0f / 32768.0f;

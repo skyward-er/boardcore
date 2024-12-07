@@ -238,8 +238,8 @@ void calibrateAccelerometer()
             {
                 bmx160->sample();
 
-                uint8_t fifoSize = bmx160->getLastFifoSize();
-                auto& fifo       = bmx160->getLastFifo();
+                uint16_t fifoSize;
+                auto& fifo = bmx160->getLastFifo(fifoSize);
 
                 for (uint8_t ii = 0; ii < fifoSize; ii++)
                 {
@@ -333,10 +333,9 @@ void calibrateMagnetometer()
         [&]()
         {
             bmx160->sample();
-
-            uint8_t fifoSize = bmx160->getLastFifoSize();
-            auto& fifo       = bmx160->getLastFifo();
-
+            uint16_t fifoSize;
+            auto& fifo = bmx160->getLastFifo(fifoSize);
+    
             for (uint8_t i = 0; i < fifoSize; i++)
             {
                 Logger::getInstance().log(fifo.at(i));
@@ -409,8 +408,8 @@ void calibrateGyroscope()
         {
             bmx160->sample();
 
-            uint8_t fifoSize = bmx160->getLastFifoSize();
-            auto& fifo       = bmx160->getLastFifo();
+            uint16_t fifoSize;
+            auto& fifo = bmx160->getLastFifo(fifoSize);
 
             for (uint8_t i = 0; i < fifoSize; i++)
             {
