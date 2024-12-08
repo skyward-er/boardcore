@@ -1,5 +1,6 @@
 /* Copyright (c) 2016-2020 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano, Giovanni Annaloro
+ * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano,
+ * Giovanni Annaloro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -143,21 +144,23 @@ class SensorFIFO : public Sensor<Data>
 {
 protected:
     std::array<Data, FifoSize> lastFifo;
-    uint16_t lastFifoLevel = 1;  //< number of samples in lastFifo
+    uint16_t lastFifoLevel          = 1;  //< number of samples in lastFifo
     uint64_t lastInterruptTimestamp = 0;
-    uint64_t interruptTimestampDelta = 0;  //< delta between previous interrupt timestamp and the last received one
-    miosix::FastMutex fifoMutex; //thread safe mutex to read FIFO 
-
+    uint64_t interruptTimestampDelta =
+        0;                        //< delta between previous interrupt
+                                  // timestamp and the last received one
+    miosix::FastMutex fifoMutex;  // thread safe mutex to read FIFO
 
 public:
     /**
-     * @param lastFifoSize output parameter for last FIFO size 
+     * @param lastFifoSize output parameter for last FIFO size
      * @return last FIFO sampled from the sensor
      */
-    const std::array<Data, FifoSize> getLastFifo(uint16_t& lastFifoSize) {
+    const std::array<Data, FifoSize> getLastFifo(uint16_t& lastFifoSize)
+    {
         miosix::Lock<miosix::FastMutex> l(fifoMutex);
         lastFifoSize = lastFifoLevel;
-        return lastFifo; 
+        return lastFifo;
     }
 
     /**

@@ -335,7 +335,7 @@ void calibrateMagnetometer()
             bmx160->sample();
             uint16_t fifoSize;
             auto& fifo = bmx160->getLastFifo(fifoSize);
-    
+
             for (uint8_t i = 0; i < fifoSize; i++)
             {
                 Logger::getInstance().log(fifo.at(i));

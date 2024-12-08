@@ -73,13 +73,15 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     Eigen::Vector3f avgAccel{0, 0, 0}, avgMag{0, 0, 0}, avgGyro{0, 0, 0}, vec;
     BMX160WithCorrectionData result;
     BMX160Data fifoElement;
-    uint16_t lastFifoSize; 
-    std::array<BMX160Data, BMX160Defs::FIFO_SIZE> lastFifo = bmx160->getLastFifo(lastFifoSize); //get last fifo and save last fifo size in fifoSize
+    uint16_t lastFifoSize;
+    std::array<BMX160Data, BMX160Defs::FIFO_SIZE> lastFifo =
+        bmx160->getLastFifo(
+            lastFifoSize);  // get last fifo and save last fifo size in fifoSize
 
     // Read all data in the fifo
     for (int i = 0; i < lastFifoSize; i++)
     {
-        BMX160Data fifoElement = lastFifo[i];
+        fifoElement = lastFifo[i];
         // Read acceleration data
         static_cast<AccelerometerData>(fifoElement) >> vec;
         avgAccel += vec;
