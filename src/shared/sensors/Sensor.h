@@ -1,7 +1,5 @@
 /* Copyright (c) 2016-2020 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano,
- * Giovanni Annaloro
- *
+ * Authors: Alain Carlucci, Luca Conterio, Davide Mor, Emilio Corigliano
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
