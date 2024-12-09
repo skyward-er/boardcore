@@ -42,7 +42,8 @@ void __attribute__((used)) DMA1_Stream0_IRQImpl()
         Boardcore::DMAStreamId::DMA1_Str0);
 }
 
-// Commented because already used elsewhere by miosix
+// TODO: decide how to handle this situation
+// Commented because already defined elsewhere by miosix
 // void __attribute__((naked)) DMA1_Stream1_IRQHandler()
 // {
 //     saveContext();
@@ -51,7 +52,8 @@ void __attribute__((used)) DMA1_Stream0_IRQImpl()
 // }
 // void __attribute__((used)) DMA1_Stream1_IRQImpl()
 // {
-//     Boardcore::DMADriver::instance().IRQhandleInterrupt(Boardcore::DMAStreamId::DMA1_Str1);
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
+//         Boardcore::DMAStreamId::DMA1_Str1);
 // }
 
 void __attribute__((naked)) DMA1_Stream2_IRQHandler()
@@ -67,7 +69,8 @@ void __attribute__((used)) DMA1_Stream2_IRQImpl()
         Boardcore::DMAStreamId::DMA1_Str2);
 }
 
-// Commented because already used elsewhere by miosix
+// TODO: decide how to handle this situation
+// Commented because already defined elsewhere by miosix
 // void __attribute__((naked)) DMA1_Stream3_IRQHandler()
 // {
 //     saveContext();
@@ -76,7 +79,8 @@ void __attribute__((used)) DMA1_Stream2_IRQImpl()
 // }
 // void __attribute__((used)) DMA1_Stream3_IRQImpl()
 // {
-//     Boardcore::DMADriver::instance().IRQhandleInterrupt(Boardcore::DMAStreamId::DMA1_Str3);
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
+//         Boardcore::DMAStreamId::DMA1_Str3);
 // }
 
 void __attribute__((naked)) DMA1_Stream4_IRQHandler()
@@ -170,14 +174,19 @@ void __attribute__((used)) DMA2_Stream2_IRQImpl()
         Boardcore::DMAStreamId::DMA2_Str2);
 }
 
-// void __attribute__((naked)) DMA2_Stream3_IRQHandler() {
+// TODO: decide how to handle this situation
+// Commented because already defined elsewhere by miosix
+// void __attribute__((naked)) DMA2_Stream3_IRQHandler()
+// {
 //     saveContext();
 //     asm volatile("bl _Z20DMA2_Stream3_IRQImplv");
 //     restoreContext();
 // }
 
-// void __attribute__((used)) DMA2_Stream3_IRQImpl() {
-//     DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str3);
+// void __attribute__((used)) DMA2_Stream3_IRQImpl()
+// {
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
+//         Boardcore::DMAStreamId::DMA2_Str3);
 // }
 
 void __attribute__((naked)) DMA2_Stream4_IRQHandler()
@@ -193,15 +202,18 @@ void __attribute__((used)) DMA2_Stream4_IRQImpl()
         Boardcore::DMAStreamId::DMA2_Str4);
 }
 
-// void __attribute__((naked)) DMA2_Stream5_IRQHandler() {
-//     saveContext();
-//     asm volatile("bl _Z20DMA2_Stream5_IRQImplv");
-//     restoreContext();
-// }
+void __attribute__((naked)) DMA2_Stream5_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z20DMA2_Stream5_IRQImplv");
+    restoreContext();
+}
 
-// void __attribute__((used)) DMA2_Stream5_IRQImpl() {
-//     DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str5);
-// }
+void __attribute__((used)) DMA2_Stream5_IRQImpl()
+{
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str5);
+}
 
 void __attribute__((naked)) DMA2_Stream6_IRQHandler()
 {
@@ -216,15 +228,18 @@ void __attribute__((used)) DMA2_Stream6_IRQImpl()
         Boardcore::DMAStreamId::DMA2_Str6);
 }
 
-// void __attribute__((naked)) DMA2_Stream7_IRQHandler() {
-//     saveContext();
-//     asm volatile("bl _Z20DMA2_Stream7_IRQImplv");
-//     restoreContext();
-// }
+void __attribute__((naked)) DMA2_Stream7_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z20DMA2_Stream7_IRQImplv");
+    restoreContext();
+}
 
-// void __attribute__((used)) DMA2_Stream7_IRQImpl() {
-//     DMADriver::instance().IRQhandleInterrupt(DMAStreamId::DMA2_Str7);
-// }
+void __attribute__((used)) DMA2_Stream7_IRQImpl()
+{
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMAStreamId::DMA2_Str7);
+}
 
 namespace Boardcore
 {
