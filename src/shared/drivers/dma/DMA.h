@@ -44,10 +44,15 @@ namespace Boardcore
 
 enum class DMAStreamId : uint8_t
 {
+    // TODO: some streams are commented because the
+    // corresponding irq handler is already defined
+    // by miosix. For now those streams are not usable,
+    // decide how to handle this situation.
+
     DMA1_Str0 = 0,
-    DMA1_Str1 = 1,
+    // DMA1_Str1 = 1,
     DMA1_Str2 = 2,
-    DMA1_Str3 = 3,
+    // DMA1_Str3 = 3,
     DMA1_Str4 = 4,
     DMA1_Str5 = 5,
     DMA1_Str6 = 6,
@@ -55,7 +60,7 @@ enum class DMAStreamId : uint8_t
     DMA2_Str0 = 8,
     DMA2_Str1 = 9,
     DMA2_Str2 = 10,
-    DMA2_Str3 = 11,
+    // DMA2_Str3 = 11,
     DMA2_Str4 = 12,
     DMA2_Str5 = 13,
     DMA2_Str6 = 14,
