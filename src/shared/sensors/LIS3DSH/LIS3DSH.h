@@ -399,6 +399,65 @@ public:
             printf("Wrong WHO_AM_I value, got %d instead of %d\n", whoamiValue, WHO_AM_I_DEFAULT_VALUE);
     }
 
+    void whoamiDmaOnlyRX()
+    {
+        // Max wait for receiver stream
+        constexpr auto wait = std::chrono::seconds(1);
+        constexpr auto waitNs = std::chrono::nanoseconds(wait).count();
+
+        uint8_t reg = WHO_AM_I_REG;
+        // Configuration taken from the spi driver
+        if (spiSlave.config.writeBit == SPI::WriteBit::NORMAL)
+            reg |= 0x80;
+
+        // Uses SPI1
+        uint8_t dstBuf[] = {0,0};
+        // Receiver stream setup
+        DMAStream &streamRx = DMADriver::instance().acquireStream(DMAStreamId::DMA2_Str0);
+        DMATransaction trnRx{
+            .channel = DMATransaction::Channel::CHANNEL3, // SPI1_RX
+            .direction         = DMATransaction::Direction::PER_TO_MEM,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = (void*)&(SPI1->DR),
+            .dstAddress        = dstBuf,
+            .numberOfDataItems = 1,
+            // .srcIncrement      = true,
+            .dstIncrement      = true,
+            .enableTransferCompleteInterrupt = true,
+        };
+        streamRx.setup(trnRx);
+
+        // Start transaction
+        spiSlave.bus.select(spiSlave.cs);
+
+        // Send request
+        spiSlave.bus.write(reg); // verify if correct
+        // TODO: Ritentare con writeNoRead
+
+        // First enable the receiving stream
+        streamRx.enable();
+
+        // Wait for the receiver to complete
+        const bool res = streamRx.timedWaitForTransferComplete(waitNs);
+
+        // Stop the transaction
+        spiSlave.bus.deselect(spiSlave.cs);
+
+        uint8_t whoamiValue = dstBuf[0];
+
+        if(res)
+            printf("Transfer completed\n");
+        else
+            printf("Transfer failed\n");
+
+        if (whoamiValue == WHO_AM_I_DEFAULT_VALUE)
+            printf("Correct WHO_AM_I value\n");
+        else
+            printf("Wrong WHO_AM_I value, got %d instead of %d\n", whoamiValue, WHO_AM_I_DEFAULT_VALUE);
+    }
+
 private:
     /**
      * @brief Read new data from the accelerometer.

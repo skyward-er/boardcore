@@ -89,7 +89,8 @@ int main()
     Thread::sleep(500);
 
     // Test dma communication by reading whoami
-    sensor.whoamiDma();
+    // sensor.whoamiDma();
+    sensor.whoamiDmaOnlyRX();
 
     // sample some data from the sensor
     // for (int i = 0; i < 100; i++)
