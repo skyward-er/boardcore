@@ -98,8 +98,8 @@ public:
      * datasheet for details. Unit of measurement [Gauss]
      * @return True if operation succeeded.
      */
-    bool setMagnetometerCompensation(const Eigen::Matrix3f &c,
-                                     const Eigen::Vector3f &b);
+    bool setMagnetometerCompensation(const Eigen::Matrix3f& c,
+                                     const Eigen::Vector3f& b);
 
     /**
      * @brief Set custom compensation parameters for the accelerometer.
@@ -110,8 +110,8 @@ public:
      * datasheet for details. Unit of measurement [m/s^2]
      * @return True if operation succeeded.
      */
-    bool setAccelerometerCompensation(const Eigen::Matrix3f &c,
-                                      const Eigen::Vector3f &b);
+    bool setAccelerometerCompensation(const Eigen::Matrix3f& c,
+                                      const Eigen::Vector3f& b);
 
     /**
      * @brief Set custom compensation parameters for the gyroscope.
@@ -122,8 +122,8 @@ public:
      * datasheet for details. Unit of measurement [rad/s]
      * @return True if operation succeeded.
      */
-    bool setGyroscopeCompensation(const Eigen::Matrix3f &c,
-                                  const Eigen::Vector3f &b);
+    bool setGyroscopeCompensation(const Eigen::Matrix3f& c,
+                                  const Eigen::Vector3f& b);
 
     /**
      * @brief Write the current register settings into non-volatile
@@ -290,7 +290,7 @@ protected:
      *
      * @return True if operation succeeded.
      */
-    bool writeRegister(const std::string &command);
+    bool writeRegister(const std::string& command);
 
     /**
      * @brief Serial interface that is needed to communicate

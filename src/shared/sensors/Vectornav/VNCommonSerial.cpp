@@ -214,10 +214,8 @@ void VNCommonSerial::configDefaultSerialPort()
 
 bool VNCommonSerial::configUserSerialPort()
 {
-    std::string command;
-
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+    std::string command = fmt::format("{}{}", "VNWRG,5,", baudRate);
 
     // I can send the command
     if (!sendStringCommand(command))
@@ -468,38 +466,35 @@ std::string VNCommonSerial::getHSIEstimatorValues()
     return recvString.data();
 }
 
-bool VNCommonSerial::setMagnetometerCompensation(const Eigen::Matrix3f &c,
-                                                 const Eigen::Vector3f &b)
+bool VNCommonSerial::setMagnetometerCompensation(const Eigen::Matrix3f& c,
+                                                 const Eigen::Vector3f& b)
 {
-    std::string command;
-
-    command = fmt::format("VNWRG,23,{},{},{},{},{},{},{},{},{},{},{},{}",
-                          c(0, 0), c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2),
-                          c(2, 0), c(2, 1), c(2, 2), b(0), b(1), b(2));
+    std::string command =
+        fmt::format("VNWRG,23,{},{},{},{},{},{},{},{},{},{},{},{}", c(0, 0),
+                    c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2), c(2, 0),
+                    c(2, 1), c(2, 2), b(0), b(1), b(2));
 
     return writeRegister(command);
 }
 
-bool VNCommonSerial::setAccelerometerCompensation(const Eigen::Matrix3f &c,
-                                                  const Eigen::Vector3f &b)
+bool VNCommonSerial::setAccelerometerCompensation(const Eigen::Matrix3f& c,
+                                                  const Eigen::Vector3f& b)
 {
-    std::string command;
-
-    command = fmt::format("VNWRG,25,{},{},{},{},{},{},{},{},{},{},{},{}",
-                          c(0, 0), c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2),
-                          c(2, 0), c(2, 1), c(2, 2), b(0), b(1), b(2));
+    std::string command =
+        fmt::format("VNWRG,25,{},{},{},{},{},{},{},{},{},{},{},{}", c(0, 0),
+                    c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2), c(2, 0),
+                    c(2, 1), c(2, 2), b(0), b(1), b(2));
 
     return writeRegister(command);
 }
 
-bool VNCommonSerial::setGyroscopeCompensation(const Eigen::Matrix3f &c,
-                                              const Eigen::Vector3f &b)
+bool VNCommonSerial::setGyroscopeCompensation(const Eigen::Matrix3f& c,
+                                              const Eigen::Vector3f& b)
 {
-    std::string command;
-
-    command = fmt::format("VNWRG,84,{},{},{},{},{},{},{},{},{},{},{},{}",
-                          c(0, 0), c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2),
-                          c(2, 0), c(2, 1), c(2, 2), b(0), b(1), b(2));
+    std::string command =
+        fmt::format("VNWRG,84,{},{},{},{},{},{},{},{},{},{},{},{}", c(0, 0),
+                    c(0, 1), c(0, 2), c(1, 0), c(1, 1), c(1, 2), c(2, 0),
+                    c(2, 1), c(2, 2), b(0), b(1), b(2));
 
     return writeRegister(command);
 }
@@ -640,7 +635,7 @@ bool VNCommonSerial::recvStringCommand(char* command, int maxLength)
     return true;
 }
 
-bool VNCommonSerial::writeRegister(const std::string &command)
+bool VNCommonSerial::writeRegister(const std::string& command)
 {
     usart.clearQueue();
     if (!sendStringCommand(command))
