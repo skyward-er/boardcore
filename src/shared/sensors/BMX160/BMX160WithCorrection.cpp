@@ -71,16 +71,16 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     }
 
     Eigen::Vector3f avgAccel{0, 0, 0}, avgMag{0, 0, 0}, avgGyro{0, 0, 0}, vec;
-    BMX160Data fifoElement;
     BMX160WithCorrectionData result;
-
-    uint8_t fifoSize = bmx160->getLastFifoSize();
+    BMX160Data fifoElement;
+    uint16_t lastFifoSize;
+    const auto lastFifo = bmx160->getLastFifo(
+        lastFifoSize);  // get last fifo and save last fifo size in fifoSize
 
     // Read all data in the fifo
-    for (int i = 0; i < fifoSize; i++)
+    for (int i = 0; i < lastFifoSize; i++)
     {
-        fifoElement = bmx160->getFifoElement(i);
-
+        fifoElement = lastFifo[i];
         // Read acceleration data
         static_cast<AccelerometerData>(fifoElement) >> vec;
         avgAccel += vec;
@@ -95,7 +95,7 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     }
 
     // Average the samples
-    if (fifoSize == 0)
+    if (lastFifoSize == 0)
     {
         static_cast<AccelerometerData>(bmx160->getLastSample()) >> avgAccel;
         static_cast<MagnetometerData>(bmx160->getLastSample()) >> avgMag;
@@ -104,9 +104,9 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     }
     else
     {
-        avgAccel /= fifoSize;
-        avgMag /= fifoSize;
-        avgGyro /= fifoSize;
+        avgAccel /= lastFifoSize;
+        avgMag /= lastFifoSize;
+        avgGyro /= lastFifoSize;
     }
 
     // Correct the measurements

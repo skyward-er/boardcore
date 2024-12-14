@@ -221,11 +221,13 @@ public:
             int16_t z = buf[4] | buf[5] << 8;
 
             Eigen::Vector3f rads = toRadiansPerSecond(x, y, z);
-            lastFifo[0] = {lastSampleTimestamp, rads(0), rads(1), rads(2)};
+            return {lastSampleTimestamp, rads(0), rads(1), rads(2)};
         }
-
         else  // FIFO is enabled
         {
+            // Lock mutex for thread safe Fifo reading
+            miosix::Lock<miosix::FastMutex> l(fifoMutex);
+
             SPITransaction spi(spislave);
             // Read last fifo level
             uint8_t fifoSrc   = spi.readRegister(REG_FIFO_SRC);
@@ -287,9 +289,8 @@ public:
             }
 
             lastFifoLevel = fifoLevel - duplicates;
+            return lastFifo[lastFifoLevel - 1];
         }
-
-        return lastFifo[lastFifoLevel - 1];
     }
 
 private:

@@ -127,6 +127,8 @@ private:
      * timestamp is 0: in this case nothing happens to the fifo, data inside
      * `timeslot` is discarded.
      *
+     * @note The fifo mutex must be locked prior to calling this function
+     *
      * @param timeslot The timeslot containing data to be pushed inside the
      * fifo.
      * @param fifoIdx The current index of the fifo, pointing to the current

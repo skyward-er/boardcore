@@ -94,18 +94,19 @@ int main()
         }
 
         uint64_t now = TimestampTimer::getTimestamp();
+        uint16_t fifoSize;
+        const auto lastFifo = sensor->getLastFifo(fifoSize);
+        uint16_t len        = std::min(fifoSize, (uint16_t)5);
 
         printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
                now / 1000000.0f);
         printf("Temp: %.2f deg\n", sensor->getTemperature().temperature);
-        printf("Fill: %d\n", sensor->getLastFifoSize());
-
+        printf("Fill: %d\n", fifoSize);
         printf("----------------------------\n");
-        uint16_t len = std::min(sensor->getLastFifoSize(), (uint16_t)5);
 
         for (uint16_t i = 0; i < len; i++)
         {
-            BMX160Data data = sensor->getFifoElement(i);
+            BMX160Data data = lastFifo[i];
             printf("Mag [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
                    data.magneticFieldTimestamp / 1000000.0f,
                    data.magneticFieldX, data.magneticFieldY,

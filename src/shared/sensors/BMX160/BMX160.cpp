@@ -750,8 +750,9 @@ void BMX160::readFifo(bool headerless)
     spi.readRegisters(BMX160Defs::REG_FIFO_DATA, buf, len);
     uint64_t timestamp          = 0;
     uint64_t watermarkTimestamp = 0;
+    int idx                     = 0;
+    miosix::Lock<miosix::FastMutex> l(fifoMutex);
 
-    int idx = 0;
     while (idx < len && buf[idx] != BMX160Defs::FIFO_STOP_BYTE)
     {
         if (headerless)

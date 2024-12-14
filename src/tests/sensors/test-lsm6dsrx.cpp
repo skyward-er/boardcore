@@ -264,17 +264,15 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
         }
 
         sens->sample();
-
-        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-            sens->getLastFifo();
-
+        uint16_t fifoSize;
+        const auto buf = sens->getLastFifo(fifoSize);
         // Print fifo
         std::cout << "last fifo element:\n";
-        buf[sens->getLastFifoSize() - 1].print(std::cout);
-        std::cout << "last fifo size: " << sens->getLastFifoSize() << "\n";
+        buf[fifoSize - 1].print(std::cout);
+        std::cout << "last fifo size: " << fifoSize << "\n";
 
         // Check fifo data
-        for (uint16_t i = 1; i < sens->getLastFifoSize(); ++i)
+        for (uint16_t i = 1; i < fifoSize; ++i)
         {
             // Check for accelerometer timestamps
             if (buf[i].accelerationTimestamp <=

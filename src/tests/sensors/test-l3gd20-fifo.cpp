@@ -174,11 +174,9 @@ int main()
         // Measure how long we take to read the fifo
         update = TimestampTimer::getTimestamp() - update;
 
-        uint8_t level =
-            gyro->getLastFifoSize();  // Current number of samples in the FIFO
-
-        // Obtain the FIFO
-        const array<L3GD20Data, L3GD20_FIFO_SIZE>& fifo = gyro->getLastFifo();
+        uint16_t level;
+        // Obtain the FIFO and save the last fifo size
+        const auto fifo = gyro->getLastFifo(level);
 
         // Store everything in the data buffer
         for (int i = 0; i < level; i++)

@@ -137,36 +137,47 @@ public:
 
 /**
  * @brief Interface for sensor that implement a FIFO.
+ *
+ * @note This class is move constructible, but the move operation is not thread
+ * safe. The moved-to object's mutex is initialized to the unlocked state, no
+ * matter the moved-from object's mutex state. The move constructor is only
+ * needed for HIL.
+ *
  */
 template <typename Data, uint32_t FifoSize>
 class SensorFIFO : public Sensor<Data>
 {
 protected:
     std::array<Data, FifoSize> lastFifo;
-    uint16_t lastFifoLevel = 1;  ///< number of samples in lastFifo
-
+    uint16_t lastFifoLevel          = 1;  //< number of samples in lastFifo
     uint64_t lastInterruptTimestamp = 0;
     uint64_t interruptTimestampDelta =
-        0;  ///< delta between previous interrupt timestamp and the last
-            ///< received one
+        0;                        //< delta between previous interrupt
+                                  // timestamp and the last received one
+    miosix::FastMutex fifoMutex;  // thread safe mutex to read FIFO
 
 public:
+    SensorFIFO() {}
+
+    SensorFIFO(SensorFIFO&& other)
+        : lastFifo{std::move(other.lastFifo)},
+          lastFifoLevel{std::move(other.lastFifoLevel)},
+          lastInterruptTimestamp{std::move(other.lastInterruptTimestamp)},
+          interruptTimestampDelta{std::move(other.interruptTimestampDelta)},
+          fifoMutex{}
+    {
+    }
+
     /**
+     * @param lastFifoSize output parameter for last FIFO size
      * @return last FIFO sampled from the sensor
      */
-    const std::array<Data, FifoSize>& getLastFifo() { return lastFifo; }
-
-    /**
-     * @param i index of the requested item inside the FIFO
-     *
-     * @return the i-th element of the FIFO
-     */
-    const Data& getFifoElement(uint32_t i) const { return lastFifo[i]; }
-
-    /**
-     * @return number of elements in the last FIFO sampled from the sensor
-     */
-    uint16_t getLastFifoSize() const { return lastFifoLevel; }
+    const std::array<Data, FifoSize> getLastFifo(uint16_t& lastFifoSize)
+    {
+        miosix::Lock<miosix::FastMutex> l(fifoMutex);
+        lastFifoSize = lastFifoLevel;
+        return lastFifo;
+    }
 
     /**
      * @brief Called by the interrupt handling routine: provides the timestamp

@@ -209,8 +209,8 @@ SixParametersCorrector calibrateMagnetometer(SixParametersCorrector oldCorr)
         {
             bmx160->sample();
 
-            uint8_t fifoSize = bmx160->getLastFifoSize();
-            auto& fifo       = bmx160->getLastFifo();
+            uint16_t fifoSize;
+            const auto fifo = bmx160->getLastFifo(fifoSize);
 
             for (uint8_t i = 0; i < fifoSize; i++)
             {
@@ -294,8 +294,8 @@ SixParametersCorrector calibrateGyroscope(SixParametersCorrector corr)
         {
             bmx160->sample();
 
-            uint8_t fifoSize = bmx160->getLastFifoSize();
-            auto& fifo       = bmx160->getLastFifo();
+            uint16_t fifoSize;
+            const auto fifo = bmx160->getLastFifo(fifoSize);
 
             for (uint8_t i = 0; i < fifoSize; i++)
             {
@@ -436,7 +436,7 @@ SixParametersCorrector calibrateGyroscope(SixParametersCorrector corr)
 //             bmx160->sample();
 //             avgAccel = {0, 0, 0};
 
-//             // Read all the data contained in the fifo
+//             // Read all the data contaigetLastFifoned in the fifo
 //             uint8_t size       = bmx160->getLastFifoSize();
 //             fifoAccSampleCount = 0;
 //             for (int ii = 0; ii < size; ii++)
