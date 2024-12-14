@@ -765,6 +765,9 @@ float LSM6DSRX::getSensorTimestampResolution()
 
 void LSM6DSRX::readFromFifo()
 {
+    // Lock mutex for thread safe Fifo reading
+    miosix::Lock<miosix::FastMutex> l(fifoMutex);
+
     SPITransaction spi{spiSlave};
 
     // get number of sample to read
@@ -794,17 +797,17 @@ void LSM6DSRX::readFromFifo()
     // --> `i` keeps count of the number of elements in `rawFifo`
     //     `idxFifo` keeps track of the samples saved inside `lastFifo`
     uint16_t idxFifo = 0;
+
     for (uint16_t i = 0; i < numSamples; ++i)
     {
         const uint8_t sensorTag   = (rawFifo[i].sampleTag >> 3) & 31;
         const uint8_t timeslotTag = (rawFifo[i].sampleTag & 6) >> 1;
-
-        const uint8_t xl = rawFifo[i].xl;
-        const uint8_t xh = rawFifo[i].xh;
-        const uint8_t yl = rawFifo[i].yl;
-        const uint8_t yh = rawFifo[i].yh;
-        const uint8_t zl = rawFifo[i].zl;
-        const uint8_t zh = rawFifo[i].zh;
+        const uint8_t xl          = rawFifo[i].xl;
+        const uint8_t xh          = rawFifo[i].xh;
+        const uint8_t yl          = rawFifo[i].yl;
+        const uint8_t yh          = rawFifo[i].yh;
+        const uint8_t zl          = rawFifo[i].zl;
+        const uint8_t zh          = rawFifo[i].zh;
 
         switch (sensorTag)
         {

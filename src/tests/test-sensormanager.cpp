@@ -158,7 +158,8 @@ public:
     FIFOData sampleImpl()
     {
         index = 0;
-        return sensor->getFifoElement(index);
+        uint16_t actualFifoSize;
+        return sensor->getLastFifo(actualFifoSize)[index];
     }
 
     FIFOData getLastSample() override
@@ -167,8 +168,8 @@ public:
             index++;
 
         TRACE("Index : %d \n", index);
-
-        return sensor->getFifoElement(index);
+        uint16_t actualFifoSize;
+        return sensor->getLastFifo(actualFifoSize)[index];
     }
 
 private:

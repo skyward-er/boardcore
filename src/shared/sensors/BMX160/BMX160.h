@@ -41,7 +41,7 @@ namespace Boardcore
 /**
  * @brief BMX160 Driver.
  */
-class BMX160 : public SensorFIFO<BMX160Data, 200>
+class BMX160 : public SensorFIFO<BMX160Data, BMX160Defs::FIFO_SIZE>
 {
 public:
     /**

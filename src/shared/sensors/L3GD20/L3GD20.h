@@ -226,6 +226,9 @@ public:
 
         else  // FIFO is enabled
         {
+            // Lock mutex for thread safe Fifo reading
+            miosix::Lock<miosix::FastMutex> l(fifoMutex);
+
             SPITransaction spi(spislave);
             // Read last fifo level
             uint8_t fifoSrc   = spi.readRegister(REG_FIFO_SRC);

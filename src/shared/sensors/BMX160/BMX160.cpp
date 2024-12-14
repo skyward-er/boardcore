@@ -754,6 +754,9 @@ void BMX160::readFifo(bool headerless)
     int idx = 0;
     while (idx < len && buf[idx] != BMX160Defs::FIFO_STOP_BYTE)
     {
+        // Lock mutex for thread safe Fifo reading
+        miosix::Lock<miosix::FastMutex> l(fifoMutex);
+
         if (headerless)
         {
             auto magRaw = parseStruct<BMX160Defs::MagRaw>(buf, idx);
