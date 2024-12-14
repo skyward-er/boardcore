@@ -49,7 +49,9 @@ UBXGPSSpi::UBXGPSSpi(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
 SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
     SPIBusConfig config;
-    config.clockDivider = SPI::ClockDivider::DIV_16;
+    config.clockDivider  = SPI::ClockDivider::DIV_16;
+    config.csHoldTimeUs  = 0;   // 1 millisecondo
+    config.csSetupTimeUs = 10;  // 10 microsecondi
     return config;
 }
 
@@ -57,9 +59,13 @@ uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }
 
 bool UBXGPSSpi::init()
 {
+
+     SPISlaveLock lock(spiSlave);
+
+
     LOG_DEBUG(logger, "Resetting the device...");
 
-    if (!reset())
+    if (!reset(lock))
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not reset the device");
@@ -68,7 +74,7 @@ bool UBXGPSSpi::init()
 
     LOG_DEBUG(logger, "Setting the UBX protocol...");
 
-    if (!setUBXProtocol())
+    if (!setUBXProtocol(lock))
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the UBX protocol");
@@ -77,7 +83,7 @@ bool UBXGPSSpi::init()
 
     LOG_DEBUG(logger, "Setting the dynamic model...");
 
-    if (!setDynamicModelToAirborne4g())
+    if (!setDynamicModelToAirborne4g(lock))
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the dynamic model");
@@ -86,7 +92,7 @@ bool UBXGPSSpi::init()
 
     LOG_DEBUG(logger, "Setting the sample rate...");
 
-    if (!setSampleRate())
+    if (!setSampleRate(lock))
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the sample rate");
@@ -95,7 +101,7 @@ bool UBXGPSSpi::init()
 
     LOG_DEBUG(logger, "Setting the PVT message rate...");
 
-    if (!setPVTMessageRate())
+    if (!setPVTMessageRate(lock))
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the PVT message rate");
@@ -113,20 +119,21 @@ UBXGPSData UBXGPSSpi::sampleImpl()
 *PARTE AGGIUNTA
 *
 **/
-    long long currentTimestamp = Kernel::getOldTick();
+  long long currentTimestamp = Kernel::getOldTick(); 
 
     // Controlla se è passato abbastanza tempo dall'ultimo campione
     if (currentTimestamp - lastSampleTimestamp < 1)
     {
-        return NO_NEW_DATA; // Restituisce l'ultimo campione se la differenza è < 1ms
+        return NO_NEW_DATA;  // Restituisce l'ultimo campione se la differenza è < 1ms
     }
 
+    SPISlaveLock lock(spiSlave);
 
 
 
     UBXPvtFrame pvt;
 
-    if (!readUBXFrame(pvt))
+    if (!readUBXFrame(lock, pvt))
         return lastSample;
 
     UBXPvtFrame::Payload& pvtP = pvt.getPayload();
@@ -166,7 +173,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     return sample;
 }
 
-bool UBXGPSSpi::reset()
+bool UBXGPSSpi::reset(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Hot start
@@ -177,7 +184,7 @@ bool UBXGPSSpi::reset()
     UBXFrame frame{UBXMessage::UBX_CFG_RST, payload, sizeof(payload)};
 
     // The reset message will not be followed by an acknowledgment
-    if (!writeUBXFrame(frame))
+    if (!writeUBXFrame(lock, frame))
         return false;
 
     // Do not interact with the module while it is resetting
@@ -186,7 +193,7 @@ bool UBXGPSSpi::reset()
     return true;
 }
 
-bool UBXGPSSpi::setUBXProtocol()
+bool UBXGPSSpi::setUBXProtocol(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
         0x04,                    // SPI port
@@ -202,10 +209,10 @@ bool UBXGPSSpi::setUBXProtocol()
 
     UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
 
-    return safeWriteUBXFrame(frame);
+    return safeWriteUBXFrame(lock, frame);
 }
 
-bool UBXGPSSpi::setDynamicModelToAirborne4g()
+bool UBXGPSSpi::setDynamicModelToAirborne4g(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
         0x01, 0x00,  // Parameters bitmask, apply dynamic model configuration
@@ -231,10 +238,10 @@ bool UBXGPSSpi::setDynamicModelToAirborne4g()
 
     UBXFrame frame{UBXMessage::UBX_CFG_NAV5, payload, sizeof(payload)};
 
-    return safeWriteUBXFrame(frame);
+    return safeWriteUBXFrame(lock, frame);
 }
 
-bool UBXGPSSpi::setSampleRate()
+bool UBXGPSSpi::setSampleRate(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Measurement rate
@@ -248,10 +255,10 @@ bool UBXGPSSpi::setSampleRate()
 
     UBXFrame frame{UBXMessage::UBX_CFG_RATE, payload, sizeof(payload)};
 
-    return safeWriteUBXFrame(frame);
+    return safeWriteUBXFrame(lock, frame);
 }
 
-bool UBXGPSSpi::setPVTMessageRate()
+bool UBXGPSSpi::setPVTMessageRate(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
         0x01, 0x07,  // PVT message
@@ -260,17 +267,17 @@ bool UBXGPSSpi::setPVTMessageRate()
 
     UBXFrame frame{UBXMessage::UBX_CFG_MSG, payload, sizeof(payload)};
 
-    return safeWriteUBXFrame(frame);
+    return safeWriteUBXFrame(lock, frame);
 }
 
-bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
+bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
 {
     long long start = Kernel::getOldTick();
     long long end   = start + READ_TIMEOUT;
 
     {
-        spiSlave.bus.configure(spiSlave.config);
-        spiSlave.bus.select(spiSlave.cs);
+        //spiSlave.bus.configure(spiSlave.config);
+        //spiSlave.bus.select(spiSlave.cs);
 
         // Search UBX frame preamble byte by byte
         size_t i     = 0;
@@ -280,7 +287,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             if (Kernel::getOldTick() >= end)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
-                spiSlave.bus.deselect(spiSlave.cs);
+               // spiSlave.bus.deselect(spiSlave.cs);
                 // Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
             }
@@ -321,7 +328,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
         spiSlave.bus.read(frame.checksum, 2);
 
-        spiSlave.bus.deselect(spiSlave.cs);
+        //spiSlave.bus.deselect(spiSlave.cs);
         // Thread::sleep(1);  // GPS minimum time after deselect
     }
 
@@ -334,7 +341,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
     return true;
 }
 
-bool UBXGPSSpi::writeUBXFrame(const UBXFrame& frame)
+bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
 {
     if (!frame.isValid())
     {
@@ -346,15 +353,16 @@ bool UBXGPSSpi::writeUBXFrame(const UBXFrame& frame)
     frame.writePacked(packedFrame);
 
     {
-        SPITransaction spi{spiSlave};
-        spi.write(packedFrame, frame.getLength());
-        Thread::sleep(1);  // GPS minimum time after deselect
+        //SPITransaction spi{spiSlave};
+        //spi.write(packedFrame, frame.getLength());
+        //Thread::sleep(1);  // GPS minimum time after deselect
+         spiSlave.bus.write(packedFrame, frame.getLength());
     }
 
     return true;
 }
 
-bool UBXGPSSpi::safeWriteUBXFrame(const UBXFrame& frame)
+bool UBXGPSSpi::safeWriteUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
 {
     for (unsigned int i = 0; i < MAX_TRIES; i++)
     {
@@ -364,12 +372,12 @@ bool UBXGPSSpi::safeWriteUBXFrame(const UBXFrame& frame)
                       MAX_TRIES);
         }
 
-        if (!writeUBXFrame(frame))
+        if (!writeUBXFrame(lock, frame))
             return false;
 
         UBXAckFrame ack;
 
-        if (!readUBXFrame(ack))
+        if (!readUBXFrame(lock, ack))
             continue;
 
         if (ack.isNack())
