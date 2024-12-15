@@ -285,6 +285,17 @@ public:
                  << IFindex;
     }
 
+    /**
+     * @brief Change only the number of items to be exchanged during
+     * a dma transaction.
+     */
+    void changeNumberOfItems(const uint16_t nItems)
+    {
+        // TODO: verify that the stream is not enabled while doing it
+        currentSetup.numberOfDataItems = nItems;
+        registers->NDTR                = nItems;
+    }
+
 private:
     DMAStream(DMAStreamId id);
 

@@ -23,10 +23,13 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <math.h>
 #include <sensors/Sensor.h>
+
+#include <chrono>
 
 #include "LIS3DSHData.h"
 
@@ -313,6 +316,91 @@ public:
         UPDATE_AFTER_READ_MODE =
             1  // values updated only when MSB and LSB are read (recommended)
     };
+
+    /**
+     * @brief Reads whoami register with dma.
+     */
+    void whoamiDma()
+    {
+        // Max wait for receiver stream
+        constexpr auto wait   = std::chrono::seconds(1);
+        constexpr auto waitNs = std::chrono::nanoseconds(wait).count();
+
+        uint8_t reg = WHO_AM_I_REG;
+        // Configuration taken from the spi driver
+        if (spiSlave.config.writeBit == SPI::WriteBit::NORMAL)
+            reg |= 0x80;
+
+        // Uses SPI1
+        uint8_t dstBuf[] = {0, 0};
+        // Receiver stream setup
+        DMAStream& streamRx =
+            DMADriver::instance().acquireStream(DMAStreamId::DMA2_Str0);
+        DMATransaction trnRx{
+            .channel           = DMATransaction::Channel::CHANNEL3,  // SPI1_RX
+            .direction         = DMATransaction::Direction::PER_TO_MEM,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = (void*)&(SPI1->DR),
+            .dstAddress        = dstBuf,
+            .numberOfDataItems = 2,
+            // .srcIncrement      = true,
+            .dstIncrement                    = true,
+            .enableTransferCompleteInterrupt = true,
+        };
+        streamRx.setup(trnRx);
+
+        // Sender stream setup
+        DMAStream& streamTx =
+            DMADriver::instance().acquireStream(DMAStreamId::DMA2_Str5);
+        uint8_t sendBuf[] = {reg, 0};
+        DMATransaction trnTx{
+            .channel           = DMATransaction::Channel::CHANNEL3,  // SPI1_TX
+            .direction         = DMATransaction::Direction::MEM_TO_PER,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = sendBuf,
+            .dstAddress        = (void*)&(SPI1->DR),
+            .numberOfDataItems = 2,
+            .srcIncrement      = true,
+            // .dstIncrement      = true,
+            // .enableTransferCompleteInterrupt = true,
+        };
+        streamTx.setup(trnTx);
+
+        // Start transaction
+        spiSlave.bus.select(spiSlave.cs);
+
+        // First enable the receiving stream
+        streamRx.enable();
+
+        // Enable sender stream
+        streamTx.enable();
+
+        // Wait for the sender to complete before stopping the transaction
+        streamTx.waitForTransferComplete();
+
+        // Stop the transaction
+        spiSlave.bus.deselect(spiSlave.cs);
+
+        // Wait for the receiver to complete
+        const bool res = streamRx.timedWaitForTransferComplete(waitNs);
+
+        uint8_t whoamiValue = dstBuf[1];
+
+        if (res)
+            printf("Transfer completed\n");
+        else
+            printf("Transfer failed\n");
+
+        if (whoamiValue == WHO_AM_I_DEFAULT_VALUE)
+            printf("Correct WHO_AM_I value\n");
+        else
+            printf("Wrong WHO_AM_I value, got %d instead of %d\n", whoamiValue,
+                   WHO_AM_I_DEFAULT_VALUE);
+    }
 
 private:
     /**

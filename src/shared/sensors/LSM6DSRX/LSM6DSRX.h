@@ -23,9 +23,12 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
+
+#include <chrono>
 
 #include "LSM6DSRXConfig.h"
 #include "LSM6DSRXData.h"
@@ -108,6 +111,12 @@ private:
 
     PrintLogger logger = Logging::getLogger("lsm6dsrx");
 
+    DMAStream& streamRx =
+        DMADriver::instance().acquireStream(DMAStreamId::DMA1_Str0);
+    DMAStream& streamTx =
+        DMADriver::instance().acquireStream(DMAStreamId::DMA1_Str5);
+    uint8_t DMA_sendBuf = 0;
+
     /**
      * @brief Check who_am_i register for validity.
      *
@@ -119,6 +128,84 @@ private:
      * @brief Performs a really simple reading from the FIFO buffer.
      */
     void readFromFifo();
+
+    void setStreamRx(uint16_t nBytes)
+    {
+        // USES SPI3
+        DMATransaction trnRx{
+            .channel           = DMATransaction::Channel::CHANNEL0,  // SPI3_RX
+            .direction         = DMATransaction::Direction::PER_TO_MEM,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = (void*)&(SPI3->DR),
+            .dstAddress        = reinterpret_cast<uint8_t*>(rawFifo.data()),
+            .numberOfDataItems = nBytes,
+            // .srcIncrement      = true,
+            .dstIncrement                    = true,
+            .enableTransferCompleteInterrupt = true,
+        };
+        streamRx.setup(trnRx);
+    }
+
+    void setStreamTx(uint16_t nBytes)
+    {
+        // USES SPI3
+        DMATransaction trnTx{
+            .channel           = DMATransaction::Channel::CHANNEL0,  // SPI3_TX
+            .direction         = DMATransaction::Direction::MEM_TO_PER,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = &DMA_sendBuf,
+            .dstAddress        = (void*)&(SPI3->DR),
+            .numberOfDataItems = nBytes,
+            // .srcIncrement      = true,
+            // .dstIncrement      = true,
+            .enableTransferCompleteInterrupt = true,
+        };
+        streamTx.setup(trnTx);
+    }
+
+    bool readFifoDma(uint8_t reg, const uint16_t nBytes)
+    {
+        // Max wait for receiver stream
+        constexpr auto wait   = std::chrono::seconds(2);
+        constexpr auto waitNs = std::chrono::nanoseconds(wait).count();
+
+        // Configuration taken from the spi driver
+        if (spiSlave.config.writeBit == SPI::WriteBit::NORMAL)
+            reg |= 0x80;
+
+        streamRx.changeNumberOfItems(nBytes);
+        streamTx.changeNumberOfItems(nBytes);
+
+        // Start transaction
+        spiSlave.bus.select(spiSlave.cs);
+
+        // Send first byte
+        spiSlave.bus.write(reg);
+
+        // First enable the receiving stream
+        streamRx.enable();
+
+        // Enable sender stream
+        streamTx.enable();
+
+        // Wait for the sender to complete before stopping the transaction
+        streamTx.waitForTransferComplete();
+
+        // Stop the transaction
+        spiSlave.bus.deselect(spiSlave.cs);
+
+        // Wait for the receiver to complete
+        bool res = streamRx.timedWaitForTransferComplete(waitNs);
+
+        streamRx.disable();
+        streamTx.disable();
+
+        return res;
+    }
 
     /**
      * @brief Utility function to handle the saving of a sample inside the fifo

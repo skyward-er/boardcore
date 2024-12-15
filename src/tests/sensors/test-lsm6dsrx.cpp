@@ -59,6 +59,9 @@ int main()
 
     SPIBus bus(SPI3);
 
+    bus.enableRxDMARequest();
+    bus.enableTxDMARequest();
+
     GpioPin csPin(GPIOE_BASE, 3);  // PE3 CS
     csPin.mode(Mode::OUTPUT);
 
@@ -87,12 +90,12 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_833;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_52;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_833;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_52;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // fifo
@@ -270,41 +273,50 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
             dataReady = intPin.value();
         }
 
+        const auto begin = std::chrono::steady_clock::now();
         sens->sample();
+        const auto end = std::chrono::steady_clock::now();
 
-        const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
-            sens->getLastFifo();
+        // const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
+        //     sens->getLastFifo();
 
         // Print fifo
-        std::cout << "last fifo element:\n";
-        buf[sens->getLastFifoSize() - 1].print(std::cout);
+        // std::cout << "first fifo element:\n";
+        // buf[0].print(std::cout);
+        // std::cout << "last fifo element:\n";
+        // buf[sens->getLastFifoSize() - 1].print(std::cout);
         std::cout << "last fifo size: " << sens->getLastFifoSize() << "\n";
+        const auto diff = end - begin;
+        std::cout << "time elapsed: "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(diff)
+                         .count()
+                  << " us\n";
 
         // Check fifo data
-        for (uint16_t i = 1; i < sens->getLastFifoSize(); ++i)
-        {
-            // Check for accelerometer timestamps
-            if (buf[i].accelerationTimestamp <=
-                buf[i - 1].accelerationTimestamp)
-            {
-                std::cout << "Error, accelerometer data not ordered\n\n";
-            }
+        // for (uint16_t i = 1; i < sens->getLastFifoSize(); ++i)
+        // {
+        //     // Check for accelerometer timestamps
+        //     if (buf[i].accelerationTimestamp <=
+        //         buf[i - 1].accelerationTimestamp)
+        //     {
+        //         std::cout << "Error, accelerometer data not ordered\n\n";
+        //     }
 
-            // Check for gyroscope timestamps
-            if (buf[i].angularSpeedTimestamp <=
-                buf[i - 1].angularSpeedTimestamp)
-            {
-                std::cout << "Error, gyroscope data not ordered\n\n";
-            }
+        //     // Check for gyroscope timestamps
+        //     if (buf[i].angularSpeedTimestamp <=
+        //         buf[i - 1].angularSpeedTimestamp)
+        //     {
+        //         std::cout << "Error, gyroscope data not ordered\n\n";
+        //     }
 
-            // Check that gyr and acc timestamps are equal
-            if (buf[i].accelerationTimestamp != buf[i].angularSpeedTimestamp)
-            {
-                std::cout << "Error, timestamps not equal\n\n";
-            }
-        }
+        //     // Check that gyr and acc timestamps are equal
+        //     if (buf[i].accelerationTimestamp != buf[i].angularSpeedTimestamp)
+        //     {
+        //         std::cout << "Error, timestamps not equal\n\n";
+        //     }
+        // }
 
-        std::cout << "Extraction completed\n\n" << std::endl;
-        Thread::sleep(1000);
+        // std::cout << "Extraction completed\n\n" << std::endl;
+        // Thread::sleep(1000);
     }
 }

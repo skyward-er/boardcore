@@ -38,6 +38,10 @@ GpioPin cs(GPIOE_BASE, 3);
 
 int main()
 {
+    // Enable DMA for SPI
+    bus.enableRxDMARequest();
+    bus.enableTxDMARequest();
+
     spiSck.mode(miosix::Mode::ALTERNATE);
     spiSck.alternateFunction(5);
     spiMiso.mode(miosix::Mode::ALTERNATE);
@@ -84,28 +88,8 @@ int main()
 
     Thread::sleep(500);
 
-    // sample some data from the sensor
-    for (int i = 0; i < 5; i++)
-    {
-        // sensor intitialized, should return error if no new data exist
-        sensor.sample();
-
-        if (sensor.getLastError() == SensorErrors::NO_NEW_DATA)
-        {
-            printf("\nWarning: no new data to be read \n");
-        }
-
-        data = sensor.getLastSample();
-
-        printf("\nTimestamp: %llu \n", data.accelerationTimestamp);
-        printf("Acc: x: %f | y: %f | z: %f \n", data.accelerationX,
-               data.accelerationY, data.accelerationZ);
-        printf("Temp: %.2f C \n", data.temperature);
-
-        Thread::sleep(200);
-    }
-
-    printf("\nLIS3DSH TEST OK ! \n");
+    // Test dma communication by reading whoami
+    sensor.whoamiDma();
 
     return 0;
 }

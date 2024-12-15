@@ -55,6 +55,10 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
     {
         config.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
     }
+
+    // setup dma
+    setStreamRx(0);
+    setStreamTx(0);
 }
 
 bool LSM6DSRX::init()
@@ -789,9 +793,11 @@ void LSM6DSRX::readFromFifo()
                                                           false};
 
     // read samples from the sensors
-    spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
-                      reinterpret_cast<uint8_t*>(rawFifo.data()),
-                      numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    // spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+    //                   reinterpret_cast<uint8_t*>(rawFifo.data()),
+    //                   numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    readFifoDma(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+                numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
 
     // not all data extracted from fifo is sample data, timestamps are not
     // saved.
