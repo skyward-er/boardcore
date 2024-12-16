@@ -318,10 +318,8 @@ void VN300::buildBinaryDataReduced(const VN300Defs::BinaryDataReduced& rawData,
 
 bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
 {
-    std::string command;
-
-    command = fmt::format("{}{},{},{}", "VNWRG,57,", antPos.posX, antPos.posY,
-                          antPos.posZ);
+    std::string command = fmt::format("{}{},{},{}", "VNWRG,57,", antPos.posX,
+                                      antPos.posY, antPos.posZ);
 
     usart.clearQueue();
     if (!sendStringCommand(command))
@@ -338,11 +336,9 @@ bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
 
 bool VN300::setCompassBaseline(VN300Defs::AntennaPosition antPos)
 {
-    std::string command;
-
-    command = fmt::format("{}{},{},{},{},{},{}", "VNWRG,93,", antPos.posX,
-                          antPos.posY, antPos.posZ, antPos.uncX, antPos.uncY,
-                          antPos.uncZ);
+    std::string command = fmt::format("{}{},{},{},{},{},{}", "VNWRG,93,",
+                                      antPos.posX, antPos.posY, antPos.posZ,
+                                      antPos.uncX, antPos.uncY, antPos.uncZ);
 
     usart.clearQueue();
     if (!sendStringCommand(command))
