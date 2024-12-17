@@ -59,6 +59,7 @@ uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }
 
 bool UBXGPSSpi::init()
 {
+    // Ensures the SPI slave is selected and configured for the duration of the scope
     SPISlaveLock lock(spiSlave);
 
     LOG_DEBUG(logger, "Resetting the device...");
@@ -115,11 +116,11 @@ UBXGPSData UBXGPSSpi::sampleImpl()
 {
     long long currentTimestamp = Kernel::getOldTick();
 
-    // Controlla se è passato abbastanza tempo dall'ultimo campione
+    // Checks if enough time has passed since the last sample
     if (currentTimestamp - lastSampleTimestamp < 1)
     {
-        // PERCHE NON VA BENE NO_NEW_DATA?
-        return lastSample;  // Restituisce l'ultimo campione se la differenza è
+        // Returns the last sample if the time difference is less than 1ms
+        return lastSample;  
     }
 
     SPISlaveLock lock(spiSlave);
@@ -158,15 +159,6 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     return sample;
 }
 
-/**
- * 	•reset(): Reset controllato del GPS.
-    •setUBXProtocol(): Configura il protocollo di comunicazione come
-     UBX su SPI.
-    •setDynamicModelToAirborne4g(): Modello dinamico per applicazioni
-     aeree.
-    •setSampleRate(): Frequenza di campionamento.
-    •setPVTMessageRate(): Frequenza di aggiornamento per i messaggi PVT.
- */
 bool UBXGPSSpi::reset(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
@@ -264,6 +256,7 @@ bool UBXGPSSpi::setPVTMessageRate(const SPISlaveLock& lock)
     return safeWriteUBXFrame(lock, frame);
 }
 
+// Reads a UBX frame from the SPI bus using the provided SPISlaveLock
 bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
 {
     long long start = Kernel::getOldTick();
@@ -318,6 +311,7 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
     return true;
 }
 
+// Writes a UBX frame to the SPI bus using the provided SPISlaveLock
 bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
 {
     if (!frame.isValid())
