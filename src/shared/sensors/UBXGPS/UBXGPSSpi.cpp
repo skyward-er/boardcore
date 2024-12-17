@@ -46,7 +46,6 @@ UBXGPSSpi::UBXGPSSpi(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
 {
 }
 
-
 SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
     SPIBusConfig config;
@@ -112,13 +111,11 @@ bool UBXGPSSpi::init()
 
 bool UBXGPSSpi::selfTest() { return true; }
 
-
-UBXGPSData UBXGPSSpi::sampleImpl() 
+UBXGPSData UBXGPSSpi::sampleImpl()
 {
 <<<<<<< Updated upstream
     long long currentTimestamp = Kernel::getOldTick();
 =======
-
     long long currentTimestamp = Kernel::getOldTick(); 
 >>>>>>> Stashed changes
 
@@ -129,7 +126,8 @@ UBXGPSData UBXGPSSpi::sampleImpl()
         return NO_NEW_DATA;  // Restituisce l'ultimo campione se la differenza è
                              // < 1ms
 =======
-        return NO_NEW_DATA;  // Restituisce l'ultimo campione se la differenza è < 1ms
+        return NO_NEW_DATA;  // Restituisce l'ultimo campione se la differenza è
+                             // < 1ms
 >>>>>>> Stashed changes
     }
 
@@ -165,10 +163,10 @@ UBXGPSData UBXGPSSpi::sampleImpl()
                             .accuracy   = pvtP.tAcc};
 
 <<<<<<< Updated upstream
-    lastSampleTimestamp = currentTimestamp;
+    lastSampleTimestamp  = currentTimestamp;
 
 =======
-   
+
     lastSampleTimestamp = currentTimestamp;
     
 >>>>>>> Stashed changes
@@ -184,10 +182,10 @@ UBXGPSData UBXGPSSpi::sampleImpl()
      aeree.
     •setSampleRate(): Frequenza di campionamento.
 =======
-     UBX su SPI. 
+     UBX su SPI.
     •setDynamicModelToAirborne4g(): Modello dinamico per applicazioni
-     aeree. 
-    •setSampleRate(): Frequenza di campionamento. 
+     aeree.
+    •setSampleRate(): Frequenza di campionamento.
 >>>>>>> Stashed changes
     •setPVTMessageRate(): Frequenza di aggiornamento per i messaggi PVT.
  */
@@ -312,49 +310,17 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
     size_t i     = 0;
     bool waiting = false;
     while (i < 2)
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+        size_t i = 0;
+    bool waiting = false;
+    while (i < 2)
     {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        size_t i     = 0;
-        bool waiting = false;
-        while (i < 2)
-        {
-            if (Kernel::getOldTick() >= end)
-                return false;
-
-            uint8_t c = spiSlave.bus.read();
-
-            if (c == UBXFrame::PREAMBLE[i])
-            {
-                waiting             = false;
-                frame.preamble[i++] = c;
-            }
-            else if (c == UBXFrame::PREAMBLE[0])
-            {
-                i                   = 0;
-                waiting             = false;
-                frame.preamble[i++] = c;
-            }
-            else if (c == UBXFrame::WAIT)
-            {
-                i = 0;
-                if (!waiting)
-                    waiting = true;
-            }
-            else
-            {
-                i       = 0;
-                waiting = false;
-            }
-=======
         if (Kernel::getOldTick() >= end)
             return false;
->>>>>>> Stashed changes
 
-            uint8_t c = spiSlave.bus.read();
+        uint8_t c = spiSlave.bus.read();
 
-<<<<<<< Updated upstream
-=======
         if (c == UBXFrame::PREAMBLE[i])
         {
             waiting             = false;
@@ -377,13 +343,42 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
             i       = 0;
             waiting = false;
         }
+=======
+        if (Kernel::getOldTick() >= end)
+            return false;
+>>>>>>> Stashed changes
+
+        uint8_t c = spiSlave.bus.read();
+
+<<<<<<< Updated upstream
+=======
+    if (c == UBXFrame::PREAMBLE[i])
+    {
+        waiting = false;
+        frame.preamble[i++] = c;
+    }
+    else if (c == UBXFrame::PREAMBLE[0])
+    {
+        i = 0;
+        waiting = false;
+        frame.preamble[i++] = c;
+    }
+    else if (c == UBXFrame::WAIT)
+    {
+        i = 0;
+        if (!waiting)
+            waiting = true;
+    }
+    else
+    {
+        i = 0;
+        waiting = false;
+    }
 >>>>>>> Stashed changes
 =======
         if (Kernel::getOldTick() >= end)
-        {
             return false;
 >>>>>>> Stashed changes
-        }
 
         uint8_t c = spiSlave.bus.read();
 
@@ -393,44 +388,42 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
             LOG_ERR(logger, "Received invalid UBX frame");
             return false;
 =======
-        if (c == UBXFrame::PREAMBLE[i])
-        {
-            waiting             = false;
-            frame.preamble[i++] = c;
-        }
-        else if (c == UBXFrame::PREAMBLE[0])
-        {
-            i                   = 0;
-            waiting             = false;
-            frame.preamble[i++] = c;
-        }
-        else if (c == UBXFrame::WAIT)
-        {
-            i = 0;
-            if (!waiting)
-            {
-                waiting = true;
-            }
-        }
-        else
-        {
-            i       = 0;
-            waiting = false;
-        }
-    }
-
-    frame.message       = swapBytes16(spiSlave.bus.read16());
-    frame.payloadLength = swapBytes16(spiSlave.bus.read16());
-    spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
-    spiSlave.bus.read(frame.checksum, 2);
-
-    if (!frame.isValid())
+    if (c == UBXFrame::PREAMBLE[i])
     {
-        LOG_ERR(logger, "Received invalid UBX frame");
-        return false;
+        waiting             = false;
+        frame.preamble[i++] = c;
     }
+    else if (c == UBXFrame::PREAMBLE[0])
+    {
+        i                   = 0;
+        waiting             = false;
+        frame.preamble[i++] = c;
+    }
+    else if (c == UBXFrame::WAIT)
+    {
+        i = 0;
+        if (!waiting)
+            waiting = true;
+    }
+    else
+    {
+        i       = 0;
+        waiting = false;
+    }
+}
 
-    return true;
+frame.message = swapBytes16(spiSlave.bus.read16());
+frame.payloadLength = swapBytes16(spiSlave.bus.read16());
+spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
+spiSlave.bus.read(frame.checksum, 2);
+
+if (!frame.isValid())
+{
+    LOG_ERR(logger, "Received invalid UBX frame");
+    return false;
+}
+
+return true;
 }
 
 bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
@@ -449,7 +442,8 @@ bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
     return true;
 }
 
-bool UBXGPSSpi::safeWriteUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
+bool UBXGPSSpi::safeWriteUBXFrame(const SPISlaveLock& lock,
+                                  const UBXFrame& frame)
 {
     for (unsigned int i = 0; i < MAX_TRIES; i++)
     {
@@ -503,7 +497,7 @@ bool UBXGPSSpi::safeWriteUBXFrame(const SPISlaveLock& lock, const UBXFrame& fram
             spiSlave.bus.write(packedFrame, frame.getLength());
         }
 =======
-    spiSlave.bus.write(packedFrame, frame.getLength());
+        spiSlave.bus.write(packedFrame, frame.getLength());
 >>>>>>> Stashed changes
 
         return true;
