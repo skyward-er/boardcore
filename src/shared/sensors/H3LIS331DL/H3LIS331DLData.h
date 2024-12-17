@@ -29,6 +29,10 @@ namespace Boardcore
 
 struct H3LIS331DLData : public AccelerometerData
 {
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     H3LIS331DLData() : AccelerometerData(0, 0, 0, 0) {};
 
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)

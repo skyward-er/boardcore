@@ -81,64 +81,74 @@ private:
     /**
      * @brief Resets the device to its default configuration.
      *
+     * @param lock The SPI slave lock.
      * @return True if the device reset succeeded.
      */
-    bool reset();
+    bool reset(const SPISlaveLock& lock);
 
     /**
      * @brief Enables UBX and disables NMEA on the SPI port.
      *
+     * @param lock The SPI slave lock.
      * @return True if the configuration received an acknowledgement.
      */
-    bool setUBXProtocol();
+    bool setUBXProtocol(const SPISlaveLock& lock);
 
     /**
      * @brief Configures the dynamic model to airborn 4g.
      *
+     * @param lock The SPI slave lock.
      * @return True if the configuration received an acknowledgement.
      */
-    bool setDynamicModelToAirborne4g();
+    bool setDynamicModelToAirborne4g(const SPISlaveLock& lock);
 
     /**
      * @brief Configures the navigation solution sample rate.
      *
+     * @param lock The SPI slave lock.
      * @return True if the configuration received an acknowledgement.
      */
-    bool setSampleRate();
+    bool setSampleRate(const SPISlaveLock& lock);
 
     /**
      * @brief Configures the PVT message output rate.
      *
+     * @param lock The SPI slave lock.
      * @return True if the configuration received an acknowledgement.
      */
-    bool setPVTMessageRate();
+    bool setPVTMessageRate(const SPISlaveLock& lock);
 
     /**
      * @brief Reads a UBX frame.
      *
+     * @param lock The SPI slave lock.
      * @param frame The received frame.
      * @return True if a valid frame was read.
      */
-    bool readUBXFrame(UBXFrame& frame);
+    bool readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame);
 
     /**
      * @brief Writes a UBX frame.
      *
+     * @param lock The SPI slave lock.
      * @param frame The frame to write.
      * @return True if the frame is valid.
      */
-    bool writeUBXFrame(const UBXFrame& frame);
+    bool writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame);
 
     /**
      * @brief Writes a UBX frame and waits for its acknowledgement.
      *
+     * @param lock The SPI slave lock.
      * @param frame The frame to write.
      * @return True if the frame is valid and acknowledged.
      */
-    bool safeWriteUBXFrame(const UBXFrame& frame);
+    bool safeWriteUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame);
 
     SPISlave spiSlave;
     uint8_t sampleRate;
+    // add timestamp
+    long long lastSampleTimestamp = 0;  // Timestamp dell'ultimo campione
 
     PrintLogger logger = Logging::getLogger("ubxgps");
 

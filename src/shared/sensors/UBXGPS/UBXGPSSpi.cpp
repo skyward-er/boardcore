@@ -59,9 +59,7 @@ uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }
 
 bool UBXGPSSpi::init()
 {
-
-     SPISlaveLock lock(spiSlave);
-
+    SPISlaveLock lock(spiSlave);
 
     LOG_DEBUG(logger, "Resetting the device...");
 
@@ -115,21 +113,16 @@ bool UBXGPSSpi::selfTest() { return true; }
 
 UBXGPSData UBXGPSSpi::sampleImpl()
 {
-/**
-*PARTE AGGIUNTA
-*
-**/
-  long long currentTimestamp = Kernel::getOldTick(); 
+    long long currentTimestamp = Kernel::getOldTick();
 
     // Controlla se è passato abbastanza tempo dall'ultimo campione
     if (currentTimestamp - lastSampleTimestamp < 1)
     {
-        return NO_NEW_DATA;  // Restituisce l'ultimo campione se la differenza è < 1ms
+        return NO_NEW_DATA;  // Restituisce l'ultimo campione se la differenza è
+                             // < 1ms
     }
 
     SPISlaveLock lock(spiSlave);
-
-
 
     UBXPvtFrame pvt;
 
@@ -160,19 +153,20 @@ UBXGPSData UBXGPSSpi::sampleImpl()
                             .nanosecond = pvtP.nano,
                             .accuracy   = pvtP.tAcc};
 
-
-
-
-
-    // Aggiorna il timestamp dell'ultimo campione
     lastSampleTimestamp = currentTimestamp;
-
-
-
 
     return sample;
 }
 
+/**
+ * 	•reset(): Reset controllato del GPS.
+    •setUBXProtocol(): Configura il protocollo di comunicazione come
+     UBX su SPI.
+    •setDynamicModelToAirborne4g(): Modello dinamico per applicazioni
+     aeree.
+    •setSampleRate(): Frequenza di campionamento.
+    •setPVTMessageRate(): Frequenza di aggiornamento per i messaggi PVT.
+ */
 bool UBXGPSSpi::reset(const SPISlaveLock& lock)
 {
     uint8_t payload[] = {
@@ -270,27 +264,32 @@ bool UBXGPSSpi::setPVTMessageRate(const SPISlaveLock& lock)
     return safeWriteUBXFrame(lock, frame);
 }
 
+<<<<<<< Updated upstream
+=======
+
+
+
+
+
+
+>>>>>>> Stashed changes
 bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
 {
     long long start = Kernel::getOldTick();
     long long end   = start + READ_TIMEOUT;
 
+    // Search UBX frame preamble byte by byte
+    size_t i     = 0;
+    bool waiting = false;
+    while (i < 2)
     {
-        //spiSlave.bus.configure(spiSlave.config);
-        //spiSlave.bus.select(spiSlave.cs);
-
-        // Search UBX frame preamble byte by byte
+<<<<<<< Updated upstream
         size_t i     = 0;
         bool waiting = false;
         while (i < 2)
         {
             if (Kernel::getOldTick() >= end)
-            {
-                // LOG_ERR(logger, "Timeout for read expired");
-               // spiSlave.bus.deselect(spiSlave.cs);
-                // Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
-            }
 
             uint8_t c = spiSlave.bus.read();
 
@@ -309,18 +308,45 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
             {
                 i = 0;
                 if (!waiting)
-                {
                     waiting = true;
-                    // LOG_DEBUG(logger, "Device is waiting...");
-                }
             }
             else
             {
                 i       = 0;
                 waiting = false;
-                // LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}",
-                // c, c);
             }
+=======
+        if (Kernel::getOldTick() >= end)
+            return false;
+>>>>>>> Stashed changes
+
+            uint8_t c = spiSlave.bus.read();
+
+<<<<<<< Updated upstream
+=======
+        if (c == UBXFrame::PREAMBLE[i])
+        {
+            waiting             = false;
+            frame.preamble[i++] = c;
+        }
+        else if (c == UBXFrame::PREAMBLE[0])
+        {
+            i                   = 0;
+            waiting             = false;
+            frame.preamble[i++] = c;
+        }
+        else if (c == UBXFrame::WAIT)
+        {
+            i = 0;
+            if (!waiting)
+                waiting = true;
+        }
+        else
+        {
+            i       = 0;
+            waiting = false;
+        }
+>>>>>>> Stashed changes
         }
 
         frame.message       = swapBytes16(spiSlave.bus.read16());
@@ -328,84 +354,84 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
         spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
         spiSlave.bus.read(frame.checksum, 2);
 
-        //spiSlave.bus.deselect(spiSlave.cs);
-        // Thread::sleep(1);  // GPS minimum time after deselect
-    }
-
-    if (!frame.isValid())
-    {
-        LOG_ERR(logger, "Received invalid UBX frame");
-        return false;
-    }
-
-    return true;
-}
-
-bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
-{
-    if (!frame.isValid())
-    {
-        LOG_ERR(logger, "Trying to send an invalid UBX frame");
-        return false;
-    }
-
-    uint8_t packedFrame[frame.getLength()];
-    frame.writePacked(packedFrame);
-
-    {
-        //SPITransaction spi{spiSlave};
-        //spi.write(packedFrame, frame.getLength());
-        //Thread::sleep(1);  // GPS minimum time after deselect
-         spiSlave.bus.write(packedFrame, frame.getLength());
-    }
-
-    return true;
-}
-
-bool UBXGPSSpi::safeWriteUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
-{
-    for (unsigned int i = 0; i < MAX_TRIES; i++)
-    {
-        if (i > 0)
+        if (!frame.isValid())
         {
-            LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
-                      MAX_TRIES);
-        }
-
-        if (!writeUBXFrame(lock, frame))
+            LOG_ERR(logger, "Received invalid UBX frame");
             return false;
-
-        UBXAckFrame ack;
-
-        if (!readUBXFrame(lock, ack))
-            continue;
-
-        if (ack.isNack())
-        {
-            if (ack.getAckMessage() == frame.getMessage())
-            {
-                LOG_DEBUG(logger, "Received NAK");
-            }
-            else
-            {
-                LOG_DEBUG(logger, "Received NAK for different UBX frame {:04x}",
-                          static_cast<uint16_t>(ack.getPayload().ackMessage));
-            }
-            continue;
-        }
-
-        if (ack.isAck() && ack.getAckMessage() != frame.getMessage())
-        {
-            LOG_DEBUG(logger, "Received ACK for different UBX frame {:04x}",
-                      static_cast<uint16_t>(ack.getPayload().ackMessage));
-            continue;
         }
 
         return true;
     }
 
-    LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);
-    return false;
-}
+    bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock,
+                                  const UBXFrame& frame)
+    {
+        if (!frame.isValid())
+        {
+            LOG_ERR(logger, "Trying to send an invalid UBX frame");
+            return false;
+        }
+
+        uint8_t packedFrame[frame.getLength()];
+        frame.writePacked(packedFrame);
+
+<<<<<<< Updated upstream
+        {
+            spiSlave.bus.write(packedFrame, frame.getLength());
+        }
+=======
+    spiSlave.bus.write(packedFrame, frame.getLength());
+>>>>>>> Stashed changes
+
+        return true;
+    }
+
+    bool UBXGPSSpi::safeWriteUBXFrame(const SPISlaveLock& lock,
+                                      const UBXFrame& frame)
+    {
+        for (unsigned int i = 0; i < MAX_TRIES; i++)
+        {
+            if (i > 0)
+            {
+                LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
+                          MAX_TRIES);
+            }
+
+            if (!writeUBXFrame(lock, frame))
+                return false;
+
+            UBXAckFrame ack;
+
+            if (!readUBXFrame(lock, ack))
+                continue;
+
+            if (ack.isNack())
+            {
+                if (ack.getAckMessage() == frame.getMessage())
+                {
+                    LOG_DEBUG(logger, "Received NAK");
+                }
+                else
+                {
+                    LOG_DEBUG(
+                        logger, "Received NAK for different UBX frame {:04x}",
+                        static_cast<uint16_t>(ack.getPayload().ackMessage));
+                }
+                continue;
+            }
+
+            if (ack.isAck() && ack.getAckMessage() != frame.getMessage())
+            {
+                LOG_DEBUG(logger, "Received ACK for different UBX frame {:04x}",
+                          static_cast<uint16_t>(ack.getPayload().ackMessage));
+                continue;
+            }
+
+            return true;
+        }
+
+        LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);
+        return false;
+    }
 
 }  // namespace Boardcore

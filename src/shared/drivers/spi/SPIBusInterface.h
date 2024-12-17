@@ -346,4 +346,22 @@ private:
     GpioType& cs;
 };
 
+/**
+ * @brief RAII Interface for SPI bus acquisition and chip selection.
+ */
+class SPISlaveLock
+{
+public:
+    explicit SPISlaveLock(const SPISlave& slave) : slave(slave)
+    {
+        slave.bus.configure(slave.config);
+        slave.bus.select(slave.cs);
+    }
+
+    ~SPISlaveLock() { slave.bus.deselect(slave.cs); }
+
+private:
+    const SPISlave& slave;
+};
+
 }  // namespace Boardcore
