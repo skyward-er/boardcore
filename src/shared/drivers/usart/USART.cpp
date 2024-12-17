@@ -500,6 +500,9 @@ void USART::setBaudrate(int baudrate)
     this->baudrate = baudrate;
 }
 
+// Be careful when using this function to read more bytes than available in the
+// queue! We decided to not implement an assert here because the user might want
+// to read the available bytes and then wait for more data to arrive.
 bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
                      const bool blocking, std::chrono::nanoseconds timeout)
 {
@@ -510,8 +513,6 @@ bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
     error         = false;
     // Whether we timed out while waiting
     bool timedOut = false;
-
-    assert(nBytes <= rxQueue.size() && "Attempt to read more bytes than available in the internal queue");
 
     miosix::FastInterruptDisableLock dLock;
     for (;;)
