@@ -50,8 +50,8 @@ SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
     SPIBusConfig config;
     config.clockDivider  = SPI::ClockDivider::DIV_16;
-    config.csHoldTimeUs  = 0;   // 1 millisecondo
-    config.csSetupTimeUs = 10;  // 10 microsecondi
+    config.csHoldTimeUs  = 0;   // 1 millisecond
+    config.csSetupTimeUs = 10;  // 10 microsecond
     return config;
 }
 
@@ -59,7 +59,8 @@ uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }
 
 bool UBXGPSSpi::init()
 {
-    // Ensures the SPI slave is selected and configured for the duration of the scope
+    // Ensures the SPI slave is selected and configured for the duration of the
+    // scope
     SPISlaveLock lock(spiSlave);
 
     LOG_DEBUG(logger, "Resetting the device...");
@@ -120,7 +121,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     if (currentTimestamp - lastSampleTimestamp < 1)
     {
         // Returns the last sample if the time difference is less than 1ms
-        return lastSample;  
+        return lastSample;
     }
 
     SPISlaveLock lock(spiSlave);
