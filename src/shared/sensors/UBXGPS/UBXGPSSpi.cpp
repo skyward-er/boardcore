@@ -59,8 +59,7 @@ uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }
 
 bool UBXGPSSpi::init()
 {
-    // Ensures the SPI slave is selected and configured for the duration of the
-    // scope
+    // Ensures the SPI slave is selected and configured for the duration of the scope
     SPISlaveLock lock(spiSlave);
 
     LOG_DEBUG(logger, "Resetting the device...");

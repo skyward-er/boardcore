@@ -148,7 +148,7 @@ private:
     SPISlave spiSlave;
     uint8_t sampleRate;
     // add timestamp
-    long long lastSampleTimestamp = 0;  // Timestamp dell'ultimo campione
+    long long lastSampleTimestamp = 0;
 
     PrintLogger logger = Logging::getLogger("ubxgps");
 
