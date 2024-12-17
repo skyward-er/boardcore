@@ -347,8 +347,9 @@ private:
 };
 
 /**
+ *
  * @brief RAII Interface for SPI bus acquisition and chip selection.
- * 
+ *
  */
 class SPISlaveLock
 {
