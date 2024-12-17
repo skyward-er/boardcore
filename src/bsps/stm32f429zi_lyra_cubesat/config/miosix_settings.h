@@ -27,8 +27,8 @@
 // The PARSING_FROM_IDE is because Netbeans gets confused by this, it is never
 // defined when compiling the code.
 #ifndef PARSING_FROM_IDE
-//#error This error is a reminder that you have not edited miosix_settings.h
-// yet.
+// #error This error is a reminder that you have not edited miosix_settings.h
+//  yet.
 #endif  // PARSING_FROM_IDE
 
 /**
@@ -70,14 +70,14 @@ namespace miosix
 // Uncomment only *one* of those
 
 #define SCHED_TYPE_PRIORITY
-//#define SCHED_TYPE_CONTROL_BASED
-//#define SCHED_TYPE_EDF
+// #define SCHED_TYPE_CONTROL_BASED
+// #define SCHED_TYPE_EDF
 
 /// \def WITH_CPU_TIME_COUNTER
 /// Allows to enable/disable CPUTimeCounter to save code size and remove its
 /// overhead from the scheduling process. By default it is not defined
 /// (CPUTimeCounter is disabled).
-//#define WITH_CPU_TIME_COUNTER
+// #define WITH_CPU_TIME_COUNTER
 
 //
 // Filesystem options
@@ -110,7 +110,7 @@ const unsigned char MAX_OPEN_FILES = 8;
 /// This enables the dynamic loader to load elf programs, the extended system
 /// call service and, if the hardware supports it, the MPU to provide memory
 /// isolation of processes
-//#define WITH_PROCESSES
+// #define WITH_PROCESSES
 
 #if defined(WITH_PROCESSES) && defined(__NO_EXCEPTIONS)
 #error Processes require C++ exception support
@@ -145,7 +145,7 @@ const unsigned char MAX_OPEN_FILES = 8;
 /// \def WITH_DEEP_SLEEP
 /// Adds interfaces and required variables to support deep sleep state switch
 /// automatically when peripherals are not required
-//#define WITH_DEEP_SLEEP
+// #define WITH_DEEP_SLEEP
 
 /**
  * \def JTAG_DISABLE_SLEEP
