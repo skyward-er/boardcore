@@ -378,7 +378,7 @@ build_impl() {
     declare opts
     get_build_opts opts $jobs
 
-    cmake --build "$build_dir" "${opts[@]}" --target "$target"
+    cmake --build "$build_dir" --target "$target" "${opts[@]}"
 }
 
 flash_impl() {
