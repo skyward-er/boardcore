@@ -43,8 +43,6 @@ ADS131M08::ADS131M08(SPIBusInterface& bus, miosix::GpioPin cs,
 bool ADS131M08::init()
 {
     bool resetSuccess = reset();
-    // Apply config is a void method, so we can't check if it was successful,
-    // Is this a problem? - Ettore
     applyConfig(config);
     return resetSuccess;
 }
