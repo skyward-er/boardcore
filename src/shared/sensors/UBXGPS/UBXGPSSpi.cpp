@@ -132,9 +132,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     UBXPvtFrame pvt;
 
     if (!readUBXFrame(lock, pvt))
-    { 
         return lastSample;
-    }
 
     UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
