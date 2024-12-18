@@ -119,4 +119,8 @@ TEST_CASE("Units Test")
     REQUIRE(ss.str() == "12");
     ss << 3_m;
     REQUIRE(ss.str() == "123");
+
+    std::istringstream is("4");
+    is >> a;
+    REQUIRE(a == 4_rad);
 }
