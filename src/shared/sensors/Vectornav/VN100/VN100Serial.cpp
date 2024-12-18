@@ -133,9 +133,7 @@ VN100SerialData VN100Serial::sampleImpl()
 
     sampleOutcome = getBinaryOutput<BinaryData>(binData, askSampleCommand);
     if (!sampleOutcome)
-    {
         lastError = NO_NEW_DATA;
-    }
 
     // With binary output the checksum is always calculated with checksum16
     bool validChecksum =
@@ -144,9 +142,7 @@ VN100SerialData VN100Serial::sampleImpl()
                              sizeof(binData)) == 0);
 
     if (sampleOutcome && !validChecksum)
-    {
         lastError = SensorErrors::BUS_FAULT;
-    }
 
     // Verify if the sample is valid
     sampleOutcome = sampleOutcome && validChecksum;
