@@ -50,8 +50,7 @@ SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
     SPIBusConfig config;
     config.clockDivider  = SPI::ClockDivider::DIV_16;
-    config.csHoldTimeUs  = 0;   // 1 millisecond
-    config.csSetupTimeUs = 10;  // 10 microsecond
+    config.csSetupTimeUs = 10;
     return config;
 }
 
@@ -61,7 +60,6 @@ bool UBXGPSSpi::init()
 {
     // Ensures the SPI slave is selected and configured for the duration of the
     // scope
-
     SPISlaveLock lock(spiSlave);
 
     LOG_DEBUG(logger, "Resetting the device...");
@@ -118,10 +116,14 @@ UBXGPSData UBXGPSSpi::sampleImpl()
 {
     long long currentTimestamp = Kernel::getOldTick();
 
-    // Checks if enough time has passed since the last sample
+    // Returns the last sample if the time difference is less than 1ms
+    // From sensor specification, the time between SPI transactions must be at
+    // least 1ms. If sampling is requested before that time has passed, return
+    // the last sample.
+
     if (currentTimestamp - lastSampleTimestamp < 1)
     {
-        // Returns the last sample if the time difference is less than 1ms
+        lastError = SensorErrors::NO_NEW_DATA;
         return lastSample;
     }
 
@@ -130,7 +132,10 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     UBXPvtFrame pvt;
 
     if (!readUBXFrame(lock, pvt))
+    {
+        // lastError = SensorErrors::NO_NEW_DATA;
         return lastSample;
+    }
 
     UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
@@ -157,6 +162,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
                             .accuracy   = pvtP.tAcc};
 
     lastSampleTimestamp = currentTimestamp;
+    lastError           = SensorErrors::NO_ERRORS;
 
     return sample;
 }
@@ -258,13 +264,13 @@ bool UBXGPSSpi::setPVTMessageRate(const SPISlaveLock& lock)
     return safeWriteUBXFrame(lock, frame);
 }
 
-// Reads a UBX frame from the SPI bus using the provided SPISlaveLock
 bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
 {
     long long start = Kernel::getOldTick();
     long long end   = start + READ_TIMEOUT;
 
     {
+        // Search UBX frame preamble byte by byte
         size_t i     = 0;
         bool waiting = false;
         while (i < 2)
@@ -313,7 +319,6 @@ bool UBXGPSSpi::readUBXFrame(const SPISlaveLock& lock, UBXFrame& frame)
     return true;
 }
 
-// Writes a UBX frame to the SPI bus using the provided SPISlaveLock
 bool UBXGPSSpi::writeUBXFrame(const SPISlaveLock& lock, const UBXFrame& frame)
 {
     if (!frame.isValid())
