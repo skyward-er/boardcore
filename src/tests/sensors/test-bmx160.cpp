@@ -101,8 +101,8 @@ int main()
         sensor->getLastFifo(fifoSize);
         printf("Fill: %d\n", fifoSize);
         printf("----------------------------\n");
-        auto& lastFifo = sensor->getLastFifo(fifoSize);
-        uint16_t len   = std::min(fifoSize, (uint16_t)5);
+        const auto& lastFifo = sensor->getLastFifo(fifoSize);
+        uint16_t len         = std::min(fifoSize, (uint16_t)5);
 
         for (uint16_t i = 0; i < len; i++)
         {

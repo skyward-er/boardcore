@@ -676,7 +676,7 @@ void Sensors::ubxgpsCallback()
 void Sensors::lsm6dsrxCallback()
 {
     uint16_t fifoSize;
-    auto& fifo = lsm6dsrx->getLastFifo(fifoSize);
+    const auto& fifo = lsm6dsrx->getLastFifo(fifoSize);
 
     // For every instance inside the fifo log the sample
     for (uint16_t i = 0; i < fifoSize; i++)

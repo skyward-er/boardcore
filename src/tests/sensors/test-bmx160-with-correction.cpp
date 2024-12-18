@@ -210,7 +210,7 @@ SixParametersCorrector calibrateMagnetometer(SixParametersCorrector oldCorr)
             bmx160->sample();
 
             uint16_t fifoSize;
-            auto& fifo = bmx160->getLastFifo(fifoSize);
+            const auto& fifo = bmx160->getLastFifo(fifoSize);
 
             for (uint8_t i = 0; i < fifoSize; i++)
             {
@@ -295,7 +295,7 @@ SixParametersCorrector calibrateGyroscope(SixParametersCorrector corr)
             bmx160->sample();
 
             uint16_t fifoSize;
-            auto& fifo = bmx160->getLastFifo(fifoSize);
+            const auto& fifo = bmx160->getLastFifo(fifoSize);
 
             for (uint8_t i = 0; i < fifoSize; i++)
             {

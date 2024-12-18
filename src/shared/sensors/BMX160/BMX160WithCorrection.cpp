@@ -74,7 +74,7 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     BMX160WithCorrectionData result;
     BMX160Data fifoElement;
     uint16_t lastFifoSize;
-    std::array<BMX160Data, BMX160Defs::FIFO_SIZE> lastFifo =
+    const std::array<BMX160Data, BMX160Defs::FIFO_SIZE>& lastFifo =
         bmx160->getLastFifo(
             lastFifoSize);  // get last fifo and save last fifo size in fifoSize
 
