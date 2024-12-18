@@ -30,6 +30,7 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
+#include <sstream>
 
 using namespace Boardcore;
 
@@ -103,4 +104,19 @@ TEST_CASE("Units Test")
     REQUIRE(a == Radian(2 * PI));
     a /= 2;
     REQUIRE(a == Radian(PI));
+
+    // Test unary operators
+    REQUIRE(+Radian(PI) == Radian(PI));
+    REQUIRE(-Radian(PI) == Radian(-PI));
+    REQUIRE(!Radian(PI) == false);
+    REQUIRE(!Radian(0) == true);
+
+    // Test stream operators
+    std::ostringstream ss;
+    ss << 1_deg;
+    REQUIRE(ss.str() == "1");
+    ss << 2_rad;
+    REQUIRE(ss.str() == "12");
+    ss << 3_m;
+    REQUIRE(ss.str() == "123");
 }

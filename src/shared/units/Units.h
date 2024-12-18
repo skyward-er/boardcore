@@ -24,6 +24,7 @@
 
 #include <utils/Debug.h>
 
+#include <ostream>
 #include <ratio>
 #include <typeinfo>
 
@@ -189,6 +190,33 @@ constexpr Unit<Kind, Ratio>& operator/=(Unit<Kind, Ratio>& lhs, float rhs)
 {
     lhs = lhs / rhs;
     return lhs;
+}
+
+// Unary operators
+template <UnitKind Kind, class Ratio>
+constexpr Unit<Kind, Ratio> operator+(const Unit<Kind, Ratio>& rhs)
+{
+    return Unit<Kind, Ratio>(rhs.template value());
+}
+
+template <UnitKind Kind, class Ratio>
+constexpr Unit<Kind, Ratio> operator-(const Unit<Kind, Ratio>& rhs)
+{
+    return Unit<Kind, Ratio>(-rhs.template value());
+}
+
+template <UnitKind Kind, class Ratio>
+constexpr bool operator!(const Unit<Kind, Ratio>& rhs)
+{
+    return !rhs.template value();
+}
+
+// Stream operators
+template <UnitKind Kind, class Ratio>
+std::ostream& operator<<(std::ostream& os, const Unit<Kind, Ratio>& rhs)
+{
+    os << rhs.template value();
+    return os;
 }
 
 }  // namespace Units
