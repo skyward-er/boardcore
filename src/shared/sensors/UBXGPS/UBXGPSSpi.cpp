@@ -132,8 +132,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     UBXPvtFrame pvt;
 
     if (!readUBXFrame(lock, pvt))
-    {
-        // lastError = SensorErrors::NO_NEW_DATA;
+    { 
         return lastSample;
     }
 
