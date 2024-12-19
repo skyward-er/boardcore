@@ -83,16 +83,15 @@ public:
         return _value * currentRatio / targetRatio;
     }
 
-    /**
-     * @brief Return a lvalue reference to the value of the unit.
-     */
-    float& addr() { return _value; }
-
     template <UnitKind TargetKind, class TargetRatio = Ratio>
     constexpr operator Unit<TargetKind, TargetRatio>() const
     {
         return Unit<TargetKind, TargetRatio>(value<TargetRatio>());
     }
+
+    template <UnitKind PKind, class PRatio>
+    friend std::istream& operator>>(std::istream& is,
+                                    Unit<PKind, PRatio>& unit);
 
 private:
     float _value;
@@ -241,7 +240,7 @@ std::ostream& operator<<(std::ostream& os, const Unit<Kind, Ratio>& unit)
 template <UnitKind Kind, class Ratio>
 inline std::istream& operator>>(std::istream& is, Unit<Kind, Ratio>& unit)
 {
-    is >> unit.addr();
+    is >> unit._value;
     return is;
 }
 
