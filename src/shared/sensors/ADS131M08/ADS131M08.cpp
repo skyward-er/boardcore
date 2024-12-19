@@ -42,10 +42,9 @@ ADS131M08::ADS131M08(SPIBusInterface& bus, miosix::GpioPin cs,
 
 bool ADS131M08::init()
 {
-    reset();
+    bool resetSuccess = reset();
     applyConfig(config);
-
-    return true;
+    return resetSuccess;
 }
 
 bool ADS131M08::reset()
