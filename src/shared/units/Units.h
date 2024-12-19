@@ -24,6 +24,7 @@
 
 #include <utils/Debug.h>
 
+#include <ostream>
 #include <ratio>
 #include <typeinfo>
 
@@ -32,6 +33,9 @@ namespace Boardcore
 namespace Units
 {
 
+/**
+ * @brief Enumeration of the different kinds of units.
+ */
 enum class UnitKind
 {
     Angle,
@@ -43,7 +47,16 @@ enum class UnitKind
     Frequency,
 };
 
-// Base class to implement custom measurement units logic.
+/**
+ * Base class to implement custom measurement units logic.
+ * @tparam Kind The kind of unit.
+ * @tparam Ratio The ratio of the unit.
+ *
+ * The Ratio template parameter is used to convert between different units of
+ * the same kind. For example, to convert from meters to kilometers, the ratio
+ * is 1/1000.
+ *
+ */
 template <UnitKind Kind, class Ratio = std::ratio<1>>
 class Unit
 {
@@ -56,7 +69,9 @@ public:
     {
     }
 
-    // Get the value of the unit in the specified ratio.
+    /**
+     * @brief Return the value of the unit in the target ratio.
+     */
     template <class TargetRatio = Ratio>
     constexpr float value() const
     {
@@ -73,6 +88,10 @@ public:
     {
         return Unit<TargetKind, TargetRatio>(value<TargetRatio>());
     }
+
+    template <UnitKind PKind, class PRatio>
+    friend std::istream& operator>>(std::istream& is,
+                                    Unit<PKind, PRatio>& unit);
 
 private:
     float _value;
@@ -189,6 +208,40 @@ constexpr Unit<Kind, Ratio>& operator/=(Unit<Kind, Ratio>& lhs, float rhs)
 {
     lhs = lhs / rhs;
     return lhs;
+}
+
+// Unary operators
+template <UnitKind Kind, class Ratio>
+constexpr Unit<Kind, Ratio> operator+(const Unit<Kind, Ratio>& unit)
+{
+    return Unit<Kind, Ratio>(unit.template value());
+}
+
+template <UnitKind Kind, class Ratio>
+constexpr Unit<Kind, Ratio> operator-(const Unit<Kind, Ratio>& unit)
+{
+    return Unit<Kind, Ratio>(-unit.template value());
+}
+
+template <UnitKind Kind, class Ratio>
+constexpr bool operator!(const Unit<Kind, Ratio>& unit)
+{
+    return !unit.template value();
+}
+
+// Stream operators
+template <UnitKind Kind, class Ratio>
+std::ostream& operator<<(std::ostream& os, const Unit<Kind, Ratio>& unit)
+{
+    os << unit.template value();
+    return os;
+}
+
+template <UnitKind Kind, class Ratio>
+inline std::istream& operator>>(std::istream& is, Unit<Kind, Ratio>& unit)
+{
+    is >> unit._value;
+    return is;
 }
 
 }  // namespace Units
