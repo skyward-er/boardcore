@@ -43,7 +43,8 @@ ToTime time_cast(FromTime const& from)
     return ToTime(from);
 }
 
-std::chrono::duration<float> to_chrono(Time<> const& from)
+template <class Ratio>
+std::chrono::duration<float> to_chrono(Time<Ratio> const& from)
 {
     return std::chrono::duration<float>(from.value());
 }
