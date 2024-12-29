@@ -29,7 +29,7 @@
 #include <utils/Debug.h>
 
 // Workaround for working intellisense
-#ifdef DEBUG
+#ifdef INTELLISENSE
 #include <catch.hpp>
 #else
 #include <catch2/catch.hpp>
