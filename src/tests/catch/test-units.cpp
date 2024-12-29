@@ -28,13 +28,7 @@
 #include <units/Time.h>
 #include <utils/Debug.h>
 
-// Workaround for working intellisense
-#ifdef INTELLISENSE
-#include <catch.hpp>
-#else
 #include <catch2/catch.hpp>
-#endif
-
 #include <cmath>
 #include <sstream>
 

@@ -3,8 +3,7 @@
         "defaultDefines": [
             "_MIOSIX",
             "DEBUG",
-            "__cplusplus=201402L",
-            "INTELLISENSE"
+            "__cplusplus=201402L"
         ],
         "defaultIncludePaths": [
             "${workspaceFolder}/libs/Catch2/include",
