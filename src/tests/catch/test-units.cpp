@@ -28,7 +28,13 @@
 #include <units/Time.h>
 #include <utils/Debug.h>
 
+// Workaround for working intellisense
+#ifdef DEBUG
+#include <catch.hpp>
+#else
 #include <catch2/catch.hpp>
+#endif
+
 #include <cmath>
 #include <sstream>
 
@@ -73,7 +79,7 @@ TEST_CASE("Units Test")
     REQUIRE(MeterPerSecond(1) ==
             speed_cast<MeterPerSecond>(KilometerPerHour(3.6)));
 
-    REQUIRE(MeterPerSecondSquared(9.81) ==
+    REQUIRE(MeterPerSecondSquared(Constants::g) ==
             acceleration_cast<MeterPerSecondSquared>(G(1)));
 
     // Test operators
