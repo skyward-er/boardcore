@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <utils/Constants.h>
+
 #include <ratio>
 
 #include "Units.h"
@@ -43,7 +45,16 @@ ToAcceleration acceleration_cast(FromAcceleration const& from)
 }
 
 using MeterPerSecondSquared = Acceleration<>;  // Acceleration in m/s^2
-using G = Acceleration<std::ratio<981, 100>>;  // Acceleration in Gs
+using G =
+    Acceleration<std::ratio<static_cast<std::intmax_t>(Constants::g * 1e10),
+                            static_cast<std::intmax_t>(1e10)>>;  // Acceleration
+                                                                 // in Gs
+
+/**
+ * Assert that we have enough precision to represent the constant value.
+ */
+static_assert(MeterPerSecondSquared{G{1}}.value() == Constants::g,
+              "Not enough precision to represent g in m/s^2");
 
 // Floats
 constexpr auto operator""_mps2(long double n)
