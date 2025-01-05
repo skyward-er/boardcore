@@ -1,4 +1,4 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
+/* Copyright (c) 2023-2025 Skyward Experimental Rocketry
  * Author: Davide Basso
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -48,6 +48,20 @@ enum class UnitKind
 };
 
 /**
+ * @brief Convert a value from one ratio to another.
+ */
+template <class FromRatio, class ToRatio>
+constexpr float convertRatio(float value)
+{
+    constexpr auto currentRatio =
+        static_cast<float>(FromRatio::num) / static_cast<float>(FromRatio::den);
+    constexpr auto targetRatio =
+        static_cast<float>(ToRatio::num) / static_cast<float>(ToRatio::den);
+
+    return value * currentRatio / targetRatio;
+}
+
+/**
  * Base class to implement custom measurement units logic.
  * @tparam Kind The kind of unit.
  * @tparam Ratio The ratio of the unit.
@@ -61,32 +75,48 @@ template <UnitKind Kind, class Ratio = std::ratio<1>>
 class Unit
 {
 public:
+    typedef Ratio ratio;
+    constexpr static UnitKind kind = Kind;
+
     constexpr explicit Unit(float val) : _value(val) {}
 
     template <UnitKind FromKind, class FromRatio>
     constexpr explicit Unit(Unit<FromKind, FromRatio> const& from)
-        : _value(from.template value<Ratio>())
+        : _value(convertRatio<FromRatio, Ratio>(
+              from.template value<Unit<FromKind, FromRatio>>()))
     {
     }
 
     /**
      * @brief Return the value of the unit in the target ratio.
      */
-    template <class TargetRatio = Ratio>
+    template <class TargetUnit>
     constexpr float value() const
     {
-        constexpr auto currentRatio =
-            static_cast<float>(Ratio::num) / static_cast<float>(Ratio::den);
-        constexpr auto targetRatio = static_cast<float>(TargetRatio::num) /
-                                     static_cast<float>(TargetRatio::den);
+        static_assert(Kind == TargetUnit::kind,
+                      "Cannot convert between different kinds of units");
 
-        return _value * currentRatio / targetRatio;
+        return convertRatio<Ratio, typename TargetUnit::ratio>(_value);
+    }
+
+    /**
+     * @brief Return the value of the unit in the current ratio.
+     * @deprecated Use value<TargetUnit>() instead.
+     */
+    [[deprecated(
+        "Unit::value() was called without any template argument. This is not recommended, \
+as it may lead to wrong ratios being used. Consider specifying the target unit \
+by calling value<TargetUnit>().")]]
+    constexpr float value() const
+    {
+        return _value;
     }
 
     template <UnitKind TargetKind, class TargetRatio = Ratio>
     constexpr operator Unit<TargetKind, TargetRatio>() const
     {
-        return Unit<TargetKind, TargetRatio>(value<TargetRatio>());
+        return Unit<TargetKind, TargetRatio>(
+            convertRatio<Ratio, TargetRatio>(_value));
     }
 
     template <UnitKind PKind, class PRatio>
@@ -102,38 +132,40 @@ template <UnitKind Kind, class Ratio>
 constexpr auto operator+(const Unit<Kind, Ratio>& lhs,
                          const Unit<Kind, Ratio>& rhs)
 {
-    return Unit<Kind, Ratio>(lhs.template value() + rhs.template value());
+    return Unit<Kind, Ratio>(lhs.template value<Unit<Kind, Ratio>>() +
+                             rhs.template value<Unit<Kind, Ratio>>());
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr auto operator-(const Unit<Kind, Ratio>& lhs,
                          const Unit<Kind, Ratio>& rhs)
 {
-    return Unit<Kind, Ratio>(lhs.template value() - rhs.template value());
+    return Unit<Kind, Ratio>(lhs.template value<Unit<Kind, Ratio>>() -
+                             rhs.template value<Unit<Kind, Ratio>>());
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr auto operator*(const Unit<Kind, Ratio>& lhs, float rhs)
 {
-    return Unit<Kind, Ratio>(lhs.template value() * rhs);
+    return Unit<Kind, Ratio>(lhs.template value<Unit<Kind, Ratio>>() * rhs);
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr auto operator*(float lhs, const Unit<Kind, Ratio>& rhs)
 {
-    return Unit<Kind, Ratio>(lhs * rhs.template value());
+    return Unit<Kind, Ratio>(lhs * rhs.template value<Unit<Kind, Ratio>>());
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr auto operator/(const Unit<Kind, Ratio>& lhs, float rhs)
 {
-    return Unit<Kind, Ratio>(lhs.template value() / rhs);
+    return Unit<Kind, Ratio>(lhs.template value<Unit<Kind, Ratio>>() / rhs);
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr auto operator/(float lhs, const Unit<Kind, Ratio>& rhs)
 {
-    return Unit<Kind, Ratio>(lhs / rhs.template value());
+    return Unit<Kind, Ratio>(lhs / rhs.template value<Unit<Kind, Ratio>>());
 }
 
 // Comparison operators
@@ -141,42 +173,48 @@ template <UnitKind Kind, class Ratio>
 constexpr bool operator==(const Unit<Kind, Ratio>& lhs,
                           const Unit<Kind, Ratio>& rhs)
 {
-    return lhs.template value() == rhs.template value();
+    return lhs.template value<Unit<Kind, Ratio>>() ==
+           rhs.template value<Unit<Kind, Ratio>>();
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr bool operator!=(const Unit<Kind, Ratio>& lhs,
                           const Unit<Kind, Ratio>& rhs)
 {
-    return lhs.template value() != rhs.template value();
+    return lhs.template value<Unit<Kind, Ratio>>() !=
+           rhs.template value<Unit<Kind, Ratio>>();
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr bool operator<(const Unit<Kind, Ratio>& lhs,
                          const Unit<Kind, Ratio>& rhs)
 {
-    return lhs.template value() < rhs.template value();
+    return lhs.template value<Unit<Kind, Ratio>>() <
+           rhs.template value<Unit<Kind, Ratio>>();
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr bool operator>(const Unit<Kind, Ratio>& lhs,
                          const Unit<Kind, Ratio>& rhs)
 {
-    return lhs.template value() > rhs.template value();
+    return lhs.template value<Unit<Kind, Ratio>>() >
+           rhs.template value<Unit<Kind, Ratio>>();
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr bool operator<=(const Unit<Kind, Ratio>& lhs,
                           const Unit<Kind, Ratio>& rhs)
 {
-    return lhs.template value() <= rhs.template value();
+    return lhs.template value<Unit<Kind, Ratio>>() <=
+           rhs.template value<Unit<Kind, Ratio>>();
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr bool operator>=(const Unit<Kind, Ratio>& lhs,
                           const Unit<Kind, Ratio>& rhs)
 {
-    return lhs.template value() >= rhs.template value();
+    return lhs.template value<Unit<Kind, Ratio>>() >=
+           rhs.template value<Unit<Kind, Ratio>>();
 }
 
 // Direct assignment operators
@@ -214,26 +252,26 @@ constexpr Unit<Kind, Ratio>& operator/=(Unit<Kind, Ratio>& lhs, float rhs)
 template <UnitKind Kind, class Ratio>
 constexpr Unit<Kind, Ratio> operator+(const Unit<Kind, Ratio>& unit)
 {
-    return Unit<Kind, Ratio>(unit.template value());
+    return Unit<Kind, Ratio>(unit.template value<Unit<Kind, Ratio>>());
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr Unit<Kind, Ratio> operator-(const Unit<Kind, Ratio>& unit)
 {
-    return Unit<Kind, Ratio>(-unit.template value());
+    return Unit<Kind, Ratio>(-unit.template value<Unit<Kind, Ratio>>());
 }
 
 template <UnitKind Kind, class Ratio>
 constexpr bool operator!(const Unit<Kind, Ratio>& unit)
 {
-    return !unit.template value();
+    return !unit.template value<Unit<Kind, Ratio>>();
 }
 
 // Stream operators
 template <UnitKind Kind, class Ratio>
 std::ostream& operator<<(std::ostream& os, const Unit<Kind, Ratio>& unit)
 {
-    os << unit.template value();
+    os << unit.template value<Unit<Kind, Ratio>>();
     return os;
 }
 

@@ -37,7 +37,7 @@ using namespace Boardcore;
 template <class T>
 bool eq(T const& a, T const& b)
 {
-    return std::fabs(a.value() - b.value()) < 1e-6;
+    return std::fabs(a.template value<T>() - b.template value<T>()) < 1e-6;
 }
 
 TEST_CASE("Units Test")

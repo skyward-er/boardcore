@@ -152,8 +152,8 @@ public:
                    std::chrono::time_point<std::chrono::steady_clock>
                        startTime = std::chrono::steady_clock::now())
     {
-        auto period = std::chrono::nanoseconds{
-            static_cast<int64_t>(sToNs(1) / frequency.value())};
+        auto period = std::chrono::nanoseconds{static_cast<int64_t>(
+            sToNs(1) / frequency.value<Units::Frequency::Hertz>())};
 
         return addTask(function, period, policy, startTime);
     }

@@ -53,7 +53,7 @@ using G =
 /**
  * Assert that we have enough precision to represent the constant value.
  */
-static_assert(MeterPerSecondSquared{G{1}}.value() == Constants::g,
+static_assert(G{1}.value<MeterPerSecondSquared>() == Constants::g,
               "Not enough precision to represent g in m/s^2");
 
 // Floats

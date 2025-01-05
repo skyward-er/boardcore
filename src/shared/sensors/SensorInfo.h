@@ -59,10 +59,11 @@ struct SensorInfo
         // cppcheck-suppress passedByValue
         const std::string id, Units::Frequency::Hertz frequency,
         std::function<void()> callback = []() {}, bool isEnabled = true)
-        : SensorInfo(id,
-                     std::chrono::nanoseconds{
-                         static_cast<int64_t>(sToNs(1) / frequency.value())},
-                     std::move(callback), isEnabled)
+        : SensorInfo(
+              id,
+              std::chrono::nanoseconds{static_cast<int64_t>(
+                  sToNs(1) / frequency.value<Units::Frequency::Hertz>())},
+              std::move(callback), isEnabled)
     {
     }
 
