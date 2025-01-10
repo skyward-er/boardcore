@@ -27,6 +27,7 @@
 #include <utils/Debug.h>
 #include <utils/Numeric.h>
 
+#include <fstream>
 #include <string>
 
 #include "arch/common/drivers/serial.h"
@@ -590,6 +591,26 @@ void USART::writeString(const char* buffer)
 
         i++;
     };
+}
+
+bool USART::writeFile(const std::string& fileName)
+{
+    std::ifstream file(fileName, std::ifstream::binary);
+    std::vector<uint8_t> buffer(1024, 0);  // 1024 Bytes buffer.
+
+    if (!file.is_open())
+    {
+        LOG_ERR(logger, "Failed to open file {}", fileName);
+        return false;
+    }
+
+    while (file.read(reinterpret_cast<char*>(buffer.data()), buffer.size()))
+    {
+        std::streamsize s = file.gcount();
+        if (s > 0)
+            write(buffer.data(), static_cast<size_t>(s));
+    }
+    return true;
 }
 
 void USART::clearQueue()

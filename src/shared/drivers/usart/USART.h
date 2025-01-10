@@ -268,6 +268,14 @@ public:
     void writeString(const char* buffer);
 
     /**
+     * @brief Given a filename, uses the USART interface to stream the file in
+     * 1KB chunks
+     * @param fileName String containing the name of the file to stream.
+     * @return A boolean value (true if stream is complete, false otherwise).
+     */
+    bool writeFile(const std::string& fileName);
+
+    /**
      * @brief Set the length of the word to 8 or to 9.
      *
      * @param wl WordLength element that represents the length of the word.
