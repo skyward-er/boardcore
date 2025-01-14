@@ -133,9 +133,9 @@ private:
     void setState(const FollowerState& newState);
 
     /**
-     * @brief Get for the GPS coordinates of the antenna.
+     * @brief Get for the [lat, lon] coordinates of the antenna.
      */
-    Eigen::Vector3f getAntennaCoordinates();
+    Eigen::Vector2f getAntennaCoordinates();
 
     /**
      * @brief Get for the GPS coordinates of the rocket's NAS origin reference.
@@ -152,33 +152,33 @@ private:
 
     bool antennaCoordinatesSet = false;
     bool rocketCoordinatesSet  = false;
+    bool lastRocketNasStateSet = false;
     std::atomic<bool> firstAntennaAttitudeSet{false};
 
     VN300Data lastAntennaAttitude;
-    miosix::FastMutex lastAntennaAttitudeMutex;
 
     NASState lastRocketNasState;
-    miosix::FastMutex lastRocketNasStateMutex;
 
-    // GPS coordinates of the antenna [lat, lon, alt] [deg, deg, m]
-    Eigen::Vector3f antennaCoordinates;
-    miosix::FastMutex antennaCoordinatesMutex;
-    // GPS coordinates of the NAS origin taken from reference origin [lat, lon,
-    // alt] [deg, deg, m]
+    // TODO: See if assumption has sense...
+    /* GPS coordinates of the antenna [lat, lon] [deg, deg],
+     altitude is considered same as NAS Origin */
+    Eigen::Vector2f antennaCoordinates;
+    /* GPS coordinates of the NAS origin taken from reference origin [lat, lon,
+     alt] [deg, deg, m] */
     Eigen::Vector3f rocketNASOrigin;
-    miosix::FastMutex rocketNASOriginMutex;
-    // Initial distance between the antenna and the rocket while in ramp [lat,
-    // lon, alt] [deg, deg, m]
-    Eigen::Vector2f initialAntennaRocketDistance;
+    /* Distance between the antenna and the rocket [lat,
+     lon, alt] [deg, deg, m] */
+    Eigen::Vector2f antennaRocketDistance;
 
     // Target yaw and pitch of the system [deg, deg]
     AntennaAngles targetAngles;
-    miosix::FastMutex targetAnglesMutex;
 
     FollowerState state;
-    miosix::FastMutex stateMutex;
 
     PrintLogger logger = Logging::getLogger("Follower");
+
+    // General mutex for the follower
+    miosix::FastMutex followerMutex;
 };
 
 }  // namespace Boardcore
