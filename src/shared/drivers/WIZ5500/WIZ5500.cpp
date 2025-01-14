@@ -25,6 +25,7 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
+#include <utils/Debug.h>
 #include <utils/KernelTime.h>
 
 #include "WIZ5500Defs.h"
@@ -464,6 +465,8 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
         while (wait_infos[i].irq == 0 && result == TimedWaitResult::NoTimeout &&
                interrupt_service_thread != this_thread)
         {
+            if (Kernel::getOldTick() > start + timeout)
+                break;
             if (timeout != -1)
             {
                 result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(
@@ -484,6 +487,9 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
 
     while (interrupt_service_thread == this_thread)
     {
+        if (Kernel::getOldTick() > start + timeout)
+            break;
+
         // Run a single step of the ISR
         if (timeout == -1)
             result = runInterruptServiceRoutine(l, -1);
