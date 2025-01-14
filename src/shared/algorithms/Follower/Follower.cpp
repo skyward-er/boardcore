@@ -76,7 +76,7 @@ void Follower::setLastAntennaAttitude(const VN300Data& attitudeData)
 {
     Lock<FastMutex> lock(followerMutex);
     firstAntennaAttitudeSet = true;
-    lastAntennaAttitude = attitudeData;
+    lastAntennaAttitude     = attitudeData;
 }
 
 VN300Data Follower::getLastAntennaAttitude()
