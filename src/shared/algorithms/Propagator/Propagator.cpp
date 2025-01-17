@@ -24,6 +24,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/AeroUtils/AeroUtils.h>
+#include <utils/Debug.h>
 
 using namespace Eigen;
 
@@ -64,7 +65,7 @@ void Propagator::step()
 void Propagator::setRocketNasState(const NASState& newRocketNasState)
 {
     miosix::Lock<miosix::FastMutex> lockState(stateMutex);
-    miosix::Lock<miosix::FastMutex> lockNAS(nasStateMutex);
+    miosix::Lock<miosix::FastMutex> lock(nasStateMutex);
 
     // Reset nPropagations to notify another received "real" packet
     state.nPropagations = 0;
