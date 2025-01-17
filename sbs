@@ -58,6 +58,13 @@ VERBOSE_FILENAME=".sbs_verbose"
 BUILD_DEFAULT_DIRNAME="build"
 BUILD_HOST_DIRNAME="build-host"
 
+# Logical cores count, cross platform
+N_PROC=$(
+    nproc 2>/dev/null ||                   # Linux
+    sysctl -n hw.logicalcpu 2>/dev/null || # macOS 
+    getconf _NPROCESSORS_ONLN 2>/dev/null  # POSIX
+)
+
 ################################################################################
 ##############################    Global States   ##############################
 ################################################################################
@@ -465,7 +472,7 @@ lint_clangformat() {
     # count files and spread them evenly across cores: files / nproc + 1
     declare files_per_proc=$(
         echo "$files" | wc -l | \
-        xargs -I {} bash -c "expr \( {} / $(nproc) \) + 1"
+        xargs -I {} bash -c "expr \( {} / $N_PROC \) + 1"
     )
 
     echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
@@ -750,7 +757,7 @@ format() {
     # count files and spread them evenly across cores: files / nproc + 1
     declare files_per_proc=$(
         echo "$files" | wc -l | \
-        xargs -I {} bash -c "expr \( {} / $(nproc) \) + 1"
+        xargs -I {} bash -c "expr \( {} / $N_PROC \) + 1"
     )
 
     echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
