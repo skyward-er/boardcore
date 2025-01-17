@@ -149,18 +149,18 @@ void Follower::step()
 
         lastRocketNas = lastRocketNasState;
         vn300         = lastAntennaAttitude;
+
+        // Local variable checks and updates
+        // Getting the position of the rocket wrt the antennas in NED frame
+        rocketPosition = {lastRocketNas.n, lastRocketNas.e, lastRocketNas.d};
+
+        // Calculate the antenna target angles from the NED rocket coordinates
+        targetAngles = rocketPositionToAntennaAngles(rocketPosition);
+
+        // Calculate the amount to move from the current position
+        diffAngles = {targetAngles.timestamp, targetAngles.yaw - vn300.yaw,
+                      targetAngles.pitch - vn300.pitch};
     }
-
-    // Local variable checks and updates
-    // Getting the position of the rocket wrt the antennas in NED frame
-    rocketPosition = {lastRocketNas.n, lastRocketNas.e, lastRocketNas.d};
-
-    // Calculate the antenna target angles from the NED rocket coordinates
-    targetAngles = rocketPositionToAntennaAngles(rocketPosition);
-
-    // Calculate the amount to move from the current position
-    diffAngles = {targetAngles.timestamp, targetAngles.yaw - vn300.yaw,
-                  targetAngles.pitch - vn300.pitch};
 
     // Rotate in the shortest direction
     diffAngles.yaw   = YAW_GAIN * minimizeRotation(diffAngles.yaw);
@@ -211,10 +211,10 @@ AntennaAngles Follower::rocketPositionToAntennaAngles(
     const NEDCoords& rocketNed)
 {
     // Antenna Coordinates
-    Eigen::Vector2f antennaCoord = getAntennaCoordinates();
+    Eigen::Vector2f antennaCoord = antennaCoordinates;
 
     // Rocket coordinates, w/out altitude
-    Eigen::Vector2f rocketCoord = getRocketNASOrigin().head<2>();
+    Eigen::Vector2f rocketCoord = rocketNASOrigin.head<2>();
 
     antennaRocketDistance = Aeroutils::geodetic2NED(rocketCoord, antennaCoord);
 

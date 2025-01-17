@@ -123,6 +123,8 @@ private:
     /**
      * @brief Calculates the target angles from the given NED coordinates that
      * the antenna should point to.
+     *
+     * @note Called by a mutex-protected function
      */
     AntennaAngles rocketPositionToAntennaAngles(const NEDCoords& ned);
 
