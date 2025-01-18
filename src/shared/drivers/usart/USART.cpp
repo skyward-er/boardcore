@@ -594,9 +594,9 @@ void USART::writeString(const char* buffer)
 
 void USART::clearQueue()
 {
-    char buf[usart_queue_default_capacity];
+    char buf[INTERNAL_QUEUE_LENGTH];
     rxQueue.reset();
-    while (read(buf, usart_queue_default_capacity))
+    while (read(buf, INTERNAL_QUEUE_LENGTH))
         ;
     rxQueue.reset();
 }

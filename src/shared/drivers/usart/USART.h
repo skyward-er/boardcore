@@ -196,13 +196,18 @@ public:
      * no control flow and no oversampling).
      * Requires that the gpios are configured for the choosen uart.
      *
+     * @note An internal queue is used to store the received data, before the
+     * user reads it. Reading more data than the queue capacity is allowed, but
+     * only up to the internal queue capacity will be returned.
+     *
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
      * @param baudrate Baudrate in bit per second. Default values are [2400,
      * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
+     * @param queueLen Length of the internal queue for the received data.
      */
     USART(USARTType* usart, int baudrate,
-          unsigned int queueLen = usart_queue_default_capacity);
+          unsigned int queueLen = INTERNAL_QUEUE_LENGTH);
 
     ///< Delete copy/move constructors/operators.
     USART(const USART&)            = delete;
@@ -337,7 +342,7 @@ private:
     bool error            = false;  ///< Error occurred while receiving message
 
     ///< Default queue length
-    const static unsigned int usart_queue_default_capacity = 256;
+    static constexpr unsigned int INTERNAL_QUEUE_LENGTH = 256;
 };
 
 /**
