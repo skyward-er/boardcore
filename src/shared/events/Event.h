@@ -31,11 +31,12 @@ typedef uint8_t Event;
 
 enum BasicEvent : Event
 {
-    EV_ENTRY        = 0,
-    EV_EXIT         = 1,
-    EV_EMPTY        = 2,
-    EV_INIT         = 3,
-    EV_FIRST_CUSTOM = 4
+    EV_ENTRY          = 0,
+    EV_EXIT           = 1,
+    EV_EMPTY          = 2,
+    EV_INIT           = 3,
+    EV_ASYNC_CONTINUE = 4,  // Async continuation support
+    EV_FIRST_CUSTOM   = 5
 };
 
 /**
