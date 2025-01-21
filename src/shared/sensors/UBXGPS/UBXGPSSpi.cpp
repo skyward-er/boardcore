@@ -49,7 +49,8 @@ UBXGPSSpi::UBXGPSSpi(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
 SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
     SPIBusConfig config;
-    config.clockDivider = SPI::ClockDivider::DIV_16;
+    config.clockDivider  = SPI::ClockDivider::DIV_16;
+    config.csSetupTimeUs = 10;
     return config;
 }
 
@@ -109,9 +110,22 @@ bool UBXGPSSpi::selfTest() { return true; }
 
 UBXGPSData UBXGPSSpi::sampleImpl()
 {
+    int64_t currentTimestamp = Kernel::getOldTick();
+
+    // Returns the last sample if the time difference is less than 1ms
+    // From sensor specification, the time between SPI transactions must be at
+    // least 1ms. If sampling is requested before that time has passed, return
+    // the last sample.
+
+    if (currentTimestamp - lastSampleTimestamp < 1)
+    {
+        lastError = SensorErrors::NO_NEW_DATA;
+        return lastSample;
+    }
+
     UBXPvtFrame pvt;
 
-    if (!readUBXFrame(pvt))
+    if (!readUBXFrame(pvt, false))
         return lastSample;
 
     UBXPvtFrame::Payload& pvtP = pvt.getPayload();
@@ -138,6 +152,8 @@ UBXGPSData UBXGPSSpi::sampleImpl()
                             .nanosecond = pvtP.nano,
                             .accuracy   = pvtP.tAcc};
 
+    lastSampleTimestamp = Kernel::getOldTick();
+    lastError           = SensorErrors::NO_ERRORS;
     return sample;
 }
 
@@ -238,7 +254,7 @@ bool UBXGPSSpi::setPVTMessageRate()
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
+bool UBXGPSSpi::readUBXFrame(UBXFrame& frame, bool wait)
 {
     long long start = Kernel::getOldTick();
     long long end   = start + READ_TIMEOUT;
@@ -256,7 +272,8 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);
-                Thread::sleep(1);  // GPS minimum time after deselect
+                if (wait)
+                    Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
             }
 
@@ -297,7 +314,8 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         spiSlave.bus.read(frame.checksum, 2);
 
         spiSlave.bus.deselect(spiSlave.cs);
-        Thread::sleep(1);  // GPS minimum time after deselect
+        if (wait)
+            Thread::sleep(1);  // GPS minimum time after deselect
     }
 
     if (!frame.isValid())
