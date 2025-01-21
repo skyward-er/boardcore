@@ -117,9 +117,10 @@ private:
      * @brief Reads a UBX frame.
      *
      * @param frame The received frame.
+     * @param wait Whether to wait 1ms after slave deselection or not
      * @return True if a valid frame was read.
      */
-    bool readUBXFrame(UBXFrame& frame);
+    bool readUBXFrame(UBXFrame& frame, bool wait = true);
 
     /**
      * @brief Writes a UBX frame.
@@ -139,6 +140,7 @@ private:
 
     SPISlave spiSlave;
     uint8_t sampleRate;
+    int64_t lastSampleTimestamp = 0;
 
     PrintLogger logger = Logging::getLogger("ubxgps");
 
