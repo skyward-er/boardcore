@@ -38,27 +38,6 @@
 #define MIOSIX_RADIO_DIO3_IRQ EXTI9_IRQHandlerImpl
 #define MIOSIX_RADIO_SPI SPI6
 
-#define MIOSIX_SERVOS_1_TIM TIM8
-#define MIOSIX_SERVOS_1_CHANNEL CHANNEL_2
-#define MIOSIX_SERVOS_2_TIM TIM1
-#define MIOSIX_SERVOS_2_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_3_TIM TIM10
-#define MIOSIX_SERVOS_3_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_4_TIM TIM11
-#define MIOSIX_SERVOS_4_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_5_TIM TIM5
-#define MIOSIX_SERVOS_5_CHANNEL CHANNEL_3
-#define MIOSIX_SERVOS_6_TIM TIM3
-#define MIOSIX_SERVOS_6_CHANNEL CHANNEL_3
-#define MIOSIX_SERVOS_7_TIM TIM4
-#define MIOSIX_SERVOS_7_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_8_TIM TIM8
-#define MIOSIX_SERVOS_8_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_9_TIM TIM12
-#define MIOSIX_SERVOS_9_CHANNEL CHANNEL_2
-#define MIOSIX_SERVOS_10_TIM TIM9
-#define MIOSIX_SERVOS_10_CHANNEL CHANNEL_2
-
 namespace miosix
 {
 
@@ -128,11 +107,13 @@ using rx = Gpio<GPIOB_BASE, 12>;
 namespace timers
 {
 using tim1ch1  = Gpio<GPIOA_BASE, 8>;
+using tim2ch3  = Gpio<GPIOA_BASE, 2>;
+using tim2ch4  = Gpio<GPIOB_BASE, 11>;
 using tim3ch3  = Gpio<GPIOB_BASE, 0>;
 using tim4ch1  = Gpio<GPIOD_BASE, 12>;
-using tim5ch3  = Gpio<GPIOA_BASE, 2>;
+using tim4ch2  = Gpio<GPIOD_BASE, 13>;
 using tim8ch1  = Gpio<GPIOC_BASE, 6>;
-using tim8ch2  = Gpio<GPIOC_BASE, 7>;  // Extra timer
+using tim8ch2  = Gpio<GPIOC_BASE, 7>;
 using tim9ch2  = Gpio<GPIOA_BASE, 3>;
 using tim10ch1 = Gpio<GPIOB_BASE, 8>;
 using tim11ch1 = Gpio<GPIOB_BASE, 9>;
@@ -167,13 +148,15 @@ using cs = Gpio<GPIOB_BASE, 2>;
 // Flavio, why?
 namespace LPS22
 {
-using cs = Gpio<GPIOB_BASE, 11>;
+// NOTE: also used by tim2ch4, ensure there's no conflict before enabling this
+// using cs = Gpio<GPIOB_BASE, 11>;
 }  // namespace LPS22
 
 // Flavio, why?
 namespace LSM6
 {
-using cs = Gpio<GPIOD_BASE, 13>;
+// NOTE: also used by tim4ch2, ensure there's no conflict before enabling this
+// using cs = Gpio<GPIOD_BASE, 13>;
 }  // namespace LSM6
 
 // Flavio, why?
@@ -214,18 +197,63 @@ using dio1 = Gpio<GPIOE_BASE, 4>;
 using dio3 = Gpio<GPIOG_BASE, 9>;
 }  // namespace radio
 
+/**
+ * @brief Servo PWM control PIN definitions
+ *
+ * @note Some servos share the same timer, so they must use the same frequency:
+ * - Servo OX_FIL     and NITR   (TIM8) must use the same frequency
+ * - Servo N2_REL and UNUSED (TIM2) must use the same frequency
+ * - Servo N2_FIL and MAIN   (TIM4) must use the same frequency
+ */
 namespace servos
 {
-using servo1  = miosix::interfaces::timers::tim8ch2;
-using servo2  = miosix::interfaces::timers::tim1ch1;
-using servo3  = miosix::interfaces::timers::tim10ch1;
-using servo4  = miosix::interfaces::timers::tim11ch1;
-using servo5  = miosix::interfaces::timers::tim5ch3;
-using servo6  = miosix::interfaces::timers::tim3ch3;
-using servo7  = miosix::interfaces::timers::tim4ch1;
-using servo8  = miosix::interfaces::timers::tim8ch1;
-using servo9  = miosix::interfaces::timers::tim12ch2;
-using servo10 = miosix::interfaces::timers::tim9ch2;
+#define MIOSIX_SERVOS_OX_FIL_TIM TIM8
+#define MIOSIX_SERVOS_OX_FIL_CHANNEL CHANNEL_2
+using servo_ox_filling = miosix::interfaces::timers::tim8ch2;
+
+#define MIOSIX_SERVOS_OX_REL_TIM TIM1
+#define MIOSIX_SERVOS_OX_REL_CHANNEL CHANNEL_1
+using servo_ox_release = miosix::interfaces::timers::tim1ch1;
+
+#define MIOSIX_SERVOS_OX_DET_TIM TIM10
+#define MIOSIX_SERVOS_OX_DET_CHANNEL CHANNEL_1
+using servo_ox_detach = miosix::interfaces::timers::tim10ch1;
+
+#define MIOSIX_SERVOS_N2_3W_TIM TIM11
+#define MIOSIX_SERVOS_N2_3W_CHANNEL CHANNEL_1
+using servo_n2_3way = miosix::interfaces::timers::tim11ch1;
+
+#define MIOSIX_SERVOS_N2_FIL_TIM TIM4
+#define MIOSIX_SERVOS_N2_FIL_CHANNEL CHANNEL_1
+using servo_n2_filling = miosix::interfaces::timers::tim4ch1;
+
+#define MIOSIX_SERVOS_N2_REL_TIM TIM2
+#define MIOSIX_SERVOS_N2_REL_CHANNEL CHANNEL_3
+using servo_n2_release = miosix::interfaces::timers::tim2ch3;
+
+#define MIOSIX_SERVOS_N2_DET_TIM TIM3
+#define MIOSIX_SERVOS_N2_DET_CHANNEL CHANNEL_3
+using servo_n2_detach = miosix::interfaces::timers::tim3ch3;
+
+#define MIOSIX_SERVOS_NITR_TIM TIM8
+#define MIOSIX_SERVOS_NITR_CHANNEL CHANNEL_1
+using servo_nitrogen = miosix::interfaces::timers::tim8ch1;
+
+#define MIOSIX_SERVOS_OX_VEN_TIM TIM12
+#define MIOSIX_SERVOS_OX_VEN_CHANNEL CHANNEL_2
+using servo_ox_venting = miosix::interfaces::timers::tim12ch2;
+
+#define MIOSIX_SERVOS_N2_QUE_TIM TIM9
+#define MIOSIX_SERVOS_N2_QUE_CHANNEL CHANNEL_2
+using servo_n2_quenching = miosix::interfaces::timers::tim9ch2;
+
+#define MIOSIX_SERVOS_MAIN_TIM TIM4
+#define MIOSIX_SERVOS_MAIN_CHANNEL CHANNEL_2
+using servo_main = miosix::interfaces::timers::tim4ch2;
+
+#define MIOSIX_SERVOS_UNUSED_TIM TIM2
+#define MIOSIX_SERVOS_UNUSED_CHANNEL CHANNEL_4
+using servo_unused = miosix::interfaces::timers::tim2ch4;
 }  // namespace servos
 
 namespace adcs

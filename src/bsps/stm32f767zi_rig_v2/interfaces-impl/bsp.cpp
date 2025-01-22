@@ -313,12 +313,16 @@ void IRQbspInit()
 
     interfaces::timers::tim1ch1::alternateFunction(1);
     interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim2ch3::alternateFunction(1);
+    interfaces::timers::tim2ch3::mode(Mode::ALTERNATE);
+    interfaces::timers::tim2ch4::alternateFunction(1);
+    interfaces::timers::tim2ch4::mode(Mode::ALTERNATE);
     interfaces::timers::tim3ch3::alternateFunction(2);
     interfaces::timers::tim3ch3::mode(Mode::ALTERNATE);
     interfaces::timers::tim4ch1::alternateFunction(2);
     interfaces::timers::tim4ch1::mode(Mode::ALTERNATE);
-    interfaces::timers::tim5ch3::alternateFunction(2);
-    interfaces::timers::tim5ch3::mode(Mode::ALTERNATE);
+    interfaces::timers::tim4ch2::alternateFunction(2);
+    interfaces::timers::tim4ch2::mode(Mode::ALTERNATE);
     interfaces::timers::tim8ch1::alternateFunction(3);
     interfaces::timers::tim8ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim8ch2::alternateFunction(3);
@@ -346,6 +350,10 @@ void IRQbspInit()
     interfaces::relays::relay4::high();
 
     /* Do not enable Flavio's bullshit
+
+    NOTE: some of the following pins are used for servo timers, ensure there's
+    no conflicts before enabling these.
+
     sensors::H3LIS::cs::mode(Mode::OUTPUT);
     sensors::H3LIS::cs::high();
 
