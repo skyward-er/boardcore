@@ -67,6 +67,7 @@ public:
      */
     LSM6DSRXData getSensorData();
 
+protected:
     /**
      * @brief Gather data from FIFO/data registers.
      */
