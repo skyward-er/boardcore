@@ -31,6 +31,7 @@ namespace Constants
 static constexpr float PI                 = 3.14159265f;  // [rad]
 static constexpr float DEGREES_TO_RADIANS = PI / 180.0f;
 static constexpr float RADIANS_TO_DEGREES = 180.0f / PI;
+static constexpr float PSI_TO_PASCAL      = 6894.76f;  // [Pa / psi]
 
 static constexpr float g = 9.80665f;  // [m^s^2]
 
