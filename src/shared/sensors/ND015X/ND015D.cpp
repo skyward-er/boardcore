@@ -123,7 +123,7 @@ void ND015D::setNotch(NotchEnable ntc)
 ND015XData ND015D::sampleImpl()
 {
     ND015XData data;
-    SPIDataOut = (modeByte << 8) | rateByte;
+    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
 
     SPITransaction spi(slave);
 
@@ -131,7 +131,7 @@ ND015XData ND015D::sampleImpl()
                                  // reading the data to make sure the proper
                                  // settings are used
 
-    SPIDataIn = spi.transfer16(SPIDataOut);
+    uint16_t SPIDataIn = spi.transfer16(SPIDataOut);
 
     data.pressure          = (short)SPIDataIn / (0.9 * pow(2, 15)) * range;
     data.pressureTimestamp = TimestampTimer::getTimestamp();
