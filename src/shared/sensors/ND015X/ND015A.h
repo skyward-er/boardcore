@@ -111,8 +111,6 @@ private:
     SPISlave slave;
     uint8_t modeByte = 0xF7;  // settings for the mode control register
     uint8_t rateByte = 0x1C;  // settings for the rate control register
-    uint16_t SPIDataIn;
-    uint16_t SPIDataOut;
 
     enum RegisterMask : uint8_t
     {
