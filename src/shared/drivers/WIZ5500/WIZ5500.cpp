@@ -487,7 +487,8 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
 
     while (interrupt_service_thread == this_thread)
     {
-        if (Kernel::getOldTick() > start + timeout)
+        // In case of no timeout or expired timeout
+        if (timeout != -1 && Kernel::getOldTick() > start + timeout)
             break;
 
         // Run a single step of the ISR
