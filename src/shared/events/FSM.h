@@ -23,8 +23,12 @@
 #pragma once
 
 #include <events/Event.h>
+#include <events/EventBroker.h>
 #include <events/EventHandler.h>
 #include <utils/collections/SyncQueue.h>
+
+#include <chrono>
+#include <csetjmp>
 
 #include "ActiveObject.h"
 
@@ -51,11 +55,17 @@ public:
     bool testState(void (T::*testState)(const Event&));
 
 protected:
+    void run() override;
     void handleEvent(const Event& e) override;
+
+    void waitEvent(Event events);
+    void waitFor(std::chrono::milliseconds time);
 
 private:
     void (T::*state)(const Event&);
     Event specialEvent;
+
+    std::jmp_buf runLoop;
 
 protected:
     // Async continuation support
@@ -84,6 +94,9 @@ void FSM<T>::transition(void (T::*nextState)(const Event&))
     state        = nextState;
     specialEvent = EV_ENTRY;
     (static_cast<T*>(this)->*state)(specialEvent);
+
+    // TODO: explain
+    longjmp(runLoop, 1);
 }
 
 template <class T>
@@ -93,9 +106,44 @@ bool FSM<T>::testState(void (T::*testState)(const Event&))
 }
 
 template <class T>
+void FSM<T>::run()
+{
+    // TODO: explain
+    setjmp(runLoop);
+
+    while (!shouldStop())
+    {
+        Event e = eventList.get();
+        handleEvent(e);
+    }
+}
+
+template <class T>
 void FSM<T>::handleEvent(const Event& e)
 {
     (static_cast<T*>(this)->*state)(e);
+}
+
+template <class T>
+void FSM<T>::waitEvent(Event event)
+{
+    while (!shouldStop())
+    {
+        Event e = eventList.get();
+
+        if (e == event)
+            // The event we were waiting for has arrived
+            return;
+
+        handleEvent(e);
+    }
+}
+
+template <class T>
+void FSM<T>::waitFor(std::chrono::milliseconds time)
+{
+    EventBroker::getInstance().postDelayed(EV_ASYNC_CONTINUE, 0, time.count());
+    waitEvent(EV_ASYNC_CONTINUE);
 }
 
 /**

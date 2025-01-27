@@ -115,7 +115,8 @@
                 "polynomials": "cpp",
                 "autodiff": "cpp",
                 "sparseextra": "cpp",
-                "specialfunctions": "cpp"
+                "specialfunctions": "cpp",
+                "csetjmp": "cpp"
         },
         "cSpell.words": [
                 "abom",
