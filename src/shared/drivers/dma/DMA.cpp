@@ -499,22 +499,23 @@ void DMAStream::waitForTransferComplete()
         transferCompleteFlag, -1);
 }
 
-bool DMAStream::timedWaitForHalfTransfer(uint64_t timeout_ns)
+bool DMAStream::timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns)
 {
     return waitForInterruptEventImpl(
         currentSetup.enableHalfTransferInterrupt,
         std::bind(&DMAStream::getHalfTransferFlagStatus, this),
         std::bind(&DMAStream::clearHalfTransferFlag, this), halfTransferFlag,
-        timeout_ns);
+        timeout_ns.count());
 }
 
-bool DMAStream::timedWaitForTransferComplete(uint64_t timeout_ns)
+bool DMAStream::timedWaitForTransferComplete(
+    std::chrono::nanoseconds timeout_ns)
 {
     return waitForInterruptEventImpl(
         currentSetup.enableTransferCompleteInterrupt,
         std::bind(&DMAStream::getTransferCompleteFlagStatus, this),
         std::bind(&DMAStream::clearTransferCompleteFlag, this),
-        transferCompleteFlag, timeout_ns);
+        transferCompleteFlag, timeout_ns.count());
 }
 
 void DMAStream::setHalfTransferCallback(std::function<void()> callback)
