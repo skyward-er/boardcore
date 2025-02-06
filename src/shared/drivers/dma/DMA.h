@@ -27,6 +27,7 @@
 #include <kernel/sync.h>
 #include <utils/TimedPollingFlag.h>
 
+#include <chrono>
 #include <functional>
 #include <map>
 
@@ -187,9 +188,9 @@ public:
 
     void waitForTransferComplete();
 
-    bool timedWaitForHalfTransfer(uint64_t timeout_ns);
+    bool timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns);
 
-    bool timedWaitForTransferComplete(uint64_t timeout_ns);
+    bool timedWaitForTransferComplete(std::chrono::nanoseconds timeout_ns);
 
     void setHalfTransferCallback(std::function<void()> callback);
 
