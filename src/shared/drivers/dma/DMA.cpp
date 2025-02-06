@@ -370,7 +370,8 @@ void DMAStream::setup(DMATransaction transaction)
     registers->CR |= static_cast<uint32_t>(transaction.priority);
     if (transaction.circularMode)
         registers->CR |= DMA_SxCR_CIRC;
-    registers->NDTR = transaction.numberOfDataItems;
+
+    setNumberOfDataItems(transaction.numberOfDataItems);
 
     if (transaction.direction == DMATransaction::Direction::MEM_TO_PER)
     {
@@ -549,6 +550,13 @@ void DMAStream::readFlags()
     transferErrorFlag    = flags & DMA_LISR_TEIF0;
     fifoErrorFlag        = flags & DMA_LISR_DMEIF0;
     directModeErrorFlag  = flags & DMA_LISR_DMEIF0;
+}
+
+void DMAStream::setNumberOfDataItems(const uint16_t nBytes)
+{
+    // TODO: assert that the stream is disabled while doing it
+    currentSetup.numberOfDataItems = nBytes;
+    registers->NDTR                = nBytes;
 }
 
 int DMAStream::getCurrentBufferNumber()

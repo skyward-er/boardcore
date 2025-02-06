@@ -211,6 +211,13 @@ public:
     void readFlags();
 
     /**
+     * @brief Set the number of bytes to be exchanged during a
+     * dma transaction. Useful in case you don't want to change
+     * the entire configuration.
+     */
+    void setNumberOfDataItems(const uint16_t nBytes);
+
+    /**
      * @brief Returns the last read status of the half transfer flag.
      *
      * TODO: Explain what this flag intails and what to do.
