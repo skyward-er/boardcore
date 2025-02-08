@@ -407,18 +407,14 @@ void Wiz5500::close(int sock_n, int timeout)
     socket_infos[sock_n].mode = Wiz5500::SocketMode::CLOSED;
 }
 
-void Wiz5500::waitForINTn(Lock<FastMutex>& l)
+void Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
 {
-    long long start        = Kernel::getOldTick();
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
     Unlock<FastMutex> ul(l);
     FastInterruptDisableLock il;
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
-    {
-        result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(
-            il, start + INTN_TIMEOUT);
-    }
+        result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(il, until);
 }
 
 int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
@@ -488,11 +484,14 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
     while (interrupt_service_thread == this_thread)
     {
         // Run a single step of the ISR
-        runInterruptServiceRoutine(l);
+        if (timeout == -1)
+            result = runInterruptServiceRoutine(l, -1);
+        else
+            result = runInterruptServiceRoutine(l, start + timeout);
 
         // Check if we woke up ourself, then we need to elect a new interrupt
         // service thread
-        if (wait_infos[i].irq != 0)
+        if (wait_infos[i].irq != 0 || result == TimedWaitResult::Timeout)
         {
             Thread* new_interrupt_service_thread = nullptr;
 
@@ -527,10 +526,23 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
     return wait_infos[i].irq;
 }
 
-void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l)
+TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
+                                                    long long until)
 {
     // Other threads might wake us up in order to
-    waitForINTn(l);
+    long long start = Kernel::getOldTick();
+    if (until == -1)
+    {
+        waitForINTn(l, start + INTN_TIMEOUT);
+    }
+    else
+    {
+        waitForINTn(l, std::min(start + INTN_TIMEOUT, until));
+
+        // Did we run out of time?
+        if (Kernel::getOldTick() >= until)
+            return TimedWaitResult::Timeout;
+    }
 
     // Ok something happened!
 
@@ -590,6 +602,8 @@ void Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l)
             cb(ip, port);
         }
     }
+
+    return TimedWaitResult::NoTimeout;
 }
 
 void Wiz5500::spiRead(uint8_t block, uint16_t address, uint8_t* data,
