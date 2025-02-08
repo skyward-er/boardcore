@@ -494,19 +494,25 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
         // service thread
         if (wait_infos[i].irq != 0)
         {
+            Thread* new_interrupt_service_thread = nullptr;
+
             for (int j = 0; j < NUM_THREAD_WAIT_INFOS; j++)
             {
-                if (wait_infos[j].irq == 0)
+                if (wait_infos[j].irq == 0 && wait_infos[j].sock_n != -1 &&
+                    j != i)
                 {
-                    {
-                        FastInterruptDisableLock il;
-                        interrupt_service_thread = wait_infos[j].thread;
-                    }
-
-                    wait_infos[j].thread->wakeup();
+                    new_interrupt_service_thread = wait_infos[j].thread;
                     break;
                 }
             }
+
+            {
+                FastInterruptDisableLock il;
+                interrupt_service_thread = new_interrupt_service_thread;
+            }
+
+            if (new_interrupt_service_thread)
+                new_interrupt_service_thread->wakeup();
         }
     }
 
