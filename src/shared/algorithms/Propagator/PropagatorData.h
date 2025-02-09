@@ -72,12 +72,12 @@ struct PropagatorState
      *
      * @return Eigen::Vector3f the NED position vector
      */
-    Eigen::Vector3f getXProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+    Eigen::Vector3f getPosition() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
 
     /**
      * @brief Setter for the vector of positions NED
      */
-    void setXProp(Eigen::Vector3f xProp)
+    void setPosition(Eigen::Vector3f xProp)
     {
         nas.n = xProp(0);
         nas.e = xProp(1);
@@ -89,7 +89,7 @@ struct PropagatorState
      *
      * @return Eigen::Vector3f the NED velocities vector
      */
-    Eigen::Vector3f getVProp()
+    Eigen::Vector3f getVelocity()
     {
         return Eigen::Vector3f(nas.vn, nas.ve, nas.vd);
     }
@@ -97,7 +97,7 @@ struct PropagatorState
     /**
      * @brief Setter for the vector of velocities NED
      */
-    void setVProp(Eigen::Vector3f vProp)
+    void setVelocity(Eigen::Vector3f vProp)
     {
         nas.vn = vProp(0);
         nas.ve = vProp(1);
@@ -107,7 +107,7 @@ struct PropagatorState
     /**
      * @brief Setter for the vector acceleration
      */
-    void setAProp(Eigen::Vector3f aProp)
+    void setAcceleration(Eigen::Vector3f aProp)
     {
         acceleration = aProp;
     }
@@ -117,7 +117,7 @@ struct PropagatorState
      *
      * @return Eigen::Vector3f acceleration
      */
-    Eigen::Vector3f getAProp() const
+    Eigen::Vector3f getAcceleration() const
     {
         return acceleration;
     }
