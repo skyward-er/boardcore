@@ -58,17 +58,17 @@ void Propagator::step()
     {
         // checking that last two states are not propagated
         if(state.nPropagations == 0 && oldState.nPropagations == 0)             
-            state.setAProp((state.getVProp() - oldState.getVProp()) / updatePeriod);
+            state.setAcceleration((state.getVelocity() - oldState.getVelocity()) / updatePeriod);
 
-        state.setVProp((state.getVProp() + state.getAProp()) * updatePeriod);
-        state.setXProp((state.getXProp() + state.getVProp()) * updatePeriod);
+        state.setVelocity((state.getVelocity() + state.getAcceleration()) * updatePeriod);
+        state.setPosition((state.getPosition() + state.getVelocity()) * updatePeriod);
 
         state.nPropagations++;
         state.timestamp = TimestampTimer::getTimestamp();
     }
     else    // Update Position propagating assuming costant velocity
     { 
-    state.setXProp(state.getXProp() + state.getVProp() * updatePeriod);
+    state.setPosition(state.getPosition() + state.getVelocity() * updatePeriod);
     state.nPropagations++;
     state.timestamp = TimestampTimer::getTimestamp();
     }
