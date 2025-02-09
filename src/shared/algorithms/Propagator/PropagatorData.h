@@ -38,10 +38,13 @@ namespace Boardcore
  */
 struct PropagatorState
 {
-    uint64_t timestamp;      ///< Prediction timestamp [ms]
+    uint64_t timestamp;      ///< Prediction timestamp (ARP timestamp) [ms]
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 
+    float az                  = 0;
+    static constexpr float ax = 0,
+                           ay = 0;  ///< only az is used by the propagator
     PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
@@ -52,7 +55,8 @@ struct PropagatorState
 
     static std::string header()
     {
-        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
+        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz,ax,"
+               "ay,az\n";
     }
 
     void print(std::ostream& os) const
@@ -60,7 +64,8 @@ struct PropagatorState
         os << timestamp << "," << nPropagations << "," << nas.n << "," << nas.e
            << "," << nas.d << "," << nas.vn << "," << nas.ve << "," << nas.vd
            << "," << nas.qx << "," << nas.qy << "," << nas.qz << "," << nas.qw
-           << "," << nas.bx << "," << nas.by << "," << nas.bz << "\n";
+           << "," << nas.bx << "," << nas.by << "," << nas.bz << "," << ax
+           << "," << ay << "," << az << "\n";
     }
 
     NASState getNasState() const { return nas; }
@@ -70,12 +75,15 @@ struct PropagatorState
      *
      * @return Eigen::Vector3f the NED position vector
      */
-    Eigen::Vector3f getXProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+    Eigen::Vector3f getPosition()
+    {
+        return Eigen::Vector3f(nas.n, nas.e, nas.d);
+    }
 
     /**
      * @brief Setter for the vector of positions NED
      */
-    void setXProp(Eigen::Vector3f xProp)
+    void setPosition(Eigen::Vector3f xProp)
     {
         nas.n = xProp(0);
         nas.e = xProp(1);
@@ -87,7 +95,7 @@ struct PropagatorState
      *
      * @return Eigen::Vector3f the NED velocities vector
      */
-    Eigen::Vector3f getVProp()
+    Eigen::Vector3f getVelocity()
     {
         return Eigen::Vector3f(nas.vn, nas.ve, nas.vd);
     }
@@ -95,11 +103,30 @@ struct PropagatorState
     /**
      * @brief Setter for the vector of velocities NED
      */
-    void setVProp(Eigen::Vector3f vProp)
+    void setVelocity(Eigen::Vector3f vProp)
     {
         nas.vn = vProp(0);
         nas.ve = vProp(1);
         nas.vd = vProp(2);
+    }
+
+    /**
+     * @brief Setter for the vector acceleration(only z-axis)
+     */
+    void setZAcceleration(Eigen::Vector3f acc) { az = acc(2); }
+
+    /**
+     * @brief Getter for the vector acceleration
+     *
+     * @return Eigen::Vector3f acceleration
+     */
+    Eigen::Vector3f getAcceleration() const
+    {
+        Eigen::Vector3f acc;
+        acc(0) = ax;
+        acc(1) = ay;
+        acc(2) = az;
+        return acc;
     }
 
     /**

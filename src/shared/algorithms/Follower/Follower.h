@@ -158,8 +158,6 @@ private:
 
     // actuation update period [ms]
     std::chrono::milliseconds updatePeriod;
-    // Initialization flag
-    std::atomic<bool> isInit{false};
 
     // max number of retries for GPS data acquisition
     const uint8_t maxInitRetries = 120;
