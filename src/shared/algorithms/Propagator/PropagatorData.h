@@ -42,6 +42,8 @@ struct PropagatorState
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 
+    Eigen::Vector3f acceleration = Eigen::Vector3f::Zero(); 
+
     PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
@@ -100,6 +102,24 @@ struct PropagatorState
         nas.vn = vProp(0);
         nas.ve = vProp(1);
         nas.vd = vProp(2);
+    }
+
+    /**
+     * @brief Setter for the vector acceleration
+     */
+    void setAProp(Eigen::Vector3f aProp)
+    {
+        acceleration = aProp;
+    }
+
+    /**
+     * @brief Getter for the vector acceleration 
+     *
+     * @return Eigen::Vector3f acceleration
+     */
+    Eigen::Vector3f getAProp() const
+    {
+        return acceleration;
     }
 
     /**
