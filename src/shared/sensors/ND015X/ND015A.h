@@ -109,8 +109,18 @@ protected:
 
 private:
     SPISlave slave;
-    uint8_t modeByte = 0xF7;  // settings for the mode control register
-    uint8_t rateByte = 0x1C;  // settings for the rate control register
+    uint8_t modeByte   = 0xF7;  // settings for the mode control register
+    uint8_t rateByte   = 0x1C;  // settings for the rate control register
+    string sensorModel = "ND015A";
+
+    struct
+    {
+        uint16_t pressure;
+        uint16_t temperature;
+        uint8_t model[8];
+        uint8_t serial[4];
+        uint8_t build[6];
+    } NDD015ADataExtended;
 
     enum RegisterMask : uint8_t
     {
