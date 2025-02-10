@@ -35,20 +35,6 @@ namespace Boardcore
 class ND015A : public Sensor<ND015XData>
 {
 public:
-    /**
-     * The datasheet is unclear about the unit of measure,
-     * it could be either psi or inH2O but I believe it's the latter
-     */
-    enum FullScaleRange : uint8_t
-    {
-        FS_1  = 0x02,  // 1.0  psi
-        FS_2  = 0x03,  // 2.0  psi
-        FS_4  = 0x04,  // 4.0  psi
-        FS_5  = 0x05,  // 5.0  psi
-        FS_10 = 0x06,  // 10.0 psi
-        FS_15 = 0x07,  // 15.0 psi
-    };
-
     enum BWLimitFilter : uint8_t
     {
         BWL_1   = 0x00,  // 1.0 Hz
@@ -73,10 +59,27 @@ public:
         ENABLED  = 0x80,
     };
 
+    /**
+     * @brief Constructor for the ND015A sensor.
+     *
+     * @param bus SPI bus interface.
+     * @param cs Chip select GPIO pin.
+     * @param spiConfig SPI bus configuration.
+     */
     ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig);
 
+    /**
+     * @brief Initializes the sensor.
+     *
+     * @return True if model number matches, false otherwise.
+     */
     bool init() override;
 
+    /**
+     * @brief Not implemented.
+     *
+     * @return Always returns true.
+     */
     bool selfTest() override;
 
     /**
@@ -84,7 +87,9 @@ public:
      *
      * @param odr   output data rate for the sensor,
      *              the actual odr is calculated as
-     *              444Hz / odr
+     *              444Hz / odr.
+     *              Allowed values are 0x00 to 0xFF,
+     *              0x00 will select the auto-select rate mode
      */
     void setOutputDataRate(u_int8_t odr);
 
@@ -100,8 +105,18 @@ public:
      */
     void setIOWatchdog(IOWatchdogEnable iow);
 
+    /**
+     * @brief Sets the bandwidth limit filter for the sensor.
+     *
+     * @param bwl Bandwidth limit filter setting.
+     */
     void setBWLimitFilter(BWLimitFilter bwl);
 
+    /**
+     * @brief Enables or disables the notch filter.
+     *
+     * @param ntc Notch filter setting.
+     */
     void setNotch(NotchEnable ntc);
 
 protected:

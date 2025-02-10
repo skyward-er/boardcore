@@ -72,10 +72,27 @@ public:
         ENABLED  = 0x80,
     };
 
+    /**
+     * @brief Constructor for the ND015D sensor.
+     *
+     * @param bus SPI bus interface.
+     * @param cs Chip select GPIO pin.
+     * @param spiConfig SPI bus configuration.
+     */
     ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig);
 
+    /**
+     * @brief Initializes the sensor.
+     *
+     * @return True if model number matches, false otherwise.
+     */
     bool init() override;
 
+    /**
+     * @brief Not implemented.
+     *
+     * @return Always returns true.
+     */
     bool selfTest() override;
 
     /**
@@ -83,27 +100,38 @@ public:
      *
      * @param odr   output data rate for the sensor,
      *              the actual odr is calculated as
-     *              444Hz / odr
+     *              444Hz / odr.
+     *              Allowed values are 0x00 to 0xFF,
+     *              0x00 will select the auto-select rate mode
      */
     void setOutputDataRate(u_int8_t odr);
 
     /**
-     * @brief function to set the fullscale range
+     * @brief Sets the full-scale range for the sensor.
      *
-     * @param fs   fullscale range, default is
-     *             2.0 psi
+     * @param fs Full-scale range. Default is 2.0 psi.
      */
     void setFullScaleRange(FullScaleRange fs);
 
     /**
-     * @brief function to enable the IO watchdog
+     * @brief Enables or disables the IO watchdog.
      *
-     * @param iow  setting
+     * @param iow IO watchdog setting.
      */
     void setIOWatchdog(IOWatchdogEnable iow);
 
+    /**
+     * @brief Sets the bandwidth limit filter for the sensor.
+     *
+     * @param bwl Bandwidth limit filter setting.
+     */
     void setBWLimitFilter(BWLimitFilter bwl);
 
+    /**
+     * @brief Enables or disables the notch filter.
+     *
+     * @param ntc Notch filter setting.
+     */
     void setNotch(NotchEnable ntc);
 
 protected:
