@@ -120,7 +120,7 @@ private:
         uint8_t model[8];
         uint8_t serial[4];
         uint8_t build[6];
-    } NDD015ADataExtended;
+    } NDD015ADataExtended = {0};
 
     enum RegisterMask : uint8_t
     {
