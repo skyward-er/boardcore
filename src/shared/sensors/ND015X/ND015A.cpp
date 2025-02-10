@@ -34,25 +34,28 @@ ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig)
 
 bool ND015A::init()
 {
-    uint8_t data[10];
+    uint8_t* data;
+    NDD015ADataExtended.pressure =
+        (modeByte << 8) | rateByte;  // updating the first 2 bytes with the
+                                     // correct sensor settings
 
     SPITransaction spi(slave);
 
-    spi.read(data, sizeof(data));
+    data = reinterpret_cast<uint8_t*>(&NDD015ADataExtended);
 
-    // the following monstrosity is needed to check if the model number read
-    // from the SPI is correct, the numbers are the ASCII encoding of "ND015A"
+    spi.transfer(data, sizeof(NDD015ADataExtended));
 
-    if (data[9] == 0x41 && data[8] == 0x35 && data[7] == 0x31 &&
-        data[6] == 0x30 && data[5] == 0x44 && data[4] == 0x4E)
+    // check if the model returned by the sensor matches with the correct model
+    for (int i = 4; i < 10; i++)
     {
-        return true;
+        if ((uint8_t)(&data + i) != (sensorModel[i - 4]))
+        {
+            LOG_ERR(logger, "sensor model number did not match");
+            return false;
+        }
     }
-    else
-    {
-        LOG_ERR(logger, "sensor model number did not match");
-        return false;
-    }
+
+    return true;
 }
 
 bool ND015A::selfTest() { return true; }
@@ -68,21 +71,41 @@ void ND015A::setOutputDataRate(uint8_t odr)
         LOG_ERR(logger, "odr setting not valid, using default value (0x1C)");
         rateByte = 0x1C;
     }
+
+    SPITransaction spi(slave);
+
+    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    spi.transfer16(SPIDataOut);
 }
 
 void ND015A::setIOWatchdog(IOWatchdogEnable iow)
 {
     modeByte = (modeByte & ~IO_WATCHDOG_MASK) | iow;
+
+    SPITransaction spi(slave);
+
+    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    spi.transfer16(SPIDataOut);
 }
 
 void ND015A::setBWLimitFilter(BWLimitFilter bwl)
 {
     modeByte = (modeByte & ~BW_LIMIT_MASK) | bwl;
+
+    SPITransaction spi(slave);
+
+    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    spi.transfer16(SPIDataOut);
 }
 
 void ND015A::setNotch(NotchEnable ntc)
 {
     modeByte = (modeByte & ~NOTCH_MASK) | ntc;
+
+    SPITransaction spi(slave);
+
+    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    spi.transfer16(SPIDataOut);
 }
 
 ND015XData ND015A::sampleImpl()
@@ -91,10 +114,6 @@ ND015XData ND015A::sampleImpl()
     uint16_t SPIDataOut = (modeByte << 8) | rateByte;
 
     SPITransaction spi(slave);
-
-    spi.transfer16(SPIDataOut);  // we need to make an SPI transaction before
-                                 // reading the data to make sure the proper
-                                 // settings are used
 
     uint16_t SPIDataIn = spi.transfer16(SPIDataOut);
 
