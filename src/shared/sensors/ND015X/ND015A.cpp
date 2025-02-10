@@ -48,7 +48,8 @@ bool ND015A::init()
     // check if the model returned by the sensor matches with the correct model
     for (int i = 4; i < 10; i++)
     {
-        if ((uint8_t)(&data + i) != (sensorModel[i - 4]))
+        if (static_cast<uint8_t>(data[i]) !=
+            static_cast<uint8_t>(sensorModel[i - 4]))
         {
             LOG_ERR(logger, "sensor model number did not match");
             return false;
