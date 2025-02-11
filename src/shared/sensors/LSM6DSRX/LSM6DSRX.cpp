@@ -309,9 +309,9 @@ bool LSM6DSRX::selfTestAcc()
     }
 
     // read and discard data
-    getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A);
-    getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A);
-    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A);
+    readFloat16(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A);
+    readFloat16(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A);
+    readFloat16(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A);
 
     // read normal data (self test disabled)
     for (idx = 0; idx < SIZE_DATA; ++idx)
@@ -327,12 +327,15 @@ bool LSM6DSRX::selfTestAcc()
         }
 
         // read data
-        averageNormal.accelerationX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, 0.061));
-        averageNormal.accelerationY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, 0.061));
-        averageNormal.accelerationZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, 0.061));
+        averageNormal.accelerationX += readFloat16(LSM6DSRXDefs::REG_OUTX_L_A,
+                                                   LSM6DSRXDefs::REG_OUTX_H_A) *
+                                       0.061;
+        averageNormal.accelerationY += readFloat16(LSM6DSRXDefs::REG_OUTY_L_A,
+                                                   LSM6DSRXDefs::REG_OUTY_H_A) *
+                                       0.061;
+        averageNormal.accelerationZ += readFloat16(LSM6DSRXDefs::REG_OUTZ_L_A,
+                                                   LSM6DSRXDefs::REG_OUTZ_H_A) *
+                                       0.061;
     }
     averageNormal.accelerationX /= SIZE_DATA;
     averageNormal.accelerationY /= SIZE_DATA;
@@ -355,9 +358,9 @@ bool LSM6DSRX::selfTestAcc()
     }
 
     // read and discard data
-    getAxisData(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A);
-    getAxisData(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A);
-    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A);
+    readFloat16(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A);
+    readFloat16(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A);
+    readFloat16(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A);
 
     // read self test data
     for (idx = 0; idx < SIZE_DATA; ++idx)
@@ -373,12 +376,15 @@ bool LSM6DSRX::selfTestAcc()
         }
 
         // read data
-        averageSF.accelerationX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, 0.061));
-        averageSF.accelerationY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, 0.061));
-        averageSF.accelerationZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, 0.061));
+        averageSF.accelerationX += readFloat16(LSM6DSRXDefs::REG_OUTX_L_A,
+                                               LSM6DSRXDefs::REG_OUTX_H_A) *
+                                   0.061;
+        averageSF.accelerationY += readFloat16(LSM6DSRXDefs::REG_OUTY_L_A,
+                                               LSM6DSRXDefs::REG_OUTY_H_A) *
+                                   0.061;
+        averageSF.accelerationZ += readFloat16(LSM6DSRXDefs::REG_OUTZ_L_A,
+                                               LSM6DSRXDefs::REG_OUTZ_H_A) *
+                                   0.061;
     }
     averageSF.accelerationX /= SIZE_DATA;
     averageSF.accelerationY /= SIZE_DATA;
@@ -478,9 +484,9 @@ bool LSM6DSRX::selfTestGyr()
         byteValue = (byteValue & 0x02) >> 1;
     }
     // read and discard data
-    getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G);
-    getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G);
-    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G);
+    readFloat16(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G);
+    readFloat16(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G);
+    readFloat16(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G);
 
     // read normal data (self test disabled)
     for (idx = 0; idx < SIZE_DATA; ++idx)
@@ -496,12 +502,15 @@ bool LSM6DSRX::selfTestGyr()
         }
 
         // read data
-        averageNormal.angularSpeedX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070));
-        averageNormal.angularSpeedY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070));
-        averageNormal.angularSpeedZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070));
+        averageNormal.angularSpeedX += readFloat16(LSM6DSRXDefs::REG_OUTX_L_G,
+                                                   LSM6DSRXDefs::REG_OUTX_H_G) *
+                                       0.070;
+        averageNormal.angularSpeedY += readFloat16(LSM6DSRXDefs::REG_OUTY_L_G,
+                                                   LSM6DSRXDefs::REG_OUTY_H_G) *
+                                       0.070;
+        averageNormal.angularSpeedZ += readFloat16(LSM6DSRXDefs::REG_OUTZ_L_G,
+                                                   LSM6DSRXDefs::REG_OUTZ_H_G) *
+                                       0.070;
     }
     averageNormal.angularSpeedX /= SIZE_DATA;
     averageNormal.angularSpeedY /= SIZE_DATA;
@@ -523,9 +532,9 @@ bool LSM6DSRX::selfTestGyr()
         byteValue = (byteValue & 0x02) >> 1;
     }
     // read and discard data
-    getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G);
-    getAxisData(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G);
-    getAxisData(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G);
+    readFloat16(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G);
+    readFloat16(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G);
+    readFloat16(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G);
 
     // read self test data
     for (idx = 0; idx < SIZE_DATA; ++idx)
@@ -541,12 +550,15 @@ bool LSM6DSRX::selfTestGyr()
         }
 
         // read data
-        averageSF.angularSpeedX += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, 0.070));
-        averageSF.angularSpeedY += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, 0.070));
-        averageSF.angularSpeedZ += static_cast<float>(getAxisData(
-            LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, 0.070));
+        averageSF.angularSpeedX += readFloat16(LSM6DSRXDefs::REG_OUTX_L_G,
+                                               LSM6DSRXDefs::REG_OUTX_H_G) *
+                                   0.070;
+        averageSF.angularSpeedY += readFloat16(LSM6DSRXDefs::REG_OUTY_L_G,
+                                               LSM6DSRXDefs::REG_OUTY_H_G) *
+                                   0.070;
+        averageSF.angularSpeedZ += readFloat16(LSM6DSRXDefs::REG_OUTZ_L_G,
+                                               LSM6DSRXDefs::REG_OUTZ_H_G) *
+                                   0.070;
     }
     averageSF.angularSpeedX /= SIZE_DATA;
     averageSF.angularSpeedY /= SIZE_DATA;
@@ -612,24 +624,39 @@ void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
     data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
-    data.accelerationX = getAxisData(
-        LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A, sensitivityAcc);
-    data.accelerationY = getAxisData(
-        LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A, sensitivityAcc);
-    data.accelerationZ = getAxisData(
-        LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A, sensitivityAcc);
+    data.accelerationX =
+        readFloat16(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A) *
+        sensitivityAcc;
+    data.accelerationY =
+        readFloat16(LSM6DSRXDefs::REG_OUTY_L_A, LSM6DSRXDefs::REG_OUTY_H_A) *
+        sensitivityAcc;
+    data.accelerationZ =
+        readFloat16(LSM6DSRXDefs::REG_OUTZ_L_A, LSM6DSRXDefs::REG_OUTZ_H_A) *
+        sensitivityAcc;
 }
 
 void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
     data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
 
-    data.angularSpeedX = getAxisData(
-        LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G, sensitivityGyr);
-    data.angularSpeedY = getAxisData(
-        LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G, sensitivityGyr);
-    data.angularSpeedZ = getAxisData(
-        LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G, sensitivityGyr);
+    data.angularSpeedX =
+        readFloat16(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G) *
+        sensitivityGyr;
+    data.angularSpeedY =
+        readFloat16(LSM6DSRXDefs::REG_OUTY_L_G, LSM6DSRXDefs::REG_OUTY_H_G) *
+        sensitivityGyr;
+    data.angularSpeedZ =
+        readFloat16(LSM6DSRXDefs::REG_OUTZ_L_G, LSM6DSRXDefs::REG_OUTZ_H_G) *
+        sensitivityGyr;
+}
+
+void LSM6DSRX::getTemperatureData(LSM6DSRXData& data)
+{
+    data.temperatureTimestamp = TimestampTimer::getTimestamp();
+
+    // TODO: CHECK
+    data.temperature =
+        readFloat16(LSM6DSRXDefs::REG_OUT_TEMP_L, LSM6DSRXDefs::REG_OUT_TEMP_H);
 }
 
 uint32_t LSM6DSRX::getSensorTimestamp()
@@ -652,6 +679,7 @@ LSM6DSRXData LSM6DSRX::getSensorData()
 
     getAccelerometerData(data);
     getGyroscopeData(data);
+    getTemperatureData(data);
 
     return data;
 }
@@ -694,8 +722,8 @@ LSM6DSRXData LSM6DSRX::sampleImpl()
     }
 }
 
-float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
-                            LSM6DSRXDefs::Registers highReg, float sensitivity)
+float LSM6DSRX::readFloat16(LSM6DSRXDefs::Registers lowReg,
+                            LSM6DSRXDefs::Registers highReg)
 {
     int8_t low = 0, high = 0;
     int16_t sample = 0;
@@ -707,12 +735,12 @@ float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
 
     sample = combineHighLowBits(low, high);
 
-    float ret = static_cast<float>(sample) * sensitivity;
+    float ret = static_cast<float>(sample);
     return ret;
 }
 
-int16_t LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
-                              LSM6DSRXDefs::Registers highReg)
+int16_t LSM6DSRX::readInt16(LSM6DSRXDefs::Registers lowReg,
+                            LSM6DSRXDefs::Registers highReg)
 {
     int8_t low = 0, high = 0;
     int16_t sample = 0;
@@ -850,6 +878,13 @@ void LSM6DSRX::readFromFifo()
                 // Check if we can push into fifo (both samples are present)
                 if (timestamps[timeslotTag].gyrPresent)
                     pushIntoFifo(timestamps[timeslotTag], idxFifo);
+
+                break;
+            case 0x03:
+                // Temperature data
+                // TODO: CHECK
+                timestamps[timeslotTag].data.temperature =
+                    static_cast<float>(combineHighLowBits(xl, xh));
 
                 break;
             case 0x04:

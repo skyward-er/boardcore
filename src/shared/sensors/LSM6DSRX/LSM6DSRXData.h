@@ -27,10 +27,13 @@
 namespace Boardcore
 {
 
-struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
+struct LSM6DSRXData : public AccelerometerData,
+                      public GyroscopeData,
+                      public TemperatureData
 {
     LSM6DSRXData()
-        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0}
+        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
+          TemperatureData{0, 0.0}
     {
     }
 

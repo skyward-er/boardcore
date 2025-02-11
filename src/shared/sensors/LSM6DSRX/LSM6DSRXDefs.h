@@ -118,6 +118,9 @@ enum Registers
     REG_FIFO_DATA_OUT_Z_L = 0x7D,
     REG_FIFO_DATA_OUT_Z_H = 0x7E,
 
+    REG_OUT_TEMP_L = 0x20,  ///< Low bits temperature output register
+    REG_OUT_TEMP_H = 0x21,  ///< High bits temperature output register
+
     REG_OUTX_L_A =
         0x28,  ///< Low bits output register for the accelerometer (x axis)
     REG_OUTX_H_A =
