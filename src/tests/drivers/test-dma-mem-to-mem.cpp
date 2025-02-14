@@ -33,11 +33,8 @@ void printBuffer(uint8_t *buffer, size_t size);
 
 int main()
 {
-    // DMAStream* stream =
-    // DMADriver::instance().acquireStream(DMADefs::DMAStreamId::DMA2_Str0,
-    // DMADefs::Channel::CHANNEL0);
-    DMAStream *stream = DMADriver::instance().automaticAcquireStream(
-        DMADefs::Peripherals::PE_MEM_ONLY);
+    DMAStream *stream = DMADriver::instance().automaticAcquireStreamBlocking(
+        DMADefs::Peripherals::PE_MEM_ONLY, std::chrono::seconds::zero());
 
     if (stream == nullptr)
     {

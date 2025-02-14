@@ -99,10 +99,34 @@ public:
 
     bool tryChannel(DMADefs::DMAStreamId id);
 
-    DMAStream* acquireStream(DMADefs::DMAStreamId id, DMADefs::Channel channel);
+    /**
+     * @brief Try to acquire the specified stream and initialize it with the
+     * correct channel.
+     * @param id The id of the stream to be acquired.
+     * @param channel The channel used to initialize the stream.
+     * @param timeout The maximum time that will be waited when in blocking
+     * mode, 0 to disable the timeout and wait forever.
+     * @return The pointer to the allocated stream if successful, nullptr if the
+     * timeout expired.
+     */
+    DMAStream* acquireStreamBlocking(DMADefs::DMAStreamId id,
+                                     DMADefs::Channel channel,
+                                     const std::chrono::nanoseconds timeout);
 
-    // TODO: change name
-    DMAStream* automaticAcquireStream(DMADefs::Peripherals peripheral);
+    /**
+     * @brief Try to acquire a stream that is connected to the specified
+     * peripheral.
+     * @param peripheral The wanted peripheral.
+     * @param timeout The maximum time that will be waited when in blocking
+     * mode, 0 to disable the timeout and wait forever.
+     * @return The pointer to the allocated stream if successful, nullptr if the
+     * timeout expired.
+     *
+     * TODO: change name
+     */
+    DMAStream* automaticAcquireStreamBlocking(
+        DMADefs::Peripherals peripheral,
+        const std::chrono::nanoseconds timeout);
 
     void releaseStream(DMADefs::DMAStreamId id);
 
