@@ -29,12 +29,22 @@
 using namespace miosix;
 using namespace Boardcore;
 
-DMAStream &stream = DMADriver::instance().acquireStream(DMAStreamId::DMA2_Str0);
-
 void printBuffer(uint8_t *buffer, size_t size);
 
 int main()
 {
+    // DMAStream* stream =
+    // DMADriver::instance().acquireStream(DMADefs::DMAStreamId::DMA2_Str0,
+    // DMADefs::Channel::CHANNEL0);
+    DMAStream *stream = DMADriver::instance().automaticAcquireStream(
+        DMADefs::Peripherals::PE_MEM_ONLY);
+
+    if (stream == nullptr)
+    {
+        printf("Error, cannot allocate dma stream\n");
+        return 0;
+    }
+
     /**
      * In this test we want to copy a buffer1 into buffer2 with the DMA.
      */
@@ -59,11 +69,11 @@ int main()
         .dstIncrement      = true,
         .enableTransferCompleteInterrupt = true,
     };
-    stream.setup(trn);
-    stream.enable();
+    stream->setup(trn);
+    stream->enable();
 
     auto begin = std::chrono::steady_clock::now();
-    stream.waitForTransferComplete();
+    stream->waitForTransferComplete();
     auto end = std::chrono::steady_clock::now();
 
     printf("After:\n");

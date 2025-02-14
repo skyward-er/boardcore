@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <interfaces/arch_registers.h>
 #include <kernel/scheduler/scheduler.h>
 #include <kernel/sync.h>
 #include <utils/TimedPollingFlag.h>
@@ -30,6 +29,8 @@
 #include <chrono>
 #include <functional>
 #include <map>
+
+#include "DMADefs.h"
 
 namespace Boardcore
 {
@@ -43,57 +44,8 @@ namespace Boardcore
 #define DMA_SxCR_PSIZE_Pos (11U)
 #endif
 
-enum class DMAStreamId : uint8_t
-{
-    // TODO: some streams are commented because the
-    // corresponding irq handler is already defined
-    // by miosix. For now those streams are not usable,
-    // decide how to handle this situation.
-
-    DMA1_Str0 = 0,
-    // DMA1_Str1 = 1,
-    DMA1_Str2 = 2,
-    // DMA1_Str3 = 3,
-    DMA1_Str4 = 4,
-    DMA1_Str5 = 5,
-    DMA1_Str6 = 6,
-    DMA1_Str7 = 7,
-    DMA2_Str0 = 8,
-    DMA2_Str1 = 9,
-    DMA2_Str2 = 10,
-    // DMA2_Str3 = 11,
-    DMA2_Str4 = 12,
-    DMA2_Str5 = 13,
-    DMA2_Str6 = 14,
-    DMA2_Str7 = 15,
-};
-
-/**
- * @brief Mapping between `DMAStreamId` and the corresponding irq number.
- * This is needed because irq number values are not contiguous and they are
- * architecture dependent.
- */
-const IRQn_Type irqNumberMapping[] = {
-    DMA1_Stream0_IRQn, DMA1_Stream1_IRQn, DMA1_Stream2_IRQn, DMA1_Stream3_IRQn,
-    DMA1_Stream4_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream7_IRQn,
-    DMA2_Stream0_IRQn, DMA2_Stream1_IRQn, DMA2_Stream2_IRQn, DMA2_Stream3_IRQn,
-    DMA2_Stream4_IRQn, DMA2_Stream5_IRQn, DMA2_Stream6_IRQn, DMA2_Stream7_IRQn,
-};
-
 struct DMATransaction
 {
-    enum class Channel : uint32_t
-    {
-        CHANNEL0 = 0,
-        CHANNEL1 = DMA_SxCR_CHSEL_0,
-        CHANNEL2 = DMA_SxCR_CHSEL_1,
-        CHANNEL3 = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0,
-        CHANNEL4 = DMA_SxCR_CHSEL_2,
-        CHANNEL5 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_0,
-        CHANNEL6 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_1,
-        CHANNEL7 = DMA_SxCR_CHSEL,
-    };
-
     enum class Direction : uint16_t
     {
         MEM_TO_MEM = DMA_SxCR_DIR_1,
@@ -116,7 +68,6 @@ struct DMATransaction
         BITS_32,
     };
 
-    Channel channel                      = Channel::CHANNEL0;
     Direction direction                  = Direction::MEM_TO_MEM;
     Priority priority                    = Priority::LOW;
     DataSize srcSize                     = DataSize::BITS_32;
@@ -142,15 +93,18 @@ class DMAStream;
 class DMADriver
 {
 public:
-    void IRQhandleInterrupt(DMAStreamId id);
+    void IRQhandleInterrupt(DMADefs::DMAStreamId id);
 
     static DMADriver& instance();
 
-    bool tryChannel(DMAStreamId id);
+    bool tryChannel(DMADefs::DMAStreamId id);
 
-    DMAStream& acquireStream(DMAStreamId id);
+    DMAStream* acquireStream(DMADefs::DMAStreamId id, DMADefs::Channel channel);
 
-    void releaseStream(DMAStreamId id);
+    // TODO: change name
+    DMAStream* automaticAcquireStream(DMADefs::Peripherals peripheral);
+
+    void releaseStream(DMADefs::DMAStreamId id);
 
 private:
     DMADriver();
@@ -159,7 +113,7 @@ private:
 
     miosix::FastMutex mutex;
     miosix::ConditionVariable cv;
-    std::map<DMAStreamId, DMAStream*> streams;
+    std::map<DMADefs::DMAStreamId, DMAStream*> streams;
 
 public:
     DMADriver(const DMADriver&)            = delete;
@@ -219,6 +173,12 @@ public:
     void setNumberOfDataItems(const uint16_t nBytes);
 
     /**
+     * @brief Select the channel to be used by the stream during
+     * the transactions.
+     */
+    void setChannel(const DMADefs::Channel channel);
+
+    /**
      * @brief Returns the last read status of the half transfer flag.
      *
      * TODO: Explain what this flag intails and what to do.
@@ -260,6 +220,10 @@ public:
      */
     int getCurrentBufferNumber();
 
+    inline DMADefs::DMAStreamId getStreamId() { return id; }
+
+    inline DMADefs::Channel getCurrentChannel() { return currentChannel; }
+
     inline void clearHalfTransferFlag()
     {
         *IFCR |= DMA_LIFCR_CHTIF0 << IFindex;
@@ -294,7 +258,7 @@ public:
     }
 
 private:
-    DMAStream(DMAStreamId id);
+    DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel);
 
     DMATransaction currentSetup;
 
@@ -316,7 +280,8 @@ private:
     std::function<void()> transferCompleteCallback;
     std::function<void()> errorCallback;
 
-    DMAStreamId id;
+    DMADefs::DMAStreamId id;
+    DMADefs::Channel currentChannel;
     IRQn_Type irqNumber;
     DMA_Stream_TypeDef* registers;
 
