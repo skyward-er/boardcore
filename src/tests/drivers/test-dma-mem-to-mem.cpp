@@ -33,10 +33,10 @@ void printBuffer(uint8_t *buffer, size_t size);
 
 int main()
 {
-    DMAStream *stream = DMADriver::instance().automaticAcquireStreamBlocking(
-        DMADefs::Peripherals::PE_MEM_ONLY, std::chrono::seconds::zero());
+    DMAStreamGuard stream(DMADriver::instance().automaticAcquireStreamBlocking(
+        DMADefs::Peripherals::PE_MEM_ONLY, std::chrono::seconds::zero()));
 
-    if (stream == nullptr)
+    if (stream.get() == nullptr)
     {
         printf("Error, cannot allocate dma stream\n");
         return 0;
