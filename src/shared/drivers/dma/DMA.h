@@ -416,4 +416,28 @@ public:
     DMAStream& operator=(const DMAStream&) = delete;
 };
 
+class DMAStreamGuard
+{
+public:
+    DMAStreamGuard(DMAStream* ptr) : pStream(ptr) {}
+
+    ~DMAStreamGuard()
+    {
+        if (pStream != nullptr)
+        {
+            DMADriver::instance().releaseStream(pStream->getStreamId());
+        }
+    }
+
+    DMAStreamGuard(const DMAStreamGuard&)            = delete;
+    DMAStreamGuard& operator=(const DMAStreamGuard&) = delete;
+
+    DMAStream* operator->() { return pStream; }
+
+    inline DMAStream* get() { return pStream; }
+
+private:
+    DMAStream* pStream = nullptr;
+};
+
 }  // namespace Boardcore
