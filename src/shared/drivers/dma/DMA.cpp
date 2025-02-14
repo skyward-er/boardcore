@@ -307,14 +307,30 @@ bool DMADriver::tryChannel(DMADefs::DMAStreamId id)
     return streams.count(id) == 0;
 }
 
-DMAStream* DMADriver::acquireStream(DMADefs::DMAStreamId id,
-                                    DMADefs::Channel channel)
+DMAStream* DMADriver::acquireStreamBlocking(
+    DMADefs::DMAStreamId id, DMADefs::Channel channel,
+    const std::chrono::nanoseconds timeout)
 {
     Lock<FastMutex> l(mutex);
 
-    // Wait until the channel is free
+    // Wait until the stream is free or the timeout expires
     while (streams.count(id) != 0)
-        cv.wait(l);
+    {
+        if (timeout == std::chrono::nanoseconds::zero())
+        {
+            cv.wait(l);
+        }
+        else
+        {
+            auto res = cv.timedWait(l, timeout.count());
+
+            if (res == TimedWaitResult::Timeout)
+            {
+                // The timeout expired
+                return nullptr;
+            }
+        }
+    }
 
     // Enable the clock if not already done
     // TODO: Enable DMA1 or DMA2
@@ -324,27 +340,45 @@ DMAStream* DMADriver::acquireStream(DMADefs::DMAStreamId id,
     return streams[id] = new DMAStream(id, channel);
 }
 
-DMAStream* DMADriver::automaticAcquireStream(DMADefs::Peripherals peripheral)
+DMAStream* DMADriver::automaticAcquireStreamBlocking(
+    DMADefs::Peripherals peripheral, const std::chrono::nanoseconds timeout)
 {
-    auto availableStreams = DMADefs::mapPeripherals.equal_range(peripheral);
+    const auto availableStreams =
+        DMADefs::mapPeripherals.equal_range(peripheral);
 
-    // Iterate through the streams for that peripheral,
-    // return the first available
     Lock<FastMutex> l(mutex);
-    for (auto it = availableStreams.first; it != availableStreams.second; ++it)
+    while (true)
     {
-        DMADefs::DMAStreamId id  = it->second.first;
-        DMADefs::Channel channel = it->second.second;
-
-        if (streams.count(id) == 0)
+        // Iterate through the streams for that peripheral,
+        // return the first available
+        for (auto it = availableStreams.first; it != availableStreams.second;
+             ++it)
         {
-            // Stream is free
-            return streams[id] = new DMAStream(id, channel);
+            DMADefs::DMAStreamId id  = it->second.first;
+            DMADefs::Channel channel = it->second.second;
+
+            if (streams.count(id) == 0)
+            {
+                // Stream is free
+                return streams[id] = new DMAStream(id, channel);
+            }
+        }
+
+        if (timeout == std::chrono::nanoseconds::zero())
+        {
+            cv.wait(l);
+        }
+        else
+        {
+            auto res = cv.timedWait(l, timeout.count());
+
+            if (res == TimedWaitResult::Timeout)
+            {
+                // The timeout expired
+                return nullptr;
+            }
         }
     }
-
-    // TODO: improve error handling
-    return nullptr;
 }
 
 void DMADriver::releaseStream(DMADefs::DMAStreamId id)
