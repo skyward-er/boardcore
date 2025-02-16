@@ -31,7 +31,8 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-static constexpr bool useAcceleration = true; //set true to use the propagator with acceleration
+static constexpr bool useAcceleration =
+    true;  // set true to use the propagator with acceleration
 
 Propagator::Propagator(std::chrono::milliseconds pUpdatePeriod)
     : updatePeriod(static_cast<float>(pUpdatePeriod.count()) / 1000), state()
@@ -54,24 +55,18 @@ void Propagator::step()
                                    getRocketNasState())
                  : oldState);
 
-    if(useAcceleration) // Update Position assuming constant acceleration
+    if (useAcceleration)  // Update Position assuming constant acceleration
     {
-        // checking that last two states are not propagated
-        if(state.nPropagations == 0 && oldState.nPropagations == 0)             
-            state.setAcceleration((state.getVelocity() - oldState.getVelocity()) / updatePeriod);
-
-        state.setVelocity((state.getVelocity() + state.getAcceleration()) * updatePeriod);
-        state.setPosition((state.getPosition() + state.getVelocity()) * updatePeriod);
-
-        state.nPropagations++;
-        state.timestamp = TimestampTimer::getTimestamp();
+        state.setAcceleration((state.getVelocity() - oldState.getVelocity()) /
+                              updatePeriod);
+        state.setVelocity((state.getVelocity() + state.getAcceleration()) *
+                          updatePeriod);
     }
-    else    // Update Position propagating assuming costant velocity
-    { 
+
     state.setPosition(state.getPosition() + state.getVelocity() * updatePeriod);
+
     state.nPropagations++;
     state.timestamp = TimestampTimer::getTimestamp();
-    }
 
     // Log propagator state
     PropagatorState logState(state);
