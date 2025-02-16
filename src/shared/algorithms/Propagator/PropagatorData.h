@@ -42,7 +42,7 @@ struct PropagatorState
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 
-    Eigen::Vector3f acceleration = Eigen::Vector3f::Zero(); 
+    Eigen::Vector3f acceleration = Eigen::Vector3f::Zero();
 
     PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
@@ -54,7 +54,8 @@ struct PropagatorState
 
     static std::string header()
     {
-        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
+        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz,ax,"
+               "ay,az\n";
     }
 
     void print(std::ostream& os) const
@@ -62,7 +63,9 @@ struct PropagatorState
         os << timestamp << "," << nPropagations << "," << nas.n << "," << nas.e
            << "," << nas.d << "," << nas.vn << "," << nas.ve << "," << nas.vd
            << "," << nas.qx << "," << nas.qy << "," << nas.qz << "," << nas.qw
-           << "," << nas.bx << "," << nas.by << "," << nas.bz << "\n";
+           << "," << nas.bx << "," << nas.by << "," << nas.bz << ","
+           << acceleration[0] << "," << acceleration[1] << ","
+           << acceleration[2] << "\n";
     }
 
     NASState getNasState() const { return nas; }
@@ -72,7 +75,10 @@ struct PropagatorState
      *
      * @return Eigen::Vector3f the NED position vector
      */
-    Eigen::Vector3f getPosition() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
+    Eigen::Vector3f getPosition()
+    {
+        return Eigen::Vector3f(nas.n, nas.e, nas.d);
+    }
 
     /**
      * @brief Setter for the vector of positions NED
@@ -107,20 +113,14 @@ struct PropagatorState
     /**
      * @brief Setter for the vector acceleration
      */
-    void setAcceleration(Eigen::Vector3f aProp)
-    {
-        acceleration = aProp;
-    }
+    void setAcceleration(Eigen::Vector3f acc) { acceleration = acc; }
 
     /**
-     * @brief Getter for the vector acceleration 
+     * @brief Getter for the vector acceleration
      *
      * @return Eigen::Vector3f acceleration
      */
-    Eigen::Vector3f getAcceleration() const
-    {
-        return acceleration;
-    }
+    Eigen::Vector3f getAcceleration() const { return acceleration; }
 
     /**
      * @brief Getter for the vector of quaternions
