@@ -89,6 +89,7 @@ struct DMATransaction
 
 // Forward declaration
 class DMAStream;
+class DMAStreamGuard;
 
 class DMADriver
 {
@@ -109,9 +110,9 @@ public:
      * @return The pointer to the allocated stream if successful, nullptr if the
      * timeout expired.
      */
-    DMAStream* acquireStreamBlocking(DMADefs::DMAStreamId id,
-                                     DMADefs::Channel channel,
-                                     const std::chrono::nanoseconds timeout);
+    DMAStreamGuard acquireStreamBlocking(
+        DMADefs::DMAStreamId id, DMADefs::Channel channel,
+        const std::chrono::nanoseconds timeout);
 
     /**
      * @brief Try to acquire a stream that is connected to the specified
@@ -124,7 +125,7 @@ public:
      *
      * TODO: change name
      */
-    DMAStream* automaticAcquireStreamBlocking(
+    DMAStreamGuard automaticAcquireStreamBlocking(
         DMADefs::Peripherals peripheral,
         const std::chrono::nanoseconds timeout);
 
@@ -416,6 +417,9 @@ public:
     DMAStream& operator=(const DMAStream&) = delete;
 };
 
+/**
+ * @brief Simple RAII class to handle DMA streams.
+ */
 class DMAStreamGuard
 {
 public:
@@ -432,9 +436,16 @@ public:
     DMAStreamGuard(const DMAStreamGuard&)            = delete;
     DMAStreamGuard& operator=(const DMAStreamGuard&) = delete;
 
-    DMAStream* operator->() { return pStream; }
+    DMAStreamGuard(DMAStreamGuard&&) noexcept            = default;
+    DMAStreamGuard& operator=(DMAStreamGuard&&) noexcept = default;
 
-    inline DMAStream* get() { return pStream; }
+    DMAStream* operator->();
+
+    /**
+     * @return True if the stream was correctly allocated and
+     * is ready to use. False otherwise.
+     */
+    inline bool isValid() { return pStream != nullptr; }
 
 private:
     DMAStream* pStream = nullptr;

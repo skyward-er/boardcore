@@ -24,6 +24,7 @@
 
 #include <kernel/logging.h>
 #include <utils/ClockUtils.h>
+#include <utils/Debug.h>
 
 #include <map>
 
@@ -307,7 +308,7 @@ bool DMADriver::tryChannel(DMADefs::DMAStreamId id)
     return streams.count(id) == 0;
 }
 
-DMAStream* DMADriver::acquireStreamBlocking(
+DMAStreamGuard DMADriver::acquireStreamBlocking(
     DMADefs::DMAStreamId id, DMADefs::Channel channel,
     const std::chrono::nanoseconds timeout)
 {
@@ -327,7 +328,7 @@ DMAStream* DMADriver::acquireStreamBlocking(
             if (res == TimedWaitResult::Timeout)
             {
                 // The timeout expired
-                return nullptr;
+                return DMAStreamGuard(nullptr);
             }
         }
     }
@@ -337,10 +338,10 @@ DMAStream* DMADriver::acquireStreamBlocking(
     // if (streams.size() == 0)
     //     RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
-    return streams[id] = new DMAStream(id, channel);
+    return DMAStreamGuard((streams[id] = new DMAStream(id, channel)));
 }
 
-DMAStream* DMADriver::automaticAcquireStreamBlocking(
+DMAStreamGuard DMADriver::automaticAcquireStreamBlocking(
     DMADefs::Peripherals peripheral, const std::chrono::nanoseconds timeout)
 {
     const auto availableStreams =
@@ -360,7 +361,7 @@ DMAStream* DMADriver::automaticAcquireStreamBlocking(
             if (streams.count(id) == 0)
             {
                 // Stream is free
-                return streams[id] = new DMAStream(id, channel);
+                return DMAStreamGuard(streams[id] = new DMAStream(id, channel));
             }
         }
 
@@ -375,7 +376,7 @@ DMAStream* DMADriver::automaticAcquireStreamBlocking(
             if (res == TimedWaitResult::Timeout)
             {
                 // The timeout expired
-                return nullptr;
+                return DMAStreamGuard(nullptr);
             }
         }
     }
@@ -677,6 +678,13 @@ DMAStream::DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel)
 
     // Select the interrupt
     irqNumber = DMADefs::irqNumberMapping[static_cast<uint8_t>(id)];
+}
+
+DMAStream* DMAStreamGuard::operator->()
+{
+    D(assert((pStream != nullptr) && "pointer is null"));
+
+    return pStream;
 }
 
 }  // namespace Boardcore
