@@ -42,7 +42,6 @@ struct PropagatorState
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 
-    
     float ax = 0, ay = 0,
           az = 0;  // propagater acceleration (Eigen::Vector3f could not be used
                    // because it is not trivially copyable)
