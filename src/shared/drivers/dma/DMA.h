@@ -134,11 +134,11 @@ public:
 private:
     DMADriver();
 
-    void IRQwakeupThread(DMAStream* stream);
+    void IRQwakeupThread(DMAStream& stream);
 
     miosix::FastMutex mutex;
     miosix::ConditionVariable cv;
-    std::map<DMADefs::DMAStreamId, DMAStream*> streams;
+    std::map<DMADefs::DMAStreamId, DMAStream> streams;
 
 public:
     DMADriver(const DMADriver&)            = delete;
@@ -396,9 +396,7 @@ private:
             else
             {
                 while (!getEventStatus())
-                {
                     readFlags();
-                }
                 result = true;
             }
 
@@ -415,6 +413,9 @@ private:
 public:
     DMAStream(const DMAStream&)            = delete;
     DMAStream& operator=(const DMAStream&) = delete;
+
+    DMAStream(DMAStream&&) noexcept            = default;
+    DMAStream& operator=(DMAStream&&) noexcept = default;
 };
 
 /**
@@ -428,9 +429,7 @@ public:
     ~DMAStreamGuard()
     {
         if (pStream != nullptr)
-        {
             DMADriver::instance().releaseStream(pStream->getStreamId());
-        }
     }
 
     DMAStreamGuard(const DMAStreamGuard&)            = delete;
