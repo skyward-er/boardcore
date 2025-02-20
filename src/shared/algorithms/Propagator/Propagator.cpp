@@ -46,6 +46,7 @@ void Propagator::step()
     miosix::Lock<miosix::FastMutex> lock(stateMutex);
     // Take new rocket data only if it has been just updated, otherwise take
     // last state available
+
     PropagatorState oldState = state;
 
     // updates with the last received NAS state if present, otherwise uses the
@@ -55,13 +56,21 @@ void Propagator::step()
                                    getRocketNasState())
                  : oldState);
 
-    if (useAcceleration)  // Update Position assuming constant acceleration
+    if (state.nPropagations == 0 &&
+        useAcceleration)  // Update Position assuming constant acceleration
     {
-        state.setAcceleration((state.getVelocity() - oldState.getVelocity()) /
-                              updatePeriod);
-        state.setVelocity((state.getVelocity() + state.getAcceleration()) *
-                          updatePeriod);
+        t1 = state.timestamp;
+        dt = t1 - t0;
+        if (dt > 0 && dt < 4646476 && t0 != 0)
+            state.setAcceleration(state.getVelocity() -
+                                  last_real_velocity / dt);
+        t0                 = t1;
+        last_real_velocity = state.getVelocity();
     }
+
+    if (useAcceleration)
+        state.setVelocity(state.getVelocity() +
+                          state.getAcceleration() * updatePeriod);
 
     state.setPosition(state.getPosition() + state.getVelocity() * updatePeriod);
 

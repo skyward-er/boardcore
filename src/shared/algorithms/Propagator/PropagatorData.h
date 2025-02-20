@@ -42,7 +42,10 @@ struct PropagatorState
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 
-    Eigen::Vector3f acceleration = Eigen::Vector3f::Zero();
+    
+    float ax = 0, ay = 0,
+          az = 0;  // propagater acceleration (Eigen::Vector3f could not be used
+                   // because it is not trivially copyable)
 
     PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
@@ -63,9 +66,8 @@ struct PropagatorState
         os << timestamp << "," << nPropagations << "," << nas.n << "," << nas.e
            << "," << nas.d << "," << nas.vn << "," << nas.ve << "," << nas.vd
            << "," << nas.qx << "," << nas.qy << "," << nas.qz << "," << nas.qw
-           << "," << nas.bx << "," << nas.by << "," << nas.bz << ","
-           << acceleration[0] << "," << acceleration[1] << ","
-           << acceleration[2] << "\n";
+           << "," << nas.bx << "," << nas.by << "," << nas.bz << "," << ax
+           << "," << ay << "," << az << "\n";
     }
 
     NASState getNasState() const { return nas; }
@@ -113,14 +115,26 @@ struct PropagatorState
     /**
      * @brief Setter for the vector acceleration
      */
-    void setAcceleration(Eigen::Vector3f acc) { acceleration = acc; }
+    void setAcceleration(Eigen::Vector3f acc)
+    {
+        ax = acc[0];
+        ay = acc[1];
+        az = acc[2];
+    }
 
     /**
      * @brief Getter for the vector acceleration
      *
      * @return Eigen::Vector3f acceleration
      */
-    Eigen::Vector3f getAcceleration() const { return acceleration; }
+    Eigen::Vector3f getAcceleration() const
+    {
+        Eigen::Vector3f acc;
+        acc[0] = ax;
+        acc[1] = ay;
+        acc[2] = az;
+        return acc;
+    }
 
     /**
      * @brief Getter for the vector of quaternions
