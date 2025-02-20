@@ -247,42 +247,38 @@ namespace Boardcore
 
 void DMADriver::IRQhandleInterrupt(DMADefs::DMAStreamId id)
 {
-    auto stream = streams[id];
+    DMAStream& stream = streams.at(id);
 
-    stream->readFlags();
-    stream->clearAllFlags();
+    stream.readFlags();
+    stream.clearAllFlags();
 
-    // Run the callbacks if neccessary
-    if (stream->halfTransferCallback && stream->halfTransferFlag)
+    // Run the callbacks if necessary
+    if (stream.halfTransferCallback && stream.halfTransferFlag)
+        stream.halfTransferCallback();
+
+    if (stream.transferCompleteCallback && stream.transferCompleteFlag)
+        stream.transferCompleteCallback();
+
+    if (stream.errorCallback &&
+        (stream.transferErrorFlag || stream.fifoErrorFlag ||
+         stream.directModeErrorFlag))
     {
-        stream->halfTransferCallback();
-    }
-    if (stream->transferCompleteCallback && stream->transferCompleteFlag)
-    {
-        stream->transferCompleteCallback();
-    }
-    if (stream->errorCallback &&
-        (stream->transferErrorFlag || stream->fifoErrorFlag ||
-         stream->directModeErrorFlag))
-    {
-        stream->errorCallback();
+        stream.errorCallback();
     }
 
     // Wakeup the thread if the user is waiting
-    if (stream->waitingThread)
-    {
+    if (stream.waitingThread)
         IRQwakeupThread(stream);
-    }
 }
 
-void DMADriver::IRQwakeupThread(DMAStream* stream)
+void DMADriver::IRQwakeupThread(DMAStream& stream)
 {
     // Wakeup the waiting thread
-    stream->waitingThread->wakeup();
+    stream.waitingThread->wakeup();
 
     // If the waiting thread has a higher priority than the current
     // thread then reschedule
-    if (stream->waitingThread->IRQgetPriority() >
+    if (stream.waitingThread->IRQgetPriority() >
         miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
     {
         miosix::Scheduler::IRQfindNextThread();
@@ -290,7 +286,7 @@ void DMADriver::IRQwakeupThread(DMAStream* stream)
 
     // Clear the thread pointer, this way the thread will be sure it is
     // not a spurious wakeup
-    stream->waitingThread = nullptr;
+    stream.waitingThread = nullptr;
 }
 
 DMADriver& DMADriver::instance()
@@ -338,7 +334,9 @@ DMAStreamGuard DMADriver::acquireStreamBlocking(
     // if (streams.size() == 0)
     //     RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
-    return DMAStreamGuard((streams[id] = new DMAStream(id, channel)));
+    streams.insert(
+        std::pair<DMADefs::DMAStreamId, DMAStream>(id, DMAStream(id, channel)));
+    return DMAStreamGuard(&(streams.at(id)));
 }
 
 DMAStreamGuard DMADriver::automaticAcquireStreamBlocking(
@@ -361,7 +359,9 @@ DMAStreamGuard DMADriver::automaticAcquireStreamBlocking(
             if (streams.count(id) == 0)
             {
                 // Stream is free
-                return DMAStreamGuard(streams[id] = new DMAStream(id, channel));
+                streams.insert(std::pair<DMADefs::DMAStreamId, DMAStream>(
+                    id, DMAStream(id, channel)));
+                return DMAStreamGuard(&(streams.at(id)));
             }
         }
 
@@ -388,7 +388,6 @@ void DMADriver::releaseStream(DMADefs::DMAStreamId id)
 
     if (streams.count(id) != 0)
     {
-        delete streams[id];
         streams.erase(id);
         cv.broadcast();
     }

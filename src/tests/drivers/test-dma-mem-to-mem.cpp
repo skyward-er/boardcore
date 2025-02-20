@@ -29,7 +29,7 @@
 using namespace miosix;
 using namespace Boardcore;
 
-void printBuffer(uint8_t *buffer, size_t size);
+void printBuffer(uint8_t* buffer, size_t size);
 
 int main()
 {
@@ -88,12 +88,10 @@ int main()
     return 0;
 }
 
-void printBuffer(uint8_t *buffer, size_t size)
+void printBuffer(uint8_t* buffer, size_t size)
 {
     for (size_t i = 0; i < size - 1; i++)
-    {
         printf("%x,", buffer[i]);
-    }
 
     printf("%x\n", buffer[size - 1]);
 }
