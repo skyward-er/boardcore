@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+/* Copyright (c) 2025 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

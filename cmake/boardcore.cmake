@@ -59,6 +59,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/dma/DMA.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/dma/DMADefs.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/interrupt/external_interrupts.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/timer/PWM.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/timer/CountedPWM.cpp
