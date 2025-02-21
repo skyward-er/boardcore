@@ -25,6 +25,9 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <math.h>
 
+#define SENSOR_MODEL_OFFSET 4
+#define SENSOR_MODEL_LENGTH 6
+
 namespace Boardcore
 {
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig)
@@ -46,10 +49,11 @@ bool ND015A::init()
     spi.transfer(data, sizeof(NDD015ADataExtended));
 
     // check if the model returned by the sensor matches with the correct model
-    for (int i = 4; i < 10; i++)
+    for (int i = SENSOR_MODEL_OFFSET;
+         i < SENSOR_MODEL_OFFSET + SENSOR_MODEL_LENGTH; i++)
     {
         if (static_cast<uint8_t>(data[i]) !=
-            static_cast<uint8_t>(sensorModel[i - 4]))
+            static_cast<uint8_t>(sensorModel[i - SENSOR_MODEL_OFFSET]))
         {
             LOG_ERR(logger, "sensor model number did not match");
             return false;
