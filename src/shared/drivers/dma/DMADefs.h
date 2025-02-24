@@ -30,6 +30,20 @@
 namespace Boardcore
 {
 
+// For some reason these defines are missing
+// in the CMSIS STM32F4xx file
+#ifdef STM32F407xx
+
+#ifndef DMA_SxCR_MSIZE_Pos
+#define DMA_SxCR_MSIZE_Pos (13U)
+#endif
+
+#ifndef DMA_SxCR_PSIZE_Pos
+#define DMA_SxCR_PSIZE_Pos (11U)
+#endif
+
+#endif  // STM32F407xx
+
 namespace DMADefs
 {
 

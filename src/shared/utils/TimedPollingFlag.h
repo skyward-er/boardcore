@@ -40,12 +40,8 @@ inline bool timedPollingFlag(std::function<bool()> readFlag,
     uint64_t start = miosix::getTime();
 
     while (miosix::getTime() - start < timeout_ns)
-    {
         if (readFlag())
-        {
             return true;
-        }
-    }
 
     return false;
 }

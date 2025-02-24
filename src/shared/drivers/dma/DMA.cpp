@@ -304,9 +304,9 @@ bool DMADriver::tryChannel(DMADefs::DMAStreamId id)
     return streams.count(id) == 0;
 }
 
-DMAStreamGuard DMADriver::acquireStreamBlocking(
-    DMADefs::DMAStreamId id, DMADefs::Channel channel,
-    const std::chrono::nanoseconds timeout)
+DMAStreamGuard DMADriver::acquireStream(DMADefs::DMAStreamId id,
+                                        DMADefs::Channel channel,
+                                        std::chrono::nanoseconds timeout)
 {
     Lock<FastMutex> l(mutex);
 
@@ -339,8 +339,8 @@ DMAStreamGuard DMADriver::acquireStreamBlocking(
     return DMAStreamGuard(&(streams.at(id)));
 }
 
-DMAStreamGuard DMADriver::automaticAcquireStreamBlocking(
-    DMADefs::Peripherals peripheral, const std::chrono::nanoseconds timeout)
+DMAStreamGuard DMADriver::acquireStreamForPeripheral(
+    DMADefs::Peripherals peripheral, std::chrono::nanoseconds timeout)
 {
     const auto availableStreams =
         DMADefs::mapPeripherals.equal_range(peripheral);
@@ -405,14 +405,14 @@ DMADriver::DMADriver()
     ClockUtils::enablePeripheralClock(DMA2);
 
     // Reset interrupts flags by setting the clear bits to 1
-    // TODO: Change this magic number
-    DMA1->HIFCR = 0x0f7d0f7d;  // = 0b 0000 1111 0111 1101 0000 1111 0111 1101
-    DMA1->LIFCR = 0x0f7d0f7d;
-    DMA2->HIFCR = 0x0f7d0f7d;
-    DMA2->LIFCR = 0x0f7d0f7d;
+    constexpr int resetValue = 0x0f7d0f7d;
+    DMA1->HIFCR              = resetValue;
+    DMA1->LIFCR              = resetValue;
+    DMA2->HIFCR              = resetValue;
+    DMA2->LIFCR              = resetValue;
 }
 
-void DMAStream::setup(DMATransaction transaction)
+void DMAStream::setup(DMATransaction& transaction)
 {
     currentSetup = transaction;
 
