@@ -24,8 +24,6 @@
 #include <miosix.h>
 #include <util/util.h>
 
-#include <chrono>
-
 using namespace miosix;
 using namespace Boardcore;
 
@@ -33,9 +31,8 @@ void printBuffer(uint8_t* buffer, size_t size);
 
 int main()
 {
-    DMAStreamGuard stream =
-        DMADriver::instance().automaticAcquireStreamBlocking(
-            DMADefs::Peripherals::PE_MEM_ONLY, std::chrono::seconds::zero());
+    DMAStreamGuard stream = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_MEM_ONLY);
 
     if (!stream.isValid())
     {
@@ -70,20 +67,13 @@ int main()
     stream->setup(trn);
     stream->enable();
 
-    auto begin = std::chrono::steady_clock::now();
     stream->waitForTransferComplete();
-    auto end = std::chrono::steady_clock::now();
 
     printf("After:\n");
     printf("Buffer 1:\n");
     printBuffer(buffer1, sizeof(buffer1));
     printf("Buffer 2:\n");
     printBuffer(buffer2, sizeof(buffer2));
-
-    const auto elapsedTime =
-        std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
-            .count();
-    printf("Elapsed time: %lld [us]\n", elapsedTime);
 
     return 0;
 }
