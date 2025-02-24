@@ -35,15 +35,6 @@
 namespace Boardcore
 {
 
-// TODO: remove and find a better solution for stm32f407
-#ifndef DMA_SxCR_MSIZE_Pos
-#define DMA_SxCR_MSIZE_Pos (13U)
-#endif
-// TODO: remove and find a better solution for stm32f407
-#ifndef DMA_SxCR_PSIZE_Pos
-#define DMA_SxCR_PSIZE_Pos (11U)
-#endif
-
 struct DMATransaction
 {
     enum class Direction : uint16_t
@@ -105,29 +96,27 @@ public:
      * correct channel.
      * @param id The id of the stream to be acquired.
      * @param channel The channel used to initialize the stream.
-     * @param timeout The maximum time that will be waited when in blocking
-     * mode, 0 to disable the timeout and wait forever.
-     * @return The pointer to the allocated stream if successful, nullptr if the
-     * timeout expired.
+     * @param timeout The maximum time that will be waited, defaults to waiting
+     * forever.
+     * @return A stream guard that might be valid or not, depending on the
+     * outcome of the request.
      */
-    DMAStreamGuard acquireStreamBlocking(
+    DMAStreamGuard acquireStream(
         DMADefs::DMAStreamId id, DMADefs::Channel channel,
-        const std::chrono::nanoseconds timeout);
+        std::chrono::nanoseconds timeout = std::chrono::nanoseconds::zero());
 
     /**
      * @brief Try to acquire a stream that is connected to the specified
      * peripheral.
      * @param peripheral The wanted peripheral.
-     * @param timeout The maximum time that will be waited when in blocking
-     * mode, 0 to disable the timeout and wait forever.
-     * @return The pointer to the allocated stream if successful, nullptr if the
-     * timeout expired.
-     *
-     * TODO: change name
+     * @param timeout The maximum time that will be waited, defaults to waiting
+     * forever.
+     * @return A stream guard that might be valid or not, depending on the
+     * outcome of the request.
      */
-    DMAStreamGuard automaticAcquireStreamBlocking(
+    DMAStreamGuard acquireStreamForPeripheral(
         DMADefs::Peripherals peripheral,
-        const std::chrono::nanoseconds timeout);
+        std::chrono::nanoseconds timeout = std::chrono::nanoseconds::zero());
 
     void releaseStream(DMADefs::DMAStreamId id);
 
@@ -153,7 +142,7 @@ public:
     /**
      * @brief Setup the stream with the given configuration.
      */
-    void setup(DMATransaction transaction);
+    void setup(DMATransaction& transaction);
 
     /**
      * @brief Activate the stream. As soon as the stream is enabled, it
@@ -447,7 +436,7 @@ public:
     inline bool isValid() { return pStream != nullptr; }
 
 private:
-    DMAStream* pStream = nullptr;
+    DMAStream* const pStream;
 };
 
 }  // namespace Boardcore
