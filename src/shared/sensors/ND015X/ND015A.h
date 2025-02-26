@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2025 Skyward Experimental Rocketry
  * Author: Pietro Bortolus
  *
@@ -59,6 +58,14 @@ public:
         ENABLED  = 0x80,
     };
 
+    struct Config
+    {
+        IOWatchdogEnable iow;
+        BWLimitFilter bwl;
+        NotchEnable ntc;
+        uint8_t odr;
+    };
+
     /**
      * @brief Constructor for the ND015A sensor.
      *
@@ -66,7 +73,16 @@ public:
      * @param cs Chip select GPIO pin.
      * @param spiConfig SPI bus configuration.
      */
-    ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig);
+    ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+           Config config);
+
+    /**
+     * @brief Function to apply the configuration to the sensor.
+     *
+     * @param config Configuration to apply.
+     */
+
+    bool applyConfig(Config config);
 
     /**
      * @brief Initializes the sensor.
@@ -123,26 +139,31 @@ protected:
     ND015XData sampleImpl() override;
 
 private:
+    Config configuration;
     SPISlave slave;
-    uint8_t modeByte   = 0xF7;  // settings for the mode control register
-    uint8_t rateByte   = 0x1C;  // settings for the rate control register
-    string sensorModel = "ND015A";
+    static constexpr char MODEL_NAME[] = "ND015A";
 
+    /**
+     * @brief settings for the mode control register,
+     *        the initial values are the ones set by default
+     *        in the sensor
+     */
     struct
+    {
+        uint8_t fsr : 3 = 0x7;   // full scale range, value cannot be changed
+        uint8_t iow : 1 = 0x0;   // IO watchdog enable
+        uint8_t bwl : 3 = 0x7;   // bandwidth limit filter
+        uint8_t ntc : 1 = 0x1;   // notch filter enable
+        uint8_t odr : 8 = 0x1C;  // output data rate
+    } sensorSettings;
+
+    struct nd015aDataExtended
     {
         uint16_t pressure;
         uint16_t temperature;
         uint8_t model[8];
         uint8_t serial[4];
         uint8_t build[6];
-    } NDD015ADataExtended = {0};
-
-    enum RegisterMask : uint8_t
-    {
-        FS_MASK          = 0x07,
-        IO_WATCHDOG_MASK = 0x08,
-        BW_LIMIT_MASK    = 0x70,
-        NOTCH_MASK       = 0x80,
     };
 
     PrintLogger logger = Logging::getLogger("nd015a");

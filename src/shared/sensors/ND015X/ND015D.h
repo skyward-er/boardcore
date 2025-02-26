@@ -72,6 +72,15 @@ public:
         ENABLED  = 0x80,
     };
 
+    struct Config
+    {
+        FullScaleRange fsr;
+        IOWatchdogEnable iow;
+        BWLimitFilter bwl;
+        NotchEnable ntc;
+        uint8_t odr;
+    };
+
     /**
      * @brief Constructor for the ND015D sensor.
      *
@@ -79,7 +88,16 @@ public:
      * @param cs Chip select GPIO pin.
      * @param spiConfig SPI bus configuration.
      */
-    ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig);
+    ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+           Config config);
+
+    /**
+     * @brief Function to apply the configuration to the sensor.
+     *
+     * @param config Configuration to apply.
+     */
+
+    bool applyConfig(Config config);
 
     /**
      * @brief Initializes the sensor.
@@ -104,14 +122,14 @@ public:
      *              Allowed values are 0x00 to 0xFF,
      *              0x00 will select the auto-select rate mode
      */
-    void setOutputDataRate(u_int8_t odr);
+    void setOutputDataRate(uint8_t odr);
 
     /**
      * @brief Sets the full-scale range for the sensor.
      *
      * @param fs Full-scale range. Default is 2.0 psi.
      */
-    void setFullScaleRange(FullScaleRange fs);
+    void setFullScaleRange(FullScaleRange fsr);
 
     /**
      * @brief Enables or disables the IO watchdog.
@@ -138,27 +156,32 @@ protected:
     ND015XData sampleImpl() override;
 
 private:
+    Config configuration;
     SPISlave slave;
-    uint8_t modeByte   = 0xF3;  // settings for the mode control register
-    uint8_t rateByte   = 0x1C;  // settings for the rate control register
-    short range        = 1;
-    string sensorModel = "ND015D";
+    short range                        = 1;
+    static constexpr char MODEL_NAME[] = "ND015D";
 
+    /**
+     * @brief settings for the mode control register,
+     *        the initial values are the ones set by default
+     *        in the sensor
+     */
     struct
+    {
+        uint8_t fsr : 3 = 0x3;   // full scale range
+        uint8_t iow : 1 = 0x0;   // IO watchdog enable
+        uint8_t bwl : 3 = 0x7;   // bandwidth limit filter
+        uint8_t ntc : 1 = 0x1;   // notch filter enable
+        uint8_t odr : 8 = 0x1C;  // output data rate
+    } sensorSettings;
+
+    struct nd015aDataExtended
     {
         uint16_t pressure;
         uint16_t temperature;
         uint8_t model[8];
         uint8_t serial[4];
         uint8_t build[6];
-    } NDD015ADataExtended = {0};
-
-    enum RegisterMask : uint8_t
-    {
-        FS_MASK          = 0x07,
-        IO_WATCHDOG_MASK = 0x08,
-        BW_LIMIT_MASK    = 0x70,
-        NOTCH_MASK       = 0x80,
     };
 
     PrintLogger logger = Logging::getLogger("nd015d");

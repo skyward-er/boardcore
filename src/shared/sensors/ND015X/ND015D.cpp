@@ -22,16 +22,17 @@
 
 #include "ND015D.h"
 
+#include <cmath.h>
 #include <drivers/timer/TimestampTimer.h>
-#include <math.h>
 
 #define SENSOR_MODEL_OFFSET 4
 #define SENSOR_MODEL_LENGTH 6
 
 namespace Boardcore
 {
-ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig)
-    : slave(bus, cs, spiConfig)
+ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+               Config config)
+    : slave(bus, cs, spiConfig), configuration(config)
 {
 }
 
@@ -65,11 +66,37 @@ bool ND015D::init()
 
 bool ND015D::selfTest() { return true; }
 
+bool ND015D::applyConfig(Config config)
+{
+    sensorSettings.fsr = config.fsr;
+    sensorSettings.iow = config.iow;
+    sensorSettings.bwl = config.bwl;
+    sensorSettings.ntc = config.ntc;
+
+    if (config.odr < 0x100)
+    {
+        sensorSettings.odr = config.odr;
+    }
+    else
+    {
+        LOG_ERR(logger, "odr setting not valid, using default value (0x1C)");
+        sensorSettings.odr = 0x1C;
+    }
+
+    SPITransaction spi(slave);
+    uint16_t SPIDataOut;
+
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
+    spi.transfer16(SPIDataOut);
+
+    return true;
+}
+
 void ND015D::setOutputDataRate(uint8_t odr)
 {
     if (odr < 0x100)
     {
-        rateByte = odr;
+        sensorSettings.odr = odr;
     }
     else
     {
@@ -78,14 +105,15 @@ void ND015D::setOutputDataRate(uint8_t odr)
     }
 
     SPITransaction spi(slave);
+    uint16_t SPIDataOut;
 
-    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
     spi.transfer16(SPIDataOut);
 }
 
-void ND015D::setFullScaleRange(FullScaleRange fs)
+void ND015D::setFullScaleRange(FullScaleRange fsr)
 {
-    modeByte = (modeByte & ~FS_MASK) | fs;
+    sensorSettings.fsr = fsr;
 
     switch (fs)
     {
@@ -118,48 +146,52 @@ void ND015D::setFullScaleRange(FullScaleRange fs)
     }
 
     SPITransaction spi(slave);
+    uint16_t SPIDataOut;
 
-    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
     spi.transfer16(SPIDataOut);
 }
 
 void ND015D::setIOWatchdog(IOWatchdogEnable iow)
 {
-    modeByte = (modeByte & ~IO_WATCHDOG_MASK) | iow;
+    sensorSettings.iow = iow;
 
     SPITransaction spi(slave);
+    uint16_t SPIDataOut;
 
-    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
     spi.transfer16(SPIDataOut);
 }
 
 void ND015D::setBWLimitFilter(BWLimitFilter bwl)
 {
-    modeByte = (modeByte & ~BW_LIMIT_MASK) | bwl;
+    sensorSettings.bwl = bwl;
 
     SPITransaction spi(slave);
+    uint16_t SPIDataOut;
 
-    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
     spi.transfer16(SPIDataOut);
 }
 
 void ND015D::setNotch(NotchEnable ntc)
 {
-    modeByte = (modeByte & ~NOTCH_MASK) | ntc;
+    sensorSettings.ntc = ntc;
 
     SPITransaction spi(slave);
+    uint16_t SPIDataOut;
 
-    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
     spi.transfer16(SPIDataOut);
 }
 
 ND015XData ND015D::sampleImpl()
 {
     ND015XData data;
-    uint16_t SPIDataOut = (modeByte << 8) | rateByte;
-
+    uint16_t SPIDataOut;
     SPITransaction spi(slave);
 
+    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
     uint16_t SPIDataIn = spi.transfer16(SPIDataOut);
 
     data.pressure          = (short)SPIDataIn / (0.9 * pow(2, 15)) * range;

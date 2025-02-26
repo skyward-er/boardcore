@@ -335,6 +335,5 @@
                 "Zyxda"
         ],
         "cSpell.language": "en",
-        "cSpell.enabled": true,
-        "C_Cpp.errorSquiggles": "enabled"
+        "cSpell.enabled": true
 }
