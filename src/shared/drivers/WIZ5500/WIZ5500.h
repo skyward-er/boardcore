@@ -252,7 +252,8 @@ private:
     static constexpr int NUM_THREAD_WAIT_INFOS = 16;
     static constexpr int NUM_SOCKETS           = 8;
 
-    void waitForINTn(miosix::Lock<miosix::FastMutex>& l, long long until);
+    miosix::TimedWaitResult waitForINTn(miosix::Lock<miosix::FastMutex>& l,
+                                        long long until);
     int waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
                          uint8_t irq_mask, int timeout);
 
