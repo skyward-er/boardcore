@@ -407,7 +407,7 @@ void Wiz5500::close(int sock_n, int timeout)
     socket_infos[sock_n].mode = Wiz5500::SocketMode::CLOSED;
 }
 
-void Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
+TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
 {
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
@@ -415,6 +415,7 @@ void Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
     FastInterruptDisableLock il;
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
         result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(il, until);
+    return result;
 }
 
 int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
@@ -533,14 +534,15 @@ TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
     long long start = Kernel::getOldTick();
     if (until == -1)
     {
-        waitForINTn(l, start + INTN_TIMEOUT);
+        // Wait for interrupts and check if we run out of time
+        if (waitForINTn(l, start + INTN_TIMEOUT) == TimedWaitResult::Timeout)
+            return TimedWaitResult::Timeout;
     }
     else
     {
-        waitForINTn(l, std::min(start + INTN_TIMEOUT, until));
-
-        // Did we run out of time?
-        if (Kernel::getOldTick() >= until)
+        // Wait for interrupts and check if we run out of time
+        if (waitForINTn(l, std::min(start + INTN_TIMEOUT, until)) ==
+            TimedWaitResult::Timeout)
             return TimedWaitResult::Timeout;
     }
 
