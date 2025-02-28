@@ -622,8 +622,6 @@ uint16_t LSM6DSRX::combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
 
 void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
-    data.accelerationTimestamp = TimestampTimer::getTimestamp();
-
     data.accelerationX =
         readFloat16(LSM6DSRXDefs::REG_OUTX_L_A, LSM6DSRXDefs::REG_OUTX_H_A) *
         sensitivityAcc;
@@ -637,8 +635,6 @@ void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 
 void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
-    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
-
     data.angularSpeedX =
         readFloat16(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G) *
         sensitivityGyr;
@@ -652,8 +648,6 @@ void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 
 void LSM6DSRX::getTemperatureData(LSM6DSRXData& data)
 {
-    data.temperatureTimestamp = TimestampTimer::getTimestamp();
-
     data.temperature = readFloat16(LSM6DSRXDefs::REG_OUT_TEMP_L,
                                    LSM6DSRXDefs::REG_OUT_TEMP_H) /
                        256;
@@ -677,6 +671,10 @@ LSM6DSRXData LSM6DSRX::getSensorData()
     D(assert(isInit && "init() was not called"));
 
     LSM6DSRXData data;
+
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+    data.angularSpeedTimestamp = data.accelerationTimestamp;
+    data.temperatureTimestamp  = data.accelerationTimestamp;
 
     getAccelerometerData(data);
     getGyroscopeData(data);
