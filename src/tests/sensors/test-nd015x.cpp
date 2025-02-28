@@ -20,21 +20,37 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <iostream>
 
-#include <sensors/SensorData.h>
+#include "sensors/ND015X/ND015A.h"
 
-namespace Boardcore
+using namespace miosix;
+using namespace Boardcore;
+
+int main()
 {
+    miosix::GpioPin cs(GPIOE_BASE, 3);
 
-struct ND015XData : public PressureData
-{
-    static std::string header() { return "timestamp,pressure\n"; }
+    SPIBusConfig spiConfig;
+    SPIBus bus(SPI1);
 
-    void print(std::ostream& os) const
+    ND015A sensor(bus, cs, spiConfig);
+    ND015XData sensorData;
+
+    sensor.setOutputDataRate(100);
+    sensor.setBWLimitFilter(ND015A::BWLimitFilter::BWL_100);
+    sensor.setIOWatchdog(ND015A::IOWatchdogEnable::ENABLED);
+    sensor.setNotch(ND015A::NotchEnable::ENABLED);
+
+    while (true)
     {
-        os << pressureTimestamp << "," << pressure << "\n";
-    }
-};
+        sensor.sample();
+        sensorData = sensor.getLastSample();
+        std::cout << "New data: " << sensorData.header() << std::endl;
 
-}  // namespace Boardcore
+        sleep(100);
+    }
+
+    return 0;
+}
+

@@ -127,7 +127,7 @@ public:
     /**
      * @brief Sets the full-scale range for the sensor.
      *
-     * @param fs Full-scale range. Default is 2.0 psi.
+     * @param fs Full-scale range.
      */
     void setFullScaleRange(FullScaleRange fsr);
 
@@ -175,7 +175,7 @@ private:
         uint8_t odr : 8;  // output data rate
     } sensorSettings;
 
-    struct nd015dDataExtended
+    struct ND015DDataExtended
     {
         uint16_t pressure;
         uint16_t temperature;

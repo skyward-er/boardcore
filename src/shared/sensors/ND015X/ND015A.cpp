@@ -39,7 +39,7 @@ bool ND015A::init()
 {
     applyConfig(configuration);
 
-    nd015aDataExtended extendedData;
+    ND015ADataExtended extendedData;
     uint8_t* data = reinterpret_cast<uint8_t*>(&extendedData);
 
     // setting the first 2 bytes of the data to the correct sensor settings
@@ -50,8 +50,8 @@ bool ND015A::init()
 
     // this part checks if the model number returned by the sensor matches the
     // correct model number
-    bool compareResult = (memcmp(&extendedData.model,
-                                 &MODEL_NAME, sizeof(MODEL_NAME) - 1) == 0);
+    bool compareResult =
+        (memcmp(&extendedData.model, &MODEL_NAME, sizeof(MODEL_NAME) - 1) == 0);
 
     if (!compareResult)
     {
@@ -80,10 +80,10 @@ bool ND015A::applyConfig(Config config)
     }
 
     SPITransaction spi(slave);
-    uint16_t SPIDataOut;
+    uint16_t spiDataOut;
 
-    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
-    spi.transfer16(SPIDataOut);
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    spi.transfer16(spiDataOut);
 
     return true;
 }
@@ -101,10 +101,10 @@ void ND015A::setOutputDataRate(uint8_t odr)
     }
 
     SPITransaction spi(slave);
-    uint16_t SPIDataOut;
+    uint16_t spiDataOut;
 
-    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
-    spi.transfer16(SPIDataOut);
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    spi.transfer16(spiDataOut);
 }
 
 void ND015A::setIOWatchdog(IOWatchdogEnable iow)
@@ -112,10 +112,10 @@ void ND015A::setIOWatchdog(IOWatchdogEnable iow)
     sensorSettings.iow = iow;
 
     SPITransaction spi(slave);
-    uint16_t SPIDataOut;
+    uint16_t spiDataOut;
 
-    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
-    spi.transfer16(SPIDataOut);
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    spi.transfer16(spiDataOut);
 }
 
 void ND015A::setBWLimitFilter(BWLimitFilter bwl)
@@ -123,10 +123,10 @@ void ND015A::setBWLimitFilter(BWLimitFilter bwl)
     sensorSettings.bwl = bwl;
 
     SPITransaction spi(slave);
-    uint16_t SPIDataOut;
+    uint16_t spiDataOut;
 
-    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
-    spi.transfer16(SPIDataOut);
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    spi.transfer16(spiDataOut);
 }
 
 void ND015A::setNotch(NotchEnable ntc)
@@ -134,23 +134,23 @@ void ND015A::setNotch(NotchEnable ntc)
     sensorSettings.ntc = ntc;
 
     SPITransaction spi(slave);
-    uint16_t SPIDataOut;
+    uint16_t spiDataOut;
 
-    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
-    spi.transfer16(SPIDataOut);
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    spi.transfer16(spiDataOut);
 }
 
 ND015XData ND015A::sampleImpl()
 {
     ND015XData data;
-    uint16_t SPIDataOut;
+    uint16_t spiDataOut;
     SPITransaction spi(slave);
 
-    memcpy(&SPIDataOut, &sensorSettings, sizeof(SPIDataOut));
-    uint16_t SPIDataIn = spi.transfer16(SPIDataOut);
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    uint16_t spiDataIn = spi.transfer16(spiDataOut);
 
     data.pressure =
-        ((short)SPIDataIn - 0.05 * pow(2, 16)) / (0.9 * pow(2, 16)) * 15;
+        ((short)spiDataIn - 0.05 * pow(2, 16)) / (0.9 * pow(2, 16)) * 15;
     data.pressureTimestamp = TimestampTimer::getTimestamp();
 
     return data;
