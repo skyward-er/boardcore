@@ -34,7 +34,7 @@ namespace Boardcore
 class ND015A : public Sensor<ND015XData>
 {
 public:
-    enum BWLimitFilter : uint8_t
+    enum class BWLimitFilter : uint8_t
     {
         BWL_1   = 0x00,  // 1.0 Hz
         BWL_2   = 0x10,  // 2.0 Hz
@@ -46,13 +46,13 @@ public:
         BWL_200 = 0x70,  // 200 Hz
     };
 
-    enum IOWatchdogEnable : uint8_t
+    enum class IOWatchdogEnable : uint8_t
     {
         DISABLED = 0x00,
         ENABLED  = 0x08,
     };
 
-    enum NotchEnable : uint8_t
+    enum class NotchEnable : uint8_t
     {
         DISABLED = 0x00,
         ENABLED  = 0x80,

@@ -38,7 +38,7 @@ public:
      * The datasheet is unclear about the unit of measure,
      * it could be either psi or inH2O but I believe it's the latter
      */
-    enum FullScaleRange : uint8_t
+    enum class FullScaleRange : uint8_t
     {
         FS_1  = 0x02,  // 1.0  psi
         FS_2  = 0x03,  // 2.0  psi
@@ -48,7 +48,7 @@ public:
         FS_15 = 0x07,  // 15.0 psi
     };
 
-    enum BWLimitFilter : uint8_t
+    enum class BWLimitFilter : uint8_t
     {
         BWL_1   = 0x00,  // 1.0 Hz
         BWL_2   = 0x10,  // 2.0 Hz
@@ -60,13 +60,13 @@ public:
         BWL_200 = 0x70,  // 200 Hz
     };
 
-    enum IOWatchdogEnable : uint8_t
+    enum class IOWatchdogEnable : uint8_t
     {
         DISABLED = 0x00,
         ENABLED  = 0x08,
     };
 
-    enum NotchEnable : uint8_t
+    enum class NotchEnable : uint8_t
     {
         DISABLED = 0x00,
         ENABLED  = 0x80,

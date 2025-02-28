@@ -111,7 +111,7 @@ void ND015A::setOutputDataRate(uint8_t odr)
 
 void ND015A::setIOWatchdog(IOWatchdogEnable iow)
 {
-    sensorSettings.iow = iow;
+    sensorSettings.iow = static_cast<uint8_t>(iow);
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -122,7 +122,7 @@ void ND015A::setIOWatchdog(IOWatchdogEnable iow)
 
 void ND015A::setBWLimitFilter(BWLimitFilter bwl)
 {
-    sensorSettings.bwl = bwl;
+    sensorSettings.bwl = static_cast<uint8_t>(bwl);
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -133,7 +133,7 @@ void ND015A::setBWLimitFilter(BWLimitFilter bwl)
 
 void ND015A::setNotch(NotchEnable ntc)
 {
-    sensorSettings.ntc = ntc;
+    sensorSettings.ntc = static_cast<uint8_t>(ntc);
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;

@@ -112,9 +112,9 @@ void ND015D::setOutputDataRate(uint8_t odr)
 
 void ND015D::setFullScaleRange(FullScaleRange fsr)
 {
-    sensorSettings.fsr = fsr;
+    sensorSettings.fsr = static_cast<uint8_t>(fsr);
 
-    switch (fs)
+    switch (static_cast<uint8_t>(fsr))
     {
         case FS_1:
             range = 1;
@@ -153,7 +153,7 @@ void ND015D::setFullScaleRange(FullScaleRange fsr)
 
 void ND015D::setIOWatchdog(IOWatchdogEnable iow)
 {
-    sensorSettings.iow = iow;
+    sensorSettings.iow = static_cast<uint8_t>(iow);
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -164,7 +164,7 @@ void ND015D::setIOWatchdog(IOWatchdogEnable iow)
 
 void ND015D::setBWLimitFilter(BWLimitFilter bwl)
 {
-    sensorSettings.bwl = bwl;
+    sensorSettings.bwl = static_cast<uint8_t>(bwl);
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -175,7 +175,7 @@ void ND015D::setBWLimitFilter(BWLimitFilter bwl)
 
 void ND015D::setNotch(NotchEnable ntc)
 {
-    sensorSettings.ntc = ntc;
+    sensorSettings.ntc = static_cast<uint8_t>(ntc);
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
