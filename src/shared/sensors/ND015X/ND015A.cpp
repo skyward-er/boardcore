@@ -22,8 +22,9 @@
 
 #include "ND015A.h"
 
-#include <cmath>
 #include <drivers/timer/TimestampTimer.h>
+
+#include <cmath>
 
 #define SENSOR_MODEL_OFFSET 4
 
