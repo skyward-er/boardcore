@@ -26,7 +26,6 @@
 #include <drivers/timer/TimestampTimer.h>
 
 #define SENSOR_MODEL_OFFSET 4
-#define SENSOR_MODEL_LENGTH 6
 
 namespace Boardcore
 {
@@ -41,28 +40,23 @@ bool ND015D::init()
     applyConfig(configuration);
 
     uint8_t* data;
-    memcpy(&NDD015ADataExtended, &sensorSettings,
-           sizeof(sensorSettings));  // updating the first 2 bytes with the
-                                     // correct sensor settings
+
+    // setting the first 2 bytes of the data to the correct sensor settings
+    memcpy(&nd015aDataExtended, &sensorSettings, sizeof(sensorSettings));
 
     SPITransaction spi(slave);
+    spi.transfer(data, sizeof(nd015aDataExtended));
 
-    data = reinterpret_cast<uint8_t*>(&NDD015ADataExtended);
+    // this part checks if the model number returned by the sensor matches the
+    // correct model number
+    bool compareResult = (memcmp(&nd015aDataExtended[SENSOR_MODEL_OFFSET],
+                                 &MODEL_NAME, sizeof(MODEL_NAME) - 1) == 0);
 
-    spi.transfer(data, sizeof(NDD015ADataExtended));
-
-    // check if the model returned by the sensor matches with the correct model
-    for (int i = SENSOR_MODEL_OFFSET;
-         i < SENSOR_MODEL_OFFSET + SENSOR_MODEL_LENGTH; i++)
+    if (!compareResult)
     {
-        if (static_cast<uint8_t>(data[i]) !=
-            static_cast<uint8_t>(sensorModel[i - SENSOR_MODEL_OFFSET]))
-        {
-            LOG_ERR(logger, "sensor model number did not match");
-            return false;
-        }
+        LOG_ERR(logger, "sensor model number did not match");
+        return false;
     }
-
     return true;
 }
 
