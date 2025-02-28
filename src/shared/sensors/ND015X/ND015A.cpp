@@ -22,7 +22,7 @@
 
 #include "ND015A.h"
 
-#include <cmath.h>
+#include <cmath>
 #include <drivers/timer/TimestampTimer.h>
 
 #define SENSOR_MODEL_OFFSET 4
@@ -31,7 +31,8 @@ namespace Boardcore
 {
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                Config config)
-    : slave(bus, cs, spiConfig), configuration(config)
+    : slave(bus, cs, spiConfig), configuration(config),
+      sensorSettings{0x7, config.iow, config.bwl, config.ntc, config.odr}
 {
 }
 
