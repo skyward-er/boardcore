@@ -31,13 +31,15 @@
 namespace Boardcore
 {
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-    Config config)
-: slave(bus, cs, spiConfig), configuration(config)
+               Config config)
+    : slave(bus, cs, spiConfig), configuration(config)
 {
 }
 
 bool ND015A::init()
 {
+    applyConfig(configuration);
+
     uint8_t* data;
     nd015aDataExtended extendedData;
 

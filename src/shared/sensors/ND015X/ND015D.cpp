@@ -38,9 +38,11 @@ ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
 
 bool ND015D::init()
 {
+    applyConfig(configuration);
+
     uint8_t* data;
-    NDD015ADataExtended.pressure =
-        (modeByte << 8) | rateByte;  // updating the first 2 bytes with the
+    memcpy(&NDD015ADataExtended, &sensorSettings,
+           sizeof(sensorSettings));  // updating the first 2 bytes with the
                                      // correct sensor settings
 
     SPITransaction spi(slave);

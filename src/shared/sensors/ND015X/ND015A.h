@@ -150,11 +150,11 @@ private:
      */
     struct
     {
-        uint8_t fsr : 3 = 0x7;   // full scale range, value cannot be changed
-        uint8_t iow : 1 = 0x0;   // IO watchdog enable
-        uint8_t bwl : 3 = 0x7;   // bandwidth limit filter
-        uint8_t ntc : 1 = 0x1;   // notch filter enable
-        uint8_t odr : 8 = 0x1C;  // output data rate
+        uint8_t fsr : 3;  // full scale range, value cannot be changed
+        uint8_t iow : 1;  // IO watchdog enable
+        uint8_t bwl : 3;  // bandwidth limit filter
+        uint8_t ntc : 1;  // notch filter enable
+        uint8_t odr : 8;  // output data rate
     } sensorSettings;
 
     struct nd015aDataExtended
