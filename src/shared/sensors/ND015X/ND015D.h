@@ -175,7 +175,7 @@ private:
         uint8_t odr : 8;  // output data rate
     } sensorSettings;
 
-    struct nd015aDataExtended
+    struct nd015dDataExtended
     {
         uint16_t pressure;
         uint16_t temperature;

@@ -39,17 +39,18 @@ bool ND015A::init()
 {
     applyConfig(configuration);
 
-    uint8_t* data;
+    nd015aDataExtended extendedData;
+    uint8_t* data = reinterpret_cast<uint8_t*>(&extendedData);
 
     // setting the first 2 bytes of the data to the correct sensor settings
-    memcpy(&nd015aDataExtended, &sensorSettings, sizeof(sensorSettings));
+    memcpy(&extendedData, &sensorSettings, sizeof(sensorSettings));
 
     SPITransaction spi(slave);
-    spi.transfer(data, sizeof(nd015aDataExtended));
+    spi.transfer(data, sizeof(extendedData));
 
     // this part checks if the model number returned by the sensor matches the
     // correct model number
-    bool compareResult = (memcmp(&nd015aDataExtended[SENSOR_MODEL_OFFSET],
+    bool compareResult = (memcmp(&extendedData.model,
                                  &MODEL_NAME, sizeof(MODEL_NAME) - 1) == 0);
 
     if (!compareResult)
