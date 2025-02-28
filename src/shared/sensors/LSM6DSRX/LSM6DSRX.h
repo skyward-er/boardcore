@@ -161,18 +161,17 @@ private:
      * @brief Reads 16-bits float data from the specified registers.
      * @param lowReg Register containing the low bits of the output.
      * @param highReg Register containing the high bits of the output.
-     * @param sensitivity Sensitivity value for the sample.
      */
-    float getAxisData(LSM6DSRXDefs::Registers lowReg,
-                      LSM6DSRXDefs::Registers highReg, float sensitivity);
+    float readFloat16(LSM6DSRXDefs::Registers lowReg,
+                      LSM6DSRXDefs::Registers highReg);
 
     /**
      * @brief Reads 16-bits data from the specified registers.
      * @param lowReg Register containing the low bits of the output.
      * @param highReg Register containing the high bits of the output.
      */
-    int16_t getAxisData(LSM6DSRXDefs::Registers lowReg,
-                        LSM6DSRXDefs::Registers highReg);
+    int16_t readInt16(LSM6DSRXDefs::Registers lowReg,
+                      LSM6DSRXDefs::Registers highReg);
 
     /**
      * @brief Initialize the accelerometer.
@@ -217,6 +216,12 @@ private:
      * @param data The structure where data from the sensor is to be saved.
      */
     void getGyroscopeData(LSM6DSRXData& data);
+
+    /**
+     * @brief Retrieves temperature data.
+     * @param data The structure where data from the sensor is to be saved.
+     */
+    void getTemperatureData(LSM6DSRXData& data);
 
     /**
      * @brief Converts timestamp from the value given by the sensor to the one

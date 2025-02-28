@@ -77,7 +77,7 @@ int main()
     int2Pin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_2;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_64;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
@@ -86,20 +86,19 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_833;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_52;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_833;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_52;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // fifo
     sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
     sensConfig.fifoTimestampDecimation =
         LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DEC_1;
-    sensConfig.fifoTemperatureBdr =
-        LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
+    sensConfig.fifoTemperatureBdr = LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::HZ_52;
 
     // interrupt
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;

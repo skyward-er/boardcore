@@ -118,6 +118,9 @@ enum Registers
     REG_FIFO_DATA_OUT_Z_L = 0x7D,
     REG_FIFO_DATA_OUT_Z_H = 0x7E,
 
+    REG_OUT_TEMP_L = 0x20,  ///< Low bits temperature output register
+    REG_OUT_TEMP_H = 0x21,  ///< High bits temperature output register
+
     REG_OUTX_L_A =
         0x28,  ///< Low bits output register for the accelerometer (x axis)
     REG_OUTX_H_A =
@@ -173,14 +176,15 @@ struct RawFifoData
  * @brief Temporary struct used to store data extracted from fifo, before
  * turning it into LSM6DSRXData.
  *
- * accPresent and gyrPresent are flags that are set when a sample from the
- * corresponding sensor is pushed inside the timeslot.
+ * accPresent, gyrPresent and tempPresent are flags that are set when a sample
+ * from the corresponding sensor is pushed inside the timeslot.
  */
 struct FifoTimeslotData
 {
     LSM6DSRXData data;
-    bool accPresent = false;
-    bool gyrPresent = false;
+    bool accPresent  = false;
+    bool gyrPresent  = false;
+    bool tempPresent = false;
 };
 
 }  // namespace LSM6DSRXDefs

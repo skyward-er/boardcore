@@ -27,10 +27,13 @@
 namespace Boardcore
 {
 
-struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
+struct LSM6DSRXData : public AccelerometerData,
+                      public GyroscopeData,
+                      public TemperatureData
 {
     LSM6DSRXData()
-        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0}
+        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
+          TemperatureData{0, 0.0}
     {
     }
 
@@ -38,7 +41,7 @@ struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
     {
         return "accelerationTimestamp,accelerationX,accelerationY,"
                "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ\n";
+               "angularSpeedY,angularSpeedZ,temperatureTimestamp,temperature\n";
     }
 
     void print(std::ostream& os) const
@@ -46,17 +49,8 @@ struct LSM6DSRXData : public AccelerometerData, public GyroscopeData
         os << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
            << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << "\n";
-    }
-};
-
-struct LSM6DSRXTemperature : public TemperatureData
-{
-    static std::string header() { return "temperatureTimestamp,temperature\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << temperatureTimestamp << "," << temperature << "\n";
+           << angularSpeedY << "," << angularSpeedZ << ","
+           << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 
