@@ -34,6 +34,12 @@ namespace Boardcore
 class ND015A : public Sensor<ND015XData>
 {
 public:
+    enum class IOWatchdogEnable : uint8_t
+    {
+        DISABLED = 0x00,
+        ENABLED  = 0x08,
+    };
+
     enum class BWLimitFilter : uint8_t
     {
         BWL_1   = 0x00,  // 1.0 Hz
@@ -46,24 +52,10 @@ public:
         BWL_200 = 0x70,  // 200 Hz
     };
 
-    enum class IOWatchdogEnable : uint8_t
-    {
-        DISABLED = 0x00,
-        ENABLED  = 0x08,
-    };
-
     enum class NotchEnable : uint8_t
     {
         DISABLED = 0x00,
         ENABLED  = 0x80,
-    };
-
-    struct Config
-    {
-        IOWatchdogEnable iow;
-        BWLimitFilter bwl;
-        NotchEnable ntc;
-        uint8_t odr;
     };
 
     /**
@@ -74,15 +66,8 @@ public:
      * @param spiConfig SPI bus configuration.
      */
     ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           Config config);
-
-    /**
-     * @brief Function to apply the configuration to the sensor.
-     *
-     * @param config Configuration to apply.
-     */
-
-    bool applyConfig(Config config);
+           IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
+           uint8_t odr);
 
     /**
      * @brief Initializes the sensor.
@@ -107,7 +92,7 @@ public:
      *              Allowed values are 0x00 to 0xFF,
      *              0x00 will select the auto-select rate mode
      */
-    void setOutputDataRate(u_int8_t odr);
+    void setOutputDataRate(uint8_t odr);
 
     /**
      * @brief function is not implemented as the sensor has a fixed fullscale
@@ -139,7 +124,6 @@ protected:
     ND015XData sampleImpl() override;
 
 private:
-    Config configuration;
     SPISlave slave;
     static constexpr char MODEL_NAME[] = "ND015A";
 
@@ -150,12 +134,15 @@ private:
      */
     struct
     {
-        uint8_t fsr : 3;  // full scale range, value cannot be changed
-        uint8_t iow : 1;  // IO watchdog enable
-        uint8_t bwl : 3;  // bandwidth limit filter
-        uint8_t ntc : 1;  // notch filter enable
-        uint8_t odr : 8;  // output data rate
+        uint8_t fsr : 3;           // full scale range, value cannot be changed
+        IOWatchdogEnable iow : 1;  // IO watchdog enable
+        BWLimitFilter bwl : 3;     // bandwidth limit filter
+        NotchEnable ntc : 1;       // notch filter enable
+        uint8_t odr : 8;           // output data rate
     } sensorSettings;
+
+    static_assert(sizeof(sensorSettings) == 2,
+                  "sensorSettings size is not 2 bytes");
 
     struct ND015ADataExtended
     {

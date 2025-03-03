@@ -26,22 +26,20 @@
 
 #include <cmath>
 
-#define SENSOR_MODEL_OFFSET 4
-
 namespace Boardcore
 {
 ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               Config config)
-    : slave(bus, cs, spiConfig), configuration(config),
-      sensorSettings{config.fsr, config.iow, config.bwl, config.ntc, config.odr}
+               FullScaleRange fsr   = FullScaleRange::FS_2,
+               IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
+               BWLimitFilter bwl    = BWLimitFilter::BWL_200,
+               NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C)
+    : slave(bus, cs, spiConfig), sensorSettings{fsr, iow, bwl, ntc, odr}
 {
 }
 
 bool ND015D::init()
 {
-    applyConfig(configuration);
-
-    ND015DDataExtended extendedData;
+    ND015DDataExtended extendedData{};
     uint8_t* data = reinterpret_cast<uint8_t*>(&extendedData);
 
     // setting the first 2 bytes of the data to the correct sensor settings
@@ -65,43 +63,9 @@ bool ND015D::init()
 
 bool ND015D::selfTest() { return true; }
 
-bool ND015D::applyConfig(Config config)
-{
-    sensorSettings.fsr = config.fsr;
-    sensorSettings.iow = config.iow;
-    sensorSettings.bwl = config.bwl;
-    sensorSettings.ntc = config.ntc;
-
-    if (config.odr < 0x100)
-    {
-        sensorSettings.odr = config.odr;
-    }
-    else
-    {
-        LOG_ERR(logger, "odr setting not valid, using default value (0x1C)");
-        sensorSettings.odr = 0x1C;
-    }
-
-    SPITransaction spi(slave);
-    uint16_t spiDataOut;
-
-    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
-
-    return true;
-}
-
 void ND015D::setOutputDataRate(uint8_t odr)
 {
-    if (odr < 0x100)
-    {
-        sensorSettings.odr = odr;
-    }
-    else
-    {
-        LOG_ERR(logger, "odr setting not valid, using default value (0x1C)");
-        rateByte = 0x1C;
-    }
+    sensorSettings.odr = odr;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;

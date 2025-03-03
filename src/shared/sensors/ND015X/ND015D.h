@@ -48,6 +48,12 @@ public:
         FS_15 = 0x07,  // 15.0 psi
     };
 
+    enum class IOWatchdogEnable : uint8_t
+    {
+        DISABLED = 0x00,
+        ENABLED  = 0x08,
+    };
+
     enum class BWLimitFilter : uint8_t
     {
         BWL_1   = 0x00,  // 1.0 Hz
@@ -60,25 +66,10 @@ public:
         BWL_200 = 0x70,  // 200 Hz
     };
 
-    enum class IOWatchdogEnable : uint8_t
-    {
-        DISABLED = 0x00,
-        ENABLED  = 0x08,
-    };
-
     enum class NotchEnable : uint8_t
     {
         DISABLED = 0x00,
         ENABLED  = 0x80,
-    };
-
-    struct Config
-    {
-        FullScaleRange fsr;
-        IOWatchdogEnable iow;
-        BWLimitFilter bwl;
-        NotchEnable ntc;
-        uint8_t odr;
     };
 
     /**
@@ -89,15 +80,8 @@ public:
      * @param spiConfig SPI bus configuration.
      */
     ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           Config config);
-
-    /**
-     * @brief Function to apply the configuration to the sensor.
-     *
-     * @param config Configuration to apply.
-     */
-
-    bool applyConfig(Config config);
+           FullScaleRange fsr, IOWatchdogEnable iow, BWLimitFilter bwl,
+           NotchEnable ntc, uint8_t odr);
 
     /**
      * @brief Initializes the sensor.
@@ -156,7 +140,6 @@ protected:
     ND015XData sampleImpl() override;
 
 private:
-    Config configuration;
     SPISlave slave;
     short range                        = 1;
     static constexpr char MODEL_NAME[] = "ND015D";
@@ -168,12 +151,15 @@ private:
      */
     struct
     {
-        uint8_t fsr : 3;  // full scale range
-        uint8_t iow : 1;  // IO watchdog enable
-        uint8_t bwl : 3;  // bandwidth limit filter
-        uint8_t ntc : 1;  // notch filter enable
-        uint8_t odr : 8;  // output data rate
+        FullScaleRange fsr : 3;    // full scale range
+        IOWatchdogEnable iow : 1;  // IO watchdog enable
+        BWLimitFilter bwl : 3;     // bandwidth limit filter
+        NotchEnable ntc : 1;       // notch filter enable
+        uint8_t odr : 8;           // output data rate
     } sensorSettings;
+
+    static_assert(sizeof(sensorSettings) == 2,
+                  "sensorSettings size is not 2 bytes");
 
     struct ND015DDataExtended
     {
