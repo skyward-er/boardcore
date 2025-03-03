@@ -42,10 +42,10 @@ void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
                          miosix::GpioPin intPin);
 
 /**
- * @brief Test the execution time of sampleImpl().
+ * @brief Test the execution time of sample().
  */
-void testSampleImplTime(SPIBus& bus, miosix::GpioPin csPin,
-                        SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
+void testSampleTime(SPIBus& bus, miosix::GpioPin csPin,
+                    SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
 
 /**
  * @brief Test fifo read.
@@ -77,7 +77,7 @@ int main()
     int2Pin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_2;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_64;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
@@ -86,20 +86,19 @@ int main()
 
     // acc
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_833;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_52;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // gyr
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_833;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_52;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     // fifo
     sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
     sensConfig.fifoTimestampDecimation =
         LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DEC_1;
-    sensConfig.fifoTemperatureBdr =
-        LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
+    sensConfig.fifoTemperatureBdr = LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::HZ_52;
 
     // interrupt
     sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::NOTHING;
@@ -109,7 +108,7 @@ int main()
 
     testFifoRead(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
-    // testSampleImplTime(bus, csPin, busConfiguration, sensConfig);
+    // testSampleTime(bus, csPin, busConfiguration, sensConfig);
 
     // testFifoFillingTime(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
@@ -159,7 +158,7 @@ void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
         }
 
         // empty the fifo
-        sens->sampleImpl();
+        sens->sample();
 
         // test time needed to fill the fifo
         uint64_t t0   = TimestampTimer::getTimestamp();
@@ -177,9 +176,8 @@ void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
     }
 }
 
-void testSampleImplTime(SPIBus& bus, miosix::GpioPin csPin,
-                        SPIBusConfig busConfiguration,
-                        LSM6DSRXConfig& sensConfig)
+void testSampleTime(SPIBus& bus, miosix::GpioPin csPin,
+                    SPIBusConfig busConfiguration, LSM6DSRXConfig& sensConfig)
 {
     std::unique_ptr<LSM6DSRX> sens =
         std::make_unique<LSM6DSRX>(bus, csPin, busConfiguration, sensConfig);
@@ -210,13 +208,15 @@ void testSampleImplTime(SPIBus& bus, miosix::GpioPin csPin,
     {
         uint64_t t0 = TimestampTimer::getTimestamp();
 
-        auto d = sens->sampleImpl();
+        sens->sample();
 
         uint64_t t1 = TimestampTimer::getTimestamp();
 
+        auto d = sens->getLastSample();
+
         uint64_t diff = t1 - t0;
 
-        std::cout << "sampleImpl() execution time(us): " << diff << "\n";
+        std::cout << "sample() execution time(us): " << diff << "\n";
         std::cout << "last fifo sample:\n";
         d.print(std::cout);
         std::cout << "\n\n\n";
