@@ -51,25 +51,25 @@ public:
     enum class IOWatchdogEnable : uint8_t
     {
         DISABLED = 0x00,
-        ENABLED  = 0x08,
+        ENABLED  = 0x01,
     };
 
     enum class BWLimitFilter : uint8_t
     {
         BWL_1   = 0x00,  // 1.0 Hz
-        BWL_2   = 0x10,  // 2.0 Hz
-        BWL_5   = 0x20,  // 5.0 Hz
-        BWL_10  = 0x30,  // 10  Hz
-        BWL_20  = 0x40,  // 20  Hz
-        BWL_50  = 0x50,  // 50  Hz
-        BWL_100 = 0x60,  // 100 Hz
-        BWL_200 = 0x70,  // 200 Hz
+        BWL_2   = 0x01,  // 2.0 Hz
+        BWL_5   = 0x02,  // 5.0 Hz
+        BWL_10  = 0x03,  // 10  Hz
+        BWL_20  = 0x04,  // 20  Hz
+        BWL_50  = 0x05,  // 50  Hz
+        BWL_100 = 0x06,  // 100 Hz
+        BWL_200 = 0x07,  // 200 Hz
     };
 
     enum class NotchEnable : uint8_t
     {
         DISABLED = 0x00,
-        ENABLED  = 0x80,
+        ENABLED  = 0x01,
     };
 
     /**
@@ -79,9 +79,12 @@ public:
      * @param cs Chip select GPIO pin.
      * @param spiConfig SPI bus configuration.
      */
+
     ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           FullScaleRange fsr, IOWatchdogEnable iow, BWLimitFilter bwl,
-           NotchEnable ntc, uint8_t odr);
+           FullScaleRange fsr   = FullScaleRange::FS_2,
+           IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
+           BWLimitFilter bwl    = BWLimitFilter::BWL_200,
+           NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
 
     /**
      * @brief Initializes the sensor.
