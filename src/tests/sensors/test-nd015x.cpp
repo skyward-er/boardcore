@@ -61,7 +61,7 @@ int main()
     ND015D sensor(bus, csPin, spiConfig);
     ND015XData sensorData;
 
-    if (sensor.init();)
+    if (sensor.init())
     {
         std::cout << "Sensor initialized correctly" << std::endl;
     }
