@@ -66,10 +66,6 @@ public:
      * @param spiConfig SPI bus configuration.
      */
     ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
-           uint8_t odr);
-
-    ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
            IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
            BWLimitFilter bwl    = BWLimitFilter::BWL_200,
            NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
