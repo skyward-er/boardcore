@@ -89,6 +89,9 @@ public:
 
     static DMADriver& instance();
 
+    /**
+     * @return True if the stream is not already in use.
+     */
     bool tryChannel(DMADefs::DMAStreamId id);
 
     /**
@@ -123,6 +126,9 @@ public:
 private:
     DMADriver();
 
+    /**
+     * @brief Wakeup the sleeping thread associated to the stream.
+     */
     void IRQwakeupThread(DMAStream& stream);
 
     miosix::FastMutex mutex;
@@ -146,18 +152,44 @@ public:
 
     /**
      * @brief Activate the stream. As soon as the stream is enabled, it
-     * can serve any DMA request from the peripheral connected to the stream.
+     * serves any DMA request from/to the peripheral connected to the stream.
      */
     void enable();
 
     void disable();
 
+    /**
+     * @brief Wait for the half transfer complete signal.
+     * The caller waits for the corresponding interrupt, if enabled.
+     * Otherwise it goes to polling mode on the flag.
+     */
     void waitForHalfTransfer();
 
+    /**
+     * @brief Wait for the transfer complete signal.
+     * The caller waits for the corresponding interrupt, if enabled.
+     * Otherwise it goes to polling mode on the flag.
+     */
     void waitForTransferComplete();
 
+    /**
+     * @brief Wait for the half transfer complete signal.
+     * The caller waits for the corresponding interrupt, if enabled.
+     * Otherwise it goes to polling mode on the flag.
+     * @param timeout_ns The maximum time that will be waited.
+     * @return True if the event is reached, false if the
+     * timeout expired.
+     */
     bool timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns);
 
+    /**
+     * @brief Wait for the transfer complete signal.
+     * The caller waits for the corresponding interrupt, if enabled.
+     * Otherwise it goes to polling mode on the flag.
+     * @param timeout_ns The maximum time that will be waited.
+     * @return True if the event is reached, false if the
+     * timeout expired.
+     */
     bool timedWaitForTransferComplete(std::chrono::nanoseconds timeout_ns);
 
     void setHalfTransferCallback(std::function<void()> callback);
@@ -278,7 +310,7 @@ private:
 
     /**
      * @brief Used to determine if the user thread is
-     * waiting to be awaked by an interrupt.
+     * waiting to be awakened by an interrupt.
      */
     miosix::Thread* waitingThread = nullptr;
 
@@ -294,9 +326,8 @@ private:
     std::function<void()> transferCompleteCallback;
     std::function<void()> errorCallback;
 
-    DMADefs::DMAStreamId id;
+    const DMADefs::DMAStreamId id;
     DMADefs::Channel currentChannel;
-    IRQn_Type irqNumber;
     DMA_Stream_TypeDef* registers;
 
     volatile uint32_t* ISR;   ///< Interrupt status register
