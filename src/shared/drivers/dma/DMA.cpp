@@ -507,6 +507,8 @@ void DMAStream::setup(DMATransaction& transaction)
         enableInterrupt = true;
     }
 
+    // Select the interrupt number
+    IRQn_Type irqNumber = DMADefs::irqNumberMapping[static_cast<uint8_t>(id)];
     if (enableInterrupt)
     {
         NVIC_SetPriority(irqNumber, 8);
@@ -674,9 +676,6 @@ DMAStream::DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel)
     // Refer to reference manual for the register bits structure
     int offset = static_cast<uint8_t>(id) % 4;
     IFindex    = (offset % 2) * 6 + (offset / 2) * 16;
-
-    // Select the interrupt
-    irqNumber = DMADefs::irqNumberMapping[static_cast<uint8_t>(id)];
 }
 
 DMAStream* DMAStreamGuard::operator->()
