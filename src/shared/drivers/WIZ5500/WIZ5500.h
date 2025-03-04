@@ -252,11 +252,13 @@ private:
     static constexpr int NUM_THREAD_WAIT_INFOS = 16;
     static constexpr int NUM_SOCKETS           = 8;
 
-    void waitForINTn(miosix::Lock<miosix::FastMutex>& l);
+    miosix::TimedWaitResult waitForINTn(miosix::Lock<miosix::FastMutex>& l,
+                                        long long until);
     int waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
                          uint8_t irq_mask, int timeout);
 
-    void runInterruptServiceRoutine(miosix::Lock<miosix::FastMutex>& l);
+    miosix::TimedWaitResult runInterruptServiceRoutine(
+        miosix::Lock<miosix::FastMutex>& l, long long until);
 
     void spiRead(uint8_t block, uint16_t address, uint8_t* data, size_t len);
     void spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
