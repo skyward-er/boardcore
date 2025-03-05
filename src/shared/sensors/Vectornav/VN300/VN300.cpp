@@ -314,6 +314,12 @@ void VN300::buildBinaryDataReduced(const VN300Defs::BinaryDataReduced& rawData,
     data.quaternionX         = rawData.quaternionX;
     data.quaternionY         = rawData.quaternionY;
     data.quaternionZ         = rawData.quaternionZ;
+
+    // Accelerometer
+    data.accelerationTimestamp = timestamp;
+    data.accelerationX         = rawData.accelX;
+    data.accelerationY         = rawData.accelY;
+    data.accelerationZ         = rawData.accelZ;
 }
 
 bool VN300::setAntennaA(VN300Defs::AntennaPosition antPos)
@@ -399,6 +405,7 @@ bool VN300::setBinaryOutput()
                 VN300Defs::BINARYGROUP_COMMON | VN300Defs::BINARYGROUP_GPS;
             commonGroup = VN300Defs::COMMONGROUP_YAWPITCHROLL |
                           VN300Defs::COMMONGROUP_QUATERNION |
+                          VN300Defs::COMMONGROUP_ACCEL |
                           VN300Defs::COMMONGROUP_ANGULARRATE;
             gnssGroup = VN300Defs::GPSGROUP_FIX | VN300Defs::GPSGROUP_POSLLA;
 

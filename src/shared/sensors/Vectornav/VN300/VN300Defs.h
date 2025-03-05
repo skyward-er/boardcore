@@ -277,6 +277,9 @@ struct __attribute__((packed)) BinaryDataReduced
     float angularX;
     float angularY;
     float angularZ;
+    float accelX;
+    float accelY;
+    float accelZ;
     uint8_t gpsFix;
     double latitude;
     double longitude;
