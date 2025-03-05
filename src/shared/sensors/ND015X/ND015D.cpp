@@ -29,13 +29,13 @@
 namespace Boardcore
 {
 ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               FullScaleRange fsr   = FullScaleRange::FS_2,
-               IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
-               BWLimitFilter bwl    = BWLimitFilter::BWL_200,
-               NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C)
+               FullScaleRange fsr, IOWatchdogEnable iow, BWLimitFilter bwl,
+               NotchEnable ntc, uint8_t odr)
     : slave(bus, cs, spiConfig), sensorSettings{fsr, iow, bwl, ntc, odr}
 {
 }
+
+ND015D::~ND015D() = default;
 
 bool ND015D::init()
 {
@@ -76,31 +76,31 @@ void ND015D::setOutputDataRate(uint8_t odr)
 
 void ND015D::setFullScaleRange(FullScaleRange fsr)
 {
-    sensorSettings.fsr = static_cast<uint8_t>(fsr);
+    sensorSettings.fsr = fsr;
 
-    switch (static_cast<uint8_t>(fsr))
+    switch (fsr)
     {
-        case FS_1:
+        case FullScaleRange::FS_1:
             range = 1;
             break;
 
-        case FS_2:
+        case FullScaleRange::FS_2:
             range = 2;
             break;
 
-        case FS_4:
+        case FullScaleRange::FS_4:
             range = 4;
             break;
 
-        case FS_5:
+        case FullScaleRange::FS_5:
             range = 5;
             break;
 
-        case FS_10:
+        case FullScaleRange::FS_10:
             range = 10;
             break;
 
-        case FS_15:
+        case FullScaleRange::FS_15:
             range = 15;
             break;
 
@@ -117,7 +117,7 @@ void ND015D::setFullScaleRange(FullScaleRange fsr)
 
 void ND015D::setIOWatchdog(IOWatchdogEnable iow)
 {
-    sensorSettings.iow = static_cast<uint8_t>(iow);
+    sensorSettings.iow = iow;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -128,7 +128,7 @@ void ND015D::setIOWatchdog(IOWatchdogEnable iow)
 
 void ND015D::setBWLimitFilter(BWLimitFilter bwl)
 {
-    sensorSettings.bwl = static_cast<uint8_t>(bwl);
+    sensorSettings.bwl = bwl;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -139,7 +139,7 @@ void ND015D::setBWLimitFilter(BWLimitFilter bwl)
 
 void ND015D::setNotch(NotchEnable ntc)
 {
-    sensorSettings.ntc = static_cast<uint8_t>(ntc);
+    sensorSettings.ntc = ntc;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;

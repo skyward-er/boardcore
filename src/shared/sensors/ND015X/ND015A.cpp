@@ -29,9 +29,8 @@
 namespace Boardcore
 {
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
-               BWLimitFilter bwl    = BWLimitFilter::BWL_200,
-               NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C)
+               IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
+               uint8_t odr)
     : slave(bus, cs, spiConfig), sensorSettings{0x7, iow, bwl, ntc, odr}
 {
 }
@@ -75,7 +74,7 @@ void ND015A::setOutputDataRate(uint8_t odr)
 
 void ND015A::setIOWatchdog(IOWatchdogEnable iow)
 {
-    sensorSettings.iow = static_cast<uint8_t>(iow);
+    sensorSettings.iow = iow;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -86,7 +85,7 @@ void ND015A::setIOWatchdog(IOWatchdogEnable iow)
 
 void ND015A::setBWLimitFilter(BWLimitFilter bwl)
 {
-    sensorSettings.bwl = static_cast<uint8_t>(bwl);
+    sensorSettings.bwl = bwl;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;
@@ -97,7 +96,7 @@ void ND015A::setBWLimitFilter(BWLimitFilter bwl)
 
 void ND015A::setNotch(NotchEnable ntc)
 {
-    sensorSettings.ntc = static_cast<uint8_t>(ntc);
+    sensorSettings.ntc = ntc;
 
     SPITransaction spi(slave);
     uint16_t spiDataOut;

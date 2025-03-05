@@ -126,7 +126,7 @@ protected:
 
 private:
     SPISlave slave;
-    static constexpr char MODEL_NAME[] = "ND015A";
+    static inline constexpr char MODEL_NAME[] = "ND015A";
 
     /**
      * @brief settings for the mode control register,

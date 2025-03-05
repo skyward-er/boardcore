@@ -86,6 +86,8 @@ public:
            BWLimitFilter bwl    = BWLimitFilter::BWL_200,
            NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
 
+    ~ND015D() override;
+
     /**
      * @brief Initializes the sensor.
      *
@@ -144,8 +146,8 @@ protected:
 
 private:
     SPISlave slave;
-    short range                        = 1;
-    static constexpr char MODEL_NAME[] = "ND015D";
+    short range                               = 1;
+    static inline constexpr char MODEL_NAME[] = "ND015D";
 
     /**
      * @brief settings for the mode control register,

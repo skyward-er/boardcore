@@ -21,7 +21,6 @@
  */
 
 #include <miosix.h>
-#include <sensors/ND015X/ND015XData.h>
 
 #include <iostream>
 
@@ -57,7 +56,7 @@ int main()
     SPIBusConfig spiConfig;
     SPIBus bus(SPI1);
 
-    // ND015A sensor(bus, cs, spiConfig);
+    // ND015A sensor(bus, csPin, spiConfig);
     ND015D sensor(bus, csPin, spiConfig);
     ND015XData sensorData;
 
