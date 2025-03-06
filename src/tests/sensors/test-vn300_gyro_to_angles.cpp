@@ -21,6 +21,8 @@
  */
 
 #include <drivers/timer/TimestampTimer.h>
+#include <logAnglesData.h>
+#include <logger/Logger.h>
 #include <sensors/Vectornav/VN300/VN300.h>
 
 #include <Eigen/Dense>
@@ -35,31 +37,6 @@ using namespace Eigen;
 
 using namespace miosix;
 using namespace Boardcore;
-
-struct LogAngles
-{
-    float roll, pitch, yaw;
-
-    LogAngles() : roll{0}, pitch{0}, yaw(0) {}
-    LogAngles(float Roll, float Pitch, float Yaw)
-        : roll{Roll}, pitch{Pitch}, yaw(Yaw)
-    {
-    }
-
-    void getAngles(float x, float y, float z)
-    {
-        this->roll  = x * (180 / M_PI);
-        this->pitch = y * (180 / M_PI);
-        this->yaw   = z * (180 / M_PI);
-    }
-
-    static std::string header() { return "Roll,Pitch,Yaw,quaternionZ\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << roll << "," << pitch << "," << yaw << "\n";
-    }
-};
 
 void computeEulerAngles(const Vector3d& gyro, double dt, Vector3d& angles)
 {
@@ -110,6 +87,8 @@ int main()
         return 0;
     }
 
+    Logger::getInstance().start();
+
     uint64_t t0     = TimestampTimer::getTimestamp();
     Vector3d angles = {0, 0, 0};
 
@@ -123,7 +102,8 @@ int main()
 
             sensor.sample();
             sample = sensor.getLastSample();
-            Logger::getInstance().log(sample);  // getting last sample & logs
+            Logger::getInstance().log<VN300Data>(
+                sample);  // getting last sample & logs
 
             Vector3d gyro = {sample.angularSpeedX, sample.angularSpeedY,
                              sample.angularSpeedZ};
@@ -133,7 +113,7 @@ int main()
             angles_log.getAngles(angles(0), angles(1), angles(2));
             printf("Angles: %f, %f, %f\n", angles_log.pitch, angles_log.roll,
                    angles_log.yaw);
-            Boardcore::Logger::getInstance().log(angles_log);
+            Boardcore::Logger::getInstance().log<LogAngles>(angles_log);
 
             t0 = TimestampTimer::getTimestamp();
         }
