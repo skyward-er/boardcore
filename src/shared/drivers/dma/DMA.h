@@ -24,7 +24,6 @@
 
 #include <kernel/scheduler/scheduler.h>
 #include <kernel/sync.h>
-#include <utils/TimedPollingFlag.h>
 
 #include <chrono>
 #include <functional>
@@ -405,13 +404,15 @@ private:
             // Pool the flag if the user did not enable the interrupt
             if (timeout_ns >= 0)
             {
-                // TODO: this doesn't work, because the methods passed as
-                // getEventStatus do not update the flags (reading them
-                // by calling readFlags()).
-                // This means that it always polls a value that will
-                // never become true, then exit when the timeout is
-                // reached.
-                result = timedPollingFlag(getEventStatus, timeout_ns);
+                const long long start = miosix::getTime();
+
+                do
+                {
+                    readFlags();
+                } while (!getEventStatus() &&
+                         miosix::getTime() - start < timeout_ns);
+
+                result = getEventStatus();
             }
             else
             {
