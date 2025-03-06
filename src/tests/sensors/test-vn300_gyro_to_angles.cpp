@@ -21,7 +21,7 @@
  */
 
 #include <drivers/timer/TimestampTimer.h>
-#include <logAnglesData.h>
+#include <sensors/logAnglesData.h>
 #include <logger/Logger.h>
 #include <sensors/Vectornav/VN300/VN300.h>
 
@@ -50,11 +50,13 @@ void computeEulerAngles(const Vector3d& gyro, double dt, Vector3d& angles)
             cos(ass(1));  // rotation matrix angular_rate --> body_rate
 
     Vector3d angular_rate = G.transpose() * body_rate;
-
+    printf("angles -->%f,%f,%f\n",angles(0),angles(1),angles(2));
+    printf("angular_rate -->%f,%f,%f\n",angular_rate(0),angular_rate(1),angular_rate(2));
+    printf("dt: %f", (dt / 1000000));
     Vector3d new_angles =
-        angles + angular_rate * (dt / 10000000);  // integration
+        angles + angular_rate * (dt / 1000000);  // integration
     angles = new_angles;
-
+    printf("new_angles -->%f,%f,%f\n",angles(0),angles(1),angles(2));
     // rad --> deg
 }
 

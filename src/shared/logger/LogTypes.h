@@ -80,6 +80,7 @@
 #include <sensors/analog/pressure/nxp/MPXH6400AData.h>
 #include <sensors/analog/pressure/nxp/MPXHZ6130AData.h>
 #include <sensors/logAnglesData.h>
+#include <test/AnnoyingScalar.h>
 
 #include <fstream>
 #include <iostream>
@@ -184,6 +185,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<FollowerState>();
     ds.registerType<LogAntennasCoordinates>();
     ds.registerType<LogRocketCoordinates>();
+    ds.registerType<LogAngles>();
 }
 
 }  // namespace LogTypes
