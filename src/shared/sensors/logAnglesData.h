@@ -1,6 +1,5 @@
 #include <iostream>
 
-namespace Boardcore{
 struct LogAngles
 {
     float roll, pitch, yaw;
@@ -25,4 +24,3 @@ struct LogAngles
         os << roll << "," << pitch << "," << yaw << "\n";
     }
 };
-}
