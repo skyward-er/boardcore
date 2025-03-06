@@ -487,6 +487,9 @@ sbs_target(test-lps22df stm32f767zi_nucleo)
 add_executable(test-lsm6dsrx src/tests/sensors/test-lsm6dsrx.cpp)
 sbs_target(test-lsm6dsrx stm32f407vg_stm32f4discovery)
 
+add_executable(test-gyro_to_angles src/tests/sensors/test-vn300_gyro_to_angles.cpp)
+sbs_target(test-gyro_to_angles stm32f767zi_lyra_gs)
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
