@@ -20,18 +20,15 @@
  * THE SOFTWARE.
  */
 
-
-#include <iostream>
-#include <Eigen/Dense>
-#include <vector>
-#include <cmath>
-
-
-#include <sensors/Vectornav/VN300/VN300.h>
 #include <drivers/timer/TimestampTimer.h>
+#include <sensors/Vectornav/VN300/VN300.h>
+
+#include <Eigen/Dense>
+#include <cmath>
+#include <iostream>
+#include <vector>
+
 #include "interfaces-impl/hwmapping.h"
-
-
 
 using namespace std;
 using namespace Eigen;
@@ -39,69 +36,62 @@ using namespace Eigen;
 using namespace miosix;
 using namespace Boardcore;
 
+struct LogAngles
+{
+    float roll, pitch, yaw;
 
-
-struct LogAngles{
-
-    float roll,pitch,yaw;
-
-    LogAngles() : roll{0}, pitch{0},yaw(0) {}
-    LogAngles(float Roll, float Pitch,float Yaw) : roll{Roll}, pitch{Pitch},yaw(Yaw) {}
-
-    void getAngles(float x, float y, float z){
-        this->roll = x;
-        this->pitch = y;
-        this->yaw = z;
-    }
-
-    static std::string header()
+    LogAngles() : roll{0}, pitch{0}, yaw(0) {}
+    LogAngles(float Roll, float Pitch, float Yaw)
+        : roll{Roll}, pitch{Pitch}, yaw(Yaw)
     {
-        return "Roll,Pitch,Yaw,quaternionZ\n";
     }
+
+    void getAngles(float x, float y, float z)
+    {
+        this->roll  = x * (180 / M_PI);
+        this->pitch = y * (180 / M_PI);
+        this->yaw   = z * (180 / M_PI);
+    }
+
+    static std::string header() { return "Roll,Pitch,Yaw,quaternionZ\n"; }
 
     void print(std::ostream& os) const
     {
         os << roll << "," << pitch << "," << yaw << "\n";
     }
-
 };
 
+void computeEulerAngles(const Vector3d& gyro, double dt, Vector3d& angles)
+{
+    Vector3d body_rate = gyro;
+    Vector3d ass       = angles;
 
+    Matrix3d G;
+    G << cos(ass(1)), 0, -cos(ass(0)) * sin(ass(1)), 0, 1, sin(ass(0)),
+        sin(ass(1)), 0,
+        cos(ass(0)) *
+            cos(ass(1));  // rotation matrix angular_rate --> body_rate
 
-void computeEulerAngles(const Vector3d& gyro, double dt, Vector3d& angles) {
-   
-        Vector3d body_rate = gyro;
-        Vector3d ass = angles;
-        
-        Matrix3d G;
-        G << cos(ass(1)), 0, -cos(ass(0)) * sin(ass(1)),
-             0,           1,  sin(ass(0)),
-             sin(ass(1)), 0,  cos(ass(0)) * cos(ass(1)); //rotation matrix angular_rate --> body_rate
+    Vector3d angular_rate = G.transpose() * body_rate;
 
-        Vector3d angular_rate = G.transpose() * body_rate;
+    Vector3d new_angles =
+        angles + angular_rate * (dt / 10000000);  // integration
+    angles = new_angles;
 
-        Vector3d new_angles = angles + angular_rate * dt; //integration
-        angles = new_angles;
-    
-    //rad --> deg
-    for(int i = 0 ; i<3; i++) angles(i) *= (180/ M_PI);
-
+    // rad --> deg
 }
 
-
-int main(){
-
-    const double dt = 20000; // [us]
+int main()
+{
+    const double dt = 20000;  // [us]
     LogAngles angles_log;
-    
 
     VN300Data sample;
 
     const int baud = 115200;
     USART usart(USART2, baud);
     VN300 sensor(usart, baud, VN300Defs::SampleOptions::FULL,
-                 VN300::CRCOptions::CRC_ENABLE_8,
-                 std::chrono::milliseconds(10));
+                 VN300::CRCOptions::CRC_ENABLE_8, std::chrono::seconds(2));
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -120,33 +110,37 @@ int main(){
         return 0;
     }
 
-    
-    uint64_t t0 = TimestampTimer::getTimestamp();
-    Vector3d angles = {0,0,0};
-    
-    while(true){
+    uint64_t t0     = TimestampTimer::getTimestamp();
+    Vector3d angles = {0, 0, 0};
 
+    while (true)
+    {
         uint64_t t1 = TimestampTimer::getTimestamp();
 
-        if(t1 - t0 >= dt){
+        if (t1 - t0 >= dt)
+        {
+            printf("Sampling\n");
 
             sensor.sample();
-            Logger::getInstance().log(sensor.getLastSample()); // getting last sample & log
+            sample = sensor.getLastSample();
+            Logger::getInstance().log(sample);  // getting last sample & logs
 
-            Vector3d gyro = {sample.angularSpeedX, sample.angularSpeedY, sample.angularSpeedZ};
-            
-            computeEulerAngles(gyro,dt,angles);
+            Vector3d gyro = {sample.angularSpeedX, sample.angularSpeedY,
+                             sample.angularSpeedZ};
 
-            angles_log.getAngles(angles(0),angles(1),angles(2));
+            computeEulerAngles(gyro, dt, angles);
+
+            angles_log.getAngles(angles(0), angles(1), angles(2));
+            printf("Angles: %f, %f, %f\n", angles_log.pitch, angles_log.roll,
+                   angles_log.yaw);
             Boardcore::Logger::getInstance().log(angles_log);
 
             t0 = TimestampTimer::getTimestamp();
         }
-    }
-    
 
+        Thread::sleep(20);
+    }
 
     return 0;
 }
-
 
