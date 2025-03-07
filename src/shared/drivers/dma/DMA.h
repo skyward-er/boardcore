@@ -213,9 +213,11 @@ public:
     /**
      * @brief Set the number of bytes to be exchanged during a
      * dma transaction. Useful in case you don't want to change
-     * the entire configuration.
+     * the entire configuration. Use while the stream is not
+     * enabled.
+     * @return True if the operation succeeded, false otherwise.
      */
-    void setNumberOfDataItems(const uint16_t nBytes);
+    bool setNumberOfDataItems(const uint16_t nBytes);
 
     /**
      * @brief Select the channel to be used by the stream during
