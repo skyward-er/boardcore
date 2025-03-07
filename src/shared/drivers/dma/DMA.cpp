@@ -613,11 +613,18 @@ void DMAStream::readFlags()
     directModeErrorFlag  = flags & DMA_LISR_DMEIF0;
 }
 
-void DMAStream::setNumberOfDataItems(const uint16_t nBytes)
+bool DMAStream::setNumberOfDataItems(const uint16_t nBytes)
 {
-    // TODO: assert that the stream is disabled while doing it
+    // Verify that the stream is disabled while doing it
+    if (registers->CR & DMA_SxCR_EN != 0)
+    {
+        // Cannot proceed
+        return false;
+    }
+
     currentSetup.numberOfDataItems = nBytes;
     registers->NDTR                = nBytes;
+    return true;
 }
 
 void DMAStream::setChannel(const DMADefs::Channel channel)
