@@ -88,8 +88,8 @@ using rx = Gpio<GPIOA_BASE, 11>;
 namespace timers
 {
 using tim1ch1  = Gpio<GPIOA_BASE, 8>;
-using tim4ch1  = Gpio<GPIOD_BASE, 12>;
 using tim3ch1  = Gpio<GPIOC_BASE, 6>;
+using tim4ch1  = Gpio<GPIOD_BASE, 12>;
 using tim8ch2  = Gpio<GPIOC_BASE, 7>;
 using tim9ch1  = Gpio<GPIOA_BASE, 2>;
 using tim11ch1 = Gpio<GPIOB_BASE, 9>;
