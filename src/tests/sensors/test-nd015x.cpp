@@ -64,7 +64,9 @@ int main()
     // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig());
     ND015XData sensorData;
 
-    if (sensor.init())
+    sensor.init();
+
+    if (sensor.checkModelMatch())
     {
         std::cout << "Sensor initialized correctly" << std::endl;
     }

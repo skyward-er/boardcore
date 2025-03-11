@@ -58,6 +58,20 @@ ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
 
 bool ND015D::init()
 {
+    // setting the sensor settings to the correct values
+    SPITransaction spi(slave);
+    uint16_t spiDataOut;
+
+    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    spi.transfer16(spiDataOut);
+
+    return true;
+}
+
+bool ND015D::selfTest() { return true; }
+
+bool ND015D::checkModelMatch()
+{
     ND015DDataExtended extendedData{};
     uint8_t* data = reinterpret_cast<uint8_t*>(&extendedData);
 
@@ -86,8 +100,6 @@ bool ND015D::init()
     }
     return true;
 }
-
-bool ND015D::selfTest() { return true; }
 
 void ND015D::setOutputDataRate(uint8_t odr)
 {
