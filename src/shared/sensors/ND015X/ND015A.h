@@ -82,7 +82,7 @@ public:
     /**
      * @brief Initializes the sensor.
      *
-     * @return True if model number matches, false otherwise.
+     * @return Always returns true.
      */
     bool init() override;
 
@@ -124,6 +124,18 @@ public:
      * @param ntc Notch filter setting.
      */
     void setNotch(NotchEnable ntc);
+
+    /**
+     * @brief   Checks if the sensor model matches the expected model.
+     *
+     * @return  True if the model matches, false otherwise.
+     *
+     * @warning The function might return false even when it should not as the
+     *          SPI transaction sometimes ads some zeroes when it should not.
+     *          This is because the sensore requires a clock cycle greater than
+     *          the one we can provide
+     */
+    bool checkModelMatch();
 
 protected:
     ND015XData sampleImpl() override;
