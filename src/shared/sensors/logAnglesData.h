@@ -1,9 +1,11 @@
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
-namespace Boardcore{
+namespace Boardcore
+{
 struct LogAngles
 {
+    uint64_t timestamp;
     float roll, pitch, yaw;
 
     LogAngles() : roll{0}, pitch{0}, yaw(0) {}
@@ -19,11 +21,14 @@ struct LogAngles
         this->yaw   = z * (180 / M_PI);
     }
 
-    static std::string header() { return "Roll,Pitch,Yaw,quaternionZ\n"; }
+    static std::string header()
+    {
+        return "Timestamp,Roll,Pitch,Yaw,quaternionZ\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << roll << "," << pitch << "," << yaw << "\n";
+        os << timestamp << "," << roll << "," << pitch << "," << yaw << "\n";
     }
 };
-}
+}  // namespace Boardcore

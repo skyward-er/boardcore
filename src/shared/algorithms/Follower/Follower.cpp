@@ -50,9 +50,8 @@ float minimizeRotation(float angle)
     return angle;
 }
 
-Follower::Follower(std::chrono::milliseconds updatePeriod)
-    : updatePeriod(static_cast<float>(updatePeriod.count()) / 1000),
-      targetAngles({0, 0, 0})
+Follower::Follower(std::chrono::milliseconds updPeriod)
+    : updatePeriod{updPeriod}, targetAngles({0, 0, 0})
 {
 }
 
@@ -168,9 +167,13 @@ void Follower::step()
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =
-        std::abs((diffAngles.yaw * 1000) / (360 * updatePeriod));
+        std::abs((diffAngles.yaw) /
+                 (360 * (static_cast<float>(updatePeriod.count()) / 1000)));
+    TRACE("[Follower] horizontalSpeed is: %f\n", horizontalSpeed);
     float verticalSpeed =
-        std::abs((diffAngles.pitch * 1000) / (360 * updatePeriod));
+        std::abs((diffAngles.pitch) /
+                 (360 * (static_cast<float>(updatePeriod.count()) / 1000)));
+    TRACE("[Follower] Vertical speed is: %f\n", horizontalSpeed);
 
     // Update the state of the follower
     FollowerState newState;

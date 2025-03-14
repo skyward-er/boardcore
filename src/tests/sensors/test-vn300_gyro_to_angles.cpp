@@ -21,9 +21,9 @@
  */
 
 #include <drivers/timer/TimestampTimer.h>
-#include <sensors/logAnglesData.h>
 #include <logger/Logger.h>
 #include <sensors/Vectornav/VN300/VN300.h>
+#include <sensors/logAnglesData.h>
 
 #include <Eigen/Dense>
 #include <cmath>
@@ -50,13 +50,14 @@ void computeEulerAngles(const Vector3d& gyro, double dt, Vector3d& angles)
             cos(ass(1));  // rotation matrix angular_rate --> body_rate
 
     Vector3d angular_rate = G.transpose() * body_rate;
-    printf("angles -->%f,%f,%f\n",angles(0),angles(1),angles(2));
-    printf("angular_rate -->%f,%f,%f\n",angular_rate(0),angular_rate(1),angular_rate(2));
+    printf("angles -->%f,%f,%f\n", angles(0), angles(1), angles(2));
+    printf("angular_rate -->%f,%f,%f\n", angular_rate(0), angular_rate(1),
+           angular_rate(2));
     printf("dt: %f", (dt / 1000000));
     Vector3d new_angles =
         angles + angular_rate * (dt / 1000000);  // integration
     angles = new_angles;
-    printf("new_angles -->%f,%f,%f\n",angles(0),angles(1),angles(2));
+    printf("new_angles -->%f,%f,%f\n", angles(0), angles(1), angles(2));
     // rad --> deg
 }
 
@@ -91,6 +92,10 @@ int main()
 
     Logger::getInstance().start();
 
+    printf("[GYRO] LOG NR %d \n", Logger::getInstance().getStats().logNumber);
+
+    Thread::sleep(100);
+
     uint64_t t0     = TimestampTimer::getTimestamp();
     Vector3d angles = {0, 0, 0};
 
@@ -110,8 +115,9 @@ int main()
             Vector3d gyro = {sample.angularSpeedX, sample.angularSpeedY,
                              sample.angularSpeedZ};
 
-            computeEulerAngles(gyro, dt, angles);
+            computeEulerAngles(gyro, t1 - t0, angles);
 
+            angles_log.timestamp = t1;
             angles_log.getAngles(angles(0), angles(1), angles(2));
             printf("Angles: %f, %f, %f\n", angles_log.pitch, angles_log.roll,
                    angles_log.yaw);
@@ -119,6 +125,8 @@ int main()
 
             t0 = TimestampTimer::getTimestamp();
         }
+        printf("[GYRO] LOG NR %d \n",
+               Logger::getInstance().getStats().logNumber);
 
         Thread::sleep(20);
     }
