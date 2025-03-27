@@ -77,7 +77,7 @@ enum class DMAStreamId : uint8_t
  */
 enum class Channel : uint32_t
 {
-    // The first 8 channels are valid for all supported channels
+    // The first 8 channels are valid for all supported architectures
     CHANNEL0 = 0,
     CHANNEL1 = DMA_SxCR_CHSEL_0,
     CHANNEL2 = DMA_SxCR_CHSEL_1,
@@ -85,15 +85,14 @@ enum class Channel : uint32_t
     CHANNEL4 = DMA_SxCR_CHSEL_2,
     CHANNEL5 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_0,
     CHANNEL6 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_1,
-    CHANNEL7 = DMA_SxCR_CHSEL,
+    CHANNEL7 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0,
 
 // stm32f767 also has channels from 8 to 11
 #ifdef STM32F767xx
-    // TODO: verify
     CHANNEL8  = DMA_SxCR_CHSEL_3,
     CHANNEL9  = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_0,
     CHANNEL10 = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_1,
-    CHANNEL11 = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_2,
+    CHANNEL11 = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0,
 #endif  // STM32F767xx
 };
 
