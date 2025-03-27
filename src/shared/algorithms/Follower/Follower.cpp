@@ -50,9 +50,8 @@ float minimizeRotation(float angle)
     return angle;
 }
 
-Follower::Follower(std::chrono::milliseconds updatePeriod)
-    : updatePeriod(static_cast<float>(updatePeriod.count()) / 1000),
-      targetAngles({0, 0, 0})
+Follower::Follower(std::chrono::milliseconds updPeriod)
+    : updatePeriod{updPeriod}, targetAngles({0, 0, 0})
 {
 }
 
@@ -116,6 +115,18 @@ AntennaAngles Follower::getTargetAngles()
     return targetAngles;
 }
 
+bool Follower::setMaxGain(float yawGainNew, float pitchGainNew)
+{
+    // In case of negative or over the limit values, do not set the gains
+    if (yawGainNew < 0 || yawGainNew > YAW_GAIN_LIMIT || pitchGainNew < 0 ||
+        pitchGainNew > PITCH_GAIN_LIMIT)
+        return false;
+
+    yawGain   = yawGainNew;
+    pitchGain = pitchGainNew;
+    return true;
+}
+
 bool Follower::init()
 {
     if (isInit)
@@ -163,14 +174,20 @@ void Follower::step()
     }
 
     // Rotate in the shortest direction
-    diffAngles.yaw   = YAW_GAIN * minimizeRotation(diffAngles.yaw);
-    diffAngles.pitch = PITCH_GAIN * minimizeRotation(diffAngles.pitch);
+    diffAngles.yaw =
+        std::min(yawGain, YAW_GAIN_LIMIT) * minimizeRotation(diffAngles.yaw);
+    diffAngles.pitch = std::min(pitchGain, PITCH_GAIN_LIMIT) *
+                       minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =
-        std::abs((diffAngles.yaw * 1000) / (360 * updatePeriod));
+        std::abs((diffAngles.yaw) /
+                 (360 * (static_cast<float>(updatePeriod.count()) / 1000)));
+    TRACE("[Follower] horizontalSpeed is: %f\n", horizontalSpeed);
     float verticalSpeed =
-        std::abs((diffAngles.pitch * 1000) / (360 * updatePeriod));
+        std::abs((diffAngles.pitch) /
+                 (360 * (static_cast<float>(updatePeriod.count()) / 1000)));
+    TRACE("[Follower] Vertical speed is: %f\n", horizontalSpeed);
 
     // Update the state of the follower
     FollowerState newState;
