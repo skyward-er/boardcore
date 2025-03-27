@@ -106,8 +106,12 @@ int main()
         if (t1 - t0 >= dt)
         {
             printf("Sampling\n");
-
+            uint64_t t_ = TimestampTimer::getTimestamp();
             sensor.sample();
+            printf("sample dt = %llu \n",TimestampTimer::getTimestamp() - t_);
+
+            t1 = TimestampTimer::getTimestamp();
+
             sample = sensor.getLastSample();
             Logger::getInstance().log<VN300Data>(
                 sample);  // getting last sample & logs
@@ -128,7 +132,7 @@ int main()
         printf("[GYRO] LOG NR %d \n",
                Logger::getInstance().getStats().logNumber);
 
-        Thread::sleep(20);
+        Thread::sleep(1);
     }
 
     return 0;
