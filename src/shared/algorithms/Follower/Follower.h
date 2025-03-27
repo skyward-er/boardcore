@@ -144,8 +144,8 @@ private:
      */
     Eigen::Vector3f getRocketNASOrigin();
 
-    // actuation update period [s]
-    float updatePeriod;
+    // actuation update period [ms]
+    std::chrono::milliseconds updatePeriod;
     // Initialization flag
     std::atomic<bool> isInit{false};
 
