@@ -77,6 +77,7 @@ enum class DMAStreamId : uint8_t
  */
 enum class Channel : uint32_t
 {
+    // The first 8 channels are valid for all supported channels
     CHANNEL0 = 0,
     CHANNEL1 = DMA_SxCR_CHSEL_0,
     CHANNEL2 = DMA_SxCR_CHSEL_1,
@@ -85,6 +86,15 @@ enum class Channel : uint32_t
     CHANNEL5 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_0,
     CHANNEL6 = DMA_SxCR_CHSEL_2 | DMA_SxCR_CHSEL_1,
     CHANNEL7 = DMA_SxCR_CHSEL,
+
+// stm32f767 also has channels from 8 to 11
+#ifdef STM32F767xx
+    // TODO: verify
+    CHANNEL8  = DMA_SxCR_CHSEL_3,
+    CHANNEL9  = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_0,
+    CHANNEL10 = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_1,
+    CHANNEL11 = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_2,
+#endif  // STM32F767xx
 };
 
 /**
@@ -106,6 +116,7 @@ enum class Peripherals : uint8_t
     PE_SPI5_RX,
     PE_SPI6_TX,
     PE_SPI6_RX,
+    PE_QUADSPI,
     PE_USART1_TX,
     PE_USART1_RX,
     PE_USART2_TX,
@@ -128,6 +139,8 @@ enum class Peripherals : uint8_t
     PE_I2C2_RX,
     PE_I2C3_TX,
     PE_I2C3_RX,
+    PE_I2C4_TX,
+    PE_I2C4_RX,
     PE_I2S2_EXT_TX,
     PE_I2S2_EXT_RX,
     PE_I2S3_EXT_TX,
@@ -175,13 +188,24 @@ enum class Peripherals : uint8_t
     PE_ADC2,
     PE_ADC3,
     PE_SAI1_A,
+    PE_SAI2_A,
     PE_SAI1_B,
+    PE_SAI2_B,
     PE_DCMI,
     PE_SDIO,
+    PE_SDMMC1,
+    PE_SDMMC2,
     PE_CRYP_OUT,
     PE_CRYP_IN,
     PE_HASH_IN,
-
+    PE_SPDIFRX_DT,
+    PE_SPDIFRX_CS,
+    PE_DFSDM1_FLT0,
+    PE_DFSDM1_FLT1,
+    PE_DFSDM1_FLT2,
+    PE_DFSDM1_FLT3,
+    PE_JPEG_IN,
+    PE_JPEG_OUT,
 };
 
 /**
@@ -194,6 +218,11 @@ extern const IRQn_Type irqNumberMapping[];
 /**
  * @brief Maps the peripherals to the dma streams (and
  * the corresponding channel) that are connected with.
+ *
+ * Supported architectures:
+ * - STM32F407xx
+ * - STM32F429xx
+ * - STM32F767xx
  */
 extern const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
     mapPeripherals;
