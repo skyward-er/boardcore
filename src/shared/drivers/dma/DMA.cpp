@@ -616,7 +616,7 @@ void DMAStream::readFlags()
 bool DMAStream::setNumberOfDataItems(const uint16_t nBytes)
 {
     // Verify that the stream is disabled while doing it
-    if (registers->CR & DMA_SxCR_EN != 0)
+    if ((registers->CR & DMA_SxCR_EN) != 0)
     {
         // Cannot proceed
         return false;
