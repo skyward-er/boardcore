@@ -30,11 +30,6 @@
 #define MIOSIX_SENSOR_LIS2MDL_SPI SPI3
 #define MIOSIX_SENSOR_ADS131M08_SPI SPI4
 
-#define MIOSIX_SERVOS_1_TIM TIM3
-#define MIOSIX_SERVOS_1_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_2_TIM TIM1
-#define MIOSIX_SERVOS_2_CHANNEL CHANNEL_1
-
 namespace miosix
 {
 
@@ -127,9 +122,19 @@ namespace H3LIS331DL
 using cs = Gpio<GPIOB_BASE, 7>;
 }
 
-namespace LSM6DSRX
+namespace LSM6DSRX0
 {
 using cs = Gpio<GPIOG_BASE, 12>;
+}
+
+namespace LSM6DSRX1
+{
+using cs = Gpio<GPIOG_BASE, 11>;
+}
+
+namespace thermocouple
+{
+using cs = Gpio<GPIOD_BASE, 11>;
 }
 
 }  // namespace sensors
@@ -139,6 +144,33 @@ namespace adcs
 using vbat     = miosix::interfaces::adcs::adc12in14;
 using servoCur = miosix::interfaces::adcs::adc12in9;
 }  // namespace adcs
+
+namespace servos
+{
+#define MIOSIX_SERVOS_0_TIM TIM3
+#define MIOSIX_SERVOS_0_CHANNEL CHANNEL_1
+using servo0 = miosix::interfaces::timers::tim3ch1;
+
+#define MIOSIX_SERVOS_1_TIM TIM1
+#define MIOSIX_SERVOS_1_CHANNEL CHANNEL_1
+using servo1 = miosix::interfaces::timers::tim1ch1;
+
+#define MIOSIX_SERVOS_2_TIM TIM8
+#define MIOSIX_SERVOS_2_CHANNEL CHANNEL_2
+using servo2 = miosix::interfaces::timers::tim8ch2;
+
+#define MIOSIX_SERVOS_3_TIM TIM9
+#define MIOSIX_SERVOS_3_CHANNEL CHANNEL_1
+using servo3 = miosix::interfaces::timers::tim9ch1;
+
+#define MIOSIX_SERVOS_4_TIM TIM11
+#define MIOSIX_SERVOS_4_CHANNEL CHANNEL_1
+using servo4 = miosix::interfaces::timers::tim11ch1;
+
+#define MIOSIX_SERVOS_5_TIM TIM4
+#define MIOSIX_SERVOS_5_CHANNEL CHANNEL_1
+using servo5 = miosix::interfaces::timers::tim4ch1;
+}  // namespace servos
 
 namespace gpios
 {

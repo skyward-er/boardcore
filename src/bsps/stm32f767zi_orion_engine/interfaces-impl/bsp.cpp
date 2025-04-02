@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio, Davide Mor
+/* Copyright (c) 2025 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio, Davide Mor, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -314,9 +314,12 @@ void IRQbspInit()
     sensors::LIS2MDL::cs::high();
     sensors::H3LIS331DL::cs::mode(Mode::OUTPUT);
     sensors::H3LIS331DL::cs::high();
-    sensors::LSM6DSRX::cs::mode(Mode::OUTPUT);
-    sensors::LSM6DSRX::cs::high();
-    // TODO: are there other sensors?
+    sensors::LSM6DSRX0::cs::mode(Mode::OUTPUT);
+    sensors::LSM6DSRX0::cs::high();
+    sensors::LSM6DSRX1::cs::mode(Mode::OUTPUT);
+    sensors::LSM6DSRX1::cs::high();
+    sensors::thermocouple::cs::mode(Mode::OUTPUT);
+    sensors::thermocouple::cs::high();
 
     gpios::boardLed::mode(Mode::OUTPUT);
     gpios::boardLed::low();
