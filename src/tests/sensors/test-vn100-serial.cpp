@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+ * Author: Matteo Pignataro, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
 #include <inttypes.h>
 #include <sensors/Vectornav/VN100/VN100Serial.h>
 
@@ -30,7 +29,6 @@ using namespace Boardcore;
 int main()
 {
     VN100SerialData sample;
-    string sampleRaw;
 
     GpioPin u2tx1(GPIOA_BASE, 2);
     GpioPin u2rx1(GPIOA_BASE, 3);
@@ -41,7 +39,8 @@ int main()
     u2tx1.mode(Mode::ALTERNATE);
 
     USART usart(USART2, 115200);
-    VN100Serial sensor{usart, 115200, VN100Serial::CRCOptions::CRC_ENABLE_16};
+    VN100Serial sensor{usart, 115200, VNCommonSerial::CRCOptions::CRC_ENABLE_16,
+                       std::chrono::seconds(5)};
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -60,15 +59,6 @@ int main()
         return 0;
     }
 
-    if (!sensor.start())
-    {
-        printf("Unable to start the sampling thread\n");
-        return 0;
-    }
-
-    printf("Sensor sampling thread started!\n");
-
-    // Sample and print 100 samples
     for (int i = 0; i < 100; i++)
     {
         sensor.sample();
@@ -78,12 +68,14 @@ int main()
                sample.accelerationY, sample.accelerationZ);
         printf("ang: %.3f, %.3f, %.3f\n", sample.angularSpeedX,
                sample.angularSpeedY, sample.angularSpeedZ);
+        printf("mag: %.3f, %.3f, %.3f\n", sample.magneticFieldX,
+               sample.magneticFieldY, sample.magneticFieldZ);
+        printf("quat: %.3f, %.3f, %.3f, %.3f\n", sample.quaternionX,
+               sample.quaternionY, sample.quaternionZ, sample.quaternionW);
+        printf("temp: %.3f\n", sample.temperature);
+        printf("press: %.3f\n\n", sample.pressure);
 
-        sensor.sampleRaw();
-        sampleRaw = sensor.getLastRawSample();
-        printf("%s\n", sampleRaw.c_str());
-        // Thread::sleep(100);
-        printf("\n");
+        Thread::sleep(500);
     }
 
     sensor.closeAndReset();
