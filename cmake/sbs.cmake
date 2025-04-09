@@ -26,6 +26,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Load in SBS_BASE the project path
 cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
+# Load in BOARDCORE_PATH the boardcore path
+cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH BOARDCORE_PATH)
+
+# Add the version information header to the global include path, so that all 
+# targets defined after this point will have access to it (Boardcore, Kernel)
+include_directories(${BOARDCORE_PATH}/version)
 
 # Include the Boardcore libraries
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
@@ -37,14 +43,30 @@ function(sbs_target TARGET OPT_BOARD)
         message(FATAL_ERROR "No board selected")
     endif()
 
-    # The only include directory of Boardcore is shared!
     target_include_directories(${TARGET} PRIVATE src/shared)
+
+    # Define the version information generation command
+    add_custom_target(${TARGET}-version-info
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/generated/${TARGET}/version.cpp
+        COMMAND "${CMAKE_COMMAND}"
+        "-D" "TARGET_NAME=${TARGET}"
+        "-D" "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        "-D" "BOARDCORE_PATH=${BOARDCORE_PATH}"
+        "-D" "OUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/generated/${TARGET}"
+        "-P" "${BOARDCORE_PATH}/cmake/version.cmake"
+        COMMENT "Generating version information file for ${TARGET}"
+        VERBATIM
+    )
+    # Build the generated version information file as part of the target
+    target_sources(${TARGET} PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/generated/${TARGET}/version.cpp
+    )
 
     if(CMAKE_CROSSCOMPILING)
         # Link the embedded Boardcore library
         target_link_libraries(${TARGET} PRIVATE Skyward::Boardcore::${OPT_BOARD})
 
-        # Linker script and linking options are eredited from the kernel library
+        # Linker script and linking options are inherited from the kernel library
 
         # Add a post build command to create the hex file to flash on the board
         add_custom_command(

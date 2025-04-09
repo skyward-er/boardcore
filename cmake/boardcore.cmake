@@ -19,8 +19,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Load in BOARDCORE_PATH the project path
-cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH BOARDCORE_PATH)
+# Load in BOARDCORE_PATH the project path if not already defined
+if (NOT DEFINED BOARDCORE_PATH)
+    cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH BOARDCORE_PATH)
+endif()
 
 # Include dependencies and board list
 include(${BOARDCORE_PATH}/cmake/dependencies.cmake)

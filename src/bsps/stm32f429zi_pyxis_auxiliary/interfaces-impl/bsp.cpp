@@ -45,6 +45,7 @@
 #include "kernel/kernel.h"
 #include "kernel/logging.h"
 #include "kernel/sync.h"
+#include "version.h"
 
 namespace miosix
 {
@@ -108,7 +109,11 @@ void IRQbspInit()
                                               : STM32Serial::NOFLOWCTRL)));
 }
 
-void bspInit2() {}
+void bspInit2()
+{
+    // Print Skyward version info
+    bootlog("%s\n", SKYWARD_VERSION_STRING);
+}
 
 /**
  * For safety reasons, we never want the board to shutdown.

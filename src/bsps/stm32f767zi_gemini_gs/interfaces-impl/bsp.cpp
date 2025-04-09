@@ -47,6 +47,7 @@
 #include "kernel/kernel.h"
 #include "kernel/logging.h"
 #include "kernel/sync.h"
+#include "version.h"
 
 namespace miosix
 {
@@ -288,6 +289,9 @@ void IRQbspInit()
 
 void bspInit2()
 {
+    // Print Skyward version info
+    bootlog("%s\n", SKYWARD_VERSION_STRING);
+
 #ifdef WITH_FILESYSTEM
     // Init devfs with empty device
     basicFilesystemSetup(intrusive_ref_ptr<Device>());
