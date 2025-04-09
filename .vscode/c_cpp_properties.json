@@ -20,12 +20,12 @@
         ]
     },
     "configurations": [
-        // Skyward boards
         {
             "name": "stm32f205rc_ciuti",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f205rc_ciuti",
@@ -48,6 +48,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_death_stack_v1",
@@ -72,6 +73,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_death_stack_v2",
@@ -95,6 +97,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_death_stack_v3",
@@ -118,6 +121,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_nokia",
@@ -141,6 +145,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_parafoil",
@@ -164,6 +169,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_pyxis_auxiliary",
@@ -186,6 +192,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_rig",
@@ -209,6 +216,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_con_rig",
@@ -232,6 +240,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_conrig_v2",
@@ -254,6 +263,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f756zg_nucleo",
@@ -277,6 +287,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_automated_antennas",
@@ -300,6 +311,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_compute_unit",
@@ -323,6 +335,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_compute_unit_v2",
@@ -346,6 +359,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_rig_v2",
@@ -369,6 +383,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_lyra_biscotto",
@@ -392,6 +407,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_lyra_motor",
@@ -415,6 +431,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_death_stack_v4",
@@ -438,6 +455,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_gemini_gs",
@@ -461,6 +479,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_gemini_motor",
@@ -484,6 +503,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_lyra_gs",
@@ -507,6 +527,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_orion_biscotto",
@@ -530,6 +551,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_orion_engine",
@@ -548,12 +570,12 @@
                 "${workspaceFolder}/src/bsps/stm32f767zi_orion_engine"
             ]
         },
-        // Miosix boards
         {
             "name": "stm32f407vg_stm32f4discovery",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f407vg_stm32f4discovery",
@@ -576,6 +598,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_stm32f4discovery",
@@ -599,6 +622,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_nucleo",
@@ -622,6 +646,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f769ni_discovery",
@@ -645,6 +670,7 @@
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_lyra_cubesat",
