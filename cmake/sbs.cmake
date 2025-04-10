@@ -39,30 +39,33 @@ function(sbs_target TARGET OPT_BOARD)
 
     target_include_directories(${TARGET} PRIVATE src/shared)
 
-    add_custom_target(${TARGET}-version-info
+    # Define version information generation command
+    add_custom_target(${TARGET}-version-info-gen
         COMMAND "${CMAKE_COMMAND}"
         "-D" "TARGET_NAME=${TARGET}"
         "-D" "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
         "-D" "BOARDCORE_PATH=${BOARDCORE_PATH}"
-        "-D" "BIN_DIR=${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}"
+        "-D" "OUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}"
         "-P" "${BOARDCORE_PATH}/cmake/version.cmake"
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}/version.h"
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}/version.cpp"
         COMMENT "Generating version information file for ${TARGET}"
         VERBATIM
     )
-    add_dependencies(${TARGET} ${TARGET}-version-info)
+    # Create the version information interface library target
+    # Linking with this target will add the include directory to the target
+    add_library(${TARGET}-version-info STATIC
+        ${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}/version.cpp
+    )
+    # The version info needs to be generated before building the target
+    add_dependencies(${TARGET}-version-info ${TARGET}-version-info-gen)
+
+    # Link the version information library to the target
+    target_link_libraries(${TARGET} PRIVATE ${TARGET}-version-info)
 
     if(CMAKE_CROSSCOMPILING)
         # Link the embedded Boardcore library
         target_link_libraries(${TARGET} PRIVATE Skyward::Boardcore::${OPT_BOARD})
-        
-        # Add the generated include directory to the target
-        # This also works for injecting include directories into consumed libs
-        # E.g. adding version information to the kernel library
-        target_include_directories(${TARGET} PRIVATE
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}>
-        )
-        
+
         # Linker script and linking options are inherited from the kernel library
 
         # Add a post build command to create the hex file to flash on the board

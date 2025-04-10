@@ -88,6 +88,6 @@ set(GIT_VERSION_STRING "${GIT_VERSION_INFO}${GIT_DIRTY_SUFFIX}")
 # - CMAKE_BUILD_TYPE
 
 configure_file(
-  "${BOARDCORE_PATH}/cmake/version.h.in"
-  "${BIN_DIR}/version.h"
+  "${BOARDCORE_PATH}/cmake/version.cpp.in"
+  "${OUT_DIR}/version.cpp"
 )
