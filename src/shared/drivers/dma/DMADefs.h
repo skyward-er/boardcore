@@ -67,9 +67,9 @@ enum class DMAStreamId : uint8_t
     DMA2_Str2 = 10,
     // DMA2_Str3 = 11,
     DMA2_Str4 = 12,
-    DMA2_Str5 = 13,
+    // DMA2_Str5 = 13,
     DMA2_Str6 = 14,
-    DMA2_Str7 = 15,
+    // DMA2_Str7 = 15,
 };
 
 /**

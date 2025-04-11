@@ -203,18 +203,18 @@ void __attribute__((used)) DMA2_Stream4_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str4);
 }
 
-void __attribute__((naked)) DMA2_Stream5_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream5_IRQImplv");
-    restoreContext();
-}
+// void __attribute__((naked)) DMA2_Stream5_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z20DMA2_Stream5_IRQImplv");
+//     restoreContext();
+// }
 
-void __attribute__((used)) DMA2_Stream5_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str5);
-}
+// void __attribute__((used)) DMA2_Stream5_IRQImpl()
+// {
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
+//         Boardcore::DMADefs::DMAStreamId::DMA2_Str5);
+// }
 
 void __attribute__((naked)) DMA2_Stream6_IRQHandler()
 {
@@ -229,18 +229,18 @@ void __attribute__((used)) DMA2_Stream6_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str6);
 }
 
-void __attribute__((naked)) DMA2_Stream7_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream7_IRQImplv");
-    restoreContext();
-}
+// void __attribute__((naked)) DMA2_Stream7_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z20DMA2_Stream7_IRQImplv");
+//     restoreContext();
+// }
 
-void __attribute__((used)) DMA2_Stream7_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str7);
-}
+// void __attribute__((used)) DMA2_Stream7_IRQImpl()
+// {
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
+//         Boardcore::DMADefs::DMAStreamId::DMA2_Str7);
+// }
 
 namespace Boardcore
 {
@@ -446,7 +446,12 @@ void DMAStream::setup(DMATransaction& transaction)
         if (transaction.dstIncrement)
             registers->CR |= DMA_SxCR_PINC;
 
+        // SCB_CleanDCache_by_Addr
+        SCB_CleanDCache_by_Addr((uint32_t*)transaction.srcAddress, transaction.numberOfDataItems);
         registers->M0AR = reinterpret_cast<uint32_t>(transaction.srcAddress);
+
+        // SCB_InvalidateDCache_by_Addr
+        SCB_InvalidateDCache_by_Addr((uint32_t*)transaction.dstAddress, transaction.numberOfDataItems);
         registers->PAR  = reinterpret_cast<uint32_t>(transaction.dstAddress);
     }
     else

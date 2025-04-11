@@ -31,8 +31,21 @@ void printBuffer(uint8_t* buffer, size_t size);
 
 int main()
 {
-    DMAStreamGuard stream = DMADriver::instance().acquireStreamForPeripheral(
-        DMADefs::Peripherals::PE_MEM_ONLY);
+    printf("ok funziona sulla engine\n");
+    // SCB_DisableDCache();
+    // SCB_DisableICache();
+    // miosix::Thread::sleep(500);
+
+    /**
+     * verificare quali stream sono usate sull f7 e quali no (provando
+     * a compilare avendo tutti gli irq handler attivi)
+     *
+     * è giusto che non runni i callback in polling mode?
+     */
+
+    // DMAStreamGuard stream = DMADriver::instance().acquireStreamForPeripheral(
+    //     DMADefs::Peripherals::PE_MEM_ONLY);
+    DMAStreamGuard stream = DMADriver::instance().acquireStream(DMADefs::DMAStreamId::DMA2_Str0, DMADefs::Channel::CHANNEL0);
 
     if (!stream.isValid())
     {
@@ -65,9 +78,37 @@ int main()
         .enableTransferCompleteInterrupt = true,
     };
     stream->setup(trn);
+
     stream->enable();
 
+    // auto start = std::chrono::steady_clock::now();
     stream->waitForTransferComplete();
+    // auto end = std::chrono::steady_clock::now();
+
+    // auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    // printf("tempo impiegato: %lld ns\n\n", dur.count());
+
+    // stream->readFlags();
+    // printf("direct mode error flag: %d\n", stream->getDirectModeErrorFlagStatus());
+    // printf("fifo error flag: %d\n", stream->getFifoErrorFlagStatus());
+    // printf("half trans flag: %d\n", stream->getHalfTransferFlagStatus());
+    // printf("trans complete flag: %d\n", stream->getTransferCompleteFlagStatus());
+    // printf("trans error flag: %d\n\n", stream->getTransferErrorFlagStatus());
+
+    SCB_InvalidateDCache_by_Addr((uint32_t*)buffer2, 8); // risolve solo per i primi 4 byte
+    // SCB_InvalidateDCache_by_Addr((uint32_t*)(buffer2+4), 8); // risolve solo per gli ultimi 4 byte
+    // SCB_CleanDCache_by_Addr((uint32_t*)buffer2, 8); // non fa nulla
+
+    if ( ((uint64_t)buffer2 & 0x3) == 0 )
+    {
+        // The address is 4-byte aligned here
+        printf("buf2 is 32-bit aligned\n");
+    }
+    else
+    {
+        printf("buf2 IS NOT 32-bit aligned\n");
+    }
+
 
     printf("After:\n");
     printf("Buffer 1:\n");
