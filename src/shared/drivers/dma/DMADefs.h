@@ -49,15 +49,32 @@ namespace DMADefs
 
 enum class DMAStreamId : uint8_t
 {
-    // TODO: some streams are commented because the
-    // corresponding irq handler is already defined
-    // by miosix. For now those streams are not usable,
-    // decide how to handle this situation.
+    /**
+     * Here are defined the selectable streams.
+     *
+     * The problem is that some of these stream are used
+     * by miosix. The corresponding IRQHandlers are already defined
+     * in there, causing conflicts.
+     * Moreover, the used streams differ from STM32F407xx to
+     * STM32F767xx. That's why some streams are available only
+     * for a particular board, or none (DMA2_Stream3 is not available
+     * at all).
+     */
 
     DMA1_Str0 = 0,
-    // DMA1_Str1 = 1,
+
+#ifndef STM32F407xx
+    // This stream is used by miosix for STM32F407xx boards
+    DMA1_Str1 = 1,
+#endif  // STM32F407xx
+
     DMA1_Str2 = 2,
-    // DMA1_Str3 = 3,
+
+#ifndef STM32F407xx
+    // This stream is used by miosix for STM32F407xx boards
+    DMA1_Str3 = 3,
+#endif  // STM32F407xx
+
     DMA1_Str4 = 4,
     DMA1_Str5 = 5,
     DMA1_Str6 = 6,
@@ -65,11 +82,20 @@ enum class DMAStreamId : uint8_t
     DMA2_Str0 = 8,
     DMA2_Str1 = 9,
     DMA2_Str2 = 10,
-    // DMA2_Str3 = 11,
+    // DMA2_Str3 = 11, // Always used by miosix
     DMA2_Str4 = 12,
+
+#ifndef STM32F767xx
+    // This stream is used by miosix for STM32F767xx boards
     DMA2_Str5 = 13,
+#endif  // STM32F767xx
+
     DMA2_Str6 = 14,
+
+#ifndef STM32F767xx
+    // This stream is used by miosix for STM32F767xx boards
     DMA2_Str7 = 15,
+#endif  // STM32F767xx
 };
 
 /**
