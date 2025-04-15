@@ -30,6 +30,18 @@
 
 using namespace miosix;
 
+/**
+ * Here are defined the IRQHandlers for the various streams.
+ *
+ * The problem is that some of these stream are used
+ * by miosix. The corresponding IRQHandlers are already defined
+ * in there, causing conflicts.
+ * Moreover, the used streams differ from STM32F407xx to
+ * STM32F767xx. That's why some streams are available only
+ * for a particular board, or none (DMA2_Stream3 is not available
+ * at all).
+ */
+
 void __attribute__((naked)) DMA1_Stream0_IRQHandler()
 {
     saveContext();
@@ -43,19 +55,21 @@ void __attribute__((used)) DMA1_Stream0_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA1_Str0);
 }
 
-// TODO: decide how to handle this situation
-// Commented because already defined elsewhere by miosix
-// void __attribute__((naked)) DMA1_Stream1_IRQHandler()
-// {
-//     saveContext();
-//     asm volatile("bl _Z20DMA1_Stream1_IRQImplv");
-//     restoreContext();
-// }
-// void __attribute__((used)) DMA1_Stream1_IRQImpl()
-// {
-//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
-//         Boardcore::DMADefs::DMAStreamId::DMA1_Str1);
-// }
+#ifndef STM32F407xx
+// This stream is used by miosix for STM32F407xx boards
+void __attribute__((naked)) DMA1_Stream1_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z20DMA1_Stream1_IRQImplv");
+    restoreContext();
+}
+
+void __attribute__((used)) DMA1_Stream1_IRQImpl()
+{
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMADefs::DMAStreamId::DMA1_Str1);
+}
+#endif  // STM32F407xx
 
 void __attribute__((naked)) DMA1_Stream2_IRQHandler()
 {
@@ -70,19 +84,21 @@ void __attribute__((used)) DMA1_Stream2_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA1_Str2);
 }
 
-// TODO: decide how to handle this situation
-// Commented because already defined elsewhere by miosix
-// void __attribute__((naked)) DMA1_Stream3_IRQHandler()
-// {
-//     saveContext();
-//     asm volatile("bl _Z20DMA1_Stream3_IRQImplv");
-//     restoreContext();
-// }
-// void __attribute__((used)) DMA1_Stream3_IRQImpl()
-// {
-//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
-//         Boardcore::DMAStreamId::DMA1_Str3);
-// }
+#ifndef STM32F407xx
+// This stream is used by miosix for STM32F407xx boards
+void __attribute__((naked)) DMA1_Stream3_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z20DMA1_Stream3_IRQImplv");
+    restoreContext();
+}
+
+void __attribute__((used)) DMA1_Stream3_IRQImpl()
+{
+    Boardcore::DMADriver::instance().IRQhandleInterrupt(
+        Boardcore::DMADefs::DMAStreamId::DMA1_Str3);
+}
+#endif  // STM32F407xx
 
 void __attribute__((naked)) DMA1_Stream4_IRQHandler()
 {
@@ -175,8 +191,8 @@ void __attribute__((used)) DMA2_Stream2_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str2);
 }
 
-// TODO: decide how to handle this situation
-// Commented because already defined elsewhere by miosix
+// This stream is used by miosix both for STM32F407xx
+// and STM32F767xx, so it is simply commented out
 // void __attribute__((naked)) DMA2_Stream3_IRQHandler()
 // {
 //     saveContext();
@@ -203,6 +219,8 @@ void __attribute__((used)) DMA2_Stream4_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str4);
 }
 
+#ifndef STM32F767xx
+// This stream is used by miosix for STM32F767xx boards
 void __attribute__((naked)) DMA2_Stream5_IRQHandler()
 {
     saveContext();
@@ -215,6 +233,7 @@ void __attribute__((used)) DMA2_Stream5_IRQImpl()
     Boardcore::DMADriver::instance().IRQhandleInterrupt(
         Boardcore::DMADefs::DMAStreamId::DMA2_Str5);
 }
+#endif  // STM32F767xx
 
 void __attribute__((naked)) DMA2_Stream6_IRQHandler()
 {
@@ -229,6 +248,8 @@ void __attribute__((used)) DMA2_Stream6_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str6);
 }
 
+#ifndef STM32F767xx
+// This stream is used by miosix for STM32F767xx boards
 void __attribute__((naked)) DMA2_Stream7_IRQHandler()
 {
     saveContext();
@@ -241,6 +262,7 @@ void __attribute__((used)) DMA2_Stream7_IRQImpl()
     Boardcore::DMADriver::instance().IRQhandleInterrupt(
         Boardcore::DMADefs::DMAStreamId::DMA2_Str7);
 }
+#endif  // STM32F767xx
 
 namespace Boardcore
 {
