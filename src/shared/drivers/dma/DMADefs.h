@@ -1,5 +1,5 @@
 /* Copyright (c) 2025 Skyward Experimental Rocketry
- * Author: Alberto Nidasio, Fabrizio Monti
+ * Author: Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -244,10 +244,9 @@ extern const IRQn_Type irqNumberMapping[];
  * @brief Maps the peripherals to the dma streams (and
  * the corresponding channel) that are connected with.
  *
- * Supported architectures:
- * - STM32F407xx
- * - STM32F429xx
- * - STM32F767xx
+ * The actual initialization of mapPeripherals is board
+ * specific, and can be found inside the "board_mappings"
+ * folder.
  */
 extern const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
     mapPeripherals;
