@@ -27,6 +27,8 @@
 #include <kernel/scheduler/scheduler.h>
 #include <utils/KernelTime.h>
 
+#include <algorithm>
+
 #include "WIZ5500Defs.h"
 
 using namespace Boardcore;
@@ -378,18 +380,19 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
     // Remove what we have already read.
     recv_len -= sizeof(WizIp) + sizeof(uint16_t) + sizeof(uint16_t);
 
-    // Check if we actually have space
-    if (recv_len < len)
-        spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, recv_len);
+    // Read the minimum between the received length and the maximum length
+    uint16_t read_len = std::min(static_cast<size_t>(recv_len), len);
 
-    addr += recv_len;
+    spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, read_len);
+
+    addr += read_len;
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
 
     // Finally tell the device that we correctly received and read the data
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
               Wiz::Socket::CMD_RECV);
 
-    return recv_len < len ? recv_len : -1;
+    return read_len;
 }
 
 void Wiz5500::close(int sock_n, int timeout)
