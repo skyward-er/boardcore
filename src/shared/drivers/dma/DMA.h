@@ -161,6 +161,8 @@ public:
      * @brief Wait for the half transfer complete signal.
      * The caller waits for the corresponding interrupt, if enabled.
      * Otherwise it goes to polling mode on the flag.
+     * @warning In case cache is used, this method DOES NOT invalidate
+     * the cache lines. It is up to the user.
      */
     void waitForHalfTransfer();
 
@@ -168,6 +170,8 @@ public:
      * @brief Wait for the transfer complete signal.
      * The caller waits for the corresponding interrupt, if enabled.
      * Otherwise it goes to polling mode on the flag.
+     * In case cache is used, this method invalidates the
+     * cache lines, so that the user can see the memory as is in ram.
      */
     void waitForTransferComplete();
 
@@ -178,6 +182,8 @@ public:
      * @param timeout_ns The maximum time that will be waited.
      * @return True if the event is reached, false if the
      * timeout expired.
+     * @warning In case cache is used, this method DOES NOT invalidate
+     * the cache lines. It is up to the user.
      */
     bool timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns);
 
@@ -185,6 +191,8 @@ public:
      * @brief Wait for the transfer complete signal.
      * The caller waits for the corresponding interrupt, if enabled.
      * Otherwise it goes to polling mode on the flag.
+     * In case cache is used, this method invalidates the
+     * cache lines, so that the user can see the memory as is in ram.
      * @param timeout_ns The maximum time that will be waited.
      * @return True if the event is reached, false if the
      * timeout expired.
@@ -432,6 +440,16 @@ private:
 
         return result;
     }
+
+#ifdef STM32F767xx
+    /**
+     * @brief In case cache is used and data is written to ram,
+     * we have to invalidate cache lines in order to see the
+     * updated data. This function verifies if this operation
+     * is needed and performs it.
+     */
+    void invalidateCache();
+#endif  // STM32F767xx
 
 public:
     DMAStream(const DMAStream&)            = delete;
