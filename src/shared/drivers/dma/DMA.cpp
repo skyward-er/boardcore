@@ -579,6 +579,10 @@ void DMAStream::waitForTransferComplete()
         std::bind(&DMAStream::getTransferCompleteFlagStatus, this),
         std::bind(&DMAStream::clearTransferCompleteFlag, this),
         transferCompleteFlag, -1);
+
+#ifdef STM32F767xx
+    invalidateCache();
+#endif  // STM32F767xx
 }
 
 bool DMAStream::timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns)
@@ -598,7 +602,52 @@ bool DMAStream::timedWaitForTransferComplete(
         std::bind(&DMAStream::getTransferCompleteFlagStatus, this),
         std::bind(&DMAStream::clearTransferCompleteFlag, this),
         transferCompleteFlag, timeout_ns.count());
+
+#ifdef STM32F767xx
+    invalidateCache();
+#endif  // STM32F767xx
 }
+
+#ifdef STM32F767xx
+void DMAStream::invalidateCache()
+{
+    /**
+     * STM32F7 boards use data cache. Unluckily the dma doesn't
+     * trigger the cache refresh.
+     * This means that when copying data to ram, the user won't
+     * see the result.
+     * This method check if cache invalidation is needed, and
+     * forces it if necessary.
+     *
+     * The memory being invalidated must be 32 bytes aligned.
+     */
+
+    // If the data was copied from memory to a peripheral there's
+    // no need to worry about cache
+    if (currentSetup.direction == DMATransaction::Direction::MEM_TO_PER)
+        return;
+
+    constexpr uint8_t CACHE_LINE_SIZE = 32;
+
+    // Aligned ptr: round down to the nearest address that is
+    // 32 bytes aligned
+    uintptr_t alignedPtr =
+        (uintptr_t)currentSetup.dstAddress & ~(CACHE_LINE_SIZE - 1);
+
+    // Evaluate how many bytes were added, due to the round down
+    uintptr_t diff = (uintptr_t)currentSetup.dstAddress - alignedPtr;
+
+    // Aligned size: compute the amount of bytes being invalidated
+    int32_t alignedSize = currentSetup.numberOfDataItems;
+    if (currentSetup.dstSize == DMATransaction::DataSize::BITS_16)
+        alignedSize *= 2;
+    else if (currentSetup.dstSize == DMATransaction::DataSize::BITS_32)
+        alignedSize *= 4;
+    alignedSize += diff;
+
+    SCB_InvalidateDCache_by_Addr((uint32_t*)alignedPtr, alignedSize);
+}
+#endif  // STM32F767xx
 
 void DMAStream::setHalfTransferCallback(std::function<void()> callback)
 {
