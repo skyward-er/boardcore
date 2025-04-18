@@ -32,7 +32,7 @@ namespace Boardcore
 
 // For some reason these defines are missing
 // in the CMSIS STM32F4xx file
-#ifdef STM32F407xx
+#if defined(STM32F407xx) || defined(STM32F429xx)
 
 #ifndef DMA_SxCR_MSIZE_Pos
 #define DMA_SxCR_MSIZE_Pos (13U)
@@ -55,10 +55,9 @@ enum class DMAStreamId : uint8_t
      * The problem is that some of these stream are used
      * by miosix. The corresponding IRQHandlers are already defined
      * in there, causing conflicts.
-     * Moreover, the used streams differ from STM32F407xx to
-     * STM32F767xx. That's why some streams are available only
-     * for a particular board, or none (DMA2_Stream3 is not available
-     * at all).
+     * Moreover, the used streams might differ from different boards.
+     * That's why some streams are available only for a particular
+     * board.
      */
 
     DMA1_Str0 = 0,
@@ -82,20 +81,22 @@ enum class DMAStreamId : uint8_t
     DMA2_Str0 = 8,
     DMA2_Str1 = 9,
     DMA2_Str2 = 10,
-    // DMA2_Str3 = 11, // Always used by miosix
+    // DMA2_Str3 = 11, // Always used by miosix on currently supported boards
     DMA2_Str4 = 12,
 
-#ifndef STM32F767xx
-    // This stream is used by miosix for STM32F767xx boards
+#if !defined(STM32F767xx) && !defined(STM32F429xx)
+    // This stream is used by miosix for STM32F767xx
+    // and STM32F429xx boards
     DMA2_Str5 = 13,
-#endif  // STM32F767xx
+#endif  // STM32F767xx & STM32F429xx
 
     DMA2_Str6 = 14,
 
-#ifndef STM32F767xx
-    // This stream is used by miosix for STM32F767xx boards
+#if !defined(STM32F767xx) && !defined(STM32F429xx)
+    // This stream is used by miosix for STM32F767xx
+    // and STM32F429xx boards
     DMA2_Str7 = 15,
-#endif  // STM32F767xx
+#endif  // STM32F767xx & STM32F429xx
 };
 
 /**
