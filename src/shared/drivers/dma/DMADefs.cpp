@@ -22,6 +22,7 @@
 
 #include "DMADefs.h"
 
+// Include board mappings
 #ifdef STM32F407xx
 #include "board_mappings/stm32f407xx_mappings.cpp"
 #endif  // STM32F407xx
