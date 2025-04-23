@@ -34,6 +34,10 @@
 namespace Boardcore
 {
 
+/**
+ * @brief This is the configuration struct for
+ * a DMA transaction.
+ */
 struct DMATransaction
 {
     enum class Direction : uint16_t
@@ -81,6 +85,10 @@ struct DMATransaction
 class DMAStream;
 class DMAStreamGuard;
 
+/**
+ * @brief This class is responsible for streams acquisition,
+ * streams release and interrupt handling.
+ */
 class DMADriver
 {
 public:
@@ -91,7 +99,7 @@ public:
     /**
      * @return True if the stream is not already in use.
      */
-    bool tryChannel(DMADefs::DMAStreamId id);
+    bool tryStream(DMADefs::DMAStreamId id);
 
     /**
      * @brief Try to acquire the specified stream and initialize it with the
@@ -139,6 +147,10 @@ public:
     DMADriver& operator=(const DMADriver&) = delete;
 };
 
+/**
+ * @brief This class represents the actual DMA stream.
+ * It can be used to setup, start and stop DMA transactions.
+ */
 class DMAStream
 {
     friend DMADriver;
@@ -155,6 +167,13 @@ public:
      */
     void enable();
 
+    /**
+     * @brief Stop the DMA transaction (if running).
+     * This is equivalent to killing the transaction: DO NOT expect to be able
+     * to restart the transaction from where it was interrupted. The work
+     * completed up to the call will still be valid.
+     * @warning If set, the transfer complete interrupt will be fired.
+     */
     void disable();
 
     /**
@@ -235,36 +254,26 @@ public:
 
     /**
      * @brief Returns the last read status of the half transfer flag.
-     *
-     * TODO: Explain what this flag intails and what to do.
      */
     inline bool getHalfTransferFlagStatus() { return halfTransferFlag; }
 
     /**
      * @brief Returns the last read status of the transfer complete flag.
-     *
-     * TODO: Explain what this flag intails and what to do.
      */
     inline bool getTransferCompleteFlagStatus() { return transferCompleteFlag; }
 
     /**
      * @brief Returns the last read status of the transfer error flag.
-     *
-     * TODO: Explain what this flag intails and what to do.
      */
     inline bool getTransferErrorFlagStatus() { return transferErrorFlag; }
 
     /**
      * @brief Returns the last read status of the fifo error flag.
-     *
-     * TODO: Explain what this flag intails and what to do.
      */
     inline bool getFifoErrorFlagStatus() { return fifoErrorFlag; }
 
     /**
      * @brief Returns the last read status of the direct mode error flag.
-     *
-     * TODO: Explain what this flag intails and what to do.
      */
     inline bool getDirectModeErrorFlagStatus() { return directModeErrorFlag; }
 
