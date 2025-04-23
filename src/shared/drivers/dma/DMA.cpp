@@ -36,10 +36,8 @@ using namespace miosix;
  * The problem is that some of these stream are used
  * by miosix. The corresponding IRQHandlers are already defined
  * in there, causing conflicts.
- * Moreover, the used streams differ from STM32F407xx to
- * STM32F767xx. That's why some streams are available only
- * for a particular board, or none (DMA2_Stream3 is not available
- * at all).
+ * Moreover, the used streams might differ from different boards.
+ * That's why some streams are available only for a particular board.
  */
 
 void __attribute__((naked)) DMA1_Stream0_IRQHandler()
@@ -191,8 +189,8 @@ void __attribute__((used)) DMA2_Stream2_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str2);
 }
 
-// This stream is used by miosix both for STM32F407xx
-// and STM32F767xx, so it is simply commented out
+// This stream is used by miosix for all currently supported
+// boards, so it is simply commented out
 // void __attribute__((naked)) DMA2_Stream3_IRQHandler()
 // {
 //     saveContext();
@@ -319,7 +317,7 @@ DMADriver& DMADriver::instance()
     return instance;
 }
 
-bool DMADriver::tryChannel(DMADefs::DMAStreamId id)
+bool DMADriver::tryStream(DMADefs::DMAStreamId id)
 {
     Lock<FastMutex> l(mutex);
 
@@ -352,11 +350,6 @@ DMAStreamGuard DMADriver::acquireStream(DMADefs::DMAStreamId id,
             }
         }
     }
-
-    // Enable the clock if not already done
-    // TODO: Enable DMA1 or DMA2
-    // if (streams.size() == 0)
-    //     RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
     streams.insert(
         std::pair<DMADefs::DMAStreamId, DMAStream>(id, DMAStream(id, channel)));
@@ -415,16 +408,11 @@ void DMADriver::releaseStream(DMADefs::DMAStreamId id)
         streams.erase(id);
         cv.broadcast();
     }
-
-    // Disable the clock if there are no more channels
-    // TODO: Disable DMA1 or DMA2
-    // if (streams.size() == 0)
-    //     RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA1EN;
 }
 
 DMADriver::DMADriver()
 {
-    // For now enable the clock always
+    // For now the clocks are always enabled
     ClockUtils::enablePeripheralClock(DMA1);
     ClockUtils::enablePeripheralClock(DMA2);
 
@@ -555,8 +543,8 @@ void DMAStream::enable()
     directModeErrorFlag  = false;
 
     // Before setting EN bit to '1' to start a new transfer, the event
-    //  flags corresponding to the stream in DMA_LISR or DMA_HISR
-    //  register must be cleared.
+    // flags corresponding to the stream in DMA_LISR or DMA_HISR
+    // register must be cleared.
     clearAllFlags();
 
     // Enable the peripheral
@@ -622,6 +610,11 @@ void DMAStream::invalidateCache()
      * forces it if necessary.
      *
      * The memory being invalidated must be 32 bytes aligned.
+     *
+     * As of today, the cache is set as write-through. This
+     * means that values written in cache are immediately
+     * written in ram, and we don't need to worry about memory
+     * to peripheral operations,
      */
 
     // If the data was copied from memory to a peripheral there's
@@ -760,7 +753,7 @@ DMAStream::DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel)
 
 DMAStream* DMAStreamGuard::operator->()
 {
-    D(assert((pStream != nullptr) && "pointer is null"));
+    D(assert((pStream != nullptr) && "DMAStreamGuard: pointer is null"));
 
     return pStream;
 }
