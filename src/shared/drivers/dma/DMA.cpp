@@ -275,8 +275,10 @@ void DMADriver::IRQhandleInterrupt(DMADefs::DMAStreamId id)
     stream.clearAllFlags();
 
     // Run the callbacks if necessary
-    if (stream.halfTransferCallback && stream.halfTransferFlag)
-        stream.halfTransferCallback();
+
+    // Disabled, see DMATransaction for details
+    // if (stream.halfTransferCallback && stream.halfTransferFlag)
+    //     stream.halfTransferCallback();
 
     if (stream.transferCompleteCallback && stream.transferCompleteFlag)
         stream.transferCompleteCallback();
@@ -488,12 +490,13 @@ void DMAStream::setup(DMATransaction& transaction)
     }
 
     bool enableInterrupt = false;
-    if (transaction.enableHalfTransferInterrupt)
-    {
-        clearHalfTransferFlag();
-        registers->CR |= DMA_SxCR_HTIE;
-        enableInterrupt = true;
-    }
+    // Disabled, see DMATransaction for details
+    // if (transaction.enableHalfTransferInterrupt)
+    // {
+    //     clearHalfTransferFlag();
+    //     registers->CR |= DMA_SxCR_HTIE;
+    //     enableInterrupt = true;
+    // }
     if (transaction.enableTransferCompleteInterrupt)
     {
         clearTransferCompleteFlag();
@@ -536,7 +539,8 @@ void DMAStream::setup(DMATransaction& transaction)
 void DMAStream::enable()
 {
     // Reset all saved flags
-    halfTransferFlag     = false;
+    // Disabled, see DMATransaction for details
+    // halfTransferFlag     = false;
     transferCompleteFlag = false;
     transferErrorFlag    = false;
     fifoErrorFlag        = false;
@@ -553,14 +557,15 @@ void DMAStream::enable()
 
 void DMAStream::disable() { registers->CR &= ~DMA_SxCR_EN; }
 
-void DMAStream::waitForHalfTransfer()
-{
-    waitForInterruptEventImpl(
-        currentSetup.enableHalfTransferInterrupt,
-        std::bind(&DMAStream::getHalfTransferFlagStatus, this),
-        std::bind(&DMAStream::clearHalfTransferFlag, this), halfTransferFlag,
-        -1);
-}
+// Disabled, see DMATransaction for details
+// void DMAStream::waitForHalfTransfer()
+// {
+//     waitForInterruptEventImpl(
+//         currentSetup.enableHalfTransferInterrupt,
+//         std::bind(&DMAStream::getHalfTransferFlagStatus, this),
+//         std::bind(&DMAStream::clearHalfTransferFlag, this), halfTransferFlag,
+//         -1);
+// }
 
 void DMAStream::waitForTransferComplete()
 {
@@ -575,14 +580,15 @@ void DMAStream::waitForTransferComplete()
 #endif  // STM32F767xx
 }
 
-bool DMAStream::timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns)
-{
-    return waitForInterruptEventImpl(
-        currentSetup.enableHalfTransferInterrupt,
-        std::bind(&DMAStream::getHalfTransferFlagStatus, this),
-        std::bind(&DMAStream::clearHalfTransferFlag, this), halfTransferFlag,
-        timeout_ns.count());
-}
+// Disabled, see DMATransaction for details
+// bool DMAStream::timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns)
+// {
+//     return waitForInterruptEventImpl(
+//         currentSetup.enableHalfTransferInterrupt,
+//         std::bind(&DMAStream::getHalfTransferFlagStatus, this),
+//         std::bind(&DMAStream::clearHalfTransferFlag, this), halfTransferFlag,
+//         timeout_ns.count());
+// }
 
 bool DMAStream::timedWaitForTransferComplete(
     std::chrono::nanoseconds timeout_ns)
@@ -644,12 +650,15 @@ void DMAStream::invalidateCache()
 }
 #endif  // STM32F767xx
 
-void DMAStream::setHalfTransferCallback(std::function<void()> callback)
-{
-    halfTransferCallback = callback;
-}
+// Disabled, see DMATransaction for details
+// void DMAStream::setHalfTransferCallback(std::function<void()> callback)
+// {
+//     halfTransferCallback = callback;
+// }
 
-void DMAStream::resetHalfTransferCallback() { halfTransferCallback = nullptr; }
+// Disabled, see DMATransaction for details
+// void DMAStream::resetHalfTransferCallback() { halfTransferCallback = nullptr;
+// }
 
 void DMAStream::setTransferCompleteCallback(std::function<void()> callback)
 {
@@ -672,7 +681,8 @@ void DMAStream::readFlags()
 {
     uint8_t flags = *ISR >> IFindex;
 
-    halfTransferFlag     = flags & DMA_LISR_HTIF0;
+    // Disabled, see DMATransaction for details
+    // halfTransferFlag     = flags & DMA_LISR_HTIF0;
     transferCompleteFlag = flags & DMA_LISR_TCIF0;
     transferErrorFlag    = flags & DMA_LISR_TEIF0;
     fifoErrorFlag        = flags & DMA_LISR_DMEIF0;

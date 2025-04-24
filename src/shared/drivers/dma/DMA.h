@@ -95,8 +95,19 @@ struct DMATransaction
      * available with memory to memory transfers.
      */
     bool doubleBufferMode                = false;
-    bool enableHalfTransferInterrupt     = false;
     bool enableTransferCompleteInterrupt = false;
+
+    /**
+     * The half transfer interrupt is disabled due to the data
+     * cache on STM32F7 boards.
+     * After a full DMA transaction, cache invalidation is required
+     * to maintain data coherence. However, the half transfer
+     * mechanism does not allow the driver to handle cache
+     * invalidation internally, leaving the job to the user.
+     * For this reason, the half transfer logic has been
+     * deliberately disabled.
+     */
+    // bool enableHalfTransferInterrupt     = false;
 
     /**
      * The transfer error interrupt flag is set when:
@@ -242,7 +253,8 @@ public:
      * @warning In case cache is used, this method DOES NOT invalidate
      * the cache lines. It is up to the user.
      */
-    void waitForHalfTransfer();
+    // Disabled, see DMATransaction for details
+    // void waitForHalfTransfer();
 
     /**
      * @brief Wait for the transfer complete signal.
@@ -263,7 +275,8 @@ public:
      * @warning In case cache is used, this method DOES NOT invalidate
      * the cache lines. It is up to the user.
      */
-    bool timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns);
+    // Disabled, see DMATransaction for details
+    // bool timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns);
 
     /**
      * @brief Wait for the transfer complete signal.
@@ -277,9 +290,11 @@ public:
      */
     bool timedWaitForTransferComplete(std::chrono::nanoseconds timeout_ns);
 
-    void setHalfTransferCallback(std::function<void()> callback);
+    // Disabled, see DMATransaction for details
+    // void setHalfTransferCallback(std::function<void()> callback);
 
-    void resetHalfTransferCallback();
+    // Disabled, see DMATransaction for details
+    // void resetHalfTransferCallback();
 
     void setTransferCompleteCallback(std::function<void()> callback);
 
@@ -314,7 +329,8 @@ public:
     /**
      * @brief Returns the last read status of the half transfer flag.
      */
-    inline bool getHalfTransferFlagStatus() { return halfTransferFlag; }
+    // Disabled, see DMATransaction for details
+    // inline bool getHalfTransferFlagStatus() { return halfTransferFlag; }
 
     /**
      * @brief Returns the last read status of the transfer complete flag.
@@ -348,10 +364,11 @@ public:
 
     inline DMADefs::Channel getCurrentChannel() { return currentChannel; }
 
-    inline void clearHalfTransferFlag()
-    {
-        *IFCR |= DMA_LIFCR_CHTIF0 << IFindex;
-    }
+    // Disabled, see DMATransaction for details
+    // inline void clearHalfTransferFlag()
+    // {
+    //     *IFCR |= DMA_LIFCR_CHTIF0 << IFindex;
+    // }
 
     inline void clearTransferCompleteFlag()
     {
@@ -394,15 +411,17 @@ private:
 
     // These flags are set by the interrupt routine and tells the user
     // which event were triggered
-    bool halfTransferFlag     = false;
     bool transferCompleteFlag = false;
     bool transferErrorFlag    = false;
     bool fifoErrorFlag        = false;
     bool directModeErrorFlag  = false;
+    // Disabled, see DMATransaction for details
+    // bool halfTransferFlag     = false;
 
-    std::function<void()> halfTransferCallback;
     std::function<void()> transferCompleteCallback;
     std::function<void()> errorCallback;
+    // Disabled, see DMATransaction for details
+    // std::function<void()> halfTransferCallback;
 
     const DMADefs::DMAStreamId id;
     DMADefs::Channel currentChannel;
