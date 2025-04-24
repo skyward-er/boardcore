@@ -147,6 +147,8 @@ class DMAStreamGuard;
 class DMADriver
 {
 public:
+    // cppcheck-suppress  noExplicitConstructor
+
     void IRQhandleInterrupt(DMADefs::DMAStreamId id);
 
     static DMADriver& instance();
@@ -211,6 +213,8 @@ class DMAStream
     friend DMADriver;
 
 public:
+    // cppcheck-suppress  noExplicitConstructor
+
     /**
      * @brief Setup the stream with the given configuration.
      */
@@ -530,6 +534,7 @@ public:
 class DMAStreamGuard
 {
 public:
+    // cppcheck-suppress  noExplicitConstructor
     DMAStreamGuard(DMAStream* ptr) : pStream(ptr) {}
 
     ~DMAStreamGuard()
