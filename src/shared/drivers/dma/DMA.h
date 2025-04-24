@@ -47,6 +47,16 @@ struct DMATransaction
         PER_TO_MEM = 0,
     };
 
+    /**
+     * Priority of the DMA transaction. When multiple
+     * streams from the same controller (DMA1 or DMA2)
+     * are requested, they are served following the
+     * priority order.
+     * If two requests have the same software priority level,
+     * the stream with the lower number takes priority over
+     * the stream with the higher number. For example, Stream
+     * 2 takes priority over Stream 4.
+     */
     enum class Priority : uint32_t
     {
         VERY_HIGH = DMA_SxCR_PL,
@@ -62,23 +72,38 @@ struct DMATransaction
         BITS_32,
     };
 
-    Direction direction                  = Direction::MEM_TO_MEM;
-    Priority priority                    = Priority::LOW;
-    DataSize srcSize                     = DataSize::BITS_32;
-    DataSize dstSize                     = DataSize::BITS_32;
-    volatile void* srcAddress            = nullptr;
-    volatile void* dstAddress            = nullptr;
-    volatile void* secondMemoryAddress   = nullptr;
-    uint16_t numberOfDataItems           = 0;
-    bool srcIncrement                    = false;
-    bool dstIncrement                    = false;
-    bool circularMode                    = false;
+    Direction direction                = Direction::MEM_TO_MEM;
+    Priority priority                  = Priority::LOW;
+    DataSize srcSize                   = DataSize::BITS_32;
+    DataSize dstSize                   = DataSize::BITS_32;
+    volatile void* srcAddress          = nullptr;
+    volatile void* dstAddress          = nullptr;
+    volatile void* secondMemoryAddress = nullptr;
+    uint16_t numberOfDataItems         = 0;
+    bool srcIncrement                  = false;
+    bool dstIncrement                  = false;
+
+    /**
+     * @brief Enables circular buffer mode.
+     * @warning Not available with memory to memory transfers.
+     */
+    bool circularMode = false;
+
+    /**
+     * @brief Enables double buffer mode.
+     * @warning Automatically enables circular mode. Not
+     * available with memory to memory transfers.
+     */
     bool doubleBufferMode                = false;
     bool enableHalfTransferInterrupt     = false;
     bool enableTransferCompleteInterrupt = false;
     bool enableTransferErrorInterrupt    = false;
-    bool enableFifoErrorInterrupt        = false;
-    bool enableDirectModeErrorInterrupt  = false;
+
+    // Fifo mode currently not supported
+    bool enableFifoErrorInterrupt = false;
+
+    // Direct mode is the default fifo operating mode
+    bool enableDirectModeErrorInterrupt = false;
 };
 
 // Forward declaration
@@ -273,13 +298,14 @@ public:
     inline bool getFifoErrorFlagStatus() { return fifoErrorFlag; }
 
     /**
-     * @brief Returns the last read status of the direct mode error flag.
+     * @brief Returns the last read status of the direct mode (default
+     * mode) error flag.
      */
     inline bool getDirectModeErrorFlagStatus() { return directModeErrorFlag; }
 
     /**
-     * @brief Returns the number of the buffer currently in use.
-     *
+     * @brief Returns the number of the buffer currently in use when
+     * in double buffer mode.
      * @return 1 or 2 depending on the buffer currently in use.
      */
     int getCurrentBufferNumber();
