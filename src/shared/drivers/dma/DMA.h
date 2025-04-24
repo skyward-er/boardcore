@@ -97,12 +97,42 @@ struct DMATransaction
     bool doubleBufferMode                = false;
     bool enableHalfTransferInterrupt     = false;
     bool enableTransferCompleteInterrupt = false;
-    bool enableTransferErrorInterrupt    = false;
 
-    // Fifo mode currently not supported
+    /**
+     * The transfer error interrupt flag is set when:
+     * - A bus error occurs during a DMA read or a write access.
+     * - A write access is requested by software on a memory address register
+     * in Double buffer mode whereas the stream is enabled and the current
+     * target memory is the one impacted by the write into the memory address
+     * register.
+     */
+    bool enableTransferErrorInterrupt = false;
+
+    /**
+     * Fifo overrun/underrun condition.
+     *
+     * In direct mode, the FIFO error flag can also be set under
+     * the following conditions:
+     * - In the peripheral-to-memory mode, the FIFO can be saturated
+     * (overrun) if the memory bus is not granted for several
+     * peripheral requests.
+     * - In the memory-to-peripheral mode, an underrun condition may
+     * occur if the memory bus has not been granted before a
+     * peripheral request occurs.
+     */
     bool enableFifoErrorInterrupt = false;
 
-    // Direct mode is the default fifo operating mode
+    /**
+     * Direct mode is the default fifo operating mode.
+     *
+     * Direct mode error can only be set in the peripheral-to-memory
+     * mode while operating in direct mode. This flag is set when a DMA request
+     * occurs while the previous data have not yet been fully transferred into
+     * the memory (because the memory bus was not granted). In this case, the
+     * flag indicates that 2 data items were be transferred successively to the
+     * same destination address, which could be an issue if the destination is
+     * not able to manage this situation.
+     */
     bool enableDirectModeErrorInterrupt = false;
 };
 
