@@ -509,7 +509,7 @@ void DMAStream::setup(DMATransaction& transaction)
     if (transaction.enableFifoErrorInterrupt)
     {
         clearFifoErrorFlag();
-        registers->CR |= DMA_SxFCR_FEIE;
+        registers->FCR |= DMA_SxFCR_FEIE;
         enableInterrupt = true;
     }
     if (transaction.enableDirectModeErrorInterrupt)
