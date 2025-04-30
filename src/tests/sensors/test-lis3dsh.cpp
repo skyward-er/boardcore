@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
@@ -38,6 +39,26 @@ GpioPin cs(GPIOE_BASE, 3);
 
 int main()
 {
+    // Enable DMA for SPI
+    bus.enableRxDMARequest();
+    bus.enableTxDMARequest();
+
+    auto rxStream = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_SPI1_RX);
+    if (!rxStream.isValid())
+    {
+        printf("Cannot acquire dma rx stream\n");
+        return 0;
+    }
+
+    auto txStream = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_SPI1_TX);
+    if (!txStream.isValid())
+    {
+        printf("Cannot acquire dma tx stream\n");
+        return 0;
+    }
+
     spiSck.mode(miosix::Mode::ALTERNATE);
     spiSck.alternateFunction(5);
     spiMiso.mode(miosix::Mode::ALTERNATE);
@@ -48,8 +69,8 @@ int main()
     cs.mode(miosix::Mode::OUTPUT);
     cs.high();
 
-    LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
-                   sensor.FULL_SCALE_4G);
+    LIS3DSH sensor(bus, cs, rxStream, txStream, bus.getSpi(), sensor.ODR_100_HZ,
+                   sensor.UPDATE_AFTER_READ_MODE, sensor.FULL_SCALE_4G);
 
     LIS3DSHData data;
 
@@ -81,7 +102,7 @@ int main()
     Thread::sleep(500);
 
     // sample some data from the sensor
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 50; i++)
     {
         // sensor intitialized, should return error if no new data exist
         sensor.sample();
@@ -96,10 +117,12 @@ int main()
                data.accelerationY, data.accelerationZ);
         printf("Temp: %.2f C \n", data.temperature);
 
-        Thread::sleep(200);
+        Thread::sleep(1000);
     }
 
     printf("\nLIS3DSH TEST OK ! \n");
+    // Test dma communication by reading whoami
+    sensor.whoamiDma();
 
     return 0;
 }

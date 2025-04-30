@@ -23,10 +23,14 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <math.h>
 #include <sensors/Sensor.h>
+
+#include <chrono>
 
 #include "LIS3DSHData.h"
 
@@ -60,10 +64,12 @@ public:
      *                      Default value is +/-2g.
      */
     LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chipSelect,
+            DMAStreamGuard& rxStream, DMAStreamGuard& txStream, SPIType* ptrSpi,
             uint8_t odr       = OutputDataRate::ODR_100_HZ,
             uint8_t bdu       = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
             uint8_t fullScale = FullScale::FULL_SCALE_2G)
-        : spiSlave(bus, chipSelect), odr(odr), bdu(bdu), fullScale(fullScale)
+        : spiSlave(bus, chipSelect), streamRx(rxStream), streamTx(txStream),
+          ptrSpi(ptrSpi), odr(odr), bdu(bdu), fullScale(fullScale)
     {
         spiSlave.config.clockDivider =
             SPI::ClockDivider::DIV_64;  // used to set the spi baud rate
@@ -85,10 +91,12 @@ public:
      *                      Default value is +/-2g.
      */
     LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chipSelect,
+            DMAStreamGuard& rxStream, DMAStreamGuard& txStream, SPIType* ptrSpi,
             SPIBusConfig config, uint8_t odr = OutputDataRate::ODR_100_HZ,
             uint8_t bdu       = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
             uint8_t fullScale = FullScale::FULL_SCALE_2G)
-        : spiSlave(bus, chipSelect, config), odr(odr), bdu(bdu),
+        : spiSlave(bus, chipSelect, config), streamRx(rxStream),
+          streamTx(txStream), ptrSpi(ptrSpi), odr(odr), bdu(bdu),
           fullScale(fullScale)
     {
     }
@@ -312,7 +320,30 @@ public:
             1  // values updated only when MSB and LSB are read (recommended)
     };
 
+    /**
+     * @brief Reads whoami register with dma.
+     */
+    void whoamiDma()
+    {
+        // Max wait for receiver stream
+        constexpr auto wait = std::chrono::seconds(1);
+
+        SPITransactionDMA transaction(spiSlave, ptrSpi, streamRx, streamTx);
+
+        uint8_t whoamiValue = transaction.readRegister(WHO_AM_I_REG, wait);
+
+        if (whoamiValue == WHO_AM_I_DEFAULT_VALUE)
+            printf("Correct WHO_AM_I value\n");
+        else
+            printf("Wrong WHO_AM_I value, got %d instead of %d\n", whoamiValue,
+                   WHO_AM_I_DEFAULT_VALUE);
+    }
+
 private:
+    DMAStreamGuard& streamRx;
+    DMAStreamGuard& streamTx;
+    SPIType* ptrSpi;
+
     /**
      * @brief Read new data from the accelerometer.
      *
@@ -348,7 +379,8 @@ private:
     {
         AccelerometerData accelData;
 
-        SPITransaction spi(spiSlave);
+        // SPITransaction spi(spiSlave);
+        SPITransactionDMA spi(spiSlave, ptrSpi, streamRx, streamTx);
 
         // read the sensor's status register
         uint8_t status = spi.readRegister(STATUS);
