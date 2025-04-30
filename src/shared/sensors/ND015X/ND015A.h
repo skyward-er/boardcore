@@ -25,6 +25,7 @@
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
+#include <drivers/dma/DMA.h>
 
 #include "ND015XData.h"
 
@@ -75,6 +76,7 @@ public:
      * @param spiConfig SPI bus configuration.
      */
     ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+           DMAStreamGuard& streamRx, DMAStreamGuard& streamTx, SPIType* ptrSpi,
            IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
            BWLimitFilter bwl    = BWLimitFilter::BWL_200,
            NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
@@ -156,6 +158,10 @@ private:
         NotchEnable ntc : 1;       // notch filter enable
         uint8_t odr : 8;           // output data rate
     } sensorSettings;
+
+    DMAStreamGuard& streamRx;
+    DMAStreamGuard& streamTx;
+    SPIType* ptrSpi;
 
     static_assert(sizeof(sensorSettings) == 2,
                   "sensorSettings size is not 2 bytes");

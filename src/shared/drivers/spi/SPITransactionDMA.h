@@ -32,8 +32,8 @@ namespace Boardcore
 class SPITransactionDMA
 {
 public:
-    SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi, DMAStreamGuard& rxStream,
-                      DMAStreamGuard& txStream)
+    SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
+                      DMAStreamGuard& rxStream, DMAStreamGuard& txStream)
         : slave(slave), spi(ptrSpi), streamRx(rxStream), streamTx(txStream)
     {
     }
@@ -100,6 +100,79 @@ public:
         streamRx->timedWaitForTransferComplete(wait);
 
         return dstBuf[1];
+    }
+
+    /**
+     * @brief Full duplex transmission of 16 bits on the bus.
+     *
+     * @param data Half word to write.
+     * @return Half word read from the bus.
+     */
+    uint16_t transfer16(uint16_t data, std::chrono::microseconds wait =
+                                           std::chrono::microseconds::zero())
+    {
+        // uint16_t temp[2] = {0};
+        // // Transferring MSB, putting the read value in the MSB of temp
+        // temp[0] = static_cast<uint16_t>(transfer(static_cast<uint8_t>(data >>
+        // 8)));
+        // // Transferring LSB, putting the read value in the LSB of temp
+        // temp[1] =
+        // static_cast<uint16_t>(transfer(static_cast<uint8_t>(data)));
+        // // MSB | LSB
+        // return temp[0] << 8 | temp[1];
+
+        uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 8),
+                              static_cast<uint8_t>(data)};
+        uint8_t recvBuf[2] = {0};
+
+        DMATransaction trnRx{
+            .direction         = DMATransaction::Direction::PER_TO_MEM,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = (void*)&(spi->DR),
+            .dstAddress        = recvBuf,
+            .numberOfDataItems = 2,
+            .srcIncrement      = false,
+            .dstIncrement      = true,
+            .enableTransferCompleteInterrupt = true,
+        };
+        streamRx->setup(trnRx);
+
+        DMATransaction trnTx{
+            .direction         = DMATransaction::Direction::MEM_TO_PER,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = sendBuf,
+            .dstAddress        = (void*)&(spi->DR),
+            .numberOfDataItems = 2,
+            .srcIncrement      = true,
+            .dstIncrement      = false,
+            .enableTransferCompleteInterrupt = true,
+        };
+        streamTx->setup(trnTx);
+
+        // Start transaction
+        slave.bus.select(slave.cs);
+
+        // First enable the receiving stream
+        streamRx->enable();
+
+        // Enable sender stream
+        streamTx->enable();
+
+        // Wait for the sender to complete before stopping the transaction
+        streamTx->waitForTransferComplete();  // TODO: make timed wait
+
+        // Stop the transaction
+        slave.bus.deselect(slave.cs);
+
+        // Wait for the receiver to complete
+        // TODO: verify the result of the transaction
+        streamRx->timedWaitForTransferComplete(wait);
+
+        return recvBuf[0] << 8 | recvBuf[1];
     }
 
 private:
