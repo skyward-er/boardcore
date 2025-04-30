@@ -23,9 +23,13 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/spi/SPITransactionDMA.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
+
+#include <chrono>
 
 #include "LSM6DSRXConfig.h"
 #include "LSM6DSRXData.h"
@@ -48,7 +52,8 @@ public:
      * @param busConfiguration SPI bus configuration.
      * @param config LSM6DSRX configuration.
      */
-    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
+    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, DMAStreamGuard& streamRx,
+             DMAStreamGuard& streamTx, SPIBusConfig busConfiguration,
              LSM6DSRXConfig& config);
 
     /**
@@ -67,6 +72,23 @@ public:
      */
     LSM6DSRXData getSensorData();
 
+    void checkWhoamiDma()
+    {
+        SPITransactionDMA transaction(spiSlave, ptrSpi, streamRx, streamTx);
+        uint8_t regValue = transaction.readRegister(LSM6DSRXDefs::REG_WHO_AM_I);
+
+        if (regValue == LSM6DSRXDefs::WHO_AM_I_VALUE)
+        {
+            printf("checkWhoamiDma(): whoami correct!\n");
+        }
+        else
+        {
+            printf("checkWhoamiDma(): error, invalid value!\n");
+            printf("Expected: %u | Obtained: %u", LSM6DSRXDefs::REG_WHO_AM_I,
+                   regValue);
+        }
+    }
+
 protected:
     /**
      * @brief Gather data from FIFO/data registers.
@@ -74,6 +96,11 @@ protected:
     LSM6DSRXData sampleImpl() override;
 
 private:
+    SPIType* ptrSpi;
+    DMAStreamGuard& streamRx;
+    DMAStreamGuard& streamTx;
+    uint8_t DMA_sendBuf = 0;  // It must be persistent to calls to setupTx()
+
     bool isInit = false;
     SPISlave spiSlave;
     LSM6DSRXConfig config;
@@ -120,6 +147,78 @@ private:
      * @brief Performs a really simple reading from the FIFO buffer.
      */
     void readFromFifo();
+
+    inline void setStreamRx(uint16_t nBytes)
+    {
+        DMATransaction trnRx{
+            .direction         = DMATransaction::Direction::PER_TO_MEM,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = (void*)&(ptrSpi->DR),
+            .dstAddress        = reinterpret_cast<uint8_t*>(rawFifo.data()),
+            .numberOfDataItems = nBytes,
+            .srcIncrement      = false,
+            .dstIncrement      = true,
+            // .enableTransferCompleteInterrupt = true,
+        };
+        streamRx->setup(trnRx);
+    }
+
+    inline void setStreamTx(uint16_t nBytes)
+    {
+        DMATransaction trnTx{
+            .direction         = DMATransaction::Direction::MEM_TO_PER,
+            .priority          = DMATransaction::Priority::VERY_HIGH,
+            .srcSize           = DMATransaction::DataSize::BITS_8,
+            .dstSize           = DMATransaction::DataSize::BITS_8,
+            .srcAddress        = &DMA_sendBuf,
+            .dstAddress        = (void*)&(ptrSpi->DR),
+            .numberOfDataItems = nBytes,
+            .srcIncrement      = false,
+            .dstIncrement      = false,
+            // .enableTransferCompleteInterrupt = true,
+        };
+        streamTx->setup(trnTx);
+    }
+
+    inline bool readFifoDma(uint8_t reg, const uint16_t nBytes)
+    {
+        // Max wait for receiver stream
+        constexpr auto wait = std::chrono::seconds(1);
+
+        // Configuration taken from the spi driver
+        if (spiSlave.config.writeBit == SPI::WriteBit::NORMAL)
+            reg |= 0x80;
+
+        streamRx->setNumberOfDataItems(nBytes);
+        streamTx->setNumberOfDataItems(nBytes);
+
+        // Start transaction
+        spiSlave.bus.select(spiSlave.cs);
+
+        // Send first byte
+        // TODO: in case of problems, try removing this line and
+        // using a proper buffer, without caring about memory usage
+        spiSlave.bus.write(reg);
+
+        // First enable the receiving stream
+        streamRx->enable();
+
+        // Enable sender stream
+        streamTx->enable();
+
+        // Wait for the sender to complete before stopping the transaction
+        streamTx->waitForTransferComplete();
+
+        // Wait for the receiver to complete
+        bool res = streamRx->timedWaitForTransferComplete(wait);
+
+        // Stop the transaction
+        spiSlave.bus.deselect(spiSlave.cs);
+
+        return res;
+    }
 
     /**
      * @brief Utility function to handle the saving of a sample inside the fifo

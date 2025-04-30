@@ -32,9 +32,11 @@
 namespace Boardcore
 {
 
-LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
-                   SPIBusConfig busConfiguration, LSM6DSRXConfig& configuration)
-    : spiSlave(bus, csPin, busConfiguration), config(configuration)
+LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, DMAStreamGuard& streamRx,
+                   DMAStreamGuard& streamTx, SPIBusConfig busConfiguration,
+                   LSM6DSRXConfig& configuration)
+    : ptrSpi(bus.getSpi()), streamRx(streamRx), streamTx(streamTx),
+      spiSlave(bus, csPin, busConfiguration), config(configuration)
 {
     isInit = false;
 
@@ -53,6 +55,10 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
     // NORMAL
     if (config.odrAcc == LSM6DSRXConfig::ACC_ODR::HZ_1_6)
         config.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
+
+    // setup dma
+    setStreamRx(0);
+    setStreamTx(0);
 }
 
 bool LSM6DSRX::init()
@@ -815,9 +821,18 @@ void LSM6DSRX::readFromFifo()
                                                           false};
 
     // read samples from the sensors
-    spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
-                      reinterpret_cast<uint8_t*>(rawFifo.data()),
-                      numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    // spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+    //                   reinterpret_cast<uint8_t*>(rawFifo.data()),
+    //                   numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    readFifoDma(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+                numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+
+    streamRx->readFlags();
+    streamTx->readFlags();
+    if (streamRx->getTransferErrorFlagStatus())
+        printf("streamRx, error flag is set\n");
+    if (streamTx->getTransferErrorFlagStatus())
+        printf("streamTx, error flag is set\n");
 
     // not all data extracted from fifo is sample data, timestamps are not
     // saved.
