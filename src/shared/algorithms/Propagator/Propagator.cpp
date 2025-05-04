@@ -61,9 +61,9 @@ void Propagator::step()
     {
         t1 = state.timestamp;
         dt = t1 - t0;
-        if (dt > 0 && dt < 4646476 && t0 != 0)
-            state.setAcceleration(state.getVelocity() -
-                                  last_real_velocity / dt);
+        if (dt > 0 && dt < maxAccelerationTime && t0 != 0)
+            state.setZAcceleration((state.getVelocity() - last_real_velocity) /
+                                   dt);
         t0                 = t1;
         last_real_velocity = state.getVelocity();
     }

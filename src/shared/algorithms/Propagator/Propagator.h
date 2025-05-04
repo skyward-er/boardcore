@@ -97,8 +97,12 @@ private:
     NASState lastRocketNasState;      ///< Last received rocket NAS state
     miosix::FastMutex nasStateMutex;  ///< mutex to sync nasState accesses
     miosix::FastMutex stateMutex;     ///< mutex to sync state accesses
-    Eigen::Vector3f last_real_velocity;
-    uint64_t t0 = 0, t1 = 0, dt = 0;
+    Eigen::Vector3f last_real_velocity;  ///< last non-propagated velocity
+    uint64_t t0 = 0, t1 = 0,
+             dt = 0;  ///< time values used to compute acceleration [u]
+    const uint64_t maxAccelerationTime =
+        5000000;  ///< Time limit after which acceleration data is ignored for
+                  ///< propagation (5s)
 };
 
 }  // namespace Boardcore
