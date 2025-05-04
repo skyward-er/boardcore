@@ -42,10 +42,9 @@ struct PropagatorState
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 
-    float ax = 0, ay = 0,
-          az = 0;  // propagater acceleration (Eigen::Vector3f could not be used
-                   // because it is not trivially copyable)
-
+    float az                  = 0;
+    static constexpr float ax = 0,
+                           ay = 0;  ///< only az is used by the propagator
     PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
@@ -112,14 +111,9 @@ struct PropagatorState
     }
 
     /**
-     * @brief Setter for the vector acceleration
+     * @brief Setter for the vector acceleration(only z-axis)
      */
-    void setAcceleration(Eigen::Vector3f acc)
-    {
-        ax = acc[0];
-        ay = acc[1];
-        az = acc[2];
-    }
+    void setZAcceleration(Eigen::Vector3f acc) { az = acc(2); }
 
     /**
      * @brief Getter for the vector acceleration
@@ -129,9 +123,9 @@ struct PropagatorState
     Eigen::Vector3f getAcceleration() const
     {
         Eigen::Vector3f acc;
-        acc[0] = ax;
-        acc[1] = ay;
-        acc[2] = az;
+        acc(0) = ax;
+        acc(1) = ay;
+        acc(2) = az;
         return acc;
     }
 
