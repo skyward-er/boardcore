@@ -176,6 +176,7 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
         fmt::fmt-header-only
         Catch2::Catch2
         Mavlink::Mavlink
+        Socrate::Socrate
     )
 
     # Link MxGui if supported by the target

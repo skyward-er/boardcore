@@ -15,6 +15,7 @@
             "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common/CMSIS/Include",
             "${workspaceFolder}/libs/mxgui",
             "${workspaceFolder}/libs/tscpp",
+            "${workspaceFolder}/libs/socrate/include",
             "${workspaceFolder}/src/shared",
             "${workspaceFolder}/src/tests",
             "${workspaceFolder}/version"

@@ -30,6 +30,8 @@ include(${SBS_BASE}/libs/mxgui/cmake/mxgui.cmake)
 
 # Serialization library
 add_subdirectory(${SBS_BASE}/libs/tscpp EXCLUDE_FROM_ALL)
+add_subdirectory(${SBS_BASE}/libs/socrate EXCLUDE_FROM_ALL)
+
 
 # Eigen library
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
