@@ -115,6 +115,18 @@ AntennaAngles Follower::getTargetAngles()
     return targetAngles;
 }
 
+bool Follower::setMaxGain(float yawGainNew, float pitchGainNew)
+{
+    // In case of negative or over the limit values, do not set the gains
+    if (yawGainNew < 0 || yawGainNew > YAW_GAIN_LIMIT || pitchGainNew < 0 ||
+        pitchGainNew > PITCH_GAIN_LIMIT)
+        return false;
+
+    yawGain   = yawGainNew;
+    pitchGain = pitchGainNew;
+    return true;
+}
+
 bool Follower::init()
 {
     if (isInit)
@@ -162,8 +174,10 @@ void Follower::step()
     }
 
     // Rotate in the shortest direction
-    diffAngles.yaw   = YAW_GAIN * minimizeRotation(diffAngles.yaw);
-    diffAngles.pitch = PITCH_GAIN * minimizeRotation(diffAngles.pitch);
+    diffAngles.yaw =
+        std::min(yawGain, YAW_GAIN_LIMIT) * minimizeRotation(diffAngles.yaw);
+    diffAngles.pitch = std::min(pitchGain, PITCH_GAIN_LIMIT) *
+                       minimizeRotation(diffAngles.pitch);
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =

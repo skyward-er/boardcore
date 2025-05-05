@@ -38,8 +38,10 @@
 namespace Boardcore
 {
 
-static constexpr float YAW_GAIN   = 0.1;
-static constexpr float PITCH_GAIN = 1.0;
+static constexpr float YAW_GAIN_LIMIT =
+    1.0;  ///< Max limit for the Yaw gain, cannot be set more
+static constexpr float PITCH_GAIN_LIMIT =
+    1.0;  ///< Max limit for the pirch gain cannot be set more
 
 /**
  * @brief Follower class to output the yaw ad pitch necessary to track from the
@@ -88,6 +90,16 @@ public:
      * (yaw, pitch)
      */
     void setLastAntennaAttitude(const VN300Data& attitudeData);
+
+    /**
+     * @brief Set the maximum gain for the yaw and pitch
+     *
+     * @param yawGainNew the gain for the yaw
+     * @param pitchGainNew the gain for the pitch
+     * @return true if set correctly
+     * @return false if negative or over the maximum limits
+     */
+    bool setMaxGain(float yawGainNew, float pitchGainNew);
 
     /**
      * @brief Synchronized getter for the State of the follower algorithm.
@@ -181,6 +193,9 @@ private:
 
     // General mutex for the follower
     miosix::FastMutex followerMutex;
+
+    float yawGain   = YAW_GAIN_LIMIT;    ///< Gain on the yaw
+    float pitchGain = PITCH_GAIN_LIMIT;  ///< Gain on the pitch
 };
 
 }  // namespace Boardcore
