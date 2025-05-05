@@ -26,6 +26,7 @@
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
 #include <utils/KernelTime.h>
+
 #include <algorithm>
 
 #include "WIZ5500Defs.h"
