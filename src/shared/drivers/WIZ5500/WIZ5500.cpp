@@ -380,7 +380,7 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
     // Remove what we have already read.
     recv_len -= sizeof(WizIp) + sizeof(uint16_t) + sizeof(uint16_t);
 
-    // Read the minimum between the received length and the maximum length
+    // Read up to the user-provided size, or all received data if smaller
     uint16_t read_len = std::min(static_cast<size_t>(recv_len), len);
 
     spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, read_len);
