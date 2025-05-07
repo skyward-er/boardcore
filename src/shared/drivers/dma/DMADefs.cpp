@@ -23,17 +23,33 @@
 #include "DMADefs.h"
 
 // Include board mappings
-#ifdef STM32F407xx
+#if defined(STM32F407xx)
 #include "board_mappings/stm32f407xx_mappings.cpp"
-#endif  // STM32F407xx
 
-#ifdef STM32F429xx
+#elif defined(STM32F429xx)
 #include "board_mappings/stm32f429xx_mappings.cpp"
-#endif  // STM32F429xx
 
-#ifdef STM32F767xx
+#elif defined(STM32F767xx)
 #include "board_mappings/stm32f767xx_mappings.cpp"
-#endif  // STM32F767xx
+
+#else
+#warning \
+    "DMA: mapping not supported for this board! An empty mapping will be used, acquireStreamForPeripheral() will not work!"
+namespace Boardcore
+{
+namespace DMADefs
+{
+const std::multimap<Peripherals, std::pair<DMAStreamId, Channel> >
+    mapPeripherals = {};
+}  // namespace DMADefs
+}  // namespace Boardcore
+
+#endif
+
+// Check that at most 1 board is defined
+#if defined(STM32F407xx) + defined(STM32F429xx) + defined(STM32F767xx) > 1
+#error "DMA: Multiple boards defined. Only one must be defined"
+#endif
 
 namespace Boardcore
 {
