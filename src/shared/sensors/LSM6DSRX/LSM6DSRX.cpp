@@ -793,7 +793,7 @@ float LSM6DSRX::getSensorTimestampResolution()
 void LSM6DSRX::readFromFifo()
 {
     // Lock mutex for thread safe Fifo reading
-    miosix::Lock<miosix::FastMutex> l(fifoMutex);
+    miosix::Lock<miosix::FastMutex> l(mutex);
 
     SPITransaction spi{spiSlave};
 

@@ -147,14 +147,15 @@ public:
 template <typename Data, uint32_t FifoSize>
 class SensorFIFO : public Sensor<Data>
 {
+    using Super = Sensor<Data>;
+
 protected:
     std::array<Data, FifoSize> lastFifo;
     uint16_t lastFifoLevel          = 1;  //< number of samples in lastFifo
     uint64_t lastInterruptTimestamp = 0;
     uint64_t interruptTimestampDelta =
-        0;                        //< delta between previous interrupt
-                                  // timestamp and the last received one
-    miosix::FastMutex fifoMutex;  // thread safe mutex to read FIFO
+        0;  //< delta between previous interrupt
+            // timestamp and the last received one
 
 public:
     SensorFIFO() {}
@@ -163,8 +164,7 @@ public:
         : lastFifo{std::move(other.lastFifo)},
           lastFifoLevel{std::move(other.lastFifoLevel)},
           lastInterruptTimestamp{std::move(other.lastInterruptTimestamp)},
-          interruptTimestampDelta{std::move(other.interruptTimestampDelta)},
-          fifoMutex{}
+          interruptTimestampDelta{std::move(other.interruptTimestampDelta)}
     {
     }
 
@@ -174,7 +174,7 @@ public:
      */
     const std::array<Data, FifoSize> getLastFifo(uint16_t& lastFifoSize)
     {
-        miosix::Lock<miosix::FastMutex> l(fifoMutex);
+        miosix::Lock<miosix::FastMutex> l(Super::mutex);
         lastFifoSize = lastFifoLevel;
         return lastFifo;
     }
