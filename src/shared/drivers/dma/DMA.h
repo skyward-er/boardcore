@@ -95,8 +95,15 @@ struct DMATransaction
      * available with memory to memory transfers.
      */
     bool doubleBufferMode                = false;
-    bool enableHalfTransferInterrupt     = false;
     bool enableTransferCompleteInterrupt = false;
+
+    /**
+     * @warning After a full DMA transaction, cache invalidation is required
+     * to maintain data coherence. However, the half transfer
+     * mechanism does not allow the driver to handle cache
+     * invalidation internally, leaving the job to the user.
+     */
+    bool enableHalfTransferInterrupt = false;
 
     /**
      * The transfer error interrupt flag is set when:
@@ -240,7 +247,8 @@ public:
      * The caller waits for the corresponding interrupt, if enabled.
      * Otherwise it goes to polling mode on the flag.
      * @warning In case cache is used, this method DOES NOT invalidate
-     * the cache lines. It is up to the user.
+     * the cache lines. Cache invalidation must be handled by the
+     * user.
      */
     void waitForHalfTransfer();
 
@@ -261,7 +269,8 @@ public:
      * @return True if the event is reached, false if the
      * timeout expired.
      * @warning In case cache is used, this method DOES NOT invalidate
-     * the cache lines. It is up to the user.
+     * the cache lines. Cache invalidation must be handled by the
+     * user.
      */
     bool timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns);
 
