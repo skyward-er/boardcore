@@ -751,7 +751,7 @@ void BMX160::readFifo(bool headerless)
     uint64_t timestamp          = 0;
     uint64_t watermarkTimestamp = 0;
     int idx                     = 0;
-    miosix::Lock<miosix::FastMutex> l(fifoMutex);
+    miosix::Lock<miosix::FastMutex> l(mutex);
 
     while (idx < len && buf[idx] != BMX160Defs::FIFO_STOP_BYTE)
     {
