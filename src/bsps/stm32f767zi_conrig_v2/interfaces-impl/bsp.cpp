@@ -291,8 +291,8 @@ void IRQbspInit()
     btns::n2_quenching::mode(Mode::INPUT);
     btns::ignition::mode(Mode::INPUT);
     btns::arm::mode(Mode::INPUT);
+    btns::tars1::mode(Mode::INPUT);
     btns::tars3::mode(Mode::INPUT);
-    btns::tars3m::mode(Mode::INPUT);
 
     ui::armedLed::mode(Mode::OUTPUT);
 

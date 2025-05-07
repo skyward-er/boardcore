@@ -113,8 +113,8 @@ using ox_venting   = Gpio<GPIOD_BASE, 11>;
 using n2_quenching = Gpio<GPIOB_BASE, 15>;
 using ignition     = Gpio<GPIOB_BASE, 14>;  // Port: IGN1
 using arm          = Gpio<GPIOD_BASE, 13>;  // Port: ARM
-using tars3        = Gpio<GPIOE_BASE, 6>;
-using tars3m       = Gpio<GPIOB_BASE, 4>;
+using tars1        = Gpio<GPIOE_BASE, 6>;
+using tars3        = Gpio<GPIOB_BASE, 4>;
 }  // namespace btns
 
 namespace ui
