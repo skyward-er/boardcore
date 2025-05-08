@@ -135,7 +135,9 @@ public:
 private:
     Logger();
 
-    static std::string getFileName(int logNumber);
+    static std::string getLogName(int logNumber);
+
+    static std::string getMappingName(int logNumber);
 
     static void packThreadLauncher(void* argv);
 
@@ -158,7 +160,19 @@ private:
      * \param data Pointer to class data.
      * \param size Class size.
      */
-    LoggerResult logImpl(const char* name, const void* data, unsigned int size);
+    template <typename T>
+    LoggerResult logImpl(const T& t, unsigned int size);
+
+    /**
+     * @brief Maps the type T to a mapping file.
+     *
+     * This function is used to map the type T to a mapping file. This file is
+     * used by the log decoder.
+     *
+     * \param t The class to be mapped.
+     */
+    template <typename T>
+    void mapType(const T& t);
 
     static constexpr unsigned int maxFilenameNumber =
         10000;  ///< Limit on files
@@ -216,8 +230,9 @@ private:
 
     volatile bool started = false;  ///< Logger is started and accepting data.
 
-    FILE* file = nullptr;  ///< Log file.
-    LoggerStats stats;     ///< Logger stats.
+    FILE* logFile     = nullptr;  ///< Log file.
+    FILE* mappingFile = nullptr;  ///< Mapping file.
+    LoggerStats stats;            ///< Logger stats.
 };
 
 template <typename T>
@@ -227,7 +242,7 @@ LoggerResult Logger::log(const T& t)
         std::is_trivially_copyable<T>::value,
         "The type T must be trivially copyable in order to be logged!");
 
-    return logImpl(typeid(t).name(), &t, sizeof(t));
+    return logImpl(t, sizeof(t));
 }
 
 }  // namespace Boardcore

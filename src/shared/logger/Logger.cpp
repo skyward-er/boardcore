@@ -36,6 +36,7 @@
 #include <chrono>
 #include <fstream>
 #include <stdexcept>
+#include <userde.hpp>
 
 using namespace std;
 using namespace miosix;
@@ -49,27 +50,41 @@ bool Logger::start()
         return true;
 
     // Find the proper log filename base on the current files on the disk
-    string filename;
+    string logName;
+    string mappingName;
     for (fileNumber = 0; fileNumber < (int)maxFilenameNumber; fileNumber++)
     {
         // Check if the current file does not exists
-        filename = getFileName(fileNumber);
+        logName     = getLogName(fileNumber);
+        mappingName = getMappingName(fileNumber);
+
+        // TODO decide how to handle this part
         struct stat st;
-        if (stat(filename.c_str(), &st) != 0)
+        if (stat(logName.c_str(), &st) != 0)
             break;
 
         if (fileNumber == maxFilenameNumber - 1)
             TRACE("Too many log files, appending data to last\n");
     }
 
-    file = fopen(filename.c_str(), "ab");  // b for binary
-    if (file == NULL)
+    logFile = fopen(logName.c_str(), "ab");  // b for binary
+    if (logFile == NULL)
     {
         fileNumber = -1;
-        TRACE("Error opening %s file\n", filename.c_str());
+        TRACE("Error opening %s file\n", logName.c_str());
         return false;
     }
-    setbuf(file, NULL);  // Disable buffering for the file stream
+
+    mappingFile = fopen(mappingName.c_str(), "ab");  // b for binary
+    if (mappingFile == NULL)
+    {
+        fileNumber = -1;
+        TRACE("Error opening %s file\n", mappingName.c_str());
+        return false;
+    }
+
+    setbuf(logFile, NULL);      // Disable buffering for the file stream
+    setbuf(mappingFile, NULL);  // Disable buffering for the file stream
 
     // The boring part, start threads one by one and if they fail, undo.
     // Perhaps excessive defensive programming as thread creation failure is
@@ -79,7 +94,8 @@ bool Logger::start()
                             Thread::JOINABLE);
     if (!packTh)
     {
-        fclose(file);
+        fclose(logFile);
+        fclose(mappingFile);
         TRACE("Error creating pack thread\n");
         return false;
     }
@@ -98,7 +114,8 @@ bool Logger::start()
             fullBufferList.pop();
         }
         fullBufferList.pop();  // Remove nullptr
-        fclose(file);
+        fclose(logFile);
+        fclose(mappingFile);
         TRACE("Error creating write thread\n");
         return false;
     }
@@ -121,7 +138,8 @@ void Logger::stop()
     packTh->join();
     writeTh->join();
 
-    fclose(file);
+    fclose(logFile);
+    fclose(mappingFile);
 
     stats = {};
 
@@ -137,7 +155,7 @@ bool Logger::testSDCard()
 
 int Logger::getCurrentLogNumber() { return fileNumber; }
 
-string Logger::getCurrentFileName() { return getFileName(fileNumber); }
+string Logger::getCurrentFileName() { return getLogName(fileNumber); }
 
 LoggerStats Logger::getStats()
 {
@@ -179,10 +197,18 @@ Logger::Logger()
         emptyBufferList.push(new Buffer);
 }
 
-string Logger::getFileName(int logNumber)
+string Logger::getLogName(int logNumber)
 {
     char filename[32];
     sprintf(filename, "/sd/log%02d.dat", logNumber);
+
+    return string(filename);
+}
+
+string Logger::getMappingName(int logNumber)
+{
+    char filename[32];
+    sprintf(filename, "/sd/mapping%02d.dat", logNumber);
 
     return string(filename);
 }
@@ -291,13 +317,13 @@ void Logger::writeThread()
             using namespace std::chrono;
             auto start = system_clock::now();
 
-            size_t result = fwrite(buffer->data, 1, buffer->size, file);
+            size_t result = fwrite(buffer->data, 1, buffer->size, logFile);
             if (result != buffer->size)
             {
                 // If this fails and your board uses SDRAM,
                 // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
                 stats.writesFailed++;
-                stats.lastWriteError = ferror(file);
+                stats.lastWriteError = ferror(logFile);
             }
             else
             {
@@ -325,8 +351,8 @@ void Logger::writeThread()
     }
 }
 
-LoggerResult Logger::logImpl(const char* name, const void* data,
-                             unsigned int size)
+template <typename T>
+LoggerResult Logger::logImpl(const T& t, unsigned int size)
 {
     if (started == false)
     {
@@ -352,19 +378,19 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     }
 
     // Copy the data in the record
-    int result =
-        tscpp::serializeImpl(record->data, maxRecordSize, name, data, size);
+    auto result =
+        socrate::serialize_with_name<T>(t, record->data, maxRecordSize);
 
-    // If the record is too small, move the record in the empty queue and error
-    if (result == tscpp::BufferTooSmall)
+    // If the record is too small, move the record in the empty queue and
+    // error
+    if (result == socrate::userde::Error::BufferTooSmall)
     {
         emptyRecordsQueue.put(record);
         atomicAdd(&stats.tooLargeSamples, 1);
-        TRACE("The current record size is not enough to store %s\n", name);
+        TRACE("The current record size is not enough to store %s\n",
+              t.type_name());
         return LoggerResult::TooLarge;
     }
-
-    record->size = result;
 
     // Move the record to the full queue, where the pack thread will read and
     // store it in a buffer
@@ -373,6 +399,34 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     atomicAdd(&stats.queuedSamples, 1);
 
     return LoggerResult::Queued;
+}
+
+// TODO make this use records instead of writing directly to file
+template <typename T>
+void mapType(const T& t)
+{
+    std::string typeName(T::reflect().type_name());
+    fwrite(typeName.c_str(), 1, typeName.size() + 1, file);
+
+    auto fieldCount = T::reflect().field_count();
+
+    fwrite(&fieldCount, 1, 2, file);
+
+    T::reflect().for_each_field(
+        data,
+        [&](const char* _name, auto& value)
+        {
+            std::string fieldName(_name);
+            std::string type(typeid(value).name());
+
+            // Write the field name to the file
+            fwrite(fieldName.c_str(), 1, fieldName.size() + 1, mappingFile);
+            TRACE("field name: %s\n", fieldName.c_str());
+
+            // Write the field type to the file
+            fwrite(type.c_str(), 1, type.size() + 1, mappingFile);
+            TRACE("field type: %s\n", type.c_str());
+        });
 }
 
 }  // namespace Boardcore
