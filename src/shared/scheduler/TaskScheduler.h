@@ -315,7 +315,7 @@ private:
                                                        size_t id)
     {
         return TaskStatsResult{id,
-                               std::chrono::nanoseconds{task.period},
+                               task.period,
                                task.activationStats.getStats(),
                                task.periodStats.getStats(),
                                task.workloadStats.getStats(),

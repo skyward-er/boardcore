@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -38,29 +40,12 @@ struct MPU9250Data : public AccelerometerData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,gyro_"
-               "timestamp,"
-               "angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,magneticFieldTimestamp,"
-               "magneticFieldX,"
-               "magneticFieldY,"
-               "magneticFieldZ,"
-               "temperatureTimestamp,"
-               "temp\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << ","
-           << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(MPU9250Data, EXTEND_DEF(AccelerometerData)
+                                           EXTEND_DEF(GyroscopeData)
+                                               EXTEND_DEF(MagnetometerData)
+                                                   EXTEND_DEF(TemperatureData));
     }
 };
 

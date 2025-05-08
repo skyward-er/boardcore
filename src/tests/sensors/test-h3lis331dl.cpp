@@ -25,6 +25,8 @@
 #include <sensors/H3LIS331DL/H3LIS331DL.h>
 #include <utils/Debug.h>
 
+#include <iostream>
+
 #include "miosix.h"
 
 using namespace Boardcore;
@@ -76,7 +78,7 @@ int main()
     H3LIS331DLData data;
 
     // Print out the CSV header
-    printf(H3LIS331DLData::header().c_str());
+    std::cout << "timestamp,accelerationX,accelerationY,accelerationZ\n";
     // sample some data from the sensor
     for (int i = 0; i < 255; i++)
     {

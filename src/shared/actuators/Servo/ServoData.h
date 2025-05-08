@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -35,12 +36,11 @@ struct ServoData
     uint8_t channel;
     float position;
 
-    static std::string header() { return "timestamp,timer,channel,position\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << static_cast<int>(timer) << ","
-           << static_cast<int>(channel) << "," << position << "\n";
+        return STRUCT_DEF(ServoData,
+                          FIELD_DEF(timestamp) FIELD_DEF(timer)
+                              FIELD_DEF(channel) FIELD_DEF(position));
     }
 };
 

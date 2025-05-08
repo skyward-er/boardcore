@@ -358,6 +358,7 @@ def check_cppcheck(directory):
                 "--suppress=unmatchedSuppression",
                 "--suppress=unusedFunction",
                 "--suppress=missingInclude",
+                "-Ilibs/socrate/include",
                 directory,
             ],
             stderr=STDOUT,

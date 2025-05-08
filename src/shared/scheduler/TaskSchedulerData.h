@@ -22,11 +22,13 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <utils/Stats/Stats.h>
 
 #include <chrono>
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -45,33 +47,33 @@ namespace Boardcore
 struct TaskStatsResult
 {
     size_t id;
-    std::chrono::nanoseconds period;
+    int64_t period;  //< this was a std::chrono::nanoseconds
     StatsResult activationStats;
     StatsResult periodStats;
     StatsResult workloadStats;
     uint32_t missedEvents;
     uint32_t failedEvents;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "id,period,actMin,actMax,actMean,actStddev,actNSamples,"
-               "periodMin,periodMax,periodMean,period_stddev,"
-               "periodNSamples,workloadMin,workloadMax,workloadMean,"
-               "workload_stddev,workloadNSample,missedEvents,failedEvents\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << (int)id << "," << period.count() << ","
-           << activationStats.minValue << "," << activationStats.maxValue << ","
-           << activationStats.mean << "," << activationStats.stdDev << ","
-           << activationStats.nSamples << "," << periodStats.minValue << ","
-           << periodStats.maxValue << "," << periodStats.mean << ","
-           << periodStats.stdDev << "," << periodStats.nSamples << ","
-           << workloadStats.minValue << "," << workloadStats.maxValue << ","
-           << workloadStats.mean << "," << workloadStats.stdDev << ","
-           << workloadStats.nSamples << "," << missedEvents << ","
-           << failedEvents << "\n";
+        return STRUCT_DEF(
+            TaskStatsResult,
+            FIELD_DEF(id) FIELD_DEF(period) FIELD_DEF2(
+                activationStats, minValue) FIELD_DEF2(activationStats, maxValue)
+                FIELD_DEF2(activationStats, mean) FIELD_DEF2(activationStats,
+                                                             stdDev)
+                    FIELD_DEF2(activationStats, nSamples) FIELD_DEF2(
+                        periodStats, minValue) FIELD_DEF2(periodStats, maxValue)
+                        FIELD_DEF2(periodStats, mean)
+                            FIELD_DEF2(periodStats, stdDev) FIELD_DEF2(
+                                periodStats, nSamples)
+                                FIELD_DEF2(workloadStats, minValue) FIELD_DEF2(
+                                    workloadStats, maxValue)
+                                    FIELD_DEF2(workloadStats, mean)
+                                        FIELD_DEF2(workloadStats, stdDev)
+                                            FIELD_DEF2(workloadStats, nSamples)
+                                                FIELD_DEF(missedEvents)
+                                                    FIELD_DEF(failedEvents));
     }
 };
 

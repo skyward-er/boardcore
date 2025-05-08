@@ -23,11 +23,11 @@
 #pragma once
 
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore
 {
-
 /**
  * @brief Statistics for the logger.
  */
@@ -35,35 +35,35 @@ struct LoggerStats
 {
     uint64_t timestamp = 0;
 
-    int logNumber = 0;
+    int32_t logNumber = 0;
 
     ///< Number of dropped samples because they where too large.
-    int tooLargeSamples = 0;
+    int32_t tooLargeSamples = 0;
 
-    int droppedSamples   = 0;  ///< Number of dropped samples due to fifo full.
-    int queuedSamples    = 0;  ///< Number of samples written to buffer.
-    int buffersFilled    = 0;  ///< Number of buffers filled.
-    int buffersWritten   = 0;  ///< Number of buffers written to disk.
-    int writesFailed     = 0;  ///< Number of fwrite() that failed.
-    int lastWriteError   = 0;  ///< Error of the last fwrite() that failed.
-    int averageWriteTime = 0;  ///< Average time for an fwrite() of a buffer.
-    int maxWriteTime     = 0;  ///< Max time for an fwrite() of a buffer.
+    int32_t droppedSamples =
+        0;  ///< Number of dropped samples due to fifo full.
+    int32_t queuedSamples  = 0;  ///< Number of samples written to buffer.
+    int32_t queuedMappings = 0;  ///< Number of mappings written to buffer.
+    int32_t buffersFilled  = 0;  ///< Number of buffers filled.
+    int32_t buffersWritten = 0;  ///< Number of buffers written to disk.
+    int32_t writesFailed   = 0;  ///< Number of fwrite() that failed.
+    int32_t lastWriteError = 0;  ///< Error of the last fwrite() that failed.
+    int32_t averageWriteTime =
+        0;                     ///< Average time for an fwrite() of a buffer.
+    int32_t maxWriteTime = 0;  ///< Max time for an fwrite() of a buffer.
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,logNumber,tooLargeSamples,droppedSamples,"
-               "queuedSamples,buffersFilled,buffersWritten,writesFailed,"
-               "lastWriteError,averageWriteTime,maxWriteTime\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << logNumber << "," << tooLargeSamples << ","
-           << droppedSamples << "," << queuedSamples << "," << buffersFilled
-           << "," << buffersWritten << "," << writesFailed << ","
-           << lastWriteError << "," << averageWriteTime << "," << maxWriteTime
-           << "\n";
-    }
+        return STRUCT_DEF(
+            LoggerStats,
+            FIELD_DEF(timestamp) FIELD_DEF(logNumber) FIELD_DEF(tooLargeSamples)
+                FIELD_DEF(droppedSamples) FIELD_DEF(queuedSamples)
+                    FIELD_DEF(queuedMappings) FIELD_DEF(buffersFilled)
+                        FIELD_DEF(buffersWritten) FIELD_DEF(writesFailed)
+                            FIELD_DEF(lastWriteError)
+                                FIELD_DEF(averageWriteTime)
+                                    FIELD_DEF(maxWriteTime));
+    };
 };
-
 }  // namespace Boardcore
+

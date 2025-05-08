@@ -26,6 +26,7 @@
 
 #include <Eigen/Eigen>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -60,20 +61,6 @@ struct ReferenceValues
     {
     }
 
-    static std::string header()
-    {
-        return "refAltitude,refPressure,refTemperature,refLatitude,"
-               "refLongitude,"
-               "mslPressure,mslTemperature\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << refAltitude << "," << refPressure << "," << refTemperature << ","
-           << refLatitude << "," << refLongitude << "," << mslPressure << ","
-           << mslTemperature << "\n";
-    }
-
     bool operator==(const ReferenceValues& other) const
     {
         return refAltitude == other.refAltitude &&
@@ -88,6 +75,15 @@ struct ReferenceValues
     bool operator!=(const ReferenceValues& other) const
     {
         return !(*this == other);
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ReferenceValues,
+                          FIELD_DEF(refAltitude) FIELD_DEF(refPressure)
+                              FIELD_DEF(refTemperature) FIELD_DEF(refLatitude)
+                                  FIELD_DEF(refLongitude) FIELD_DEF(mslPressure)
+                                      FIELD_DEF(mslTemperature));
     }
 };
 

@@ -21,6 +21,7 @@
  */
 
 #pragma once
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -201,6 +202,17 @@ struct INSData
     float velocityX;  // Estimated velocity (NED) in m/s
     float velocityY;
     float velocityZ;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            INSData,
+            FIELD_DEF(insTimestamp) FIELD_DEF(gpsFix) FIELD_DEF(insStatus)
+                FIELD_DEF(yaw) FIELD_DEF(pitch) FIELD_DEF(roll)
+                    FIELD_DEF(latitude) FIELD_DEF(longitude) FIELD_DEF(altitude)
+                        FIELD_DEF(velocityX) FIELD_DEF(velocityY)
+                            FIELD_DEF(velocityZ));
+    }
 };
 
 /**

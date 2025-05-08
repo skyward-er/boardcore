@@ -58,6 +58,14 @@ initialRocketMass};
 }
 */
 
+void printData(MEAState data)
+{
+    std::cout << data.timestamp << "," << data.estimatedPressure << ","
+              << data.estimatedMass << "," << data.estimatedApogee << ","
+              << data.estimatedForce << "," << data.x0 << "," << data.x1 << ","
+              << data.x2 << "\n";
+}
+
 MEA::Config getMEAConfig()
 {
     MEA::Config config;
@@ -91,7 +99,8 @@ TEST_CASE("MEA Update Test")
     MEA mea(getMEAConfig());
     MEAState state;
 
-    std::cout << MEAState::header();
+    std::cout << "timestamp,estimatedPressure,estimatedMass,estimatedApogee,"
+                 "estimatedForce,x0,x1,x2\n";
 
     for (unsigned i = 1; i < PRESSURE.size(); i++)
     {
@@ -104,7 +113,7 @@ TEST_CASE("MEA Update Test")
         // Get the results
         state = mea.getState();
 
-        state.print(std::cout);
+        printData(state);
 
         if (state.estimatedMass != Approx(ESTIMATED_MASS[i]).epsilon(0.01))
         {

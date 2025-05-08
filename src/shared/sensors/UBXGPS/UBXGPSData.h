@@ -22,7 +22,10 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <sensors/SensorData.h>
+
+#include <userde.hpp>
 
 namespace Boardcore
 {
@@ -46,16 +49,12 @@ struct UBXDateTime
     int32_t nanosecond = 0;  // Fraction of second, range -1e9 .. 1e9 (UTC) [ns]
     uint32_t accuracy  = 0;  // Time accuracy estimate (UTC) [ns]
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "year,month,day,hour,minute,second,nanosecond,accuracy";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << year << "," << (int)month << "," << (int)day << "," << (int)hour
-           << "," << (int)minute << "," << (int)second << "," << nanosecond
-           << "," << accuracy;
+        return STRUCT_DEF(
+            UBXDateTime, FIELD_DEF(year) FIELD_DEF(month) FIELD_DEF(day)
+                             FIELD_DEF(hour) FIELD_DEF(minute) FIELD_DEF(second)
+                                 FIELD_DEF(nanosecond) FIELD_DEF(accuracy));
     }
 };
 
@@ -63,25 +62,51 @@ struct UBXGPSData : public GPSData
 {
     UBXDateTime ubxTime;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "gpsTimestamp,latitude,longitude,height,velocityNorth,"
-               "velocityEast,velocityDown,speed,track,positionDOP,satellites,"
-               "fix," +
-               UBXDateTime::header() + "\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << gpsTimestamp << "," << latitude << "," << longitude << ","
-           << height << "," << velocityNorth << "," << velocityEast << ","
-           << velocityDown << "," << speed << "," << track << "," << positionDOP
-           << "," << (int)satellites << "," << (int)fix << ",";
-
-        ubxTime.print(os);
-
-        os << "\n";
+        return STRUCT_DEF(
+            Boardcore::UBXGPSData,
+            EXTEND_DEF(GPSData) FIELD_DEF2(ubxTime, year)
+                FIELD_DEF2(ubxTime, month) FIELD_DEF2(ubxTime, day) FIELD_DEF2(
+                    ubxTime, hour) FIELD_DEF2(ubxTime, minute)
+                    FIELD_DEF2(ubxTime, second) FIELD_DEF2(ubxTime, nanosecond)
+                        FIELD_DEF2(ubxTime, accuracy));
     }
 };
 
 }  // namespace Boardcore
+
+/* template <>
+struct socrate::userde::Serde<Boardcore::UBXDateTime, void>
+{
+    static constexpr size_t size()
+    {
+        return sizeof(uint16_t) + sizeof(uint8_t) * 5 + sizeof(int32_t) +
+               sizeof(uint32_t);
+    }
+
+    static void serialize(const Boardcore::UBXDateTime& value, Stream& stream)
+    {
+        stream.write(&value.year, sizeof(uint16_t));
+        stream.write(&value.month, sizeof(uint8_t));
+        stream.write(&value.day, sizeof(uint8_t));
+        stream.write(&value.hour, sizeof(uint8_t));
+        stream.write(&value.minute, sizeof(uint8_t));
+        stream.write(&value.second, sizeof(uint8_t));
+        stream.write(&value.nanosecond, sizeof(int32_t));
+        stream.write(&value.accuracy, sizeof(uint32_t));
+    }
+
+    static void deserialize(Boardcore::UBXDateTime& value, Stream& stream)
+    {
+        stream.read(&value.year, sizeof(uint16_t));
+        stream.read(&value.month, sizeof(uint8_t));
+        stream.read(&value.day, sizeof(uint8_t));
+        stream.read(&value.hour, sizeof(uint8_t));
+        stream.read(&value.minute, sizeof(uint8_t));
+        stream.read(&value.second, sizeof(uint8_t));
+        stream.read(&value.nanosecond, sizeof(int32_t));
+        stream.read(&value.accuracy, sizeof(uint32_t));
+    }
+};
+ */
