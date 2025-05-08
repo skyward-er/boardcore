@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -34,15 +36,10 @@ struct BatteryVoltageSensorData : public ADCData
 {
     float batVoltage = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "voltageTimestamp,channelId,voltage,bat_voltage\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << voltageTimestamp << "," << (int)channelId << "," << voltage << ","
-           << batVoltage << "\n";
+        return STRUCT_DEF(BatteryVoltageSensorData,
+                          EXTEND_DEF(ADCData) FIELD_DEF(batVoltage));
     }
 };
 

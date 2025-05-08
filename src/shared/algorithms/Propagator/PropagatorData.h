@@ -23,9 +23,11 @@
 #pragma once
 
 #include <algorithms/NAS/NASState.h>
+#include <logger/LogTypes.h>
 
 #include <Eigen/Core>
 #include <ostream>
+#include <userde.hpp>
 
 namespace Boardcore
 {
@@ -42,10 +44,10 @@ struct PropagatorState
 {
     uint64_t timestamp;      ///< Prediction timestamp [ms]
     uint32_t nPropagations;  ///< Predictions from last received NAS state
-    Eigen::Vector3f x_prop;  ///< Position propagation state NED [m]
-    Eigen::Vector3f v_prop;  ///< Speed propagation state NED [m]
-    Eigen::Vector4f q_prop;  ///< Quaternion propagation (scalar last)
-    Eigen::Vector3f b_prop;  ///< Gyroscope bias propagation
+    Vec3f x_prop;            ///< Position propagation state NED [m]
+    Vec3f v_prop;            ///< Speed propagation state NED [m]
+    Vec4f q_prop;            ///< Quaternion propagation (scalar last)
+    Vec3f b_prop;            ///< Gyroscope bias propagation
 
     PropagatorState()
         : timestamp(0), nPropagations(0), x_prop(0, 0, 0), v_prop(0, 0, 0),
@@ -60,9 +62,8 @@ struct PropagatorState
     {
     }
 
-    PropagatorState(uint64_t timestamp, uint32_t nPropagations,
-                    Eigen::Vector3f x_prop, Eigen::Vector3f v_prop,
-                    Eigen::Vector4f q_prop, Eigen::Vector3f b_prop)
+    PropagatorState(uint64_t timestamp, uint32_t nPropagations, Vec3f x_prop,
+                    Vec3f v_prop, Vec4f q_prop, Vec3f b_prop)
         : timestamp(timestamp), nPropagations(nPropagations), x_prop(x_prop),
           v_prop(v_prop), q_prop(q_prop), b_prop(b_prop)
     {
@@ -78,27 +79,27 @@ struct PropagatorState
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << nPropagations << "," << x_prop(0) << ","
-           << x_prop(1) << "," << x_prop(2) << "," << v_prop(0) << ","
-           << v_prop(1) << "," << v_prop(2) << "," << q_prop(0) << ","
-           << q_prop(1) << "," << q_prop(2) << "," << q_prop(3) << ","
-           << b_prop(0) << "," << b_prop(1) << "," << b_prop(2) << "\n";
+        return STRUCT_DEF(
+            PropagatorState,
+            FIELD_DEF(timestamp) FIELD_DEF(nPropagations) FIELD_DEF2(x_prop, x)
+                FIELD_DEF2(x_prop, y) FIELD_DEF2(x_prop, z) FIELD_DEF2(
+                    v_prop, x) FIELD_DEF2(v_prop, y) FIELD_DEF2(v_prop, z)
+                    FIELD_DEF2(q_prop, x) FIELD_DEF2(q_prop, y) FIELD_DEF2(
+                        q_prop, z) FIELD_DEF2(q_prop, w) FIELD_DEF2(b_prop, x)
+                        FIELD_DEF2(b_prop, y) FIELD_DEF2(b_prop, z));
     }
 
     NASState getNasState() const
     {
         Eigen::Matrix<float, 13, 1> nasState;
         // cppcheck-suppress constStatement
-        nasState << x_prop, v_prop, q_prop, b_prop;
+        nasState << x_prop.toEigen(), v_prop.toEigen(), q_prop.toEigen(),
+            b_prop.toEigen();
         return NASState(timestamp, nasState);
     }
 };
 
 }  // namespace Boardcore
+

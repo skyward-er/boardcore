@@ -27,13 +27,11 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <interfaces/atomic_ops.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <tscpp/buffer.h>
-#include <utils/Debug.h>
 
 #include <chrono>
+#include <cstring>
 #include <fstream>
 #include <stdexcept>
 
@@ -48,28 +46,42 @@ bool Logger::start()
     if (started)
         return true;
 
+    stopWritingThread = false;
     // Find the proper log filename base on the current files on the disk
-    string filename;
+    string logName;
+    string mappingName;
     for (fileNumber = 0; fileNumber < (int)maxFilenameNumber; fileNumber++)
     {
         // Check if the current file does not exists
-        filename = getFileName(fileNumber);
+        logName     = getLogName(fileNumber);
+        mappingName = getMappingName(fileNumber);
+
         struct stat st;
-        if (stat(filename.c_str(), &st) != 0)
+        if (stat(logName.c_str(), &st) != 0)
             break;
 
         if (fileNumber == maxFilenameNumber - 1)
             TRACE("Too many log files, appending data to last\n");
     }
 
-    file = fopen(filename.c_str(), "ab");  // b for binary
-    if (file == NULL)
+    logFile = fopen(logName.c_str(), "ab");  // b for binary
+    if (logFile == NULL)
     {
         fileNumber = -1;
-        TRACE("Error opening %s file\n", filename.c_str());
+        TRACE("Error opening %s file\n", logName.c_str());
         return false;
     }
-    setbuf(file, NULL);  // Disable buffering for the file stream
+
+    mappingFile = fopen(mappingName.c_str(), "ab");  // b for binary
+    if (mappingFile == NULL)
+    {
+        fileNumber = -1;
+        TRACE("Error opening %s file\n", mappingName.c_str());
+        return false;
+    }
+
+    setbuf(logFile, NULL);      // Disable buffering for the file stream
+    setbuf(mappingFile, NULL);  // Disable buffering for the file stream
 
     // The boring part, start threads one by one and if they fail, undo.
     // Perhaps excessive defensive programming as thread creation failure is
@@ -79,7 +91,8 @@ bool Logger::start()
                             Thread::JOINABLE);
     if (!packTh)
     {
-        fclose(file);
+        fclose(logFile);
+        fclose(mappingFile);
         TRACE("Error creating pack thread\n");
         return false;
     }
@@ -98,7 +111,8 @@ bool Logger::start()
             fullBufferList.pop();
         }
         fullBufferList.pop();  // Remove nullptr
-        fclose(file);
+        fclose(logFile);
+        fclose(mappingFile);
         TRACE("Error creating write thread\n");
         return false;
     }
@@ -116,12 +130,14 @@ void Logger::stop()
 
     started = false;
 
-    fullRecordsQueue.put(nullptr);  // Signal packThread to stop
+    fullRecordsQueue.put(nullptr);         // Signal packThread to stop
+    fullMappingRecordsQueue.put(nullptr);  // Signal packThread to stop
 
     packTh->join();
     writeTh->join();
 
-    fclose(file);
+    fclose(logFile);
+    fclose(mappingFile);
 
     stats = {};
 
@@ -137,7 +153,9 @@ bool Logger::testSDCard()
 
 int Logger::getCurrentLogNumber() { return fileNumber; }
 
-string Logger::getCurrentFileName() { return getFileName(fileNumber); }
+string Logger::getCurrentFileName() { return getLogName(fileNumber); }
+
+string Logger::getCurrentMappingName() { return getMappingName(fileNumber); }
 
 LoggerStats Logger::getStats()
 {
@@ -170,19 +188,35 @@ void Logger::logStats()
 
 Logger::Logger()
 {
-    // Allocate the records
+    // Allocate the records for the log
     for (unsigned int i = 0; i < numRecords; i++)
         emptyRecordsQueue.put(new Record);
 
-    // Allocate buffers and put them in the empty list
+    // Allocate the records for the mappings
+    for (unsigned int i = 0; i < numMappingRecords; i++)
+        emptyMappingRecordsQueue.put(new Record);
+
+    // Allocate buffers for the log and put them in the empty list
     for (unsigned int i = 0; i < numBuffers; i++)
         emptyBufferList.push(new Buffer);
+
+    // Allocate buffers for the mappings and put them in the empty list
+    for (unsigned int i = 0; i < numMappingBuffers; i++)
+        emptyMappingBufferList.push(new Buffer);
 }
 
-string Logger::getFileName(int logNumber)
+string Logger::getLogName(int logNumber)
 {
     char filename[32];
     sprintf(filename, "/sd/log%02d.dat", logNumber);
+
+    return string(filename);
+}
+
+string Logger::getMappingName(int logNumber)
+{
+    char filename[32];
+    sprintf(filename, "/sd/mapping%02d.dat", logNumber);
 
     return string(filename);
 }
@@ -217,6 +251,7 @@ void Logger::packThread()
         {
             StackLogger::getInstance().updateStack(THID_LOGGER_PACK);
 
+            // packing for the samples
             Buffer* buffer = nullptr;
             {
                 Lock<FastMutex> l(mutex);
@@ -239,6 +274,9 @@ void Logger::packThread()
                     Lock<FastMutex> l(mutex);
                     fullBufferList.push(buffer);   // Don't lose the buffer
                     fullBufferList.push(nullptr);  // Signal writeThread to stop
+                    fullMappingBufferList.push(nullptr);
+
+                    stopWritingThread = true;
                     cond.broadcast();
                     stats.buffersFilled++;
                     return;
@@ -256,6 +294,61 @@ void Logger::packThread()
                 cond.broadcast();
                 stats.buffersFilled++;
             }
+
+            // packing for the mappings
+            Buffer* mappingBuffer = nullptr;
+            {
+                Lock<FastMutex> l(mutex);
+                // Get an empty buffer, wait if none is available
+                while (emptyMappingBufferList.empty())
+                    cond.wait(l);
+                mappingBuffer = emptyMappingBufferList.front();
+                emptyMappingBufferList.pop();
+                mappingBuffer->size = 0;
+            }
+
+            if (!fullMappingRecordsQueue.isEmpty())
+            {
+                do
+                {
+                    Record* mappingRecord = nullptr;
+                    fullMappingRecordsQueue.get(mappingRecord);
+
+                    // When stop() is called, it pushes a nullptr
+                    // signaling to stop
+                    if (mappingRecord == nullptr)
+                    {
+                        Lock<FastMutex> l(mutex);
+
+                        // Don't lose the buffer
+                        fullMappingBufferList.push(mappingBuffer);
+
+                        // Signal writeThread to stop
+                        fullMappingBufferList.push(nullptr);
+                        fullBufferList.push(nullptr);
+
+                        stopWritingThread = true;
+                        cond.broadcast();
+                        stats.buffersFilled++;
+
+                        return;
+                    }
+
+                    memcpy(mappingBuffer->data + mappingBuffer->size,
+                           mappingRecord->data, mappingRecord->size);
+
+                    mappingBuffer->size += mappingRecord->size;
+                    emptyMappingRecordsQueue.put(mappingRecord);
+                } while (bufferSize - mappingBuffer->size >= maxRecordSize &&
+                         !fullMappingRecordsQueue.isEmpty());
+                {
+                    Lock<FastMutex> l(mutex);
+                    // Put back full buffer
+                    fullMappingBufferList.push(mappingBuffer);
+                    cond.broadcast();
+                    stats.buffersFilled++;
+                }
+            }
         }
     }
     catch (exception& e)
@@ -268,40 +361,70 @@ void Logger::writeThread()
 {
     try
     {
-        for (;;)
+        while (!stopWritingThread)
         {
             StackLogger::getInstance().updateStack(THID_LOGGER_WRITE);
 
-            Buffer* buffer = nullptr;
+            Buffer* buffer        = nullptr;
+            Buffer* mappingBuffer = nullptr;
+
+            // if either list is not empty get a buffer
             {
                 Lock<FastMutex> l(mutex);
-                // Get a full buffer, wait if none is available
-                while (fullBufferList.empty())
+                while (fullBufferList.empty() && fullMappingBufferList.empty())
                     cond.wait(l);
-                buffer = fullBufferList.front();
-                fullBufferList.pop();
-            }
 
-            // When packThread stops, it pushes a nullptr signaling to
-            // stop
-            if (buffer == nullptr)
-                return;
+                if (!fullBufferList.empty())
+                {
+                    buffer = fullBufferList.front();
+                    fullBufferList.pop();
+                }
+
+                if (!fullMappingBufferList.empty())
+                {
+                    mappingBuffer = fullMappingBufferList.front();
+                    fullMappingBufferList.pop();
+                }
+            }
 
             // Write data to disk
             using namespace std::chrono;
             auto start = system_clock::now();
 
-            size_t result = fwrite(buffer->data, 1, buffer->size, file);
-            if (result != buffer->size)
+            // write samples data
+            if (buffer != nullptr)
             {
-                // If this fails and your board uses SDRAM,
-                // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
-                stats.writesFailed++;
-                stats.lastWriteError = ferror(file);
+                size_t result = fwrite(buffer->data, 1, buffer->size, logFile);
+
+                if (result != buffer->size)
+                {
+                    // If this fails and your board uses SDRAM,
+                    // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
+                    stats.writesFailed++;
+                    stats.lastWriteError = ferror(logFile);
+                }
+                else
+                {
+                    stats.buffersWritten++;
+                }
             }
-            else
-            {
-                stats.buffersWritten++;
+
+            if (mappingBuffer != nullptr)
+            {  // write mapping data
+                size_t result = fwrite(mappingBuffer->data, 1,
+                                       mappingBuffer->size, mappingFile);
+
+                if (result != mappingBuffer->size)
+                {
+                    // If this fails and your board uses SDRAM,
+                    // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
+                    stats.writesFailed++;
+                    stats.lastWriteError = ferror(mappingFile);
+                }
+                else
+                {
+                    stats.buffersWritten++;
+                }
             }
 
             auto interval = system_clock::now() - start;
@@ -311,68 +434,25 @@ void Logger::writeThread()
                 max(stats.maxWriteTime, stats.averageWriteTime);
 
             {
+                // Lock<FastMutex> l(mutex);
                 Lock<FastMutex> l(mutex);
 
-                // Put back empty buffer
-                emptyBufferList.push(buffer);
+                // Put back empty buffer if we got one
+                if (buffer != nullptr)
+                    emptyBufferList.push(buffer);
+
+                // Put back empty mapping buffer if we got one
+                if (mappingBuffer != nullptr)
+                    emptyMappingBufferList.push(mappingBuffer);
                 cond.broadcast();
             }
         }
+        return;
     }
     catch (exception& e)
     {
         TRACE("Error: writeThread failed due to an exception: %s\n", e.what());
     }
-}
-
-LoggerResult Logger::logImpl(const char* name, const void* data,
-                             unsigned int size)
-{
-    if (started == false)
-    {
-        stats.droppedSamples++;
-
-        // Signal that we are trying to write to a closed log
-        stats.lastWriteError = -1;
-
-        return LoggerResult::Ignored;
-    }
-
-    Record* record = nullptr;
-
-    // Retrieve a record from the empty queue, if available
-    {
-        // We disable interrupts because IRQget() is nonblocking, unlike get()
-        FastInterruptDisableLock dLock;
-        if (emptyRecordsQueue.IRQget(record) == false)
-        {
-            stats.droppedSamples++;
-            return LoggerResult::Dropped;
-        }
-    }
-
-    // Copy the data in the record
-    int result =
-        tscpp::serializeImpl(record->data, maxRecordSize, name, data, size);
-
-    // If the record is too small, move the record in the empty queue and error
-    if (result == tscpp::BufferTooSmall)
-    {
-        emptyRecordsQueue.put(record);
-        atomicAdd(&stats.tooLargeSamples, 1);
-        TRACE("The current record size is not enough to store %s\n", name);
-        return LoggerResult::TooLarge;
-    }
-
-    record->size = result;
-
-    // Move the record to the full queue, where the pack thread will read and
-    // store it in a buffer
-    fullRecordsQueue.put(record);
-
-    atomicAdd(&stats.queuedSamples, 1);
-
-    return LoggerResult::Queued;
 }
 
 }  // namespace Boardcore

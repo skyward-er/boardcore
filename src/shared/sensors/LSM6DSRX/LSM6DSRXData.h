@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -37,20 +39,11 @@ struct LSM6DSRXData : public AccelerometerData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,temperatureTimestamp,temperature\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(LSM6DSRXData, EXTEND_DEF(AccelerometerData)
+                                            EXTEND_DEF(GyroscopeData)
+                                                EXTEND_DEF(TemperatureData));
     }
 };
 

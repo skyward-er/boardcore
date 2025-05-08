@@ -37,11 +37,9 @@ struct HX711Data : public LoadCellData
     {
     }
 
-    static std::string header() { return "loadTimestamp,load\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << loadTimestamp << "," << load << "\n";
+        return STRUCT_DEF(HX711Data, EXTEND_DEF(LoadCellData));
     }
 };
 

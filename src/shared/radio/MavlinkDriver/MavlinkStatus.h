@@ -22,13 +22,26 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <mavlink_lib/mavlink_types.h>
 
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
+#include <type_traits>
 
 namespace Boardcore
 {
+
+/*  uint8_t msg_received;               ///< Number of received messages
+ uint8_t buffer_overrun;             ///< Number of buffer overruns
+ uint8_t parse_error;                ///< Number of parse errors
+ mavlink_parse_state_t parse_state;  ///< Parsing state machine
+ uint8_t packet_idx;                 ///< Index in current packet
+ uint8_t current_rx_seq;  ///< Sequence number of last packet received
+ uint8_t current_tx_seq;  ///< Sequence number of last packet sent
+ uint16_t packet_rx_success_count;  ///< Received packets
+ uint16_t packet_rx_drop_count;     ///< Number of packet drops */
 
 struct MavlinkStatus
 {
@@ -39,26 +52,19 @@ struct MavlinkStatus
     uint16_t nDroppedPackets;  ///< Number of packet drops
     mavlink_status_t mavStats;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,n_send_queue,max_send_queue,n_send_errors,n_dropped_"
-               "packets,mav_stats.buffer_overrun,mav_stats.msg_received,mav_"
-               "stats.parse_error,mav_stats.parse_state,mav_stats.packet_idx,"
-               "mav_stats.current_rx_seq,mav_stats.current_tx_seq,mav_stats."
-               "packet_rx_success_count,mav_stats.packet_rx_drop_count\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << nSendQueue << "," << maxSendQueue << ","
-           << nSendErrors << "," << nDroppedPackets << ","
-           << (int)mavStats.msg_received << "," << (int)mavStats.buffer_overrun
-           << "," << (int)mavStats.parse_error << ","
-           << (int)mavStats.parse_state << "," << (int)mavStats.packet_idx
-           << "," << (int)mavStats.current_rx_seq << ","
-           << (int)mavStats.current_tx_seq << ","
-           << mavStats.packet_rx_success_count << ","
-           << mavStats.packet_rx_drop_count << "\n";
+        return STRUCT_DEF(
+            MavlinkStatus,
+            FIELD_DEF(timestamp) FIELD_DEF(nSendQueue) FIELD_DEF(maxSendQueue)
+                FIELD_DEF(nSendErrors) FIELD_DEF(nDroppedPackets) FIELD_DEF2(
+                    mavStats, msg_received) FIELD_DEF2(mavStats, buffer_overrun)
+                    FIELD_DEF2(mavStats, parse_error) FIELD_DEF2(
+                        mavStats, parse_state) FIELD_DEF2(mavStats, packet_idx)
+                        FIELD_DEF2(mavStats, current_rx_seq)
+                            FIELD_DEF2(mavStats, current_tx_seq)
+                                FIELD_DEF2(mavStats, packet_rx_success_count)
+                                    FIELD_DEF2(mavStats, packet_rx_drop_count));
     }
 };
 

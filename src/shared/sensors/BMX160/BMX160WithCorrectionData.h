@@ -24,6 +24,8 @@
 
 #include <sensors/BMX160/BMX160Data.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -66,22 +68,9 @@ struct BMX160WithCorrectionData : public BMX160Data
         return *this;
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,magneticFieldTimestamp,"
-               "magneticFieldX,magneticFieldY,magneticFieldZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << ","
-           << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << "\n";
+        return STRUCT_DEF(BMX160WithCorrectionData, EXTEND_DEF(BMX160Data));
     }
 };
 
@@ -98,11 +87,10 @@ struct BMX160GyroscopeCalibrationBiases
     {
     }
 
-    static std::string header() { return "bias_x,bias_y,bias_z\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << bx << "," << by << "," << bz << "\n";
+        return STRUCT_DEF(BMX160GyroscopeCalibrationBiases,
+                          FIELD_DEF(bx) FIELD_DEF(by) FIELD_DEF(bz));
     }
 };
 
