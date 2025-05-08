@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -37,15 +38,12 @@ struct ADAState
     float x1;
     float x2;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,mslAltitude,aglAltitude,verticalSpeed,x0,x1,x2\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << mslAltitude << "," << aglAltitude << ","
-           << verticalSpeed << "," << x0 << "," << x1 << "," << x2 << "\n";
+        return STRUCT_DEF(ADAState,
+                          FIELD_DEF(timestamp) FIELD_DEF(mslAltitude)
+                              FIELD_DEF(aglAltitude) FIELD_DEF(verticalSpeed)
+                                  FIELD_DEF(x0) FIELD_DEF(x1) FIELD_DEF(x2));
     }
 };
 

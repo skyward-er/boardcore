@@ -24,16 +24,16 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
 struct ND015XData : public PressureData
 {
-    static std::string header() { return "timestamp,pressure\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "\n";
+        return STRUCT_DEF(ND015XData, EXTEND_DEF(PressureData));
     }
 };
 

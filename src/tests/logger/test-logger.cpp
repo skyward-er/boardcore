@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Federico Terraneo
+/* Copyright (c) 2025 Skyward Experimental Rocketry
+ * Author: Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,6 @@ void logThread(void*)
         for (int i = 0; i < 5; i++)
         {
             Dummy d;
-            d.correctValue();
             log.log(d);
         }
     }

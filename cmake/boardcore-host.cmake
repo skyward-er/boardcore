@@ -75,6 +75,7 @@ target_link_libraries(boardcore-host PUBLIC
     fmt::fmt-header-only
     Catch2::Catch2
     Mavlink::Mavlink
+    Socrate::Socrate
 )
 
 # Create a nice alias for the library

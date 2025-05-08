@@ -50,15 +50,9 @@ struct MAX31856Data : public TemperatureData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "temperatureTimestamp,temperature,coldJunctionTemperature\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << temperatureTimestamp << "," << temperature << ","
-           << coldJunctionTemperature << "\n";
+        return STRUCT_DEF(MAX31856Data, EXTEND_DEF(TemperatureData));
     }
 };
 

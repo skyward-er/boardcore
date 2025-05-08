@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -48,15 +49,12 @@ struct StepperData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,enabled,positionDeg,speed,moveDeg\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << enabled << "," << positionDeg << "," << speed
-           << "," << moveDeg << "\n";
+        return STRUCT_DEF(StepperData,
+                          FIELD_DEF(timestamp) FIELD_DEF(enabled)
+                              FIELD_DEF(positionDeg) FIELD_DEF(speed)
+                                  FIELD_DEF(moveDeg));
     }
 };
 

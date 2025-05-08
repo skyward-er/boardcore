@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -41,17 +42,13 @@ struct MEAState
     float x1;  ///< second kalman state
     float x2;  ///< third kalman state representing the mass
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,estimatedPressure,estimatedMass,estimatedApogee,"
-               "estimatedForce,x0,x1,x2\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << estimatedPressure << "," << estimatedMass
-           << "," << estimatedApogee << "," << estimatedForce << "," << x0
-           << "," << x1 << "," << x2 << "\n";
+        return STRUCT_DEF(
+            MEAState, FIELD_DEF(timestamp) FIELD_DEF(estimatedPressure)
+                          FIELD_DEF(estimatedMass) FIELD_DEF(estimatedApogee)
+                              FIELD_DEF(estimatedForce) FIELD_DEF(x0)
+                                  FIELD_DEF(x1) FIELD_DEF(x2));
     }
 };
 

@@ -24,6 +24,7 @@
 
 #include <Eigen/Core>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -54,9 +55,10 @@ struct TimestampData
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(TimestampData, FIELD_DEF(timestamp));
+    }
 };
 
 struct LoadCellData
@@ -64,11 +66,10 @@ struct LoadCellData
     uint64_t loadTimestamp = 0;
     float load             = 0;
 
-    static std::string header() { return "loadTimestamp,load\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << loadTimestamp << "," << load << "\n";
+        return STRUCT_DEF(LoadCellData,
+                          FIELD_DEF(loadTimestamp) FIELD_DEF(load));
     }
 };
 
@@ -77,11 +78,10 @@ struct TemperatureData
     uint64_t temperatureTimestamp = 0;
     float temperature             = 0;
 
-    static std::string header() { return "timestamp,temperature\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(TemperatureData, FIELD_DEF(temperatureTimestamp)
+                                               FIELD_DEF(temperature));
     }
 };
 
@@ -90,11 +90,10 @@ struct PressureData
     uint64_t pressureTimestamp = 0;
     float pressure             = 0;
 
-    static std::string header() { return "timestamp,pressure\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "\n";
+        return STRUCT_DEF(PressureData,
+                          FIELD_DEF(pressureTimestamp) FIELD_DEF(pressure));
     }
 };
 
@@ -106,11 +105,10 @@ struct HumidityData
     uint64_t humidityTimestamp = 0;
     float humidity             = 0;
 
-    static std::string header() { return "timestamp,humidity\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << humidityTimestamp << "," << humidity << "\n";
+        return STRUCT_DEF(HumidityData,
+                          FIELD_DEF(humidityTimestamp) FIELD_DEF(humidity));
     }
 };
 
@@ -139,20 +137,17 @@ struct AccelerometerData
     {
     }
 
-    static std::string header()
-    {
-        return "timestamp,accelerationX,accelerationY,accelerationZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << "\n";
-    }
-
     operator Eigen::Vector3f() const
     {
         return {accelerationX, accelerationY, accelerationZ};
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(AccelerometerData,
+                          FIELD_DEF(accelerationTimestamp)
+                              FIELD_DEF(accelerationX) FIELD_DEF(accelerationY)
+                                  FIELD_DEF(accelerationZ));
     }
 };
 
@@ -183,20 +178,17 @@ struct QuaternionData
     {
     }
 
-    static std::string header()
-    {
-        return "timestamp,quaternionX,quaternionY,quaternionZ,quaterionW\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
-           << "," << quaternionZ << "," << quaternionW << "\n";
-    }
-
     operator Eigen::Vector4f() const
     {
         return {quaternionX, quaternionY, quaternionZ, quaternionW};
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(QuaternionData,
+                          FIELD_DEF(quaternionTimestamp) FIELD_DEF(quaternionX)
+                              FIELD_DEF(quaternionY) FIELD_DEF(quaternionZ)
+                                  FIELD_DEF(quaternionW));
     }
 };
 
@@ -225,20 +217,17 @@ struct GyroscopeData
     {
     }
 
-    static std::string header()
-    {
-        return "timestamp,angularSpeedX,angularSpeedY,angularSpeedZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << "\n";
-    }
-
     operator Eigen::Vector3f() const
     {
         return {angularSpeedX, angularSpeedY, angularSpeedZ};
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(GyroscopeData,
+                          FIELD_DEF(angularSpeedTimestamp)
+                              FIELD_DEF(angularSpeedX) FIELD_DEF(angularSpeedY)
+                                  FIELD_DEF(angularSpeedZ));
     }
 };
 
@@ -267,20 +256,17 @@ struct MagnetometerData
     {
     }
 
-    static std::string header()
-    {
-        return "timestamp,magneticFieldX,magneticFieldY,magneticFieldZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << "\n";
-    }
-
     operator Eigen::Vector3f() const
     {
         return {magneticFieldX, magneticFieldY, magneticFieldZ};
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            MagnetometerData,
+            FIELD_DEF(magneticFieldTimestamp) FIELD_DEF(magneticFieldX)
+                FIELD_DEF(magneticFieldY) FIELD_DEF(magneticFieldZ));
     }
 };
 
@@ -302,18 +288,15 @@ struct GPSData
     uint8_t satellites    = 0;  // [1]
     uint8_t fix           = 0;  // 0 = no fix
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,latitude,longitude,height,velocityNorth,velocityEast,"
-               "velocityDown,speed,track,positionDOP,satellites,fix\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << gpsTimestamp << "," << latitude << "," << longitude << ","
-           << height << "," << velocityNorth << "," << velocityEast << ","
-           << velocityDown << "," << speed << "," << track << "," << positionDOP
-           << "," << (int)satellites << "," << (int)fix << "\n";
+        return STRUCT_DEF(
+            GPSData,
+            FIELD_DEF(gpsTimestamp) FIELD_DEF(latitude) FIELD_DEF(longitude)
+                FIELD_DEF(height) FIELD_DEF(velocityNorth)
+                    FIELD_DEF(velocityEast) FIELD_DEF(velocityDown)
+                        FIELD_DEF(speed) FIELD_DEF(track) FIELD_DEF(positionDOP)
+                            FIELD_DEF(satellites) FIELD_DEF(fix));
     }
 };
 
@@ -325,11 +308,10 @@ struct CurrentData
     uint64_t currentTimestamp = 0;
     float current             = 0;
 
-    static std::string header() { return "timestamp,current\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << currentTimestamp << "," << current << "\n";
+        return STRUCT_DEF(CurrentData,
+                          FIELD_DEF(currentTimestamp) FIELD_DEF(current));
     }
 };
 
@@ -341,11 +323,10 @@ struct VoltageData
     uint64_t voltageTimestamp = 0;
     float voltage             = 0;
 
-    static std::string header() { return "timestamp,voltage\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << voltageTimestamp << "," << voltage << "\n";
+        return STRUCT_DEF(VoltageData,
+                          FIELD_DEF(voltageTimestamp) FIELD_DEF(voltage));
     }
 };
 
@@ -358,14 +339,6 @@ struct ADCData
     uint8_t channelId         = 0;
     float voltage             = 0;
 
-    static std::string header() { return "timestamp,channelId,voltage\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << voltageTimestamp << "," << (int)channelId << "," << voltage
-           << "\n";
-    }
-
     /**
      * @brief Allows implicit conversions to VoltageData.
      */
@@ -375,6 +348,12 @@ struct ADCData
             .voltageTimestamp = voltageTimestamp,
             .voltage          = voltage,
         };
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ADCData, FIELD_DEF(voltageTimestamp)
+                                       FIELD_DEF(channelId) FIELD_DEF(voltage));
     }
 };
 

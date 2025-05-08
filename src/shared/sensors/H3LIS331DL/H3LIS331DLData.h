@@ -36,15 +36,9 @@ struct H3LIS331DLData : public AccelerometerData
 
     explicit H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc) {};
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,accelerationX,accelerationY,accelerationZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << "\n";
+        return STRUCT_DEF(H3LIS331DLData, EXTEND_DEF(AccelerometerData));
     }
 };
 

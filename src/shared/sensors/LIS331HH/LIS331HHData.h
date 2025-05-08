@@ -24,23 +24,16 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
 struct LIS331HHData : public AccelerometerData
 {
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,temp_"
-               "timestamp,"
-               "temp\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << "\n";
+        return STRUCT_DEF(LIS331HHData, EXTEND_DEF(AccelerometerData));
     }
 };
 
