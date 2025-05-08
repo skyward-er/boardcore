@@ -32,6 +32,7 @@
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLoggerData.h>
 #include <diagnostic/StackData.h>
+#include <drivers/WIZ5500/WIZ5500Stats.h>
 #include <drivers/adc/InternalADCData.h>
 #include <drivers/canbus/CanProtocol/CanProtocolTypes.h>
 #include <events/EventData.h>
@@ -138,6 +139,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<HX711Data>();
     ds.registerType<IMUData>();
     ds.registerType<InternalADCData>();
+    ds.registerType<WIZ5500Stats>();
     ds.registerType<L3GD20Data>();
     ds.registerType<LIS2MDLData>();
     ds.registerType<LIS3DSHData>();

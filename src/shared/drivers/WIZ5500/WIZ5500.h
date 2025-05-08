@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ActiveObject.h>
+#include <drivers/WIZ5500/WIZ5500Stats.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
@@ -307,6 +308,8 @@ private:
     miosix::GpioPin intn;
     miosix::FastMutex mutex;
     SPISlave slave;
+
+    WIZ5500Stats wizzStats;
 };
 
 }  // namespace Boardcore

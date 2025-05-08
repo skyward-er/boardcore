@@ -23,8 +23,10 @@
 #include "WIZ5500.h"
 
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
+#include <logger/Logger.h>
 #include <utils/KernelTime.h>
 
 #include <algorithm>
@@ -382,6 +384,15 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
 
     // Read the minimum between the received length and the maximum length
     uint16_t read_len = std::min(static_cast<size_t>(recv_len), len);
+
+    if (read_len > 0)
+    {
+        wizzStats.timestamp       = TimestampTimer::getTimestamp();
+        wizzStats.receivedPackets = wizzStats.receivedPackets + 1;
+        wizzStats.lastPacketSize  = read_len;
+        wizzStats.lastReadBuff    = recv_len;
+        Logger::getInstance().log(wizzStats);
+    }
 
     spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, read_len);
 
