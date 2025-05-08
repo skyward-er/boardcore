@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -31,11 +33,10 @@ struct AnalogLoadCellData : LoadCellData
 {
     float voltage = 0;
 
-    static std::string header() { return "loadTimestamp,load,voltage\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << loadTimestamp << "," << load << "," << voltage << "\n";
+        return STRUCT_DEF(AnalogLoadCellData,
+                          EXTEND_DEF(LoadCellData) FIELD_DEF(voltage));
     }
 };
 

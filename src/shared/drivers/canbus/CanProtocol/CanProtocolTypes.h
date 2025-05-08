@@ -28,6 +28,7 @@
 #include <sensors/analog/Pitot/PitotData.h>
 
 #include <cstring>
+#include <reflect.hpp>
 
 #include "CanProtocolData.h"
 
@@ -53,16 +54,10 @@ struct CanPitotData : PitotData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,deltaP,airspeed,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << deltaP << "," << airspeed << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanPitotData, EXTEND_DEF(PitotData) FIELD_DEF(
+                                            secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -71,16 +66,11 @@ struct CanPressureData : PressureData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,pressure,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << pressureTimestamp << "," << pressure << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanPressureData,
+                          EXTEND_DEF(PressureData) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
     }
 };
 
@@ -89,16 +79,11 @@ struct CanTemperatureData : TemperatureData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,temperature,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << temperatureTimestamp << "," << temperature << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanTemperatureData,
+                          EXTEND_DEF(TemperatureData) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
     }
 };
 
@@ -107,16 +92,10 @@ struct CanCurrentData : CurrentData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,current,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << currentTimestamp << "," << current << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanCurrentData, EXTEND_DEF(CurrentData) FIELD_DEF(
+                                              secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -125,17 +104,10 @@ struct CanServoData : ServoData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,timer,channel,position,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << static_cast<int>(timer) << ","
-           << static_cast<int>(channel) << "," << position << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanServoData, EXTEND_DEF(ServoData) FIELD_DEF(
+                                            secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -144,18 +116,11 @@ struct CanBatteryVoltageSensorData : BatteryVoltageSensorData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "voltageTimestamp,channelId,voltage,batVoltage,secondaryType,"
-               "source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << voltageTimestamp << "," << static_cast<int>(channelId) << ","
-           << voltage << "," << batVoltage << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanBatteryVoltageSensorData,
+                          EXTEND_DEF(BatteryVoltageSensorData)
+                              FIELD_DEF(secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -164,16 +129,10 @@ struct CanVoltageData : VoltageData
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,voltage,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << voltageTimestamp << "," << voltage << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanVoltageData, EXTEND_DEF(VoltageData) FIELD_DEF(
+                                              secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -187,16 +146,12 @@ struct DeviceStatus
     bool hil     = false;
     bool logGood = false;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,state,logNumber,armed,hil,logGood\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << static_cast<int>(state) << "," << logNumber
-           << "," << (armed ? 1 : 0) << "," << (hil ? 1 : 0) << ","
-           << (logGood ? 1 : 0) << "\n";
+        return STRUCT_DEF(DeviceStatus,
+                          FIELD_DEF(timestamp) FIELD_DEF(logNumber)
+                              FIELD_DEF(state) FIELD_DEF(armed) FIELD_DEF(hil)
+                                  FIELD_DEF(logGood));
     }
 };
 
@@ -205,18 +160,11 @@ struct CanDeviceStatus : DeviceStatus
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,state,logNumber,armed,hil,logGood,secondaryType,"
-               "source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << static_cast<int>(state) << "," << logNumber
-           << "," << (armed ? 1 : 0) << "," << (hil ? 1 : 0) << ","
-           << (logGood ? 1 : 0) << "," << static_cast<int>(secondaryType) << ","
-           << static_cast<int>(source) << "\n";
+        return STRUCT_DEF(CanDeviceStatus,
+                          EXTEND_DEF(DeviceStatus) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
     }
 };
 
@@ -225,11 +173,10 @@ struct ServoCommand
     uint64_t timestamp   = 0;
     uint32_t openingTime = 0;
 
-    static std::string header() { return "timestamp,openingTime\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << openingTime << "\n";
+        return STRUCT_DEF(ServoCommand,
+                          FIELD_DEF(timestamp) FIELD_DEF(openingTime));
     }
 };
 
@@ -238,16 +185,11 @@ struct CanServoCommand : ServoCommand
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,openingTime,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << openingTime << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanServoCommand,
+                          EXTEND_DEF(ServoCommand) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
     }
 };
 
@@ -257,11 +199,10 @@ struct ServoFeedback
     float aperture     = 0;
     bool open          = false;
 
-    static std::string header() { return "timestamp,aperture,open\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << aperture << "," << (open ? 1 : 0) << "\n";
+        return STRUCT_DEF(ServoFeedback, FIELD_DEF(timestamp) FIELD_DEF(
+                                             aperture) FIELD_DEF(open));
     }
 };
 
@@ -270,16 +211,11 @@ struct CanServoFeedback : ServoFeedback
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,aperture,open,secondaryType,source\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << aperture << "," << (open ? 1 : 0) << ","
-           << static_cast<int>(secondaryType) << "," << static_cast<int>(source)
-           << "\n";
+        return STRUCT_DEF(CanServoFeedback,
+                          EXTEND_DEF(ServoFeedback) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
     }
 };
 
@@ -290,13 +226,10 @@ struct CanEvent
     uint8_t target = 0;
     uint8_t event  = 0;
 
-    static std::string header() { return "timestamp,source,target,event\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << static_cast<int>(source) << ","
-           << static_cast<int>(target) << "," << static_cast<int>(event)
-           << "\n";
+        return STRUCT_DEF(CanEvent, FIELD_DEF(timestamp) FIELD_DEF(source)
+                                        FIELD_DEF(target) FIELD_DEF(event));
     }
 };
 

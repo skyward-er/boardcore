@@ -1,12 +1,15 @@
 BOARDCORE := ../../
 
 all:
-	g++ -std=c++17 -O2 -o logdecoder logdecoder.cpp \
+	g++ -std=c++20 -O2 -o logdecoder logdecoder.cpp \
 					-DCOMPILE_FOR_X86 \
-					$(BOARDCORE)libs/tscpp/tscpp/stream.cpp \
+					-DCOMPILE_FOR_HOST \
+					-DFMT_HEADER_ONLY \
+					-I$(BOARDCORE)libs/miosix-host \
 	 				-I$(BOARDCORE)libs/mavlink-skyward-lib \
 	 				-I$(BOARDCORE)libs/eigen \
-	 				-I$(BOARDCORE)libs/tscpp \
-	 				-I$(BOARDCORE)src/shared
+	 				-I$(BOARDCORE)libs/socrate/include \
+	 				-I$(BOARDCORE)libs/fmt/include \
+	 				-I$(BOARDCORE)src/shared 
 clean:
 	rm logdecoder

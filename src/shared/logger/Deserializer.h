@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2022 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio
+/* Copyright (c) 2015-2025 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Alberto Nidasio, Pietro Bortolus, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,51 @@
 
 #pragma once
 
-#include <sys/stat.h>
-#include <tscpp/stream.h>
-
-#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <ostream>
-#include <regex>
+#include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-using std::ostream;
-using std::string;
-using std::vector;
-using tscpp::TypePoolStream;
-using tscpp::UnknownInputArchive;
+#include "Logger.h"
 
 namespace Boardcore
 {
 
-typedef std::numeric_limits<float> flt;
+using float32_t = float;
+using float64_t = double;
 
-// linter off
+namespace detail
+{
+template <typename T>
+void deserializeField(std::ifstream& in, std::ofstream& out)
+{
+    auto value = T{};
+    in.read(reinterpret_cast<char*>(&value), sizeof(T));
+    out << value << ',';
+}
+
+template <>
+void deserializeField<int8_t>(std::ifstream& in, std::ofstream& out)
+{
+    using T    = int8_t;
+    auto value = T{};
+    in.read(reinterpret_cast<char*>(&value), sizeof(T));
+    out << static_cast<int>(value) << ',';
+}
+
+template <>
+void deserializeField<uint8_t>(std::ifstream& in, std::ofstream& out)
+{
+    using T    = uint8_t;
+    auto value = T{};
+    in.read(reinterpret_cast<char*>(&value), sizeof(T));
+    out << static_cast<unsigned int>(value) << ',';
+}
+}  // namespace detail
 
 /**
  * @brief Class used to deserialize the binary logs created using fedetft's
@@ -57,22 +78,15 @@ public:
     /**
      * @brief Initializes the deserializer with the filename provided.
      */
-    Deserializer(std::string fileName);
-
-    ~Deserializer();
+    Deserializer(std::filesystem::path fileName);
 
     /**
-     * @brief Register a type to be deserialized.
-     *
-     * Node: The object type must provide a static header function and a print
-     * function with the following prototypes:
-     * static std::string header()
-     * void print(std::ostream& os) const
-     *
-     * @tparam T The object type to be deserialized.
+     * @brief Returns the path to the directory where the log will be decoded.
      */
-    template <typename T>
-    void registerType();
+    std::filesystem::path outputDirectory() const
+    {
+        return filename.parent_path() / filename.stem();
+    }
 
     /**
      * @brief Deserializes the provided file.
@@ -81,164 +95,236 @@ public:
      */
     bool deserialize();
 
-    /**
-     * @brief Closes all the openend files.
-     */
-    void close();
-
 private:
+    using FieldDeserializer =
+        std::function<void(std::ifstream&, std::ofstream&)>;
+
+    using DeserializeInstructions = std::vector<FieldDeserializer>;
+
     /**
-     * @brief Function to print a data element into its csv file.
+     * @brief Creates a CSV file for the given type name.
      *
-     * @tparam T Type of the object.
-     * @param t Object to be printed in the file.
-     * @param path Path where to save the file.
-     * @param prefix Prefix added to the file.
+     * This method generates a CSV file in the log folder path using the
+     * provided type name.
+     *
+     * @param typeName The name of the type for which the CSV file is created.
+     * @return The output stream of the file.
+     * @throws std::runtime_error If the file cannot be opened.
      */
-    template <typename T>
-    void printType(T& t, std::string path = "", std::string prefix = "");
+    std::ofstream createCSV(const std::string& typeName);
 
-    bool closed = false;
+    /**
+     * @brief Registers the types and their deserialization instructions from
+     * the mapping file.
+     *
+     * This method reads the mapping file to extract type names, field names,
+     * and field types. It creates corresponding CSV files for each type and
+     * stores deserialization instructions for each field in the `types` map.
+     * Throws an exception if the mapping file is missing or contains invalid
+     * data.
+     */
+    void registerType(std::string typeName, std::ifstream& file);
 
-    std::map<std::string, std::ofstream*> fileStreams;
-    tscpp::TypePoolStream tps;
+    struct MappingRecord
+    {
+        std::ofstream file;
+        DeserializeInstructions instructions;
+    };
 
-    std::string logFilename;
-    std::string logFilenameWithoutExtension;
-    std::string logFolderPath;
+    std::unordered_map<std::string, MappingRecord> typeMap;
+
+    std::filesystem::path filename;
 };
 
-Deserializer::Deserializer(std::string logFilename) : logFilename(logFilename)
+Deserializer::Deserializer(std::filesystem::path filename)
+    : filename(std::move(filename))
 {
-    // Prepare the folder path
-    logFilenameWithoutExtension =
-        logFilename.substr(0, logFilename.find_last_of("."));
-    logFolderPath = logFilenameWithoutExtension + "/";
 }
 
-Deserializer::~Deserializer() { close(); }
-
-template <typename T>
-void Deserializer::registerType()
+std::ofstream Deserializer::createCSV(const std::string& typeName)
 {
-    std::function<void(T & t)> callback =
-        std::bind(&Deserializer::printType<T>, this, std::placeholders::_1,
-                  logFolderPath, logFilenameWithoutExtension);
+    auto outputFile = outputDirectory() / (typeName + ".csv");
+    std::ofstream stream(outputFile);
 
-    tps.registerType<T>(callback);
-}
-
-template <typename T>
-void Deserializer::printType(T& t, std::string path, std::string prefix)
-{
-    static std::ofstream* stream;
-    std::string demangledTypeName = tscpp::demangle(typeid(T).name());
-
-    // Replace the :: with the _ in order to make the format string cross
-    // platform compatible
-    demangledTypeName =
-        std::regex_replace(demangledTypeName, std::regex("::"), "_");
-
-    try
+    if (!stream)
     {
-        stream = fileStreams.at(demangledTypeName);
+        std::cerr << "Error opening file " << outputFile << std::endl;
+        throw std::runtime_error("Error opening file " + outputFile.string());
     }
-    // If not already initialize, open the file and write the header
-    catch (std::out_of_range e)
-    {
-        stream               = new std::ofstream();
-        std::string filename = path + prefix + "_" + demangledTypeName + ".csv";
-        std::cout << "Creating file " + filename << std::endl;
-        stream->open(filename);
 
-        if (!stream->is_open())
+    stream.precision(std::numeric_limits<float>::max_digits10);
+
+    return stream;
+}
+
+/**
+ * @brief Register a type so that it can be deserialized
+ */
+void Deserializer::registerType(std::string typeName, std::ifstream& file)
+{
+    // Create a new csv file for this type
+    std::ofstream outFile = createCSV(typeName);
+
+    // Read the number of fields
+    uint8_t fieldCount = file.get();
+    // Dummy null read
+    file.get();
+
+    // create an array to store the field types
+    DeserializeInstructions deserializeInstructions;
+    deserializeInstructions.reserve(fieldCount);
+    std::string header;
+
+    for (int i = 0; i < fieldCount; i++)
+    {
+        // get the name of the field
+        std::string fieldName;
+        // Read null terminated name string
+        while (file.peek() != 0)
+            fieldName += file.get();
+        // Dummy null read
+        file.get();
+        header += fieldName + ",";
+
+        // Read the field type
+        char fieldType = file.get();
+        // Dummy null read
+        file.get();
+
+        switch (fieldType)
         {
-            printf("Error opening file %s.\n", filename.c_str());
-            perror("Error is:");
-            return;
+            case TypeIDByte::Bool:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<bool>);
+                break;
+            case TypeIDByte::Char:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<char>);
+                break;
+            case TypeIDByte::Int8:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<int8_t>);
+                break;
+            case TypeIDByte::UInt8:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<uint8_t>);
+                break;
+            case TypeIDByte::Int16:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<int16_t>);
+                break;
+            case TypeIDByte::UInt16:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<uint16_t>);
+                break;
+            case TypeIDByte::Int32:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<int32_t>);
+                break;
+            case TypeIDByte::UInt32:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<uint32_t>);
+                break;
+            case TypeIDByte::Int64:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<int64_t>);
+                break;
+            case TypeIDByte::UInt64:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<uint64_t>);
+                break;
+            case TypeIDByte::Float:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<float32_t>);
+                break;
+            case TypeIDByte::Double:
+                deserializeInstructions.push_back(
+                    detail::deserializeField<float64_t>);
+                break;
+            default:
+                std::cerr << "Unknown field type: " << fieldType << std::endl
+                          << "Aborting deserialization" << std::endl;
+                throw std::runtime_error("Unknown field type: " +
+                                         std::to_string(fieldType));
         }
-
-        // Print the header in the file
-        *stream << T::header();
-
-        // Set stream precision to maximum float precision
-        stream->precision(flt::max_digits10);
-
-        // Add the file to the vector such that it will be closed
-        fileStreams.emplace(demangledTypeName, stream);
     }
 
-    // Print data into the file if it is open
-    if (stream->is_open())
-        t.print(std::ref(*stream));
+    // print the header to the CSV and remove the trailing comma
+    outFile << header.substr(0, header.size() - 1) << '\n';
+
+    auto result = typeMap.emplace(
+        typeName,
+        MappingRecord{std::move(outFile), std::move(deserializeInstructions)});
+
+    if (!result.second)
+    {
+        std::cerr << "Duplicate type: " << typeName << std::endl;
+        throw std::runtime_error("Duplicate type: " + typeName);
+    }
+
+    // Indent to reduce output clutter
+    std::cout << "\tFound type " << typeName << " with " << (int)fieldCount
+              << " fields" << std::endl;
+
+    return;
 }
 
 bool Deserializer::deserialize()
 {
-    if (closed)
-        return false;
-
-    // Create the folder
-    mkdir(logFolderPath.c_str(), 0777);
-
-    // Move the log file into the folder
-    if (rename(logFilename.c_str(), (logFolderPath + logFilename).c_str()))
-    {
-        std::cout << logFilename + " does not exists." << std::endl;
-        return false;
-    }
-
-    // Open the log file
-    std::ifstream file(logFolderPath + logFilename);
-
-    // Check if the file exists
+    std::ifstream file(filename, std::ios::binary);
     if (!file)
     {
-        std::cout << logFolderPath + logFilename + " does not exists."
-                  << std::endl;
+        std::cerr << filename << " does not exists." << std::endl;
         return false;
     }
 
-    tscpp::UnknownInputArchive inputArchive(file, tps);
-    while (true)
+    std::filesystem::create_directory(outputDirectory());
+
+    while (file.peek() != -1)
     {
+        std::string typeName;
+
+        // Read null terminated name string
+        while (file.peek() != 0)
+            typeName += file.get();
+        // Dummy null read
+        file.get();
+
         try
         {
-            inputArchive.unserialize();
+            // if the first char of the type name is the mapping marker then
+            // this is the definition of a mapping and not data to be
+            // deserialized
+            if (typeName[0] == MappingMarker)
+            {
+                registerType(typeName.substr(1), file);
+                continue;
+            }
+
+            // get the correct parser for this type
+            auto& type = typeMap.at(typeName);
+
+            for (auto& fieldInstruction : type.instructions)
+                fieldInstruction(file, type.file);
+
+            // replace the trailing comma with a newline character
+            type.file.seekp(type.file.tellp() - std::streampos{1});
+            type.file << '\n';
         }
-        catch (tscpp::TscppException& ex)
+        catch (const std::out_of_range& e)
         {
-            // Reached end of file
-            if (strcmp(ex.what(), "eof") == 0)
-            {
-                return true;
-            }
-            // Unknown type found
-            else if (strcmp(ex.what(), "unknown type") == 0)
-            {
-                std::string unknownTypeName = ex.name();
-                std::cout << "Unknown type found: " << unknownTypeName
-                          << std::endl;
-                return false;
-            }
+            std::cerr << "Type not found: " << typeName << std::endl;
+            return false;
+        }
+        catch (std::runtime_error& e)
+        {
+            std::cerr << "Error deserializing type: " << typeName << " - "
+                      << e.what() << std::endl;
+            return false;
         }
     }
 
-    file.close();
     return true;
-}
-
-void Deserializer::close()
-{
-    if (!closed)
-    {
-        closed = true;
-        for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
-        {
-            it->second->close();
-            delete it->second;
-        }
-    }
 }
 
 }  // namespace Boardcore

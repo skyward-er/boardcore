@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -42,32 +44,18 @@ struct BMX160Data : public AccelerometerData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,magneticFieldTimestamp,"
-               "magneticFieldX,magneticFieldY,magneticFieldZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << ","
-           << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << "\n";
+        return STRUCT_DEF(BMX160Data, EXTEND_DEF(AccelerometerData)
+                                          EXTEND_DEF(GyroscopeData)
+                                              EXTEND_DEF(MagnetometerData));
     }
 };
-
 struct BMX160Temperature : public TemperatureData
 {
-    static std::string header() { return "temperatureTimestamp,temperature\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(BMX160Temperature, EXTEND_DEF(TemperatureData));
     }
 };
 
@@ -81,21 +69,18 @@ struct BMX160FifoStats
     uint64_t watermarkTimestamp;  ///< Watermark timestamp (from the start of
                                   // the fifo)
     uint64_t fifoDuration;        ///< Total fifo duration
-    uint64_t
-        interruptTimestampDelta;  ///< Reported delta time between the previous
-                                  // interrupt and the current one.
-    int len;                      ///< Fifo length in bytes.
+    uint64_t interruptTimestampDelta;  ///< Reported delta time between the
+                                       ///< previous
+                                       // interrupt and the current one.
+    int len;                           ///< Fifo length in bytes.
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,watermark_timestamp,fifo_duration,interrupt_"
-               "timestamp_delta,fifo_len\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << watermarkTimestamp << "," << fifoDuration
-           << "," << interruptTimestampDelta << "," << len << "\n";
+        return STRUCT_DEF(BMX160FifoStats,
+                          FIELD_DEF(timestamp) FIELD_DEF(watermarkTimestamp)
+                              FIELD_DEF(fifoDuration)
+                                  FIELD_DEF(interruptTimestampDelta)
+                                      FIELD_DEF(len));
     }
 };
 

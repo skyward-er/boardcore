@@ -67,31 +67,13 @@ struct VN300Data : public QuaternionData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "quaternionTimestamp,quaternionX,quaternionY,quaternionZ,"
-               "quaternionW,magneticFieldTimestamp,"
-               "magneticFieldX,magneticFieldY,magneticFieldZ,"
-               "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,insTimeStamp,"
-               "insStatus,yaw,pitch,roll,latitude,"
-               "longitude,altitude,nedVelX,nedVelY,nedVelZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
-           << "," << quaternionZ << "," << quaternionW << ","
-           << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << ","
-           << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << "," << insTimestamp
-           << "," << insStatus << "," << yaw << "," << pitch << "," << roll
-           << "," << latitude << "," << longitude << "," << altitude << ","
-           << velocityX << "," << velocityY << "," << velocityZ << "\n";
+        return STRUCT_DEF(
+            VN300Data,
+            EXTEND_DEF(QuaternionData) EXTEND_DEF(MagnetometerData)
+                EXTEND_DEF(AccelerometerData) EXTEND_DEF(GyroscopeData)
+                    EXTEND_DEF(VN300Defs::INSData));
     }
 };
 

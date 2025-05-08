@@ -26,6 +26,7 @@
 
 #include <Eigen/Core>
 #include <ostream>
+#include <userde.hpp>
 
 namespace Boardcore
 {
@@ -53,19 +54,16 @@ struct PropagatorState
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz,ax,"
-               "ay,az\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << nPropagations << "," << nas.n << "," << nas.e
-           << "," << nas.d << "," << nas.vn << "," << nas.ve << "," << nas.vd
-           << "," << nas.qx << "," << nas.qy << "," << nas.qz << "," << nas.qw
-           << "," << nas.bx << "," << nas.by << "," << nas.bz << "," << ax
-           << "," << ay << "," << az << "\n";
+        return STRUCT_DEF(
+            PropagatorState,
+            FIELD_DEF(timestamp) FIELD_DEF(nPropagations) FIELD_DEF2(nas, n)
+                FIELD_DEF2(nas, e) FIELD_DEF2(nas, d) FIELD_DEF2(nas, vn)
+                    FIELD_DEF2(nas, ve) FIELD_DEF2(nas, vd) FIELD_DEF2(nas, qx)
+                        FIELD_DEF2(nas, qy) FIELD_DEF2(nas, qz) FIELD_DEF2(
+                            nas, qw) FIELD_DEF2(nas, bx) FIELD_DEF2(nas, by)
+                            FIELD_DEF2(nas, bz) FIELD_DEF(az));
     }
 
     NASState getNasState() const { return nas; }
@@ -169,3 +167,4 @@ struct PropagatorState
 };
 
 }  // namespace Boardcore
+

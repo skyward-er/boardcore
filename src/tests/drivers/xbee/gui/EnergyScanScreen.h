@@ -129,7 +129,7 @@ struct EnergyScanScreen
         }
     }
 
-    void updateScan(array<int, NUM_CHANNELS> scan)
+    void updateScan(array<int32_t, NUM_CHANNELS> scan)
     {
         for (unsigned int i = 0; i < NUM_CHANNELS; i++)
         {

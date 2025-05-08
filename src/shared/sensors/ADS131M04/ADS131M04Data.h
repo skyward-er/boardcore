@@ -22,10 +22,12 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <sensors/SensorData.h>
 #include <stdint.h>
 
 #include <ostream>
+#include <reflect.hpp>
 
 #include "ADS131M04Defs.h"
 
@@ -49,22 +51,16 @@ struct ADS131M04Data
         voltage[3] = voltageCh4;
     }
 
-    static std::string header()
-    {
-        return "timestamp,voltage_channel_1,voltage_channel_2,voltage_channel_"
-               "3,voltage_channel_4\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << voltage[0] << "," << voltage[1] << ","
-           << voltage[2] << "," << voltage[3] << "\n";
-    }
-
     const ADCData getVoltage(ADS131M04Defs::Channel channel)
     {
         return {timestamp, static_cast<uint8_t>(channel),
                 voltage[static_cast<uint8_t>(channel)]};
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ADS131M04Data,
+                          FIELD_DEF(timestamp) FIELD_DEF(voltage));
     }
 };
 

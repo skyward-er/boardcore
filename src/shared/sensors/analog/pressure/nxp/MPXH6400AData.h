@@ -29,11 +29,9 @@ namespace Boardcore
 
 struct MPXH6400AData : public PressureData
 {
-    static std::string header() { return "pressureTimestamp,pressure\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "\n";
+        return STRUCT_DEF(MPXH6400AData, EXTEND_DEF(PressureData));
     }
 };
 

@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -51,15 +53,10 @@ struct MS5803Data : public PressureData, TemperatureData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "pressureTimestamp,pressure,temperatureTimestamp,temperature\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << pressureTimestamp << "," << pressure << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(MS5803Data,
+                          EXTEND_DEF(PressureData) EXTEND_DEF(TemperatureData));
     }
 };
 

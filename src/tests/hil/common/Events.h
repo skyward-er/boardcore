@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <map>
+#include <reflect.hpp>
 #include <string>
 #include <vector>
 
@@ -242,54 +243,60 @@ struct LiftoffEvent
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LiftoffEvent, FIELD_DEF(timestamp));
+    }
 };
 
 struct ApogeeEvent
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ApogeeEvent, FIELD_DEF(timestamp));
+    }
 };
 
 struct NoseconeEvent
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(NoseconeEvent, FIELD_DEF(timestamp));
+    }
 };
 
 struct ExpulsionEvent
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ExpulsionEvent, FIELD_DEF(timestamp));
+    }
 };
 
 struct MainEvent
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(MainEvent, FIELD_DEF(timestamp));
+    }
 };
 
 struct LandingEvent
 {
     uint64_t timestamp;
 
-    static std::string header() { return "timestamp\n"; }
-
-    void print(std::ostream& os) const { os << timestamp << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LandingEvent, FIELD_DEF(timestamp));
+    }
 };
 
 }  // namespace Common

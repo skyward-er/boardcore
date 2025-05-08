@@ -35,6 +35,15 @@ using namespace std;
 using namespace miosix;
 using namespace Boardcore;
 
+/**
+ * @brief Print data to std::cout
+ */
+void printData(LPS28DFWData data)
+{
+    std::cout << data.pressureTimestamp << "," << data.pressure << ","
+              << data.temperatureTimestamp << "," << data.temperature << "\n";
+}
+
 // I2C1
 typedef Gpio<GPIOB_BASE, 8> i1scl;
 typedef Gpio<GPIOB_BASE, 9> i1sda;
@@ -77,7 +86,7 @@ void sampleOneShotMode(I2C& i2c)
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-            lps28dfw.getLastSample().print(std::cout);
+            printData(lps28dfw.getLastSample());
         else
             printf("Error: %d\n", lps28dfw.getLastError());
         Thread::sleep(100);
@@ -108,7 +117,7 @@ void sampleContinuousMode(I2C& i2c)
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-            lps28dfw.getLastSample().print(std::cout);
+            printData(lps28dfw.getLastSample());
         else
             printf("Error: %d\n", lps28dfw.getLastError());
     }
@@ -139,7 +148,7 @@ void sampleInterruptMode(I2C& i2c)
         lps28dfw.sample();
 
         if (lps28dfw.getLastError() == SensorErrors::NO_ERRORS)
-            lps28dfw.getLastSample().print(std::cout);
+            printData(lps28dfw.getLastSample());
         else
             printf("Error: %d\n", lps28dfw.getLastError());
     }

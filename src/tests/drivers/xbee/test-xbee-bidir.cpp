@@ -220,20 +220,21 @@ int main()
         printf("%02u:%02u:%06.3f\n", h, m, s);
         if (RUN_SENDER)
         {
-            printf("SND: int: %u, cnt: %u, tts: %u ms, pps: %.1f, fail: %u\n ",
-                   txd.timeSinceLastSend,
-                   txd.txSuccessCounter + txd.txFailCounter, txd.timeToSend,
-                   resSnd.packetsPerSecond, txd.txFailCounter);
+            std::cout << "SND: int: " << txd.timeSinceLastSend
+                      << ", cnt: " << (txd.txSuccessCounter + txd.txFailCounter)
+                      << ", tts: " << txd.timeToSend
+                      << " ms, pps: " << resSnd.packetsPerSecond
+                      << ", fail: " << txd.txFailCounter << "\n";
         }
         if (RUN_RECEIVER)
         {
-            printf(
-                "RCV: cnt: %u, last_rx: %lld ms,  RSSI: %d, dr: %.0f, pps: "
-                "%.1f,"
-                " pl: %.0f%%, lcnt: %u, fail: %u\n",
-                rxd.rcvCount, rxd.lastPacketTimestamp, rxd.RSSI,
-                resRcv.dataRate, resRcv.packetsPerSecond,
-                resRcv.packetLoss * 100, rxd.packetsLost, rxd.rcvCount);
+            std::cout << "RCV: cnt: " << rxd.rcvCount
+                      << ", last_rx: " << rxd.lastPacketTimestamp << " ms"
+                      << ", RSSI: " << rxd.RSSI << ", dr: " << resRcv.dataRate
+                      << ", pps: " << resRcv.packetsPerSecond
+                      << ", pl: " << resRcv.packetLoss * 100 << "%"
+                      << ", lcnt: " << rxd.packetsLost
+                      << ", fail: " << rxd.rcvCount << "\n";
         }
         printf("\n");
 

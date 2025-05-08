@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -45,17 +47,10 @@ struct LIS2MDLData : public MagnetometerData, public TemperatureData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "magneticFieldTimestamp,magneticFieldX,magneticFieldY,"
-               "magneticFieldZ,temperatureTimestamp,temp\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(LIS2MDLData, EXTEND_DEF(MagnetometerData)
+                                           EXTEND_DEF(TemperatureData));
     }
 };
 

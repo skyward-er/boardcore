@@ -45,19 +45,10 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,temp_"
-               "timestamp,"
-               "temp\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(LIS3DSHData, EXTEND_DEF(AccelerometerData)
+                                           EXTEND_DEF(TemperatureData));
     }
 };
 

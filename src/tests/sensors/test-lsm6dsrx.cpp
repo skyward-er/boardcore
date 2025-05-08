@@ -54,6 +54,18 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
                   SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
                   miosix::GpioPin intPin);
 
+/**
+ * @brief Print data to std::cout
+ */
+void printData(LSM6DSRXData data)
+{
+    std::cout << data.accelerationTimestamp << "," << data.accelerationX << ","
+              << data.accelerationY << "," << data.accelerationZ << ","
+              << data.angularSpeedTimestamp << "," << data.angularSpeedX << ","
+              << data.angularSpeedY << "," << data.angularSpeedZ << ","
+              << data.temperatureTimestamp << "," << data.temperature << "\n";
+}
+
 int main()
 {
     SPIBus bus(SPI3);
@@ -218,7 +230,7 @@ void testSampleTime(SPIBus& bus, miosix::GpioPin csPin,
 
         std::cout << "sample() execution time(us): " << diff << "\n";
         std::cout << "last fifo sample:\n";
-        d.print(std::cout);
+        printData(d);
         std::cout << "\n\n\n";
 
         miosix::Thread::sleep(1000);
@@ -268,7 +280,7 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
         const auto buf = sens->getLastFifo(fifoSize);
         // Print fifo
         std::cout << "last fifo element:\n";
-        buf[fifoSize - 1].print(std::cout);
+        printData(buf[fifoSize - 1]);
         std::cout << "last fifo size: " << fifoSize << "\n";
 
         // Check fifo data
@@ -297,3 +309,4 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
         Thread::sleep(1000);
     }
 }
+

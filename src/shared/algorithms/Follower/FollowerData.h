@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -52,6 +54,12 @@ struct AntennaAngles
     AntennaAngles(uint64_t timestamp, float yaw, float pitch,
                   uint32_t nrPropagations)
         : timestamp{timestamp}, yaw(yaw), pitch(pitch) {};
+
+    constexpr static auto reflect()
+    {
+        return STRUCT_DEF(AntennaAngles,
+                          FIELD_DEF(timestamp) FIELD_DEF(yaw) FIELD_DEF(pitch));
+    }
 };
 
 /**
@@ -74,15 +82,10 @@ struct AntennaAnglesLog : public AntennaAngles
     AntennaAnglesLog(AntennaAngles angle, uint32_t nrPropagations)
         : AntennaAngles(angle), nrPropagations{nrPropagations} {};
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,yaw,pitch,nrPropagations\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << yaw << "," << pitch << "," << nrPropagations
-           << "\n";
+        return STRUCT_DEF(AntennaAnglesLog,
+                          EXTEND_DEF(AntennaAngles) FIELD_DEF(nrPropagations));
     }
 };
 
@@ -103,15 +106,12 @@ struct FollowerState
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,yaw,pitch,horizontalSpeed,verticalSpeed\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << yaw << "," << pitch << "," << horizontalSpeed
-           << "," << verticalSpeed << "\n";
+        return STRUCT_DEF(FollowerState,
+                          FIELD_DEF(timestamp) FIELD_DEF(yaw) FIELD_DEF(pitch)
+                              FIELD_DEF(horizontalSpeed)
+                                  FIELD_DEF(verticalSpeed));
     }
 };
 
@@ -124,6 +124,11 @@ struct LogAntennasCoordinates : public GPSData
     LogAntennasCoordinates() = default;
 
     explicit LogAntennasCoordinates(const GPSData& data) : GPSData(data) {}
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LogAntennasCoordinates, EXTEND_DEF(GPSData));
+    }
 };
 
 /**
@@ -134,5 +139,10 @@ struct LogRocketCoordinates : public GPSData
     LogRocketCoordinates() = default;
 
     explicit LogRocketCoordinates(const GPSData& data) : GPSData(data) {}
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LogRocketCoordinates, EXTEND_DEF(GPSData));
+    }
 };
 }  // namespace Boardcore

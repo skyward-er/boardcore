@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore
@@ -58,9 +59,10 @@ struct LoggingString
 {
     char logString[MAX_LOG_STRING_SIZE];
 
-    static std::string header() { return "log_string\n"; }
-
-    void print(std::ostream& os) const { os << logString << "\n"; }
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LoggingString, FIELD_DEF(logString));
+    }
 };
 
 }  // namespace Boardcore

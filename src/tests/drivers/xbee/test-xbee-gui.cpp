@@ -97,14 +97,16 @@ protected:
             if (xbee->sendATCommand("ED", &response, &duration, 1, 1000) &&
                 response.getCommandDataLength() == 30)
             {
-                array<int, 30> scan;
+                array<int32_t, 30> scan;
 
                 for (uint16_t i = 0; i < response.getCommandDataLength(); i++)
-                    scan[i] = -(int)(*(response.getCommandDataPointer() + i));
+                    scan[i] =
+                        -(int32_t)(*(response.getCommandDataPointer() + i));
 
                 gui->screenEnergy.updateScan(scan);
 
-                EnergyScanData data{Kernel::getOldTick(), scan};
+                EnergyScanData data{static_cast<int64_t>(Kernel::getOldTick()),
+                                    scan};
                 logger.log(data);
             }
         }

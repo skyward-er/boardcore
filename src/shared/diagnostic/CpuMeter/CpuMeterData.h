@@ -24,6 +24,8 @@
 
 #include <utils/Stats/Stats.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -53,15 +55,14 @@ struct CpuMeterData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,minValue,maxValue,mean,stdDev,nSamples\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << minValue << "," << maxValue << "," << mean
-           << "," << stdDev << "," << nSamples << "\n";
+        return STRUCT_DEF(
+            CpuMeterData,
+            FIELD_DEF(timestamp) FIELD_DEF(minValue) FIELD_DEF(maxValue)
+                FIELD_DEF(mean) FIELD_DEF(stdDev) FIELD_DEF(nSamples)
+                    FIELD_DEF(minFreeHeap) FIELD_DEF(freeHeap)
+                        FIELD_DEF(minFreeStack) FIELD_DEF(freeStack));
     }
 };
 

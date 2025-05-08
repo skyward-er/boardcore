@@ -24,6 +24,7 @@
 
 #include <array>
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 using std::array;
@@ -35,8 +36,8 @@ namespace Boardcore
 
 struct EnergyScanData
 {
-    long long timestamp;
-    int channelData[30];
+    int64_t timestamp;
+    int32_t channelData[30];
 
     EnergyScanData() = default;
 
@@ -46,22 +47,10 @@ struct EnergyScanData
             channelData[i] = scan[i];
     }
 
-    static string header()
+    static constexpr auto reflect()
     {
-        string out = "timestamp";
-        for (int i = 0; i < 30; i++)
-            out += ",channel_" + to_string(i);
-        return out + "\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp;
-
-        for (int i = 0; i < 30; i++)
-            os << "," << channelData[i];
-
-        os << "\n";
+        return STRUCT_DEF(EnergyScanData,
+                          FIELD_DEF(timestamp) FIELD_DEF(channelData));
     }
 };
 

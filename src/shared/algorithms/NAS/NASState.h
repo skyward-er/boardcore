@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -68,17 +69,14 @@ struct NASState
         return Eigen::Matrix<float, 13, 1>(n, e, d, vn, ve, vd, qx, qy, qz, qw,
                                            bx, by, bz);
     }
-
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << n << "," << e << "," << d << "," << vn << ","
-           << ve << "," << vd << "," << qx << "," << qy << "," << qz << ","
-           << qw << "," << bx << "," << by << "," << bz << "\n";
+        return STRUCT_DEF(NASState,
+                          FIELD_DEF(timestamp) FIELD_DEF(n) FIELD_DEF(e)
+                              FIELD_DEF(d) FIELD_DEF(vn) FIELD_DEF(ve)
+                                  FIELD_DEF(vd) FIELD_DEF(qx) FIELD_DEF(qy)
+                                      FIELD_DEF(qz) FIELD_DEF(qw) FIELD_DEF(bx)
+                                          FIELD_DEF(by) FIELD_DEF(bz));
     }
 };
 

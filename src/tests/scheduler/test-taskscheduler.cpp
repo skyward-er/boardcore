@@ -119,7 +119,7 @@ void printTaskStats(TaskScheduler& scheduler)
     printf("* Tasks stats\n");
     for (auto stat : scheduler.getTaskStats())
     {
-        float frequency = 1.0f / stat.period.count() * std::nano::den;
+        float frequency = 1.0f / stat.period * std::nano::den;
         fmt::print(
             "| Task ID {} | Frequency {} Hz:\n"
             "|\t                 Average[ms]    StdDev[ms]\n"

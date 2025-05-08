@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore
@@ -38,11 +39,10 @@ struct EventData
     uint8_t event;
     uint8_t topic;
 
-    static std::string header() { return "timestamp,event,topic\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << (int)event << "," << (int)topic << "\n";
+        return STRUCT_DEF(
+            EventData, FIELD_DEF(timestamp) FIELD_DEF(event) FIELD_DEF(topic));
     }
 };
 

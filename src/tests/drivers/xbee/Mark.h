@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 using std::string;
@@ -35,14 +36,12 @@ namespace Boardcore
  */
 struct Mark
 {
-    long long timestamp;
-    unsigned int seq;
+    int64_t timestamp;
+    uint32_t seq;
 
-    static string header() { return "timestamp,seq\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << seq << "\n";
+        return STRUCT_DEF(Mark, FIELD_DEF(timestamp) FIELD_DEF(seq));
     }
 };
 

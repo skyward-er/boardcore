@@ -39,16 +39,9 @@ struct L3GD20Data : public GyroscopeData
 
     L3GD20Data(GyroscopeData gyr) : GyroscopeData(gyr) {}
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "angularSpeedTimestamp,angularSpeedX,angularSpeedY,"
-               "angularSpeedZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << "\n";
+        return STRUCT_DEF(L3GD20Data, EXTEND_DEF(GyroscopeData));
     }
 };
 

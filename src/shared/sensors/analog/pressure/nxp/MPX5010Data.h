@@ -24,16 +24,16 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
 struct MPX5010Data : public PressureData
 {
-    static std::string header() { return "pressureTimestamp,pressure\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "\n";
+        return STRUCT_DEF(MPX5010Data, EXTEND_DEF(PressureData));
     }
 };
 

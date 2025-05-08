@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -37,15 +39,9 @@ struct ADS1118Data : public ADCData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "voltageTimestamp,channelId,voltage\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << voltageTimestamp << "," << (int)channelId << "," << voltage
-           << "\n";
+        return STRUCT_DEF(ADS1118Data, EXTEND_DEF(ADCData));
     }
 };
 

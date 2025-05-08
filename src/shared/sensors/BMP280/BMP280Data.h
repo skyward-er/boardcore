@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -39,15 +41,10 @@ struct BMP280Data : public TemperatureData, public PressureData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "temperatureTimestamp,temperature,pressureTimestamp,pressure,\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << temperatureTimestamp << "," << temperature << ","
-           << pressureTimestamp << "," << pressure << "," << "\n";
+        return STRUCT_DEF(BMP280Data,
+                          EXTEND_DEF(TemperatureData) EXTEND_DEF(PressureData));
     }
 };
 

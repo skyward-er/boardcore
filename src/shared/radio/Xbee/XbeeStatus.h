@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore
@@ -50,22 +51,17 @@ struct XbeeStatus
 
     unsigned int frameBufMaxLength = 0;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,last_tx_status_error,last_tx_status,tts_stats.min,"
-               "tts_stats.max,tts_stats.mean,tts_stats.stddev,tts_stats.n_"
-               "samples,tx_timeout_count,rx_dropped_buffers,frame_buf_max_"
-               "length\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << (int)lastTxStatusError << ","
-           << (int)lastTxStatus << "," << timeToSendStats.minValue << ","
-           << timeToSendStats.maxValue << "," << timeToSendStats.mean << ","
-           << timeToSendStats.stdDev << "," << timeToSendStats.nSamples << ","
-           << txTimeoutCount << "," << rxDroppedBuffers << ","
-           << frameBufMaxLength << "\n";
+        return STRUCT_DEF(
+            XbeeStatus,
+            FIELD_DEF(timestamp) FIELD_DEF(lastTxStatusError) FIELD_DEF(
+                lastTxStatus) FIELD_DEF2(timeToSendStats, minValue)
+                FIELD_DEF2(timeToSendStats, maxValue) FIELD_DEF2(
+                    timeToSendStats, mean) FIELD_DEF2(timeToSendStats, stdDev)
+                    FIELD_DEF2(timeToSendStats, nSamples)
+                        FIELD_DEF(txTimeoutCount) FIELD_DEF(rxDroppedBuffers)
+                            FIELD_DEF(frameBufMaxLength));
     }
 };
 
