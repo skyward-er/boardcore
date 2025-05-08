@@ -81,7 +81,11 @@ private:
     bool value = false;
 };
 
-class D : public InjectableWithDeps<CIface>
+/**
+ * This class was previously called D but that interfered with the D macro
+ * inside of Debug.h so I renamed it
+ */
+class DD : public InjectableWithDeps<CIface>
 {
 public:
     void bing_d() { value = getModule<CIface>()->bong_c(); }
@@ -160,15 +164,15 @@ TEST_CASE("DependencyManager - Virtual Dependencies")
 {
     DependencyManager manager;
 
-    Boardcore::A* a = new Boardcore::A();
-    Boardcore::B* b = new Boardcore::B();
-    Boardcore::C* c = new Boardcore::C();
-    Boardcore::D* d = new Boardcore::D();
+    Boardcore::A* a  = new Boardcore::A();
+    Boardcore::B* b  = new Boardcore::B();
+    Boardcore::C* c  = new Boardcore::C();
+    Boardcore::DD* d = new Boardcore::DD();
 
     REQUIRE(manager.insert<Boardcore::A>(a));
     REQUIRE(manager.insert<Boardcore::B>(b));
     REQUIRE(manager.insert<Boardcore::CIface>(c));
-    REQUIRE(manager.insert<Boardcore::D>(d));
+    REQUIRE(manager.insert<Boardcore::DD>(d));
     REQUIRE(manager.inject());
 
     a->bing_a(false);

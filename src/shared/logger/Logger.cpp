@@ -27,13 +27,12 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <interfaces/atomic_ops.h>
+#include <fmt/format.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <tscpp/buffer.h>
-#include <utils/Debug.h>
 
 #include <chrono>
+#include <cstring>
 #include <fstream>
 #include <stdexcept>
 
@@ -48,27 +47,28 @@ bool Logger::start()
     if (started)
         return true;
 
-    // Find the proper log filename base on the current files on the disk
-    string filename;
-    for (fileNumber = 0; fileNumber < (int)maxFilenameNumber; fileNumber++)
+    // Find the next log filename based on the current files on the disk
+    int logNumber = findNextLogNumber();
+    if (logNumber < 0)
     {
-        // Check if the current file does not exists
-        filename = getFileName(fileNumber);
-        struct stat st;
-        if (stat(filename.c_str(), &st) != 0)
-            break;
-
-        if (fileNumber == maxFilenameNumber - 1)
-            TRACE("Too many log files, appending data to last\n");
+        TRACE("Too many log files, aborting\n");
+        return false;
     }
 
-    file = fopen(filename.c_str(), "ab");  // b for binary
+    string logName = getLogName(logNumber);
+
+    file = fopen(logName.c_str(), "ab");  // b for binary
     if (file == NULL)
     {
         fileNumber = -1;
-        TRACE("Error opening %s file\n", filename.c_str());
+        TRACE("Error opening %s file\n", logName.c_str());
         return false;
     }
+    else
+    {
+        fileNumber = logNumber;
+    }
+
     setbuf(file, NULL);  // Disable buffering for the file stream
 
     // The boring part, start threads one by one and if they fail, undo.
@@ -137,7 +137,7 @@ bool Logger::testSDCard()
 
 int Logger::getCurrentLogNumber() { return fileNumber; }
 
-string Logger::getCurrentFileName() { return getFileName(fileNumber); }
+string Logger::getCurrentFileName() { return getLogName(fileNumber); }
 
 LoggerStats Logger::getStats()
 {
@@ -170,21 +170,57 @@ void Logger::logStats()
 
 Logger::Logger()
 {
-    // Allocate the records
+    // Allocate the records for the log
     for (unsigned int i = 0; i < numRecords; i++)
         emptyRecordsQueue.put(new Record);
 
-    // Allocate buffers and put them in the empty list
+    // Allocate the records for the mappings
+    for (unsigned int i = 0; i < numMappings; i++)
+        emptyMappingsQueue.put(new MappingRecord);
+
+    // Allocate buffers for the log and put them in the empty list
     for (unsigned int i = 0; i < numBuffers; i++)
         emptyBufferList.push(new Buffer);
 }
 
-string Logger::getFileName(int logNumber)
+int Logger::findNextLogNumber()
 {
-    char filename[32];
-    sprintf(filename, "/sd/log%02d.dat", logNumber);
+    int low  = 1;
+    int high = maxFilenameNumber;
 
-    return string(filename);
+    while (low <= high)
+    {
+        int mid             = low + (high - low) / 2;
+        std::string logName = getLogName(mid);
+
+        struct stat st;
+        if (stat(logName.c_str(), &st) == 0)
+        {
+            // File exists, so the next available number must be higher
+            low = mid + 1;
+        }
+        else
+        {
+            // File does not exist, so this could be the one, or it could be a
+            // lower number
+            high = mid - 1;
+        }
+    }
+
+    // After the loop `low` holds the first number for which a log was not found
+    if (low > maxFilenameNumber)
+    {
+        // If we reached the maximum number, return -1 to indicate no available
+        // log numbers
+        return -1;
+    }
+
+    return low;
+}
+
+string Logger::getLogName(int logNumber)
+{
+    return fmt::format("/sd/log{:02d}.dat", logNumber);
 }
 
 void Logger::packThreadLauncher(void* argv)
@@ -217,6 +253,7 @@ void Logger::packThread()
         {
             StackLogger::getInstance().updateStack(THID_LOGGER_PACK);
 
+            // packing for the samples
             Buffer* buffer = nullptr;
             {
                 Lock<FastMutex> l(mutex);
@@ -239,15 +276,28 @@ void Logger::packThread()
                     Lock<FastMutex> l(mutex);
                     fullBufferList.push(buffer);   // Don't lose the buffer
                     fullBufferList.push(nullptr);  // Signal writeThread to stop
+
                     cond.broadcast();
                     stats.buffersFilled++;
-                    return;
+                    return;  // Stop the thread
+                }
+
+                // If the record has a mapping, we need to write it before
+                // writing the data
+                if (record->mapping)
+                {
+                    auto* mapping = record->mapping;
+                    memcpy(buffer->data + buffer->size, mapping->data,
+                           mapping->size);
+                    buffer->size += mapping->size;
+                    emptyMappingsQueue.put(mapping);
                 }
 
                 memcpy(buffer->data + buffer->size, record->data, record->size);
                 buffer->size += record->size;
                 emptyRecordsQueue.put(record);
-            } while (bufferSize - buffer->size >= maxRecordSize);
+            } while (bufferSize - buffer->size >=
+                     maxRecordSize + maxMappingSize);
 
             {
                 Lock<FastMutex> l(mutex);
@@ -323,56 +373,6 @@ void Logger::writeThread()
     {
         TRACE("Error: writeThread failed due to an exception: %s\n", e.what());
     }
-}
-
-LoggerResult Logger::logImpl(const char* name, const void* data,
-                             unsigned int size)
-{
-    if (started == false)
-    {
-        stats.droppedSamples++;
-
-        // Signal that we are trying to write to a closed log
-        stats.lastWriteError = -1;
-
-        return LoggerResult::Ignored;
-    }
-
-    Record* record = nullptr;
-
-    // Retrieve a record from the empty queue, if available
-    {
-        // We disable interrupts because IRQget() is nonblocking, unlike get()
-        FastInterruptDisableLock dLock;
-        if (emptyRecordsQueue.IRQget(record) == false)
-        {
-            stats.droppedSamples++;
-            return LoggerResult::Dropped;
-        }
-    }
-
-    // Copy the data in the record
-    int result =
-        tscpp::serializeImpl(record->data, maxRecordSize, name, data, size);
-
-    // If the record is too small, move the record in the empty queue and error
-    if (result == tscpp::BufferTooSmall)
-    {
-        emptyRecordsQueue.put(record);
-        atomicAdd(&stats.tooLargeSamples, 1);
-        TRACE("The current record size is not enough to store %s\n", name);
-        return LoggerResult::TooLarge;
-    }
-
-    record->size = result;
-
-    // Move the record to the full queue, where the pack thread will read and
-    // store it in a buffer
-    fullRecordsQueue.put(record);
-
-    atomicAdd(&stats.queuedSamples, 1);
-
-    return LoggerResult::Queued;
 }
 
 }  // namespace Boardcore

@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
@@ -65,28 +67,13 @@ struct VN100SerialData : public QuaternionData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "quatTimestamp,quatX,quatY,quatZ,quatW,magneticFieldTimestamp,"
-               "magneticFieldX,magneticFieldY,magneticFieldZ,"
-               "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ,temperatureTimestamp,"
-               "temperature,pressureTimestamp,pressure\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
-           << "," << quaternionZ << "," << quaternionW << ","
-           << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << ","
-           << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << ","
-           << temperatureTimestamp << "," << temperature << ","
-           << pressureTimestamp << "," << pressure << "\n";
+        return STRUCT_DEF(
+            VN100SerialData,
+            EXTEND_DEF(QuaternionData) EXTEND_DEF(MagnetometerData)
+                EXTEND_DEF(AccelerometerData) EXTEND_DEF(GyroscopeData)
+                    EXTEND_DEF(TemperatureData) EXTEND_DEF(PressureData));
     }
 };
 

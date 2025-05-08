@@ -690,6 +690,22 @@
                 "${workspaceFolder}/src/bsps/stm32f429zi_lyra_cubesat/config",
                 "${workspaceFolder}/src/bsps/stm32f429zi_lyra_cubesat"
             ]
+        },
+        {
+            "name": "logdecoder",
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/skyward-boardcore/libs/miosix-host"
+            ],
+            "defines": [
+                "COMPILE_FOR_HOST",
+                "COMPILE_FOR_X86",
+                "FMT_HEADER_ONLY"
+            ],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "cppStandard": "c++20"
         }
     ],
     "version": 4

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -33,11 +34,10 @@ struct PitotData
     float deltaP;
     float airspeed;
 
-    static std::string header() { return "timestamp,deltaP,airspeed\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << deltaP << "," << airspeed << "\n";
+        return STRUCT_DEF(PitotData, FIELD_DEF(timestamp) FIELD_DEF(deltaP)
+                                         FIELD_DEF(airspeed));
     }
 };
 

@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -38,6 +39,13 @@ struct StatsResult
     float mean;         ///< Mean of dataset.
     float stdDev;       ///< Standard deviation of dataset.
     uint32_t nSamples;  ///< Number of samples.
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(StatsResult, FIELD_DEF(minValue) FIELD_DEF(maxValue)
+                                           FIELD_DEF(mean) FIELD_DEF(stdDev)
+                                               FIELD_DEF(nSamples));
+    }
 };
 
 /**

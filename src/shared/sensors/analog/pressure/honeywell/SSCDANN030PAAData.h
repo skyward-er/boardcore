@@ -29,11 +29,9 @@ namespace Boardcore
 
 struct SSCDANN030PAAData : public PressureData
 {
-    static std::string header() { return "pressureTimestamp,pressure\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "\n";
+        return STRUCT_DEF(SSCDANN030PAAData, EXTEND_DEF(PressureData));
     }
 };
 
