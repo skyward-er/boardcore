@@ -161,7 +161,7 @@ private:
      * \param size Class size.
      */
     template <typename T>
-    LoggerResult logImpl(const T& t, unsigned int size);
+    LoggerResult logImpl(T& t, unsigned int size);
 
     /**
      * @brief Maps the type T to a mapping file.
@@ -181,11 +181,22 @@ private:
     static constexpr unsigned int numRecords = 512;  ///< Size of record queues
     static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
     static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
+
+    static constexpr unsigned int numMapRecords =
+        32;  ///< Size of mapping record queues
+    static constexpr unsigned int numMapBuffers =
+        4;  ///< Number of mapping buffers
 #else
     static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
     static constexpr unsigned int numRecords = 64;  ///< Size of record queues
     static constexpr unsigned int numBuffers = 8;   ///< Number of buffers
     static constexpr unsigned int bufferSize = 4 * 1024;  ///< Size of buffers
+
+    static constexpr unsigned int numMapRecords =
+        16;  ///< Size of mapping record queues
+    static constexpr unsigned int numMapBuffers =
+        4;  ///< Number of mapping buffers
+
 #endif
 
     /**
@@ -198,7 +209,7 @@ private:
     {
     public:
         Record() : size(0) {}
-        char data[maxRecordSize] = {};
+        uint8_t data[maxRecordSize] = {};
         unsigned int size;
     };
 
@@ -212,7 +223,7 @@ private:
     {
     public:
         Buffer() : size(0) {}
-        char data[bufferSize] = {};
+        uint8_t data[bufferSize] = {};
         unsigned int size;
     };
 
@@ -224,6 +235,15 @@ private:
     std::queue<Buffer*, std::list<Buffer*>> emptyBufferList;
     miosix::FastMutex mutex;  ///< To allow concurrent access to the queues.
     miosix::ConditionVariable cond;  ///< To lock when buffers are all empty.
+
+    miosix::Queue<Record*, numRecords> fullMappingRecordsQueue;
+    miosix::Queue<Record*, numRecords> emptyMappingRecordsQueue;
+    std::queue<Buffer*, std::list<Buffer*>> fullMappingBufferList;
+    std::queue<Buffer*, std::list<Buffer*>> emptyMappingBufferList;
+    miosix::FastMutex
+        mapMutex;  ///< To allow concurrent access to the mapping queues.
+    miosix::ConditionVariable
+        mapCond;  ///< To lock when mapping buffers are all empty.
 
     miosix::Thread* packTh  = nullptr;  ///< Thread packing logged data.
     miosix::Thread* writeTh = nullptr;  ///< Thread writing data to disk.
@@ -238,6 +258,14 @@ private:
 template <typename T>
 LoggerResult Logger::log(const T& t)
 {
+    static bool isMapped = false;
+
+    if (!isMapped)
+    {
+        mapType(t);
+        isMapped = true;
+    }
+
     static_assert(
         std::is_trivially_copyable<T>::value,
         "The type T must be trivially copyable in order to be logged!");

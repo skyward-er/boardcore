@@ -42,6 +42,7 @@ struct LoggerStats
 
     int droppedSamples   = 0;  ///< Number of dropped samples due to fifo full.
     int queuedSamples    = 0;  ///< Number of samples written to buffer.
+    int queuedMappings   = 0;  ///< Number of mappings written to buffer.
     int buffersFilled    = 0;  ///< Number of buffers filled.
     int buffersWritten   = 0;  ///< Number of buffers written to disk.
     int writesFailed     = 0;  ///< Number of fwrite() that failed.

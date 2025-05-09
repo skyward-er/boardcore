@@ -40,6 +40,7 @@
 
 using namespace std;
 using namespace miosix;
+using namespace socrate;
 
 namespace Boardcore
 {
@@ -133,7 +134,8 @@ void Logger::stop()
 
     started = false;
 
-    fullRecordsQueue.put(nullptr);  // Signal packThread to stop
+    fullRecordsQueue.put(nullptr);         // Signal packThread to stop
+    fullMappingRecordsQueue.put(nullptr);  // Signal packThread to stop
 
     packTh->join();
     writeTh->join();
@@ -243,6 +245,7 @@ void Logger::packThread()
         {
             StackLogger::getInstance().updateStack(THID_LOGGER_PACK);
 
+            // packing for the samples
             Buffer* buffer = nullptr;
             {
                 Lock<FastMutex> l(mutex);
@@ -282,6 +285,49 @@ void Logger::packThread()
                 cond.broadcast();
                 stats.buffersFilled++;
             }
+
+            // packing for the mappings
+            Buffer* mappingBuffer = nullptr;
+            {
+                Lock<FastMutex> l(mapMutex);
+                // Get an empty buffer, wait if none is available
+                while (emptyMappingBufferList.empty())
+                    mapCond.wait(l);
+                mappingBuffer = emptyMappingBufferList.front();
+                emptyMappingBufferList.pop();
+                mappingBuffer->size = 0;
+            }
+            do
+            {
+                Record* record = nullptr;
+                fullMappingRecordsQueue.get(record);
+
+                // When stop() is called, it pushes a nullptr signaling to stop
+                if (record == nullptr)
+                {
+                    Lock<FastMutex> l(mapMutex);
+                    fullMappingBufferList.push(mappingBuffer);  // Don't lose
+                                                                // the buffer
+                    fullMappingBufferList.push(nullptr);  // Signal writeThread
+                                                          // to stop
+                    mapCond.broadcast();
+                    stats.buffersFilled++;
+                    return;
+                }
+
+                memcpy(mappingBuffer->data + mappingBuffer->size, record->data,
+                       record->size);
+                mappingBuffer->size += record->size;
+                emptyMappingRecordsQueue.put(record);
+            } while (bufferSize - mappingBuffer->size >= maxRecordSize);
+
+            {
+                Lock<FastMutex> l(mapMutex);
+                // Put back full buffer
+                fullMappingBufferList.push(mappingBuffer);
+                mapCond.broadcast();
+                stats.buffersFilled++;
+            }
         }
     }
     catch (exception& e)
@@ -298,6 +344,7 @@ void Logger::writeThread()
         {
             StackLogger::getInstance().updateStack(THID_LOGGER_WRITE);
 
+            // writing for the samples
             Buffer* buffer = nullptr;
             {
                 Lock<FastMutex> l(mutex);
@@ -308,15 +355,26 @@ void Logger::writeThread()
                 fullBufferList.pop();
             }
 
+            Buffer* mappingBuffer = nullptr;
+            {
+                Lock<FastMutex> l(mapMutex);
+                // Get a full buffer, wait if none is available
+                while (fullMappingBufferList.empty())
+                    mapCond.wait(l);
+                mappingBuffer = fullMappingBufferList.front();
+                fullMappingBufferList.pop();
+            }
+
             // When packThread stops, it pushes a nullptr signaling to
             // stop
-            if (buffer == nullptr)
+            if (buffer == nullptr || mappingBuffer == nullptr)
                 return;
 
             // Write data to disk
             using namespace std::chrono;
             auto start = system_clock::now();
 
+            // write samples data
             size_t result = fwrite(buffer->data, 1, buffer->size, logFile);
             if (result != buffer->size)
             {
@@ -324,6 +382,21 @@ void Logger::writeThread()
                 // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
                 stats.writesFailed++;
                 stats.lastWriteError = ferror(logFile);
+            }
+            else
+            {
+                stats.buffersWritten++;
+            }
+
+            // write mapping data
+            result = fwrite(mappingBuffer->data, 1, mappingBuffer->size,
+                            mappingFile);
+            if (result != mappingBuffer->size)
+            {
+                // If this fails and your board uses SDRAM,
+                // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
+                stats.writesFailed++;
+                stats.lastWriteError = ferror(mappingFile);
             }
             else
             {
@@ -341,6 +414,8 @@ void Logger::writeThread()
 
                 // Put back empty buffer
                 emptyBufferList.push(buffer);
+                // Put back empty mapping buffer
+                emptyMappingBufferList.push(mappingBuffer);
                 cond.broadcast();
             }
         }
@@ -352,7 +427,7 @@ void Logger::writeThread()
 }
 
 template <typename T>
-LoggerResult Logger::logImpl(const T& t, unsigned int size)
+LoggerResult Logger::logImpl(T& t, unsigned int size)
 {
     if (started == false)
     {
@@ -379,7 +454,7 @@ LoggerResult Logger::logImpl(const T& t, unsigned int size)
 
     // Copy the data in the record
     auto result =
-        socrate::serialize_with_name<T>(t, record->data, maxRecordSize);
+        socrate::userde::serialize_with_name<T>(t, record->data, maxRecordSize);
 
     // If the record is too small, move the record in the empty queue and
     // error
@@ -401,32 +476,88 @@ LoggerResult Logger::logImpl(const T& t, unsigned int size)
     return LoggerResult::Queued;
 }
 
-// TODO make this use records instead of writing directly to file
 template <typename T>
-void mapType(const T& t)
+void Logger::mapType(const T& t)
 {
+    Record* record = nullptr;
+    // Retrieve a record from the empty queue, if available
+    {
+        // We disable interrupts because IRQget() is nonblocking, unlike get()
+        FastInterruptDisableLock dLock;
+        if (emptyMappingRecordsQueue.IRQget(record) == false)
+        {
+            stats.droppedSamples++;
+            return;
+        }
+    }
+    // calculate the size of the mapping
     std::string typeName(T::reflect().type_name());
-    fwrite(typeName.c_str(), 1, typeName.size() + 1, file);
 
+    size_t mappingSize;
+    mappingSize = typeName.size() + 1;  // name of the type + null terminator
+    mappingSize += 2;                   // field count + null terminator
+    T::reflect().for_each_field(
+        t,
+        [&](const char* _name, auto& value)
+        {
+            std::string fieldName(_name);
+            std::string type(typeid(value).name());
+            mappingSize +=
+                fieldName.size() + 1;        // field name + null terminator
+            mappingSize += type.size() + 1;  // field type + null terminator
+        });
+
+    // check if the mapping size is too large for the record, if it's too small
+    // move the record to the empty queue
+    if (mappingSize > maxRecordSize)
+    {
+        emptyMappingRecordsQueue.put(record);
+        TRACE(
+            "The current record size is not enough to store the mapping of "
+            "%s\n",
+            t.type_name());
+        return;
+    }
+
+    // Copy the data in the record
+    memcpy(record->data, typeName.c_str(), typeName.size() + 1);
+
+    size_t offset = 0;
+
+    // Write the type name to the record
+    memcpy(record->data + offset, typeName.c_str(), typeName.size() + 1);
+    offset += typeName.size() + 1;
+
+    // Write the field count to the record
     auto fieldCount = T::reflect().field_count();
-
-    fwrite(&fieldCount, 1, 2, file);
+    memcpy(record->data + offset, &fieldCount, 2);
+    offset += 2;
 
     T::reflect().for_each_field(
-        data,
+        t,
         [&](const char* _name, auto& value)
         {
             std::string fieldName(_name);
             std::string type(typeid(value).name());
 
-            // Write the field name to the file
-            fwrite(fieldName.c_str(), 1, fieldName.size() + 1, mappingFile);
+            // Write the field name to the record
+            memcpy(record->data + offset, fieldName.c_str(),
+                   fieldName.size() + 1);
+            offset += fieldName.size() + 1;
             TRACE("field name: %s\n", fieldName.c_str());
 
-            // Write the field type to the file
-            fwrite(type.c_str(), 1, type.size() + 1, mappingFile);
+            // Write the field type to the record
+            memcpy(record->data + offset, type.c_str(), type.size() + 1);
+            offset += type.size() + 1;
+
             TRACE("field type: %s\n", type.c_str());
         });
+
+    // Move the record to the full queue, where the pack thread will read and
+    // store it in a buffer
+    fullMappingRecordsQueue.put(record);
+
+    atomicAdd(&stats.queuedMappings, 1);
 }
 
 }  // namespace Boardcore
