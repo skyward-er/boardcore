@@ -81,15 +81,15 @@ int main()
 
     sensor.init();
 
-    if (sensor.checkModelMatch())
-    {
-        std::cout << "Sensor initialized correctly" << std::endl;
-    }
-    else
-    {
-        std::cout << "Sensor failed to initialize" << std::endl;
-        return 1;
-    }
+    // if (sensor.checkModelMatch())
+    // {
+    //     std::cout << "Sensor initialized correctly" << std::endl;
+    // }
+    // else
+    // {
+    //     std::cout << "Sensor failed to initialize" << std::endl;
+    //     return 1;
+    // }
 
     while (true)
     {

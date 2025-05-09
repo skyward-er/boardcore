@@ -32,6 +32,8 @@
 #include <memory>
 #include <vector>
 
+#include <interfaces-impl/hwmapping.h>
+
 using namespace Boardcore;
 using namespace miosix;
 
@@ -43,10 +45,8 @@ int main()
     SCB_DisableDCache();
     SCB_DisableICache();
 
-    SPIBus bus(SPI3);
-
-    bus.enableRxDMARequest();
-    bus.enableTxDMARequest();
+    // SPIBus bus(SPI3);
+    SPIBus bus(MIOSIX_SENSOR_LSM6DSRX_SPI);
 
     auto streamRx = DMADriver::instance().acquireStreamForPeripheral(
         DMADefs::Peripherals::PE_SPI3_RX);
@@ -65,7 +65,7 @@ int main()
     }
 
     // GpioPin csPin(GPIOE_BASE, 3);  // PE3 CS
-    GpioPin csPin = miosix::sensors::LSM6DSRX0::cs::getPin();  // PE3 CS
+    GpioPin csPin = miosix::sensors::LSM6DSRX::cs::getPin();  // PE3 CS
     csPin.mode(Mode::OUTPUT);
 
     // GpioPin clockPin(GPIOB_BASE, 3);  // PB3 CK (SCL)
@@ -84,7 +84,7 @@ int main()
     // int2Pin.mode(Mode::INPUT);
 
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
-    busConfiguration.clockDivider = SPI::ClockDivider::DIV_64;
+    busConfiguration.clockDivider = SPI::ClockDivider::DIV_256;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 

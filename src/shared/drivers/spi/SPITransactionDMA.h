@@ -80,24 +80,7 @@ public:
         };
         streamTx->setup(trnTx);
 
-        // Start transaction
-        slave.bus.select(slave.cs);
-
-        // First enable the receiving stream
-        streamRx->enable();
-
-        // Enable sender stream
-        streamTx->enable();
-
-        // Wait for the sender to complete before stopping the transaction
-        streamTx->waitForTransferComplete();  // TODO: make timed wait
-
-        // Stop the transaction
-        slave.bus.deselect(slave.cs);
-
-        // Wait for the receiver to complete
-        // TODO: verify the result of the transaction
-        streamRx->timedWaitForTransferComplete(wait);
+        dmaTransfer(wait);
 
         return dstBuf[1];
     }
@@ -180,6 +163,60 @@ private:
     SPIType* spi;
     DMAStreamGuard& streamRx;
     DMAStreamGuard& streamTx;
+
+    /**
+     * @brief Perform the dma transaction following the
+     * spi rules.
+     * @warning The streams must be setup and ready to go.
+     */
+    bool dmaTransfer(const std::chrono::microseconds wait)
+    {
+        // Disable spi
+        spi->CR1 &= ~SPI_CR1_SPE;
+
+        // Start transaction
+        slave.bus.select(slave.cs);
+
+        // enable dma receive dma
+        spi->CR2 |= SPI_CR2_RXDMAEN;
+
+        // First enable the receiving stream
+        streamRx->enable();
+
+        // Enable sender stream
+        streamTx->enable();
+
+        // Enable spi transmit dma
+        spi->CR2 |= SPI_CR2_TXDMAEN;
+
+        // Enable spi peripheral
+        spi->CR1 |= SPI_CR1_SPE;
+
+        // Wait for the sender to complete before stopping the transaction
+        // TODO: make timed wait
+        streamTx->waitForTransferComplete();
+
+        // Wait for the receiver to complete
+        // TODO: verify the result of the transaction
+        streamRx->timedWaitForTransferComplete(wait);
+
+        // Stop the transaction
+        slave.bus.deselect(slave.cs);
+
+        // Disable the dma streams
+        streamTx->disable();
+        streamRx->disable();
+
+        // Disable the spi peripheral
+        spi->CR1 &= ~SPI_CR1_SPE;
+
+        // Disable spi dma transmit and receive
+        spi->CR2 &= ~SPI_CR2_TXDMAEN;
+        spi->CR2 &= ~SPI_CR2_RXDMAEN;
+
+        // TODO: error handling
+        return true;
+    }
 };
 
 }  // namespace Boardcore

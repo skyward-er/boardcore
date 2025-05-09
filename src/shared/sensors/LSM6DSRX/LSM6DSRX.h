@@ -84,7 +84,7 @@ public:
         else
         {
             printf("checkWhoamiDma(): error, invalid value!\n");
-            printf("Expected: %u | Obtained: %u", LSM6DSRXDefs::REG_WHO_AM_I,
+            printf("Expected: %u | Obtained: %u\n", LSM6DSRXDefs::REG_WHO_AM_I,
                    regValue);
         }
     }

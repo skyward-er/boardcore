@@ -150,8 +150,8 @@ ND015XData ND015A::sampleImpl()
 {
     ND015XData data;
     uint16_t spiDataOut;
-    // SPITransaction spi(slave);
-    SPITransactionDMA spi(slave, ptrSpi, streamRx, streamTx);
+    SPITransaction spi(slave);
+    // SPITransactionDMA spi(slave, ptrSpi, streamRx, streamTx);
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
     uint16_t spiDataIn = spi.transfer16(spiDataOut);

@@ -821,11 +821,11 @@ void LSM6DSRX::readFromFifo()
                                                           false};
 
     // read samples from the sensors
-    // spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
-    //                   reinterpret_cast<uint8_t*>(rawFifo.data()),
-    //                   numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
-    readFifoDma(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
-                numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+                      reinterpret_cast<uint8_t*>(rawFifo.data()),
+                      numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    // readFifoDma(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+    //             numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
 
     streamRx->readFlags();
     streamTx->readFlags();

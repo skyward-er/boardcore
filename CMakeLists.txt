@@ -488,7 +488,7 @@ add_executable(test-lps22df src/tests/sensors/test-lps22df.cpp)
 sbs_target(test-lps22df stm32f767zi_nucleo)
 
 add_executable(test-lsm6dsrx src/tests/sensors/test-lsm6dsrx.cpp)
-sbs_target(test-lsm6dsrx stm32f767zi_orion_engine)
+sbs_target(test-lsm6dsrx stm32f767zi_lyra_biscotto)
 
 add_executable(test-nd015x src/tests/sensors/test-nd015x.cpp)
 sbs_target(test-nd015x stm32f767zi_lyra_biscotto)
