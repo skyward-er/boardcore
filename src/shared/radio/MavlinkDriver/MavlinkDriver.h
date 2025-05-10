@@ -179,7 +179,7 @@ private:
     uint16_t pollingTime = 100;  // ms
 
     // Buffers
-    static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
+    static constexpr size_t MAV_IN_BUFFER_SIZE = 1024;
 
     SyncPacketQueue<PktLength, OutQueueSize> outQueue;
     uint8_t rcvBuffer[MAV_IN_BUFFER_SIZE];

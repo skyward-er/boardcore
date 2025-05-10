@@ -371,7 +371,7 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
             reinterpret_cast<uint8_t*>(&dst_port), sizeof(uint16_t));
     addr += sizeof(uint16_t);
 
-    // Now, what's this?
+    // Now, what's this? We don't know, and we don't care
     uint16_t what = 0;
     spiRead(Wiz::getSocketRxBlock(sock_n), addr,
             reinterpret_cast<uint8_t*>(&what), sizeof(uint16_t));
@@ -385,7 +385,9 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
 
     spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, read_len);
 
-    addr += read_len;
+    // Updating the address by the actually received length to avoid next packet
+    // reading a non existing header
+    addr += recv_len;
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
 
     // Finally tell the device that we correctly received and read the data
