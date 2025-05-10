@@ -39,26 +39,13 @@ struct MavlinkStatus
     uint16_t nDroppedPackets;  ///< Number of packet drops
     mavlink_status_t mavStats;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,n_send_queue,max_send_queue,n_send_errors,n_dropped_"
-               "packets,mav_stats.buffer_overrun,mav_stats.msg_received,mav_"
-               "stats.parse_error,mav_stats.parse_state,mav_stats.packet_idx,"
-               "mav_stats.current_rx_seq,mav_stats.current_tx_seq,mav_stats."
-               "packet_rx_success_count,mav_stats.packet_rx_drop_count\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << nSendQueue << "," << maxSendQueue << ","
-           << nSendErrors << "," << nDroppedPackets << ","
-           << (int)mavStats.msg_received << "," << (int)mavStats.buffer_overrun
-           << "," << (int)mavStats.parse_error << ","
-           << (int)mavStats.parse_state << "," << (int)mavStats.packet_idx
-           << "," << (int)mavStats.current_rx_seq << ","
-           << (int)mavStats.current_tx_seq << ","
-           << mavStats.packet_rx_success_count << ","
-           << mavStats.packet_rx_drop_count << "\n";
+        return STRUCT_DEF(MavlinkStatus,
+                          FIELD_DEF(timestamp) FIELD_DEF(nSendQueue)
+                              FIELD_DEF(maxSendQueue) FIELD_DEF(nSendErrors)
+                                  FIELD_DEF(nDroppedPackets)
+                                      FIELD_DEF(mavStats));
     }
 };
 

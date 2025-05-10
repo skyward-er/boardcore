@@ -37,15 +37,10 @@ struct LPS22DFData : public PressureData, public TemperatureData
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "pressureTimestamp,pressure,temperatureTimestamp,temperature\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << pressureTimestamp << "," << pressure << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(LPS22DFData,
+                          EXTEND_DEF(PressureData) EXTEND_DEF(TemperatureData));
     }
 };
 

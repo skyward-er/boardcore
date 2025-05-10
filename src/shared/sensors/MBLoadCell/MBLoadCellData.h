@@ -100,12 +100,10 @@ struct MBLoadCellData : public LoadCellData
     {
     }
 
-    static std::string header() { return "loadTimestamp,weight\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        if (valid)
-            os << loadTimestamp / 1000000.0 << "," << load << "\n";
+        return STRUCT_DEF(MBLoadCellData,
+                          EXTEND_DEF(LoadCellData) FIELD_DEF(valid));
     }
 };
 

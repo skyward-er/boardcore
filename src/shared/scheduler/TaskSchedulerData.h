@@ -27,6 +27,7 @@
 #include <chrono>
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -52,26 +53,13 @@ struct TaskStatsResult
     uint32_t missedEvents;
     uint32_t failedEvents;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "id,period,actMin,actMax,actMean,actStddev,actNSamples,"
-               "periodMin,periodMax,periodMean,period_stddev,"
-               "periodNSamples,workloadMin,workloadMax,workloadMean,"
-               "workload_stddev,workloadNSample,missedEvents,failedEvents\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << (int)id << "," << period.count() << ","
-           << activationStats.minValue << "," << activationStats.maxValue << ","
-           << activationStats.mean << "," << activationStats.stdDev << ","
-           << activationStats.nSamples << "," << periodStats.minValue << ","
-           << periodStats.maxValue << "," << periodStats.mean << ","
-           << periodStats.stdDev << "," << periodStats.nSamples << ","
-           << workloadStats.minValue << "," << workloadStats.maxValue << ","
-           << workloadStats.mean << "," << workloadStats.stdDev << ","
-           << workloadStats.nSamples << "," << missedEvents << ","
-           << failedEvents << "\n";
+        return STRUCT_DEF(
+            TaskStatsResult,
+            FIELD_DEF(id) FIELD_DEF(period) FIELD_DEF(activationStats)
+                FIELD_DEF(periodStats) FIELD_DEF(workloadStats)
+                    FIELD_DEF(missedEvents) FIELD_DEF(failedEvents));
     }
 };
 

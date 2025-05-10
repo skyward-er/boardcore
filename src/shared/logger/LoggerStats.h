@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore
@@ -50,20 +51,17 @@ struct LoggerStats
     int averageWriteTime = 0;  ///< Average time for an fwrite() of a buffer.
     int maxWriteTime     = 0;  ///< Max time for an fwrite() of a buffer.
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,logNumber,tooLargeSamples,droppedSamples,"
-               "queuedSamples,buffersFilled,buffersWritten,writesFailed,"
-               "lastWriteError,averageWriteTime,maxWriteTime\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << logNumber << "," << tooLargeSamples << ","
-           << droppedSamples << "," << queuedSamples << "," << buffersFilled
-           << "," << buffersWritten << "," << writesFailed << ","
-           << lastWriteError << "," << averageWriteTime << "," << maxWriteTime
-           << "\n";
+        return STRUCT_DEF(
+            LoggerStats,
+            FIELD_DEF(timestamp) FIELD_DEF(logNumber) FIELD_DEF(tooLargeSamples)
+                FIELD_DEF(droppedSamples) FIELD_DEF(queuedSamples)
+                    FIELD_DEF(queuedMappings) FIELD_DEF(buffersFilled)
+                        FIELD_DEF(buffersWritten) FIELD_DEF(writesFailed)
+                            FIELD_DEF(lastWriteError)
+                                FIELD_DEF(averageWriteTime)
+                                    FIELD_DEF(maxWriteTime));
     }
 };
 

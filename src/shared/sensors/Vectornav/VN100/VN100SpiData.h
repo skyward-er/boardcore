@@ -55,25 +55,12 @@ struct VN100SpiData : public QuaternionData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "quatTimestamp,quatX,quatY,quatZ,quatW,magneticFieldTimestamp,"
-               "magneticFieldX,magneticFieldY,magneticFieldZ,"
-               "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
-               "angularSpeedY,angularSpeedZ\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << quaternionTimestamp << "," << quaternionX << "," << quaternionY
-           << "," << quaternionZ << "," << quaternionW << ","
-           << magneticFieldTimestamp << "," << magneticFieldX << ","
-           << magneticFieldY << "," << magneticFieldZ << ","
-           << accelerationTimestamp << "," << accelerationX << ","
-           << accelerationY << "," << accelerationZ << ","
-           << angularSpeedTimestamp << "," << angularSpeedX << ","
-           << angularSpeedY << "," << angularSpeedZ << "\n";
+        return STRUCT_DEF(VN100SpiData, EXTEND_DEF(QuaternionData)
+                                            EXTEND_DEF(MagnetometerData)
+                                                EXTEND_DEF(AccelerometerData)
+                                                    EXTEND_DEF(GyroscopeData));
     }
 };
 

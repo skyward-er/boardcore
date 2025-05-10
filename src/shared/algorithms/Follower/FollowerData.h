@@ -97,15 +97,12 @@ struct FollowerState
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,yaw,pitch,horizontalSpeed,verticalSpeed\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << yaw << "," << pitch << "," << horizontalSpeed
-           << "," << verticalSpeed << "\n";
+        return STRUCT_DEF(FollowerState,
+                          FIELD_DEF(timestamp) FIELD_DEF(yaw) FIELD_DEF(pitch)
+                              FIELD_DEF(horizontalSpeed)
+                                  FIELD_DEF(verticalSpeed));
     }
 };
 
@@ -118,6 +115,11 @@ struct LogAntennasCoordinates : public GPSData
     LogAntennasCoordinates() = default;
 
     explicit LogAntennasCoordinates(const GPSData& data) : GPSData(data) {}
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LogAntennasCoordinates, EXTEND_DEF(GPSData));
+    }
 };
 
 /**
@@ -128,5 +130,10 @@ struct LogRocketCoordinates : public GPSData
     LogRocketCoordinates() = default;
 
     explicit LogRocketCoordinates(const GPSData& data) : GPSData(data) {}
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(LogRocketCoordinates, EXTEND_DEF(GPSData));
+    }
 };
 }  // namespace Boardcore

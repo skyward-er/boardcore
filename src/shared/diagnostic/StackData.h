@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore
@@ -50,15 +51,14 @@ enum ThreadId : uint8_t
 
 struct StackData
 {
-    long long timestamp       = 0;
+    int64_t timestamp         = 0;
     uint8_t threadId          = 0;
     unsigned int minimumStack = 0;
 
-    static std::string header() { return "timestamp,threadId,minimumStack\n"; }
-
-    void print(std::ostream& os)
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << (int)threadId << "," << minimumStack << "\n";
+        return STRUCT_DEF(StackData, FIELD_DEF(timestamp) FIELD_DEF(threadId)
+                                         FIELD_DEF(minimumStack));
     }
 };
 

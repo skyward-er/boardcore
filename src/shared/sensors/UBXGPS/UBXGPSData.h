@@ -46,16 +46,12 @@ struct UBXDateTime
     int32_t nanosecond = 0;  // Fraction of second, range -1e9 .. 1e9 (UTC) [ns]
     uint32_t accuracy  = 0;  // Time accuracy estimate (UTC) [ns]
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "year,month,day,hour,minute,second,nanosecond,accuracy";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << year << "," << (int)month << "," << (int)day << "," << (int)hour
-           << "," << (int)minute << "," << (int)second << "," << nanosecond
-           << "," << accuracy;
+        return STRUCT_DEF(
+            UBXDateTime, FIELD_DEF(year) FIELD_DEF(month) FIELD_DEF(day)
+                             FIELD_DEF(hour) FIELD_DEF(minute) FIELD_DEF(second)
+                                 FIELD_DEF(nanosecond) FIELD_DEF(accuracy));
     }
 };
 
@@ -63,24 +59,9 @@ struct UBXGPSData : public GPSData
 {
     UBXDateTime ubxTime;
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "gpsTimestamp,latitude,longitude,height,velocityNorth,"
-               "velocityEast,velocityDown,speed,track,positionDOP,satellites,"
-               "fix," +
-               UBXDateTime::header() + "\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << gpsTimestamp << "," << latitude << "," << longitude << ","
-           << height << "," << velocityNorth << "," << velocityEast << ","
-           << velocityDown << "," << speed << "," << track << "," << positionDOP
-           << "," << (int)satellites << "," << (int)fix << ",";
-
-        ubxTime.print(os);
-
-        os << "\n";
+        return STRUCT_DEF(UBXGPSData, EXTEND_DEF(GPSData) FIELD_DEF(ubxTime));
     }
 };
 

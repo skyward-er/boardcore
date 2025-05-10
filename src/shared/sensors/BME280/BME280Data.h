@@ -44,17 +44,11 @@ struct BME280Data : public TemperatureData,
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "temperatureTimestamp,temperature,pressureTimestamp,pressure,"
-               "humid_timestamp,humidity\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << temperatureTimestamp << "," << temperature << ","
-           << pressureTimestamp << "," << pressure << "," << humidityTimestamp
-           << "," << humidity << "\n";
+        return STRUCT_DEF(BME280Data,
+                          EXTEND_DEF(TemperatureData) EXTEND_DEF(PressureData)
+                              EXTEND_DEF(HumidityData));
     }
 };
 

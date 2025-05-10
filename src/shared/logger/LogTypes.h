@@ -101,8 +101,8 @@ void registerTypes(Deserializer& ds)
     ds.registerType<ADAState>();
     ds.registerType<ADCData>();
     ds.registerType<ADS1118Data>();
-    ds.registerType<ADS131M04Data>();
-    ds.registerType<ADS131M08Data>();
+    ds.registerType<ADS131M04Data>();  // TODO
+    ds.registerType<ADS131M08Data>();  // TODO
     ds.registerType<AnalogLoadCellData>();
     ds.registerType<BatteryVoltageSensorData>();
     ds.registerType<BME280Data>();
@@ -124,7 +124,6 @@ void registerTypes(Deserializer& ds)
     ds.registerType<CanEvent>();
     ds.registerType<CpuMeterData>();
     ds.registerType<CurrentData>();
-    ds.registerType<CurrentData>();
     ds.registerType<DeviceStatus>();
     ds.registerType<EventData>();
     ds.registerType<GPSData>();
@@ -144,12 +143,14 @@ void registerTypes(Deserializer& ds)
     ds.registerType<LIS3MDLData>();
     ds.registerType<LoadCellData>();
     ds.registerType<LoggerStats>();
-    ds.registerType<LoggingString>();
+    ds.registerType<LoggingString>();  // added char[250] to supported types,
+                                       // kinda ugly but idk how to do it
+                                       // otherwise
     ds.registerType<LPS22DFData>();
     ds.registerType<LPS28DFWData>();
     ds.registerType<LSM6DSRXData>();
     ds.registerType<MagnetometerData>();
-    ds.registerType<MavlinkStatus>();
+    ds.registerType<MavlinkStatus>();  // kinda funky, hope it works
     ds.registerType<MAX31856Data>();
     ds.registerType<MBLoadCellData>();
     ds.registerType<MEAState>();
@@ -171,10 +172,10 @@ void registerTypes(Deserializer& ds)
     ds.registerType<SSCMRNN030PAData>();
     ds.registerType<StackData>();
     ds.registerType<StepperData>();
-    ds.registerType<TaskStatsResult>();
+    ds.registerType<TaskStatsResult>();  // also might not work
     ds.registerType<TemperatureData>();
     ds.registerType<TimestampData>();
-    ds.registerType<UBXGPSData>();
+    ds.registerType<UBXGPSData>();  // same as the others
     ds.registerType<VN100SerialData>();
     ds.registerType<VN100SpiData>();
     ds.registerType<VN300Data>();

@@ -23,16 +23,21 @@
 #pragma once
 
 #include <Singleton.h>
+#include <interfaces/atomic_ops.h>
 #include <miosix.h>
 #include <stdint.h>
+#include <utils/Debug.h>
 
 #include <cstdio>
 #include <list>
 #include <queue>
 #include <string>
 #include <type_traits>
+#include <userde.hpp>
 
 #include "LoggerStats.h"
+
+using namespace miosix;
 
 namespace Boardcore
 {
@@ -172,7 +177,7 @@ private:
      * \param t The class to be mapped.
      */
     template <typename T>
-    void mapType(const T& t);
+    void mapType(T& t);
 
     static constexpr unsigned int maxFilenameNumber =
         10000;  ///< Limit on files
@@ -266,11 +271,142 @@ LoggerResult Logger::log(const T& t)
         isMapped = true;
     }
 
-    static_assert(
-        std::is_trivially_copyable<T>::value,
-        "The type T must be trivially copyable in order to be logged!");
-
     return logImpl(t, sizeof(t));
+}
+
+template <typename T>
+LoggerResult Logger::logImpl(T& t, unsigned int size)
+{
+    T mutableCopy = t;
+    if (started == false)
+    {
+        stats.droppedSamples++;
+
+        // Signal that we are trying to write to a closed log
+        stats.lastWriteError = -1;
+
+        return LoggerResult::Ignored;
+    }
+
+    Record* record = nullptr;
+
+    // Retrieve a record from the empty queue, if available
+    {
+        // We disable interrupts because IRQget() is nonblocking, unlike get()
+        FastInterruptDisableLock dLock;
+        if (emptyRecordsQueue.IRQget(record) == false)
+        {
+            stats.droppedSamples++;
+            return LoggerResult::Dropped;
+        }
+    }
+
+    // Copy the data in the record
+    auto result = socrate::userde::serialize_with_name<T>(
+        mutableCopy, record->data, maxRecordSize);
+
+    // If the record is too small, move the record in the empty queue and
+    // error
+    if (result == socrate::userde::Error::BufferTooSmall)
+    {
+        emptyRecordsQueue.put(record);
+        atomicAdd(&stats.tooLargeSamples, 1);
+        TRACE("The current record size is not enough to store %s\n",
+              t.type_name());
+        return LoggerResult::TooLarge;
+    }
+
+    // Move the record to the full queue, where the pack thread will read and
+    // store it in a buffer
+    fullRecordsQueue.put(record);
+
+    atomicAdd(&stats.queuedSamples, 1);
+
+    return LoggerResult::Queued;
+}
+
+template <typename T>
+void Logger::mapType(T& t)
+{
+    Record* record = nullptr;
+    // Retrieve a record from the empty queue, if available
+    {
+        // We disable interrupts because IRQget() is nonblocking, unlike get()
+        FastInterruptDisableLock dLock;
+        if (emptyMappingRecordsQueue.IRQget(record) == false)
+        {
+            stats.droppedSamples++;
+            return;
+        }
+    }
+    // calculate the size of the mapping
+    std::string typeName(T::reflect().type_name());
+
+    size_t mappingSize;
+    mappingSize = typeName.size() + 1;  // name of the type + null terminator
+    mappingSize += 2;                   // field count + null terminator
+    T::reflect().for_each_field(
+        t,
+        [&](const char* _name, auto& value)
+        {
+            std::string fieldName(_name);
+            std::string type(typeid(value).name());
+            mappingSize +=
+                fieldName.size() + 1;        // field name + null terminator
+            mappingSize += type.size() + 1;  // field type + null terminator
+        });
+
+    // check if the mapping size is too large for the record, if it's too small
+    // move the record to the empty queue
+    if (mappingSize > maxRecordSize)
+    {
+        emptyMappingRecordsQueue.put(record);
+        TRACE(
+            "The current record size is not enough to store the mapping of "
+            "%s\n",
+            t.type_name());
+        return;
+    }
+
+    // Copy the data in the record
+    memcpy(record->data, typeName.c_str(), typeName.size() + 1);
+
+    size_t offset = 0;
+
+    // Write the type name to the record
+    memcpy(record->data + offset, typeName.c_str(), typeName.size() + 1);
+    offset += typeName.size() + 1;
+
+    // Write the field count to the record
+    auto fieldCount = T::reflect().field_count();
+    memcpy(record->data + offset, &fieldCount, 2);
+    offset += 2;
+
+    T::reflect().for_each_field(
+        t,
+        [&](const char* _name, auto& value)
+        {
+            std::string fieldName(_name);
+            std::string type(typeid(value).name());
+
+            // Write the field name to the record
+            memcpy(record->data + offset, fieldName.c_str(),
+                   fieldName.size() + 1);
+            offset += fieldName.size() + 1;
+            TRACE("field name: %s\n", fieldName.c_str());
+
+            // Write the field type to the record
+            memcpy(record->data + offset, type.c_str(), type.size() + 1);
+            offset += type.size() + 1;
+
+            TRACE("field type: %s\n", type.c_str());
+        });
+
+    // Move the record to the full queue, where the pack thread will read and
+    // store it in a buffer
+    fullMappingRecordsQueue.put(record);
+
+    atomicAdd(&stats.queuedMappings, 1);
 }
 
 }  // namespace Boardcore
