@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <ostream>
+#include <reflect.hpp>
 #include <string>
 
 namespace Boardcore

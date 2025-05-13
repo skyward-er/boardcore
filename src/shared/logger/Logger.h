@@ -37,8 +37,6 @@
 
 #include "LoggerStats.h"
 
-using namespace miosix;
-
 namespace Boardcore
 {
 
@@ -293,7 +291,7 @@ LoggerResult Logger::logImpl(T& t, unsigned int size)
     // Retrieve a record from the empty queue, if available
     {
         // We disable interrupts because IRQget() is nonblocking, unlike get()
-        FastInterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
         if (emptyRecordsQueue.IRQget(record) == false)
         {
             stats.droppedSamples++;
@@ -310,7 +308,7 @@ LoggerResult Logger::logImpl(T& t, unsigned int size)
     if (result == socrate::userde::Error::BufferTooSmall)
     {
         emptyRecordsQueue.put(record);
-        atomicAdd(&stats.tooLargeSamples, 1);
+        miosix::atomicAdd(&stats.tooLargeSamples, 1);
         TRACE("The current record size is not enough to store %s\n",
               t.type_name());
         return LoggerResult::TooLarge;
@@ -320,7 +318,7 @@ LoggerResult Logger::logImpl(T& t, unsigned int size)
     // store it in a buffer
     fullRecordsQueue.put(record);
 
-    atomicAdd(&stats.queuedSamples, 1);
+    miosix::atomicAdd(&stats.queuedSamples, 1);
 
     return LoggerResult::Queued;
 }
@@ -332,7 +330,7 @@ void Logger::mapType(T& t)
     // Retrieve a record from the empty queue, if available
     {
         // We disable interrupts because IRQget() is nonblocking, unlike get()
-        FastInterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
         if (emptyMappingRecordsQueue.IRQget(record) == false)
         {
             stats.droppedSamples++;
@@ -406,7 +404,7 @@ void Logger::mapType(T& t)
     // store it in a buffer
     fullMappingRecordsQueue.put(record);
 
-    atomicAdd(&stats.queuedMappings, 1);
+    miosix::atomicAdd(&stats.queuedMappings, 1);
 }
 
 }  // namespace Boardcore

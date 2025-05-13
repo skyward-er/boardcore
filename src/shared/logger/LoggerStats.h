@@ -28,7 +28,6 @@
 
 namespace Boardcore
 {
-
 /**
  * @brief Statistics for the logger.
  */
@@ -62,7 +61,7 @@ struct LoggerStats
                             FIELD_DEF(lastWriteError)
                                 FIELD_DEF(averageWriteTime)
                                     FIELD_DEF(maxWriteTime));
-    }
+    };
 };
-
 }  // namespace Boardcore
+

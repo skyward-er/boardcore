@@ -26,6 +26,7 @@
 
 #include <cstdio>
 #include <map>
+#include <reflect.hpp>
 
 #include "sensors/SensorData.h"
 

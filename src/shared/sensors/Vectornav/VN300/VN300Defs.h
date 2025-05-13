@@ -21,6 +21,7 @@
  */
 
 #pragma once
+#include <reflect.hpp>
 
 namespace Boardcore
 {

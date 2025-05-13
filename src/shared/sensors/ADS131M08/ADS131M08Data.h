@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include <ostream>
+#include <reflect.hpp>
 
 #include "ADS131M08Defs.h"
 

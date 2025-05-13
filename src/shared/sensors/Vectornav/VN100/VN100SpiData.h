@@ -24,6 +24,8 @@
 
 #include <sensors/SensorData.h>
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
 
