@@ -74,15 +74,10 @@ struct AntennaAnglesLog : public AntennaAngles
     AntennaAnglesLog(AntennaAngles angle, uint32_t nrPropagations)
         : AntennaAngles(angle), nrPropagations{nrPropagations} {};
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,yaw,pitch,nrPropagations\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << yaw << "," << pitch << "," << nrPropagations
-           << "\n";
+        return STRUCT_DEF(AntennaAnglesLog,
+                          EXTEND_DEF(AntennaAngles) FIELD_DEF(nrPropagations));
     }
 };
 

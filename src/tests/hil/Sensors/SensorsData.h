@@ -24,6 +24,8 @@
 #include <sensors/LPS28DFW/LPS28DFWData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN015PAData.h>
 
+#include <reflect.hpp>
+
 namespace HILTest
 {
 struct SensorsCalibrationParameter
@@ -47,16 +49,12 @@ struct SensorsCalibrationParameter
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,referencePressure,offsetStatic1,offsetStatic2,"
-               "offsetDeployment\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << referencePressure << "," << offsetStatic1
-           << "," << offsetStatic2 << "," << offsetDeployment << "\n";
+        return STRUCT_DEF(SensorsCalibrationParameter,
+                          FIELD_DEF(timestamp) FIELD_DEF(referencePressure)
+                              FIELD_DEF(offsetStatic1) FIELD_DEF(offsetStatic2)
+                                  FIELD_DEF(offsetDeployment));
     }
 };
 struct LPS28DFW_1Data : Boardcore::LPS28DFWData
@@ -68,15 +66,9 @@ struct LPS28DFW_1Data : Boardcore::LPS28DFWData
 
     LPS28DFW_1Data() {}
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "pressureTimestamp,pressure,temperatureTimestamp,temperature\n ";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << pressureTimestamp << "," << pressure << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(LPS28DFW_1Data, EXTEND_DEF(Boardcore::LPS28DFWData));
     }
 };
 
@@ -89,15 +81,9 @@ struct LPS28DFW_2Data : Boardcore::LPS28DFWData
 
     LPS28DFW_2Data() {}
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "pressureTimestamp,pressure,temperatureTimestamp,temperature\n ";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << pressureTimestamp << "," << pressure << ","
-           << temperatureTimestamp << "," << temperature << "\n";
+        return STRUCT_DEF(LPS28DFW_2Data, EXTEND_DEF(Boardcore::LPS28DFWData));
     }
 };
 
@@ -110,11 +96,10 @@ struct HSCMRNN015PA_1Data : Boardcore::HSCMRNN015PAData
 
     HSCMRNN015PA_1Data() {}
 
-    static std::string header() { return "pressureTimestamp,pressure\n "; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "," << "\n";
+        return STRUCT_DEF(HSCMRNN015PA_1Data,
+                          EXTEND_DEF(Boardcore::HSCMRNN015PAData));
     }
 };
 
@@ -127,11 +112,10 @@ struct HSCMRNN015PA_2Data : Boardcore::HSCMRNN015PAData
 
     HSCMRNN015PA_2Data() {}
 
-    static std::string header() { return "pressureTimestamp,pressure\n "; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << pressureTimestamp << "," << pressure << "," << "\n";
+        return STRUCT_DEF(HSCMRNN015PA_2Data,
+                          EXTEND_DEF(Boardcore::HSCMRNN015PAData));
     }
 };
 

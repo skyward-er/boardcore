@@ -26,6 +26,7 @@
 
 #include <Eigen/Core>
 #include <ostream>
+#include <reflect.hpp>
 
 namespace Boardcore
 {
@@ -78,18 +79,12 @@ struct PropagatorState
     {
     }
 
-    static std::string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,nPropagations,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << nPropagations << "," << x_prop(0) << ","
-           << x_prop(1) << "," << x_prop(2) << "," << v_prop(0) << ","
-           << v_prop(1) << "," << v_prop(2) << "," << q_prop(0) << ","
-           << q_prop(1) << "," << q_prop(2) << "," << q_prop(3) << ","
-           << b_prop(0) << "," << b_prop(1) << "," << b_prop(2) << "\n";
+        return STRUCT_DEF(PropagatorState,
+                          FIELD_DEF(timestamp) FIELD_DEF(nPropagations)
+                              FIELD_DEF(x_prop) FIELD_DEF(v_prop)
+                                  FIELD_DEF(q_prop) FIELD_DEF(b_prop));
     }
 
     NASState getNasState() const
