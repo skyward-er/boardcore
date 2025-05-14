@@ -136,24 +136,7 @@ public:
         };
         streamTx->setup(trnTx);
 
-        // Start transaction
-        slave.bus.select(slave.cs);
-
-        // First enable the receiving stream
-        streamRx->enable();
-
-        // Enable sender stream
-        streamTx->enable();
-
-        // Wait for the sender to complete before stopping the transaction
-        streamTx->waitForTransferComplete();  // TODO: make timed wait
-
-        // Stop the transaction
-        slave.bus.deselect(slave.cs);
-
-        // Wait for the receiver to complete
-        // TODO: verify the result of the transaction
-        streamRx->timedWaitForTransferComplete(wait);
+        dmaTransfer(wait);
 
         return recvBuf[0] << 8 | recvBuf[1];
     }
@@ -208,7 +191,7 @@ private:
         streamRx->disable();
 
         // Disable the spi peripheral
-        spi->CR1 &= ~SPI_CR1_SPE;
+        // spi->CR1 &= ~SPI_CR1_SPE;
 
         // Disable spi dma transmit and receive
         spi->CR2 &= ~SPI_CR2_TXDMAEN;
