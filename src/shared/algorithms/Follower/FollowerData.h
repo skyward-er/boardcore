@@ -54,6 +54,12 @@ struct AntennaAngles
     AntennaAngles(uint64_t timestamp, float yaw, float pitch,
                   uint32_t nrPropagations)
         : timestamp{timestamp}, yaw(yaw), pitch(pitch) {};
+
+    constexpr static auto reflect()
+    {
+        return STRUCT_DEF(AntennaAngles,
+                          FIELD_DEF(timestamp) FIELD_DEF(yaw) FIELD_DEF(pitch));
+    }
 };
 
 /**

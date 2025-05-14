@@ -345,7 +345,7 @@ void Logger::mapType(T& t)
     mappingSize += 2;                   // field count + null terminator
     T::reflect().for_each_field(
         t,
-        [&](const char* _name, auto& value)
+        [&](const char* _name, const auto& value)
         {
             std::string fieldName(_name);
             std::string type(typeid(value).name());
@@ -382,7 +382,7 @@ void Logger::mapType(T& t)
 
     T::reflect().for_each_field(
         t,
-        [&](const char* _name, auto& value)
+        [&](const char* _name, const auto& value)
         {
             std::string fieldName(_name);
             std::string type(typeid(value).name());
