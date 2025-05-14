@@ -56,7 +56,7 @@ void initPins()
 
 int main()
 {
-    SCB_DisableDCache();
+    // SCB_DisableDCache();
 
     // Initialize SPI pins
     initPins();
