@@ -587,7 +587,7 @@ bool DMAStream::timedWaitForHalfTransfer(std::chrono::nanoseconds timeout_ns)
 bool DMAStream::timedWaitForTransferComplete(
     std::chrono::nanoseconds timeout_ns)
 {
-    return waitForInterruptEventImpl(
+    bool ret = waitForInterruptEventImpl(
         currentSetup.enableTransferCompleteInterrupt,
         std::bind(&DMAStream::getTransferCompleteFlagStatus, this),
         std::bind(&DMAStream::clearTransferCompleteFlag, this),
@@ -596,6 +596,8 @@ bool DMAStream::timedWaitForTransferComplete(
 #ifdef STM32F767xx
     invalidateCache();
 #endif  // STM32F767xx
+
+    return ret;
 }
 
 #ifdef STM32F767xx
