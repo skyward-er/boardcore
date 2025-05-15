@@ -323,6 +323,9 @@ LoggerResult Logger::logImpl(T& t, unsigned int size)
     return LoggerResult::Queued;
 }
 
+// This function might not work with non standard types but that's a future me
+// problem
+
 template <typename T>
 void Logger::mapType(T& t)
 {
@@ -343,9 +346,9 @@ void Logger::mapType(T& t)
     size_t mappingSize;
     mappingSize = typeName.size() + 1;  // name of the type + null terminator
     mappingSize += 2;                   // field count + null terminator
-    T::reflect().for_each_field(
+    T::reflect().for_each_field_const(
         t,
-        [&](const char* _name, const auto& value)
+        [&](const char* _name, const auto& value, auto filedType)
         {
             std::string fieldName(_name);
             std::string type(typeid(value).name());
@@ -380,9 +383,9 @@ void Logger::mapType(T& t)
     memcpy(record->data + offset, &fieldCount, 2);
     offset += 2;
 
-    T::reflect().for_each_field(
+    T::reflect().for_each_field_const(
         t,
-        [&](const char* _name, const auto& value)
+        [&](const char* _name, const auto& value, auto fieldType)
         {
             std::string fieldName(_name);
             std::string type(typeid(value).name());
