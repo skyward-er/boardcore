@@ -67,6 +67,14 @@ public:
     ~Deserializer();
 
     /**
+     * @brief Register all types from the mapping file.
+     *
+     * @param mapping The mapping file stream
+     */
+    template <typename F>
+    void registerTypes(F&& f);
+
+    /**
      * @brief Deserializes the provided file.
      *
      * @return Whether the deserialization was successful.
@@ -89,14 +97,6 @@ private:
      */
     template <typename T>
     void printType(T& t, std::string path = "", std::string prefix = "");
-
-    /**
-     * @brief Register all types from the mapping file.
-     *
-     * @param mapping The mapping file stream
-     */
-    template <typename F>
-    void registerTypes(F&& f);
 
     bool closed = false;
 
