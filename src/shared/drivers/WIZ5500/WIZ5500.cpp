@@ -25,19 +25,25 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
-#include <utils/KernelTime.h>
+#include <utils/TimeUtils.h>
 
 #include <algorithm>
 
 #include "WIZ5500Defs.h"
+#include "kernel/kernel.h"
 
 using namespace Boardcore;
 using namespace miosix;
 
 // Keep a 500ms timeout even for the general INTn
-constexpr long long INTN_TIMEOUT = 500;
+constexpr long long INTN_TIMEOUT = 500 * 1000 * 1000;
 
-SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
+static long long intoUntil(int timeout)
+{
+    return timeout == -1 ? -1 : getTime() + msToNs(timeout);
+}
+
+static SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
 {
     SPIBusConfig bus_config = {};
     bus_config.clockDivider = clock_divider;
@@ -159,6 +165,9 @@ void Wiz5500::setSourceIp(WizIp ip)
 bool Wiz5500::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
                          uint16_t dst_port, int timeout)
 {
+    // First convert timeout into until
+    long long until = intoUntil(timeout);
+
     Lock<FastMutex> l(mutex);
 
     // Check that we are closed
@@ -188,7 +197,7 @@ bool Wiz5500::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
 
     // Ok now wait for either a connection, or a disconnection
     int irq = waitForSocketIrq(
-        l, sock_n, Wiz::Socket::Irq::CON | Wiz::Socket::Irq::DISCON, timeout);
+        l, sock_n, Wiz::Socket::Irq::CON | Wiz::Socket::Irq::DISCON, until);
 
     // Connection failed
     if ((irq & Wiz::Socket::Irq::CON) == 0)
@@ -201,6 +210,9 @@ bool Wiz5500::connectTcp(int sock_n, uint16_t src_port, WizIp dst_ip,
 bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp& dst_ip,
                         uint16_t& dst_port, int timeout)
 {
+    // First convert timeout into until
+    long long until = intoUntil(timeout);
+
     Lock<FastMutex> l(mutex);
 
     // Check that we are closed
@@ -230,7 +242,7 @@ bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp& dst_ip,
         waitForSocketIrq(l, sock_n,
                          Wiz::Socket::Irq::CON | Wiz::Socket::Irq::DISCON |
                              Wiz::Socket::Irq::TIMEOUT,
-                         timeout);
+                         until);
 
     // Connection failed
     if ((irq & Wiz::Socket::Irq::CON) == 0)
@@ -248,6 +260,9 @@ bool Wiz5500::listenTcp(int sock_n, uint16_t src_port, WizIp& dst_ip,
 bool Wiz5500::openUdp(int sock_n, uint16_t src_port, WizIp dst_ip,
                       uint16_t dst_port, int timeout)
 {
+    // For now the timeout is unused
+    (void)timeout;
+
     Lock<FastMutex> l(mutex);
 
     // Check that we are closed
@@ -277,6 +292,9 @@ bool Wiz5500::openUdp(int sock_n, uint16_t src_port, WizIp dst_ip,
 
 bool Wiz5500::send(int sock_n, const uint8_t* data, size_t len, int timeout)
 {
+    // First convert timeout into until
+    long long until = intoUntil(timeout);
+
     Lock<FastMutex> l(mutex);
 
     // We cannot send through a closed socket
@@ -297,7 +315,7 @@ bool Wiz5500::send(int sock_n, const uint8_t* data, size_t len, int timeout)
               Wiz::Socket::CMD_SEND);
 
     // Wait for the device to signal a correct send
-    int irq = waitForSocketIrq(l, sock_n, Wiz::Socket::Irq::SEND_OK, timeout);
+    int irq = waitForSocketIrq(l, sock_n, Wiz::Socket::Irq::SEND_OK, until);
 
     // It didn't signal it as an error
     if ((irq & Wiz::Socket::Irq::SEND_OK) == 0)
@@ -308,6 +326,9 @@ bool Wiz5500::send(int sock_n, const uint8_t* data, size_t len, int timeout)
 
 ssize_t Wiz5500::recv(int sock_n, uint8_t* data, size_t len, int timeout)
 {
+    // First convert timeout into until
+    long long until = intoUntil(timeout);
+
     Lock<FastMutex> l(mutex);
 
     // This is only valid for TCP
@@ -317,7 +338,7 @@ ssize_t Wiz5500::recv(int sock_n, uint8_t* data, size_t len, int timeout)
     // Wait for the device to signal that we received something, or a
     // disconnection
     int irq = waitForSocketIrq(
-        l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, timeout);
+        l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, until);
     if ((irq & Wiz::Socket::Irq::RECV) == 0)
         return -1;
 
@@ -344,6 +365,9 @@ ssize_t Wiz5500::recv(int sock_n, uint8_t* data, size_t len, int timeout)
 ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
                           uint16_t& dst_port, int timeout)
 {
+    // First convert timeout into until
+    long long until = intoUntil(timeout);
+
     Lock<FastMutex> l(mutex);
 
     // This is only valid for UDP
@@ -353,7 +377,7 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
     // Wait for the device to signal that we received something, or a
     // disconnection
     int irq = waitForSocketIrq(
-        l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, timeout);
+        l, sock_n, Wiz::Socket::Irq::RECV | Wiz::Socket::Irq::DISCON, until);
     if ((irq & Wiz::Socket::Irq::RECV) == 0)
         return -1;
 
@@ -397,6 +421,9 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
 
 void Wiz5500::close(int sock_n, int timeout)
 {
+    // First convert timeout into until
+    long long until = intoUntil(timeout);
+
     Lock<FastMutex> l(mutex);
 
     // We cannot receive close a closed socket
@@ -406,7 +433,7 @@ void Wiz5500::close(int sock_n, int timeout)
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_CR,
               Wiz::Socket::CMD_DISCON);
 
-    waitForSocketIrq(l, sock_n, Wiz::Socket::Irq::DISCON, timeout);
+    waitForSocketIrq(l, sock_n, Wiz::Socket::Irq::DISCON, until);
     socket_infos[sock_n].mode = Wiz5500::SocketMode::CLOSED;
 }
 
@@ -417,12 +444,24 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
     Unlock<FastMutex> ul(l);
     FastInterruptDisableLock il;
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
-        result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(il, until);
+    {
+        long long now = getTime();
+        if (until == -1 || until > (now + INTN_TIMEOUT))
+        {
+            // The timeout either doesn't exist, or it's further in time
+            Thread::IRQenableIrqAndTimedWait(il, now + INTN_TIMEOUT);
+        }
+        else
+        {
+            // If we timeout here, we actually reached the final timeout
+            result = Thread::IRQenableIrqAndTimedWait(il, until);
+        }
+    }
     return result;
 }
 
 int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
-                              uint8_t irq_mask, int timeout)
+                              uint8_t irq_mask, long long until)
 {
     // Check that someone else isn't already waiting for one of ours interrupts
     if ((socket_infos[sock_n].irq_mask & irq_mask) != 0)
@@ -455,46 +494,39 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
     if (i == NUM_THREAD_WAIT_INFOS)
         return 0;
 
-    long long start        = Kernel::getOldTick();
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
     if (interrupt_service_thread != nullptr)
     {
         // There is already someone managing interrupts for us, just wait
-
-        Unlock<FastMutex> ul(l);
-        FastInterruptDisableLock il;
         while (wait_infos[i].irq == 0 && result == TimedWaitResult::NoTimeout &&
                interrupt_service_thread != this_thread)
         {
-            if (timeout != -1)
+            if (until != -1)
             {
-                result = Kernel::Thread::IRQenableIrqAndTimedWaitMs(
-                    il, start + timeout);
+                Unlock<FastMutex> ul(l);
+                result = Thread::timedWait(until);
             }
             else
             {
-                Thread::IRQenableIrqAndWait(il);
+                Unlock<FastMutex> ul(l);
+                Thread::wait();
             }
         }
     }
     else
     {
         // Nobody is managing interrupts, we are doing it ourself
-        FastInterruptDisableLock il;
         interrupt_service_thread = this_thread;
     }
 
     while (interrupt_service_thread == this_thread)
     {
         // Run a single step of the ISR
-        if (timeout == -1)
-            result = runInterruptServiceRoutine(l, -1);
-        else
-            result = runInterruptServiceRoutine(l, start + timeout);
+        result = runInterruptServiceRoutine(l, until);
 
-        // Check if we woke up ourself, then we need to elect a new interrupt
-        // service thread
+        // Check if we woke up ourself, or we reached a timeout, then we need to
+        // elect a new interrupt service thread
         if (wait_infos[i].irq != 0 || result == TimedWaitResult::Timeout)
         {
             Thread* new_interrupt_service_thread = nullptr;
@@ -509,13 +541,11 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
                 }
             }
 
-            {
-                FastInterruptDisableLock il;
-                interrupt_service_thread = new_interrupt_service_thread;
-            }
-
-            if (new_interrupt_service_thread)
-                new_interrupt_service_thread->wakeup();
+            // Pick a new IST, if none is found, no-one is waiting, and the IST
+            // is not necessary
+            interrupt_service_thread = new_interrupt_service_thread;
+            if (interrupt_service_thread)
+                interrupt_service_thread->wakeup();
         }
     }
 
@@ -533,21 +563,9 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
 TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
                                                     long long until)
 {
-    // Other threads might wake us up in order to
-    long long start = Kernel::getOldTick();
-    if (until == -1)
-    {
-        // Wait for interrupts and check if we run out of time
-        if (waitForINTn(l, start + INTN_TIMEOUT) == TimedWaitResult::Timeout)
-            return TimedWaitResult::Timeout;
-    }
-    else
-    {
-        // Wait for interrupts and check if we run out of time
-        if (waitForINTn(l, std::min(start + INTN_TIMEOUT, until)) ==
-            TimedWaitResult::Timeout)
-            return TimedWaitResult::Timeout;
-    }
+    // Wait for an interrupt, returning to the caller the possible timeout
+    if (waitForINTn(l, until) == TimedWaitResult::Timeout)
+        return TimedWaitResult::Timeout;
 
     // Ok something happened!
 
@@ -555,7 +573,7 @@ TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
     uint8_t ir = spiRead8(0, Wiz::Common::REG_IR);
     spiWrite8(0, Wiz::Common::REG_IR, ir);
 
-    uint8_t sn_ir[NUM_SOCKETS] = {0};
+    uint8_t sn_ir[NUM_SOCKETS] = {};
 
     // Then check for interrupt on all the sockets
     uint8_t sir = spiRead8(0, Wiz::Common::REG_SIR);
