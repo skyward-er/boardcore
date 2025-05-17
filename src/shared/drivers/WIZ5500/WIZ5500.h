@@ -275,7 +275,10 @@ private:
     void spiWriteIp(uint8_t block, uint16_t address, WizIp data);
     void spiWriteMac(uint8_t block, uint16_t address, WizMac data);
 
+    // Thread currently servicing interrupts
     miosix::Thread* interrupt_service_thread = nullptr;
+    // Thread currently waiting for an INTn
+    miosix::Thread* intn_thread = nullptr;
 
     struct ThreadWaitInfo
     {

@@ -290,7 +290,6 @@ int main()
             std::cout << ip << ":" << port << std::endl;
         });
 
-    
     wiz->setOnIpConflict([]() { printf("[wiz5500] Ip conflict\n"); });
 
     wiz->setGatewayIp({192, 168, 1, 1});

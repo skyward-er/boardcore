@@ -127,14 +127,16 @@ void Wiz5500::reset()
 
 void Wiz5500::handleINTn()
 {
-    if (interrupt_service_thread)
+    if (intn_thread)
     {
-        interrupt_service_thread->IRQwakeup();
-        if (interrupt_service_thread->IRQgetPriority() >
+        intn_thread->IRQwakeup();
+        if (intn_thread->IRQgetPriority() >
             miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
         {
             miosix::Scheduler::IRQfindNextThread();
         }
+
+        intn_thread = nullptr;
     }
 }
 
@@ -443,6 +445,7 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
 
     Unlock<FastMutex> ul(l);
     FastInterruptDisableLock il;
+    intn_thread = Thread::IRQgetCurrentThread();
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
     {
         long long now = getTime();
