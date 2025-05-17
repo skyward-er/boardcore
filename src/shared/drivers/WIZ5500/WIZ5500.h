@@ -255,7 +255,7 @@ private:
     miosix::TimedWaitResult waitForINTn(miosix::Lock<miosix::FastMutex>& l,
                                         long long until);
     int waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
-                         uint8_t irq_mask, int timeout);
+                         uint8_t irq_mask, long long until);
 
     miosix::TimedWaitResult runInterruptServiceRoutine(
         miosix::Lock<miosix::FastMutex>& l, long long until);
