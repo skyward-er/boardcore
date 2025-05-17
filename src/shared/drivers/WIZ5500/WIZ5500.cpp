@@ -135,8 +135,6 @@ void Wiz5500::handleINTn()
         {
             miosix::Scheduler::IRQfindNextThread();
         }
-
-        intn_thread = nullptr;
     }
 }
 
@@ -445,7 +443,9 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
 
     Unlock<FastMutex> ul(l);
     FastInterruptDisableLock il;
+
     intn_thread = Thread::IRQgetCurrentThread();
+
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
     {
         long long now = getTime();
@@ -460,6 +460,10 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
             result = Thread::IRQenableIrqAndTimedWait(il, until);
         }
     }
+
+    // Set the thread pointer to null just to make sure
+    intn_thread = nullptr;
+
     return result;
 }
 
