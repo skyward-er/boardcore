@@ -38,7 +38,7 @@ namespace Boardcore
  */
 struct PropagatorState
 {
-    uint64_t timestamp;      ///< Prediction timestamp [ms]
+    uint64_t timestamp;      ///< Prediction timestamp (ARP timestamp) [ms]
     uint32_t nPropagations;  ///< Predictions from last received NAS state
     NASState nas;
 

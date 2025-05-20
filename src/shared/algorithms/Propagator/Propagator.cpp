@@ -52,29 +52,47 @@ void Propagator::step()
     // updates with the last received NAS state if present, otherwise uses the
     // last Propagator state
     state = (oldState.nPropagations == 0
-                 ? PropagatorState(oldState.timestamp, oldState.nPropagations,
-                                   getRocketNasState())
+                 ? PropagatorState(
+                       oldState.timestamp, oldState.nPropagations,
+                       getRocketNasState())  // TODO: Uh? The timestamp? SUS
                  : oldState);
 
-    if (state.nPropagations == 0 &&
-        useAcceleration)  // Update Position assuming constant acceleration
+    if (state.nPropagations == 0)
     {
-        t1 = state.timestamp;
-        dt = t1 - t0;
-        if (dt > 0 && dt < maxAccelerationTime && t0 != 0)
-            state.setZAcceleration((state.getVelocity() - last_real_velocity) /
-                                   dt);
-        t0                 = t1;
-        last_real_velocity = state.getVelocity();
+        // Update the timestamp of the last received packet
+        lastReceivedTime = TimestampTimer::getTimestamp();
+
+        // Compute the acceleration to change the velocity
+        if (useAcceleration)  // Update Position assuming constant acceleration
+        {
+            t1 = state.timestamp;
+            dt = t1 - t0;
+            if (dt > 0 && dt < maxAccelerationTime && t0 != 0)
+                state.setZAcceleration(
+                    (state.getVelocity() - last_real_velocity) / dt);
+            t0                 = t1;
+            last_real_velocity = state.getVelocity();
+        }
     }
 
-    if (useAcceleration)
+    // If we use the acceleration we update the velocity
+    if (useAcceleration &&
+        TimestampTimer::getTimestamp() > t0 + maxAccelerationTime)
         state.setVelocity(state.getVelocity() +
                           state.getAcceleration() * updatePeriod);
 
-    state.setPosition(state.getPosition() + state.getVelocity() * updatePeriod);
+    // In case the time do not exceed the maximum propagation time we update the
+    // state
+    if (TimestampTimer::getTimestamp() >
+        lastReceivedTime + MAX_PROPAGATION_TIME.count())
+    {
+        state.setPosition(state.getPosition() +
+                          state.getVelocity() * updatePeriod);
+        state.nPropagations++;
+    }
+    else
+        state = oldState;
 
-    state.nPropagations++;
     state.timestamp = TimestampTimer::getTimestamp();
 
     // Log propagator state
@@ -90,6 +108,9 @@ void Propagator::setRocketNasState(const NASState& newRocketNasState)
     // Reset nPropagations to notify another received "real" packet
     state.nPropagations = 0;
     lastRocketNasState  = newRocketNasState;
+
+    // Using as timestamp ARP timestamp
+    state.timestamp = TimestampTimer::getTimestamp();
 }
 
 }  // namespace Boardcore
