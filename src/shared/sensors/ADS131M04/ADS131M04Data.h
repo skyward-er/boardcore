@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <sensors/SensorData.h>
 #include <stdint.h>
 
@@ -63,4 +64,21 @@ struct ADS131M04Data
     }
 };
 
+template <>
+struct Mapping<ADS131M04Data>
+{
+    static std::string getMappingString(const ADS131M04Data& value)
+    {
+        std::string mappingString;
+
+        ADD_MAPPING_STRING("ADS131M04Data"), ADD_MAPPING_STRING("9");
+        ADD_MAPPING_STRING("timestamp"), ADD_MAPPING_STRING("m");
+        ADD_MAPPING_STRING("voltage[0]"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("voltage[1]"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("voltage[2]"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("voltage[3]"), ADD_MAPPING_STRING("f");
+
+        return mappingString;
+    }
+};
 }  // namespace Boardcore

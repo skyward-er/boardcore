@@ -51,6 +51,41 @@ enum class LoggerResult
     TooLarge  ///< Data is too large to be logged. Increase maxRecordSize.
 };
 
+#define ADD_MAPPING_STRING(str) mappingString += str, mappingString += '\0'
+
+template <typename T, typename = void>
+struct Mapping
+{
+};
+
+template <typename T>
+struct Mapping<T, std::enable_if_t<socrate::reflect::is_reflectable<T>>>
+{
+    static std::string getMappingString(const T& value)
+    {
+        std::string mappingString;
+
+        std::string typeName(T::reflect().type_name());
+        ADD_MAPPING_STRING(typeName);
+
+        std::string fieldCount(std::to_string(T::reflect().field_count()));
+        ADD_MAPPING_STRING(fieldCount);
+
+        T::reflect().for_each_field_const(
+            value,
+            [&](const char* _name, const auto& value, auto type)
+            {
+                std::string fieldName(_name);
+                std::string typeID(typeid(value).name());
+
+                ADD_MAPPING_STRING(fieldName);
+                ADD_MAPPING_STRING(typeID);
+            });
+
+        return mappingString;
+    }
+};
+
 /**
  * @brief Buffered logger. Needs to be started before it can be used.
  */
@@ -314,6 +349,9 @@ LoggerResult Logger::logImpl(T& t, unsigned int size)
         return LoggerResult::TooLarge;
     }
 
+    record->size = socrate::userde::Serde<T>::size() +
+                   strlen(T::reflect().type_name()) + 1;
+
     // Move the record to the full queue, where the pack thread will read and
     // store it in a buffer
     fullRecordsQueue.put(record);
@@ -340,26 +378,12 @@ void Logger::mapType(T& t)
             return;
         }
     }
-    // calculate the size of the mapping
-    std::string typeName(T::reflect().type_name());
-
-    size_t mappingSize;
-    mappingSize = typeName.size() + 1;  // name of the type + null terminator
-    mappingSize += 2;                   // field count + null terminator
-    T::reflect().for_each_field_const(
-        t,
-        [&](const char* _name, const auto& value, auto filedType)
-        {
-            std::string fieldName(_name);
-            std::string type(typeid(value).name());
-            mappingSize +=
-                fieldName.size() + 1;        // field name + null terminator
-            mappingSize += type.size() + 1;  // field type + null terminator
-        });
+    // Get the string containing the mapping of the value
+    std::string mappingString = Mapping<T>::getMappingString(t);
 
     // check if the mapping size is too large for the record, if it's too small
     // move the record to the empty queue
-    if (mappingSize > maxRecordSize)
+    if (mappingString.size() > maxRecordSize)
     {
         emptyMappingRecordsQueue.put(record);
         TRACE(
@@ -369,42 +393,12 @@ void Logger::mapType(T& t)
         return;
     }
 
-    // Copy the data in the record
-    memcpy(record->data, typeName.c_str(), typeName.size() + 1);
-
-    size_t offset = 0;
-
-    // Write the type name to the record
-    memcpy(record->data + offset, typeName.c_str(), typeName.size() + 1);
-    offset += typeName.size() + 1;
-
-    // Write the field count to the record
-    auto fieldCount = T::reflect().field_count();
-    memcpy(record->data + offset, &fieldCount, 2);
-    offset += 2;
-
-    T::reflect().for_each_field_const(
-        t,
-        [&](const char* _name, const auto& value, auto fieldType)
-        {
-            std::string fieldName(_name);
-            std::string type(typeid(value).name());
-
-            // Write the field name to the record
-            memcpy(record->data + offset, fieldName.c_str(),
-                   fieldName.size() + 1);
-            offset += fieldName.size() + 1;
-            TRACE("field name: %s\n", fieldName.c_str());
-
-            // Write the field type to the record
-            memcpy(record->data + offset, type.c_str(), type.size() + 1);
-            offset += type.size() + 1;
-
-            TRACE("field type: %s\n", type.c_str());
-        });
+    // If the record is big enough, copy the mapping string in the record
+    memcpy(record->data, mappingString.c_str(), mappingString.size());
 
     // Move the record to the full queue, where the pack thread will read and
     // store it in a buffer
+    record->size = mappingString.size();
     fullMappingRecordsQueue.put(record);
 
     miosix::atomicAdd(&stats.queuedMappings, 1);

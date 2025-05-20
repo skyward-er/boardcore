@@ -22,9 +22,10 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <sensors/SensorData.h>
 
-#include <reflect.hpp>
+#include <userde.hpp>
 
 namespace Boardcore
 {
@@ -67,4 +68,71 @@ struct UBXGPSData : public GPSData
     }
 };
 
+template <>
+struct Mapping<UBXGPSData>
+{
+    static std::string getMappingString(const UBXGPSData& value)
+    {
+        std::string mappingString;
+
+        ADD_MAPPING_STRING("UBXGPSData"), ADD_MAPPING_STRING("20");
+        ADD_MAPPING_STRING("gpsTimestamp"), ADD_MAPPING_STRING("m");
+        ADD_MAPPING_STRING("latitude"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("longitude"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("height"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("velocityNorth"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("velocityEast"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("velocityDown"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("speed"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("track"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("positionDOP"), ADD_MAPPING_STRING("f");
+        ADD_MAPPING_STRING("satellites"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("fix"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("ubxTime.year"), ADD_MAPPING_STRING("t");
+        ADD_MAPPING_STRING("ubxTime.month"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("ubxTime.day"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("ubxTime.hour"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("ubxTime.minute"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("ubxTime.second"), ADD_MAPPING_STRING("h");
+        ADD_MAPPING_STRING("ubxTime.nanosecond"), ADD_MAPPING_STRING("i");
+        ADD_MAPPING_STRING("ubxTime.accuracy"), ADD_MAPPING_STRING("j");
+
+        return mappingString;
+    }
+};
+
 }  // namespace Boardcore
+
+template <>
+struct socrate::userde::Serde<Boardcore::UBXDateTime, void>
+{
+    static constexpr size_t size()
+    {
+        return sizeof(uint16_t) + sizeof(uint8_t) * 5 + sizeof(int32_t) +
+               sizeof(uint32_t);
+    }
+
+    static void serialize(const Boardcore::UBXDateTime& value, Stream& stream)
+    {
+        stream.write(&value.year, sizeof(uint16_t));
+        stream.write(&value.month, sizeof(uint8_t));
+        stream.write(&value.day, sizeof(uint8_t));
+        stream.write(&value.hour, sizeof(uint8_t));
+        stream.write(&value.minute, sizeof(uint8_t));
+        stream.write(&value.second, sizeof(uint8_t));
+        stream.write(&value.nanosecond, sizeof(int32_t));
+        stream.write(&value.accuracy, sizeof(uint32_t));
+    }
+
+    static void deserialize(Boardcore::UBXDateTime& value, Stream& stream)
+    {
+        stream.read(&value.year, sizeof(uint16_t));
+        stream.read(&value.month, sizeof(uint8_t));
+        stream.read(&value.day, sizeof(uint8_t));
+        stream.read(&value.hour, sizeof(uint8_t));
+        stream.read(&value.minute, sizeof(uint8_t));
+        stream.read(&value.second, sizeof(uint8_t));
+        stream.read(&value.nanosecond, sizeof(int32_t));
+        stream.read(&value.accuracy, sizeof(uint32_t));
+    }
+};

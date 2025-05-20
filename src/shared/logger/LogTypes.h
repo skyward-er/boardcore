@@ -87,6 +87,8 @@
  * @brief This file includes all the types the logdecoder script will decode.
  *
  * All logged classes inside Boardcore should be reported here.
+ *
+ * This file will need to be deleted
  */
 
 namespace Boardcore
@@ -143,9 +145,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<LIS3MDLData>();
     ds.registerType<LoadCellData>();
     ds.registerType<LoggerStats>();
-    ds.registerType<LoggingString>();  // added char[250] to supported types,
-                                       // kinda ugly but idk how to do it
-                                       // otherwise
+    ds.registerType<LoggingString>();
     ds.registerType<LPS22DFData>();
     ds.registerType<LPS28DFWData>();
     ds.registerType<LSM6DSRXData>();
