@@ -71,7 +71,8 @@ public:
      *
      * @param mapping The mapping file stream
      */
-    void registerTypes();
+    template <typename F>
+    void registerTypes(F&& f);
 
     /**
      * @brief Deserializes the provided file.
@@ -94,10 +95,8 @@ private:
      * @param path Path where to save the file.
      * @param prefix Prefix added to the file.
      */
-
-    void printToCSV(std::string typeName, int fieldCount,
-                    std::vector<std::string> fieldNames, std::string data,
-                    bool isLast);
+    template <typename T>
+    void printType(T& t, std::string path = "", std::string prefix = "");
 
     bool closed = false;
 
@@ -126,21 +125,26 @@ Deserializer::Deserializer(std::string logFilename) : logFilename(logFilename)
 
 Deserializer::~Deserializer() { close(); }
 
-void Deserializer::printToCSV(std::string typeName, int fieldCount,
-                              std::vector<std::string> fieldNames,
-                              std::string data, bool isLast)
+template <typename T>
+void Deserializer::printType(T& t, std::string path, std::string prefix)
 {
     static std::ofstream* stream;
+    std::string demangledTypeName = tscpp::demangle(typeid(T).name());
+
+    // Replace the :: with the _ in order to make the format string cross
+    // platform compatible
+    demangledTypeName =
+        std::regex_replace(demangledTypeName, std::regex("::"), "_");
 
     try
     {
-        stream = fileStreams.at(typeName);
+        stream = fileStreams.at(demangledTypeName);
     }
-    // If the type's file doesn't exist, open the file and write the header
+    // If not already initialize, open the file and write the header
     catch (std::out_of_range e)
     {
         stream               = new std::ofstream();
-        std::string filename = logFolderPath + typeName + ".csv";
+        std::string filename = path + prefix + "_" + demangledTypeName + ".csv";
         std::cout << "Creating file " + filename << std::endl;
         stream->open(filename);
 
@@ -152,28 +156,27 @@ void Deserializer::printToCSV(std::string typeName, int fieldCount,
         }
 
         // Print the header in the file
-        for (int i = 0; i < fieldCount; i++)
-            *stream << fieldNames[i] << ",";
-        *stream << std::endl;
+        *stream << T::header();
 
         // Set stream precision to maximum float precision
         stream->precision(flt::max_digits10);
 
         // Add the file to the vector such that it will be closed
-        fileStreams.emplace(typeName, stream);
+        fileStreams.emplace(demangledTypeName, stream);
     }
 
     // Print data into the file if it is open
     if (stream->is_open())
-        *stream << data;
-
-    if (!isLast)
-        *stream << ",";
-    else
-        *stream << std::endl;
+        t.print(std::ref(*stream));
 }
 
-void Deserializer::registerTypes()
+/**
+ * @brief Register the types from the mapping file
+ *
+ * @param mapping The mapping file stream
+ */
+template <typename F>
+void registerTypes(F&& f)
 {
     // open the mapping file
     std::ifstream mapping(mappingFileName);
@@ -182,77 +185,63 @@ void Deserializer::registerTypes()
     while (mapping.peek() != -1)
     {
         // get the name of the type
-        std::string typeName;
+        std::string type_name;
         // Read null terminated name string
         while (mapping.peek() != 0)
-            typeName += mapping.get();
+            type_name += mapping.get();
         // Dummy null read
         mapping.get();
 
         // read the structure of the type and save it
 
         // store the number of fields
-        uint8_t fieldCount;
-        mapping.read((char*)&fieldCount, sizeof fieldCount);
+        uint8_t field_count;
+        mapping.read((char*)&field_count, sizeof field_count);
 
         // Dummy null read
         mapping.get();
 
-        // create a vector to store the field types
-        std::vector<char> fieldTypes(fieldCount);
+        // create an array to store the field types
+        std::vector<char> field_types(field_count);
 
-        // create a vector to store the field names
-        std::vector<std::string> fieldNames(fieldCount);
-
-        for (int i = 0; i < fieldCount; i++)
+        for (int i = 0; i < field_count; i++)
         {
-            // get the name of the field
-            std::string fieldName;
+            // get the name of the field, we don't actually need it for this
+            // part but we need to read it to get the type
+            std::string field_name;
             // Read null terminated name string
             while (mapping.peek() != 0)
-                fieldName += mapping.get();
+                field_name += mapping.get();
             // Dummy null read
             mapping.get();
-
-            // store the field name in the fieldNames vector
-            fieldNames[i] = fieldName;
 
             // get the type of the field
-            char fieldType;
-            fieldType = mapping.get();
+            std::string field_type;
+            // Read null terminated name string
+            while (mapping.peek() != 0)
+                field_type += mapping.get();
             // Dummy null read
             mapping.get();
 
-            // add the field type to fieldTypes vector
-            fieldTypes[i] = fieldType;
+            // add the field type to field_types
+            field_types[i] = field_type[0];
         }
 
-        // register a callback for this type that takes fieldTypes as an
-        // argument and passes them to printToCSV after having converted the
+        // register a callback for this type that takes field_types as an
+        // argument and prints them to std::cout after having converted the
         // value read from the input stream into the correct type
-        types.insert({typeName, [this, typeName, fieldNames, fieldTypes,
-                                 fieldCount](std::istream& is)
+        types.insert({type_name, [f = std::move(f), field_types,
+                                  field_count](std::istream& is)
                       {
-                          for (int i = 0; i < fieldCount; i++)
+                          for (int i = 0; i < field_count; i++)
                           {
-                              bool isLast;
-                              if (i == fieldCount - 1)
-                              {
-                                  // If this is the last field, we don't
-                                  // want to add a comma at the end of the
-                                  // line
-                                  isLast = true;
-                              }
-                              else
-                                  isLast = false;
-
                               std::ostringstream
                                   oss;  // Create a string stream for each field
 
                               // Read the value from the input stream and
                               // store it as the correct type based on the
-                              // strcutre described in fieldTypes
-                              switch (fieldTypes[i])
+                              // strcutre described in field_types
+                              switch (field_types[i])
                               {
                                   case 'a':
                                       int8_t int8;
@@ -311,21 +300,20 @@ void Deserializer::registerTypes()
                                       break;
                                   default:
                                       std::cerr
-                                          << "Unknown type: " << fieldTypes[i]
+                                          << "Unknown type: " << field_types[i]
                                           << std::endl
                                           << "Aborting deserialization"
                                           << std::endl;
                                       throw std::runtime_error(
                                           "Unknown typeID: " +
-                                          std::string(1, fieldTypes[i]));
+                                          std::string(1, field_types[i]));
                                       return;
                               }
                               // Print the converted string
-                              printToCSV(typeName, fieldCount, fieldNames,
-                                         oss.str(), isLast);
+                              f(oss);
                           }
                       }});
-        std::cout << "Registered type: " << typeName << std::endl;
+        std::cout << "Registered type: " << type_name << std::endl;
     }
     mapping.close();
     return;
@@ -340,13 +328,9 @@ bool Deserializer::deserialize()
     mkdir(logFolderPath.c_str(), 0777);
 
     // Move the log file into the folder
-    if (rename(logFilename.c_str(), (logFolderPath + logFilename).c_str()) &&
-        rename(mappingFileName.c_str(),
-               (logFolderPath + mappingFileName).c_str()))
+    if (rename(logFilename.c_str(), (logFolderPath + logFilename).c_str()))
     {
-        std::cout << "Either " + logFilename + " or " + mappingFileName +
-                         " does not exists."
-                  << std::endl;
+        std::cout << logFilename + " does not exists." << std::endl;
         return false;
     }
 
@@ -363,28 +347,28 @@ bool Deserializer::deserialize()
 
     while (file.peek() != -1)
     {
-        std::string typeName;
+        std::string type_name;
 
         // Read null terminated name string
         while (file.peek() != 0)
-            typeName += file.get();
+            type_name += file.get();
         // Dummy null read
         file.get();
 
         try
         {
             // Invoke correct parser for this type
-            std::cout << "Deserializing type: " << typeName << std::endl;
-            (types.at(typeName))(file);
+            std::cout << "Deserializing type: " << type_name << std::endl;
+            (types.at(type_name))(file);
         }
         catch (const std::out_of_range& e)
         {
-            std::cerr << "Type not found: " << typeName << std::endl;
+            std::cerr << "Type not found: " << type_name << std::endl;
             return false;
         }
         catch (std::runtime_error& e)
         {
-            std::cerr << "Error deserializing type: " << typeName << " - "
+            std::cerr << "Error deserializing type: " << type_name << " - "
                       << e.what() << std::endl;
             return false;
         }
