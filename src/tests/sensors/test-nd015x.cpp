@@ -79,6 +79,9 @@ int main()
 
     ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig(), &streamRx,
                   &streamTx, bus.getSpi());
+    // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig(), &streamRx,
+    //                 &streamTx, bus.getSpi());
+    // ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig());
     // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig());
     ND015XData sensorData;
 
