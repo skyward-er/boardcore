@@ -68,25 +68,4 @@ struct ADS131M08Data
     }
 };
 
-template <>
-struct Mapping<ADS131M08Data>
-{
-    static std::string getMappingString(const ADS131M08Data& value)
-    {
-        std::string mappingString;
-        ADD_MAPPING_STRING("ADS131M08Data"), ADD_MAPPING_STRING("9");
-        ADD_MAPPING_STRING("timestamp"), ADD_MAPPING_STRING("m");
-        ADD_MAPPING_STRING("voltage[0]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[1]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[2]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[3]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[4]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[5]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[6]"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("voltage[7]"), ADD_MAPPING_STRING("f");
-
-        return mappingString;
-    }
-};
-
 }  // namespace Boardcore

@@ -47,7 +47,7 @@ namespace Boardcore
 struct TaskStatsResult
 {
     size_t id;
-    std::chrono::nanoseconds period;
+    int64_t period;  //< this was a std::chrono::nanoseconds
     StatsResult activationStats;
     StatsResult periodStats;
     StatsResult workloadStats;
@@ -58,45 +58,22 @@ struct TaskStatsResult
     {
         return STRUCT_DEF(
             TaskStatsResult,
-            FIELD_DEF(id) FIELD_DEF(period) FIELD_DEF(activationStats)
-                FIELD_DEF(periodStats) FIELD_DEF(workloadStats)
-                    FIELD_DEF(missedEvents) FIELD_DEF(failedEvents));
-    }
-};
-
-template <>
-struct Mapping<TaskStatsResult>
-{
-    static std::string getMappingString(const TaskStatsResult& value)
-    {
-        std::string mappingString;
-
-        ADD_MAPPING_STRING("TaskStatsResult"), ADD_MAPPING_STRING("7");
-        ADD_MAPPING_STRING("id"), ADD_MAPPING_STRING("t");
-        ADD_MAPPING_STRING("period"), ADD_MAPPING_STRING("l");
-
-        ADD_MAPPING_STRING("activationStats.minValue"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("activationStats.maxValue"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("activationStats.mean"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("activationStats.stdDev"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("activationStats.nSamples"), ADD_MAPPING_STRING("j");
-
-        ADD_MAPPING_STRING("periodStats.minValue"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("periodStats.maxValue"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("periodStats.mean"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("periodStats.stdDev"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("periodStats.nSamples"), ADD_MAPPING_STRING("j");
-
-        ADD_MAPPING_STRING("workloadStats.minValue"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("workloadStats.maxValue"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("workloadStats.mean"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("workloadStats.stdDev"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("workloadStats.nSamples"), ADD_MAPPING_STRING("j");
-
-        ADD_MAPPING_STRING("missedEvents"), ADD_MAPPING_STRING("j");
-        ADD_MAPPING_STRING("failedEvents"), ADD_MAPPING_STRING("j");
-
-        return mappingString;
+            FIELD_DEF(id) FIELD_DEF(period) FIELD_DEF2(
+                activationStats, minValue) FIELD_DEF2(activationStats, maxValue)
+                FIELD_DEF2(activationStats, mean) FIELD_DEF2(activationStats,
+                                                             stdDev)
+                    FIELD_DEF2(activationStats, nSamples) FIELD_DEF2(
+                        periodStats, minValue) FIELD_DEF2(periodStats, maxValue)
+                        FIELD_DEF2(periodStats, mean)
+                            FIELD_DEF2(periodStats, stdDev) FIELD_DEF2(
+                                periodStats, nSamples)
+                                FIELD_DEF2(workloadStats, minValue) FIELD_DEF2(
+                                    workloadStats, maxValue)
+                                    FIELD_DEF2(workloadStats, mean)
+                                        FIELD_DEF2(workloadStats, stdDev)
+                                            FIELD_DEF2(workloadStats, nSamples)
+                                                FIELD_DEF(missedEvents)
+                                                    FIELD_DEF(failedEvents));
     }
 };
 

@@ -64,46 +64,19 @@ struct UBXGPSData : public GPSData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(UBXGPSData, EXTEND_DEF(GPSData) FIELD_DEF(ubxTime));
-    }
-};
-
-template <>
-struct Mapping<UBXGPSData>
-{
-    static std::string getMappingString(const UBXGPSData& value)
-    {
-        std::string mappingString;
-
-        ADD_MAPPING_STRING("UBXGPSData"), ADD_MAPPING_STRING("20");
-        ADD_MAPPING_STRING("gpsTimestamp"), ADD_MAPPING_STRING("m");
-        ADD_MAPPING_STRING("latitude"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("longitude"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("height"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("velocityNorth"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("velocityEast"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("velocityDown"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("speed"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("track"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("positionDOP"), ADD_MAPPING_STRING("f");
-        ADD_MAPPING_STRING("satellites"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("fix"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("ubxTime.year"), ADD_MAPPING_STRING("t");
-        ADD_MAPPING_STRING("ubxTime.month"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("ubxTime.day"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("ubxTime.hour"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("ubxTime.minute"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("ubxTime.second"), ADD_MAPPING_STRING("h");
-        ADD_MAPPING_STRING("ubxTime.nanosecond"), ADD_MAPPING_STRING("i");
-        ADD_MAPPING_STRING("ubxTime.accuracy"), ADD_MAPPING_STRING("j");
-
-        return mappingString;
+        return STRUCT_DEF(
+            Boardcore::UBXGPSData,
+            EXTEND_DEF(GPSData) FIELD_DEF2(ubxTime, year)
+                FIELD_DEF2(ubxTime, month) FIELD_DEF2(ubxTime, day) FIELD_DEF2(
+                    ubxTime, hour) FIELD_DEF2(ubxTime, minute)
+                    FIELD_DEF2(ubxTime, second) FIELD_DEF2(ubxTime, nanosecond)
+                        FIELD_DEF2(ubxTime, accuracy));
     }
 };
 
 }  // namespace Boardcore
 
-template <>
+/* template <>
 struct socrate::userde::Serde<Boardcore::UBXDateTime, void>
 {
     static constexpr size_t size()
@@ -136,3 +109,4 @@ struct socrate::userde::Serde<Boardcore::UBXDateTime, void>
         stream.read(&value.accuracy, sizeof(uint32_t));
     }
 };
+ */

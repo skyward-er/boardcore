@@ -40,6 +40,65 @@
 namespace Boardcore
 {
 
+template <typename T, typename = void>
+struct TypeID
+{
+    static constexpr char VALUE = '?';
+};
+
+#define TYPEID_STRUCT(type, character)           \
+    template <>                                  \
+    struct TypeID<type>                          \
+    {                                            \
+        static constexpr char VALUE = character; \
+    };
+
+TYPEID_STRUCT(bool, 'b')
+TYPEID_STRUCT(char, 'c')
+TYPEID_STRUCT(int8_t, 'h')
+TYPEID_STRUCT(uint8_t, 'H')
+TYPEID_STRUCT(int16_t, 'i')
+TYPEID_STRUCT(uint16_t, 'I')
+TYPEID_STRUCT(int32_t, 'j')
+TYPEID_STRUCT(uint32_t, 'J')
+TYPEID_STRUCT(int64_t, 'l')
+TYPEID_STRUCT(uint64_t, 'L')
+TYPEID_STRUCT(float, 'f')
+TYPEID_STRUCT(double, 'd')
+
+template <typename T>
+struct TypeID<T, std::enable_if_t<std::is_enum<T>::value>>
+{
+    static constexpr char VALUE = TypeID<std::underlying_type_t<T>>::VALUE;
+};
+
+template <typename T>
+struct TypePrinter
+{
+    static constexpr void print(std::string& mappingString, const char* name)
+    {
+        mappingString += std::string(name);
+        mappingString += '\0';
+        mappingString += TypeID<T>::VALUE;
+        mappingString += '\0';
+    }
+};
+
+template <typename T, size_t I>
+struct TypePrinter<T[I]>
+{
+    static constexpr void print(std::string& mappingString, const char* name)
+    {
+        for (int i = 0; i < I; i++)
+        {
+            mappingString += std::string(name) + "[" + std::to_string(i) + "]";
+            mappingString += '\0';
+            mappingString += TypeID<T>::VALUE;
+            mappingString += '\0';
+        }
+    }
+};
+
 /**
  * @brief Possible outcomes of Logger::log().
  */
@@ -49,41 +108,6 @@ enum class LoggerResult
     Dropped,  ///< Buffers are currently full, data will not be written. Sorry.
     Ignored,  ///< Logger is currently stopped, data will not be written.
     TooLarge  ///< Data is too large to be logged. Increase maxRecordSize.
-};
-
-#define ADD_MAPPING_STRING(str) mappingString += str, mappingString += '\0'
-
-template <typename T, typename = void>
-struct Mapping
-{
-};
-
-template <typename T>
-struct Mapping<T, std::enable_if_t<socrate::reflect::is_reflectable<T>>>
-{
-    static std::string getMappingString(const T& value)
-    {
-        std::string mappingString;
-
-        std::string typeName(T::reflect().type_name());
-        ADD_MAPPING_STRING(typeName);
-
-        std::string fieldCount(std::to_string(T::reflect().field_count()));
-        ADD_MAPPING_STRING(fieldCount);
-
-        T::reflect().for_each_field_const(
-            value,
-            [&](const char* _name, const auto& value, auto type)
-            {
-                std::string fieldName(_name);
-                std::string typeID(typeid(value).name());
-
-                ADD_MAPPING_STRING(fieldName);
-                ADD_MAPPING_STRING(typeID);
-            });
-
-        return mappingString;
-    }
 };
 
 /**
@@ -378,8 +402,22 @@ void Logger::mapType(T& t)
             return;
         }
     }
-    // Get the string containing the mapping of the value
-    std::string mappingString = Mapping<T>::getMappingString(t);
+
+    std::string mappingString;
+
+    mappingString += T::reflect().type_name();
+    mappingString += '\0';
+
+    // This doesn't work with arrays, need to change it
+    mappingString += std::to_string(T::reflect().field_count());
+    mappingString += '\0';
+
+    T::reflect().for_each_field_type(
+        [&](const char* name, auto type)
+        {
+            using Type = typename decltype(type)::Type;
+            TypePrinter<Type>::print(mappingString, name);
+        });
 
     // check if the mapping size is too large for the record, if it's too small
     // move the record to the empty queue
@@ -405,3 +443,4 @@ void Logger::mapType(T& t)
 }
 
 }  // namespace Boardcore
+

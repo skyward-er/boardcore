@@ -52,7 +52,8 @@ void Propagator::step()
                  : oldState);
 
     // Update Position propagating it with velocity
-    state.x_prop = state.x_prop + state.v_prop * updatePeriod;
+    state.x_prop = static_cast<Vec3f>(state.x_prop.toEigen() +
+                                      state.v_prop.toEigen() * updatePeriod);
     state.nPropagations++;
     state.timestamp = TimestampTimer::getTimestamp();
 }
