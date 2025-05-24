@@ -25,6 +25,7 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
+#include <utils/Debug.h>
 #include <utils/TimeUtils.h>
 
 #include <algorithm>
@@ -409,7 +410,7 @@ ssize_t Wiz5500::recvfrom(int sock_n, uint8_t* data, size_t len, WizIp& dst_ip,
 
     spiRead(Wiz::getSocketRxBlock(sock_n), addr, data, read_len);
 
-    addr += read_len;
+    addr += recv_len;
     spiWrite16(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_RX_RD, addr);
 
     // Finally tell the device that we correctly received and read the data
@@ -580,7 +581,7 @@ TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
     uint8_t ir = spiRead8(0, Wiz::Common::REG_IR);
     spiWrite8(0, Wiz::Common::REG_IR, ir);
 
-    uint8_t sn_ir[NUM_SOCKETS];
+    uint8_t sn_ir[NUM_SOCKETS] = {};
 
     // Then check for interrupt on all the sockets
     uint8_t sir = spiRead8(0, Wiz::Common::REG_SIR);
