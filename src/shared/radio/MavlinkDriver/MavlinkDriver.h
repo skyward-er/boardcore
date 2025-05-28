@@ -178,8 +178,8 @@ private:
     size_t outBufferMaxAge;
     uint16_t pollingTime = 100;  // ms
 
-    // Buffers
-    static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
+    // Buffers (equal to MTU for ethernet)
+    static constexpr size_t MAV_IN_BUFFER_SIZE = 1500;
 
     SyncPacketQueue<PktLength, OutQueueSize> outQueue;
     uint8_t rcvBuffer[MAV_IN_BUFFER_SIZE];
