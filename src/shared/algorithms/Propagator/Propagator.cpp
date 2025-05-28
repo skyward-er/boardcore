@@ -69,7 +69,8 @@ void Propagator::step()
             dt = t1 - t0;
             if (dt > 0 && dt < maxAccelerationTime && t0 != 0)
                 state.setZAcceleration(
-                    (state.getVelocity() - last_real_velocity) / dt);
+                    (state.getVelocity() - last_real_velocity) /
+                    (dt / 1000000));
             t0                 = t1;
             last_real_velocity = state.getVelocity();
         }
@@ -77,14 +78,15 @@ void Propagator::step()
 
     // If we use the acceleration we update the velocity
     if (useAcceleration &&
-        TimestampTimer::getTimestamp() > t0 + maxAccelerationTime)
+        TimestampTimer::getTimestamp() < t0 + maxAccelerationTime)
         state.setVelocity(state.getVelocity() +
                           state.getAcceleration() * updatePeriod);
 
-    // In case the time do not exceed the maximum propagation time we update the
-    // state
-    if (TimestampTimer::getTimestamp() >
-        lastReceivedTime + MAX_PROPAGATION_TIME.count())
+    // In case the time do not exceed the maximum propagation time or it is a
+    // new packet we update the state
+    if (TimestampTimer::getTimestamp() <
+            lastReceivedTime + MAX_PROPAGATION_TIME.count() ||
+        state.nPropagations == 0)
     {
         state.setPosition(state.getPosition() +
                           state.getVelocity() * updatePeriod);
