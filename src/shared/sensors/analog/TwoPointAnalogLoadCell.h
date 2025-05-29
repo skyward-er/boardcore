@@ -96,7 +96,7 @@ protected:
     LoadCellData sampleImpl() override
     {
         auto voltage = getVoltage();
-        auto mass    = -(voltage.voltage * staticScale + staticOffset);
+        auto mass    = voltage.voltage * staticScale + staticOffset;
 
         miosix::Lock<miosix::FastMutex> lock{offsetMutex};
         return {voltage.voltageTimestamp, mass - dynamicOffset};
