@@ -30,6 +30,7 @@ SPITransactionDMA::SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
                                      DMAStreamGuard* txStream)
     : slave(slave), spi(ptrSpi), streamRx(rxStream), streamTx(txStream)
 {
+    slave.bus.configure(slave.config);
 }
 
 uint8_t SPITransactionDMA::readRegister(uint8_t reg,

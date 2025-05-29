@@ -30,6 +30,17 @@
 namespace Boardcore
 {
 
+/**
+ * @brief Provides high-level access to the SPI Bus for a single spi
+ * transaction with dma.
+ *
+ * To make sure the bus is properly configured for the provided slave, you have
+ * to create a new instance of this class for every transaction, as the bus is
+ * configured upon instantiation.
+ *
+ * @warning DO NOT store an instance of this class for later use, as the bus and
+ * the dma streams may be incorrectly configured by then.
+ */
 class SPITransactionDMA
 {
 public:
@@ -41,6 +52,12 @@ public:
      */
     SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
                       DMAStreamGuard* rxStream, DMAStreamGuard* txStream);
+
+    // Delete copy/move constructors/operators
+    SPITransactionDMA(const SPITransactionDMA&)            = delete;
+    SPITransactionDMA& operator=(const SPITransactionDMA&) = delete;
+    SPITransactionDMA(SPITransactionDMA&&)                 = delete;
+    SPITransactionDMA& operator=(SPITransactionDMA&&)      = delete;
 
     /**
      * @brief Reads an 8 bit register.
