@@ -1,5 +1,5 @@
 /* Copyright (c) 2024 Skyward Experimental Rocketry
- * Author: Davide Mor
+ * Author: Davide Mor, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include <sensors/Sensor.h>
 #include <sensors/SensorData.h>
 
+#include <atomic>
 #include <functional>
 
 namespace Boardcore
@@ -45,18 +46,19 @@ public:
      * @param p1Voltage voltage of point 1.
      * @param p1Mass mass of point 1.
      */
-    TwoPointAnalogLoadCell(std::function<ADCData()> getVoltage, float p0Voltage,
-                           float p0Mass, float p1Voltage, float p1Mass)
-        : getVoltage{getVoltage},
+    TwoPointAnalogLoadCell(std::function<VoltageData()> getVoltage,
+                           float p0Voltage, float p0Mass, float p1Voltage,
+                           float p1Mass)
+        : getVoltage{std::move(getVoltage)},
           staticScale{(p1Mass - p0Mass) / (p1Voltage - p0Voltage)},
           staticOffset{p0Mass - staticScale * p0Voltage}
     {
     }
 
     TwoPointAnalogLoadCell(TwoPointAnalogLoadCell&& other)
-        : getVoltage{std::move(other.getVoltage)}, offsetMutex{},
-          dynamicOffset{other.dynamicOffset}, staticScale{other.staticScale},
-          staticOffset{other.staticOffset}
+        : getVoltage{std::move(other.getVoltage)},
+          dynamicOffset{other.dynamicOffset.load()},
+          staticScale{other.staticScale}, staticOffset{other.staticOffset}
     {
     }
 
@@ -67,11 +69,7 @@ public:
     /**
      * @brief Set the current load cell offset. Ignores any previous offsets.
      */
-    void setOffset(float value)
-    {
-        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
-        dynamicOffset = value;
-    }
+    void setOffset(float value) { dynamicOffset = value; }
 
     /**
      * @brief Update the current load cell offset. Adds the new value to the old
@@ -79,18 +77,20 @@ public:
      */
     void updateOffset(float value)
     {
-        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
-        dynamicOffset += value;
+        float currentOffset = 0.0f;
+        // Compare/exchange loop because operator+= on atomic floats is only
+        // supported since C++20
+        do
+        {
+            currentOffset = dynamicOffset.load();
+        } while (!dynamicOffset.compare_exchange_weak(currentOffset,
+                                                      currentOffset + value));
     }
 
     /**
      * @brief Retrieve the current offset.
      */
-    float getOffset()
-    {
-        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
-        return dynamicOffset;
-    }
+    float getOffset() { return dynamicOffset; }
 
 protected:
     LoadCellData sampleImpl() override
@@ -98,16 +98,13 @@ protected:
         auto voltage = getVoltage();
         auto mass    = voltage.voltage * staticScale + staticOffset;
 
-        miosix::Lock<miosix::FastMutex> lock{offsetMutex};
         return {voltage.voltageTimestamp, mass - dynamicOffset};
     }
 
 private:
-    std::function<ADCData()> getVoltage;
+    std::function<VoltageData()> getVoltage;
 
-    // std::atomic<float> does not support +=
-    miosix::FastMutex offsetMutex;
-    float dynamicOffset = 0.0f;
+    std::atomic<float> dynamicOffset{0.0f};
 
     const float staticScale;
     const float staticOffset;

@@ -318,24 +318,6 @@ struct GPSData
 };
 
 /**
- * @brief Structure to handle ADC data.
- */
-struct ADCData
-{
-    uint64_t voltageTimestamp = 0;
-    uint8_t channelId         = 0;
-    float voltage             = 0;
-
-    static std::string header() { return "timestamp,channelId,voltage\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << voltageTimestamp << "," << (int)channelId << "," << voltage
-           << "\n";
-    }
-};
-
-/**
  * @brief Structure to handle current data.
  */
 struct CurrentData
@@ -364,6 +346,35 @@ struct VoltageData
     void print(std::ostream& os) const
     {
         os << voltageTimestamp << "," << voltage << "\n";
+    }
+};
+
+/**
+ * @brief Structure to handle ADC data.
+ */
+struct ADCData
+{
+    uint64_t voltageTimestamp = 0;
+    uint8_t channelId         = 0;
+    float voltage             = 0;
+
+    static std::string header() { return "timestamp,channelId,voltage\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << voltageTimestamp << "," << (int)channelId << "," << voltage
+           << "\n";
+    }
+
+    /**
+     * @brief Allows implicit conversions to VoltageData.
+     */
+    operator VoltageData() const
+    {
+        return VoltageData{
+            .voltageTimestamp = voltageTimestamp,
+            .voltage          = voltage,
+        };
     }
 };
 
