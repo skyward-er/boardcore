@@ -51,7 +51,7 @@ public:
      * @param txStream Dma transmitting stream for the spi bus.
      */
     SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
-                      DMAStreamGuard* rxStream, DMAStreamGuard* txStream);
+                      DMAStreamGuard& rxStream, DMAStreamGuard& txStream);
 
     // Delete copy/move constructors/operators
     SPITransactionDMA(const SPITransactionDMA&)            = delete;
@@ -83,8 +83,8 @@ public:
 private:
     const SPISlave& slave;
     SPIType* spi;
-    DMAStreamGuard* streamRx;
-    DMAStreamGuard* streamTx;
+    DMAStreamGuard& streamRx;
+    DMAStreamGuard& streamTx;
 
     // Priority to be used during dma transactions
     static constexpr DMATransaction::Priority defaultPriority =

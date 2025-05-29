@@ -202,7 +202,7 @@ ND015XData ND015D::sampleImpl()
     if (streamRx != nullptr && streamTx != nullptr && ptrSpi != nullptr)
     {
         // dma
-        SPITransactionDMA spi(slave, ptrSpi, streamRx, streamTx);
+        SPITransactionDMA spi(slave, ptrSpi, *streamRx, *streamTx);
         spiDataIn = spi.transfer16(spiDataOut);
     }
     else

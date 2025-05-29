@@ -26,8 +26,8 @@ namespace Boardcore
 {
 
 SPITransactionDMA::SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
-                                     DMAStreamGuard* rxStream,
-                                     DMAStreamGuard* txStream)
+                                     DMAStreamGuard& rxStream,
+                                     DMAStreamGuard& txStream)
     : slave(slave), spi(ptrSpi), streamRx(rxStream), streamTx(txStream)
 {
     slave.bus.configure(slave.config);
@@ -55,7 +55,7 @@ uint8_t SPITransactionDMA::readRegister(uint8_t reg,
         .dstIncrement      = true,
         .enableTransferCompleteInterrupt = true,
     };
-    (*streamRx)->setup(trnRx);
+    streamRx->setup(trnRx);
 
     // Sender stream setup
     DMATransaction trnTx{
@@ -70,7 +70,7 @@ uint8_t SPITransactionDMA::readRegister(uint8_t reg,
         .dstIncrement      = false,
         .enableTransferCompleteInterrupt = true,
     };
-    (*streamTx)->setup(trnTx);
+    streamTx->setup(trnTx);
 
     dmaTransfer(timeout);
 
@@ -96,7 +96,7 @@ uint16_t SPITransactionDMA::transfer16(uint16_t data,
         .dstIncrement      = true,
         .enableTransferCompleteInterrupt = true,
     };
-    (*streamRx)->setup(trnRx);
+    streamRx->setup(trnRx);
 
     DMATransaction trnTx{
         .direction         = DMATransaction::Direction::MEM_TO_PER,
@@ -110,7 +110,7 @@ uint16_t SPITransactionDMA::transfer16(uint16_t data,
         .dstIncrement      = false,
         .enableTransferCompleteInterrupt = true,
     };
-    (*streamTx)->setup(trnTx);
+    streamTx->setup(trnTx);
 
     dmaTransfer(timeout);
 
@@ -129,10 +129,10 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
     spi->CR2 |= SPI_CR2_RXDMAEN;
 
     // First enable the receiving stream
-    (*streamRx)->enable();
+    streamRx->enable();
 
     // Enable sender stream
-    (*streamTx)->enable();
+    streamTx->enable();
 
     // Enable spi transmit dma
     spi->CR2 |= SPI_CR2_TXDMAEN;
@@ -142,11 +142,11 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
 
     // Wait for the sender to complete before stopping the transaction
     // TODO: make timed wait
-    (*streamTx)->waitForTransferComplete();
+    streamTx->waitForTransferComplete();
 
     // Wait for the receiver to complete
     // TODO: verify the result of the transaction
-    (*streamRx)->timedWaitForTransferComplete(timeout);
+    streamRx->timedWaitForTransferComplete(timeout);
 
     // TODO: SPIBus::waitPeripheral()?
     while (spi->SR & SPI_SR_BSY)
@@ -157,8 +157,8 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
     slave.bus.deselect(slave.cs);
 
     // Disable the dma streams
-    (*streamTx)->disable();
-    (*streamRx)->disable();
+    streamTx->disable();
+    streamRx->disable();
 
     // Disable spi dma transmit and receive
     spi->CR2 &= ~SPI_CR2_TXDMAEN;
