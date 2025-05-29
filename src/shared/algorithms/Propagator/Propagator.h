@@ -103,8 +103,7 @@ private:
     miosix::FastMutex stateMutex;     ///< mutex to sync state accesses
     Eigen::Vector3f
         last_real_velocity;  ///< last non-propagated velocitylast_real_velocity
-    uint64_t t0 = 0, t1 = 0,
-             dt = 0;  ///< time values used to compute acceleration [u]
+    uint64_t t0 = 0, t1 = 0;  ///< time values used to compute acceleration [u]
     uint64_t lastReceivedTime =
         0;  ///< Last timestamp from a non-propagated packet
     const uint64_t maxAccelerationTime =

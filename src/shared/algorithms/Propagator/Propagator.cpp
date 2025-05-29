@@ -65,8 +65,8 @@ void Propagator::step()
         // Compute the acceleration to change the velocity
         if (useAcceleration)  // Update Position assuming constant acceleration
         {
-            t1 = state.timestamp;
-            dt = t1 - t0;
+            t1       = TimestampTimer::getTimestamp();
+            float dt = t1 - t0;
             if (dt > 0 && dt < maxAccelerationTime && t0 != 0)
                 state.setZAcceleration(
                     (state.getVelocity() - last_real_velocity) /
