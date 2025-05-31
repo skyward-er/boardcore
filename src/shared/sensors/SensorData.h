@@ -301,22 +301,6 @@ struct GPSData
 };
 
 /**
- * @brief Structure to handle ADC data.
- */
-struct ADCData
-{
-    uint64_t voltageTimestamp = 0;
-    uint8_t channelId         = 0;
-    float voltage             = 0;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(ADCData, FIELD_DEF(voltageTimestamp)
-                                       FIELD_DEF(channelId) FIELD_DEF(voltage));
-    }
-};
-
-/**
  * @brief Structure to handle current data.
  */
 struct CurrentData
@@ -343,6 +327,33 @@ struct VoltageData
     {
         return STRUCT_DEF(VoltageData,
                           FIELD_DEF(voltageTimestamp) FIELD_DEF(voltage));
+    }
+};
+
+/**
+ * @brief Structure to handle ADC data.
+ */
+struct ADCData
+{
+    uint64_t voltageTimestamp = 0;
+    uint8_t channelId         = 0;
+    float voltage             = 0;
+
+    /**
+     * @brief Allows implicit conversions to VoltageData.
+     */
+    operator VoltageData() const
+    {
+        return VoltageData{
+            .voltageTimestamp = voltageTimestamp,
+            .voltage          = voltage,
+        };
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ADCData, FIELD_DEF(voltageTimestamp)
+                                       FIELD_DEF(channelId) FIELD_DEF(voltage));
     }
 };
 
