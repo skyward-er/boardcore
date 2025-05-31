@@ -45,7 +45,7 @@ namespace Xbee
 
 struct APIFrameLog
 {
-    long long timestamp;
+    int64_t timestamp;
     uint8_t frameType;
     uint16_t frameDataLength;
     uint8_t frameData[FRAME_DATA_SIZE];
@@ -61,17 +61,17 @@ struct APIFrameLog
         return true;
     }
 
-    static string header() { return "timestamp,length,frame_type\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << frameDataLength << "," << frameType << "\n";
+        return STRUCT_DEF(APIFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(frameType)
+                              FIELD_DEF(frameDataLength) FIELD_DEF(frameData));
     }
 };
 
 struct ATCommandFrameLog
 {
-    long long timestamp;
+    int32_t timestamp;
     uint8_t frameId = 0;
     char atCommand[2];
 
@@ -103,32 +103,19 @@ struct ATCommandFrameLog
         return true;
     }
 
-    static string header() { return "timestamp,id,cmd,param_size,params\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        char cmd[3];
-
-        strncpy(cmd, atCommand, 2);
-        cmd[2] = '\0';
-
-        os << timestamp << "," << (int)frameId << "," << cmd << ","
-           << commandDataLength << ",";
-
-        if (commandDataLength > 0)
-            for (uint16_t i = 0; i < commandDataLength; i++)
-                os << (int)commandData[i] << " ";
-        else
-            os << "-";
-
-        os << "\n";
+        return STRUCT_DEF(ATCommandFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(frameId)
+                              FIELD_DEF(atCommand) FIELD_DEF(commandData)
+                                  FIELD_DEF(commandDataLength));
     }
 };
 
 struct TXRequestFrameLog
 {
-    long long timestamp = 0;
-    uint8_t frameId     = 0;
+    int64_t timestamp = 0;
+    uint8_t frameId   = 0;
 
     uint64_t destinationAddress = 0;
 
@@ -166,26 +153,20 @@ struct TXRequestFrameLog
         return true;
     }
 
-    static string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,id,dest_addr,broadcast_radius,tx_options,rf_data_"
-               "len,first_uint32\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        uint32_t d;
-        memcpy(&d, rfData, sizeof(d));
-        os << timestamp << "," << (int)frameId << "," << destinationAddress
-           << "," << (int)broadcastRadius << "," << (int)transmitOptions << ","
-           << rfDataLength << "," << d << "\n";
+        return STRUCT_DEF(TXRequestFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(frameId) FIELD_DEF(
+                              destinationAddress) FIELD_DEF(broadcastRadius)
+                              FIELD_DEF(transmitOptions) FIELD_DEF(rfData)
+                                  FIELD_DEF(rfDataLength));
     }
 };
 
 struct ATCommandResponseFrameLog
 {
-    long long timestamp = 0;
-    uint8_t frameId     = 0;
+    int64_t timestamp = 0;
+    uint8_t frameId   = 0;
     char atCommand[2];
     uint8_t commandStatus = 0;
 
@@ -219,34 +200,19 @@ struct ATCommandResponseFrameLog
         return true;
     }
 
-    static string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,id,cmd,status,param_size,params\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        char cmd[3];
-
-        strncpy(cmd, atCommand, 2);
-        cmd[2] = '\0';
-
-        os << timestamp << "," << (int)frameId << "," << cmd << ","
-           << (int)commandStatus << "," << commandDataLength << ",";
-
-        if (commandDataLength > 0)
-            for (uint16_t i = 0; i < commandDataLength; i++)
-                os << (int)commandData[i] << " ";
-        else
-            os << "-";
-
-        os << "\n";
+        return STRUCT_DEF(ATCommandResponseFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(frameId)
+                              FIELD_DEF(atCommand) FIELD_DEF(commandStatus)
+                                  FIELD_DEF(commandData)
+                                      FIELD_DEF(commandDataLength));
     }
 };
 
 struct ModemStatusFrameLog
 {
-    long long timestamp = 0;
+    int64_t timestamp   = 0;
     uint8_t modemStatus = 0;
 
     static bool toFrameType(APIFrame& api, ModemStatusFrameLog* dest)
@@ -265,17 +231,16 @@ struct ModemStatusFrameLog
         return true;
     }
 
-    static string header() { return "timestamp,status\n"; }
-
-    void print(std::ostream& os) const
+    static constexpr auto reflect()
     {
-        os << timestamp << "," << (int)modemStatus << "\n";
+        return STRUCT_DEF(ModemStatusFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(modemStatus));
     }
 };
 
 struct TXStatusFrameLog
 {
-    long long timestamp     = 0;
+    int64_t timestamp       = 0;
     uint8_t frameId         = 0;
     uint8_t txRetryCount    = 0;
     uint8_t deliveryStatus  = 0;
@@ -301,21 +266,18 @@ struct TXStatusFrameLog
         return true;
     }
 
-    static string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,id,tx_retries,delivery_status,discovery_status\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << (int)frameId << "," << (int)txRetryCount
-           << "," << (int)deliveryStatus << "," << (int)discoveryStatus << "\n";
+        return STRUCT_DEF(TXStatusFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(frameId)
+                              FIELD_DEF(txRetryCount) FIELD_DEF(deliveryStatus)
+                                  FIELD_DEF(discoveryStatus));
     }
 };
 
 struct RXPacketFrameLog
 {
-    long long timestamp = 0;
+    int64_t timestamp = 0;
 
     uint64_t sourceAddress = 0;
 
@@ -349,18 +311,12 @@ struct RXPacketFrameLog
         return true;
     }
 
-    static string header()
+    static constexpr auto reflect()
     {
-        return "timestamp,src_addr,rx_options,rx_data_size,payload32_0,"
-               "payload32_1\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        uint32_t data[2];
-        memcpy(&data, rxData, min(sizeof(uint32_t) * 2, (size_t)rxDataLength));
-        os << timestamp << "," << sourceAddress << "," << (int)receiveOptions
-           << "," << rxDataLength << "," << data[0] << "," << data[1] << "\n";
+        return STRUCT_DEF(RXPacketFrameLog,
+                          FIELD_DEF(timestamp) FIELD_DEF(sourceAddress)
+                              FIELD_DEF(receiveOptions) FIELD_DEF(rxData)
+                                  FIELD_DEF(rxDataLength));
     }
 };
 

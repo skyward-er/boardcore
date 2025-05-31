@@ -73,8 +73,11 @@ bool deserialize(const std::filesystem::path& file)
 
     if (result)
     {
+        auto duration =
+            std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
         std::cout << "Successfully deserialized " << file << " in "
-                  << duration_cast<milliseconds>(end - start) << "\n";
+                  << duration.count() << "\n";
     }
     else
     {
