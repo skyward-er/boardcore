@@ -39,6 +39,10 @@ static constexpr std::chrono::microseconds MAX_PROPAGATION_TIME =
     std::chrono::seconds(5);  ///< Max time for the propagation, to avoid
                               ///< infinite propagation [us]
 
+static constexpr std::chrono::microseconds MAX_ACCELERATION_TIME =
+    std::chrono::seconds(5);  ///< Time limit after which acceleration data is
+                              ///< ignored for propagation (5s)
+
 /**
  * @brief Predictor class that linearly propagates the last available rocket
  * position by means of the rocket NAS velocity.
@@ -106,9 +110,6 @@ private:
     uint64_t t0 = 0, t1 = 0;  ///< time values used to compute acceleration [u]
     uint64_t lastReceivedTime =
         0;  ///< Last timestamp from a non-propagated packet
-    const uint64_t maxAccelerationTime =
-        5000000;  ///< Time limit after which acceleration data is ignored for
-                  ///< propagation (5s)
 };
 
 }  // namespace Boardcore

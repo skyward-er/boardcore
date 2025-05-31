@@ -129,8 +129,7 @@ bool Follower::setMaxGain(float yawGainNew, float pitchGainNew)
 
 bool Follower::init()
 {
-    if (isInit)
-        return true;
+    Lock<FastMutex> lock(followerMutex);
     if (!antennaCoordinatesSet || !rocketCoordinatesSet)
     {
         LOG_ERR(logger, "Antenna or rocket coordinates not set");

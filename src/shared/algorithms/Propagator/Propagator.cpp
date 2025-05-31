@@ -67,7 +67,7 @@ void Propagator::step()
         {
             t1       = TimestampTimer::getTimestamp();
             float dt = t1 - t0;
-            if (dt > 0 && dt < maxAccelerationTime && t0 != 0)
+            if (dt > 0 && dt < MAX_ACCELERATION_TIME.count() && t0 != 0)
                 state.setZAcceleration(
                     (state.getVelocity() - last_real_velocity) /
                     (dt / 1000000));
@@ -78,7 +78,7 @@ void Propagator::step()
 
     // If we use the acceleration we update the velocity
     if (useAcceleration &&
-        TimestampTimer::getTimestamp() < t0 + maxAccelerationTime)
+        TimestampTimer::getTimestamp() < t0 + MAX_ACCELERATION_TIME.count())
         state.setVelocity(state.getVelocity() +
                           state.getAcceleration() * updatePeriod);
 
