@@ -259,9 +259,9 @@ private:
     static constexpr unsigned int numBuffers = 8;   ///< Number of buffers
     static constexpr unsigned int bufferSize = 4 * 1024;  ///< Size of buffers
 
-    static constexpr unsigned int numMapRecords =
+    static constexpr unsigned int numMappingRecords =
         16;  ///< Size of mapping record queues
-    static constexpr unsigned int numMapBuffers =
+    static constexpr unsigned int numMappingBuffers =
         4;  ///< Number of mapping buffers
 
 #endif
