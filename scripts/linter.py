@@ -359,6 +359,7 @@ def check_cppcheck(directory):
                 "--suppress=unusedFunction",
                 "--suppress=missingInclude",
                 "-Ilibs/socrate/include",
+                "-Iskyward-boardcore/libs/socrate/include",
                 directory,
             ],
             stderr=STDOUT,
