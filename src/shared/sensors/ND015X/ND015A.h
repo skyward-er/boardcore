@@ -23,6 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
@@ -66,6 +67,22 @@ public:
      * @return The default SPIBusConfig object.
      */
     static SPIBusConfig getDefaultSPIConfig();
+
+    /**
+     * @brief Constructor for the ND015A sensor.
+     *
+     * @param bus SPI bus interface.
+     * @param cs Chip select GPIO pin.
+     * @param spiConfig SPI bus configuration.
+     * @param streamRx Dma receiving stream for the spi bus.
+     * @param streamTx Dma transmitting stream for the spi bus.
+     * @param ptrSpi Pointer to the spi peripheral.
+     */
+    ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+           DMAStreamGuard* streamRx, DMAStreamGuard* streamTx, SPIType* ptrSpi,
+           IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
+           BWLimitFilter bwl    = BWLimitFilter::BWL_200,
+           NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
 
     /**
      * @brief Constructor for the ND015A sensor.
@@ -142,6 +159,9 @@ protected:
 
 private:
     SPISlave slave;
+    DMAStreamGuard* const streamRx;
+    DMAStreamGuard* const streamTx;
+    SPIType* const ptrSpi;
 
     /**
      * @brief settings for the mode control register,
@@ -173,4 +193,3 @@ private:
 };
 
 }  // namespace Boardcore
-
