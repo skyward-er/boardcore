@@ -284,6 +284,9 @@ sbs_target(test-usart-f4 stm32f429zi_stm32f4discovery)
 add_executable(test-usart-f7 src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart-f7 stm32f767zi_nucleo)
 
+add_executable(test-dma-mem-to-mem src/tests/drivers/test-dma-mem-to-mem.cpp)
+sbs_target(test-dma-mem-to-mem stm32f767zi_compute_unit)
+
 add_executable(test-i2c-driver-f4 src/tests/drivers/i2c/test-i2c-driver.cpp)
 sbs_target(test-i2c-driver-f4 stm32f429zi_stm32f4discovery)
 
