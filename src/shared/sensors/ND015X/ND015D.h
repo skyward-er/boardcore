@@ -23,6 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
@@ -95,8 +96,24 @@ public:
      * @param bus SPI bus interface.
      * @param cs Chip select GPIO pin.
      * @param spiConfig SPI bus configuration.
+     * @param streamRx Dma receiving stream for the spi bus.
+     * @param streamTx Dma transmitting stream for the spi bus.
+     * @param ptrSpi Pointer to the spi peripheral.
      */
+    ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+           DMAStreamGuard* streamRx, DMAStreamGuard* streamTx, SPIType* ptrSpi,
+           FullScaleRange fsr   = FullScaleRange::FS_2,
+           IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
+           BWLimitFilter bwl    = BWLimitFilter::BWL_200,
+           NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
 
+    /**
+     * @brief Constructor for the ND015D sensor.
+     *
+     * @param bus SPI bus interface.
+     * @param cs Chip select GPIO pin.
+     * @param spiConfig SPI bus configuration.
+     */
     ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
            FullScaleRange fsr   = FullScaleRange::FS_2,
            IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
@@ -174,6 +191,9 @@ protected:
 private:
     SPISlave slave;
     float range;
+    DMAStreamGuard* const streamRx;
+    DMAStreamGuard* const streamTx;
+    SPIType* const ptrSpi;
 
     /**
      * @brief settings for the mode control register,
@@ -205,4 +225,3 @@ private:
 };
 
 }  // namespace Boardcore
-

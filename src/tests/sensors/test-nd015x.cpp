@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/dma/DMA.h>
 #include <miosix.h>
 
 #include <iostream>
@@ -60,7 +61,27 @@ int main()
 
     SPIBus bus(SPI4);
 
-    ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig());
+    auto streamRx = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_SPI4_RX);
+    if (!streamRx.isValid())
+    {
+        std::cout << "Cannot acquire streamRx" << std::endl;
+        return 1;
+    }
+
+    auto streamTx = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_SPI4_TX);
+    if (!streamTx.isValid())
+    {
+        std::cout << "Cannot acquire streamTx" << std::endl;
+        return 1;
+    }
+
+    ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig(), &streamRx,
+                  &streamTx, bus.getSpi());
+    // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig(), &streamRx,
+    //                 &streamTx, bus.getSpi());
+    // ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig());
     // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig());
     ND015XData sensorData;
 

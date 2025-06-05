@@ -22,6 +22,7 @@
 
 #include "ND015A.h"
 
+#include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Constants.h>
 
@@ -49,9 +50,19 @@ SPIBusConfig ND015A::getDefaultSPIConfig()
 }
 
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+               DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
+               SPIType* ptrSpi, IOWatchdogEnable iow, BWLimitFilter bwl,
+               NotchEnable ntc, uint8_t odr)
+    : slave(bus, cs, spiConfig), streamRx(streamRx), streamTx(streamTx),
+      ptrSpi(ptrSpi), sensorSettings{0x7, iow, bwl, ntc, odr}
+{
+}
+
+ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
                uint8_t odr)
-    : slave(bus, cs, spiConfig), sensorSettings{0x7, iow, bwl, ntc, odr}
+    : slave(bus, cs, spiConfig), streamRx(nullptr), streamTx(nullptr),
+      ptrSpi(nullptr), sensorSettings{0x7, iow, bwl, ntc, odr}
 {
 }
 
@@ -148,10 +159,21 @@ ND015XData ND015A::sampleImpl()
 {
     ND015XData data;
     uint16_t spiDataOut;
-    SPITransaction spi(slave);
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    uint16_t spiDataIn = spi.transfer16(spiDataOut);
+
+    uint16_t spiDataIn = 0;
+    if (streamRx != nullptr && streamTx != nullptr && ptrSpi != nullptr)
+    {
+        // Use dma
+        SPITransactionDMA spi(slave, ptrSpi, *streamRx, *streamTx);
+        spiDataIn = spi.transfer16(spiDataOut);
+    }
+    else
+    {
+        SPITransaction spi(slave);
+        spiDataIn = spi.transfer16(spiDataOut);
+    }
 
     data.pressure =
         ((spiDataIn - 0.05 * pow(2, 16)) / (0.9 * pow(2, 16)) * 15) *
