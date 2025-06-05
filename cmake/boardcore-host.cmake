@@ -70,7 +70,6 @@ target_include_directories(boardcore-host PUBLIC ${BOARDCORE_PATH}/src/shared)
 # Link libraries
 target_link_libraries(boardcore-host PUBLIC
     Miosix::Miosix::host
-    TSCPP::TSCPP
     Eigen3::Eigen
     fmt::fmt-header-only
     Catch2::Catch2

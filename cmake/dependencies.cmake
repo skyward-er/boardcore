@@ -29,7 +29,6 @@ add_subdirectory(${SBS_BASE}/libs/miosix-host EXCLUDE_FROM_ALL)
 include(${SBS_BASE}/libs/mxgui/cmake/mxgui.cmake)
 
 # Serialization library
-add_subdirectory(${SBS_BASE}/libs/tscpp EXCLUDE_FROM_ALL)
 add_subdirectory(${SBS_BASE}/libs/socrate EXCLUDE_FROM_ALL)
 
 
