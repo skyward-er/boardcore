@@ -65,6 +65,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/timer/CountedPWM.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/runcam/Runcam.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransaction.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransactionDMA.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/usart/USART.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f4.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f7.cpp
