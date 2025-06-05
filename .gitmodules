@@ -19,9 +19,6 @@
 [submodule "Miosix GUI library"]
 	path = libs/mxgui
 	url = https://git.skywarder.eu/avn/swd/third-party/mxgui.git
-[submodule "Trivial serialization for C++"]
-	path = libs/tscpp
-	url = https://git.skywarder.eu/avn/swd/third-party/tscpp.git
 [submodule "libs/socrate"]
 	path = libs/socrate
 	url = https://git.skywarder.eu/avn/swd/socrate.git

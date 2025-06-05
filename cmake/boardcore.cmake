@@ -171,7 +171,6 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
     target_link_libraries(${BOARDCORE_LIB} PUBLIC
         $<TARGET_OBJECTS:Miosix::Boot::${BOARD_NAME}>
         $<LINK_GROUP:RESCAN,Miosix::Kernel::${BOARD_NAME},stdc++,c,m,gcc,atomic>
-        TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only
         Catch2::Catch2
