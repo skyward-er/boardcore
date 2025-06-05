@@ -117,6 +117,8 @@ AntennaAngles Follower::getTargetAngles()
 
 bool Follower::setMaxGain(float yawGainNew, float pitchGainNew)
 {
+    Lock<FastMutex> lock(followerMutex);
+
     // In case of negative or over the limit values, do not set the gains
     if (yawGainNew < 0 || yawGainNew > YAW_GAIN_LIMIT || pitchGainNew < 0 ||
         pitchGainNew > PITCH_GAIN_LIMIT)
@@ -170,13 +172,13 @@ void Follower::step()
         // Calculate the amount to move from the current position
         diffAngles = {targetAngles.timestamp, targetAngles.yaw - vn300.yaw,
                       targetAngles.pitch - vn300.pitch};
-    }
 
-    // Rotate in the shortest direction
-    diffAngles.yaw =
-        std::min(yawGain, YAW_GAIN_LIMIT) * minimizeRotation(diffAngles.yaw);
-    diffAngles.pitch = std::min(pitchGain, PITCH_GAIN_LIMIT) *
-                       minimizeRotation(diffAngles.pitch);
+        // Rotate in the shortest direction
+        diffAngles.yaw = std::min(yawGain, YAW_GAIN_LIMIT) *
+                         minimizeRotation(diffAngles.yaw);
+        diffAngles.pitch = std::min(pitchGain, PITCH_GAIN_LIMIT) *
+                           minimizeRotation(diffAngles.pitch);
+    }
 
     // Calculate angular velocity for moving the antennas toward position
     float horizontalSpeed =
