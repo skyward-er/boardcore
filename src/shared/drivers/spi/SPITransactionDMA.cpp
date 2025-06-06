@@ -1,0 +1,171 @@
+/* Copyright (c) 2025 Skyward Experimental Rocketry
+ * Author: Fabrizio Monti
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include "SPITransactionDMA.h"
+
+namespace Boardcore
+{
+
+SPITransactionDMA::SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
+                                     DMAStreamGuard& rxStream,
+                                     DMAStreamGuard& txStream)
+    : slave(slave), spi(ptrSpi), streamRx(rxStream), streamTx(txStream)
+{
+    slave.bus.configure(slave.config);
+}
+
+uint8_t SPITransactionDMA::readRegister(uint8_t reg,
+                                        std::chrono::microseconds timeout)
+{
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
+        reg |= 0x80;
+
+    volatile uint8_t dstBuf[]  = {0, 0};
+    volatile uint8_t sendBuf[] = {reg, 0};
+
+    // Receiver stream setup
+    DMATransaction trnRx{
+        .direction         = DMATransaction::Direction::PER_TO_MEM,
+        .priority          = defaultPriority,
+        .srcSize           = DMATransaction::DataSize::BITS_8,
+        .dstSize           = DMATransaction::DataSize::BITS_8,
+        .srcAddress        = (void*)&(spi->DR),
+        .dstAddress        = dstBuf,
+        .numberOfDataItems = 2,
+        .srcIncrement      = false,
+        .dstIncrement      = true,
+        .enableTransferCompleteInterrupt = true,
+    };
+    streamRx->setup(trnRx);
+
+    // Sender stream setup
+    DMATransaction trnTx{
+        .direction         = DMATransaction::Direction::MEM_TO_PER,
+        .priority          = defaultPriority,
+        .srcSize           = DMATransaction::DataSize::BITS_8,
+        .dstSize           = DMATransaction::DataSize::BITS_8,
+        .srcAddress        = sendBuf,
+        .dstAddress        = (void*)&(spi->DR),
+        .numberOfDataItems = 2,
+        .srcIncrement      = true,
+        .dstIncrement      = false,
+        .enableTransferCompleteInterrupt = true,
+    };
+    streamTx->setup(trnTx);
+
+    dmaTransfer(timeout);
+
+    return dstBuf[1];
+}
+
+uint16_t SPITransactionDMA::transfer16(uint16_t data,
+                                       std::chrono::microseconds timeout)
+{
+    volatile uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 8),
+                                   static_cast<uint8_t>(data)};
+    volatile uint8_t recvBuf[2] = {0};
+
+    DMATransaction trnRx{
+        .direction         = DMATransaction::Direction::PER_TO_MEM,
+        .priority          = defaultPriority,
+        .srcSize           = DMATransaction::DataSize::BITS_8,
+        .dstSize           = DMATransaction::DataSize::BITS_8,
+        .srcAddress        = (void*)&(spi->DR),
+        .dstAddress        = recvBuf,
+        .numberOfDataItems = 2,
+        .srcIncrement      = false,
+        .dstIncrement      = true,
+        .enableTransferCompleteInterrupt = true,
+    };
+    streamRx->setup(trnRx);
+
+    DMATransaction trnTx{
+        .direction         = DMATransaction::Direction::MEM_TO_PER,
+        .priority          = defaultPriority,
+        .srcSize           = DMATransaction::DataSize::BITS_8,
+        .dstSize           = DMATransaction::DataSize::BITS_8,
+        .srcAddress        = sendBuf,
+        .dstAddress        = (void*)&(spi->DR),
+        .numberOfDataItems = 2,
+        .srcIncrement      = true,
+        .dstIncrement      = false,
+        .enableTransferCompleteInterrupt = true,
+    };
+    streamTx->setup(trnTx);
+
+    dmaTransfer(timeout);
+
+    return recvBuf[0] << 8 | recvBuf[1];
+}
+
+bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
+{
+    // Disable spi
+    spi->CR1 &= ~SPI_CR1_SPE;
+
+    // Start transaction
+    slave.bus.select(slave.cs);
+
+    // enable dma receive dma
+    spi->CR2 |= SPI_CR2_RXDMAEN;
+
+    // First enable the receiving stream
+    streamRx->enable();
+
+    // Enable sender stream
+    streamTx->enable();
+
+    // Enable spi transmit dma
+    spi->CR2 |= SPI_CR2_TXDMAEN;
+
+    // Enable spi peripheral
+    spi->CR1 |= SPI_CR1_SPE;
+
+    // Wait for the sender to complete before stopping the transaction
+    // TODO: make timed wait
+    streamTx->waitForTransferComplete();
+
+    // Wait for the receiver to complete
+    // TODO: verify the result of the transaction
+    streamRx->timedWaitForTransferComplete(timeout);
+
+    // TODO: SPIBus::waitPeripheral()?
+    while (spi->SR & SPI_SR_BSY)
+    {
+    }
+
+    // Stop the transaction
+    slave.bus.deselect(slave.cs);
+
+    // Disable the dma streams
+    streamTx->disable();
+    streamRx->disable();
+
+    // Disable spi dma transmit and receive
+    spi->CR2 &= ~SPI_CR2_TXDMAEN;
+    spi->CR2 &= ~SPI_CR2_RXDMAEN;
+
+    // TODO: error handling
+    return true;
+}
+
+}  // namespace Boardcore
