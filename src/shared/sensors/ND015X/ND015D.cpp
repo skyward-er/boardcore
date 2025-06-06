@@ -77,6 +77,12 @@ bool ND015D::init()
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
     spi.transfer16(spiDataOut);
 
+    // Using the sensor immediately after initialization results in incorrect
+    // readings. To avoid this, we introduce a delay. The minimum delay required
+    // to prevent errors is 400 microseconds, but for safety and reliability, we
+    // set it to 4 milliseconds.
+    miosix::Thread::sleep(4);
+
     return true;
 }
 
