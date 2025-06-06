@@ -248,6 +248,9 @@ void configureBackupSram()
 
 void IRQbspInit()
 {
+    // Reduce apb2 frequency for the nd015x sensor
+    RCC->CFGR |= RCC_CFGR_PPRE2_DIV16;
+
     // Enable USART1 pins port
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
