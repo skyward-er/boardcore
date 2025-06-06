@@ -86,10 +86,6 @@ private:
     DMAStreamGuard& streamRx;
     DMAStreamGuard& streamTx;
 
-    // Priority to be used during dma transactions
-    static constexpr DMATransaction::Priority defaultPriority =
-        DMATransaction::Priority::MEDIUM;
-
     /**
      * @brief Perform the dma transaction.
      * @warning The streams must be setup and ready to go.
@@ -97,6 +93,42 @@ private:
      * forever.
      */
     bool dmaTransfer(const std::chrono::microseconds timeout);
+
+    /**
+     * @brief Setup the configuration struct with the default sender values
+     * needed for an spi transaction.
+     * @param txSetup The struct to be configured.
+     * @param srcAddr Source address.
+     * @param nBytes Number of bytes to be transmitted.
+     */
+    void defaultTransmittingSetup(DMATransaction& txSetup, void* srcAddr,
+                                  uint16_t nBytes);
+
+    /**
+     * @brief Setup the configuration struct with the default receiver values
+     * needed for an spi transaction.
+     * @param rxSetup The struct to be configured.
+     * @param dstAddr Destination address.
+     * @param nBytes Number of bytes to be received.
+     */
+    void defaultReceivingSetup(DMATransaction& rxSetup, void* dstAddr,
+                               uint16_t nBytes);
+
+    /**
+     * @brief Setup the configuration struct with the default values needed
+     * for an spi transaction.
+     * @param streamSetup The struct to be configured.
+     * @param dir Direction of the transaction.
+     * @param srcAddr Source address.
+     * @param dstAddr Destination address.
+     * @param nBytes Number of bytes to be transmitted/received.
+     * @param srcIncr Flag, true if the source address must be incremented.
+     * @param dstIncr Flag, true if the destination address must be incremented.
+     */
+    void defaultSetup(DMATransaction& streamSetup,
+                      DMATransaction::Direction dir, void* srcAddr,
+                      void* dstAddr, uint16_t nBytes, bool srcIncr,
+                      bool dstIncr);
 };
 
 }  // namespace Boardcore

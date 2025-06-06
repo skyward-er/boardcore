@@ -42,34 +42,12 @@ uint8_t SPITransactionDMA::readRegister(uint8_t reg,
     volatile uint8_t dstBuf[]  = {0, 0};
     volatile uint8_t sendBuf[] = {reg, 0};
 
-    // Receiver stream setup
-    DMATransaction trnRx{
-        .direction         = DMATransaction::Direction::PER_TO_MEM,
-        .priority          = defaultPriority,
-        .srcSize           = DMATransaction::DataSize::BITS_8,
-        .dstSize           = DMATransaction::DataSize::BITS_8,
-        .srcAddress        = (void*)&(spi->DR),
-        .dstAddress        = dstBuf,
-        .numberOfDataItems = 2,
-        .srcIncrement      = false,
-        .dstIncrement      = true,
-        .enableTransferCompleteInterrupt = true,
-    };
+    DMATransaction trnRx;
+    defaultReceivingSetup(trnRx, (void*)dstBuf, 2);
     streamRx->setup(trnRx);
 
-    // Sender stream setup
-    DMATransaction trnTx{
-        .direction         = DMATransaction::Direction::MEM_TO_PER,
-        .priority          = defaultPriority,
-        .srcSize           = DMATransaction::DataSize::BITS_8,
-        .dstSize           = DMATransaction::DataSize::BITS_8,
-        .srcAddress        = sendBuf,
-        .dstAddress        = (void*)&(spi->DR),
-        .numberOfDataItems = 2,
-        .srcIncrement      = true,
-        .dstIncrement      = false,
-        .enableTransferCompleteInterrupt = true,
-    };
+    DMATransaction trnTx;
+    defaultTransmittingSetup(trnTx, (void*)sendBuf, 2);
     streamTx->setup(trnTx);
 
     dmaTransfer(timeout);
@@ -84,32 +62,12 @@ uint16_t SPITransactionDMA::transfer16(uint16_t data,
                                    static_cast<uint8_t>(data)};
     volatile uint8_t recvBuf[2] = {0};
 
-    DMATransaction trnRx{
-        .direction         = DMATransaction::Direction::PER_TO_MEM,
-        .priority          = defaultPriority,
-        .srcSize           = DMATransaction::DataSize::BITS_8,
-        .dstSize           = DMATransaction::DataSize::BITS_8,
-        .srcAddress        = (void*)&(spi->DR),
-        .dstAddress        = recvBuf,
-        .numberOfDataItems = 2,
-        .srcIncrement      = false,
-        .dstIncrement      = true,
-        .enableTransferCompleteInterrupt = true,
-    };
+    DMATransaction trnRx;
+    defaultReceivingSetup(trnRx, (void*)recvBuf, 2);
     streamRx->setup(trnRx);
 
-    DMATransaction trnTx{
-        .direction         = DMATransaction::Direction::MEM_TO_PER,
-        .priority          = defaultPriority,
-        .srcSize           = DMATransaction::DataSize::BITS_8,
-        .dstSize           = DMATransaction::DataSize::BITS_8,
-        .srcAddress        = sendBuf,
-        .dstAddress        = (void*)&(spi->DR),
-        .numberOfDataItems = 2,
-        .srcIncrement      = true,
-        .dstIncrement      = false,
-        .enableTransferCompleteInterrupt = true,
-    };
+    DMATransaction trnTx;
+    defaultTransmittingSetup(trnTx, (void*)sendBuf, 2);
     streamTx->setup(trnTx);
 
     dmaTransfer(timeout);
@@ -166,6 +124,47 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
 
     // TODO: error handling
     return true;
+}
+
+void SPITransactionDMA::defaultTransmittingSetup(DMATransaction& txSetup,
+                                                 void* srcAddr, uint16_t nBytes)
+{
+    defaultSetup(txSetup, DMATransaction::Direction::MEM_TO_PER, srcAddr,
+                 (void*)&(spi->DR), nBytes, true, false);
+}
+
+void SPITransactionDMA::defaultReceivingSetup(DMATransaction& rxSetup,
+                                              void* dstAddr, uint16_t nBytes)
+{
+    defaultSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
+                 (void*)&(spi->DR), dstAddr, nBytes, false, true);
+}
+
+void SPITransactionDMA::defaultSetup(DMATransaction& streamSetup,
+                                     DMATransaction::Direction dir,
+                                     void* srcAddr, void* dstAddr,
+                                     uint16_t nBytes, bool srcIncr,
+                                     bool dstIncr)
+{
+    streamSetup = DMATransaction{
+        .direction                       = dir,
+        .priority                        = DMATransaction::Priority::MEDIUM,
+        .srcSize                         = DMATransaction::DataSize::BITS_8,
+        .dstSize                         = DMATransaction::DataSize::BITS_8,
+        .srcAddress                      = srcAddr,
+        .dstAddress                      = dstAddr,
+        .secondMemoryAddress             = nullptr,
+        .numberOfDataItems               = nBytes,
+        .srcIncrement                    = srcIncr,
+        .dstIncrement                    = dstIncr,
+        .circularMode                    = false,
+        .doubleBufferMode                = false,
+        .enableTransferCompleteInterrupt = true,
+        .enableHalfTransferInterrupt     = false,
+        .enableTransferErrorInterrupt    = true,
+        .enableFifoErrorInterrupt        = true,
+        .enableDirectModeErrorInterrupt  = false,
+    };
 }
 
 }  // namespace Boardcore
