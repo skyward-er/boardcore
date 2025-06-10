@@ -91,28 +91,27 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
     // Start transaction
     slave.bus.select(slave.cs);
 
-    // enable dma receive dma
+    // Enable spi rx buffer dma
     spi->CR2 |= SPI_CR2_RXDMAEN;
 
-    // First enable the receiving stream
+    // Enable the receiving stream
     streamRx->enable();
 
-    // Enable sender stream
+    // Enable the transmitting stream
     streamTx->enable();
 
-    // Enable spi transmit dma
+    // Enable spi tx buffer dma
     spi->CR2 |= SPI_CR2_TXDMAEN;
 
-    // Enable spi peripheral
+    // Enable the spi peripheral
     spi->CR1 |= SPI_CR1_SPE;
 
     bool resultTransmit = streamTx->timedWaitForTransferComplete(timeout);
     bool resultReceive  = streamRx->timedWaitForTransferComplete(timeout);
 
-    // TODO: SPIBus::waitPeripheral()?
-    while (spi->SR & SPI_SR_BSY)
-    {
-    }
+    // DMA completion doesn't guarantee that the SPI peripheral
+    // has finished transmitting
+    spiWaitForTransmissionComplete();
 
     // Stop the transaction
     slave.bus.deselect(slave.cs);
@@ -143,6 +142,31 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
 
     return lastErrorRx == DMAErrors::NO_ERRORS &&
            lastErrorTx == DMAErrors::NO_ERRORS;
+}
+
+void SPITransactionDMA::spiWaitForTransmissionComplete()
+{
+    // First, ensure the TX buffer is empty, then check the SPI busy
+    // flag
+
+#ifdef defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
+    defined(STM32F777xx) || defined(STM32F779xx)
+    while ((spi->SR & SPI_SR_FTLVL) > 0)
+    {
+    }
+#elif defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || \
+    defined(STM32F417xx) || defined(STM32F427xx) || defined(STM32F429xx) ||   \
+    defined(STM32F437xx) || defined(STM32F439xx)
+    while ((spi->SR & SPI_SR_TXE) == 0)
+    {
+    }
+#else
+#warning This board is not officially supported. SPITransactionDMA might not work as expected.
+#endif
+
+    while (spi->SR & SPI_SR_BSY)
+    {
+    }
 }
 
 void SPITransactionDMA::defaultTransmittingSetup(DMATransaction& txSetup,
