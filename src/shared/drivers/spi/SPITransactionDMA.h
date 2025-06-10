@@ -64,7 +64,7 @@ public:
      * @param reg Register address.
      * @param timeout The maximum time that will be waited, defaults to waiting
      * forever.
-     * @return Byte read from the register.
+     * @return Byte read from the register, 0 in case of errors.
      */
     uint8_t readRegister(uint8_t reg, std::chrono::microseconds timeout =
                                           std::chrono::microseconds::zero());
@@ -75,22 +75,35 @@ public:
      * @param data Half word to write.
      * @param timeout The maximum time that will be waited, defaults to waiting
      * forever.
-     * @return Half word read from the bus.
+     * @return Half word read from the bus, 0 in case of errors.
      */
     uint16_t transfer16(uint16_t data, std::chrono::microseconds timeout =
                                            std::chrono::microseconds::zero());
+
+    /**
+     * @brief Get last errors for debugging purposes. Avoid silent fails.
+     * @param txError Variable where the dma transmitting error will be stored.
+     * @param rxError Variable where the dma receiving error will be stored.
+     */
+    void getLastErrors(DMAErrors& txError, DMAErrors& rxError);
 
 private:
     const SPISlave& slave;
     SPIType* spi;
     DMAStreamGuard& streamRx;
     DMAStreamGuard& streamTx;
+    // Last error for the transmitting stream
+    DMAErrors lastErrorTx = DMAErrors::NO_ERRORS;
+    // Last error for the receiving stream
+    DMAErrors lastErrorRx = DMAErrors::NO_ERRORS;
 
     /**
      * @brief Perform the dma transaction.
      * @warning The streams must be setup and ready to go.
      * @param timeout The maximum time that will be waited, defaults to waiting
      * forever.
+     * @return True if the operation was successful. False otherwise, sets
+     * the last error.
      */
     bool dmaTransfer(const std::chrono::microseconds timeout);
 
