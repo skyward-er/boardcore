@@ -108,6 +108,11 @@ private:
     bool dmaTransfer(const std::chrono::microseconds timeout);
 
     /**
+     * @brief Wait until the spi peripheral has finished transmitting.
+     */
+    void spiWaitForTransmissionComplete();
+
+    /**
      * @brief Setup the configuration struct with the default sender values
      * needed for an spi transaction.
      * @param txSetup The struct to be configured.
