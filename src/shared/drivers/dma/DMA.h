@@ -35,6 +35,18 @@ namespace Boardcore
 {
 
 /**
+ * @brief Generic error codes that the DMA can generate.
+ */
+enum class DMAErrors : uint8_t
+{
+    NO_ERRORS = 0,
+    TIMEOUT,            // The timeout expired
+    FIFO_ERROR,         // The fifo error flag was raised
+    TRANSFER_ERROR,     // The transfer error flag was raised
+    DIRECT_MODE_ERROR,  // The direct mode error flag was raised
+};
+
+/**
  * @brief This is the configuration struct for
  * a DMA transaction.
  */
