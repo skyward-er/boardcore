@@ -50,7 +50,8 @@ uint8_t SPITransactionDMA::readRegister(uint8_t reg,
     defaultTransmittingSetup(trnTx, (void*)sendBuf, 2);
     streamTx->setup(trnTx);
 
-    dmaTransfer(timeout);
+    if (!dmaTransfer(timeout))
+        return 0;
 
     return dstBuf[1];
 }
@@ -70,9 +71,16 @@ uint16_t SPITransactionDMA::transfer16(uint16_t data,
     defaultTransmittingSetup(trnTx, (void*)sendBuf, 2);
     streamTx->setup(trnTx);
 
-    dmaTransfer(timeout);
+    if (!dmaTransfer(timeout))
+        return 0;
 
     return recvBuf[0] << 8 | recvBuf[1];
+}
+
+void SPITransactionDMA::getLastErrors(DMAErrors& txError, DMAErrors& rxError)
+{
+    txError = lastErrorTx;
+    rxError = lastErrorRx;
 }
 
 bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
@@ -98,13 +106,8 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
     // Enable spi peripheral
     spi->CR1 |= SPI_CR1_SPE;
 
-    // Wait for the sender to complete before stopping the transaction
-    // TODO: make timed wait
-    streamTx->waitForTransferComplete();
-
-    // Wait for the receiver to complete
-    // TODO: verify the result of the transaction
-    streamRx->timedWaitForTransferComplete(timeout);
+    bool resultTransmit = streamTx->timedWaitForTransferComplete(timeout);
+    bool resultReceive  = streamRx->timedWaitForTransferComplete(timeout);
 
     // TODO: SPIBus::waitPeripheral()?
     while (spi->SR & SPI_SR_BSY)
@@ -122,8 +125,24 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
     spi->CR2 &= ~SPI_CR2_TXDMAEN;
     spi->CR2 &= ~SPI_CR2_RXDMAEN;
 
-    // TODO: error handling
-    return true;
+    // Check for transmitting errors
+    if (!resultTransmit)
+        lastErrorTx = DMAErrors::TIMEOUT;
+    else if (streamTx->getTransferErrorFlagStatus())
+        lastErrorTx = DMAErrors::TRANSFER_ERROR;
+    else if (streamTx->getFifoErrorFlagStatus())
+        lastErrorTx = DMAErrors::FIFO_ERROR;
+
+    // Check for receiving errors
+    if (!resultReceive)
+        lastErrorRx = DMAErrors::TIMEOUT;
+    else if (streamRx->getTransferErrorFlagStatus())
+        lastErrorRx = DMAErrors::TRANSFER_ERROR;
+    else if (streamRx->getFifoErrorFlagStatus())
+        lastErrorRx = DMAErrors::FIFO_ERROR;
+
+    return lastErrorRx == DMAErrors::NO_ERRORS &&
+           lastErrorTx == DMAErrors::NO_ERRORS;
 }
 
 void SPITransactionDMA::defaultTransmittingSetup(DMATransaction& txSetup,
