@@ -39,8 +39,8 @@ AirBrakesInterp::AirBrakesInterp(
     const TrajectorySet& trajectoryCloseSet,
     const AirBrakesInterpConfig& configInterp,
     std::function<void(float)> setActuator)
-    : getCurrentPosition(getCurrentPosition), setActuator(setActuator),
-      trajectoryOpenSet(trajectoryOpenSet),
+    : getCurrentPosition(std::move(getCurrentPosition)),
+      setActuator(std::move(setActuator)), trajectoryOpenSet(trajectoryOpenSet),
       trajectoryCloseSet(trajectoryCloseSet), configInterp(configInterp)
 {
 }

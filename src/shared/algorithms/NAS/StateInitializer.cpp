@@ -29,7 +29,7 @@ namespace Boardcore
 
 StateInitializer::StateInitializer() { x_init << MatrixXf::Zero(13, 1); }
 
-void StateInitializer::eCompass(const Vector3f acc, const Vector3f mag)
+void StateInitializer::eCompass(const Vector3f& acc, const Vector3f& mag)
 {
     // ndr: since this method runs only when the rocket is stationary, there's
     // no need to add the gravity vector because the accelerometers already

@@ -35,7 +35,7 @@ class ADA
 public:
     using KalmanFilter = Kalman<float, 3, 1>;
 
-    explicit ADA(const KalmanFilter::KalmanConfig kalmanConfig);
+    explicit ADA(const KalmanFilter::KalmanConfig& kalmanConfig);
 
     /**
      * @brief Update the Kalman filter.
@@ -57,12 +57,12 @@ public:
     /**
      * @brief Changes the reference values.
      */
-    void setReferenceValues(const ReferenceValues reference);
+    void setReferenceValues(const ReferenceValues& reference);
 
     /**
      * @brief Changes the kalman filter configuration.
      */
-    void setKalmanConfig(KalmanFilter::KalmanConfig config);
+    void setKalmanConfig(KalmanFilter::KalmanConfig& config);
 
     /**
      * @brief Returns the current reference values.

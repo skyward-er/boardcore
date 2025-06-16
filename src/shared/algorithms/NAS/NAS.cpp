@@ -34,7 +34,7 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-NAS::NAS(NASConfig config) : config(config)
+NAS::NAS(const NASConfig& config) : config(config)
 {
     // Covariance setup
     {
@@ -387,7 +387,7 @@ void NAS::setState(const NASState& state) { this->x = state.getX(); }
 
 void NAS::setX(const Matrix<float, 13, 1>& x) { this->x = x; }
 
-void NAS::setReferenceValues(const ReferenceValues reference)
+void NAS::setReferenceValues(const ReferenceValues& reference)
 {
     this->reference = reference;
 }

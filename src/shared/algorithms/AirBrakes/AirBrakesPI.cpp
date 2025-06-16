@@ -40,8 +40,8 @@ AirBrakesPI::AirBrakesPI(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
     const TrajectorySet& trajectorySet, const AirBrakesPIConfig& config,
     std::function<void(float)> setActuator)
-    : getCurrentPosition(getCurrentPosition), config(config),
-      setActuator(setActuator), pi(config.KP, config.KI, config.TS),
+    : getCurrentPosition(std::move(getCurrentPosition)), config(config),
+      setActuator(std::move(setActuator)), pi(config.KP, config.KI, config.TS),
       trajectorySet(trajectorySet)
 {
 }

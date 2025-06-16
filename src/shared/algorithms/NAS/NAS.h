@@ -50,7 +50,7 @@ public:
     ///< Index of bias elements in the state.
     static constexpr uint16_t IDX_BIAS = 10;
 
-    explicit NAS(NASConfig config);
+    explicit NAS(const NASConfig& config);
 
     /**
      * @brief Prediction with accelerometer data.
@@ -164,7 +164,7 @@ public:
     /**
      * @brief Changes the reference values.
      */
-    void setReferenceValues(const ReferenceValues reference);
+    void setReferenceValues(const ReferenceValues& reference);
 
     /**
      * @brief Returns the current reference values.

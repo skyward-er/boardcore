@@ -29,7 +29,7 @@ namespace Boardcore
 
 struct NASState
 {
-    uint64_t timestamp;
+    uint64_t timestamp = 0;
 
     // 13 extended kalman states
 
@@ -56,7 +56,7 @@ struct NASState
 
     NASState() {}
 
-    NASState(uint64_t timestamp, Eigen::Matrix<float, 13, 1> x)
+    NASState(uint64_t timestamp, const Eigen::Matrix<float, 13, 1>& x)
         : timestamp(timestamp), n(x(0)), e(x(1)), d(x(2)), vn(x(3)), ve(x(4)),
           vd(x(5)), qx(x(6)), qy(x(7)), qz(x(8)), qw(x(9)), bx(x(10)),
           by(x(11)), bz(x(12))

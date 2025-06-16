@@ -63,7 +63,7 @@ public:
      * @param mag 3x1 magnetometer readings [x y z][uT].
      *
      */
-    void eCompass(const Eigen::Vector3f acc, const Eigen::Vector3f mag);
+    void eCompass(const Eigen::Vector3f& acc, const Eigen::Vector3f& mag);
 
     /**
      * @brief Triad algorithm to estimate the attitude before the liftoff.

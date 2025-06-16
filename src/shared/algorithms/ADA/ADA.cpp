@@ -28,7 +28,7 @@
 namespace Boardcore
 {
 
-ADA::ADA(const KalmanFilter::KalmanConfig kalmanConfig)
+ADA::ADA(const KalmanFilter::KalmanConfig& kalmanConfig)
     : filter(kalmanConfig), state()
 {
     updateState();
@@ -55,12 +55,12 @@ void ADA::update()
 
 ADAState ADA::getState() { return state; }
 
-void ADA::setReferenceValues(const ReferenceValues reference)
+void ADA::setReferenceValues(const ReferenceValues& reference)
 {
     this->reference = reference;
 }
 
-void ADA::setKalmanConfig(KalmanFilter::KalmanConfig config)
+void ADA::setKalmanConfig(KalmanFilter::KalmanConfig& config)
 {
     filter.setConfig(config);
 }

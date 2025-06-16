@@ -77,7 +77,7 @@ public:
 
     TimedTrajectoryPoint() : TrajectoryPoint(), timestamp(0), vMod(0) {}
 
-    explicit TimedTrajectoryPoint(NASState state)
+    explicit TimedTrajectoryPoint(const NASState& state)
         : TrajectoryPoint(-state.d, -state.vd), timestamp(state.timestamp),
           vMod(Eigen::Vector3f{state.vn, state.ve, state.vd}.norm())
     {
