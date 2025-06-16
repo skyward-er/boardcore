@@ -198,7 +198,7 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             // This means also that the number of samples used for the mean sent
             // to the HIL simulator is made up of more than the number of
             // samples we though
-            LOG_WARN(logger, "%d Lost updates", nLostUpdates);
+            LOG_WARN(logger, "{} lost updates", nLostUpdates);
         }
 
         waitActuatorData();
