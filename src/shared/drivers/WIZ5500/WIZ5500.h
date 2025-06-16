@@ -37,6 +37,26 @@ namespace Boardcore
 struct WizIp
 {
     uint8_t a, b, c, d;
+
+    WizIp() = default;
+
+    constexpr WizIp(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
+        : a{a}, b{b}, c{c}, d{d}
+    {
+    }
+
+    constexpr explicit WizIp(uint32_t ip)
+        : a{static_cast<uint8_t>((ip >> 24) & 0xFF)},
+          b{static_cast<uint8_t>((ip >> 16) & 0xFF)},
+          c{static_cast<uint8_t>((ip >> 8) & 0xFF)},
+          d{static_cast<uint8_t>(ip & 0xFF)}
+    {
+    }
+
+    constexpr explicit operator uint32_t() const
+    {
+        return a << 24 | b << 16 | c << 8 | d;
+    }
 };
 
 /**
