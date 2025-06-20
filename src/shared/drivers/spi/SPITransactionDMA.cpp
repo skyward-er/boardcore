@@ -131,6 +131,8 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
         lastErrorTx = DMAErrors::TRANSFER_ERROR;
     else if (streamTx->getFifoErrorFlagStatus())
         lastErrorTx = DMAErrors::FIFO_ERROR;
+    else
+        lastErrorTx = DMAErrors::NO_ERRORS;
 
     // Check for receiving errors
     if (!resultReceive)
@@ -139,6 +141,8 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
         lastErrorRx = DMAErrors::TRANSFER_ERROR;
     else if (streamRx->getFifoErrorFlagStatus())
         lastErrorRx = DMAErrors::FIFO_ERROR;
+    else
+        lastErrorRx = DMAErrors::NO_ERRORS;
 
     return lastErrorRx == DMAErrors::NO_ERRORS &&
            lastErrorTx == DMAErrors::NO_ERRORS;
