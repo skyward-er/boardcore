@@ -34,7 +34,7 @@ SPITransactionDMA::SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
 }
 
 uint8_t SPITransactionDMA::readRegister(uint8_t reg,
-                                        std::chrono::microseconds timeout)
+                                        std::chrono::nanoseconds timeout)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
         reg |= 0x80;
@@ -57,7 +57,7 @@ uint8_t SPITransactionDMA::readRegister(uint8_t reg,
 }
 
 uint16_t SPITransactionDMA::transfer16(uint16_t data,
-                                       std::chrono::microseconds timeout)
+                                       std::chrono::nanoseconds timeout)
 {
     volatile uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 8),
                                    static_cast<uint8_t>(data)};
@@ -83,7 +83,7 @@ void SPITransactionDMA::getLastErrors(DMAErrors& txError, DMAErrors& rxError)
     rxError = lastErrorRx;
 }
 
-bool SPITransactionDMA::dmaTransfer(const std::chrono::microseconds timeout)
+bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
 {
     // Disable spi
     spi->CR1 &= ~SPI_CR1_SPE;
