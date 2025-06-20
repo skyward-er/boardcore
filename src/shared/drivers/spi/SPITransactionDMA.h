@@ -66,8 +66,8 @@ public:
      * forever.
      * @return Byte read from the register, 0 in case of errors.
      */
-    uint8_t readRegister(uint8_t reg, std::chrono::microseconds timeout =
-                                          std::chrono::microseconds::zero());
+    uint8_t readRegister(uint8_t reg, std::chrono::nanoseconds timeout =
+                                          std::chrono::nanoseconds::zero());
 
     /**
      * @brief Full duplex transmission of 16 bits on the bus.
@@ -77,8 +77,8 @@ public:
      * forever.
      * @return Half word read from the bus, 0 in case of errors.
      */
-    uint16_t transfer16(uint16_t data, std::chrono::microseconds timeout =
-                                           std::chrono::microseconds::zero());
+    uint16_t transfer16(uint16_t data, std::chrono::nanoseconds timeout =
+                                           std::chrono::nanoseconds::zero());
 
     /**
      * @brief Get last errors for debugging purposes. Avoid silent fails.
@@ -105,7 +105,7 @@ private:
      * @return True if the operation was successful. False otherwise, sets
      * the last error.
      */
-    bool dmaTransfer(const std::chrono::microseconds timeout);
+    bool dmaTransfer(const std::chrono::nanoseconds timeout);
 
     /**
      * @brief Wait until the spi peripheral has finished transmitting.
