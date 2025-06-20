@@ -463,7 +463,7 @@ private:
 
                 // Wait until the thread is woken up and the pointer is cleared
                 miosix::FastInterruptDisableLock dLock;
-                if (timeout_ns >= 0)
+                if (timeout_ns > 0)
                 {
                     do
                     {
@@ -502,7 +502,7 @@ private:
         else
         {
             // Pool the flag if the user did not enable the interrupt
-            if (timeout_ns >= 0)
+            if (timeout_ns > 0)
             {
                 const long long start = miosix::getTime();
 
