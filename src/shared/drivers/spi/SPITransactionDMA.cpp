@@ -153,7 +153,7 @@ void SPITransactionDMA::spiWaitForTransmissionComplete()
     // First, ensure the TX buffer is empty, then check the SPI busy
     // flag
 
-#ifdef defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
+#if defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
     defined(STM32F777xx) || defined(STM32F779xx)
     while ((spi->SR & SPI_SR_FTLVL) > 0)
     {
