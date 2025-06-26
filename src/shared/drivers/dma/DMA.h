@@ -39,11 +39,12 @@ namespace Boardcore
  */
 enum class DMAErrors : uint8_t
 {
-    NO_ERRORS = 0,
-    TIMEOUT,            // The timeout expired
-    FIFO_ERROR,         // The fifo error flag was raised
-    TRANSFER_ERROR,     // The transfer error flag was raised
-    DIRECT_MODE_ERROR,  // The direct mode error flag was raised
+    NO_ERRORS          = 0,
+    TIMEOUT            = 1,  // The timeout expired
+    FIFO_ERROR         = 2,  // The fifo error flag was raised
+    TRANSFER_ERROR     = 3,  // The transfer error flag was raised
+    DIRECT_MODE_ERROR  = 4,  // The direct mode error flag was raised
+    END_OF_BASE_ERRORS = 5   // Used to extend this enum
 };
 
 /**
