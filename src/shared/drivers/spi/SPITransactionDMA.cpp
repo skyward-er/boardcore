@@ -77,7 +77,8 @@ uint16_t SPITransactionDMA::transfer16(uint16_t data,
     return recvBuf[0] << 8 | recvBuf[1];
 }
 
-void SPITransactionDMA::getLastErrors(DMAErrors& txError, DMAErrors& rxError)
+void SPITransactionDMA::getLastErrors(SPITransactionDMAErrors& txError,
+                                      SPITransactionDMAErrors& rxError)
 {
     txError = lastErrorTx;
     rxError = lastErrorRx;
@@ -109,9 +110,13 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
     bool resultTransmit = streamTx->timedWaitForTransferComplete(timeout);
     bool resultReceive  = streamRx->timedWaitForTransferComplete(timeout);
 
-    // DMA completion doesn't guarantee that the SPI peripheral
-    // has finished transmitting
-    spiWaitForTransmissionComplete();
+    bool spiWaitResult = true;
+    if (resultTransmit && resultReceive)
+    {
+        // DMA completion doesn't guarantee that the SPI peripheral
+        // has finished transmitting
+        spiWaitResult = spiWaitForTransmissionComplete();
+    }
 
     // Stop the transaction
     slave.bus.deselect(slave.cs);
@@ -126,51 +131,78 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
 
     // Check for transmitting errors
     if (!resultTransmit)
-        lastErrorTx = DMAErrors::TIMEOUT;
+        lastErrorTx = SPITransactionDMAErrors::DMA_TIMEOUT;
     else if (streamTx->getTransferErrorFlagStatus())
-        lastErrorTx = DMAErrors::TRANSFER_ERROR;
+        lastErrorTx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
     else if (streamTx->getFifoErrorFlagStatus())
-        lastErrorTx = DMAErrors::FIFO_ERROR;
+        lastErrorTx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
+    else if (!spiWaitResult)
+        lastErrorTx = SPITransactionDMAErrors::SPI_TIMEOUT;
     else
-        lastErrorTx = DMAErrors::NO_ERRORS;
+        lastErrorTx = SPITransactionDMAErrors::NO_ERRORS;
 
     // Check for receiving errors
     if (!resultReceive)
-        lastErrorRx = DMAErrors::TIMEOUT;
+        lastErrorRx = SPITransactionDMAErrors::DMA_TIMEOUT;
     else if (streamRx->getTransferErrorFlagStatus())
-        lastErrorRx = DMAErrors::TRANSFER_ERROR;
+        lastErrorRx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
     else if (streamRx->getFifoErrorFlagStatus())
-        lastErrorRx = DMAErrors::FIFO_ERROR;
+        lastErrorRx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
+    else if (!spiWaitResult)
+        lastErrorRx = SPITransactionDMAErrors::SPI_TIMEOUT;
     else
-        lastErrorRx = DMAErrors::NO_ERRORS;
+        lastErrorRx = SPITransactionDMAErrors::NO_ERRORS;
 
-    return lastErrorRx == DMAErrors::NO_ERRORS &&
-           lastErrorTx == DMAErrors::NO_ERRORS;
+    return lastErrorRx == SPITransactionDMAErrors::NO_ERRORS &&
+           lastErrorTx == SPITransactionDMAErrors::NO_ERRORS;
 }
 
-void SPITransactionDMA::spiWaitForTransmissionComplete()
+bool SPITransactionDMA::spiWaitForTransmissionComplete()
 {
     // First, ensure the TX buffer is empty, then check the SPI busy
     // flag
 
+    const int64_t timeout = miosix::getTime() + spiTimeoutNs;
+
 #if defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
     defined(STM32F777xx) || defined(STM32F779xx)
-    while ((spi->SR & SPI_SR_FTLVL) > 0)
+    while ((spi->SR & SPI_SR_FTLVL) > 0 && miosix::getTime() < timeout)
     {
     }
+
+    if ((spi->SR & SPI_SR_FTLVL) > 0)
+    {
+        // Timeout expired
+        return false;
+    }
+
 #elif defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || \
     defined(STM32F417xx) || defined(STM32F427xx) || defined(STM32F429xx) ||   \
     defined(STM32F437xx) || defined(STM32F439xx)
-    while ((spi->SR & SPI_SR_TXE) == 0)
+    while ((spi->SR & SPI_SR_TXE) == 0 && miosix::getTime() < timeout)
     {
+    }
+
+    if ((spi->SR & SPI_SR_TXE) == 0)
+    {
+        // Timeout expired
+        return false;
     }
 #else
 #warning This board is not officially supported. SPITransactionDMA might not work as expected.
 #endif
 
-    while (spi->SR & SPI_SR_BSY)
+    while ((spi->SR & SPI_SR_BSY) && miosix::getTime() < timeout)
     {
     }
+
+    if (spi->SR & SPI_SR_BSY)
+    {
+        // Timeout expired
+        return false;
+    }
+
+    return true;
 }
 
 void SPITransactionDMA::defaultTransmittingSetup(DMATransaction& txSetup,
