@@ -31,6 +31,25 @@ namespace Boardcore
 {
 
 /**
+ * @brief Generic error codes that the spi transaction
+ * with dma can generate.
+ */
+enum class SPITransactionDMAErrors : uint8_t
+{
+    // Dma errors
+
+    NO_ERRORS             = static_cast<uint8_t>(DMAErrors::NO_ERRORS),
+    DMA_TIMEOUT           = static_cast<uint8_t>(DMAErrors::TIMEOUT),
+    DMA_FIFO_ERROR        = static_cast<uint8_t>(DMAErrors::FIFO_ERROR),
+    DMA_TRANSFER_ERROR    = static_cast<uint8_t>(DMAErrors::TRANSFER_ERROR),
+    DMA_DIRECT_MODE_ERROR = static_cast<uint8_t>(DMAErrors::DIRECT_MODE_ERROR),
+
+    // New spi transaction dma errors
+
+    SPI_TIMEOUT = static_cast<uint8_t>(DMAErrors::END_OF_BASE_ERRORS),
+};
+
+/**
  * @brief Provides high-level access to the SPI Bus for a single spi
  * transaction with dma.
  *
@@ -82,10 +101,11 @@ public:
 
     /**
      * @brief Get last errors for debugging purposes. Avoid silent fails.
-     * @param txError Variable where the dma transmitting error will be stored.
-     * @param rxError Variable where the dma receiving error will be stored.
+     * @param txError Variable where the transmitting error will be stored.
+     * @param rxError Variable where the receiving error will be stored.
      */
-    void getLastErrors(DMAErrors& txError, DMAErrors& rxError);
+    void getLastErrors(SPITransactionDMAErrors& txError,
+                       SPITransactionDMAErrors& rxError);
 
 private:
     const SPISlave& slave;
@@ -93,9 +113,18 @@ private:
     DMAStreamGuard& streamRx;
     DMAStreamGuard& streamTx;
     // Last error for the transmitting stream
-    DMAErrors lastErrorTx = DMAErrors::NO_ERRORS;
+    SPITransactionDMAErrors lastErrorTx = SPITransactionDMAErrors::NO_ERRORS;
     // Last error for the receiving stream
-    DMAErrors lastErrorRx = DMAErrors::NO_ERRORS;
+    SPITransactionDMAErrors lastErrorRx = SPITransactionDMAErrors::NO_ERRORS;
+
+    /**
+     * @brief The timeout for the method `spiWaitForTransmissionComplete()`,
+     * in nanoseconds.
+     */
+    static constexpr int64_t spiTimeoutNs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::milliseconds(250))
+            .count();
 
     /**
      * @brief Perform the dma transaction.
@@ -109,8 +138,10 @@ private:
 
     /**
      * @brief Wait until the spi peripheral has finished transmitting.
+     * @return True if operation successful, false if the timeout
+     * expired.
      */
-    void spiWaitForTransmissionComplete();
+    bool spiWaitForTransmissionComplete();
 
     /**
      * @brief Setup the configuration struct with the default sender values
