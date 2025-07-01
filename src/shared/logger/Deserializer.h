@@ -23,6 +23,7 @@
 #pragma once
 
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -46,25 +47,14 @@ void deserializeField(std::ifstream& in, std::ofstream& out)
 {
     auto value = T{};
     in.read(reinterpret_cast<char*>(&value), sizeof(T));
-    out << value << ',';
-}
 
-template <>
-void deserializeField<int8_t>(std::ifstream& in, std::ofstream& out)
-{
-    using T    = int8_t;
-    auto value = T{};
-    in.read(reinterpret_cast<char*>(&value), sizeof(T));
-    out << static_cast<int>(value) << ',';
-}
-
-template <>
-void deserializeField<uint8_t>(std::ifstream& in, std::ofstream& out)
-{
-    using T    = uint8_t;
-    auto value = T{};
-    in.read(reinterpret_cast<char*>(&value), sizeof(T));
-    out << static_cast<unsigned int>(value) << ',';
+    // Formatting with std::format is >2x faster than std::ostream
+    if constexpr (std::is_same_v<T, int8_t>)
+        out << std::format("{}", static_cast<int>(value));
+    else if constexpr (std::is_same_v<T, uint8_t>)
+        out << std::format("{}", static_cast<unsigned int>(value));
+    else
+        out << std::format("{}", value);
 }
 }  // namespace detail
 
@@ -123,7 +113,7 @@ private:
      * Throws an exception if the mapping file is missing or contains invalid
      * data.
      */
-    void registerType(std::string typeName, std::ifstream& file);
+    void registerType(const std::string& typeName, std::ifstream& file);
 
     struct MappingRecord
     {
@@ -152,23 +142,22 @@ std::ofstream Deserializer::createCSV(const std::string& typeName)
         throw std::runtime_error("Error opening file " + outputFile.string());
     }
 
-    stream.precision(std::numeric_limits<float>::max_digits10);
-
     return stream;
 }
 
 /**
  * @brief Register a type so that it can be deserialized
  */
-void Deserializer::registerType(std::string typeName, std::ifstream& file)
+void Deserializer::registerType(const std::string& typeName,
+                                std::ifstream& file)
 {
     // Create a new csv file for this type
-    std::ofstream outFile = createCSV(typeName);
+    auto outFile = createCSV(typeName);
 
     // Read the number of fields
     uint8_t fieldCount = file.get();
     // Dummy null read
-    file.get();
+    file.ignore();
 
     // create an array to store the field types
     DeserializeInstructions deserializeInstructions;
@@ -179,17 +168,14 @@ void Deserializer::registerType(std::string typeName, std::ifstream& file)
     {
         // get the name of the field
         std::string fieldName;
-        // Read null terminated name string
-        while (file.peek() != 0)
-            fieldName += file.get();
-        // Dummy null read
-        file.get();
+        std::getline(file, fieldName, '\0');  // Read until null terminator
+
         header += fieldName + ",";
 
         // Read the field type
         char fieldType = file.get();
         // Dummy null read
-        file.get();
+        file.ignore();
 
         switch (fieldType)
         {
@@ -280,15 +266,14 @@ bool Deserializer::deserialize()
 
     std::filesystem::create_directory(outputDirectory());
 
-    while (file.peek() != -1)
+    while (true)
     {
         std::string typeName;
+        std::getline(file, typeName, '\0');  // Read until null terminator
 
-        // Read null terminated name string
-        while (file.peek() != 0)
-            typeName += file.get();
-        // Dummy null read
-        file.get();
+        // Check if we reached end of file while trying to read the next type
+        if (file.eof())
+            break;
 
         try
         {
@@ -304,12 +289,15 @@ bool Deserializer::deserialize()
             // get the correct parser for this type
             auto& type = typeMap.at(typeName);
 
-            for (auto& fieldInstruction : type.instructions)
-                fieldInstruction(file, type.file);
+            for (size_t i = 0; i < type.instructions.size(); ++i)
+            {
+                type.instructions[i](file, type.file);
 
-            // replace the trailing comma with a newline character
-            type.file.seekp(type.file.tellp() - std::streampos{1});
-            type.file << '\n';
+                if (i == type.instructions.size() - 1)
+                    type.file.put('\n');  // newline after last field
+                else
+                    type.file.put(',');  // comma separator between fields
+            }
         }
         catch (const std::out_of_range& e)
         {
