@@ -38,9 +38,12 @@ struct NASConfig
                                 ///< estimated GPS variance. position from test,
                                 ///< velocity from datasheet
     float SIGMA_BAR;            ///< [Pa]     Estimated altitude variance
-    float SIGMA_POS;    ///< [m]     Estimated variance of the position noise
-    float SIGMA_VEL;    ///< [m/s] Estimated variance of the velocity noise
-    float SIGMA_PITOT;  ///< [Pa]    Estimated variance of the pitot velocity
+    float SIGMA_POS;  ///< [m]     Estimated variance of the position noise
+    float SIGMA_VEL;  ///< [m/s] Estimated variance of the velocity noise
+    float SIGMA_PITOT_STATIC;   ///< [Pa]    Estimated variance of the pitot
+                                ///< static pressure
+    float SIGMA_PITOT_DYNAMIC;  ///< [Pa]    Estimated variance of the pitot
+                                ///< static dynamic
 
     float P_POS;           ///< Position prediction covariance horizontal
     float P_POS_VERTICAL;  ///< Position prediction covariance vertical
