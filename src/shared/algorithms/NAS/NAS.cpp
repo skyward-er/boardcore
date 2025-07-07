@@ -338,42 +338,145 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
 {
     using namespace Constants;
 
-    const float d             = x(2);
-    const float vd            = x(5);
-    const float totalPressure = staticPressure + dynamicPressure;
-    const float relTemperature =
-        Aeroutils::relTemperature(-d, reference.refTemperature);
+    // Retrieve all necessary parameters
+    const float P0 = reference.refPressure;     // Reference pressure
+    const float T0 = reference.refTemperature;  // Reference temperature
+    const float d =
+        x(2) - reference.refAltitude;            // msl Down altitude from state
+    const float qx = x(6);                       // x quaternion from state
+    const float qy = x(7);                       // y quaternion from state
+    const float qz = x(8);                       // z quaternion from state
+    const float qw = x(9);                       // Scalar quaternion from state
+    Vector3f vel   = x.block<IDX_VEL, 1>(3, 0);  // NED Velocity from state
 
-    // Temporary value reused in two different formulas
-    float temp =
-        1 + (GAMMA_AIR - 1) / 2 * (vd * vd / (GAMMA_AIR * R * relTemperature));
+    // Temperature at current altitude
+    const float T = T0 + a * d;
 
-    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
-    H(0, 5)               = -GAMMA_AIR * temp * vd;
+    // Rotation vector from NED to Body frame
+    // clang-format off
+    RowVector3f rot_NB;
+    rot_NB <<  qw * qw + qx * qx - qy * qy - qz * qz, 
+               2 * (qx * qy + qw * qz),
+               2 * (qx * qz - qw * qy);
+    // clang-format on
 
-    // If a nan is generated, don't do the correction
-    if (isnan(H(0, 5)))
+    // X Velocity in body frame
+    const float vbody_x = rot_NB * vel;
+
+    // Derivative of 1/T wrt states
+    Matrix<float, 1, 12> dT = Matrix<float, 1, 12>::Zero();
+    dT(2)                   = -a / powf(T0 + a * d, 2);
+
+    // Derivative of Static Pressure wrt states
+    Matrix<float, 1, 12> dPstat = Matrix<float, 1, 12>::Zero();
+    dPstat(2) = g * P0 / (R * T0) * powf(1 - a * d / T0, -g / (a * R) - 1);
+
+    // clang-format off
+    // Derivative of Quaternions wrt states (using error angles approximation)
+    Matrix<float, 4, 3> dQuat;
+    dQuat << qw, -qz, qy, qz, 
+             qw, -qx, -qy, qx, 
+             qw, -qx, qy, qw;
+
+    // Derivative of Rotation vector from NED to Body frame wrt quaternions
+    Matrix<float, 3, 4> dRot_dQuat;
+    dRot_dQuat << qx, -qy, -qz, qw, 
+                  qy, qx, qw, qz, 
+                  qz, -qw, qx, -qy;
+    // clang-format on
+
+    // Derivative of Rotation vector from NED to Body frame wrt states
+    Matrix<float, 12, 3> dRot     = Matrix<float, 12, 3>::Zero();
+    dRot.block<3, 3>(IDX_QUAT, 0) = dRot_dQuat * dQuat;
+
+    // Derivative of velocity wrt states
+    Matrix<float, 3, 12> dVel    = Matrix<float, 3, 12>::Zero();
+    dVel.block<3, 3>(IDX_VEL, 0) = Matrix3f::Identity();
+
+    // Derivative of Velocity in Body frame wrt states
+    Vector<float, 12> dVbody =
+        dRot * vel + dVel.transpose() * rot_NB.transpose();
+
+    // Estimated static pressure
+    const float Ps_est = P0 * powf(1 + a * d / T0, g / (a * R));
+
+    // Estimated Mach squared
+    const float M2 = vbody_x * vbody_x / (GAMMA_AIR * R * T);
+
+    // Estimated dynamic pressure
+    const float Pd_est =
+        Ps_est *
+        (powf(1 + (GAMMA_AIR - 1) / 2 * M2, GAMMA_AIR / (GAMMA_AIR - 1)) - 1);
+
+    // Alpha-term
+    const float alpha =
+        (1 + (GAMMA_AIR - 1) / 2 * vbody_x * vbody_x / (GAMMA_AIR * R * T));
+
+    // Derivative of alpha wrt velocity
+    Matrix<float, 1, 12> dalpha_vel = 2 * vbody_x * (GAMMA_AIR - 1) /
+                                      (2 * GAMMA_AIR * R * T) *
+                                      dVel.transpose();
+
+    // Derivative of alpha wrt temperature
+    Matrix<float, 1, 12> dalpha_temp =
+        (GAMMA_AIR - 1) * vbody_x * vbody_x / (2 * GAMMA_AIR * R) * dT;
+
+    // Derivative of Alpha wrt states
+    Matrix<float, 1, 12> dalpha = dalpha_vel + dalpha_temp;
+
+    // Beta term
+    const float beta = powf(alpha, GAMMA_AIR / (GAMMA_AIR - 1));
+
+    // Derivative of Beta wrt states
+    Matrix<float, 1, 12> dbeta = GAMMA_AIR / (GAMMA_AIR - 1) *
+                                 powf(alpha, GAMMA_AIR / (GAMMA_AIR - 1) - 1) *
+                                 dalpha;
+
+    // Total pressure derivative wrt states
+    Matrix<float, 1, 12> dPtot = beta * dPstat + Ps_est * dbeta;
+
+    // Dynamic pressure derivative wrt states
+    Matrix<float, 1, 12> dPdyn = dPtot - dPstat;
+
+    // Define H matrix
+    Matrix<float, 2, 12> H;
+    H << dPstat, dPdyn;
+
+    // If a nan is generated don't do the correction
+    if (H.array().isNaN().any())
         return;
 
-    float R = config.SIGMA_PITOT * config.SIGMA_PITOT;
+    // Covariance matrix of measurement noise
+    Matrix2f R_mat = Matrix2f::Zero();
+    R_mat(0, 0)    = config.SIGMA_PITOT_STATIC * config.SIGMA_PITOT_STATIC;
+    R_mat(1, 1)    = config.SIGMA_PITOT_DYNAMIC * config.SIGMA_PITOT_DYNAMIC;
 
-    Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
-    float S                = H * Pl * H.transpose() + R;
+    Matrix2f S = H * P * H.transpose() + R_mat;
 
     // If not invertible, don't do the correction and return
-    if (S < 1e-3)
+    if (S.determinant() < 1e-3)
         return;
 
-    float y_hat =
-        std::pow(temp, (GAMMA_AIR / (GAMMA_AIR - 1))) - 1;  // pRatio_model
-    float y_measure = dynamicPressure / totalPressure;      // pRatio_measure
+    // Measurement error
+    Vector2f e =
+        (Vector2f() << staticPressure - Ps_est, dynamicPressure - Pd_est)
+            .finished();
 
-    float e               = y_measure - y_hat;
-    Matrix<float, 6, 1> K = Pl * H.transpose() / S;
-    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
+    // Kalman gain
+    Matrix<float, 12, 2> K = P * H.transpose() * S.inverse();
+
+    // Define state correction
+    Matrix<float, 1, 12> temp = (K * e).transpose();
+
+    Matrix<float, 13, 1> correction;
+    correction << temp.block<6, 1>(IDX_POS, 0), Vector4f::Zero(),
+        temp.block<3, 1>(IDX_BIAS - 1, 0);
 
     // Update the state
-    x.head<6>() = x.head<6>() + K * e;
+    x = x + correction;
+
+    // Update covariance matrix
+    P = (Matrix<float, 12, 12>::Identity() - K * H) * P;
 }
 
 NASState NAS::getState() const
