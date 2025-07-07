@@ -415,7 +415,7 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
     // Derivative of alpha wrt velocity
     Matrix<float, 1, 12> dalpha_vel = 2 * vbody_x * (GAMMA_AIR - 1) /
                                       (2 * GAMMA_AIR * R * T) *
-                                      dVel.transpose();
+                                      dVbody.transpose();
 
     // Derivative of alpha wrt temperature
     Matrix<float, 1, 12> dalpha_temp =
@@ -466,11 +466,10 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
     Matrix<float, 12, 2> K = P * H.transpose() * S.inverse();
 
     // Define state correction
-    Matrix<float, 1, 12> temp = (K * e).transpose();
+    Matrix<float, 1, 12> temp = (K * e).transpose().block<6,1>(IDX_POS,0);
 
-    Matrix<float, 13, 1> correction;
-    correction << temp.block<6, 1>(IDX_POS, 0), Vector4f::Zero(),
-        temp.block<3, 1>(IDX_BIAS - 1, 0);
+    Matrix<float, 13, 1> correction    = Matrix<float, 13, 1>::Zero();
+    correction.block<6, 1>(IDX_POS, 0) = temp.block<6, 1>(IDX_POS, 0);
 
     // Update the state
     x = x + correction;
