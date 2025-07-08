@@ -35,6 +35,19 @@ namespace Boardcore
 {
 
 /**
+ * @brief Generic error codes that the DMA can generate.
+ */
+enum class DMAErrors : uint8_t
+{
+    NO_ERRORS          = 0,
+    TIMEOUT            = 1,  // The timeout expired
+    FIFO_ERROR         = 2,  // The fifo error flag was raised
+    TRANSFER_ERROR     = 3,  // The transfer error flag was raised
+    DIRECT_MODE_ERROR  = 4,  // The direct mode error flag was raised
+    END_OF_BASE_ERRORS = 5   // Used to extend this enum
+};
+
+/**
  * @brief This is the configuration struct for
  * a DMA transaction.
  */
@@ -451,7 +464,7 @@ private:
 
                 // Wait until the thread is woken up and the pointer is cleared
                 miosix::FastInterruptDisableLock dLock;
-                if (timeout_ns >= 0)
+                if (timeout_ns > 0)
                 {
                     do
                     {
@@ -490,7 +503,7 @@ private:
         else
         {
             // Pool the flag if the user did not enable the interrupt
-            if (timeout_ns >= 0)
+            if (timeout_ns > 0)
             {
                 const long long start = miosix::getTime();
 
