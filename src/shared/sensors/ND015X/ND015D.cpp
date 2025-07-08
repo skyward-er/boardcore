@@ -51,11 +51,12 @@ SPIBusConfig ND015D::getDefaultSPIConfig()
 
 ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
-               SPIType* ptrSpi, FullScaleRange fsr, IOWatchdogEnable iow,
-               BWLimitFilter bwl, NotchEnable ntc, uint8_t odr)
+               SPIType* ptrSpi, std::chrono::nanoseconds timeout,
+               FullScaleRange fsr, IOWatchdogEnable iow, BWLimitFilter bwl,
+               NotchEnable ntc, uint8_t odr)
     : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)),
       streamRx(streamRx), streamTx(streamTx), ptrSpi(ptrSpi),
-      sensorSettings{fsr, iow, bwl, ntc, odr}
+      timeoutDma(timeout), sensorSettings{fsr, iow, bwl, ntc, odr}
 {
 }
 
@@ -64,6 +65,7 @@ ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                NotchEnable ntc, uint8_t odr)
     : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)), streamRx(nullptr),
       streamTx(nullptr), ptrSpi(nullptr),
+      timeoutDma(std::chrono::nanoseconds::zero()),
       sensorSettings{fsr, iow, bwl, ntc, odr}
 {
 }
@@ -207,9 +209,9 @@ ND015XData ND015D::sampleImpl()
 
     if (streamRx != nullptr && streamTx != nullptr && ptrSpi != nullptr)
     {
-        // dma
+        // Use dma
         SPITransactionDMA spi(slave, ptrSpi, *streamRx, *streamTx);
-        spiDataIn = spi.transfer16(spiDataOut);
+        spiDataIn = spi.transfer16(spiDataOut, timeoutDma);
     }
     else
     {
