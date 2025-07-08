@@ -77,9 +77,11 @@ public:
      * @param streamRx Dma receiving stream for the spi bus.
      * @param streamTx Dma transmitting stream for the spi bus.
      * @param ptrSpi Pointer to the spi peripheral.
+     * @param timeoutDma Timeout for the dma transactions.
      */
     ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
            DMAStreamGuard* streamRx, DMAStreamGuard* streamTx, SPIType* ptrSpi,
+           std::chrono::nanoseconds timeoutDma,
            IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
            BWLimitFilter bwl    = BWLimitFilter::BWL_200,
            NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
@@ -162,6 +164,7 @@ private:
     DMAStreamGuard* const streamRx;
     DMAStreamGuard* const streamTx;
     SPIType* const ptrSpi;
+    const std::chrono::nanoseconds timeoutDma;
 
     /**
      * @brief settings for the mode control register,
