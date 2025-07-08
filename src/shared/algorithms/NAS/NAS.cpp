@@ -466,10 +466,8 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
     Matrix<float, 12, 2> K = P * H.transpose() * S.inverse();
 
     // Define state correction
-    Matrix<float, 1, 12> temp = (K * e).transpose().block<6,1>(IDX_POS,0);
-
     Matrix<float, 13, 1> correction    = Matrix<float, 13, 1>::Zero();
-    correction.block<6, 1>(IDX_POS, 0) = temp.block<6, 1>(IDX_POS, 0);
+    correction.block<6, 1>(IDX_POS, 0) = (K * e).block<6, 1>(IDX_POS, 0);
 
     // Update the state
     x = x + correction;
