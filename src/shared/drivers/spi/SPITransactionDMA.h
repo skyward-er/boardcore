@@ -118,15 +118,6 @@ private:
     SPITransactionDMAErrors lastErrorRx = SPITransactionDMAErrors::NO_ERRORS;
 
     /**
-     * @brief The timeout for the method `spiWaitForTransmissionComplete()`,
-     * in nanoseconds.
-     */
-    static constexpr int64_t spiTimeoutNs =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::milliseconds(250))
-            .count();
-
-    /**
      * @brief Perform the dma transaction.
      * @warning The streams must be setup and ready to go.
      * @param timeout The maximum time that will be waited, defaults to waiting
@@ -138,10 +129,14 @@ private:
 
     /**
      * @brief Wait until the spi peripheral has finished transmitting.
+     * @param useTimeout True if the timeout must be used.
+     * @param timeoutTime Time (in nanoseconds) at which the operation must
+     * have completed.
      * @return True if operation successful, false if the timeout
      * expired.
      */
-    bool spiWaitForTransmissionComplete();
+    bool spiWaitForTransmissionComplete(const bool useTimeout,
+                                        const int64_t timeoutTime);
 
     /**
      * @brief Setup the configuration struct with the default sender values

@@ -86,6 +86,9 @@ void SPITransactionDMA::getLastErrors(SPITransactionDMAErrors& txError,
 
 bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
 {
+    // Get start time, needed for timeout evaluation
+    const int64_t startTime = miosix::getTime();
+
     // Disable spi
     spi->CR1 &= ~SPI_CR1_SPE;
 
@@ -113,9 +116,17 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
     bool spiWaitResult = true;
     if (resultTransmit && resultReceive)
     {
+        // Evaluate the timeout
+        bool useTimeout     = true;
+        int64_t timeoutTime = 0;
+        if (timeout != std::chrono::nanoseconds::zero())
+            timeoutTime = startTime + timeout.count();
+        else
+            useTimeout = false;
+
         // DMA completion doesn't guarantee that the SPI peripheral
         // has finished transmitting
-        spiWaitResult = spiWaitForTransmissionComplete();
+        spiWaitResult = spiWaitForTransmissionComplete(useTimeout, timeoutTime);
     }
 
     // Stop the transaction
@@ -157,20 +168,20 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
            lastErrorTx == SPITransactionDMAErrors::NO_ERRORS;
 }
 
-bool SPITransactionDMA::spiWaitForTransmissionComplete()
+bool SPITransactionDMA::spiWaitForTransmissionComplete(
+    const bool useTimeout, const int64_t timeoutTime)
 {
     // First, ensure the TX buffer is empty, then check the SPI busy
     // flag
 
-    const int64_t timeout = miosix::getTime() + spiTimeoutNs;
-
 #if defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
     defined(STM32F777xx) || defined(STM32F779xx)
-    while ((spi->SR & SPI_SR_FTLVL) > 0 && miosix::getTime() < timeout)
+    while ((spi->SR & SPI_SR_FTLVL) > 0 &&
+           (!useTimeout || miosix::getTime() < timeoutTime))
     {
     }
 
-    if ((spi->SR & SPI_SR_FTLVL) > 0)
+    if (useTimeout && (spi->SR & SPI_SR_FTLVL) > 0)
     {
         // Timeout expired
         return false;
@@ -179,11 +190,12 @@ bool SPITransactionDMA::spiWaitForTransmissionComplete()
 #elif defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || \
     defined(STM32F417xx) || defined(STM32F427xx) || defined(STM32F429xx) ||   \
     defined(STM32F437xx) || defined(STM32F439xx)
-    while ((spi->SR & SPI_SR_TXE) == 0 && miosix::getTime() < timeout)
+    while ((spi->SR & SPI_SR_TXE) == 0 &&
+           (!useTimeout || miosix::getTime() < timeoutTime))
     {
     }
 
-    if ((spi->SR & SPI_SR_TXE) == 0)
+    if (useTimeout && (spi->SR & SPI_SR_TXE) == 0)
     {
         // Timeout expired
         return false;
@@ -192,11 +204,12 @@ bool SPITransactionDMA::spiWaitForTransmissionComplete()
 #warning This board is not officially supported. SPITransactionDMA might not work as expected.
 #endif
 
-    while ((spi->SR & SPI_SR_BSY) && miosix::getTime() < timeout)
+    while ((spi->SR & SPI_SR_BSY) &&
+           (!useTimeout || miosix::getTime() < timeoutTime))
     {
     }
 
-    if (spi->SR & SPI_SR_BSY)
+    if (useTimeout && (spi->SR & SPI_SR_BSY))
     {
         // Timeout expired
         return false;
