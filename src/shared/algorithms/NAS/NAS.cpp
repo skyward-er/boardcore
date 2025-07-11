@@ -353,9 +353,10 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
     const float T = T0 + a * d;
 
     // Rotation vector from NED to Body frame
-    // clang-format off
     RowVector3f rot_NB;
-    rot_NB <<  qw * qw + qx * qx - qy * qy - qz * qz, 
+    // clang-format off
+    rot_NB <<  qw * qw + qx * qx - qy * qy - qz * qz,
+    // cppcheck-suppress constStatement
                2 * (qx * qy + qw * qz),
                2 * (qx * qz - qw * qy);
     // clang-format on
@@ -374,14 +375,16 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
     // clang-format off
     // Derivative of Quaternions wrt states (using error angles approximation)
     Matrix<float, 4, 3> dQuat;
-    dQuat << qw, -qz, qy, qz, 
-             qw, -qx, -qy, qx, 
+    dQuat << qw, -qz, qy, qz,
+             qw, -qx, -qy, qx,
+    // cppcheck-suppress constStatement
              qw, -qx, qy, qw;
 
     // Derivative of Rotation vector from NED to Body frame wrt quaternions
     Matrix<float, 3, 4> dRot_dQuat;
-    dRot_dQuat << qx, -qy, -qz, qw, 
-                  qy, qx, qw, qz, 
+    dRot_dQuat << qx, -qy, -qz, qw,
+                  qy, qx, qw, qz,
+    // cppcheck-suppress constStatement
                   qz, -qw, qx, -qy;
     // clang-format on
 
@@ -440,6 +443,7 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
 
     // Define H matrix
     Matrix<float, 2, 12> H;
+    // cppcheck-suppress constStatement
     H << dPstat, dPdyn;
 
     // If a nan is generated don't do the correction
