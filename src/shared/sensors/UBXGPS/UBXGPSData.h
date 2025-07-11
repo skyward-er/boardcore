@@ -65,7 +65,7 @@ struct UBXGPSData : public GPSData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(
-            Boardcore::UBXGPSData,
+            UBXGPSData,
             EXTEND_DEF(GPSData) FIELD_DEF2(ubxTime, year)
                 FIELD_DEF2(ubxTime, month) FIELD_DEF2(ubxTime, day) FIELD_DEF2(
                     ubxTime, hour) FIELD_DEF2(ubxTime, minute)

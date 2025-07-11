@@ -51,9 +51,9 @@ enum ThreadId : uint8_t
 
 struct StackData
 {
-    int64_t timestamp         = 0;
-    uint8_t threadId          = 0;
-    unsigned int minimumStack = 0;
+    int64_t timestamp     = 0;
+    uint8_t threadId      = 0;
+    uint32_t minimumStack = 0;
 
     static constexpr auto reflect()
     {

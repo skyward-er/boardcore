@@ -88,7 +88,7 @@ struct TxData
 struct RxData
 {
     int64_t timestamp;
-    size_t pktSize              = 0;
+    uint32_t pktSize            = 0;
     int64_t lastPacketTimestamp = 0;
     int32_t RSSI                = 0;
     uint32_t rcvCount           = 0;

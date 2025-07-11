@@ -38,18 +38,16 @@ namespace Xbee
 
 struct XbeeStatus
 {
-    long long timestamp = 0LL;
+    int64_t timestamp = 0LL;
 
     uint8_t lastTxStatusError = 0;
     uint8_t lastTxStatus      = 0;
 
     StatsResult timeToSendStats;
 
-    unsigned int txTimeoutCount = 0;
-
-    unsigned int rxDroppedBuffers = 0;
-
-    unsigned int frameBufMaxLength = 0;
+    uint32_t txTimeoutCount    = 0;
+    uint32_t rxDroppedBuffers  = 0;
+    uint32_t frameBufMaxLength = 0;
 
     static constexpr auto reflect()
     {

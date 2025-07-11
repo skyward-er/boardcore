@@ -37,7 +37,7 @@ namespace Boardcore
 struct Dummy
 {
     int64_t timestamp;
-    int x;
+    int32_t x;
 
     Dummy() : x(42)
     {
