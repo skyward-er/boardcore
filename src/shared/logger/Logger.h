@@ -104,6 +104,10 @@ struct TypePrinter
     static constexpr void print(std::string& mappingString,
                                 uint8_t* numberOfTypes, const char* name)
     {
+        static_assert(TypeID<T>::VALUE != TypeIDByte::Unknown,
+                      "Unknown TypeID '?'. This type is not supported for "
+                      "logging, refer to the error log above for details.");
+
         mappingString += std::string(name);
         mappingString += '\0';
         mappingString += TypeID<T>::VALUE;
