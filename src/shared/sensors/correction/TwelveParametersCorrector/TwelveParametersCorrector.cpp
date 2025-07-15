@@ -57,6 +57,8 @@ bool TwelveParametersCorrector::fromFile(const std::string& filename)
             inputFile >> V(i);
             inputFile.ignore(1, ',');
         }
+
+        inputFile.close();
         return true;
     }
     else
