@@ -137,6 +137,7 @@ set(BOARDCORE_SRC
     # Correction
     ${BOARDCORE_PATH}/src/shared/sensors/correction/BiasCorrector/BiasCorrector.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/correction/SixParametersCorrector/SixParametersCorrector.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/correction/TwelveParametersCorrector/TwelveParametersCorrector.cpp
 
     # Utils
     ${BOARDCORE_PATH}/src/shared/utils/AeroUtils/AeroUtils.cpp
