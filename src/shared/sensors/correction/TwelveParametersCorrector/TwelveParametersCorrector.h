@@ -29,15 +29,40 @@
 
 namespace Boardcore
 {
-
+/**
+ * @brief Twelve parameter correction works by multiplying the real measurement of a sensor by the W matrix (including the off-diagonal terms) and by adding to the result of the product the constant vector V
+ * 
+ * a_b,ideal = (W * a_b,real) + V = 
+ *    
+ *             | w11 w21 w31 |              | Vx |
+            =  | w12 w22 w32 | * a_b,real + | Vy |
+               | w13 w23 w33 |              | Vz |
+ * 
+ */
 class TwelveParametersCorrector : public BiasCorrector
 {
     TwelveParametersCorrector(Eigen::Matrix3f W, Eigen::Vector3f V);
     TwelveParametersCorrector();
 
+    /**
+     * @brief Reads the .csv file for the coefficients to configure the W and V terms of the system
+     * @param filename The name of the file
+     * @returns A boolean value to signal the outcome of the reading
+     */
     bool fromFile(const std::string& filename) override;
+
+    /**
+     * @brief Writes the .csv file with the coefficients of W and V
+     * @param filename The name of the file
+     * @returns A boolean value to signal the outcome of the writing
+     */
     bool toFile(const std::string& filename) override;
 
+    /**
+     * @brief Applies the correction to a_b,real
+     * @param inputVector The vector a_b,real
+     * @returns The a_b,ideal vector
+     */
     Eigen::Vector3f correct(const Eigen::Vector3f& inputVector) const override;
 
     Eigen::Vector3f getV() const;
