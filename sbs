@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Copyright (c) 2024 Skyward Experimental Rocketry
-# Author: Davide Basso
+# Authors: Davide Basso, Niccolò Betto
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,15 +40,16 @@ TTY_LOGO_4="\033[38;5;57m"
 TTY_LOGO_5="\033[38;5;27m"
 
 # Error message
-ERR="\n"$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
+ERR=""$TTY_ERROR""$TTY_BOLD"ERROR"$TTY_RESET""
 
 # Error codes
-EPERM=1   # Operation not permitted
-ENOENT=2  # No such file or directory
-ENOEXEC=8 # Exec format error
-ENODEV=19 # No such device
-EINVAL=22 # Invalid argument
-ENOPKG=65 # Package not installed
+EPERM=1     # Operation not permitted
+ENOENT=2    # No such file or directory
+ENOEXEC=8   # Exec format error
+ENODEV=19   # No such device
+EINVAL=22   # Invalid argument
+ENOPKG=65   # Package not installed
+ENOTSUP=95  # Operation not supported
 
 # Filenames/Dirnames
 CMAKE_FILENAME="CMakeCache.txt"
@@ -60,10 +61,12 @@ BUILD_HOST_DIRNAME="build-host"
 
 # Logical cores count, cross platform
 N_PROC=$(
-    nproc 2>/dev/null ||                   # Linux
-    sysctl -n hw.logicalcpu 2>/dev/null || # macOS 
-    getconf _NPROCESSORS_ONLN 2>/dev/null  # POSIX
+    nproc 2>/dev/null ||                      # Linux
+    sysctl -n hw.logicalcpu 2>/dev/null ||    # macOS
+    getconf _NPROCESSORS_ONLN 2>/dev/null ||  # POSIX
+    echo 1                                    # Fallback to 1 core
 )
+OS=$(uname -s)
 
 ################################################################################
 ##############################    Global States   ##############################
@@ -86,185 +89,70 @@ found_clangformat=false
 found_stflash=false
 found_stlink=false
 
+config_build_dir=
+config_host=false
+config_debug=false
+config_verbose=false
+config_reset=false
+config_jobs=$N_PROC
+
+# Set to true if a target is required for the build command (e.g. flash, run)
+target_required=false
+
 ################################################################################
 ##############################       Banner       ##############################
 ################################################################################
 
-banner="
+banner="\
 $TTY_LOGO_1              _____ ____ _____
 $TTY_LOGO_2 ___________ / ___// __ ) ___/  ________________________________
 $TTY_LOGO_3 __________  \__ \/ __  \__ \  _________________________________
 $TTY_LOGO_4 _________  ___/ / /_/ /__/ / ____________________________v4.0__
 $TTY_LOGO_5           /____/_____/____/
-$TTY_RESET
-"
+$TTY_RESET"
 
 print_configuration() {
-	step "Dependencies"
+    step "Dependencies"
 
-	yf=""$TTY_SUCCESS""$TTY_BOLD"Yes"$TTY_RESET""
-	nf=""$TTY_ERROR""$TTY_BOLD"No"$TTY_RESET""
+    yf=""$TTY_SUCCESS""$TTY_BOLD"Yes"$TTY_RESET""
+    nf=""$TTY_ERROR""$TTY_BOLD"No"$TTY_RESET""
 
-	printf "cmake:               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
-	printf "arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
-	printf "ccache:              "; [ "$found_ccache" = true      ] && printf "$yf\n" || printf "$nf\n"
-	printf "ninja:               "; [ "$found_ninja" = true       ] && printf "$yf\n" || printf "$nf\n"
-	printf "python:              "; [ "$found_python" = true      ] && printf "$yf\n" || printf "$nf\n"
-	printf "cppcheck:            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
-	printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
-	printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
+    printf "cmake:               "; [ "$found_cmake" = true       ] && printf "$yf\n" || printf "$nf\n"
+    printf "arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true   ] && printf "$yf\n" || printf "$nf\n"
+    printf "ccache:              "; [ "$found_ccache" = true      ] && printf "$yf\n" || printf "$nf\n"
+    printf "ninja:               "; [ "$found_ninja" = true       ] && printf "$yf\n" || printf "$nf\n"
+    printf "python:              "; [ "$found_python" = true      ] && printf "$yf\n" || printf "$nf\n"
+    printf "cppcheck:            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
+    printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
+    printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
 
-	printf "flasher:             ";
-	if [ "$found_stflash" = true ]; then
-		printf ""$TTY_FOUND""$TTY_BOLD"st-flash"$TTY_RESET"\n"
-	elif [ "$found_stlink" = true ]; then
-		printf ""$TTY_FOUND""$TTY_BOLD"st-link"$TTY_RESET"\n"
-	else
-		printf "$nf\n"
-	fi
-}
-
-check_build() {
-    declare host_build=$1
-
-    [ "$found_cmake" = true ] || { printf ""$ERR": CMake must be installed\n"; return $ENOPKG; }
-
-    if [ "$host_build" = false ]; then
-        [ "$found_miosixgpp" = true ] || { printf ""$ERR": arm-miosix-eabi-g++ must be installed\n"; return $ENOPKG; }
-    fi
-}
-
-################################################################################
-##############################         CLI        ##############################
-################################################################################
-
-# Filter all the arguments that are flags
-# The syntax is: filter_flags "arg1" "arg2" ... "argN"
-# Returns a list of flags in the form "--flag=value" or "--flag"
-filter_flags() {
-    flags=()
-    prev_is_flag=false
-
-    for arg in "$@"; do
-        if [[ "$arg" == -* ]]; then
-            flags+=("$arg")
-            prev_is_flag=true
-        else
-            if [ "$prev_is_flag" = true ]; then
-                # if the previous argument was a flag, then this is a flag value
-                flags[-1]="${flags[-1]}=$arg"
-            fi
-
-            prev_is_flag=false
-        fi
-    done
-
-    echo "${flags[@]}"
-}
-
-
-# Filter all the arguments that are not flags
-filter_args() {
-    args=()
-    prev_is_flag=false
-
-    for arg in "$@"; do
-        if [[ "$arg" == -* ]]; then
-            prev_is_flag=true
-        elif [ "$prev_is_flag" = true ]; then
-            prev_is_flag=false
-        else
-            args+=("$arg")
-        fi
-    done
-
-    echo "${args[@]}"
-}
-
-# Checks that no unknown flags are passed
-# The syntax is: cmd_flags "known_flags" "flags"
-cmd_flags() {
-    known_flags=("${!1}")
-    flags=("${!2}")
-
-    for flag in "${flags[@]}"; do
-        # ignore ''
-        if [ -z "$flag" ]; then
-            continue
-        fi
-
-        found=false
-        for known_flag in "${known_flags[@]}"; do
-            # if the know_flag is of type --flag=, allow flags with value
-            if [[ "$known_flag" == *= ]]; then
-                if [[ "$flag" == "$known_flag"* ]]; then
-                    found=true
-                    break
-                fi
-            else
-                if [ "$flag" == "$known_flag" ]; then
-                    found=true
-                    break
-                fi
-            fi
-        done
-
-        if [ "$found" = false ]; then
-            printf ""$ERR": Unknown flag $flag\n"
-            return $EINVAL
-        fi
-    done
-}
-
-# Checks that no more than a certain number of arguments are passed
-# The syntax is: cmd_args "max_args" "arg1" "arg2" ... "argN"
-cmd_args() {
-    max_args=$1
-    shift
-    args=("${!1}")
-    if [ "${#args[@]}" -gt "$max_args" ]; then
-        printf ""$ERR": Too many arguments\n"
-        return $EINVAL
-    fi
-}
-
-# Checks if a flag exists in the list of flags
-# The syntax is: flag_exists "flag" "flag1" "flag2" ... "flagN"
-flag_exists() {
-    flag=$1
-    shift
-    flags=("${!1}")
-
-    if [[ " ${flags[@]} " =~ " ${flag} " ]]; then
-        echo "true"
+    printf "flasher:             ";
+    if [ "$found_stflash" = true ]; then
+        printf ""$TTY_FOUND""$TTY_BOLD"st-flash"$TTY_RESET"\n"
+    elif [ "$found_stlink" = true ]; then
+        printf ""$TTY_FOUND""$TTY_BOLD"st-link"$TTY_RESET"\n"
     else
-        echo "false"
+        printf "$nf\n"
     fi
-}
-
-# Get the value of a flag
-# The syntax is: get_flag_value "possible_flags" "flags"
-get_flag_value() {
-    possible_flags=("${!1}")
-    flags=("${!2}")
-
-    for flag in "${flags[@]}"; do
-        for possible_flag in "${possible_flags[@]}"; do
-            if [[ "$flag" == "$possible_flag"* ]]; then
-                # strip the value from the flag
-                echo "${flag#*=}"
-                return
-            fi
-        done
-    done
 }
 
 # Print a step message
 step() {
-	printf "\n"$TTY_STEP""$TTY_BOLD"$1"$TTY_RESET"\n"
-	# Print - for every letter in the pre string
-	for (( i=0; i<${#1}; i++ )); do printf -- "-"; done;
-	printf "\n";
+    printf "\n"$TTY_STEP""$TTY_BOLD"$1"$TTY_RESET"\n"
+    # Print - for every letter in the pre string
+    for (( i=0; i<${#1}; i++ )); do printf -- "-"; done;
+    printf "\n";
+}
+
+# Print an error message
+error() {
+    printf "\n"
+    printf "$ERR: $1\n" >&2
+}
+
+# Print an error message without top padding
+error_nopad() {
+    printf "$ERR: $1\n" >&2
 }
 
 ################################################################################
@@ -294,18 +182,6 @@ init_dirs() {
     toolchain_file="$sbs_base/libs/miosix-kernel/miosix/cmake/toolchain.cmake"
 }
 
-# Get the build options for cmake
-# The syntax is: get_build_opts "opts" "jobs"
-get_build_opts() {
-    build_opts=()
-    jobs=$2
-
-    if [ -n "$jobs" ]; then
-        echo "- Building with $jobs jobs"
-        build_opts+=("-j $jobs")
-    fi
-}
-
 # workaround: disable tests in excluded subdirectories
 # see: https://gitlab.kitware.com/cmake/cmake/-/issues/20212
 cmake_disable_excluded_tests() {
@@ -314,28 +190,35 @@ cmake_disable_excluded_tests() {
     [ ! -f "$build_dir/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$build_dir/$CTEST_FILENAME"
 }
 
-################################################################################
-##############################     Subcommands    ##############################
-################################################################################
+check_build_env() {
+    [ "$found_cmake" = true ] || { error "CMake must be installed"; return $ENOPKG; }
+
+    if [ "$config_host" = false ]; then
+        [ "$found_miosixgpp" = true ] || { error "arm-miosix-eabi-g++ must be installed"; return $ENOPKG; }
+    fi
+}
 
 # Check if the project is configured
-# The syntax is: check_configured "config_debug" "config_verbose" "config_host"
+# Ensure the following variables are properly set before calling this:
+# config_build_dir, config_debug, config_verbose, config_host
 check_configured() {
-    build_dir="$1"
-    config_debug="$2"
-    config_verbose="$3"
-    config_host="$4"
-
     to_reconfigure=false
 
-    if [ ! -d "$build_dir" ]; then
+    # Ensure config_build_dir is set. If you see this, fix the subcommand
+    # by populating the variable before calling this function
+    if [ -z "$config_build_dir" ]; then
+        error "Build directory not set, this is an SBS bug"
+        return $ENOENT
+    fi
+
+    if [ ! -d "$config_build_dir" ]; then
         to_reconfigure=true
-        elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
-        rm -rf "$build_dir"
+        elif [ ! -f "$config_build_dir/$CMAKE_FILENAME" ]; then
+        rm -rf "$config_build_dir"
         to_reconfigure=true
     else
-        [ -f "$build_dir/$DEBUG_FILENAME" ]   && found_debug=true   || found_debug=false
-        [ -f "$build_dir/$VERBOSE_FILENAME" ] && found_verbose=true || found_verbose=false
+        [ -f "$config_build_dir/$DEBUG_FILENAME" ]   && found_debug=true   || found_debug=false
+        [ -f "$config_build_dir/$VERBOSE_FILENAME" ] && found_verbose=true || found_verbose=false
         if [ "$config_debug" != "$found_debug" ] \
         || [ "$config_verbose" != "$found_verbose" ]; then
             to_reconfigure=true
@@ -350,7 +233,7 @@ check_configured() {
         printf "  - Verbose: %s\n" "$config_verbose"
         printf "  - Host:    %s\n" "$config_host"
 
-        [ -f "$toolchain_file" ] || { printf ""$ERR": CMake Toolchain File for Miosix was not found\n"; return $ENOPKG1; }
+        [ -f "$toolchain_file" ] || { error "CMake toolchain file for Miosix was not found"; return $ENOPKG1; }
 
         declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
         defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
@@ -362,53 +245,10 @@ check_configured() {
         declare gen
         [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
 
-        cmake -B "$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
+        cmake -B "$config_build_dir" "${defs[@]}" "$gen" "$source_dir" || return
 
-        { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
-        { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
-    fi
-}
-
-build_impl() {
-    target="$1"
-    build_dir="$2"
-    config_debug="$3"
-    config_verbose="$4"
-    config_host="$5"
-
-    check_build "$config_host" || return
-
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
-    step "Build"
-
-    declare opts
-    get_build_opts opts $jobs
-
-    cmake --build "$build_dir" --target "$target" "${opts[@]}"
-}
-
-flash_impl() {
-    target="$1"
-    build_dir="$2"
-    reset="$3"
-
-    # check if the target is flashable
-    [ -f "$build_dir/$target.bin" ] || { printf ""$ERR": target '$target' is not flashable"; return $ENOEXEC; }
-
-    # flash the target
-    step "Flash"
-
-    declare -a flash_opts
-    [ "$reset" = true ] && flash_opts+=("--connect-under-reset")
-
-    if [ "$found_stflash" = true ]; then
-        st-flash --reset "${flash_opts[@]}" write "$build_dir/$target.bin" 0x8000000
-    elif [ "$found_stlink" = true ]; then
-        ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
-    else
-        printf ""$ERR": No flashing software found!\n"
-        return $ENOPKG
+        { [ "$config_debug" = true ]   && touch "$config_build_dir/$DEBUG_FILENAME";   } || rm -f "$config_build_dir/$DEBUG_FILENAME"
+        { [ "$config_verbose" = true ] && touch "$config_build_dir/$VERBOSE_FILENAME"; } || rm -f "$config_build_dir/$VERBOSE_FILENAME"
     fi
 }
 
@@ -455,7 +295,7 @@ lint_cppcheck() {
     cppcheck --language=c++ --std=c++14 --enable=all --inline-suppr \
         --suppress=unmatchedSuppression --suppress=unusedFunction \
         --suppress=missingInclude --error-exitcode=1 -q \
-        -Ilibs/socrate/include -Iskyward-boardcore/libs/socrate/include \
+        -I$sbs_base/libs/socrate/include \
         "$source_dir/src"
 }
 
@@ -466,11 +306,11 @@ lint_clangformat() {
 
     opts=(--style=file --Werror --dry-run)
 
-    # find all the source files
+    # Find all the source files
     declare files=$(find "$source_dir/src" \
     -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \))
 
-    # count files and spread them evenly across cores: files / nproc + 1
+    # Count files and spread them evenly across cores: files / nproc + 1
     declare files_per_proc=$(
         echo "$files" | wc -l | \
         xargs -I {} bash -c "expr \( {} / $N_PROC \) + 1"
@@ -480,123 +320,117 @@ lint_clangformat() {
 }
 
 ################################################################################
-##############################   Native Commands  ##############################
+###############################   Subcommands  #################################
 ################################################################################
 
 build() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+    # Parse build arguments
+    for arg in "$@"; do
+        case $arg in
+            -d|--debug) config_debug=true ;;
+            -v|--verbose) config_verbose=true ;;
+            -j|--jobs=*) config_jobs="${arg#*=}" ;;
+            -*) error "Unknown argument: $arg"; return $EINVAL ;;
+            *) target="$arg" ;;
+        esac
+    done
 
-    jobs_flag=("-j" "--jobs")
-    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 args[@] || return
-
-    jobs=$(get_flag_value jobs_flag[@] flags[@])
-
-    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
-    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
     config_host=false
+    config_build_dir="$build_default_dir"
 
-    build_dir="$build_default_dir"
+    # Use the default "all" target if none was specified
+    if [ -z "$target" ]; then
+        if [ "$target_required" = true ]; then
+            error "No target specified"
+            return $ENOENT
+        else
+            target="all"
+        fi
+    fi
 
-    target=${args[0]:-all}
+    check_build_env || return
+    check_configured || return
 
-    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host"
-}
-
-clean() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
-
-    known_flags=()
-
-    step "Clean"
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 args[@] || return
-
-    echo "Cleaning build directories..."
-    rm -rf "$build_default_dir"
-    rm -rf "$build_host_dir"
+    step "Build"
+    cmake --build "$config_build_dir" --target "$target" -- -j"$config_jobs"
 }
 
 flash() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+    # Parse flash arguments
+    unhandled_args=()
+    for arg in "$@"; do
+        case $arg in
+            -r|--reset) config_reset=true ;;
+            *) unhandled_args+=("$arg") ;;
+        esac
+    done
+    set -- "${unhandled_args[@]}"
 
-    jobs_flag=("-j" "--jobs")
-    known_flags=("-d" "-v" "-r" "-j=" "--debug" "--verbose" "--reset" "--jobs=")
+    # Require a target for flashing
+    target_required=true
+    build "$@" || return
 
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 args[@] || return
+    # Check if the target is flashable
+    [ -f "$config_build_dir/$target.bin" ] || { error "Target '$target' is not flashable"; return $ENOEXEC; }
 
-    build_dir="$build_default_dir"
+    # Flash the target
+    step "Flash"
 
-    jobs=$(get_flag_value jobs_flag[@] flags[@])
+    declare -a flash_opts
+    [ "$config_reset" = true ] && flash_opts+=("--connect-under-reset")
 
-    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
-    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
-    [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
-    config_host=false
-
-    target=${args[0]}
-
-    if [ -z "$target" ]; then
-        printf ""$ERR": No target specified\n"
-        return $ENOENT
+    if [ "$found_stflash" = true ]; then
+        st-flash --reset "${flash_opts[@]}" write "$config_build_dir/$target.bin" 0x8000000
+    elif [ "$found_stlink" = true ]; then
+        ST-LINK_CLI.exe -P "$config_build_dir/$target.bin" 0x8000000 -V -Rst
+    else
+        error "No flashing software found"
+        return $ENOPKG
     fi
-
-    # build the target
-    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
-    # flash the target
-    flash_impl "$target" "$build_dir" "$reset"
 }
 
 run() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+    # Parse run arguments
+    unhandled_args=()
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -D|--device) shift; [ -n "$1" ] && device="$1" && shift ;;
+            -D=*|--device=*) device="${1#*=}"; shift ;;
+            -B|--baudrate) shift; [ -n "$1" ] && baudrate="$1" && shift ;;
+            -B=*|--baudrate=*) baudrate="${1#*=}"; shift ;;
+            *) unhandled_args+=("$1"); shift ;;
+        esac
+    done
+    set -- "${unhandled_args[@]}"
 
-    jobs_flag=("-j" "--jobs")
-    device_flag=("-D" "--device")
-    baudrate_flag=("-B" "--baudrate")
-    known_flags=("-d" "-v" "-r" "-D=" "-B=" "-j=" "--debug" "--verbose" "--reset" "--device=" "--baudrate=" "--jobs=")
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 args[@] || return
-
-    build_dir="$build_default_dir"
-
-    jobs=$(get_flag_value jobs_flag[@] flags[@])
-
-    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
-    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
-    [ "$(flag_exists "-r" flags[@])" = true ] || [ "$(flag_exists "--reset"   flags[@])" = true ] && reset=true          || reset=false
-    config_host=false
-
-    target=${args[0]}
-
-    if [ -z "$target" ]; then
-        printf ""$ERR": No target specified\n"
-        return $ENOENT
-    fi
-
-    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
-
-    flash_impl "$target" "$build_dir" "$reset" || return
-
-    device=$(get_flag_value device_flag[@] flags[@])
-    baudrate=$(get_flag_value baudrate_flag[@] flags[@])
-
-    # If no device was specified, try to find it based on what we commonly use
+    # Try some heuristics to select a serial device if not specified
     if [ -z "$device" ]; then
-        if [ -e "/dev/ttyACM0" ]; then
-            device="/dev/ttyACM0"
-        elif [ -e "/dev/ttyUSB0" ]; then
-            device="/dev/ttyUSB0"
-        else
-            printf ""$ERR": No device specified and no default device found\n"
+        device_patterns=(
+            "/dev/ttyACM*"
+            "/dev/ttyUSB*"
+            "/dev/cu.usb*"
+            "/dev/tty.usb*"
+        )
+
+        # Enable nullglob to ensure globs that don't match expand to nothing
+        shopt -s nullglob
+
+        for pattern in "${device_patterns[@]}"; do
+            # Expand the current pattern into an array
+            matching_devices=( $pattern )
+
+            # Take the first matching device if any were found
+            if (( ${#matching_devices[@]} > 0 )); then
+                device="${matching_devices[0]}"
+                break
+            fi
+        done
+
+        # Disable nullglob
+        shopt -u nullglob
+
+        if [ -z "$device" ]; then
+            error "No serial device specified and none could be autodetected"
             return $ENODEV
         fi
     fi
@@ -604,97 +438,128 @@ run() {
     # Set Skyward's default baudrate, if none was specified
     if [ -z "$baudrate" ]; then
         baudrate="115200"
+    else
+        # Ensure baudrate is a valid number
+        if ! [[ "$baudrate" =~ ^[0-9]+$ ]]; then
+            error "Invalid baudrate: $baudrate"
+            return $EINVAL
+        fi
     fi
 
+    # Set port settings early to reduce connection delay after flashing
+    # TTY devices use \r\n for newlines by default
+    # Disable newlines on \r with `-icrnl` to avoid double newlines
+    if [ "$OS" = "Linux" ]; then
+        stty --file "$device" "$baudrate" -icrnl || return
+    elif [ "$OS" = "Darwin" ]; then
+        # macOS restores port settings to default when the port is closed
+        # so we need to open it, set it up and then read from it
+        exec 3<>$device
+        stty -f "$device" "$baudrate" -icrnl || { exec 3<&-; return 1; }
+    else
+        error "Run command not supported on this OS: $OS"
+        return $ENOTSUP
+    fi
+
+    # Flash the target
+    flash "$@" || return
+
     step "Run - $device @ $baudrate"
+    
+    # OS specific behavior
+    if [ "$OS" = "Linux" ]; then
+        cat "$device"
+    elif [ "$OS" = "Darwin" ]; then
+        cat <&3
+        # Close the fd
+        exec 3<&-
+    fi
+}
 
-    # tty devices use \r\n for newlines by default
-    # disable newlines on \r with `-icrnl` to avoid double newlines
-    stty --file $device $baudrate -icrnl || return
+clean() {
+    # Parse build arguments
+    for arg in "$@"; do
+        case $arg in
+            *) error "Unknown argument: $arg"; return $EINVAL ;;
+        esac
+    done
 
-    # connect to the device
-    cat $device
+    step "Clean"
+
+    echo "Cleaning build directories..."
+    rm -rf "$build_default_dir"
+    rm -rf "$build_host_dir"
+    echo "Done."
 }
 
 test() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
+    # Parse test arguments
+    for arg in "$@"; do
+        case $arg in
+            -d|--debug) config_debug=true ;;
+            -v|--verbose) config_verbose=true ;;
+            -j|--jobs=*) config_jobs="${arg#*=}" ;;
+            -*) error "Unknown argument: $arg"; return $EINVAL ;;
+            *) target="$arg" ;;
+        esac
+    done
 
-    jobs_flag=("-j" "--jobs")
-    known_flags=("-d" "-v" "-j=" "--debug" "--verbose" "--jobs=")
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 args[@] || return
-
-    build_dir="$build_host_dir"
-
-    jobs=$(get_flag_value jobs_flag[@] flags[@])
-
-    [ "$(flag_exists "-d" flags[@])" = true ] || [ "$(flag_exists "--debug"   flags[@])" = true ] && config_debug=true   || config_debug=false
-    [ "$(flag_exists "-v" flags[@])" = true ] || [ "$(flag_exists "--verbose" flags[@])" = true ] && config_verbose=true || config_verbose=false
     config_host=true
+    config_build_dir="$build_host_dir"
 
-    target=${args[0]:-catch-tests-boardcore}
-
+    # If target wasn't previously set, use the default one
     if [ -z "$target" ]; then
-        printf ""$ERR": No target specified\n"
-        return $ENOENT
+        target="catch-tests-boardcore"
     fi
 
-    # build the target
-    build_impl "$target" "$build_dir" "$config_debug" "$config_verbose" "$config_host" || return
+    # Build the target
+    check_build_env || return
+    check_configured || return
 
-    # run the tests
+    step "Build (Host)"
+    cmake --build "$config_build_dir" --target "$target" -- -j"$config_jobs" || return
+
+    # Run the tests
     step "Test"
 
-    cmake_disable_excluded_tests "$build_dir"
-    ( cd "$build_dir" || return; ctest )
+    cmake_disable_excluded_tests
+    ( cd "$config_build_dir" || return; ctest )
 }
 
 list() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
-
-    known_flags=()
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 1 args[@] || return
-
     config_debug=false
     config_verbose=false
     config_host=false
-    build_dir="$build_default_dir"
+    config_build_dir="$build_default_dir"
 
-    list_type=${args[0]}
+    list_type="$1"
 
     if [ -z "$list_type" ]; then
-        printf ""$ERR": No list type specified\n"
+        error_nopad "No list type specified"
         return $EINVAL
     fi
 
-    check_build "$config_host" || return
-
-    check_configured "$build_dir" "$config_debug" "$config_verbose" "$config_host" &> /dev/null || return
+    check_build_env &> /dev/null || return
+    check_configured &> /dev/null || return
 
     if [ "$list_type" = "targets" ]; then
-        cmake --build "$build_dir" --target help \
+        cmake --build "$config_build_dir" --target help \
             | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
     elif [ "$list_type" = "boards" ]; then
-        cmake --build "$build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
+        cmake --build "$config_build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
     else
-        printf ""$ERR": Unknown list type $list_type\n"
+        error_nopad "Unknown list type: $list_type"
         return $EINVAL
     fi
 }
 
 lint() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
-
-    known_flags=()
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 args[@] || return
+    # Parse lint arguments
+    for arg in "$@"; do
+        case $arg in
+            *) error "Unknown argument: $arg"; return $EINVAL ;;
+        esac
+    done
 
     declare ret=0
 
@@ -732,16 +597,15 @@ lint() {
 }
 
 format() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
-
-    known_flags=()
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 args[@] || return
+    # Parse format arguments
+    for arg in "$@"; do
+        case $arg in
+            *) error "Unknown argument: $arg"; return $EINVAL ;;
+        esac
+    done
 
     if [ "$found_clangformat" = false ]; then
-        printf ""$ERR": clang-format must be installed\n"
+        error "clang-format must be installed"
         return $ENOPKG
     fi
 
@@ -751,11 +615,11 @@ format() {
 
     opts=(--style=file --Werror -i)
 
-    # find all the source files
+    # Find all the source files
     declare files=$(find "$source_dir/src" \
     -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \))
 
-    # count files and spread them evenly across cores: files / nproc + 1
+    # Count files and spread them evenly across cores: files / nproc + 1
     declare files_per_proc=$(
         echo "$files" | wc -l | \
         xargs -I {} bash -c "expr \( {} / $N_PROC \) + 1"
@@ -787,12 +651,11 @@ help() {
     echo ""
     echo "Options:"
     echo " -d, --debug:    Build in debug mode"
-    echo " -v, --verbose:  Build in verbose mode"
-    echo " -r, --reset:    Reset the target before flashing"
+    echo " -v, --verbose:  Print verbose output during build"
+    echo " -r, --reset:    Force connect under reset when flashing"
     echo " -j, --jobs:     Number of jobs to run in parallel"
-    echo " -D, --device:   Serial device to connect to (default: /dev/ttyACM0 or /dev/ttyUSB0)"
+    echo " -D, --device:   Serial device to connect to (tries to autodetect if not specified)"
     echo " -B, --baudrate: Baudrate for the serial device (default: 115200)"
-    echo ""
 }
 
 ################################################################################
@@ -801,18 +664,17 @@ help() {
 
 
 install() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
-
-    known_flags=()
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 args[@] || return
+    # Parse install arguments
+    for arg in "$@"; do
+        case $arg in
+            *) error "Unknown argument: $arg"; return $EINVAL ;;
+        esac
+    done
 
     step "Install autocomplete"
 
     if [ "$found_python" = false ]; then
-        printf ""$ERR": Python is required to install autocomplete\n"
+        error "Python is required to install autocomplete"
         return $ENOPKG
     fi
 
@@ -822,7 +684,7 @@ install() {
     declare ret=$?
     [ $ret -ne 0 ] && printf "$targets\n" && return $ret
 
-    # split the targets on newlines
+    # Split the targets on newlines
     IFS=$'\n' read -rd '' -a targets <<< "$targets"
 
     echo "Found ${#targets[@]} targets"
@@ -832,18 +694,17 @@ install() {
 }
 
 uninstall() {
-    IFS=' ' read -r -a flags <<< "$(filter_flags "$@")"
-    IFS=' ' read -r -a args <<< "$(filter_args "$@")"
-
-    known_flags=()
-
-    cmd_flags known_flags[@] flags[@] || return
-    cmd_args 0 args[@] || return
+    # Parse uninstall arguments
+    for arg in "$@"; do
+        case $arg in
+            *) error "Unknown argument: $arg"; return $EINVAL ;;
+        esac
+    done
 
     step "Uninstall autocomplete"
 
     if [ "$found_python" = false ]; then
-        printf ""$ERR": Python is required to uninstall autocomplete\n"
+        error "Python is required to uninstall autocomplete"
         return $ENOPKG
     fi
 
@@ -855,7 +716,7 @@ uninstall() {
 ##############################        Main        ##############################
 ################################################################################
 
-# exit immediately if no argument was provided
+# Exit immediately if no argument was provided
 if [ "$#" -eq 0 ]; then
     help
     exit $EINVAL
@@ -866,22 +727,21 @@ welcome() {
     print_configuration
 }
 
-# populate global variables for all commands
+# Populate global variables for all commands
 find_deps
 init_dirs
 
-for arg in "$@"; do
-    case $arg in
-        build)     welcome; build "${@:2}"; exit ;;
-        clean)     welcome; clean "${@:2}"; exit ;;
-        flash)     welcome; flash "${@:2}"; exit ;;
-        run)       welcome; run   "${@:2}"; exit ;;
-        test)      welcome; test  "${@:2}"; exit ;;
-        lint)      welcome; lint  "${@:2}"; exit ;;
-        format)    welcome; format; exit ;;
-        install)   welcome; install; exit ;;
-        uninstall) welcome; uninstall; exit ;;
-        list)      list  "${@:2}"; exit ;;
-        *)         help; exit $EINVAL;;
-    esac
-done
+case $1 in
+    build)     welcome; shift; build "$@"; exit $? ;;
+    clean)     welcome; shift; clean "$@"; exit $? ;;
+    flash)     welcome; shift; flash "$@"; exit $? ;;
+    run)       welcome; shift; run "$@"; exit $? ;;
+    test)      welcome; shift; test "$@"; exit $? ;;
+    lint)      welcome; shift; lint "$@"; exit $? ;;
+    format)    welcome; shift; format "$@"; exit $? ;;
+    install)   welcome; shift; install "$@"; exit $? ;;
+    uninstall) welcome; shift; uninstall "$@"; exit $? ;;
+    list)      shift; list "$@"; exit $? ;;
+    help)      help; exit 0 ;;
+    *)         error_nopad "'$1' is not a SBS command. See 'sbs help'." ; exit $EINVAL ;;
+esac
