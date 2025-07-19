@@ -26,6 +26,8 @@
 #include <miosix.h>
 #include <utils/collections/IRQCircularBuffer.h>
 
+#include <chrono>
+
 #include "CanDriverData.h"
 #include "Filters.h"
 
@@ -134,8 +136,11 @@ public:
 
     /**
      * @brief Exits initialization mode and starts CanBus operation.
+     *
+     * @return true if the bus was successfully initialized.
      */
-    void init();
+    bool init(
+        std::chrono::milliseconds timeout = std::chrono::milliseconds::zero());
 
     /**
      * @brief Adds a new filter to the bus, or returns false if there are no

@@ -32,6 +32,8 @@
 #include "CanInterrupt.h"
 #include "diagnostic/PrintLogger.h"
 
+using namespace std::chrono;
+
 namespace Boardcore
 {
 
@@ -128,7 +130,7 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     else
     {
         PrintLogger ls = l.getChild("constructor");
-        LOG_ERR(ls, "Not supported peripheral");
+        LOG_ERR(ls, "Unsupported peripheral");
     }
 }
 
@@ -209,25 +211,38 @@ CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
     return cfgOpt;
 }
 
-void CanbusDriver::init()
+bool CanbusDriver::init(std::chrono::milliseconds timeout)
 {
     if (isInit)
-        return;
+        return true;
 
     PrintLogger ls = l.getChild("init");
 
     can->FMR &= ~CAN_FMR_FINIT;  // Exit filter init mode
     can->MCR &= ~CAN_MCR_INRQ;   // Enable canbus
 
+    LOG_DEBUG(ls, "Waiting for CAN bus synchronization...");
+
+    auto timeoutTs = timeout == milliseconds::zero()
+                         ? steady_clock::time_point::max()
+                         : steady_clock::now() + timeout;
+
     // Wait until the can peripheral synchronizes with the bus
-
-    LOG_DEBUG(ls, "Waiting for canbus synchronization...");
     while ((can->MSR & CAN_MSR_INAK) > 0)
+    {
+        if (steady_clock::now() > timeoutTs)
+        {
+            LOG_ERR(ls, "CAN bus synchronization timed out after {} ms",
+                    timeout.count());
+            return false;
+        }
         Thread::sleep(1);
+    }
 
-    LOG_INFO(ls, "Canbus synchronized! Init done!");
+    LOG_INFO(ls, "CAN bus synchronized, init done!");
 
     isInit = true;
+    return true;
 }
 
 bool CanbusDriver::addFilter(FilterBank filter)
@@ -241,7 +256,7 @@ bool CanbusDriver::addFilter(FilterBank filter)
 
     if (isInit)
     {
-        LOG_ERR(ls, "Cannot add filter: canbus already initialized");
+        LOG_ERR(ls, "Cannot add filter: CAN bus already initialized");
         return false;
     }
 
@@ -274,7 +289,7 @@ uint32_t CanbusDriver::send(CanPacket packet)
 
     if (!isInit)
     {
-        LOG_ERR(ls, "Canbus is not initialized!");
+        LOG_ERR(ls, "CAN bus is not initialized!");
         return 0;
     }
 
@@ -307,7 +322,7 @@ uint32_t CanbusDriver::send(CanPacket packet)
 
     if (mbxCode > 2)
     {
-        LOG_ERR(ls, "Error! Invalid TSR_CODE!");
+        LOG_ERR(ls, "Invalid TSR_CODE!");
         return 0;
     }
 
