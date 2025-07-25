@@ -181,6 +181,60 @@ public:
         PARITY    = 1
     };
 
+    struct __attribute__((packed)) ICR
+    {
+        uint16_t reserved0 : 14 = 0;
+        bool CMCF : 1           = 0;  ///< Character match clear flag
+        uint8_t reserved1 : 4   = 0;
+        bool EOBCF : 1          = 0;  ///< End of block clear flag
+        bool RTOCF : 1          = 0;  ///< Receiver timeout clear flag
+        uint8_t reserved2 : 1   = 0;
+        bool CTSCF : 1          = 0;  ///< CTS clear flag
+        bool LBDCF : 1          = 0;  ///< LIN break detection clear flag
+        uint8_t reserved3 : 1   = 0;
+        bool TCCF : 1           = 0;  ///< Transmit complete clear flag
+        uint8_t reserved4 : 1   = 0;
+        bool IDLECF : 1         = 0;  ///< Idle clear flag
+        bool ORECF : 1          = 0;  ///< Overrun error clear flag
+        bool NCF : 1            = 0;  ///< Noise detected clear flag
+        bool FECF : 1           = 0;  ///< Framing error clear flag
+        bool PECF : 1           = 0;  ///< Parity error clear flag
+
+        operator uint32_t() const
+        {
+            return *reinterpret_cast<const uint32_t*>(this);
+        }
+    };
+    static_assert(sizeof(ICR) == sizeof(uint32_t), "ICR struct size mismatch");
+
+    struct __attribute__((packed)) ISR
+    {
+        uint16_t reserved0 : 10;
+        bool TEACK : 1;  ///< Transmit enable acknowledge flag
+        uint8_t reserved1 : 1;
+        bool RWU : 1;   ///< Receiver wakeup from mute mode
+        bool SBKF : 1;  ///< Send break flag
+        bool CMF : 1;   ///< Character match flag
+        bool BUSY : 1;  ///< Busy flag
+        bool ABRF : 1;  ///< Auto baud rate flag
+        bool ABRE : 1;  ///< Auto baud rate error
+        uint8_t reserved2 : 1;
+        bool EOBF : 1;   ///< End of block flag
+        bool RTOF : 1;   ///< Receiver timeout
+        bool CTS : 1;    ///< CTS flag
+        bool CTSIF : 1;  ///< CTS interrupt flag
+        bool LBDF : 1;   ///< LIN break detection flag
+        bool TXE : 1;    ///< Transmit data register empty
+        bool TC : 1;     ///< Transmission complete
+        bool RXNE : 1;   ///< Read data register not empty
+        bool IDLE : 1;   ///< Idle line detected
+        bool ORE : 1;    ///< Overrun error
+        bool NF : 1;     ///< START bit noise detection flag
+        bool FE : 1;     ///< Framing error
+        bool PE : 1;     ///< Parity error
+    };
+    static_assert(sizeof(ISR) == sizeof(uint32_t), "ISR struct size mismatch");
+
     /**
      * @brief Interrupt handler that deals with receive and idle interrupts.
      *
@@ -341,6 +395,9 @@ private:
     miosix::Thread* rxWaiter =
         nullptr;  ///< The thread that is waiting to receive data
 
+    std::unique_ptr<miosix::Queue<ISR, 1024>> isrQueue =
+        std::make_unique<miosix::Queue<ISR, 1024>>();  ///< Queue for ISR events
+
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
     bool idle             = true;          ///< Receiver idle
     ParityBit parity      = ParityBit::NO_PARITY;
@@ -440,3 +497,6 @@ private:
 };
 
 }  // namespace Boardcore
+
+std::string to_string(Boardcore::USART::ISR isr);
+

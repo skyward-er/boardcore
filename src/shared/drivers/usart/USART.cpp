@@ -29,6 +29,7 @@
 
 #include <fstream>
 #include <string>
+#include <thread>
 
 #include "arch/common/drivers/serial.h"
 #include "filesystem/file_access.h"
@@ -323,13 +324,16 @@ void USART::IRQhandleInterrupt()
     // Always read data, since this clears interrupt flags
     c = usart->DR;
 #else
+    auto isr = ISR{usart->ISR};
+    isrQueue->IRQput(isr);
+
     // If read data register is empty then read data
     received = ((usart->ISR & USART_ISR_RXNE) == 0 ? false : true);
     // If no error put data in buffer
     framingError = ((usart->ISR & USART_ISR_FE) == 0 ? false : true);
     idle         = ((usart->ISR & USART_ISR_IDLE) == 0 ? false : true);
     // Clears interrupt flags
-    usart->ICR = USART_ICR_IDLECF;
+    usart->ICR = USART_ICR_IDLECF | USART_ICR_FECF;
     // Always read data, since this clears interrupt flags
     c = usart->RDR;
 #endif
@@ -395,6 +399,20 @@ USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
 
     // Clearing the queue for random data read at the beginning
     this->clearQueue();
+
+    std::thread(
+        [this]
+        {
+            while (true)
+            {
+                ISR isr{};
+                isrQueue->get(isr);
+
+                fmt::print("{}| ISR flags: ", miosix::getTime() / 1000000,
+                           to_string(isr));
+            }
+        })
+        .detach();
 }
 
 USART::~USART()
@@ -743,3 +761,37 @@ void STM32SerialWrapper::writeString(const char* buffer)
 }
 
 }  // namespace Boardcore
+
+// Print the ISR flags as string, print the flag name if set on a single line
+std::string to_string(Boardcore::USART::ISR isr)
+{
+    std::string result;
+
+    // clang-format off
+    if (isr.TEACK)  result += "TEACK ";
+    if (isr.RWU)    result += "RWU ";
+    if (isr.SBKF)   result += "SBKF ";
+    if (isr.CMF)    result += "CMF ";
+    if (isr.BUSY)   result += "BUSY ";
+    if (isr.ABRF)   result += "ABRF ";
+    if (isr.ABRE)   result += "ABRE ";
+    if (isr.EOBF)   result += "EOBF ";
+    if (isr.RTOF)   result += "RTOF ";
+    if (isr.CTS)    result += "CTS ";
+    if (isr.CTSIF)  result += "CTSIF ";
+    if (isr.LBDF)   result += "LBDF ";
+    if (isr.TXE)    result += "TXE ";
+    if (isr.TC)     result += "TC ";
+    if (isr.RXNE)   result += "RXNE ";
+    if (isr.IDLE)   result += "IDLE ";
+    if (isr.ORE)    result += "ORE ";
+    if (isr.NF)     result += "NF ";
+    if (isr.FE)     result += "FE ";
+    if (isr.PE)     result += "PE ";
+    // clang-format on
+
+    if (auto size = result.size(); size > 0)
+        result.resize(size - 1);  // Remove the last space
+
+    return result;
+}
