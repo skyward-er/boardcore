@@ -343,6 +343,9 @@ private:
     miosix::Thread* rxWaiter =
         nullptr;  ///< The thread that is waiting to receive data
 
+    std::unique_ptr<miosix::Queue<uint32_t, 1024>> isrQueue =
+        std::make_unique<miosix::Queue<uint32_t, 1024>>();  ///< Queue for ISR events
+
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
     bool idle             = true;          ///< Receiver idle
     ParityBit parity      = ParityBit::NO_PARITY;

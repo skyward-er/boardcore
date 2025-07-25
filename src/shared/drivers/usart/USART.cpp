@@ -29,6 +29,7 @@
 
 #include <fstream>
 #include <string>
+#include <thread>
 
 #include "arch/common/drivers/serial.h"
 #include "filesystem/file_access.h"
@@ -323,6 +324,9 @@ void USART::IRQhandleInterrupt()
     // Always read data, since this clears interrupt flags
     c = usart->DR;
 #else
+    uint32_t isr = usart->ISR;
+    isrQueue->IRQput(isr);
+
     // If read data register is empty then read data
     received = ((usart->ISR & USART_ISR_RXNE) == 0 ? false : true);
     // If no error put data in buffer
@@ -356,6 +360,8 @@ void USART::IRQhandleInterrupt()
         }
     }
 }
+
+std::string isr_to_string(uint32_t isr);
 
 USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
     : USARTInterface(usart, baudrate), rxQueue(queueLen)
@@ -395,6 +401,21 @@ USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
 
     // Clearing the queue for random data read at the beginning
     this->clearQueue();
+
+    std::thread(
+        [this]
+        {
+            while (true)
+            {
+                uint32_t isr{};
+                isrQueue->get(isr);
+
+                fmt::print("{}| USART{} ISR flags: {} ({})\n",
+                           miosix::getTime() / 1000000000.f, this->id,
+                           to_string(isr), isr);
+            }
+        })
+        .detach();
 }
 
 USART::~USART()
@@ -741,6 +762,37 @@ void STM32SerialWrapper::writeString(const char* buffer)
 {
     // strlen + 1 in order to send the '/0' terminated string
     ::write(fd, buffer, strlen(buffer) + 1);
+}
+
+// Print the ISR flags as string, print the flag name if set on a single line
+std::string isr_to_string(uint32_t isr)
+{
+    std::string result;
+
+    // clang-format off
+    if (isr & USART_ISR_TEACK)  result += "TEACK ";
+    if (isr & USART_ISR_RWU)    result += "RWU ";
+    if (isr & USART_ISR_SBKF)   result += "SBKF ";
+    if (isr & USART_ISR_CMF)    result += "CMF ";
+    if (isr & USART_ISR_BUSY)   result += "BUSY ";
+    if (isr & USART_ISR_ABRF)   result += "ABRF ";
+    if (isr & USART_ISR_ABRE)   result += "ABRE ";
+    if (isr & USART_ISR_EOBF)   result += "EOBF ";
+    if (isr & USART_ISR_RTOF)   result += "RTOF ";
+    if (isr & USART_ISR_CTS)    result += "CTS ";
+    if (isr & USART_ISR_CTSIF)  result += "CTSIF ";
+    if (isr & USART_ISR_LBDF)   result += "LBDF ";
+    if (isr & USART_ISR_TXE)    result += "TXE ";
+    if (isr & USART_ISR_TC)     result += "TC ";
+    if (isr & USART_ISR_RXNE)   result += "RXNE ";
+    if (isr & USART_ISR_IDLE)   result += "IDLE ";
+    if (isr & USART_ISR_ORE)    result += "ORE ";
+    if (isr & USART_ISR_NE)     result += "NE ";
+    if (isr & USART_ISR_FE)     result += "FE ";
+    if (isr & USART_ISR_PE)     result += "PE ";
+    // clang-format on
+
+    return result;
 }
 
 }  // namespace Boardcore
