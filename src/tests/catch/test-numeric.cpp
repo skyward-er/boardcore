@@ -25,34 +25,44 @@
 #include <catch2/catch.hpp>
 #include <climits>
 
-using namespace Boardcore;
-
-TEST_CASE("Numeric - Saturating Add")
+TEST_CASE("Numeric - std::add_sat polyfill")
 {
-    constexpr int a = add_sat(3, 4);  // no saturation occurs, T = int
+    const int a = std::add_sat(3, 4);  // no saturation occurs, T = int
     REQUIRE(a == 7);
 
-    constexpr unsigned char b =
-        add_sat<unsigned char>(UCHAR_MAX, 4);  // saturated
+    const unsigned char b =
+        std::add_sat<unsigned char>(UCHAR_MAX, 4);  // saturated
     REQUIRE(b == UCHAR_MAX);
 
-    constexpr unsigned char c = static_cast<unsigned char>(
-        add_sat(UCHAR_MAX, 4));  // not saturated, T = int
-                                 // add_sat(int, int) returns int tmp == 259,
-                                 // then assignment truncates 259 % 256 == 3
+    const unsigned char c = static_cast<unsigned char>(std::add_sat(
+        UCHAR_MAX, 4));  // not saturated, T = int
+                         // std::add_sat(int, int) returns int tmp == 259,
+                         // then assignment truncates 259 % 256 == 3
     REQUIRE(c == 3);
 
-    constexpr unsigned char e = add_sat<unsigned char>(251, a);  // saturated
+    const unsigned char e = std::add_sat<unsigned char>(251, a);  // saturated
     REQUIRE(e == UCHAR_MAX);
     // 251 is of type T = unsigned char, `a` is converted to unsigned char
     // value; might yield an int -> unsigned char conversion warning for `a`
 
-    constexpr signed char f = add_sat<signed char>(-123, -3);  // not saturated
+    const signed char f = std::add_sat<signed char>(-123, -3);  // not saturated
     REQUIRE(f == -126);
 
-    constexpr signed char g = add_sat<signed char>(-123, -13);  // saturated
-    REQUIRE(g == std::numeric_limits<signed char>::min());      // g == -128
+    const signed char g = std::add_sat<signed char>(-123, -13);  // saturated
+    REQUIRE(g == std::numeric_limits<signed char>::min());       // g == -128
 
-    constexpr signed char h = add_sat<signed char>(126, CHAR_MAX);  // saturated
-    REQUIRE(h == std::numeric_limits<signed char>::max());          // h == 127
+    const signed char h =
+        std::add_sat<signed char>(126, CHAR_MAX);           // saturated
+    REQUIRE(h == std::numeric_limits<signed char>::max());  // h == 127
+}
+
+TEST_CASE("Numeric - std::bit_cast polyfill")
+{
+    const double f64v = 19880124.0;
+    const auto u64v   = std::bit_cast<std::uint64_t>(f64v);
+    REQUIRE(std::bit_cast<double>(u64v) == f64v);  // round-trip
+
+    const std::uint64_t u64v2 = 0x3fe9000000000000ull;
+    const auto f64v2          = std::bit_cast<double>(u64v2);
+    REQUIRE(std::bit_cast<std::uint64_t>(f64v2) == u64v2);  // round-trip
 }

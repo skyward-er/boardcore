@@ -519,7 +519,8 @@ bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
             }
             else
             {
-                int64_t wakeup = add_sat(miosix::IRQgetTime(), timeout.count());
+                int64_t wakeup =
+                    std::add_sat(miosix::IRQgetTime(), timeout.count());
                 auto waitResult =
                     miosix::Thread::IRQenableIrqAndTimedWait(dLock, wakeup);
 
