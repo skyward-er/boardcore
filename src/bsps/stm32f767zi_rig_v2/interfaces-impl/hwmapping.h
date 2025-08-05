@@ -129,10 +129,10 @@ using adc12in14  = Gpio<GPIOC_BASE, 4>;
 
 namespace relays
 {
-using relay1 = Gpio<GPIOG_BASE, 3>;
-using relay2 = Gpio<GPIOG_BASE, 6>;
-using relay3 = Gpio<GPIOG_BASE, 7>;
-using relay4 = Gpio<GPIOA_BASE, 15>;
+using relay1 = Gpio<GPIOA_BASE, 15>;
+using relay2 = Gpio<GPIOG_BASE, 3>;
+using relay3 = Gpio<GPIOG_BASE, 6>;
+using relay4 = Gpio<GPIOG_BASE, 7>;
 }  // namespace relays
 
 }  // namespace interfaces
@@ -265,9 +265,10 @@ using batteryVolt  = miosix::interfaces::adcs::adc12in14;
 
 namespace relays
 {
-using ignition = miosix::interfaces::relays::relay1;
-using nitrogen = miosix::interfaces::relays::relay2;
-using armLight = miosix::interfaces::relays::relay3;
+using clacson  = miosix::interfaces::relays::relay1;
+using ignition = miosix::interfaces::relays::relay2;
+using nitrogen = miosix::interfaces::relays::relay3;
+using armLight = miosix::interfaces::relays::relay4;
 }  // namespace relays
 
 }  // namespace miosix

@@ -115,6 +115,7 @@ using ignition     = Gpio<GPIOB_BASE, 14>;  // Port: IGN1
 using arm          = Gpio<GPIOD_BASE, 13>;  // Port: ARM
 using tars1        = Gpio<GPIOE_BASE, 6>;
 using tars3        = Gpio<GPIOB_BASE, 4>;
+using clacson      = Gpio<GPIOG_BASE, 9>;
 }  // namespace btns
 
 namespace ui
