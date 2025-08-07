@@ -27,6 +27,7 @@
 #include <miosix.h>
 
 #include <functional>
+#include <iomanip>
 
 namespace Boardcore
 {
@@ -347,9 +348,12 @@ inline ostream& operator<<(ostream& os, const Boardcore::WizIp& ip)
 inline ostream& operator<<(ostream& os, const Boardcore::WizMac& mac)
 {
     auto old_flags = os.flags(os.hex);
-    os << (int)mac.a << ":" << (int)mac.b << ":" << (int)mac.c << ":"
-       << (int)mac.d << ":" << (int)mac.e << ":" << (int)mac.f;
+    auto old_fill  = os.fill('0');
+    os << std::setw(2) << (int)mac.a << ":" << std::setw(2) << (int)mac.b << ":"
+       << std::setw(2) << (int)mac.c << ":" << std::setw(2) << (int)mac.d << ":"
+       << std::setw(2) << (int)mac.e << ":" << std::setw(2) << (int)mac.f;
     os.flags(old_flags);
+    os.fill(old_fill);
     return os;
 }
 }  // namespace std
