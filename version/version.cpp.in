@@ -33,5 +33,5 @@ const char* TARGET_NAME = "@TARGET_NAME@";
 const char* BUILD_TYPE  = "@CMAKE_BUILD_TYPE@";
 
 const char* SKYWARD_VERSION_STRING =
-    "Skyward Eperimental Rocketry (c) @TARGET_NAME@ @ @GIT_VERSION_STRING@ "
+    "Skyward Experimental Rocketry (c) @TARGET_NAME@ @ @GIT_VERSION_STRING@ "
     "(@CMAKE_BUILD_TYPE@)";
