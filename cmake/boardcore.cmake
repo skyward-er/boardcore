@@ -115,6 +115,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/RotatedIMU/RotatedIMU.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/SensorManager.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/SensorSampler.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/SensorGroup.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/Vectornav/VNCommonSerial.cpp

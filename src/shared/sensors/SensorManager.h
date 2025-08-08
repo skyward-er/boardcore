@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Author: Luca Conterio, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 
 #include <map>
 
+#include "SensorGroup.h"
 #include "SensorInfo.h"
 #include "SensorSampler.h"
 
@@ -47,12 +48,14 @@ namespace Boardcore
 class SensorManager
 {
 public:
-    using function_t  = std::function<void()>;
-    using SensorMap_t = std::map<AbstractSensor*, SensorInfo>;
+    // using function_t  = std::function<void()>;
+    using SensorMap_t    = std::map<AbstractSensor*, SensorInfo>;
+    using SchedulerMap_t = std::map<SensorGroup::GroupId_t, TaskScheduler*>;
 
     explicit SensorManager(const SensorMap_t& sensorsMap);
 
-    SensorManager(const SensorMap_t& sensorsMap, TaskScheduler* scheduler);
+    SensorManager(const SensorMap_t& sensorsMap,
+                  const SchedulerMap_t& schedulerMap);
 
     /**
      * @brief Deallocates samplers (through the samplers vector).
@@ -60,14 +63,24 @@ public:
     ~SensorManager();
 
     /**
-     * @brief Starts the task scheduler.
+     * @brief Starts the task scheduler of the group.
      */
-    bool start();
+    bool start(const SensorGroup::GroupId_t groupId);
 
     /**
-     * @brief Starts the task scheduler.
+     * @brief Starts the task scheduler for every group.
      */
-    void stop();
+    void startAll();
+
+    /**
+     * @brief Stops the task scheduler of the group.
+     */
+    void stop(const SensorGroup::GroupId_t groupId);
+
+    /**
+     * @brief Stops the task scheduler for every group.
+     */
+    void stopAll();
 
     /**
      * @brief Enable sampling for the specified sensor.
@@ -84,8 +97,10 @@ public:
     void disableSensor(AbstractSensor* sensor);
 
     void enableAllSensors();
+    void enableAllSensors(const SensorGroup::GroupId_t groupId);
 
     void disableAllSensors();
+    void disableAllSensors(const SensorGroup::GroupId_t groupId);
 
     /**
      * @brief Checks whether all the sensors have been initialized correctly.
@@ -96,9 +111,10 @@ public:
 
     /**
      * @return Vector of statistics, one for each sampler, taken from the
-     * scheduler.
+     * scheduler of the group.
      */
-    const vector<TaskStatsResult> getSamplersStats();
+    const vector<TaskStatsResult> getSamplersStats(
+        const SensorGroup::GroupId_t groupId);
 
 private:
     SensorManager(const SensorManager&)            = delete;
@@ -115,7 +131,8 @@ private:
      * @param sensorsMap Map containing sensors and their respective information
      * for the sampling.
      */
-    bool init(const SensorMap_t& sensorsMap);
+    bool init(const SensorMap_t& sensorsMap,
+              const SchedulerMap_t* schedulerMap);
 
     /**
      * @brief Initialize a sensor and run its self-test.
@@ -127,7 +144,7 @@ private:
     /**
      * @brief Initialize scheduler by adding all the SensorSamplers tasks.
      */
-    void initScheduler();
+    // void initScheduler();
 
     /**
      * @brief Avoid creating duplicate IDs for tasks in case the scheduler is
@@ -135,7 +152,7 @@ private:
      *
      * @return Maximum ID among those assigned to tasks in the scheduler.
      */
-    uint8_t getFirstTaskID();
+    // uint8_t getFirstTaskID();
 
     /**
      * @brief Create a sampler object with the specified sampling period.
@@ -145,19 +162,27 @@ private:
      *
      * @return Pointer to the newly created sampler.
      */
-    SensorSampler* createSampler(uint8_t id, std::chrono::nanoseconds period);
+    // SensorSampler* createSampler(uint8_t id, std::chrono::nanoseconds
+    // period);
 
-    const uint8_t MAX_TASK_ID = 255;  ///< Max id for tasks in the scheduler.
+    // const uint8_t MAX_TASK_ID = 255;  ///< Max id for tasks in the scheduler.
 
-    TaskScheduler*
-        scheduler;         ///< To update the samplers at the correct period.
-    bool customScheduler;  ///< Whether or not the scheduler comes from outside.
+    // TaskScheduler*
+    //     scheduler;         ///< To update the samplers at the correct period.
+    // bool customScheduler;  ///< Whether or not the scheduler comes from
+    // outside.
 
-    std::vector<SensorSampler*>
-        samplers;  ///< Vector of all the samplers (unique).
+    // std::vector<SensorSampler*>
+    //     samplers;  ///< Vector of all the samplers (unique).
 
-    std::map<AbstractSensor*, SensorSampler*>
-        samplersMap;  ///< Map each sensor to the corresponding sampler.
+    // std::map<AbstractSensor*, SensorSampler*>
+    //     samplersMap;  ///< Map each sensor to the corresponding sampler.
+
+    std::map<AbstractSensor*, SensorGroup*> groupsMap;
+
+    // TODO: can the pointer be removed? or become smart?
+    // TODO: vector instead of map?
+    std::map<SensorGroup::GroupId_t, SensorGroup*> groups;
 
     bool initResult = true;  ///< true if sensors are initialized correctly.
 

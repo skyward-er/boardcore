@@ -44,34 +44,38 @@ struct SensorInfo
     std::chrono::nanoseconds period;
     std::function<void()> callback;
     bool isEnabled;
+    uint8_t groupID;
     bool isInitialized;
 
     SensorInfo(
         // cppcheck-suppress passedByValue
         const std::string id = "", uint32_t period = 0,
-        std::function<void()> callback = []() {}, bool isEnabled = true)
+        std::function<void()> callback = []() {}, bool isEnabled = true,
+        uint8_t groupID = 0)
         : SensorInfo(id, std::chrono::milliseconds{period}, std::move(callback),
-                     isEnabled)
+                     isEnabled, groupID)
     {
     }
 
     SensorInfo(
         // cppcheck-suppress passedByValue
         const std::string id, Units::Frequency::Hertz frequency,
-        std::function<void()> callback = []() {}, bool isEnabled = true)
+        std::function<void()> callback = []() {}, bool isEnabled = true,
+        uint8_t groupID = 0)
         : SensorInfo(id,
                      std::chrono::nanoseconds{
                          static_cast<int64_t>(sToNs(1) / frequency.value())},
-                     std::move(callback), isEnabled)
+                     std::move(callback), isEnabled, groupID)
     {
     }
 
     SensorInfo(
         // cppcheck-suppress passedByValue
         const std::string id, std::chrono::nanoseconds period,
-        std::function<void()> callback = []() {}, bool isEnabled = true)
+        std::function<void()> callback = []() {}, bool isEnabled = true,
+        uint8_t groupID = 0)
         : id(id), period(period), callback(std::move(callback)),
-          isEnabled(isEnabled), isInitialized(false)
+          isEnabled(isEnabled), groupID(groupID), isInitialized(false)
     {
     }
 
@@ -81,6 +85,7 @@ struct SensorInfo
         period        = info.period;
         callback      = info.callback;
         isEnabled     = info.isEnabled;
+        groupID       = info.groupID;
         isInitialized = info.isInitialized;
 
         return *this;
@@ -89,7 +94,7 @@ struct SensorInfo
     bool operator==(const SensorInfo& info) const
     {
         return id == info.id && period == info.period &&
-               isEnabled == info.isEnabled &&
+               isEnabled == info.isEnabled && groupID == info.groupID &&
                isInitialized == info.isInitialized &&
                callback.target_type() == info.callback.target_type() &&
                callback.target<void()>() == info.callback.target<void()>();

@@ -224,7 +224,7 @@ int main()
                         []() { cout << "Callback failing sensor!" << endl; },
                         /*Enabled=*/true}}});
 
-    sm.start();
+    sm.startAll();
 
     Thread::sleep(1000);
 

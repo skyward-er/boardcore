@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Author: Luca Conterio, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,59 +24,106 @@
 
 #include <utils/Debug.h>
 
+#include "SensorGroup.h"
+
 namespace Boardcore
 {
 
 SensorManager::SensorManager(const SensorMap_t& sensorsMap)
-    : scheduler(new TaskScheduler()), customScheduler(true)
 {
-    if (!init(sensorsMap))
+    if (!init(sensorsMap, nullptr))
         LOG_ERR(logger, "Initialization failed");
 }
 
 SensorManager::SensorManager(const SensorMap_t& sensorsMap,
-                             TaskScheduler* scheduler)
-    : scheduler(scheduler), customScheduler(false)
+                             const SchedulerMap_t& schedulerMap)
 {
-    if (!init(sensorsMap))
+    if (!init(sensorsMap, &schedulerMap))
         LOG_ERR(logger, "Initialization failed");
 }
 
 SensorManager::~SensorManager()
 {
-    for (auto sampler : samplers)
-        delete sampler;
-    if (customScheduler)
-        delete scheduler;
+    // for (auto sampler : samplers)
+    //     delete sampler;
+    // if (customScheduler)
+    //     delete scheduler;
+
+    for (auto it : groups)
+        delete it.second;
 }
 
-bool SensorManager::start()
+bool SensorManager::start(const SensorGroup::GroupId_t groupId)
 {
-    if (customScheduler)
-        scheduler->start();
-    return initResult;
-}
-
-void SensorManager::stop() { scheduler->stop(); }
-
-void SensorManager::enableSensor(AbstractSensor* sensor)
-{
-    if (samplersMap.find(sensor) != samplersMap.end())
+    if (groups.count(groupId) != 0)
     {
-        samplersMap[sensor]->toggleSensor(sensor, true);
+        groups.at(groupId)->start();
+
+        // TODO: should still return the init result, even if
+        // it could be false because of another group?
+        // Should I return the result of SensorGroup::start()?
+        return initResult;
     }
     else
     {
-        LOG_ERR(logger, "Can't enable sensor {} it does not exist",
+        LOG_ERR(logger,
+                "Can't start the scheduler of group {}, it does not exist",
+                groupId);
+        return false;
+    }
+
+    // if (customScheduler)
+    //     scheduler->start();
+}
+
+void SensorManager::startAll()
+{
+    for (auto it : groups)
+        it.second->start();
+}
+
+void SensorManager::stop(const SensorGroup::GroupId_t groupId)
+{
+    if (groups.count(groupId) != 0)
+    {
+        groups.at(groupId)->stop();
+    }
+    else
+    {
+        LOG_ERR(logger,
+                "Can't stop the scheduler of group {}, it does not exist",
+                groupId);
+    }
+}
+
+void SensorManager::stopAll()
+{
+    for (auto it : groups)
+        it.second->stop();
+}
+
+void SensorManager::enableSensor(AbstractSensor* sensor)
+{
+    // if (samplersMap.find(sensor) != samplersMap.end())
+    // {
+    //     samplersMap[sensor]->toggleSensor(sensor, true);
+    // }
+    if (groupsMap.find(sensor) != groupsMap.end())
+    {
+        groupsMap[sensor]->enableSensor(sensor);
+    }
+    else
+    {
+        LOG_ERR(logger, "Can't enable sensor {}, it does not exist",
                 static_cast<void*>(sensor));
     }
 }
 
 void SensorManager::disableSensor(AbstractSensor* sensor)
 {
-    if (samplersMap.find(sensor) != samplersMap.end())
+    if (groupsMap.find(sensor) != groupsMap.end())
     {
-        samplersMap[sensor]->toggleSensor(sensor, false);
+        groupsMap[sensor]->disableSensor(sensor);
     }
     else
     {
@@ -87,22 +134,48 @@ void SensorManager::disableSensor(AbstractSensor* sensor)
 
 void SensorManager::enableAllSensors()
 {
-    for (auto sampler : samplers)
-        sampler->enableAllSensors();
+    for (auto it : groups)
+        it.second->enableAllSensors();
+}
+
+void SensorManager::enableAllSensors(const SensorGroup::GroupId_t groupId)
+{
+    if (groups.find(groupId) != groups.end())
+    {
+        groups.at(groupId)->enableAllSensors();
+    }
+    else
+    {
+        LOG_ERR(logger, "Can't enable sensors, group {} does not exist",
+                groupId);
+    }
 }
 
 void SensorManager::disableAllSensors()
 {
-    for (auto sampler : samplers)
-        sampler->disableAllSensors();
+    for (auto it : groups)
+        it.second->disableAllSensors();
+}
+
+void SensorManager::disableAllSensors(const SensorGroup::GroupId_t groupId)
+{
+    if (groups.find(groupId) != groups.end())
+    {
+        groups.at(groupId)->disableAllSensors();
+    }
+    else
+    {
+        LOG_ERR(logger, "Can't disable sensors, group {} does not exist",
+                groupId);
+    }
 }
 
 bool SensorManager::areAllSensorsInitialized() { return initResult; }
 
 const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
 {
-    if (samplersMap.find(sensor) != samplersMap.end())
-        return samplersMap[sensor]->getSensorInfo(sensor);
+    if (groupsMap.find(sensor) != groupsMap.end())
+        return groupsMap[sensor]->getSensorInfo(sensor);
 
     LOG_ERR(logger, "Sensor {} not found, can't return SensorInfo",
             static_cast<void*>(sensor));
@@ -110,20 +183,28 @@ const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
     return SensorInfo{};
 }
 
-const vector<TaskStatsResult> SensorManager::getSamplersStats()
+const vector<TaskStatsResult> SensorManager::getSamplersStats(
+    const SensorGroup::GroupId_t groupId)
 {
-    return scheduler->getTaskStats();
+    if (groups.count(groupId) != 0)
+        return groups.at(groupId)->getSamplersStats();
+
+    LOG_ERR(logger, "Group {} not found, can't return sampler stats", groupId);
+
+    return {};
 }
 
-bool SensorManager::init(const SensorMap_t& sensorsMap)
+bool SensorManager::init(const SensorMap_t& sensorsMap,
+                         const SchedulerMap_t* schedulerMap)
 {
-    uint8_t currentSamplerId = getFirstTaskID();
+    // uint8_t currentSamplerId = getFirstTaskID();
 
-    if (currentSamplerId != 0)
-    {
-        LOG_DEBUG(logger, "Task scheduler not empty: starting from task ID {}",
-                  currentSamplerId);
-    }
+    // if (currentSamplerId != 0)
+    // {
+    //     LOG_DEBUG(logger, "Task scheduler not empty: starting from task ID
+    //     {}",
+    //               currentSamplerId);
+    // }
 
     for (auto it : sensorsMap)
     {
@@ -155,41 +236,75 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
                   sensorInfo.id.c_str(), sensorInfo.period.count(),
                   sensorInfo.isEnabled);
 
+        // Verify if a group for this sensor already exists
+        if (groups.count(sensorInfo.groupID) == 0)
+        {
+            // Create the group
+            if (schedulerMap == nullptr)
+            {
+                groups.emplace(sensorInfo.groupID,
+                               new SensorGroup(sensorInfo.groupID));
+            }
+            else
+            {
+                // TODO: add check that the group exists inside schedulerMap?
+                groups.emplace(
+                    sensorInfo.groupID,
+                    new SensorGroup(sensorInfo.groupID,
+                                    schedulerMap->at(sensorInfo.groupID)));
+            }
+        }
+
+        SensorGroup* ptrGroup = groups.at(sensorInfo.groupID);
+
+        ptrGroup->addSensor(sensor, sensorInfo);
+
+        groupsMap.emplace(sensor, ptrGroup);
+
         // Check if a sampler with the same sampling period exists
-        bool found = false;
-        for (auto sampler : samplers)
-        {
-            if (sensorInfo.period == sampler->getSamplingPeriod())
-            {
-                sampler->addSensor(sensor, sensorInfo);
-                samplersMap[sensor] = sampler;
-                found               = true;
-            }
-        }
+        // bool found = false;
+        // for (auto sampler : samplers)
+        // {
+        //     if (sensorInfo.period == sampler->getSamplingPeriod())
+        //     {
+        //         sampler->addSensor(sensor, sensorInfo);
+        //         samplersMap[sensor] = sampler;
+        //         found               = true;
+        //     }
+        // }
 
-        if (!found)
-        {
-            // A sampler with the required period does not exist yet
-            SensorSampler* newSampler =
-                createSampler(currentSamplerId, sensorInfo.period);
+        // if (!found)
+        // {
+        //     // A sampler with the required period does not exist yet
+        //     SensorSampler* newSampler =
+        //         createSampler(currentSamplerId, sensorInfo.period);
 
-            newSampler->addSensor(sensor, sensorInfo);
+        //     newSampler->addSensor(sensor, sensorInfo);
 
-            samplers.push_back(newSampler);
-            samplersMap[sensor] = newSampler;
+        //     samplers.push_back(newSampler);
+        //     samplersMap[sensor] = newSampler;
 
-            if (currentSamplerId == MAX_TASK_ID)
-            {
-                LOG_WARN(logger,
-                         "Max task ID (255) reached in task scheduler, IDs "
-                         "will start again from 0");
-            }
+        //     if (currentSamplerId == MAX_TASK_ID)
+        //     {
+        //         LOG_WARN(logger,
+        //                  "Max task ID (255) reached in task scheduler, IDs "
+        //                  "will start again from 0");
+        //     }
 
-            currentSamplerId++;
-        }
+        //     currentSamplerId++;
+        // }
     }
 
-    initScheduler();
+    // Initialize all groups
+    // TODO: needed?
+    // for (auto it : groups)
+    //     if (!it.second->init())
+    //         LOG_ERR(logger, "Failed to initialize sensorGroup with id {}",
+    //                 it.second->getId());
+
+    for (auto it : groups)
+        it.second->initScheduler();
+    // initScheduler();
 
     return initResult;
 }
@@ -199,46 +314,48 @@ bool SensorManager::initSensor(AbstractSensor* sensor)
     return sensor->init() && sensor->selfTest();
 }
 
-void SensorManager::initScheduler()
-{
-    // Sort the vector to have lower period samplers (higher frequency) inserted
-    // before higher period ones into the TaskScheduler
-    std::stable_sort(samplers.begin(), samplers.end(),
-                     SensorSampler::compareByPeriod);
+// void SensorManager::initScheduler()
+// {
+//     // Sort the vector to have lower period samplers (higher frequency)
+//     inserted
+//     // before higher period ones into the TaskScheduler
+//     std::stable_sort(samplers.begin(), samplers.end(),
+//                      SensorSampler::compareByPeriod);
 
-    // Add all the samplers to the scheduler
-    for (auto& sampler : samplers)
-    {
-        function_t samplerUpdateFunction([=]()
-                                         { sampler->sampleAndCallback(); });
+//     // Add all the samplers to the scheduler
+//     for (auto& sampler : samplers)
+//     {
+//         function_t samplerUpdateFunction([=]()
+//                                          { sampler->sampleAndCallback(); });
 
-        scheduler->addTask(samplerUpdateFunction, sampler->getSamplingPeriod(),
-                           TaskScheduler::Policy::RECOVER);
-    }
-}
+//         scheduler->addTask(samplerUpdateFunction,
+//         sampler->getSamplingPeriod(),
+//                            TaskScheduler::Policy::RECOVER);
+//     }
+// }
 
-uint8_t SensorManager::getFirstTaskID()
-{
-    std::vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
+// uint8_t SensorManager::getFirstTaskID()
+// {
+//     std::vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
 
-    if (tasksStats.empty())
-        return 0;
+//     if (tasksStats.empty())
+//         return 0;
 
-    auto max = std::max_element(
-        tasksStats.begin(), tasksStats.end(),
-        [](const TaskStatsResult& t1, const TaskStatsResult& t2)
-        { return t1.id < t2.id; });
+//     auto max = std::max_element(
+//         tasksStats.begin(), tasksStats.end(),
+//         [](const TaskStatsResult& t1, const TaskStatsResult& t2)
+//         { return t1.id < t2.id; });
 
-    return max->id + 1;
-}
+//     return max->id + 1;
+// }
 
-SensorSampler* SensorManager::createSampler(uint8_t id,
-                                            std::chrono::nanoseconds period)
-{
-    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ns", id,
-              period.count());
+// SensorSampler* SensorManager::createSampler(uint8_t id,
+//                                             std::chrono::nanoseconds period)
+// {
+//     LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ns", id,
+//               period.count());
 
-    return new SimpleSensorSampler(id, period);
-}
+//     return new SimpleSensorSampler(id, period);
+// }
 
 }  // namespace Boardcore
