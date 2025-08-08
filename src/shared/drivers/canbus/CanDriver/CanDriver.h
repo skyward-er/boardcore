@@ -46,8 +46,8 @@ namespace Canbus
 class CanbusDriver
 {
     // How many frames to store in the RX buffer
-    static constexpr unsigned int RX_BUF_SIZE        = 10;
-    static constexpr unsigned int TX_STATUS_BUF_SIZE = 10;
+    static constexpr unsigned int RX_BUF_SIZE        = 32;
+    static constexpr unsigned int TX_STATUS_BUF_SIZE = 32;
 
     // Weight coefficients for calculating the optimal bit timing
     static constexpr float BR_ERR_WEIGHT = 10;
