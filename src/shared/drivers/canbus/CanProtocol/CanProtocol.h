@@ -183,7 +183,7 @@ private:
     miosix::Thread* rcvThread = nullptr;
     miosix::Priority threadPriority;
 
-    SyncCircularBuffer<CanMessage, 10> outQueue;
+    SyncCircularBuffer<CanMessage, 32> outQueue;
 
     PrintLogger logger = Logging::getLogger("canprotocol");
 };
