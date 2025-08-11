@@ -65,12 +65,11 @@ class SPITransactionDMA
 public:
     /**
      * @param slave Slave to communicate with.
-     * @param ptrSpi Pointer to the spi peripheral.
      * @param rxStream Dma receiving stream for the spi bus.
      * @param txStream Dma transmitting stream for the spi bus.
      */
-    SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
-                      DMAStreamGuard& rxStream, DMAStreamGuard& txStream);
+    SPITransactionDMA(const SPISlave& slave, DMAStreamGuard& rxStream,
+                      DMAStreamGuard& txStream);
 
     // Delete copy/move constructors/operators
     SPITransactionDMA(const SPITransactionDMA&)            = delete;

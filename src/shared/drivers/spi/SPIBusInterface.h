@@ -285,6 +285,11 @@ public:
      * @param size Size of the buffer.
      */
     virtual void transfer16(uint16_t* data, size_t size) = 0;
+
+    /**
+     * @brief Retrieve the pointer to the peripheral currently used.
+     */
+    virtual SPI_TypeDef* getSpi() = 0;
 };
 
 /**

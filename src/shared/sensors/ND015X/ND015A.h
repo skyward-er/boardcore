@@ -76,11 +76,10 @@ public:
      * @param spiConfig SPI bus configuration.
      * @param streamRx Dma receiving stream for the spi bus.
      * @param streamTx Dma transmitting stream for the spi bus.
-     * @param ptrSpi Pointer to the spi peripheral.
      * @param timeoutDma Timeout for the dma transactions.
      */
     ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           DMAStreamGuard* streamRx, DMAStreamGuard* streamTx, SPIType* ptrSpi,
+           DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
            std::chrono::nanoseconds timeoutDma,
            IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
            BWLimitFilter bwl    = BWLimitFilter::BWL_200,
@@ -163,7 +162,6 @@ private:
     SPISlave slave;
     DMAStreamGuard* const streamRx;
     DMAStreamGuard* const streamTx;
-    SPIType* const ptrSpi;
     const std::chrono::nanoseconds timeoutDma;
 
     /**
