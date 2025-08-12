@@ -62,7 +62,7 @@ struct ZVKState
 
     ZVKState(){}
 
-    ZVKState(uint64_t timestamp, const Eigen::Matrix<float, 13 ,1>& x) 
+    ZVKState(uint64_t timestamp, const Eigen::Matrix<float, 16 ,1>& x) 
         : timestamp(timestamp), qx(x(0)), qy(x(1)), qz(x(2)), qw(x(3)), vn(x(4)), ve(x(5)), vd(x(6)),
         bax(x(7)), bay(x(8)), baz(x(9)), bgx(x(10)), bgy(x(11)), bgz(x(12))
     {}
