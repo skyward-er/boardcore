@@ -95,6 +95,8 @@ void SensorGroup::addSensor(AbstractSensor* sensor,
     }
 
     sensorMap.emplace(sensor, sensorInfo);
+
+    LOG_DEBUG(logger, "Adding sensor {} to the group", sensorInfo.id);
 }
 
 void SensorGroup::enableSensor(AbstractSensor* sensor)

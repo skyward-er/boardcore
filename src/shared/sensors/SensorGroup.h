@@ -83,6 +83,9 @@ public:
 
     const vector<TaskStatsResult> getSamplersStats();
 
+    /**
+     * @return The group id.
+     */
     GroupId_t getId() { return groupID; }
 
 private:
@@ -121,7 +124,8 @@ private:
     std::map<AbstractSensor*, SensorSampler*>
         samplersMap;  ///< Map each sensor to the corresponding sampler.
 
-    std::map<AbstractSensor*, SensorInfo> sensorMap; ///< Map each sensor to the corresponding SensorInfo.
+    std::map<AbstractSensor*, SensorInfo>
+        sensorMap;  ///< Map each sensor to the corresponding SensorInfo.
 
     PrintLogger logger;
 };

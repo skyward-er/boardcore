@@ -141,43 +141,6 @@ private:
      */
     bool initSensor(AbstractSensor* sensor);
 
-    /**
-     * @brief Initialize scheduler by adding all the SensorSamplers tasks.
-     */
-    // void initScheduler();
-
-    /**
-     * @brief Avoid creating duplicate IDs for tasks in case the scheduler is
-     * received from outside.
-     *
-     * @return Maximum ID among those assigned to tasks in the scheduler.
-     */
-    // uint8_t getFirstTaskID();
-
-    /**
-     * @brief Create a sampler object with the specified sampling period.
-     *
-     * @param id New sampler's identifier.
-     * @param period Sampling period of the new sampler.
-     *
-     * @return Pointer to the newly created sampler.
-     */
-    // SensorSampler* createSampler(uint8_t id, std::chrono::nanoseconds
-    // period);
-
-    // const uint8_t MAX_TASK_ID = 255;  ///< Max id for tasks in the scheduler.
-
-    // TaskScheduler*
-    //     scheduler;         ///< To update the samplers at the correct period.
-    // bool customScheduler;  ///< Whether or not the scheduler comes from
-    // outside.
-
-    // std::vector<SensorSampler*>
-    //     samplers;  ///< Vector of all the samplers (unique).
-
-    // std::map<AbstractSensor*, SensorSampler*>
-    //     samplersMap;  ///< Map each sensor to the corresponding sampler.
-
     std::map<AbstractSensor*, SensorGroup*> groupsMap;
 
     // TODO: can the pointer be removed? or become smart?

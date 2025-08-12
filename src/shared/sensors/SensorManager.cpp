@@ -44,11 +44,6 @@ SensorManager::SensorManager(const SensorMap_t& sensorsMap,
 
 SensorManager::~SensorManager()
 {
-    // for (auto sampler : samplers)
-    //     delete sampler;
-    // if (customScheduler)
-    //     delete scheduler;
-
     for (auto it : groups)
         delete it.second;
 }
@@ -71,9 +66,6 @@ bool SensorManager::start(const SensorGroup::GroupId_t groupId)
                 groupId);
         return false;
     }
-
-    // if (customScheduler)
-    //     scheduler->start();
 }
 
 void SensorManager::startAll()
@@ -104,10 +96,6 @@ void SensorManager::stopAll()
 
 void SensorManager::enableSensor(AbstractSensor* sensor)
 {
-    // if (samplersMap.find(sensor) != samplersMap.end())
-    // {
-    //     samplersMap[sensor]->toggleSensor(sensor, true);
-    // }
     if (groupsMap.find(sensor) != groupsMap.end())
     {
         groupsMap[sensor]->enableSensor(sensor);
@@ -197,15 +185,6 @@ const vector<TaskStatsResult> SensorManager::getSamplersStats(
 bool SensorManager::init(const SensorMap_t& sensorsMap,
                          const SchedulerMap_t* schedulerMap)
 {
-    // uint8_t currentSamplerId = getFirstTaskID();
-
-    // if (currentSamplerId != 0)
-    // {
-    //     LOG_DEBUG(logger, "Task scheduler not empty: starting from task ID
-    //     {}",
-    //               currentSamplerId);
-    // }
-
     for (auto it : sensorsMap)
     {
         AbstractSensor* sensor = it.first;
@@ -260,51 +239,10 @@ bool SensorManager::init(const SensorMap_t& sensorsMap,
         ptrGroup->addSensor(sensor, sensorInfo);
 
         groupsMap.emplace(sensor, ptrGroup);
-
-        // Check if a sampler with the same sampling period exists
-        // bool found = false;
-        // for (auto sampler : samplers)
-        // {
-        //     if (sensorInfo.period == sampler->getSamplingPeriod())
-        //     {
-        //         sampler->addSensor(sensor, sensorInfo);
-        //         samplersMap[sensor] = sampler;
-        //         found               = true;
-        //     }
-        // }
-
-        // if (!found)
-        // {
-        //     // A sampler with the required period does not exist yet
-        //     SensorSampler* newSampler =
-        //         createSampler(currentSamplerId, sensorInfo.period);
-
-        //     newSampler->addSensor(sensor, sensorInfo);
-
-        //     samplers.push_back(newSampler);
-        //     samplersMap[sensor] = newSampler;
-
-        //     if (currentSamplerId == MAX_TASK_ID)
-        //     {
-        //         LOG_WARN(logger,
-        //                  "Max task ID (255) reached in task scheduler, IDs "
-        //                  "will start again from 0");
-        //     }
-
-        //     currentSamplerId++;
-        // }
     }
-
-    // Initialize all groups
-    // TODO: needed?
-    // for (auto it : groups)
-    //     if (!it.second->init())
-    //         LOG_ERR(logger, "Failed to initialize sensorGroup with id {}",
-    //                 it.second->getId());
 
     for (auto it : groups)
         it.second->initScheduler();
-    // initScheduler();
 
     return initResult;
 }
@@ -313,49 +251,5 @@ bool SensorManager::initSensor(AbstractSensor* sensor)
 {
     return sensor->init() && sensor->selfTest();
 }
-
-// void SensorManager::initScheduler()
-// {
-//     // Sort the vector to have lower period samplers (higher frequency)
-//     inserted
-//     // before higher period ones into the TaskScheduler
-//     std::stable_sort(samplers.begin(), samplers.end(),
-//                      SensorSampler::compareByPeriod);
-
-//     // Add all the samplers to the scheduler
-//     for (auto& sampler : samplers)
-//     {
-//         function_t samplerUpdateFunction([=]()
-//                                          { sampler->sampleAndCallback(); });
-
-//         scheduler->addTask(samplerUpdateFunction,
-//         sampler->getSamplingPeriod(),
-//                            TaskScheduler::Policy::RECOVER);
-//     }
-// }
-
-// uint8_t SensorManager::getFirstTaskID()
-// {
-//     std::vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
-
-//     if (tasksStats.empty())
-//         return 0;
-
-//     auto max = std::max_element(
-//         tasksStats.begin(), tasksStats.end(),
-//         [](const TaskStatsResult& t1, const TaskStatsResult& t2)
-//         { return t1.id < t2.id; });
-
-//     return max->id + 1;
-// }
-
-// SensorSampler* SensorManager::createSampler(uint8_t id,
-//                                             std::chrono::nanoseconds period)
-// {
-//     LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ns", id,
-//               period.count());
-
-//     return new SimpleSensorSampler(id, period);
-// }
 
 }  // namespace Boardcore
