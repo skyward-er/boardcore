@@ -1,5 +1,5 @@
 /* Copyright (c) 2025 Skyward Experimental Rocketry
- * Author: Giovanni Annaloro
+ * Author: Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,19 +21,20 @@
  */
 
 #pragma once
-#include <Eigen/Core>
-#include <Eigen/Dense>
+
+#include <sensors/SensorData.h>
+
+#include <reflect.hpp>
 
 namespace Boardcore
 {
-struct ZVKConfig
+
+struct ND030XData : public PressureData
 {
-    float T;                //[s] Sample period
-    float SIGMA_ACC;        //[m/s^2] Accelerometer noise std
-    float SIGMA_BIAS_ACC;   //[m/s^2] Accelerometer bias std
-    float SIGMA_GYRO;       //[rad/s] Gyroscope noise std
-    float SIGMA_BIAS_GYRO;  //[rad/s] Gyroscope bias std
-    Eigen::Vector3f ON_RAMP_EULERO_ANGLES;
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ND030XData, EXTEND_DEF(PressureData));
+    }
 };
 
 }  // namespace Boardcore

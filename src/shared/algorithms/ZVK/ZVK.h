@@ -20,125 +20,180 @@
  * THE SOFTWARE.
  */
 
- #pragma once 
+#pragma once
 
- #include <Eigen/Dense>
- #include <sensors/SensorData.h>
- #include <utils/Constants.h>
- #include "ZVKConfig.h"
- #include "ZVKState.h"
- 
+#include <sensors/SensorData.h>
+#include <utils/Constants.h>
 
-namespace Boardcore 
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <memory>
+
+#include "ZVKConfig.h"
+#include "ZVKState.h"
+
+namespace Boardcore
 {
 
 class ZVK
 {
-
 public:
-    // Index of quaternions elements in the state.
-    static constexpr uint16_t IDX_QUAT = 0;
-
     // Index of velocity elements in the state.
-    static constexpr uint16_t IDX_VEL = 4;
+    static constexpr uint8_t IDX_VEL = 0;
 
-    // Index of position elements in the state.
-    static constexpr uint16_t IDX_POS = 7;
+    // Index of acceleration elements in the state.
+    static constexpr uint8_t IDX_ACC = 3;
 
-    // Index of accelerometer bias elements in the state.
-    static constexpr uint16_t IDX_BIAS_ACC = 10;
+    // Index of accelerometer0 bias elements in the state.
+    static constexpr uint8_t IDX_BIAS_ACC_0 = 6;
 
-    // Index of gyroscope bias elements in the state.
-    static constexpr uint16_t IDX_BIAS_GYRO = 13;
+    // Index of accelerometer1 bias elements in the state.
+    static constexpr uint8_t IDX_BIAS_ACC_1 = 9;
+
+    // Index of eulero angles elements in the state.
+    static constexpr uint8_t IDX_EUL_ANG = 12;
+
+    // Index of angular velocity elements in the state.
+    static constexpr uint8_t IDX_VEL_ANG = 15;
+
+    // Index of gyroscope0 bias elements in the state.
+    static constexpr uint8_t IDX_BIAS_GYRO_0 = 18;
+
+    // Index of gyroscope1 bias elements in the state.
+    static constexpr uint8_t IDX_BIAS_GYRO_1 = 21;
 
     explicit ZVK(const ZVKConfig& config);
 
     /**
      * @brief Prediction.
-     *
-     * @param acceleration Vector with acceleration data [x y z][m/s^2].
-     * @param angularSpeed Vector with angular velocity data [x y z][rad/s].
 
      */
-    void predict(const Eigen::Vector3f& acceleration, const Eigen::Vector3f& angularSpeed);
+    void predict();
 
     /**
-     * @brief Prediction.
+     * @brief Correction using zero rocket velocity.
      *
-     * @param acceleration Accelerometer data [m/s^2].
-     * @param angularSpeed Gyroscope data [rad/s].
      */
-    void predict(const AccelerometerData& acceleration, const GyroscopeData& angularSpeed);
+    void correctZeroVel();
 
     /**
-     * @brief Correction.
-     *
-     * @param acceleration Vector with acceleration data [x y z][m/s^2].
-     * @param angularSpeed Vector with angular velocity data [x y z][rad/s].
-     * @param mag Normalized vector of the magnetometer readings [x y z][uT].
-
-     */
-    void correct(const Eigen::Vector3f& acceleration, const Eigen::Vector3f& angularSpeed, const Eigen::Vector3f& mag);
-
-    /**
-     * @brief Correction.
+     * @brief Correction with accelerometer 0.
      *
      * @param acceleration Accelerometer data [m/s^2].
-     * @param angularSpeed Gyroscope data [rad/s].
-     * @param mag Magnetometer data [uT] 
      */
-    void correct(const AccelerometerData& acceleration, const GyroscopeData& angularSpeed, const MagnetometerData& mag);
+    void correctAcc0(const Eigen::Vector3f& acceleration);
 
     /**
-     * @return EKF state.
+     * @brief Correction with accelerometer 1.
+     *
+     * @param acceleration Accelerometer data [m/s^2].
+     */
+    void correctAcc1(const Eigen::Vector3f& acceleration);
+
+    /**
+     * @brief Correction with gyroscope 0.
+     *
+     * @param angularVel gyroscope data data [rad/s].
+     */
+    void correctGyro0(const Eigen::Vector3f& angularVel);
+
+    /**
+     * @brief Correction with gyroscope 1.
+     *
+     * @param angularVel gyroscope data data [rad/s].
+     */
+    void correctGyro1(const Eigen::Vector3f& angularVel);
+
+    /**
+     * @brief Correction with accelerometer data.
+     *
+     * @param acceleration Vector with accelerometer data.
+     */
+    void correctAcc0(const AccelerometerData& acceleration);
+
+    /**
+     * @brief Correction with accelerometer data.
+     *
+     * @param acceleration Vector with accelerometer data.
+     */
+    void correctAcc1(const AccelerometerData& acceleration);
+
+    /**
+     * @brief Correction with gyroscope0 data.
+     *
+     * @param angularVel Vector with gyroscope data.
+     */
+    void correctGyro0(const GyroscopeData& angularVel);
+
+    /**
+     * @brief Correction with gyroscope0 data.
+     *
+     * @param angularVel Vector with gyroscope data.
+     */
+    void correctGyro1(const GyroscopeData& angularVel);
+
+    /**
+     * @return KF state.
      */
     ZVKState getState() const;
 
     /**
-     * @return State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy bgz].
-     */
-    Eigen::Matrix<float, 16, 1> getX() const;
-
-    /**
-     * @param state State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy bgz].
-     */
-    void setX(const Eigen::Matrix<float, 16, 1>& x);
-
-    /**
-     * @param state EKF state.
+     * @param state KF state.
      */
     void setState(const ZVKState& state);
 
+    /**
+     * @return State vector [n e d ax ay az bax0 bay0 baz0 bax1 bay1 baz1 eax
+     * eay eaz avx avy avz bgx0 bgy0 bgz0 bgx1 bgy1 bgz1]
+     */
+    Eigen::Matrix<float, 24, 1> getX() const;
 
+    /**
+     * @param state State vector [n e d ax ay az bax0 bay0 baz0 bax1 bay1 baz1
+     * eax eay eaz avx avy avz bgx0 bgy0 bgz0 bgx1 bgy1 bgz1]
+     */
+    void setX(const Eigen::Matrix<float, 24, 1>& x);
 
 private:
-
-    // Extended kalman filter configuration parameters
     ZVKConfig config;
 
-    // State vector [qx, qy, qw, qz, vn, ve, vd, n, e, d, bax, bay, baz, bgx, bgy, bgz]
-    Eigen::Matrix<float,16,1> x;
+    // State
+    Eigen::Matrix<float, 24, 1> x;
 
-    // State covariance matrix
-    Eigen::Matrix<float, 15, 15> P;
+    // State covariance matrix 24x24
+    Eigen::SparseMatrix<float> Q;
 
-    // Measurement noise covariance matrix
-    Eigen::Matrix<float, 12, 12> R;
+    // State error covariance matrix 24x24
+    std::unique_ptr<Eigen::Matrix<float, 24, 24>> P;
 
-    // Process noise covariance matrix 
-    Eigen::Matrix<float, 12, 12> Q;    
+    // State transition matrix 24x24
+    Eigen::SparseMatrix<float> F;
+
+    // Measurement noise covariance matrices
+
+    // 6x6
+    Eigen::SparseMatrix<float> R_ZERO_VEL;
+
+    // 3x3
+    Eigen::SparseMatrix<float> R_ACC;
+
+    // 3x3
+    Eigen::SparseMatrix<float> R_GYRO;
+
+    // Zero velocity measurement matrix 6x6
+    Eigen::SparseMatrix<float> H_ZERO_VEL;
+
+    // Acceleration measurement matrix 3x6
+    Eigen::SparseMatrix<float> H_ACC_GYRO;
+
+    // Rotational matrix from body frame to inertial frame
+    Eigen::Matrix<float, 3, 3> A_ROT;
+
+    // On ramp quaternion
+    Eigen::Vector4f onRampQuaternion;
 
     // NED gravity vector [m/s^2].
     const Eigen::Vector3f gravityNed{0.0f, 0.0f, -Constants::g};
-
-    // Small angle error constant needed for the definition of matrix P
-    float const smallAngleError = 0.08726646;
-
-    // Constant needed for the definition of the definition of matrix R 
-    float const rConst = 1e-6;
-
-
-
 };
 
- } // namespace Boardcore
+}  // namespace Boardcore

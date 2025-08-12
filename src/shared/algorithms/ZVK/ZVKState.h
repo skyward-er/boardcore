@@ -20,69 +20,93 @@
  * THE SOFTWARE.
  */
 
-#pragma once 
-#include <cstdint>
+#pragma once
 #include <Eigen/Core>
+#include <cstdint>
 #include <reflect.hpp>
 
-namespace Boardcore 
+namespace Boardcore
 {
 
 struct ZVKState
 {
     uint64_t timestamp = 0;
 
-    //13 extended kalman states
-
-    //Attitude as quaternion body to NED frame
-    float qx = 0;
-    float qy = 0;
-    float qz = 0;
-    float qw = 0;
-
-    //Velocity in NED frame [m/s]
-    float vn = 0;
-    float ve = 0;
-    float vd = 0;
-
-    //Position [m]
+    // Velocity in NED frame [m/s]
     float n = 0;
     float e = 0;
     float d = 0;
 
-    //Accelerometer bias 
-    float bax = 0;
-    float bay = 0;
-    float baz = 0;
+    // Acceleration in NED frame [m/s^2]
+    float ax = 0;
+    float ay = 0;
+    float az = 0;
 
-    //Gyroscope bias 
-    float bgx = 0;
-    float bgy = 0;
-    float bgz = 0;
+    // Accelerometer bias IMU0
+    float bax0 = 0;
+    float bay0 = 0;
+    float baz0 = 0;
 
-    ZVKState(){}
+    // Accelerometer bias IMU1
+    float bax1 = 0;
+    float bay1 = 0;
+    float baz1 = 0;
 
-    ZVKState(uint64_t timestamp, const Eigen::Matrix<float, 13 ,1>& x) 
-        : timestamp(timestamp), qx(x(0)), qy(x(1)), qz(x(2)), qw(x(3)), vn(x(4)), ve(x(5)), vd(x(6)),
-        bax(x(7)), bay(x(8)), baz(x(9)), bgx(x(10)), bgy(x(11)), bgz(x(12))
-    {}
+    // Euler angles [rad]
+    float eax = 0;
+    float eay = 0;
+    float eaz = 0;
 
-    Eigen::Matrix<float, 16, 1> getX() const 
+    // Angular velocity [rad/s]
+    float avx = 0;
+    float avy = 0;
+    float avz = 0;
+
+    // Gyroscope bias IMU0
+    float bgx0 = 0;
+    float bgy0 = 0;
+    float bgz0 = 0;
+
+    // Gyroscope bias IMU1
+    float bgx1 = 0;
+    float bgy1 = 0;
+    float bgz1 = 0;
+
+    ZVKState() {}
+
+    ZVKState(uint64_t timestamp, const Eigen::Matrix<float, 24, 1>& x)
+        : timestamp(timestamp), n(x(0)), e(x(1)), d(x(2)), ax(x(3)), ay(x(4)),
+          az(x(5)), bax0(x(6)), bay0(x(7)), baz0(x(8)), bax1(x(9)), bay1(x(10)),
+          baz1(x(11)), eax(x(12)), eay(x(13)), eaz(x(14)), avx(x(15)),
+          avy(x(16)), avz(x(17)), bgx0(x(18)), bgy0(x(19)), bgz0(x(20)),
+          bgx1(x(21)), bgy1(x(22)), bgz1(x(23))
     {
-        return Eigen::Matrix<float, 13, 1>(qx, qy, qz, qw, vn, ve, vd, n, e, d,  bax, bay, baz, bgx, bgy, bgz);
     }
 
-        static constexpr auto reflect()
+    Eigen::Matrix<float, 24, 1> getX() const
     {
-        return STRUCT_DEF(ZVKState,
-                          FIELD_DEF(timestamp) FIELD_DEF(qx) FIELD_DEF(qy)
-                              FIELD_DEF(qz) FIELD_DEF(qw) FIELD_DEF(vn)
-                                  FIELD_DEF(ve) FIELD_DEF(vd) FIELD_DEF(n)
-                                    FIELD_DEF(e) FIELD_DEF(d) FIELD_DEF(bax)
-                                        FIELD_DEF(bay) FIELD_DEF(baz) FIELD_DEF(bgx)
-                                            FIELD_DEF(bgy) FIELD_DEF(bgz));
+        Eigen::Matrix<float, 24, 1> x;
+        x << n, e, d, ax, ay, az, bax0, bay0, baz0, bax1, bay1, baz1, eax, eay,
+            eaz, avx, avy, avz, bgx0, bgy0, bgz0, bgx1,
+            bgy1,  // cppcheck-suppress constStatement
+            bgz1;
+        return x;
     }
 
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            ZVKState,
+            FIELD_DEF(timestamp) FIELD_DEF(n) FIELD_DEF(e) FIELD_DEF(d)
+                FIELD_DEF(ax) FIELD_DEF(ay) FIELD_DEF(az) FIELD_DEF(bax0)
+                    FIELD_DEF(bay0) FIELD_DEF(baz0) FIELD_DEF(bax1)
+                        FIELD_DEF(bay1) FIELD_DEF(baz1) FIELD_DEF(eax)
+                            FIELD_DEF(eay) FIELD_DEF(eaz) FIELD_DEF(avx)
+                                FIELD_DEF(avy) FIELD_DEF(avz) FIELD_DEF(bgx0)
+                                    FIELD_DEF(bgy0) FIELD_DEF(bgz0)
+                                        FIELD_DEF(bgx1) FIELD_DEF(bgy1)
+                                            FIELD_DEF(bgz1));
+    }
 };
 
-} //namespace Boardcore
+}  // namespace Boardcore
