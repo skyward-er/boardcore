@@ -95,6 +95,11 @@ public:
     ZVKState getState() const;
 
     /**
+     * @param state EKF state.
+     */
+    void setState(const ZVKState& state);
+
+    /**
      * @return State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy bgz].
      */
     Eigen::Matrix<float, 16, 1> getX() const;
@@ -103,13 +108,6 @@ public:
      * @param state State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy bgz].
      */
     void setX(const Eigen::Matrix<float, 16, 1>& x);
-
-    /**
-     * @param state EKF state.
-     */
-    void setState(const ZVKState& state);
-
-
 
 private:
 
@@ -136,8 +134,6 @@ private:
 
     // Constant needed for the definition of the definition of matrix R 
     float const rConst = 1e-6;
-
-
 
 };
 
