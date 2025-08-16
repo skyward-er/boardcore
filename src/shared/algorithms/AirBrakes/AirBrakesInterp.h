@@ -83,6 +83,8 @@ private:
 
     AirBrakesInterpConfig configInterp;  ///< specialized config
     float lastPercentage = 0;            ///< last opening of the airbrakes
+    float integralError  = 0;            ///< integral error of the PID
+    bool saturation      = false;        ///< have we reached saturation?
 };
 
 }  // namespace Boardcore

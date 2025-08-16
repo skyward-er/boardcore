@@ -49,6 +49,15 @@ struct AirBrakesInterpConfig
     // The delta in mass between consequent trajectory sets
     float DM;
 
+    // The
+    float ARB_FREQ;
+
+    //
+    float PID_REF;
+
+    // Pid coefficients: kp. ki. kd
+    float PID_COEFFS[3];
+
     // Number of steps to look forward into the reference trajectories
     uint16_t N_FORWARD;
 };

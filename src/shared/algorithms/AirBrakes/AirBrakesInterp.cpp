@@ -86,7 +86,7 @@ void AirBrakesInterp::step()
 
     lastPosition = currentPosition;
 
-    // Interpolation
+    // Interpolation + PID
     float percentage = controlInterp(currentPosition);
 
     // Filtering
@@ -158,8 +158,39 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
     }
     else
     {
-        return (currentPosition.vz - trjPointClosed.vz) /
-               (trjPointOpen.vz - trjPointClosed.vz);
+        float detectedPosition = (currentPosition.vz - trjPointClosed.vz) /
+                                 (trjPointOpen.vz - trjPointClosed.vz);
+
+        float dt = 1 / configInterp.ARB_FREQ;
+
+        float ref       = configInterp.PID_REF;
+        float error     = detectedPosition - ref;
+        float prevError = lastPercentage - ref;
+
+        if (saturation == false)
+            integralError += error * dt;
+
+        float kp = configInterp.PID_COEFFS[0];
+        float ki = configInterp.PID_COEFFS[1];
+        float kd = configInterp.PID_COEFFS[2];
+
+        float percentage =
+            kp * error + kd * prevError / dt + ki * integralError + ref;
+
+        if (percentage < 0)
+        {
+            percentage = 0;
+            saturation = true;
+        }
+        else if (percentage > 1)
+        {
+            percentage = 1;
+            saturation = true;
+        }
+        else
+            saturation = false;
+
+        return percentage;
     }
 }
 

@@ -39,8 +39,13 @@ constexpr float STARTING_FILTER_VALUE = 0.9f;
 constexpr float ABK_CRITICAL_ALTITUDE = 2990;
 constexpr float DZ                    = 10;
 constexpr float INITIAL_MASS          = 28;
-constexpr float DM                    = 0.2f;
-constexpr uint16_t N_FORWARD          = 1;
+constexpr float ARB_FREQ              = 10;
+constexpr float PID_REF               = 0.2f;
+constexpr float KP                    = 2;
+constexpr float KI                    = 0.05f;
+constexpr float KD                    = 0.5f;
+
+constexpr uint16_t N_FORWARD = 1;
 
 AirBrakesInterpConfig getConfig()
 {
@@ -51,8 +56,14 @@ AirBrakesInterpConfig getConfig()
     config.ABK_CRITICAL_ALTITUDE   = ABK_CRITICAL_ALTITUDE;
     config.DZ                      = DZ;
     config.INITIAL_MASS            = INITIAL_MASS;
-    config.DM                      = DM;
+    config.DM                      = DZ;
+    config.ARB_FREQ                = ARB_FREQ;
+    config.PID_REF                 = PID_REF;
+    config.PID_COEFFS[0]           = KP;
+    config.PID_COEFFS[1]           = KI;
+    config.PID_COEFFS[2]           = KD;
     config.N_FORWARD               = N_FORWARD;
+
     return config;
 }
 
