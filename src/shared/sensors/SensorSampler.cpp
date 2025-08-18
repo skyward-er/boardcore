@@ -35,7 +35,8 @@ SensorSampler::SensorSampler(uint8_t id, std::chrono::nanoseconds period)
 
 SensorSampler::~SensorSampler() { sensors.clear(); }
 
-bool SensorSampler::compareByPeriod(SensorSampler* left, SensorSampler* right)
+bool SensorSampler::compareByPeriod(const std::shared_ptr<SensorSampler>& left,
+                                    const std::shared_ptr<SensorSampler>& right)
 {
     return left->getSamplingPeriod() < right->getSamplingPeriod();
 }

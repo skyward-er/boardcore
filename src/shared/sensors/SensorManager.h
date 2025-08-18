@@ -26,6 +26,7 @@
 #include <scheduler/TaskScheduler.h>
 
 #include <map>
+#include <memory>
 
 #include "SensorGroup.h"
 #include "SensorInfo.h"
@@ -56,11 +57,6 @@ public:
 
     SensorManager(const SensorMap_t& sensorsMap,
                   const SchedulerMap_t& schedulerMap);
-
-    /**
-     * @brief Deallocates samplers (through the samplers vector).
-     */
-    ~SensorManager();
 
     /**
      * @brief Starts the task scheduler of the group.
@@ -141,11 +137,10 @@ private:
      */
     bool initSensor(AbstractSensor* sensor);
 
-    std::map<AbstractSensor*, SensorGroup*> groupsMap;
+    std::map<AbstractSensor*, std::shared_ptr<SensorGroup>> groupsMap;
 
-    // TODO: can the pointer be removed? or become smart?
     // TODO: vector instead of map?
-    std::map<SensorGroup::GroupId_t, SensorGroup*> groups;
+    std::map<SensorGroup::GroupId_t, std::shared_ptr<SensorGroup>> groups;
 
     bool initResult = true;  ///< true if sensors are initialized correctly.
 

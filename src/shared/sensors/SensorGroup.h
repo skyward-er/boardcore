@@ -26,6 +26,7 @@
 #include <scheduler/TaskScheduler.h>
 
 #include <map>
+#include <memory>
 
 #include "SensorInfo.h"
 #include "SensorSampler.h"
@@ -105,7 +106,8 @@ private:
      *
      * @return Pointer to the newly created sampler.
      */
-    SensorSampler* createSampler(uint8_t id, std::chrono::nanoseconds period);
+    std::shared_ptr<SensorSampler> createSampler(
+        uint8_t id, std::chrono::nanoseconds period);
 
     const GroupId_t groupID;
 
@@ -117,11 +119,10 @@ private:
         scheduler;         ///< To update the samplers at the correct period.
     bool customScheduler;  ///< Whether or not the scheduler comes from outside.
 
-    // TODO: can it be substituted with smart pointers?
-    std::vector<SensorSampler*>
+    std::vector<std::shared_ptr<SensorSampler>>
         samplers;  ///< Vector of all the samplers (unique).
 
-    std::map<AbstractSensor*, SensorSampler*>
+    std::map<AbstractSensor*, std::shared_ptr<SensorSampler>>
         samplersMap;  ///< Map each sensor to the corresponding sampler.
 
     std::map<AbstractSensor*, SensorInfo>

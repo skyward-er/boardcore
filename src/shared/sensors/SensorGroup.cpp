@@ -51,9 +51,6 @@ SensorGroup::SensorGroup(uint8_t groupId, TaskScheduler* scheduler)
 
 SensorGroup::~SensorGroup()
 {
-    for (auto sampler : samplers)
-        delete sampler;
-
     if (customScheduler)
         delete scheduler;
 }
@@ -78,8 +75,7 @@ void SensorGroup::addSensor(AbstractSensor* sensor,
     if (!found)
     {
         // A sampler with the required period does not exist yet
-        SensorSampler* newSampler =
-            createSampler(currentSamplerId, sensorInfo.period);
+        auto newSampler = createSampler(currentSamplerId, sensorInfo.period);
 
         newSampler->addSensor(sensor, sensorInfo);
 
@@ -201,13 +197,13 @@ uint8_t SensorGroup::getFirstTaskID()
     return max->id + 1;
 }
 
-SensorSampler* SensorGroup::createSampler(uint8_t id,
-                                          std::chrono::nanoseconds period)
+std::shared_ptr<SensorSampler> SensorGroup::createSampler(
+    uint8_t id, std::chrono::nanoseconds period)
 {
     LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ns", id,
               period.count());
 
-    return new SimpleSensorSampler(id, period);
+    return std::make_shared<SimpleSensorSampler>(id, period);
 }
 
 }  // namespace Boardcore

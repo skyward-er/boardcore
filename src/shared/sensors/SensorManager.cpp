@@ -42,12 +42,6 @@ SensorManager::SensorManager(const SensorMap_t& sensorsMap,
         LOG_ERR(logger, "Initialization failed");
 }
 
-SensorManager::~SensorManager()
-{
-    for (auto it : groups)
-        delete it.second;
-}
-
 bool SensorManager::start(const SensorGroup::GroupId_t groupId)
 {
     if (groups.count(groupId) != 0)
@@ -221,20 +215,21 @@ bool SensorManager::init(const SensorMap_t& sensorsMap,
             // Create the group
             if (schedulerMap == nullptr)
             {
-                groups.emplace(sensorInfo.groupID,
-                               new SensorGroup(sensorInfo.groupID));
+                groups.emplace(
+                    sensorInfo.groupID,
+                    std::make_shared<SensorGroup>(sensorInfo.groupID));
             }
             else
             {
                 // TODO: add check that the group exists inside schedulerMap?
-                groups.emplace(
-                    sensorInfo.groupID,
-                    new SensorGroup(sensorInfo.groupID,
-                                    schedulerMap->at(sensorInfo.groupID)));
+                groups.emplace(sensorInfo.groupID,
+                               std::make_shared<SensorGroup>(
+                                   sensorInfo.groupID,
+                                   schedulerMap->at(sensorInfo.groupID)));
             }
         }
 
-        SensorGroup* ptrGroup = groups.at(sensorInfo.groupID);
+        auto ptrGroup = groups.at(sensorInfo.groupID);
 
         ptrGroup->addSensor(sensor, sensorInfo);
 

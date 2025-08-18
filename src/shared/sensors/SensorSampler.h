@@ -56,7 +56,8 @@ public:
                sensors.size() == sampler.sensors.size();
     }
 
-    static bool compareByPeriod(SensorSampler* left, SensorSampler* right);
+    static bool compareByPeriod(const std::shared_ptr<SensorSampler>& left,
+                                const std::shared_ptr<SensorSampler>& right);
 
     /**
      * @brief Add a sensor to the sensors map.
