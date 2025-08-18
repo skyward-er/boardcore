@@ -227,6 +227,8 @@ bool SensorManager::init(const SensorMap_t& sensorsMap,
                                    sensorInfo.groupID,
                                    schedulerMap->at(sensorInfo.groupID)));
             }
+
+            LOG_DEBUG(logger, "Created group with id {}", sensorInfo.groupID);
         }
 
         auto ptrGroup = groups.at(sensorInfo.groupID);

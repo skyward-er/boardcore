@@ -21,6 +21,7 @@
  */
 
 #include <assert.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/Sensor.h>
 #include <sensors/SensorManager.h>
@@ -60,6 +61,72 @@ public:
 
     bool init() override { return true; };
     bool selfTest() override { return true; };
+};
+
+class MySensorDMA : public Sensor<TestData>
+{
+public:
+    MySensorDMA() : dmaStream(nullptr) {}
+
+    MySensorDMA(DMAStreamGuard* s) : dmaStream(s)
+    {
+        source.reserve(size);
+        dest.reserve(size);
+
+        for (int i = 0; i < size; ++i)
+            source.push_back(i);
+    }
+
+    virtual TestData sampleImpl() override
+    {
+        if (dmaStream == nullptr)
+        {
+            lastError = SensorErrors::NOT_INIT;
+            return {};
+        }
+
+        DMATransaction trn = {
+            .srcSize                         = DMATransaction::DataSize::BITS_8,
+            .dstSize                         = DMATransaction::DataSize::BITS_8,
+            .srcAddress                      = source.data(),
+            .dstAddress                      = dest.data(),
+            .numberOfDataItems               = size,
+            .srcIncrement                    = true,
+            .dstIncrement                    = true,
+            .enableTransferCompleteInterrupt = true,
+            .enableTransferErrorInterrupt    = true,
+        };
+
+        (*dmaStream)->setup(trn);
+        (*dmaStream)->enable();
+        bool outcome = (*dmaStream)->timedWaitForTransferComplete(timeout);
+
+        for (int i = 0; i < size; ++i)
+        {
+            if (dest[i] != source[i])
+                outcome = false;
+
+            // Reset destination
+            dest[i] = 0;
+        }
+
+        if (outcome)
+            lastError = NO_ERRORS;
+        else
+            lastError = BUS_FAULT;  // Error
+
+        return {};
+    }
+
+    bool init() override { return dmaStream != nullptr; };
+    bool selfTest() override { return dmaStream != nullptr; };
+
+private:
+    static constexpr int size = 10;
+    DMAStreamGuard* dmaStream;
+    std::vector<uint8_t> source;
+    std::vector<uint8_t> dest;
+    const std::chrono::milliseconds timeout = std::chrono::milliseconds(200);
 };
 
 template <typename SensorData>
@@ -197,32 +264,79 @@ int main()
     MySensor s1;
     MySensor s2;
 
+    auto dmaStream = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_MEM_ONLY);
+    if (!dmaStream.isValid())
+    {
+        TRACE("Error, cannot acquire dma stream");
+        return 1;
+    }
+
+    MySensorDMA sDma1(&dmaStream);
+    MySensorDMA sDma2(&dmaStream);
+    MySensorDMA sDmaFailing;
+
     MyPressureFilter<MySensorData> filter(&s1, 2.578f);
 
     FailingSensor failigS;  // must not be initialized and not sampled
 
-    SensorManager sm({{/*Sensor=*/&s1,
-                       {/*ID=*/"s1",
-                        /*Freq=*/1000,
-                        /*Callback=*/[]() { cout << "Callback s1!" << endl; },
-                        /*Enabled=*/true}},
-                      {/*Sensor=*/&s2,
-                       {/*ID=*/"s2",
-                        /*Freq=*/1000,
-                        /*Callback=*/[]() { cout << "Callback s2!" << endl; },
-                        /*Enabled=*/true}},
-                      {/*Sensor=*/&filter,
-                       {/*ID=*/"filter",
-                        /*Freq=*/2000,
-                        /*Callback=*/
-                        []() { cout << "Callback filter!" << endl; },
-                        /*Enabled=*/true}},
-                      {/*Sensor=*/&failigS,
-                       {/*ID=*/"failing",
-                        /*Freq=*/3000,
-                        /*Callback=*/
-                        []() { cout << "Callback failing sensor!" << endl; },
-                        /*Enabled=*/true}}});
+    SensorManager sm({
+        {/*Sensor=*/&s1,
+         {/*ID=*/"s1",
+          /*Freq=*/1000,
+          /*Callback=*/[]() { cout << "Callback s1!" << endl; },
+          /*Enabled=*/true}},
+        {/*Sensor=*/&s2,
+         {/*ID=*/"s2",
+          /*Freq=*/1000,
+          /*Callback=*/[]() { cout << "Callback s2!" << endl; },
+          /*Enabled=*/true}},
+        {/*Sensor=*/&filter,
+         {/*ID=*/"filter",
+          /*Freq=*/2000,
+          /*Callback=*/
+          []() { cout << "Callback filter!" << endl; },
+          /*Enabled=*/true}},
+        {/*Sensor=*/&failigS,
+         {/*ID=*/"failing",
+          /*Freq=*/3000,
+          /*Callback=*/
+          []() { cout << "Callback failing sensor!" << endl; },
+          /*Enabled=*/true}},
+        {/*Sensor=*/&sDma1,
+         {/*ID=*/"sDma1",
+          /*Freq=*/1000,
+          /*Callback=*/
+          [&sDma1]()
+          {
+              if (sDma1.getLastError() != NO_ERRORS)
+                  cout << "Callback sDma1, error with sDma sample!" << endl;
+              else
+                  cout << "Callback sDma1!" << endl;
+          },
+          /*Enabled=*/true,
+          /*GroupId=*/1}},
+        {/*Sensor=*/&sDma2,
+         {/*ID=*/"sDma2",
+          /*Freq=*/1000,
+          /*Callback=*/
+          [&sDma2]()
+          {
+              if (sDma2.getLastError() != NO_ERRORS)
+                  cout << "Callback sDma2, error with sDma sample!" << endl;
+              else
+                  cout << "Callback sDma2!" << endl;
+          },
+          /*Enabled=*/true,
+          /*GroupId=*/1}},
+        {/*Sensor=*/&sDmaFailing,
+         {/*ID=*/"sDmaFailing",
+          /*Freq=*/1000,
+          /*Callback=*/
+          []() { cout << "Callback sDmaFailing!" << endl; },
+          /*Enabled=*/true,
+          /*GroupId=*/1}},
+    });
 
     sm.startAll();
 
