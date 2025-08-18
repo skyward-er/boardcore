@@ -40,9 +40,7 @@ public:
     using function_t = std::function<void()>;
     using GroupId_t  = uint8_t;
 
-    SensorGroup(GroupId_t groupId);
-
-    SensorGroup(GroupId_t groupId, TaskScheduler* scheduler);
+    SensorGroup(GroupId_t groupId, TaskScheduler* scheduler = nullptr);
 
     ~SensorGroup();
 

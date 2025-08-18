@@ -25,22 +25,22 @@
 namespace Boardcore
 {
 
-SensorGroup::SensorGroup(uint8_t groupId)
-    : groupID(groupId), scheduler(new TaskScheduler()), customScheduler(true),
+SensorGroup::SensorGroup(uint8_t groupId, TaskScheduler* sched)
+    : groupID(groupId), scheduler(sched),
       logger(Logging::getLogger("sensorgroup-" + std::to_string(groupId)))
 {
-    uint8_t currentSamplerId = getFirstTaskID();
-    if (currentSamplerId != 0)
+    if (scheduler == nullptr)
     {
-        LOG_DEBUG(logger, "Task scheduler not empty: starting from task ID {}",
-                  currentSamplerId);
+        customScheduler = true;
+        scheduler       = new TaskScheduler();
+        LOG_DEBUG(logger, "Allocated new task scheduler");
     }
-}
+    else
+    {
+        LOG_DEBUG(logger, "Task scheduler taken from the user");
+        customScheduler = false;
+    }
 
-SensorGroup::SensorGroup(uint8_t groupId, TaskScheduler* scheduler)
-    : groupID(groupId), scheduler(scheduler), customScheduler(false),
-      logger(Logging::getLogger("sensorgroup-" + std::to_string(groupId)))
-{
     uint8_t currentSamplerId = getFirstTaskID();
     if (currentSamplerId != 0)
     {

@@ -213,7 +213,8 @@ bool SensorManager::init(const SensorMap_t& sensorsMap,
         if (groups.count(sensorInfo.groupID) == 0)
         {
             // Create the group
-            if (schedulerMap == nullptr)
+            if (schedulerMap == nullptr ||
+                schedulerMap->count(sensorInfo.groupID) == 0)
             {
                 groups.emplace(
                     sensorInfo.groupID,
@@ -221,7 +222,6 @@ bool SensorManager::init(const SensorMap_t& sensorsMap,
             }
             else
             {
-                // TODO: add check that the group exists inside schedulerMap?
                 groups.emplace(sensorInfo.groupID,
                                std::make_shared<SensorGroup>(
                                    sensorInfo.groupID,
