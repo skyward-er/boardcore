@@ -71,7 +71,7 @@ public:
     MySensorDMA(DMAStreamGuard* s) : dmaStream(s)
     {
         source.reserve(size);
-        dest.reserve(size);
+        dest.resize(size);
 
         for (int i = 0; i < size; ++i)
             source.push_back(i);
