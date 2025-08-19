@@ -71,7 +71,7 @@ public:
     /**
      * @brief Retrieve the pointer to the peripheral currently used.
      */
-    SPIType* getSpi();
+    SPIType* getSpi() override;
 
     /**
      * @brief Resets the peripheral configuration.

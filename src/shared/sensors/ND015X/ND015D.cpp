@@ -22,6 +22,7 @@
 
 #include "ND015D.h"
 
+#include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Constants.h>
 
@@ -49,9 +50,21 @@ SPIBusConfig ND015D::getDefaultSPIConfig()
 }
 
 ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+               DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
+               std::chrono::nanoseconds timeout, FullScaleRange fsr,
+               IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
+               uint8_t odr)
+    : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)),
+      streamRx(streamRx), streamTx(streamTx), timeoutDma(timeout),
+      sensorSettings{fsr, iow, bwl, ntc, odr}
+{
+}
+
+ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                FullScaleRange fsr, IOWatchdogEnable iow, BWLimitFilter bwl,
                NotchEnable ntc, uint8_t odr)
-    : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)),
+    : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)), streamRx(nullptr),
+      streamTx(nullptr), timeoutDma(std::chrono::nanoseconds::zero()),
       sensorSettings{fsr, iow, bwl, ntc, odr}
 {
 }
@@ -64,6 +77,12 @@ bool ND015D::init()
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
     spi.transfer16(spiDataOut);
+
+    // Using the sensor immediately after initialization results in incorrect
+    // readings. To avoid this, we introduce a delay. The minimum delay required
+    // to prevent errors is 400 microseconds, but for safety and reliability, we
+    // set it to 4 milliseconds.
+    miosix::Thread::sleep(4);
 
     return true;
 }
@@ -183,10 +202,21 @@ ND015XData ND015D::sampleImpl()
 {
     ND015XData data;
     uint16_t spiDataOut;
-    SPITransaction spi(slave);
+    uint16_t spiDataIn = 0;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    uint16_t spiDataIn = spi.transfer16(spiDataOut);
+
+    if (streamRx != nullptr && streamTx != nullptr)
+    {
+        // Use dma
+        SPITransactionDMA spi(slave, *streamRx, *streamTx);
+        spiDataIn = spi.transfer16(spiDataOut, timeoutDma);
+    }
+    else
+    {
+        SPITransaction spi(slave);
+        spiDataIn = spi.transfer16(spiDataOut);
+    }
 
     data.pressure =
         (static_cast<int16_t>(spiDataIn) / (0.9 * pow(2, 15)) * range) *

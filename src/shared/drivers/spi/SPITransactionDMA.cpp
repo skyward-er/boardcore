@@ -25,10 +25,11 @@
 namespace Boardcore
 {
 
-SPITransactionDMA::SPITransactionDMA(const SPISlave& slave, SPIType* ptrSpi,
+SPITransactionDMA::SPITransactionDMA(const SPISlave& slave,
                                      DMAStreamGuard& rxStream,
                                      DMAStreamGuard& txStream)
-    : slave(slave), spi(ptrSpi), streamRx(rxStream), streamTx(txStream)
+    : slave(slave), spi(slave.bus.getSpi()), streamRx(rxStream),
+      streamTx(txStream)
 {
     slave.bus.configure(slave.config);
 }

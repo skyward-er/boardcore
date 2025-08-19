@@ -76,6 +76,11 @@ public:
     MockSPIBus& operator=(MockSPIBus&&) = delete;
 
     /**
+     * @brief Retrieve the pointer to the peripheral currently used.
+     */
+    SPI_TypeDef* getSpi() override { return nullptr; }
+
+    /**
      * @brief See SPIBusInterface::write()
      */
     virtual void write(uint8_t byte) override;
