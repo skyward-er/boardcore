@@ -130,9 +130,6 @@ private:
     std::map<AbstractSensor*, std::shared_ptr<SensorSampler>>
         samplersMap;  ///< Map each sensor to the corresponding sampler.
 
-    std::map<AbstractSensor*, SensorInfo>
-        sensorMap;  ///< Map each sensor to the corresponding SensorInfo.
-
     PrintLogger logger;
 };
 

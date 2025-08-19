@@ -85,6 +85,8 @@ public:
             return {};
         }
 
+        lastDmaError = DMAErrors::NO_ERRORS;
+
         DMATransaction trn = {
             .srcSize                         = DMATransaction::DataSize::BITS_8,
             .dstSize                         = DMATransaction::DataSize::BITS_8,
@@ -101,10 +103,16 @@ public:
         (*dmaStream)->enable();
         bool outcome = (*dmaStream)->timedWaitForTransferComplete(timeout);
 
+        if (!outcome)
+            lastDmaError = DMAErrors::TIMEOUT;
+
         for (int i = 0; i < size; ++i)
         {
-            if (dest[i] != source[i])
-                outcome = false;
+            if (dest[i] != source[i] && lastDmaError == DMAErrors::NO_ERRORS)
+            {
+                outcome      = false;
+                lastDmaError = DMAErrors::TRANSFER_ERROR;
+            }
 
             // Reset destination
             dest[i] = 0;
@@ -120,13 +128,16 @@ public:
 
     bool init() override { return dmaStream != nullptr; };
     bool selfTest() override { return dmaStream != nullptr; };
+    DMAErrors getDmaError() { return lastDmaError; };
 
 private:
-    static constexpr int size = 10;
+    static constexpr int size               = 10;
+    const std::chrono::milliseconds timeout = std::chrono::milliseconds(200);
+
     DMAStreamGuard* dmaStream;
     std::vector<uint8_t> source;
     std::vector<uint8_t> dest;
-    const std::chrono::milliseconds timeout = std::chrono::milliseconds(200);
+    DMAErrors lastDmaError = DMAErrors::NO_ERRORS;
 };
 
 template <typename SensorData>
@@ -310,7 +321,8 @@ int main()
           [&sDma1]()
           {
               if (sDma1.getLastError() != NO_ERRORS)
-                  cout << "Callback sDma1, error with sDma sample!" << endl;
+                  cout << "Callback sDma1, lastDmaError: "
+                       << (unsigned int)sDma1.getDmaError() << endl;
               else
                   cout << "Callback sDma1!" << endl;
           },
@@ -323,7 +335,8 @@ int main()
           [&sDma2]()
           {
               if (sDma2.getLastError() != NO_ERRORS)
-                  cout << "Callback sDma2, error with sDma sample!" << endl;
+                  cout << "Callback sDma1, lastDmaError: "
+                       << (unsigned int)sDma2.getDmaError() << endl;
               else
                   cout << "Callback sDma2!" << endl;
           },

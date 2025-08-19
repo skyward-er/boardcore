@@ -90,8 +90,6 @@ void SensorGroup::addSensor(AbstractSensor* sensor,
         }
     }
 
-    sensorMap.emplace(sensor, sensorInfo);
-
     LOG_DEBUG(logger, "Adding sensor {} to the group", sensorInfo.id);
 }
 
@@ -164,10 +162,9 @@ void SensorGroup::initScheduler()
 
 const SensorInfo SensorGroup::getSensorInfo(AbstractSensor* sensor)
 {
-    // TODO: is this check redundant?
-    if (sensorMap.find(sensor) != sensorMap.end())
+    if (samplersMap.count(sensor) != 0)
     {
-        return sensorMap.at(sensor);
+        return samplersMap.at(sensor)->getSensorInfo(sensor);
     }
     else
     {
