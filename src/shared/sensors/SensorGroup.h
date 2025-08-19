@@ -112,10 +112,17 @@ private:
     static constexpr uint8_t MAX_TASK_ID =
         255;  ///< Max id for tasks in the scheduler.
 
-    // TODO: can it be substituted with smart pointers?
-    TaskScheduler*
-        scheduler;         ///< To update the samplers at the correct period.
-    bool customScheduler;  ///< Whether or not the scheduler comes from outside.
+    /**
+     * @brief Needed to update the samplers at the correct period.
+     * TODO: can it be substituted with smart pointers?
+     */
+    TaskScheduler* scheduler;
+
+    /**
+     * @brief True if the scheduler was not provided by the user (we created
+     * it).
+     */
+    bool customScheduler;
 
     std::vector<std::shared_ptr<SensorSampler>>
         samplers;  ///< Vector of all the samplers (unique).

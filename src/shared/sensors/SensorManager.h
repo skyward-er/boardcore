@@ -49,12 +49,21 @@ namespace Boardcore
 class SensorManager
 {
 public:
-    // using function_t  = std::function<void()>;
     using SensorMap_t    = std::map<AbstractSensor*, SensorInfo>;
     using SchedulerMap_t = std::map<SensorGroup::GroupId_t, TaskScheduler*>;
 
+    /**
+     * @param sensorMap Map containing sensors and their respective information
+     * for the sampling.
+     */
     explicit SensorManager(const SensorMap_t& sensorsMap);
 
+    /**
+     * @param sensorMap Map containing sensors and their respective information
+     * for the sampling.
+     * @param schedulerMap Mapping of the schedulers for each SensorGroup. If
+     * no scheduler is specified for a specific group, a new one is created.
+     */
     SensorManager(const SensorMap_t& sensorsMap,
                   const SchedulerMap_t& schedulerMap);
 
@@ -92,10 +101,24 @@ public:
      */
     void disableSensor(AbstractSensor* sensor);
 
+    /**
+     * @brief Enable all the sensors for all the sensor groups.
+     */
     void enableAllSensors();
+
+    /**
+     * @brief Enable all the sensors for the specific group.
+     */
     void enableAllSensors(const SensorGroup::GroupId_t groupId);
 
+    /**
+     * @brief Disable all the sensors for all the sensor groups.
+     */
     void disableAllSensors();
+
+    /**
+     * @brief Disable all the sensors for the specific group.
+     */
     void disableAllSensors(const SensorGroup::GroupId_t groupId);
 
     /**
@@ -137,9 +160,15 @@ private:
      */
     bool initSensor(AbstractSensor* sensor);
 
+    /**
+     * @brief Mapping between the sensor and the sensor group is
+     * associated to.
+     */
     std::map<AbstractSensor*, std::shared_ptr<SensorGroup>> groupsMap;
 
-    // TODO: vector instead of map?
+    /**
+     * @brief Mapping between the sensor groups and their id.
+     */
     std::map<SensorGroup::GroupId_t, std::shared_ptr<SensorGroup>> groups;
 
     bool initResult = true;  ///< true if sensors are initialized correctly.
