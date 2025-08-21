@@ -34,14 +34,31 @@
 namespace Boardcore
 {
 
+/**
+ * @brief Sensors inside the group are organized by sampling period in various
+ * SensorSampler objects. These samplers are then added to the scheduler ordered
+ * by sampling period. The scheduler then manages the samplers by calling their
+ * sampleAndCallback method periodically.
+ */
 class SensorGroup
 {
 public:
     using function_t = std::function<void()>;
     using GroupId_t  = uint8_t;
 
+    /**
+     * @param groupId The id of the group being created.
+     * @param scheduler A pointer to the scheduler to be used. If not
+     * present, a new scheduler is allocated.
+     * In case a TaskScheduler was passed, the SensorGroup
+     * will assign to SensorSamplers incremental IDs starting from the maximum
+     * among the tasks already existing in the TaskScheduler.
+     */
     SensorGroup(GroupId_t groupId, TaskScheduler* scheduler = nullptr);
 
+    /**
+     * @brief Deallocates the scheduler if needed.
+     */
     ~SensorGroup();
 
     /**

@@ -36,12 +36,9 @@ namespace Boardcore
 {
 
 /**
- * @brief The SensorManager handles sensors initialization and sampling.
- *
- * Sensors are grouped by sampling period in various SensorSampler objects.
- * These samplers are then added to the scheduler ordered by sampling period.
- * The scheduler then manages the samplers by calling their sampleAndCallback
- * method periodically.
+ * @brief The SensorManager handles sensors and their initialization.
+ * They are initialized and then grouped inside sensor groups, which
+ * will take care of their sampling.
  *
  * TODO: The SensorManager should be able to reinitialized sensors that have
  * failed previous initializations.
@@ -140,15 +137,15 @@ private:
     SensorManager& operator=(const SensorManager&) = delete;
 
     /**
-     * @brief Initializes samplers vector and sensorsMap with the given sensors
-     * map, giving incremental IDs to SensorSampler objects.
-     *
-     * In case a TaskScheduler was passed in the constructor, the SensorManager
-     * will assign to SensorSamplers incremental IDs starting from the maximum
-     * among the tasks already existing in the TaskScheduler.
+     * @brief Initializes sensors and groups with the given sensors map and
+     * schedulers map.
      *
      * @param sensorsMap Map containing sensors and their respective information
      * for the sampling.
+     * @param schedulerMap A pointer (can be nullptr) to the map that contains
+     * the scheduler that each sensor group should use. If nullptr (or no
+     * scheduler is provided for a certain group) the sensor group will allocate
+     * a new scheduler.
      */
     bool init(const SensorMap_t& sensorsMap,
               const SchedulerMap_t* schedulerMap);
@@ -156,7 +153,7 @@ private:
     /**
      * @brief Initialize a sensor and run its self-test.
      *
-     * @param sensor  the sensor to be initialized
+     * @param sensor The sensor to be initialized.
      */
     bool initSensor(AbstractSensor* sensor);
 
