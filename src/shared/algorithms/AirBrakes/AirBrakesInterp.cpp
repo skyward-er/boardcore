@@ -90,7 +90,18 @@ void AirBrakesInterp::step()
     float percentage = controlInterp(currentPosition);
 
     // Filtering
-    float filterCoeff = 0;
+    if (currentPosition.z < configInterp.ABK_CRITICAL_ALTITUDE)
+    {
+        // Compute the actual value filtered
+        percentage =
+            lastPercentage + (percentage - lastPercentage) * filterCoeff;
+    }
+    else
+    {
+        // If the height is beyond the target one, the algorithm tries to brake
+        // as much as possible
+        percentage = 1;
+    }
 
     // If the altitude is lower than the minimum one, the filter is kept at the
     // same value, to avoid misleading filtering actions
@@ -106,19 +117,6 @@ void AirBrakesInterp::step()
                 ((configInterp.STARTING_FILTER_VALUE) /
                  (configInterp.FILTER_MAXIMUM_ALTITUDE -
                   configInterp.FILTER_MINIMUM_ALTITUDE));
-    }
-
-    if (currentPosition.z < configInterp.ABK_CRITICAL_ALTITUDE)
-    {
-        // Compute the actual value filtered
-        percentage =
-            lastPercentage + (percentage - lastPercentage) * filterCoeff;
-    }
-    else
-    {
-        // If the height is beyond the target one, the algorithm tries to brake
-        // as much as possible
-        percentage = 1;
     }
 
     lastPercentage = percentage;
@@ -170,9 +168,9 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
         if (saturation == false)
             integralError += error * dt;
 
-        float kp = configInterp.PID_COEFFS[0];
-        float ki = configInterp.PID_COEFFS[1];
-        float kd = configInterp.PID_COEFFS[2];
+        float kp = configInterp.KP;
+        float ki = configInterp.KI;
+        float kd = configInterp.KD;
 
         float percentage =
             kp * error + kd * prevError / dt + ki * integralError + ref;
@@ -193,5 +191,4 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
         return percentage;
     }
 }
-
 }  // namespace Boardcore
