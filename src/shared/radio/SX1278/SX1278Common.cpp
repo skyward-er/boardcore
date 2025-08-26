@@ -73,6 +73,13 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode& guard, IrqFlags set_irq,
 {
     IrqFlags ret_irq = 0;
 
+    // Save current thread priority
+    auto oldPriority = miosix::Thread::getCurrentThread()->getPriority();
+    // While the current thread is acting as an IRQ handler, increase its
+    // priority if it's too low to ensure IRQs are handled in a timely manner
+    if (oldPriority < MIN_IRQ_PRIORITY)
+        miosix::Thread::getCurrentThread()->setPriority(MIN_IRQ_PRIORITY);
+
     do
     {
         // An interrupt could occur and read from this variables
@@ -94,6 +101,10 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode& guard, IrqFlags set_irq,
 
         // Protect against sporadic IRQs
     } while ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) == 0);
+
+    // Restore the previous thread priority if it was changed
+    if (oldPriority < MIN_IRQ_PRIORITY)
+        miosix::Thread::getCurrentThread()->setPriority(oldPriority);
 
     return ret_irq;
 }
