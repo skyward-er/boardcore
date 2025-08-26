@@ -37,6 +37,9 @@ namespace Boardcore
 
 namespace SX1278
 {
+// The minimum required thread priority to ensure IRQs are handled in a timely
+// manner, to avoid packet loss because of high data retrieval latency
+static constexpr auto MIN_IRQ_PRIORITY = miosix::PRIORITY_MAX - 2;
 
 using DioMapping = RegDioMapping::Mapping;
 
