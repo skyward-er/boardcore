@@ -51,7 +51,7 @@ bool ADS131M08::reset()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t data[FULL_FRAME_SIZE] = {0};
+    uint8_t data[FULL_FRAME_SIZE] = {};
     sendCommand(transaction, Command::RESET, data);
 
     // The reset command takes typically 5us to reload the register contents.
@@ -168,7 +168,7 @@ bool ADS131M08::selfTest()
     disableGlobalChopMode();
 
     // Take some samples
-    int32_t averageValues[CHANNELS_NUM] = {0};
+    int32_t averageValues[CHANNELS_NUM] = {};
     int realSampleCount                 = 0;
     for (int i = 0; i < SELF_TEST_SAMPLES; i++)
     {
@@ -551,7 +551,7 @@ Register ADS131M08::getChannelGainRegisterLSB(Channel channel)
 bool ADS131M08::readSamples(int32_t rawValues[CHANNELS_NUM])
 {
     // Send the NULL command and read response
-    uint8_t data[FULL_FRAME_SIZE] = {0};
+    uint8_t data[FULL_FRAME_SIZE] = {};
 
     data[0] = (static_cast<uint16_t>(Command::NULL_CMD) & 0xff00) >> 8;
     data[1] = (static_cast<uint16_t>(Command::NULL_CMD) & 0x00ff);
@@ -590,7 +590,7 @@ bool ADS131M08::readSamples(int32_t rawValues[CHANNELS_NUM])
 
 uint16_t ADS131M08::readRegister(Register reg)
 {
-    uint8_t data[3] = {0};
+    uint8_t data[3] = {};
 
     // Prepare the command
     data[0] = static_cast<uint16_t>(Command::RREG) >> 8 |
@@ -608,7 +608,7 @@ void ADS131M08::writeRegister(Register reg, uint16_t data)
 {
     // The write command uses two communication words (3 bytes each), one for
     // the register address and one for the data to write
-    uint8_t writeCommand[6] = {0};
+    uint8_t writeCommand[6] = {};
 
     // Prepare the command
     writeCommand[0] = static_cast<uint16_t>(Command::WREG) >> 8 |

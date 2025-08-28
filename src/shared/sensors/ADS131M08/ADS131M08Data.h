@@ -35,24 +35,18 @@ namespace Boardcore
 
 struct ADS131M08Data
 {
-    uint64_t timestamp;
-    float voltage[8];
+    uint64_t timestamp                         = 0;
+    float voltage[ADS131M08Defs::CHANNELS_NUM] = {};
 
-    ADS131M08Data() : ADS131M08Data{0, 0, 0, 0, 0, 0, 0, 0, 0} {}
+    ADS131M08Data() = default;
 
     ADS131M08Data(uint64_t timestamp, float voltageCh1, float voltageCh2,
                   float voltageCh3, float voltageCh4, float voltageCh5,
                   float voltageCh6, float voltageCh7, float voltageCh8)
-        : timestamp(timestamp)
+        : timestamp(timestamp),
+          voltage{voltageCh1, voltageCh2, voltageCh3, voltageCh4,
+                  voltageCh5, voltageCh6, voltageCh7, voltageCh8}
     {
-        voltage[0] = voltageCh1;
-        voltage[1] = voltageCh2;
-        voltage[2] = voltageCh3;
-        voltage[3] = voltageCh4;
-        voltage[4] = voltageCh5;
-        voltage[5] = voltageCh6;
-        voltage[6] = voltageCh7;
-        voltage[7] = voltageCh8;
     }
 
     const ADCData getVoltage(ADS131M08Defs::Channel channel)
