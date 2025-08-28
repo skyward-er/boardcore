@@ -45,10 +45,10 @@ public:
      * @param minCurrent current at the 0 pressure point.
      * @param maxCurrent current at the maximum pressure point.
      */
-    TrafagPressureSensor(std::function<ADCData()> getVoltage,
+    TrafagPressureSensor(std::function<VoltageData()> getVoltage,
                          float shuntResistance, float maxPressure,
                          float minCurrent = 4, float maxCurrent = 20)
-        : getVoltage{getVoltage}, shuntResistance{shuntResistance},
+        : getVoltage{std::move(getVoltage)}, shuntResistance{shuntResistance},
           maxPressure{maxPressure}, minCurrent{minCurrent},
           maxCurrent{maxCurrent}
     {
@@ -57,6 +57,10 @@ public:
     bool init() override { return true; }
 
     bool selfTest() override { return true; }
+
+    void setShuntResistance(float resistance) { shuntResistance = resistance; }
+
+    float getShuntResistance() const { return shuntResistance; }
 
 protected:
     PressureData sampleImpl() override
@@ -78,9 +82,9 @@ private:
         return value * maxPressure;
     }
 
-    std::function<ADCData()> getVoltage;
+    std::function<VoltageData()> getVoltage;
 
-    const float shuntResistance;
+    float shuntResistance;
     const float maxPressure;
     const float minCurrent;
     const float maxCurrent;
