@@ -43,13 +43,19 @@ bool SensorSampler::compareByPeriod(const std::shared_ptr<SensorSampler>& left,
 
 void SensorSampler::toggleSensor(AbstractSensor* sensor, bool isEnabled)
 {
-    auto elem = std::find_if(sensors.begin(), sensors.end(),
-                             [&](std::pair<AbstractSensor*, SensorInfo> s)
-                             { return s.first == sensor; });
-
-    elem->second.isEnabled = isEnabled;
-    LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}", getID(),
-              static_cast<void*>(sensor), elem->second.isEnabled);
+    for (auto& elem : sensors)
+    {
+        if (elem.first == sensor)
+        {
+            elem.second.isEnabled = isEnabled;
+            LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}",
+                      getID(), static_cast<void*>(sensor),
+                      elem.second.isEnabled);
+            return;
+        }
+    }
+    LOG_ERR(logger, "Sampler {}: cannot toggle sensor, sensor {} not found",
+            this->id, static_cast<void*>(sensor));
 }
 
 void SensorSampler::enableAllSensors()
@@ -88,8 +94,25 @@ unsigned int SensorSampler::getNumSensors() { return sensors.size(); }
 const SensorInfo SensorSampler::getSensorInfo(AbstractSensor* sensor)
 {
     for (auto it = sensors.begin(); it != sensors.end(); ++it)
+    {
         if (it->first == sensor)
-            return it->second;
+        {
+            SensorInfo ret;
+            ret.groupID = it->second.groupID;
+            ret.id      = it->second.id;
+            ret.period  = it->second.period;
+
+            if (it->second.isInitialized)
+                if (it->second.isEnabled)
+                    ret.status = SensorStatus::ENABLED;
+                else
+                    ret.status = SensorStatus::DISABLED;
+            else
+                ret.status = SensorStatus::NOT_INIT;
+
+            return ret;
+        }
+    }
 
     LOG_ERR(logger, "Sampler {}: sensor {} not found", this->id,
             static_cast<void*>(sensor));
@@ -106,9 +129,11 @@ SimpleSensorSampler::SimpleSensorSampler(uint8_t id,
 SimpleSensorSampler::~SimpleSensorSampler() {}
 
 void SimpleSensorSampler::addSensor(AbstractSensor* sensor,
-                                    SensorInfo sensorInfo)
+                                    const SensorConfig& sensorConfig,
+                                    bool isInit)
 {
-    sensors.push_back(make_pair(sensor, sensorInfo));
+    SensorEntry info(sensorConfig, isInit);
+    sensors.push_back(make_pair(sensor, info));
 }
 
 void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)

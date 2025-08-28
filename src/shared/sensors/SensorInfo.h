@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <units/Frequency.h>
 #include <utils/KernelTime.h>
 
 #include <chrono>
@@ -32,61 +31,45 @@ namespace Boardcore
 {
 
 /**
- * @brief Sensors information struct needed by the SensorManager.
+ * @brief Represents the status of a sensor
+ * handled by the sensor manager.
+ */
+enum class SensorStatus : uint8_t
+{
+    ENABLED,   // Initialized and enabled.
+    DISABLED,  // Initialized but disabled.
+    NOT_INIT,  // Not initialized, so it cannot be enabled.
+};
+
+/**
+ * @brief Struct used to retrieve information of a sensor from the
+ * sensor manager.
  *
- * This structure contains the sampling period of a sensor,
- * the function to be called after the sampling (callback) and
- * one boolean indicating if the sensor has to be sampled (is enabled).
+ * It contains the id and group of the sensor, the sampling period
+ * and the current status.
  */
 struct SensorInfo
 {
     std::string id;
     std::chrono::nanoseconds period;
-    std::function<void()> callback;
-    bool isEnabled;
     uint8_t groupID;
-    bool isInitialized;
+    SensorStatus status;
 
     SensorInfo(
         // cppcheck-suppress passedByValue
         const std::string id = "", uint32_t period = 0,
-        std::function<void()> callback = []() {}, bool isEnabled = true,
-        uint8_t groupID = 0)
-        : SensorInfo(id, std::chrono::milliseconds{period}, std::move(callback),
-                     isEnabled, groupID)
-    {
-    }
-
-    SensorInfo(
-        // cppcheck-suppress passedByValue
-        const std::string id, Units::Frequency::Hertz frequency,
-        std::function<void()> callback = []() {}, bool isEnabled = true,
-        uint8_t groupID = 0)
-        : SensorInfo(id,
-                     std::chrono::nanoseconds{
-                         static_cast<int64_t>(sToNs(1) / frequency.value())},
-                     std::move(callback), isEnabled, groupID)
-    {
-    }
-
-    SensorInfo(
-        // cppcheck-suppress passedByValue
-        const std::string id, std::chrono::nanoseconds period,
-        std::function<void()> callback = []() {}, bool isEnabled = true,
-        uint8_t groupID = 0)
-        : id(id), period(period), callback(std::move(callback)),
-          isEnabled(isEnabled), groupID(groupID), isInitialized(false)
+        std::function<void()> callback = []() {}, uint8_t groupID = 0,
+        SensorStatus status = SensorStatus::NOT_INIT)
+        : id(id), period(period), groupID(groupID), status(status)
     {
     }
 
     SensorInfo& operator=(const SensorInfo& info)
     {
-        id            = info.id;
-        period        = info.period;
-        callback      = info.callback;
-        isEnabled     = info.isEnabled;
-        groupID       = info.groupID;
-        isInitialized = info.isInitialized;
+        id      = info.id;
+        period  = info.period;
+        groupID = info.groupID;
+        status  = info.status;
 
         return *this;
     }
@@ -94,11 +77,30 @@ struct SensorInfo
     bool operator==(const SensorInfo& info) const
     {
         return id == info.id && period == info.period &&
-               isEnabled == info.isEnabled && groupID == info.groupID &&
-               isInitialized == info.isInitialized &&
-               callback.target_type() == info.callback.target_type() &&
-               callback.target<void()>() == info.callback.target<void()>();
+               groupID == info.groupID && status == info.status;
     };
+
+    std::string toString()
+    {
+        std::string ret = id + ", " + std::to_string(groupID) + ", " +
+                          std::to_string(period.count()) + "ns, ";
+        switch (status)
+        {
+            case SensorStatus::ENABLED:
+                ret += "enabled";
+                break;
+            case SensorStatus::DISABLED:
+                ret += "disabled";
+                break;
+            case SensorStatus::NOT_INIT:
+                ret += "not init";
+                break;
+            default:
+                break;
+        }
+
+        return ret;
+    }
 };
 
 }  // namespace Boardcore

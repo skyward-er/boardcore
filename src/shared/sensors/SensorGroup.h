@@ -28,6 +28,7 @@
 #include <map>
 #include <memory>
 
+#include "SensorConfig.h"
 #include "SensorInfo.h"
 #include "SensorSampler.h"
 
@@ -78,8 +79,13 @@ public:
 
     /**
      * @brief Add a sensor to the sensor group.
+     * @param sensor Pointer to the sensor to be added.
+     * @param sensorConfig The configuration struct for the sensor.
+     * @param isInit True if the sensor was correctly initialized. False
+     * otherwise.
      */
-    void addSensor(AbstractSensor* sensor, const SensorInfo& sensorInfo);
+    void addSensor(AbstractSensor* sensor, const SensorConfig& sensorConfig,
+                   const bool isInit);
 
     void enableSensor(AbstractSensor* sensor);
 

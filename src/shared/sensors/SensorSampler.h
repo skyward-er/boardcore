@@ -27,6 +27,7 @@
 #include <chrono>
 
 #include "Sensor.h"
+#include "SensorConfig.h"
 #include "SensorInfo.h"
 
 namespace Boardcore
@@ -63,8 +64,12 @@ public:
      * @brief Add a sensor to the sensors map.
      *
      * @param sensor The sensor to be added.
+     * @param sensorConfig Configuration struct for the sensor.
+     * @param isInit True if the sensor was correctly initialized. False
+     * otherwise.
      */
-    virtual void addSensor(AbstractSensor* sensor, SensorInfo sensorInfo) = 0;
+    virtual void addSensor(AbstractSensor* sensor,
+                           const SensorConfig& sensorConfig, bool isInit) = 0;
 
     /**
      * @brief Enabled or disable a sensor.
@@ -108,7 +113,37 @@ private:
     std::chrono::nanoseconds period;  ///< Sampler update/activation period.
 
 protected:
-    std::vector<std::pair<AbstractSensor*, SensorInfo>> sensors;
+    /**
+     * @brief Used to store all the information needed for
+     * the sensor sampling.
+     */
+    struct SensorEntry
+    {
+        std::string id;
+        std::chrono::nanoseconds period;
+        std::function<void()> callback;
+        bool isEnabled;
+        uint8_t groupID;
+        bool isInitialized;
+
+        SensorEntry(const SensorConfig& conf, const bool isInit)
+            : SensorEntry(conf.id, std::chrono::nanoseconds{conf.period},
+                          std::move(conf.callback), conf.isEnabled,
+                          conf.groupID, isInit)
+        {
+        }
+
+        SensorEntry(std::string id, std::chrono::nanoseconds period,
+                    std::function<void()> callback, bool isEnabled,
+                    uint8_t groupID, bool isInitialized)
+            : id(id), period(period), callback(std::move(callback)),
+              isEnabled(isEnabled), groupID(groupID),
+              isInitialized(isInitialized)
+        {
+        }
+    };
+
+    std::vector<std::pair<AbstractSensor*, SensorEntry>> sensors;
 
     PrintLogger logger = Logging::getLogger("sensorsampler");
 };
@@ -124,7 +159,8 @@ public:
 
     ~SimpleSensorSampler();
 
-    void addSensor(AbstractSensor* sensor, SensorInfo sensorInfo) override;
+    void addSensor(AbstractSensor* sensor, const SensorConfig& sensorConfig,
+                   bool isInit) override;
 
     void sampleSensor(AbstractSensor* s) override;
 

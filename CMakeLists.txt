@@ -107,7 +107,7 @@ add_executable(test-rtc src/tests/test-rtc.cpp)
 sbs_target(test-rtc stm32f767zi_compute_unit)
 
 add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
-sbs_target(test-sensormanager stm32f429zi_death_stack_v2)
+sbs_target(test-sensormanager stm32f767zi_compute_unit)
 
 add_executable(test-serial src/tests/test-serial.cpp)
 sbs_target(test-serial stm32f767zi_lyra_biscotto)

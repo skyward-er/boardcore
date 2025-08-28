@@ -181,64 +181,63 @@ bool SensorManager::init(const SensorMap_t& sensorsMap,
 {
     for (auto it : sensorsMap)
     {
-        AbstractSensor* sensor = it.first;
-        SensorInfo sensorInfo  = it.second;
+        AbstractSensor* sensor    = it.first;
+        SensorConfig sensorConfig = it.second;
+        bool sensorIsInit         = false;
 
-        LOG_DEBUG(logger, "Initializing sensor {}", sensorInfo.id);
+        LOG_DEBUG(logger, "Initializing sensor {}", sensorConfig.id);
         // Try to initialize the sensors
         if (!initSensor(sensor))
         {
-            sensorInfo.isEnabled = false;
-
             initResult = false;
 
             LOG_ERR(
                 logger,
                 "Failed to initialize sensor {} -> Error: {} (period: {} ns)",
-                sensorInfo.id.c_str(), sensor->getLastError(),
-                sensorInfo.period.count());
+                sensorConfig.id.c_str(), sensor->getLastError(),
+                sensorConfig.period.count());
         }
         else
         {
-            sensorInfo.isInitialized = true;
+            sensorIsInit = true;
         }
 
         // Add sensor even if not initialized correctly, its isInitialized info
         // field will be false
         LOG_DEBUG(logger, "Adding {} -> period: {} ns, enabled = {}",
-                  sensorInfo.id.c_str(), sensorInfo.period.count(),
-                  sensorInfo.isEnabled);
+                  sensorConfig.id.c_str(), sensorConfig.period.count(),
+                  sensorConfig.isEnabled);
 
         // Verify if a group for this sensor already exists
-        if (groups.count(sensorInfo.groupID) == 0)
+        if (groups.count(sensorConfig.groupID) == 0)
         {
             // Create the group
             if (schedulerMap == nullptr ||
-                schedulerMap->count(sensorInfo.groupID) == 0)
+                schedulerMap->count(sensorConfig.groupID) == 0)
             {
                 groups.emplace(
-                    sensorInfo.groupID,
-                    std::make_shared<SensorGroup>(sensorInfo.groupID));
+                    sensorConfig.groupID,
+                    std::make_shared<SensorGroup>(sensorConfig.groupID));
             }
             else
             {
-                groups.emplace(sensorInfo.groupID,
+                groups.emplace(sensorConfig.groupID,
                                std::make_shared<SensorGroup>(
-                                   sensorInfo.groupID,
-                                   schedulerMap->at(sensorInfo.groupID)));
+                                   sensorConfig.groupID,
+                                   schedulerMap->at(sensorConfig.groupID)));
             }
 
-            LOG_DEBUG(logger, "Created group with id {}", sensorInfo.groupID);
+            LOG_DEBUG(logger, "Created group with id {}", sensorConfig.groupID);
         }
 
-        auto ptrGroup = groups.at(sensorInfo.groupID);
+        auto& ptrGroup = groups.at(sensorConfig.groupID);
 
-        ptrGroup->addSensor(sensor, sensorInfo);
+        ptrGroup->addSensor(sensor, sensorConfig, sensorIsInit);
 
         groupsMap.emplace(sensor, ptrGroup);
     }
 
-    for (auto it : groups)
+    for (auto& it : groups)
         it.second->initScheduler();
 
     return initResult;

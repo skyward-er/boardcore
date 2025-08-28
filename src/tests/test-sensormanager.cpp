@@ -335,7 +335,7 @@ int main()
           [&sDma2]()
           {
               if (sDma2.getLastError() != NO_ERRORS)
-                  cout << "Callback sDma1, lastDmaError: "
+                  cout << "Callback sDma2, lastDmaError: "
                        << (unsigned int)sDma2.getDmaError() << endl;
               else
                   cout << "Callback sDma2!" << endl;

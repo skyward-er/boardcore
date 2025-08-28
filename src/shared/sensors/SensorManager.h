@@ -28,6 +28,7 @@
 #include <map>
 #include <memory>
 
+#include "SensorConfig.h"
 #include "SensorGroup.h"
 #include "SensorInfo.h"
 #include "SensorSampler.h"
@@ -46,7 +47,7 @@ namespace Boardcore
 class SensorManager
 {
 public:
-    using SensorMap_t    = std::map<AbstractSensor*, SensorInfo>;
+    using SensorMap_t    = std::map<AbstractSensor*, SensorConfig>;
     using SchedulerMap_t = std::map<SensorGroup::GroupId_t, TaskScheduler*>;
 
     /**

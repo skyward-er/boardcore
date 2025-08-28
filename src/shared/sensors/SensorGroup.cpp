@@ -56,17 +56,17 @@ SensorGroup::~SensorGroup()
 }
 
 void SensorGroup::addSensor(AbstractSensor* sensor,
-                            const SensorInfo& sensorInfo)
+                            const SensorConfig& sensorConfig, const bool isInit)
 {
     const uint8_t currentSamplerId = getFirstTaskID();
 
     // Check if a sampler with the same sampling period exists
     bool found = false;
-    for (auto sampler : samplers)
+    for (auto& sampler : samplers)
     {
-        if (sensorInfo.period == sampler->getSamplingPeriod())
+        if (sensorConfig.period == sampler->getSamplingPeriod())
         {
-            sampler->addSensor(sensor, sensorInfo);
+            sampler->addSensor(sensor, sensorConfig, isInit);
             samplersMap[sensor] = sampler;
             found               = true;
         }
@@ -75,9 +75,9 @@ void SensorGroup::addSensor(AbstractSensor* sensor,
     if (!found)
     {
         // A sampler with the required period does not exist yet
-        auto newSampler = createSampler(currentSamplerId, sensorInfo.period);
+        auto newSampler = createSampler(currentSamplerId, sensorConfig.period);
 
-        newSampler->addSensor(sensor, sensorInfo);
+        newSampler->addSensor(sensor, sensorConfig, isInit);
 
         samplers.push_back(newSampler);
         samplersMap[sensor] = newSampler;
@@ -90,7 +90,7 @@ void SensorGroup::addSensor(AbstractSensor* sensor,
         }
     }
 
-    LOG_DEBUG(logger, "Adding sensor {} to the group", sensorInfo.id);
+    LOG_DEBUG(logger, "Adding sensor {} to the group", sensorConfig.id);
 }
 
 void SensorGroup::enableSensor(AbstractSensor* sensor)
@@ -109,7 +109,7 @@ void SensorGroup::enableSensor(AbstractSensor* sensor)
 
 void SensorGroup::enableAllSensors()
 {
-    for (auto it : samplers)
+    for (auto& it : samplers)
         it->enableAllSensors();
 }
 
@@ -129,7 +129,7 @@ void SensorGroup::disableSensor(AbstractSensor* sensor)
 
 void SensorGroup::disableAllSensors()
 {
-    for (auto it : samplers)
+    for (auto& it : samplers)
         it->disableAllSensors();
 }
 
