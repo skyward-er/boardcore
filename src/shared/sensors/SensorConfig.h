@@ -67,7 +67,7 @@ struct SensorConfig
     SensorConfig(
         // cppcheck-suppress passedByValue
         std::string id, Units::Frequency::Hertz frequency,
-        std::function<void()> callback, bool enabled, uint8_t groupID)
+        std::function<void()> callback, uint8_t groupID, bool enabled = true)
         : id(id), period(std::chrono::nanoseconds{
                       static_cast<int64_t>(sToNs(1) / frequency.value())}),
           callback(std::move(callback)), groupID(groupID), isEnabled(enabled)
