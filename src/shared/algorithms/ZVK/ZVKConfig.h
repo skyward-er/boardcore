@@ -42,8 +42,8 @@
         float SIGMA_MAG;        //[mgauss] Estimated magnetometer variance
         float BIAS_ACC;         //[m/s^2] Accelerometer bias
         float BIAS_GYRO;        //[rad/s] Gyroscope bias
-        float VELOCITY_UNCERTAINTY; //[m/s] Uncertainty on velocity
-        float POSITION_UNCERTAINTY; //[m] Uncertainty on position
+        float VEL_UNCERTAINTY; //[m/s] Uncertainty on velocity
+        float POS_UNCERTAINTY; //[m] Uncertainty on position
         Eigen::Vector3f NED_MAG; // Normalized magnetic field vector in NED frame
 
     };
