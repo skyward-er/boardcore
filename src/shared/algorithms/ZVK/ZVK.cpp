@@ -48,8 +48,8 @@ ZVK::ZVK(const ZVKConfig& config): config(config)
     // Set elements in the vector 
     diagElements <<
         Eigen::Vector3f::Ones() * smallAngleError * smallAngleError,
-        Eigen::Vector3f::Ones() * config.VELOCITY_UNCERTAINTY,
-        Eigen::Vector3f::Ones() * config.POSITION_UNCERTAINTY,
+        Eigen::Vector3f::Ones() * config.VEL_UNCERTAINTY,
+        Eigen::Vector3f::Ones() * config.POS_UNCERTAINTY,
         Eigen::Vector3f::Ones() * config.BIAS_ACC * config.BIAS_ACC,
         Eigen::Vector3f::Ones() * config.BIAS_GYRO * config.BIAS_GYRO;
     P = diagElements.asDiagonal();
