@@ -68,6 +68,7 @@ class MySensorDMA : public Sensor<TestData>
 public:
     MySensorDMA() : dmaStream(nullptr) {}
 
+    // cppcheck-suppress  noExplicitConstructor
     MySensorDMA(DMAStreamGuard* s) : dmaStream(s)
     {
         source.reserve(size);

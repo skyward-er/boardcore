@@ -73,6 +73,25 @@ struct SensorConfig
           callback(std::move(callback)), groupID(groupID), isEnabled(enabled)
     {
     }
+
+    SensorConfig& operator=(const SensorConfig& config)
+    {
+        id        = config.id;
+        period    = config.period;
+        callback  = config.callback;
+        groupID   = config.groupID;
+        isEnabled = config.isEnabled;
+
+        return *this;
+    }
+
+    bool operator==(const SensorConfig& config) const
+    {
+        return id == config.id && period == config.period &&
+               callback.target_type() == config.callback.target_type() &&
+               callback.target<void()>() == config.callback.target<void()>() &&
+               groupID == config.groupID && isEnabled == config.isEnabled;
+    };
 };
 
 }  // namespace Boardcore
