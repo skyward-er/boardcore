@@ -29,12 +29,13 @@ namespace Boardcore
 
 TwelveParametersCorrector::TwelveParametersCorrector(Eigen::Matrix3f W,
                                                      Eigen::Vector3f V)
+    : V(V), W(W)
 {
 }
 
-TwelveParametersCorrector::TwelveParametersCorrector() : V()
+TwelveParametersCorrector::TwelveParametersCorrector()
+    : V(Eigen::Vector3f::Zero()), W(Eigen::Matrix3f::Identity())
 {
-    W.setIdentity();
 }
 
 bool TwelveParametersCorrector::fromFile(const std::string& filename)
