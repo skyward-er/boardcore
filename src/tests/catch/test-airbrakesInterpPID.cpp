@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2025 Skyward Experimental Rocketry
+ * Author: Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,32 +20,38 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/AirBrakes/AirBrakesInterp.h>
+#include <algorithms/AirBrakes/AirBrakesInterpPID.h>
 
 #include <algorithm>
 #include <catch2/catch.hpp>
 #include <fstream>
 #include <iostream>
 
-#include "../algorithms/Airbrakes/test-airbrakesInterp-data.h"
-#include "../algorithms/Airbrakes/test-airbrakesInterp-references.h"
+#include "../algorithms/Airbrakes/test-airbrakesInterpPID-data.h"
+#include "../algorithms/Airbrakes/test-airbrakesInterpPID-references.h"
 
 using namespace Boardcore;
 using namespace std;
-using namespace ABKInterp;
+using namespace Boardcore::ABKInterpPID;
 
 constexpr float MINIMUM_ALTITUDE      = 1000;
 constexpr float MAXIMUM_ALTITUDE      = 3000;
 constexpr float STARTING_FILTER_VALUE = 0.9f;
 constexpr float ABK_CRITICAL_ALTITUDE = 2990;
 constexpr float DZ                    = 10;
-constexpr float INITIAL_MASS          = 28;
-constexpr float DM                    = 0.2f;
-constexpr uint16_t N_FORWARD          = 1;
+constexpr float INITIAL_MASS          = 29;
+constexpr float DM                    = 0.4f;
+constexpr float ARB_FREQ              = 10;
+constexpr float PID_REF               = 0.2f;
+constexpr float KP                    = 1.2f;
+constexpr float KI                    = 1;
+constexpr float KD                    = 0.01f;
 
-AirBrakesInterpConfig getConfig()
+constexpr uint16_t N_FORWARD = 0;
+
+AirBrakesInterpPIDConfig getConfigPID()
 {
-    AirBrakesInterpConfig config;
+    AirBrakesInterpPIDConfig config;
     config.FILTER_MINIMUM_ALTITUDE = MINIMUM_ALTITUDE;
     config.FILTER_MAXIMUM_ALTITUDE = MAXIMUM_ALTITUDE;
     config.STARTING_FILTER_VALUE   = STARTING_FILTER_VALUE;
@@ -53,11 +59,17 @@ AirBrakesInterpConfig getConfig()
     config.DZ                      = DZ;
     config.INITIAL_MASS            = INITIAL_MASS;
     config.DM                      = DM;
+    config.ARB_FREQ                = ARB_FREQ;
+    config.PID_REF                 = PID_REF;
+    config.KP                      = KP;
+    config.KI                      = KI;
+    config.KD                      = KD;
     config.N_FORWARD               = N_FORWARD;
+
     return config;
 }
 
-NASState getState()
+NASState getStatePID()
 {
     // Index of the progressive data point
     static size_t i = 0;
@@ -77,9 +89,9 @@ NASState getState()
 
 TEST_CASE("ABK Update Test")
 {
-    AirBrakesInterp abk(
-        []() { return static_cast<TimedTrajectoryPoint>(getState()); },
-        OPEN_TRAJECTORY_SET, CLOSED_TRAJECTORY_SET, getConfig(),
+    AirBrakesInterpPID abk(
+        []() { return static_cast<TimedTrajectoryPoint>(getStatePID()); },
+        OPEN_TRAJECTORY_SET, CLOSED_TRAJECTORY_SET, getConfigPID(),
         [&](float position)
         {
             static int i = 0;
@@ -94,7 +106,7 @@ TEST_CASE("ABK Update Test")
             i++;
         });
 
-    abk.begin(28.8);
+    abk.begin(30.0052959188768);
 
     for (size_t i = 0; i < Z.size(); i++)
         abk.update();

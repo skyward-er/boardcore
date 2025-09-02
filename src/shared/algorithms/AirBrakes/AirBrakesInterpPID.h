@@ -27,20 +27,20 @@
 #include <functional>
 #include <vector>
 
-#include "AirBrakesInterpConfig.h"
+#include "AirBrakesInterpPIDConfig.h"
 #include "TrajectorySet.h"
 
 namespace Boardcore
 {
 
-class AirBrakesInterp : public Algorithm
+class AirBrakesInterpPID : public Algorithm
 {
 public:
-    AirBrakesInterp(std::function<TimedTrajectoryPoint()> getCurrentPosition,
-                    const TrajectorySet& trajectoryOpenSet,
-                    const TrajectorySet& trajectoryCloseSet,
-                    const AirBrakesInterpConfig& configInterp,
-                    std::function<void(float)> setActuator);
+    AirBrakesInterpPID(std::function<TimedTrajectoryPoint()> getCurrentPosition,
+                       const TrajectorySet& trajectoryOpenSet,
+                       const TrajectorySet& trajectoryCloseSet,
+                       const AirBrakesInterpPIDConfig& configInterp,
+                       std::function<void(float)> setActuator);
 
     bool init() override;
 
@@ -81,8 +81,11 @@ private:
     Trajectory* choosenCloseTrajectory = nullptr;
     Trajectory* choosenOpenTrajectory  = nullptr;
 
-    AirBrakesInterpConfig configInterp;  ///< specialized config
-    float lastPercentage = 0;            ///< last opening of the airbrakes
+    AirBrakesInterpPIDConfig configInterp;  ///< specialized config
+    float lastPercentage = 0;               ///< last opening of the airbrakes
+    float integralError  = 0;               ///< integral error of the PID
+    float filterCoeff    = 1;
+    bool saturation      = false;  ///< have we reached saturation?
 };
 
 }  // namespace Boardcore

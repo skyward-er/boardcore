@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "AirBrakesInterp.h"
+#include "AirBrakesInterpPID.h"
 
 #include <logger/Logger.h>
 #include <utils/Constants.h>
@@ -33,11 +33,11 @@
 namespace Boardcore
 {
 
-AirBrakesInterp::AirBrakesInterp(
+AirBrakesInterpPID::AirBrakesInterpPID(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
     const TrajectorySet& trajectoryOpenSet,
     const TrajectorySet& trajectoryCloseSet,
-    const AirBrakesInterpConfig& configInterp,
+    const AirBrakesInterpPIDConfig& configInterp,
     std::function<void(float)> setActuator)
     : getCurrentPosition(std::move(getCurrentPosition)),
       setActuator(std::move(setActuator)), trajectoryOpenSet(trajectoryOpenSet),
@@ -45,9 +45,9 @@ AirBrakesInterp::AirBrakesInterp(
 {
 }
 
-bool AirBrakesInterp::init() { return true; }
+bool AirBrakesInterpPID::init() { return true; }
 
-void AirBrakesInterp::begin(float currentMass)
+void AirBrakesInterpPID::begin(float currentMass)
 {
     if (running)
         return;
@@ -76,7 +76,7 @@ void AirBrakesInterp::begin(float currentMass)
     Algorithm::begin();
 }
 
-void AirBrakesInterp::step()
+void AirBrakesInterpPID::step()
 {
     auto currentPosition = getCurrentPosition();
 
@@ -86,11 +86,22 @@ void AirBrakesInterp::step()
 
     lastPosition = currentPosition;
 
-    // Interpolation
+    // Interpolation + PID
     float percentage = controlInterp(currentPosition);
 
     // Filtering
-    float filterCoeff = 0;
+    if (currentPosition.z < configInterp.ABK_CRITICAL_ALTITUDE)
+    {
+        // Compute the actual value filtered
+        percentage =
+            lastPercentage + (percentage - lastPercentage) * filterCoeff;
+    }
+    else
+    {
+        // If the height is beyond the target one, the algorithm tries to brake
+        // as much as possible
+        percentage = 1;
+    }
 
     // If the altitude is lower than the minimum one, the filter is kept at the
     // same value, to avoid misleading filtering actions
@@ -108,24 +119,11 @@ void AirBrakesInterp::step()
                   configInterp.FILTER_MINIMUM_ALTITUDE));
     }
 
-    if (currentPosition.z < configInterp.ABK_CRITICAL_ALTITUDE)
-    {
-        // Compute the actual value filtered
-        percentage =
-            lastPercentage + (percentage - lastPercentage) * filterCoeff;
-    }
-    else
-    {
-        // If the height is beyond the target one, the algorithm tries to brake
-        // as much as possible
-        percentage = 1;
-    }
-
     lastPercentage = percentage;
     setActuator(percentage);
 }
 
-float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
+float AirBrakesInterpPID::controlInterp(TrajectoryPoint currentPosition)
 {
     // we take the index of the current point of the trajectory and we look
     // ahead of N points
@@ -158,9 +156,39 @@ float AirBrakesInterp::controlInterp(TrajectoryPoint currentPosition)
     }
     else
     {
-        return (currentPosition.vz - trjPointClosed.vz) /
-               (trjPointOpen.vz - trjPointClosed.vz);
+        float detectedPosition = (currentPosition.vz - trjPointClosed.vz) /
+                                 (trjPointOpen.vz - trjPointClosed.vz);
+
+        float dt = 1 / configInterp.ARB_FREQ;
+
+        float ref       = configInterp.PID_REF;
+        float error     = detectedPosition - ref;
+        float prevError = lastPercentage - ref;
+
+        if (saturation == false)
+            integralError += error * dt;
+
+        float kp = configInterp.KP;
+        float ki = configInterp.KI;
+        float kd = configInterp.KD;
+
+        float percentage =
+            kp * error + kd * prevError / dt + ki * integralError + ref;
+
+        if (percentage < 0)
+        {
+            percentage = 0;
+            saturation = true;
+        }
+        else if (percentage > 1)
+        {
+            percentage = 1;
+            saturation = true;
+        }
+        else
+            saturation = false;
+
+        return percentage;
     }
 }
-
 }  // namespace Boardcore
