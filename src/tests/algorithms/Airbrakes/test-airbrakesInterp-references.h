@@ -26,6 +26,8 @@
 
 namespace Boardcore
 {
+namespace ABKInterp
+{
 
 //['Heights ', 'Vz_closed_m28 ', 'Vz_closed_m28_2 ', 'Vz_closed_m28_4 ',
 //'Vz_closed_m28_6 ', 'Vz_closed_m28_8 ', 'Vz_closed_m29 ', 'Vz_closed_m29_2 ',
@@ -6728,4 +6730,5 @@ Boardcore::Trajectory t_open[] = {
 const Boardcore::TrajectorySet CLOSED_TRAJECTORY_SET(t_closed, 11);
 const Boardcore::TrajectorySet OPEN_TRAJECTORY_SET(t_open, 11);
 
+}  // namespace ABKInterp
 }  // namespace Boardcore

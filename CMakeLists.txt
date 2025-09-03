@@ -146,6 +146,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-dependencymanager.cpp
     src/tests/catch/test-MEA.cpp
     src/tests/catch/test-airbrakesInterp.cpp
+    src/tests/catch/test-airbrakesInterpPID.cpp
     src/tests/catch/test-pitot.cpp
     src/tests/catch/test-units.cpp
     src/tests/catch/test-registry-frontend.cpp

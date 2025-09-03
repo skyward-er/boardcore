@@ -26,6 +26,8 @@
 
 namespace Boardcore
 {
+namespace ABKInterp
+{
 static const std::vector<float> Z = {
     0,
     0.00229583764956942,
@@ -11744,4 +11746,5 @@ static const std::vector<float> ABK = {
     1,
 };
 
+}  // namespace ABKInterp
 }  // namespace Boardcore
