@@ -20,32 +20,30 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+#include <Eigen/Core>
+#include <Eigen/Dense>
 
- #pragma once 
- #include <Eigen/Core>
- #include <Eigen/Dense>
+namespace Boardcore
 
- namespace Boardcore 
+{
 
- {
+struct ZVKConfig
+{
+    float T;                  //[s] Sample period
+    float TUNE_PARAM_mu;      //[] Algorithm tunable parameter
+    float TUNE_PARAM_Re;      //[] Algorithm tunable parameter
+    float TUNE_PARAM_J2;      //[] Algorithm tunable parameter
+    float SIGMA_GYRO;         //[rad/s] Estimated gyroscope variance
+    float SIGMA_GYRO_BIAS;    //[rad/s] Estimated gyroscope bias variance
+    float SIGMA_ACC;          //[m/s^2] Estimated accelerometer variance
+    float SIGMA_BIAS_ACC;     //[m/s^2] Estimated accelerometer bias variance
+    float SIGMA_MAG;          //[mgauss] Estimated magnetometer variance
+    float BIAS_ACC;           //[m/s^2] Accelerometer bias
+    float BIAS_GYRO;          //[rad/s] Gyroscope bias
+    float VEL_UNCERTAINTY;    //[m/s] Uncertainty on velocity
+    float POS_UNCERTAINTY;    //[m] Uncertainty on position
+    Eigen::Vector3f NED_MAG;  // Normalized magnetic field vector in NED frame
+};
 
-    struct ZVKConfig
-    {
-        float T;                //[s] Sample period
-        float TUNE_PARAM_mu;    //[] Algorithm tunable parameter
-        float TUNE_PARAM_Re;    //[] Algorithm tunable parameter
-        float TUNE_PARAM_J2;    //[] Algorithm tunable parameter
-        float SIGMA_GYRO;       //[rad/s] Estimated gyroscope variance
-        float SIGMA_GYRO_BIAS;  //[rad/s] Estimated gyroscope bias variance
-        float SIGMA_ACC;        //[m/s^2] Estimated accelerometer variance
-        float SIGMA_BIAS_ACC;   //[m/s^2] Estimated accelerometer bias variance
-        float SIGMA_MAG;        //[mgauss] Estimated magnetometer variance
-        float BIAS_ACC;         //[m/s^2] Accelerometer bias
-        float BIAS_GYRO;        //[rad/s] Gyroscope bias
-        float VEL_UNCERTAINTY; //[m/s] Uncertainty on velocity
-        float POS_UNCERTAINTY; //[m] Uncertainty on position
-        Eigen::Vector3f NED_MAG; // Normalized magnetic field vector in NED frame
-
-    };
-
- } // namespace Boardcore
+}  // namespace Boardcore
