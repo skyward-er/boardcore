@@ -20,21 +20,21 @@
  * THE SOFTWARE.
  */
 
- #pragma once 
+#pragma once
 
- #include <Eigen/Dense>
- #include <sensors/SensorData.h>
- #include <utils/Constants.h>
- #include "ZVKConfig.h"
- #include "ZVKState.h"
- 
+#include <sensors/SensorData.h>
+#include <utils/Constants.h>
 
-namespace Boardcore 
+#include <Eigen/Dense>
+
+#include "ZVKConfig.h"
+#include "ZVKState.h"
+
+namespace Boardcore
 {
 
 class ZVK
 {
-
 public:
     // Index of quaternions elements in the state.
     static constexpr uint16_t IDX_QUAT = 0;
@@ -60,7 +60,8 @@ public:
      * @param angularSpeed Vector with angular velocity data [x y z][rad/s].
 
      */
-    void predict(const Eigen::Vector3f& acceleration, const Eigen::Vector3f& angularSpeed);
+    void predict(const Eigen::Vector3f& acceleration,
+                 const Eigen::Vector3f& angularSpeed);
 
     /**
      * @brief Prediction.
@@ -68,7 +69,8 @@ public:
      * @param acceleration Accelerometer data [m/s^2].
      * @param angularSpeed Gyroscope data [rad/s].
      */
-    void predict(const AccelerometerData& acceleration, const GyroscopeData& angularSpeed);
+    void predict(const AccelerometerData& acceleration,
+                 const GyroscopeData& angularSpeed);
 
     /**
      * @brief Correction.
@@ -78,16 +80,20 @@ public:
      * @param mag Normalized vector of the magnetometer readings [x y z][uT].
 
      */
-    void correct(const Eigen::Vector3f& acceleration, const Eigen::Vector3f& angularSpeed, const Eigen::Vector3f& mag);
+    void correct(const Eigen::Vector3f& acceleration,
+                 const Eigen::Vector3f& angularSpeed,
+                 const Eigen::Vector3f& mag);
 
     /**
      * @brief Correction.
      *
      * @param acceleration Accelerometer data [m/s^2].
      * @param angularSpeed Gyroscope data [rad/s].
-     * @param mag Magnetometer data [uT] 
+     * @param mag Magnetometer data [uT]
      */
-    void correct(const AccelerometerData& acceleration, const GyroscopeData& angularSpeed, const MagnetometerData& mag);
+    void correct(const AccelerometerData& acceleration,
+                 const GyroscopeData& angularSpeed,
+                 const MagnetometerData& mag);
 
     /**
      * @return EKF state.
@@ -100,22 +106,24 @@ public:
     void setState(const ZVKState& state);
 
     /**
-     * @return State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy bgz].
+     * @return State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy
+     * bgz].
      */
     Eigen::Matrix<float, 16, 1> getX() const;
 
     /**
-     * @param state State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy bgz].
+     * @param state State vector [qx qy qz qw vn ve vd n e d bax bay baz bgx bgy
+     * bgz].
      */
     void setX(const Eigen::Matrix<float, 16, 1>& x);
 
 private:
-
     // Extended kalman filter configuration parameters
     ZVKConfig config;
 
-    // State vector [qx, qy, qw, qz, vn, ve, vd, n, e, d, bax, bay, baz, bgx, bgy, bgz]
-    Eigen::Matrix<float,16,1> x;
+    // State vector [qx, qy, qw, qz, vn, ve, vd, n, e, d, bax, bay, baz, bgx,
+    // bgy, bgz]
+    Eigen::Matrix<float, 16, 1> x;
 
     // State covariance matrix
     Eigen::Matrix<float, 15, 15> P;
@@ -123,8 +131,8 @@ private:
     // Measurement noise covariance matrix
     Eigen::Matrix<float, 12, 12> R;
 
-    // Process noise covariance matrix 
-    Eigen::Matrix<float, 12, 12> Q;    
+    // Process noise covariance matrix
+    Eigen::Matrix<float, 12, 12> Q;
 
     // NED gravity vector [m/s^2].
     const Eigen::Vector3f gravityNed{0.0f, 0.0f, -Constants::g};
@@ -132,9 +140,8 @@ private:
     // Small angle error constant needed for the definition of matrix P
     float const smallAngleError = 0.08726646;
 
-    // Constant needed for the definition of the definition of matrix R 
+    // Constant needed for the definition of the definition of matrix R
     float const rConst = 1e-6;
-
 };
 
- } // namespace Boardcore
+}  // namespace Boardcore

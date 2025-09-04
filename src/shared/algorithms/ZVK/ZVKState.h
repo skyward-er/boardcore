@@ -20,69 +20,71 @@
  * THE SOFTWARE.
  */
 
-#pragma once 
-#include <cstdint>
+#pragma once
 #include <Eigen/Core>
+#include <cstdint>
 #include <reflect.hpp>
 
-namespace Boardcore 
+namespace Boardcore
 {
 
 struct ZVKState
 {
     uint64_t timestamp = 0;
 
-    //13 extended kalman states
+    // 16 kalman states
 
-    //Attitude as quaternion body to NED frame
+    // Attitude as quaternion body to NED frame
     float qx = 0;
     float qy = 0;
     float qz = 0;
     float qw = 0;
 
-    //Velocity in NED frame [m/s]
+    // Velocity in NED frame [m/s]
     float vn = 0;
     float ve = 0;
     float vd = 0;
 
-    //Position [m]
+    // Position [m]
     float n = 0;
     float e = 0;
     float d = 0;
 
-    //Accelerometer bias 
+    // Accelerometer bias
     float bax = 0;
     float bay = 0;
     float baz = 0;
 
-    //Gyroscope bias 
+    // Gyroscope bias
     float bgx = 0;
     float bgy = 0;
     float bgz = 0;
 
-    ZVKState(){}
+    ZVKState() {}
 
-    ZVKState(uint64_t timestamp, const Eigen::Matrix<float, 16 ,1>& x) 
-        : timestamp(timestamp), qx(x(0)), qy(x(1)), qz(x(2)), qw(x(3)), vn(x(4)), ve(x(5)), vd(x(6)),
-        bax(x(7)), bay(x(8)), baz(x(9)), bgx(x(10)), bgy(x(11)), bgz(x(12))
-    {}
-
-    Eigen::Matrix<float, 16, 1> getX() const 
+    ZVKState(uint64_t timestamp, const Eigen::Matrix<float, 16, 1>& x)
+        : timestamp(timestamp), qx(x(0)), qy(x(1)), qz(x(2)), qw(x(3)),
+          vn(x(4)), ve(x(5)), vd(x(6)), n(x(7)), e(x(8)), d(x(9)), bax(x(10)),
+          bay(x(11)), baz(x(12)), bgx(x(13)), bgy(x(14)), bgz(x(15))
     {
-        return Eigen::Matrix<float, 13, 1>(qx, qy, qz, qw, vn, ve, vd, n, e, d,  bax, bay, baz, bgx, bgy, bgz);
     }
 
-        static constexpr auto reflect()
+    Eigen::Matrix<float, 16, 1> getX() const
     {
-        return STRUCT_DEF(ZVKState,
-                          FIELD_DEF(timestamp) FIELD_DEF(qx) FIELD_DEF(qy)
-                              FIELD_DEF(qz) FIELD_DEF(qw) FIELD_DEF(vn)
-                                  FIELD_DEF(ve) FIELD_DEF(vd) FIELD_DEF(n)
-                                    FIELD_DEF(e) FIELD_DEF(d) FIELD_DEF(bax)
-                                        FIELD_DEF(bay) FIELD_DEF(baz) FIELD_DEF(bgx)
-                                            FIELD_DEF(bgy) FIELD_DEF(bgz));
+        return Eigen::Matrix<float, 16, 1>(qx, qy, qz, qw, vn, ve, vd, n, e, d,
+                                           bax, bay, baz, bgx, bgy, bgz);
     }
 
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            ZVKState,
+            FIELD_DEF(timestamp) FIELD_DEF(qx) FIELD_DEF(qy) FIELD_DEF(qz)
+                FIELD_DEF(qw) FIELD_DEF(vn) FIELD_DEF(ve) FIELD_DEF(vd)
+                    FIELD_DEF(n) FIELD_DEF(e) FIELD_DEF(d) FIELD_DEF(bax)
+                        FIELD_DEF(bay) FIELD_DEF(baz) FIELD_DEF(bgx)
+                            FIELD_DEF(bgy) FIELD_DEF(bgz));
+    }
 };
 
-} //namespace Boardcore
+}  // namespace Boardcore
