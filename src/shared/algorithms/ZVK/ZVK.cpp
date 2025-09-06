@@ -34,7 +34,6 @@
 #include "ZVKState.h"
 
 using namespace Boardcore;
-
 namespace Boardcore
 {
 
@@ -97,6 +96,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
     Eigen::Vector3f correctedAcceleration = acceleration - accBias;
 
     Eigen::Matrix3f A;
+    A.setZero();
     A <<  // Define matrix A needed for state prediction
         quat(0) * quat(0) - quat(1) * quat(1) - quat(2) * quat(2) +
             quat(3) * quat(3),
@@ -112,6 +112,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
             quat(3) * quat(3);
 
     Eigen::Matrix4f Omega;
+    Omega.setZero();
     Omega <<  // Define matrix Omega needed for state state prediction
         0,
         correctedAngularSpeed(2), -correctedAngularSpeed(1),
@@ -135,8 +136,9 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
         predictedVel, predictedPos, predictedAccBias, predictedGyroBias;
 
     // State covariance matrix prediction
-    Eigen::Matrix3f MA;  //
-    MA <<                // Define matrix MA needed for matrix F computation
+    Eigen::Matrix3f MA;
+    MA.setZero();
+    MA <<  // Define matrix MA needed for matrix F computation
         0,
         -correctedAcceleration(2), correctedAcceleration(1),
         correctedAcceleration(2), 0, -correctedAcceleration(0),
@@ -144,7 +146,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
 
     Eigen::Matrix<float, 15, 15>
         F;  // Define matrix F needed for state covariance matrix prediction
-            // !!!!This should be sparse ask if it is a problem
+    F.setZero();  // !!!!This should be sparse ask if it is a problem
     F.block<3, 3>(0, 0)  = -Omega.block<3, 3>(0, 0);
     F.block<3, 3>(0, 12) = -Eigen::Matrix3f::Identity();
     F.block<3, 3>(3, 6)  = Eigen::Matrix3f::Zero();
@@ -156,7 +158,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
 
     Eigen::Matrix<float, 15, 12>
         G;  // Define matrix G needed for state covariance matrix prediction
-            // !!This should be sparse ask if it is a problem
+    G.setZero();  // !!This should be sparse ask if it is a problem
     G.block<3, 3>(0, 0) = -Eigen::Matrix3f::Identity();
     G.block<3, 3>(3, 0) = Eigen::Matrix3f::Identity();
     G.block<3, 3>(9, 9) = Eigen::Matrix3f::Identity();
@@ -197,12 +199,14 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
     Eigen::Vector3f biasCorrectedAcceleration = acceleration - accBias;
 
     Eigen::Matrix<float, 4, 3> OM;
+    OM.setZero();
     OM <<  // Define matrix A needed for correction
         quat(3),
         -quat(2), quat(1), quat(2), quat(3), -quat(0), -quat(1), quat(0),
         quat(3), -quat(0), -quat(1), -quat(2);
 
     Eigen::Matrix3f A;
+    A.setZero();
     A <<  // Define matrix A needed for correction
         quat(0) * quat(0) - quat(1) * quat(1) - quat(2) * quat(2) +
             quat(3) * quat(3),
@@ -222,6 +226,7 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
         A * gravityNed;  // KF estimated acceleration
 
     Eigen::Matrix3f M;
+    M.setZero();
     M <<  // Define matrix M needed for matrix H_x initialization
         0,
         -estimatedAcceleration(2), estimatedAcceleration(1),
@@ -229,12 +234,14 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
         -estimatedAcceleration(1), estimatedAcceleration(0), 0;
 
     Eigen::Matrix3f Z_mat;
+    Z_mat.setZero();
     Z_mat <<  // Define matrix Z_mat needed for matrix H_x initialization
         0,
         -z(2), z(1), z(2), 0, -z(0), -z(1), z(0), 0;
 
     Eigen::Matrix<float, 12, 15>
         H_x;  // Define matrix H_x needed for correction
+    H_x.setZero();
     H_x.block<3, 3>(0, 0)  = Eigen::Matrix3f::Zero();
     H_x.block<3, 3>(0, 3)  = -Eigen::Matrix3f::Identity();
     H_x.block<3, 3>(0, 6)  = Eigen::Matrix3f::Zero();
@@ -259,7 +266,6 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
     Eigen::Matrix<float, 12, 12> S =
         H_x * P * H_x.transpose() +
         R;  // Define matrix S needed for gain computation
-
     Eigen::Matrix<float, 15, 12> K =
         P * H_x.transpose() * S.inverse();  // Define the gain K
 
