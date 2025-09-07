@@ -84,11 +84,11 @@ ZVK::ZVK(const ZVKConfig& config) : config(config)
 void ZVK::predict(const Eigen::Vector3f& acceleration,
                   const Eigen::Vector3f& angularSpeed)
 {
-    Eigen::Vector4f quat     = x.block<4, 1>(IDX_QUAT, 0);
-    Eigen::Vector3f vel      = x.block<3, 1>(IDX_VEL, 0);
-    Eigen::Vector3f pos      = x.block<3, 1>(IDX_POS, 0);
-    Eigen::Vector3f accBias  = x.block<3, 1>(IDX_BIAS_ACC, 0);
-    Eigen::Vector3f gyroBias = x.block<3, 1>(IDX_BIAS_GYRO, 0);
+    const Eigen::Vector4f quat     = x.block<4, 1>(IDX_QUAT, 0);
+    const Eigen::Vector3f vel      = x.block<3, 1>(IDX_VEL, 0);
+    const Eigen::Vector3f pos      = x.block<3, 1>(IDX_POS, 0);
+    const Eigen::Vector3f accBias  = x.block<3, 1>(IDX_BIAS_ACC, 0);
+    const Eigen::Vector3f gyroBias = x.block<3, 1>(IDX_BIAS_GYRO, 0);
 
     // State prediction
 
@@ -185,11 +185,11 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
                   const Eigen::Vector3f& angularSpeed,
                   const Eigen::Vector3f& mag)
 {
-    Eigen::Vector4f quat     = x.block<4, 1>(IDX_QUAT, 0);
-    Eigen::Vector3f vel      = x.block<3, 1>(IDX_VEL, 0);
-    Eigen::Vector3f pos      = x.block<3, 1>(IDX_POS, 0);
-    Eigen::Vector3f accBias  = x.block<3, 1>(IDX_BIAS_ACC, 0);
-    Eigen::Vector3f gyroBias = x.block<3, 1>(IDX_BIAS_GYRO, 0);
+    const Eigen::Vector4f quat     = x.block<4, 1>(IDX_QUAT, 0);
+    const Eigen::Vector3f vel      = x.block<3, 1>(IDX_VEL, 0);
+    const Eigen::Vector3f pos      = x.block<3, 1>(IDX_POS, 0);
+    const Eigen::Vector3f accBias  = x.block<3, 1>(IDX_BIAS_ACC, 0);
+    const Eigen::Vector3f gyroBias = x.block<3, 1>(IDX_BIAS_GYRO, 0);
 
     // State and covariance correction
 
