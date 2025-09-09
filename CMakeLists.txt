@@ -495,6 +495,10 @@ sbs_target(test-lsm6dsrx stm32f407vg_stm32f4discovery)
 add_executable(test-nd015x src/tests/sensors/test-nd015x.cpp)
 sbs_target(test-nd015x stm32f767zi_lyra_biscotto)
 
+add_executable(test-nd030d src/tests/sensors/test-nd030d.cpp)
+sbs_target(test-nd030d stm32f767zi_lyra_biscotto)
+
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
