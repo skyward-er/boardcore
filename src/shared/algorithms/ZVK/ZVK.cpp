@@ -92,8 +92,8 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
 
     // State prediction
 
-    Eigen::Vector3f correctedAngularSpeed = angularSpeed - gyroBias;
-    Eigen::Vector3f correctedAcceleration = acceleration - accBias;
+    const Eigen::Vector3f correctedAngularSpeed = angularSpeed - gyroBias;
+    const Eigen::Vector3f correctedAcceleration = acceleration - accBias;
 
     Eigen::Matrix3f A;
     A.setZero();
@@ -138,7 +138,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
     // State covariance matrix prediction
     Eigen::Matrix3f MA;
     MA.setZero();
-    MA <<  // Define matrix MA needed for matrix F computation
+    MA <<                // Define matrix MA needed for matrix F computation
         0,
         -correctedAcceleration(2), correctedAcceleration(1),
         correctedAcceleration(2), 0, -correctedAcceleration(0),
@@ -147,6 +147,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
     Eigen::Matrix<float, 15, 15>
         F;  // Define matrix F needed for state covariance matrix prediction
     F.setZero();  // !!!!This should be sparse ask if it is a problem
+    
     F.block<3, 3>(0, 0)  = -Omega.block<3, 3>(0, 0);
     F.block<3, 3>(0, 12) = -Eigen::Matrix3f::Identity();
     F.block<3, 3>(3, 6)  = Eigen::Matrix3f::Zero();
@@ -159,6 +160,7 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
     Eigen::Matrix<float, 15, 12>
         G;  // Define matrix G needed for state covariance matrix prediction
     G.setZero();  // !!This should be sparse ask if it is a problem
+
     G.block<3, 3>(0, 0) = -Eigen::Matrix3f::Identity();
     G.block<3, 3>(3, 0) = Eigen::Matrix3f::Identity();
     G.block<3, 3>(9, 9) = Eigen::Matrix3f::Identity();
@@ -172,10 +174,10 @@ void ZVK::predict(const Eigen::Vector3f& acceleration,
 void ZVK::predict(const AccelerometerData& acceleration,
                   const GyroscopeData& angularSpeed)
 {
-    Eigen::Vector3f accelerationVec = {acceleration.accelerationX,
+    const Eigen::Vector3f accelerationVec = {acceleration.accelerationX,
                                        acceleration.accelerationY,
                                        acceleration.accelerationZ};
-    Eigen::Vector3f angularSpeedVec = {angularSpeed.angularSpeedX,
+    const Eigen::Vector3f angularSpeedVec = {angularSpeed.angularSpeedX,
                                        angularSpeed.angularSpeedY,
                                        angularSpeed.angularSpeedZ};
     ZVK::predict(accelerationVec, angularSpeedVec);
@@ -193,10 +195,10 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
 
     // State and covariance correction
 
-    Eigen::Vector3f correctedAngularSpeed     = angularSpeed - gyroBias;
-    Eigen::Vector3f correctedMag              = mag.normalized();
-    Eigen::Vector3f correctedMagNed           = config.NED_MAG.normalized();
-    Eigen::Vector3f biasCorrectedAcceleration = acceleration - accBias;
+    const Eigen::Vector3f correctedAngularSpeed     = angularSpeed - gyroBias;
+    const Eigen::Vector3f correctedMag              = mag.normalized();
+    const Eigen::Vector3f correctedMagNed           = config.NED_MAG.normalized();
+    const Eigen::Vector3f biasCorrectedAcceleration = acceleration - accBias;
 
     Eigen::Matrix<float, 4, 3> OM;
     OM.setZero();
@@ -221,8 +223,8 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
         -quat(0) * quat(0) - quat(1) * quat(1) + quat(2) * quat(2) +
             quat(3) * quat(3);
 
-    Eigen::Vector3f z = A * correctedMagNed;  // Magnetic vector in body axis
-    Eigen::Vector3f estimatedAcceleration =
+    const Eigen::Vector3f z = A * correctedMagNed;  // Magnetic vector in body axis
+    const Eigen::Vector3f estimatedAcceleration =
         A * gravityNed;  // KF estimated acceleration
 
     Eigen::Matrix3f M;
@@ -242,6 +244,7 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
     Eigen::Matrix<float, 12, 15>
         H_x;  // Define matrix H_x needed for correction
     H_x.setZero();
+
     H_x.block<3, 3>(0, 0)  = Eigen::Matrix3f::Zero();
     H_x.block<3, 3>(0, 3)  = -Eigen::Matrix3f::Identity();
     H_x.block<3, 3>(0, 6)  = Eigen::Matrix3f::Zero();
@@ -268,7 +271,6 @@ void ZVK::correct(const Eigen::Vector3f& acceleration,
         R;  // Define matrix S needed for gain computation
     Eigen::Matrix<float, 15, 12> K =
         P * H_x.transpose() * S.inverse();  // Define the gain K
-
     // Error computation
 
     Eigen::Matrix<float, 12, 1> errorMinuend;
@@ -300,13 +302,13 @@ void ZVK::correct(const AccelerometerData& acceleration,
                   const GyroscopeData& angularSpeed,
                   const MagnetometerData& mag)
 {
-    Eigen::Vector3f accelerationVec = {acceleration.accelerationX,
+    const Eigen::Vector3f accelerationVec = {acceleration.accelerationX,
                                        acceleration.accelerationY,
                                        acceleration.accelerationZ};
-    Eigen::Vector3f angularSpeedVec = {angularSpeed.angularSpeedX,
+    const Eigen::Vector3f angularSpeedVec = {angularSpeed.angularSpeedX,
                                        angularSpeed.angularSpeedY,
                                        angularSpeed.angularSpeedZ};
-    Eigen::Vector3f magVec          = {mag.magneticFieldX, mag.magneticFieldY,
+    const Eigen::Vector3f magVec          = {mag.magneticFieldX, mag.magneticFieldY,
                                        mag.magneticFieldZ};
     ZVK::correct(accelerationVec, angularSpeedVec, magVec);
 }
