@@ -128,6 +128,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/LSM6DSRX/LSM6DSRX.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015D.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015A.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030D/ND030D.cpp
 
     # Calibration
     ${BOARDCORE_PATH}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
