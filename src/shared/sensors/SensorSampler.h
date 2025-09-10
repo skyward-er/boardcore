@@ -133,6 +133,7 @@ protected:
         {
         }
 
+        // cppcheck-suppress passedByValue
         SensorEntry(std::string id, std::chrono::nanoseconds period,
                     std::function<void()> callback, bool isEnabled,
                     uint8_t groupID, bool isInitialized)
