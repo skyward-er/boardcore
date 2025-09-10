@@ -102,13 +102,15 @@ public:
           dmaStreamTransmit(DMADriver::instance().acquireStreamForPeripheral(
               // NOTE: change here and also in writeDma() the required
               // peripheral
-              DMADefs::Peripherals::PE_USART1_TX, std::chrono::seconds(1)))
+              DMADefs::Peripherals::PE_UART4_TX, std::chrono::seconds(1)))
     {
         if (!dmaStreamTransmit.isValid())
         {
             std::cout << "Error, cannot acquire dma stream for usart"
                       << std::endl;
         }
+        else
+            UART4->CR3 |= USART_CR3_DMAT;  // Enable DMA transmission
     }
 
     /**
@@ -233,7 +235,7 @@ bool HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::writeDma(
     void* buffer, uint16_t nBytes)
 {
     // NOTE: change here and also in the constructor the required peripheral
-    USARTType* usart      = USART1;  // TODO: SET PROPERLY
+    USARTType* usart      = UART4;  // TODO: SET PROPERLY
     const auto trnTimeout = std::chrono::milliseconds(250);  // TODO: RESIZE
 
     DMATransaction setup{
