@@ -58,6 +58,7 @@ public:
     // cppcheck-suppress  noExplicitConstructor
     SensorGroup(GroupId_t groupId, TaskScheduler* scheduler = nullptr);
 
+    SensorGroup(const SensorGroup&)            = delete;
     SensorGroup& operator=(const SensorGroup&) = delete;
 
     /**
