@@ -23,6 +23,7 @@
 #pragma once
 
 #include <units/Frequency.h>
+#include <utils/TimeUtils.h>
 
 #include <chrono>
 #include <functional>
