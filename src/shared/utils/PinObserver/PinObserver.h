@@ -1,5 +1,5 @@
 /* Copyright (c) 2018-2022 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio
+ * Authors: Luca Erbetta, Alberto Nidasio, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@
 #include <scheduler/TaskScheduler.h>
 #include <utils/GpioPinCompare.h>
 
+#include <chrono>
+#include <functional>
 #include <map>
 
 namespace Boardcore
@@ -40,20 +42,6 @@ enum class PinTransition : uint8_t
 };
 
 /**
- * @brief Pin informations.
- */
-struct PinData
-{
-    std::function<void(PinTransition)> callback;  ///< The callback function.
-    uint32_t threshold;           ///< Number of periods to trigger an event.
-    uint32_t periodCount;         ///< Number of periods the value was the same.
-    uint64_t lastStateTimestamp;  ///< Timestamp of the last measurement.
-    bool lastState;               ///< The last measured pin state.
-    uint32_t changesCount;        ///< Incremental count of the pin changes.
-    bool reverted;                ///< Whether to revert the pin state.
-};
-
-/**
  * Class used to call a callback after a pin performs a specific transition
  * (RISING or FALLING edge) and stays in the new state for a specific amount of
  * time. Useful if you want to monitor pin transitions but you want to avoid
@@ -66,7 +54,49 @@ struct PinData
 class PinObserver
 {
 public:
-    using PinCallback = std::function<void(PinTransition)>;
+    using Clock     = std::chrono::steady_clock;
+    using TimePoint = Clock::time_point;
+
+    /**
+     * @brief Pin information.
+     */
+    struct PinData
+    {
+        // Number of periods the value was the same.
+        uint32_t periodCount;
+        // Last time the pin transitioned to a different state
+        PinObserver::TimePoint lastTransitionTs;
+        // Time when the last state change was detected
+        PinObserver::TimePoint lastStateChangeTs;
+        bool lastState;         ///< The last detected pin state
+        uint32_t changesCount;  ///< Incremental count of the pin changes
+
+        std::chrono::milliseconds getLastDetectionDelay() const
+        {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(
+                lastStateChangeTs - lastTransitionTs);
+        }
+    };
+
+    /**
+     * @brief Callback function type for pin transitions.
+     *
+     * @param transition The type of transition that triggered the callback.
+     * @param data The data associated with the pin, updated with the latest
+     * transition information.
+     */
+    using PinCallback =
+        std::function<void(PinTransition transition, const PinData& data)>;
+
+    /**
+     * @brief Pin configuration.
+     */
+    struct PinConfig
+    {
+        PinObserver::PinCallback callback;  ///< The callback function.
+        uint32_t threshold;  ///< Number of periods to trigger an event.
+        bool reverted;       ///< Whether to revert the pin state.
+    };
 
     /**
      * @brief Construct a new PinObserver object.
@@ -74,17 +104,18 @@ public:
      * @param scheduler Scheduler to be used by this PinObserver.
      * @param pollInterval Pin transition polling interval, defaults to 20 [ms].
      */
-    explicit PinObserver(TaskScheduler& scheduler, uint32_t pollInterval = 20)
+    PinObserver(TaskScheduler& scheduler, uint32_t pollInterval = 20)
         : scheduler{scheduler}, pollInterval{pollInterval}
     {
     }
 
     /**
      * Observe a pin for a specific transition, and optionally for every
-     * single state change.
+     * single state change. The callback receives the transition and the time
+     * point when the transition happened as parameters.
      *
      * @param pin Pin to listen to.
-     * @param callback Function to call on button events.
+     * @param callback Function to call on pin events.
      * @param detectionThreshold How many times the pin should be observed in
      * the post-transition state to trigger the actual transition callback,
      * defaults to 1.
@@ -116,8 +147,20 @@ private:
     TaskScheduler& scheduler;
     uint32_t pollInterval;
 
+    /**
+     * @brief Pin data used in the internal pin map.
+     */
+    struct PinEntry
+    {
+        PinConfig config;
+        PinData data;
+    };
+
     /// Map of all the callbacks registered in the PinObserver.
-    std::map<miosix::GpioPin, PinData, GpioPinCompare> callbacks;
+    std::map<miosix::GpioPin, PinEntry, GpioPinCompare> callbacks;
 };
+
+// Re-export the PinData type, was moved inside PinObserver for convenience
+using PinData = PinObserver::PinData;
 
 }  // namespace Boardcore
