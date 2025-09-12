@@ -244,7 +244,7 @@ bool HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::writeDma(
         .srcSize           = DMATransaction::DataSize::BITS_8,
         .dstSize           = DMATransaction::DataSize::BITS_8,
         .srcAddress        = buffer,
-        .dstAddress        = (void*)usart->TDR,
+        .dstAddress        = (void*)&(usart->TDR),
         .numberOfDataItems = nBytes,
         .srcIncrement      = true,
         .dstIncrement      = false,
