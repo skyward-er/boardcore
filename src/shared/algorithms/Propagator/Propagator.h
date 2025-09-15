@@ -72,18 +72,6 @@ public:
     void setRocketNasState(const NASState& newRocketNasState);
 
     /**
-     * @brief Synchronized getter for the last rocket NAS State passed to the
-     * propagator.
-     *
-     * @return The last NAS state of the rocket.
-     */
-    inline NASState getRocketNasState()
-    {
-        miosix::Lock<miosix::FastMutex> lock(nasStateMutex);
-        return lastRocketNasState;
-    }
-
-    /**
      * @brief Synchronized getter for the State of the predictor.
      *
      * @return The state of the predictor.
@@ -100,11 +88,10 @@ private:
      */
     void step() override;
 
-    float updatePeriod;               ///< Update period of the propagator [s]
-    PropagatorState state;            ///< State of the predictor
-    NASState lastRocketNasState;      ///< Last received rocket NAS state
-    miosix::FastMutex nasStateMutex;  ///< mutex to sync nasState accesses
-    miosix::FastMutex stateMutex;     ///< mutex to sync state accesses
+    float updatePeriod;            ///< Update period of the propagator [s]
+    PropagatorState state;         ///< State of the predictor
+    NASState lastRocketNasState;   ///< Last received rocket NAS state
+    miosix::FastMutex stateMutex;  ///< mutex to sync state accesses
     Eigen::Vector3f
         last_real_velocity;  ///< last non-propagated velocitylast_real_velocity
     uint64_t t0 = 0, t1 = 0;  ///< time values used to compute acceleration [u]

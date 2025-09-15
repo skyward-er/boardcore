@@ -54,7 +54,7 @@ void Propagator::step()
     state = (oldState.nPropagations == 0
                  ? PropagatorState(
                        oldState.timestamp, oldState.nPropagations,
-                       getRocketNasState())  // TODO: Uh? The timestamp? SUS
+                       lastRocketNasState)  // TODO: Uh? The timestamp? SUS
                  : oldState);
 
     if (state.nPropagations == 0)
@@ -105,7 +105,6 @@ void Propagator::step()
 void Propagator::setRocketNasState(const NASState& newRocketNasState)
 {
     miosix::Lock<miosix::FastMutex> lockState(stateMutex);
-    miosix::Lock<miosix::FastMutex> lock(nasStateMutex);
 
     // Reset nPropagations to notify another received "real" packet
     state.nPropagations = 0;

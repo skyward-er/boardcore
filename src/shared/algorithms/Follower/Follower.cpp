@@ -200,7 +200,7 @@ void Follower::step()
 
     // Write the new state for the follower
     {
-        Lock<FastMutex> lockWrite(followerMutex);
+        Lock<FastMutex> lock(followerMutex);
         state = newState;
     }
 
