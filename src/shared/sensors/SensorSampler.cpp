@@ -46,6 +46,7 @@ void SensorSampler::toggleSensor(AbstractSensor* sensor, bool isEnabled)
     for (auto& elem : sensors)
     {
         if (elem.first == sensor)
+        // cppcheck-suppress useStlAlgorithm
         {
             elem.second.isEnabled = isEnabled;
             LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}",

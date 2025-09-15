@@ -55,7 +55,11 @@ public:
      * will assign to SensorSamplers incremental IDs starting from the maximum
      * among the tasks already existing in the TaskScheduler.
      */
+    // cppcheck-suppress  noExplicitConstructor
     SensorGroup(GroupId_t groupId, TaskScheduler* scheduler = nullptr);
+
+    SensorGroup(const SensorGroup&)            = delete;
+    SensorGroup& operator=(const SensorGroup&) = delete;
 
     /**
      * @brief Deallocates the scheduler if needed.

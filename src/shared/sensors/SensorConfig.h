@@ -46,33 +46,50 @@ struct SensorConfig
     bool isEnabled;
 
     SensorConfig(
-        // cppcheck-suppress passedByValue
-        const std::string id = "", uint32_t period = 0,
+        const std::string& sensId = "", uint32_t period = 0,
         std::function<void()> callback = []() {}, bool enabled = true,
-        uint8_t groupID = 0)
-        : SensorConfig(id, std::chrono::milliseconds{period},
-                       std::move(callback), enabled, groupID)
+        uint8_t sensGroupId = 0)
+        : SensorConfig(sensId, std::chrono::milliseconds{period},
+                       std::move(callback), enabled, sensGroupId)
     {
     }
 
-    SensorConfig(
-        // cppcheck-suppress passedByValue
-        std::string id, std::chrono::nanoseconds period,
-        std::function<void()> callback, bool enabled, uint8_t groupID)
-        : id(id), period(period), callback(std::move(callback)),
-          groupID(groupID), isEnabled(enabled)
+    SensorConfig(const std::string& sensId, std::chrono::nanoseconds period,
+                 std::function<void()> callback, bool enabled,
+                 uint8_t sensGroupId)
+        : id(sensId), period(period), callback(std::move(callback)),
+          groupID(sensGroupId), isEnabled(enabled)
     {
     }
 
-    SensorConfig(
-        // cppcheck-suppress passedByValue
-        std::string id, Units::Frequency::Hertz frequency,
-        std::function<void()> callback, uint8_t groupID, bool enabled = true)
-        : id(id), period(std::chrono::nanoseconds{
-                      static_cast<int64_t>(sToNs(1) / frequency.value())}),
-          callback(std::move(callback)), groupID(groupID), isEnabled(enabled)
+    SensorConfig(const std::string& sensId, Units::Frequency::Hertz frequency,
+                 std::function<void()> callback, uint8_t sensGroupId,
+                 bool enabled = true)
+        : id(sensId), period(std::chrono::nanoseconds{
+                          static_cast<int64_t>(sToNs(1) / frequency.value())}),
+          callback(std::move(callback)), groupID(sensGroupId),
+          isEnabled(enabled)
     {
     }
+
+    SensorConfig& operator=(const SensorConfig& config)
+    {
+        id        = config.id;
+        period    = config.period;
+        callback  = config.callback;
+        groupID   = config.groupID;
+        isEnabled = config.isEnabled;
+
+        return *this;
+    }
+
+    bool operator==(const SensorConfig& config) const
+    {
+        return id == config.id && period == config.period &&
+               callback.target_type() == config.callback.target_type() &&
+               callback.target<void()>() == config.callback.target<void()>() &&
+               groupID == config.groupID && isEnabled == config.isEnabled;
+    };
 };
 
 }  // namespace Boardcore

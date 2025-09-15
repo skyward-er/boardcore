@@ -133,7 +133,7 @@ protected:
         {
         }
 
-        SensorEntry(std::string id, std::chrono::nanoseconds period,
+        SensorEntry(const std::string& id, std::chrono::nanoseconds period,
                     std::function<void()> callback, bool isEnabled,
                     uint8_t groupID, bool isInitialized)
             : id(id), period(period), callback(std::move(callback)),

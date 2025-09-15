@@ -55,10 +55,9 @@ struct SensorInfo
     uint8_t groupID;
     SensorStatus status;
 
-    SensorInfo(
-        // cppcheck-suppress passedByValue
-        const std::string id = "", uint32_t period = 0, uint8_t groupID = 0,
-        SensorStatus status = SensorStatus::NOT_INIT)
+    SensorInfo(const std::string& id = "", uint32_t period = 0,
+               uint8_t groupID     = 0,
+               SensorStatus status = SensorStatus::NOT_INIT)
         : id(id), period(period), groupID(groupID), status(status)
     {
     }
