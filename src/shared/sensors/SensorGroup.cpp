@@ -51,6 +51,7 @@ SensorGroup::SensorGroup(uint8_t groupId, TaskScheduler* sched)
 
 SensorGroup::~SensorGroup()
 {
+    scheduler->stop();
     if (customScheduler)
         delete scheduler;
 }
