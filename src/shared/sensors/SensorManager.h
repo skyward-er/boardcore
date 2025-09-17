@@ -66,24 +66,14 @@ public:
                   const SchedulerMap_t& schedulerMap);
 
     /**
-     * @brief Starts the task scheduler of the group.
-     */
-    bool start(const SensorGroup::GroupId_t groupId);
-
-    /**
      * @brief Starts the task scheduler for every group.
      */
-    void startAll();
-
-    /**
-     * @brief Stops the task scheduler of the group.
-     */
-    void stop(const SensorGroup::GroupId_t groupId);
+    bool start();
 
     /**
      * @brief Stops the task scheduler for every group.
      */
-    void stopAll();
+    void stop();
 
     /**
      * @brief Enable sampling for the specified sensor.

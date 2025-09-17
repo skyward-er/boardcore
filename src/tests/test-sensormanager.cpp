@@ -352,7 +352,7 @@ int main()
           /*GroupId=*/1}},
     });
 
-    sm.startAll();
+    sm.start();
 
     Thread::sleep(1000);
 

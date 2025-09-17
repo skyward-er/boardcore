@@ -141,7 +141,6 @@ private:
 
     /**
      * @brief Needed to update the samplers at the correct period.
-     * TODO: can it be substituted with smart pointers?
      */
     TaskScheduler* scheduler;
 

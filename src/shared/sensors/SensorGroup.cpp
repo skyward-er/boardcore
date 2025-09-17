@@ -95,7 +95,6 @@ void SensorGroup::addSensor(AbstractSensor* sensor,
 
 void SensorGroup::enableSensor(AbstractSensor* sensor)
 {
-    // TODO: is this check redundant?
     if (samplersMap.find(sensor) != samplersMap.end())
     {
         samplersMap[sensor]->toggleSensor(sensor, true);
@@ -115,7 +114,6 @@ void SensorGroup::enableAllSensors()
 
 void SensorGroup::disableSensor(AbstractSensor* sensor)
 {
-    // TODO: is this check redundant?
     if (samplersMap.find(sensor) != samplersMap.end())
     {
         samplersMap[sensor]->toggleSensor(sensor, false);
@@ -137,7 +135,6 @@ void SensorGroup::start()
 {
     if (customScheduler)
         scheduler->start();
-    // TODO: correct to return void? Originally it used to return initResult
 }
 
 void SensorGroup::stop() { scheduler->stop(); }

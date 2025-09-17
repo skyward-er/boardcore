@@ -42,47 +42,14 @@ SensorManager::SensorManager(const SensorMap_t& sensorsMap,
         LOG_ERR(logger, "Initialization failed");
 }
 
-bool SensorManager::start(const SensorGroup::GroupId_t groupId)
-{
-    if (groups.count(groupId) != 0)
-    {
-        groups.at(groupId)->start();
-
-        // TODO: should still return the init result, even if
-        // it could be false because of another group?
-        // Should I return the result of SensorGroup::start()?
-        return initResult;
-    }
-    else
-    {
-        LOG_ERR(logger,
-                "Can't start the scheduler of group {}, it does not exist",
-                groupId);
-        return false;
-    }
-}
-
-void SensorManager::startAll()
+bool SensorManager::start()
 {
     for (auto it : groups)
         it.second->start();
+    return initResult;
 }
 
-void SensorManager::stop(const SensorGroup::GroupId_t groupId)
-{
-    if (groups.count(groupId) != 0)
-    {
-        groups.at(groupId)->stop();
-    }
-    else
-    {
-        LOG_ERR(logger,
-                "Can't stop the scheduler of group {}, it does not exist",
-                groupId);
-    }
-}
-
-void SensorManager::stopAll()
+void SensorManager::stop()
 {
     for (auto it : groups)
         it.second->stop();
