@@ -243,6 +243,7 @@ void ZVK::correctZeroVel()
     x.block<3, 1>(IDX_EUL_ANG, 0) = update.block<3, 1>(3, 0);
 
     // Update P
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
     P->block<3, 3>(0, 0)   = subP.block<3, 3>(0, 0);
     P->block<3, 3>(0, 12)  = subP.block<3, 3>(0, 3);
     P->block<3, 3>(12, 0)  = subP.block<3, 3>(3, 0);
@@ -285,6 +286,7 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     x.block<3, 1>(IDX_BIAS_ACC_0, 0) = update.block<3, 1>(2, 0);
 
     // Update P
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
     P->block<6, 6>(3, 3) = subP;
 }
 
@@ -328,6 +330,7 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
     x.block<3, 1>(IDX_BIAS_ACC_1, 0) = update.block<3, 1>(2, 0);
 
     // Update P
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
     P->block<3, 3>(3, 3) = subP.block<3, 3>(0, 0);
     P->block<3, 3>(3, 9) = subP.block<3, 3>(0, 3);
     P->block<3, 3>(9, 3) = subP.block<3, 3>(3, 0);
@@ -368,6 +371,7 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
     x.block<3, 1>(IDX_BIAS_GYRO_0, 0) = update.block<3, 1>(2, 0);
 
     // Update P
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
     P->block<6, 6>(15, 15) = subP;
 }
 
@@ -409,6 +413,7 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
     x.block<3, 1>(IDX_BIAS_GYRO_1, 0) = update.block<3, 1>(2, 0);
 
     // Update P
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
     P->block<3, 3>(15, 15) = subP.block<3, 3>(0, 0);
     P->block<3, 3>(15, 21) = subP.block<3, 3>(0, 3);
     P->block<3, 3>(21, 15) = subP.block<3, 3>(3, 0);
