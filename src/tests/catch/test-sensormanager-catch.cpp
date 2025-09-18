@@ -33,6 +33,8 @@
 #define protected public
 
 #include <sensors/SensorInfo.h>
+#include <sensors/SensorConfig.h>
+#include <sensors/SensorGroup.h>
 #include <sensors/SensorManager.h>
 
 using namespace Boardcore;
@@ -55,39 +57,53 @@ class SensorManagerFixture
 public:
     SensorManagerFixture()
     {
-        scheduler = new TaskScheduler();
+        schedulerGroup0 = std::make_unique<TaskScheduler>();
         // inserst a test function in the scheduler
-        scheduler->addTask([]() { std::cout << "Task Callback!" << std::endl; },
-                           2000);
+        schedulerGroup0->addTask(
+            []() { std::cout << "Task Callback!" << std::endl; }, 2000);
 
-        sensorManager = new SensorManager({{&s1, s1_info},
-                                           {&s2, s2_info},
-                                           {&s3, s3_info},
-                                           {&s4, s4_info},
-                                           {&s5, s5_info}},
-                                          scheduler);
+        SensorManager::SchedulerMap_t schedMap{{0, schedulerGroup0.get()}};
+        SensorManager::SensorMap_t sensMap{{&s1, s1_conf},
+                                           {&s2, s2_conf},
+                                           {&s3, s3_conf},
+                                           {&s4, s4_conf},
+                                           {&s5, s5_conf}};
 
-        samplerSensor1 = sensorManager->samplersMap[&s1];
-        samplerSensor2 = sensorManager->samplersMap[&s2];
-        samplerSensor3 = sensorManager->samplersMap[&s3];
-        samplerSensor4 = sensorManager->samplersMap[&s4];
-        samplerSensor5 = sensorManager->samplersMap[&s5];
+        sensorManager = std::make_unique<SensorManager>(sensMap, schedMap);
+
+        samplerSensor1 =
+            sensorManager->groups[s1_conf.groupID]->samplersMap[&s1].get();
+        samplerSensor2 =
+            sensorManager->groups[s2_conf.groupID]->samplersMap[&s2].get();
+        samplerSensor3 =
+            sensorManager->groups[s3_conf.groupID]->samplersMap[&s3].get();
+        samplerSensor4 =
+            sensorManager->groups[s4_conf.groupID]->samplersMap[&s4].get();
+        samplerSensor5 =
+            sensorManager->groups[s5_conf.groupID]->samplersMap[&s5].get();
     }
 
-    ~SensorManagerFixture()
-    {
-        sensorManager->stop();
-
-        delete sensorManager;
-    }
+    ~SensorManagerFixture() { sensorManager->stop(); }
 
     SensorManagerFixture& operator=(SensorManagerFixture const&) = delete;
     SensorManagerFixture(const SensorManagerFixture& p)          = delete;
 
-private:
-    TaskScheduler* scheduler;
+    /**
+     * @brief Utility used to compare the 2 structs. Return true
+     * if the passed structs are similar (they refer to the same
+     * sensor).
+     */
+    static bool compareInfoAndConfig(const SensorInfo& info,
+                                     const SensorConfig& conf)
+    {
+        return info.groupID == conf.groupID && info.id == conf.id &&
+               info.period == conf.period;
+    }
 
-    SensorManager* sensorManager;
+private:
+    std::unique_ptr<TaskScheduler> schedulerGroup0;  // Scheduler for group 0
+
+    std::unique_ptr<SensorManager> sensorManager;
 
     SensorSampler* samplerSensor1;
     SensorSampler* samplerSensor2;
@@ -96,40 +112,45 @@ private:
     SensorSampler* samplerSensor5;
 
     TestSensor s1;
-    SensorInfo s1_info{/*ID=*/"s1",
-                       /*Period=*/1000,
-                       /*Callback=*/[]()
-                       { std::cout << "Callback 1!" << std::endl; },
-                       /*Enabled=*/true};
+    SensorConfig s1_conf{/*ID=*/"s1",
+                         /*Period=*/1000,
+                         /*Callback=*/[]()
+                         { std::cout << "Callback 1!" << std::endl; },
+                         /*Enabled=*/true,
+                         /*GroupId=*/0};
 
     TestSensor s2;
-    SensorInfo s2_info{/*ID=*/"s2",
-                       /*Period=*/1000ms,
-                       /*Callback=*/[]()
-                       { std::cout << "Callback 2!" << std::endl; },
-                       /*Enabled=*/false};
+    SensorConfig s2_conf{/*ID=*/"s2",
+                         /*Period=*/1000ms,
+                         /*Callback=*/[]()
+                         { std::cout << "Callback 2!" << std::endl; },
+                         /*Enabled=*/false,
+                         /*GroupId=*/0};
 
     TestSensor s3;
-    SensorInfo s3_info{/*ID=*/"s3",
-                       /*Period=*/500,
-                       /*Callback=*/[]()
-                       { std::cout << "Callback 3!" << std::endl; },
-                       /*Enabled=*/true};
+    SensorConfig s3_conf{/*ID=*/"s3",
+                         /*Period=*/500,
+                         /*Callback=*/[]()
+                         { std::cout << "Callback 3!" << std::endl; },
+                         /*Enabled=*/true,
+                         /*GroupId=*/1};
 
     TestSensor s4;
-    SensorInfo s4_info{/*ID=*/"s4",
-                       /*Period=*/1_hz,
-                       /*Callback=*/[]()
-                       { std::cout << "Callback 4!" << std::endl; },
-                       /*Enabled=*/true};
+    SensorConfig s4_conf{/*ID=*/"s4",
+                         /*Period=*/1_hz,
+                         /*Callback=*/[]()
+                         { std::cout << "Callback 4!" << std::endl; },
+                         /*Enabled=*/true,
+                         /*GroupId=*/1};
 
     // always failing self-test
     FailingSensorCatch s5;
-    SensorInfo s5_info{/*ID=*/"s5",
-                       /*Period=*/2000,
-                       /*Callback=*/[]()
-                       { std::cout << "Callback 5!" << std::endl; },
-                       /*Enabled=*/true};
+    SensorConfig s5_conf{/*ID=*/"s5",
+                         /*Period=*/2000,
+                         /*Callback=*/[]()
+                         { std::cout << "Callback 5!" << std::endl; },
+                         /*Enabled=*/true,
+                         /*GroupId=*/1};
 };
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -137,7 +158,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
 {
     sensorManager->start();
 
-    vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
+    vector<TaskStatsResult> tasksStats = schedulerGroup0->getTaskStats();
 
     INFO("Tasks number : " << tasksStats.size());
 
@@ -156,26 +177,35 @@ TEST_CASE_METHOD(SensorManagerFixture,
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Sensors are correctly added to the samplers")
 {
-    // check that 3 samplers exist (1 hz, 2 hz and 0.5 Hz)
-    REQUIRE(sensorManager->samplers.size() == 3);
+    // Check that only 1 sampler exists in group0
+    REQUIRE(sensorManager->groups[0]->samplers.size() == 1);
+    // Check that 3 samplers exist in group1
+    REQUIRE(sensorManager->groups[1]->samplers.size() == 3);
 
-    // samplers are sorted by period, in decreasing order!
+    // Sensors s1 and s2 are assigned to group0
 
-    // check that s1, s2 and s3 are assigned to correct samplers
-    REQUIRE(samplerSensor1 == sensorManager->samplers[1]);
-    REQUIRE(*samplerSensor1 == *(sensorManager->samplers[1]));
+    // Check that s1 and s2 are assigned to the correct sampler
+    REQUIRE(samplerSensor1 == sensorManager->groups[0]->samplers[0].get());
+    REQUIRE(*samplerSensor1 == *(sensorManager->groups[0]->samplers[0].get()));
     // s1 and s2 are assigned to same sampler
     REQUIRE(samplerSensor1 == samplerSensor2);
     REQUIRE(*samplerSensor1 == *samplerSensor2);
-    // s1 and s4 are assigned to same sampler
-    REQUIRE(samplerSensor1 == samplerSensor4);
-    REQUIRE(*samplerSensor1 == *samplerSensor4);
-    // s3 assigned to another sampler
-    REQUIRE(samplerSensor3 == sensorManager->samplers[0]);
-    REQUIRE(*samplerSensor3 == *(sensorManager->samplers[0]));
-    // s5 assigned to the last sampler
-    REQUIRE(samplerSensor5 == sensorManager->samplers[2]);
-    REQUIRE(*samplerSensor5 == *(sensorManager->samplers[2]));
+
+    // Sensors s3, s4 and s5 are assigned to group1
+    // - s3 -> 2 Hz
+    // - s4 -> 1 Hz
+    // - s5 -> 0.5 Hz
+    // Samplers are sorted by period, in decreasing order!
+
+    // Check that s3 is assigned to the first sampler
+    REQUIRE(samplerSensor3 == sensorManager->groups[1]->samplers[0].get());
+    REQUIRE(*samplerSensor3 == *(sensorManager->groups[1]->samplers[0].get()));
+    // Check that s4 is assigned to the second sampler
+    REQUIRE(samplerSensor4 == sensorManager->groups[1]->samplers[1].get());
+    REQUIRE(*samplerSensor4 == *(sensorManager->groups[1]->samplers[1].get()));
+    // Check that s5 is assigned to the last sampler
+    REQUIRE(samplerSensor5 == sensorManager->groups[1]->samplers[2].get());
+    REQUIRE(*samplerSensor5 == *(sensorManager->groups[1]->samplers[2].get()));
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -188,52 +218,62 @@ TEST_CASE_METHOD(SensorManagerFixture,
     SensorInfo info4 = samplerSensor4->getSensorInfo(&s4);
     SensorInfo info5 = samplerSensor5->getSensorInfo(&s5);
 
-    // The sensors show now be initialized
-    s1_info.isInitialized = true;
-    s2_info.isInitialized = true;
-    s3_info.isInitialized = true;
-    s4_info.isInitialized = true;
-    s5_info.isInitialized = true;
-
     // Correctly initialized sensors
-    REQUIRE(s1_info == info1);
-    REQUIRE(s2_info == info2);
-    REQUIRE(s3_info == info3);
-    REQUIRE(s4_info == info4);
+    REQUIRE(compareInfoAndConfig(info1, s1_conf));
+    REQUIRE(compareInfoAndConfig(info2, s2_conf));
+    REQUIRE(compareInfoAndConfig(info3, s3_conf));
+    REQUIRE(compareInfoAndConfig(info4, s4_conf));
 
     // Sensor 5 should have failed
-    REQUIRE(!(s5_info == info5));
-    REQUIRE(s5_info.id == info5.id);
-    REQUIRE(s5_info.period == info5.period);
-    REQUIRE(info5.isEnabled == false);  // Disabled even if it was as enabled
-    REQUIRE(info5.isInitialized == false);  // Always fails the initialization
+    REQUIRE(!compareInfoAndConfig(info5, s5_conf));
+    REQUIRE(s5_conf.id == info5.id);
+    REQUIRE(s5_conf.period == info5.period);
+    REQUIRE(info5.status ==
+            SensorStatus::NOT_INIT);  // s5 always fails the initialization
 }
 
-TEST_CASE_METHOD(SensorManagerFixture,
-                 "Samplers have the correct number of sensors")
+TEST_CASE_METHOD(
+    SensorManagerFixture,
+    "Samplers have the correct number of sensors and the correct periods")
 {
-    // sampler at 500 ms (2 Hz) has 1 sensor
-    // sampler at 1000 ms (1 Hz) has 3 sensors
-    // sampler at 2000 ms (2 Hz) has 1 sensor
-    for (auto s : sensorManager->samplers)
+    for (auto& group : sensorManager->groups)
     {
-        if (s->getSamplingPeriod() == std::chrono::milliseconds{1000})
+        if (group.first == 0)
         {
-            REQUIRE(s->getNumSensors() == 3);
+            // Group0: 1 sampler (1 Hz) with 2 sensors
+            REQUIRE(group.second->samplers.size() ==
+                    1);  // It must contain only 1 sampler
+
+            auto& sampler = group.second->samplers[0];
+
+            REQUIRE(sampler->getSamplingPeriod() ==
+                    std::chrono::milliseconds(1000));
+            REQUIRE(sampler->getNumSensors() == 2);
         }
-        else if (s->getSamplingPeriod() == std::chrono::milliseconds{500})
+        else if (group.first == 1)  // Group1
         {
-            REQUIRE(s->getNumSensors() == 1);
-        }
-        else if (s->getSamplingPeriod() == std::chrono::milliseconds{2000})
-        {
-            REQUIRE(s->getNumSensors() == 1);
+            // Group1: 3 samplers (0.5 Hz, 1 Hz, 2 Hz) each one with 1 sensor
+            REQUIRE(group.second->samplers.size() ==
+                    3);  // It must have 3 samplers
+
+            // NOTE: samplers should be ordered with increasing period (lower
+            // frequency)
+            REQUIRE(group.second->samplers[0]->getSamplingPeriod() ==
+                    std::chrono::milliseconds(500));
+            REQUIRE(group.second->samplers[0]->getNumSensors() == 1);
+
+            REQUIRE(group.second->samplers[1]->getSamplingPeriod() ==
+                    std::chrono::seconds(1));
+            REQUIRE(group.second->samplers[1]->getNumSensors() == 1);
+
+            REQUIRE(group.second->samplers[2]->getSamplingPeriod() ==
+                    std::chrono::seconds(2));
+            REQUIRE(group.second->samplers[2]->getNumSensors() == 1);
         }
         else
         {
             FAIL(
-                "Can't exist a sampler with period different from 500, 1000 or "
-                "2000 ms");  // no sampler with a different period exist
+                "There shouldn't exist a group with id different from 0 and 1");
         }
     }
 }
@@ -245,14 +285,14 @@ TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable sensors at runtime")
     sensorManager->enableSensor(&s2);
     sensorManager->disableSensor(&s4);
 
-    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s2).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s4).status == SensorStatus::DISABLED);
 
     sensorManager->disableSensor(&s2);
     sensorManager->enableSensor(&s4);
 
-    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == false);
-    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s2).status == SensorStatus::DISABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s4).status == SensorStatus::ENABLED);
 }
 
 TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable all sensors at runtime")
@@ -261,27 +301,33 @@ TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable all sensors at runtime")
 
     sensorManager->enableAllSensors();
 
-    REQUIRE(sensorManager->getSensorInfo(&s1).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s3).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s5).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s1).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s2).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s3).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s4).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s5).status ==
+            SensorStatus::NOT_INIT);  // s5 always fails init, the state mustn't
+                                      // change
 
     sensorManager->disableAllSensors();
 
-    REQUIRE(sensorManager->getSensorInfo(&s1).isEnabled == false);
-    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == false);
-    REQUIRE(sensorManager->getSensorInfo(&s3).isEnabled == false);
-    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == false);
-    REQUIRE(sensorManager->getSensorInfo(&s5).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s1).status == SensorStatus::DISABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s2).status == SensorStatus::DISABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s3).status == SensorStatus::DISABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s4).status == SensorStatus::DISABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s5).status ==
+            SensorStatus::NOT_INIT);  // s5 always fails init, the state mustn't
+                                      // change
 
     sensorManager->enableAllSensors();
 
-    REQUIRE(sensorManager->getSensorInfo(&s1).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s3).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == true);
-    REQUIRE(sensorManager->getSensorInfo(&s5).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s1).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s2).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s3).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s4).status == SensorStatus::ENABLED);
+    REQUIRE(sensorManager->getSensorInfo(&s5).status ==
+            SensorStatus::NOT_INIT);  // s5 always fails init, the state mustn't
+                                      // change
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -289,5 +335,5 @@ TEST_CASE_METHOD(SensorManagerFixture,
 {
     TestSensor invalidSensor;
     SensorInfo invalidInfo = sensorManager->getSensorInfo(&invalidSensor);
-    REQUIRE(!invalidInfo.isInitialized);
+    REQUIRE(invalidInfo.status == SensorStatus::NOT_INIT);
 }
