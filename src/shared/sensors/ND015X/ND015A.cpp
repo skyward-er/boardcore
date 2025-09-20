@@ -54,7 +54,7 @@ ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                std::chrono::nanoseconds timeout, IOWatchdogEnable iow,
                BWLimitFilter bwl, NotchEnable ntc, uint8_t odr)
     : slave(bus, cs, spiConfig), streamRx(streamRx), streamTx(streamTx),
-      timeoutDma(timeout), sensorSettings{0x7, iow, bwl, ntc, odr}
+      timeoutDma(timeout), sensorSettings{odr, 0x7, iow, bwl, ntc}
 {
 }
 
@@ -63,7 +63,7 @@ ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                uint8_t odr)
     : slave(bus, cs, spiConfig), streamRx(nullptr), streamTx(nullptr),
       timeoutDma(std::chrono::nanoseconds::zero()),
-      sensorSettings{0x7, iow, bwl, ntc, odr}
+      sensorSettings{odr, 0x7, iow, bwl, ntc}
 {
 }
 
@@ -162,6 +162,10 @@ void ND015A::setNotch(NotchEnable ntc)
     spi.transfer16(spiDataOut);
 }
 
+void ND015A::setOffset(int16_t offset) { pressureOffset = offset; };
+void ND015A::updateOffset(int16_t offset) { pressureOffset += offset; };
+int16_t ND015A::getOffset() { return pressureOffset; };
+
 ND015XData ND015A::sampleImpl()
 {
     ND015XData data;
@@ -182,9 +186,13 @@ ND015XData ND015A::sampleImpl()
         spiDataIn = spi.transfer16(spiDataOut);
     }
 
+    float normalizedPressure =
+        (spiDataIn - 0.05f * pow(2, 16)) / (0.9f * pow(2, 16));
+
     data.pressure =
-        ((spiDataIn - 0.05 * pow(2, 16)) / (0.9 * pow(2, 16)) * 15) *
-        Constants::PSI_TO_PASCAL;
+        normalizedPressure * ND015A::FULLSCALE * Constants::PSI_TO_PASCAL +
+        pressureOffset;
+
     data.pressureTimestamp = TimestampTimer::getTimestamp();
 
     return data;

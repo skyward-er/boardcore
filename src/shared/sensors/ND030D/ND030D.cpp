@@ -25,6 +25,7 @@
 #include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Constants.h>
+#include <utils/Numeric.h>
 
 #include <cmath>
 #include <string>
@@ -56,7 +57,7 @@ ND030D::ND030D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                uint8_t odr)
     : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)),
       streamRx(streamRx), streamTx(streamTx), timeoutDma(timeout),
-      sensorSettings{fsr, iow, bwl, ntc, odr}
+      sensorSettings{odr, fsr, iow, bwl, ntc}
 {
 }
 
@@ -65,7 +66,7 @@ ND030D::ND030D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                NotchEnable ntc, uint8_t odr)
     : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)), streamRx(nullptr),
       streamTx(nullptr), timeoutDma(std::chrono::nanoseconds::zero()),
-      sensorSettings{fsr, iow, bwl, ntc, odr}
+      sensorSettings{odr, fsr, iow, bwl, ntc}
 {
 }
 
@@ -198,6 +199,10 @@ void ND030D::setNotch(NotchEnable ntc)
     spi.transfer16(spiDataOut);
 }
 
+void ND030D::setOffset(int16_t offset) { pressureOffset = offset; };
+void ND030D::updateOffset(int16_t offset) { pressureOffset += offset; };
+int16_t ND030D::getOffset() { return pressureOffset; };
+
 ND030XData ND030D::sampleImpl()
 {
     ND030XData data;
@@ -218,9 +223,12 @@ ND030XData ND030D::sampleImpl()
         spiDataIn = spi.transfer16(spiDataOut);
     }
 
+    float normalizedPressure =
+        std::bit_cast<int16_t>(spiDataIn) / (0.9f * pow(2, 15));
+
     data.pressure =
-        (static_cast<int16_t>(spiDataIn) / (0.9 * pow(2, 15)) * range) *
-        Constants::PSI_TO_PASCAL;
+        normalizedPressure * range * Constants::PSI_TO_PASCAL + pressureOffset;
+
     data.pressureTimestamp = TimestampTimer::getTimestamp();
 
     return data;

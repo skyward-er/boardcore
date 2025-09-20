@@ -186,6 +186,31 @@ public:
      */
     bool checkModelMatch();
 
+    /**
+     * @brief Set the offset of this sensor.
+     *        The offset is stored as a int16_t and can be both postive or
+     *        negative
+     *
+     * @param  The value the offset should be set to
+     */
+    void setOffset(int16_t offset);
+
+    /**
+     * @brief Modify the offset of this sensor.
+     *        The offset is stored as a int16_t and can be both postive or
+     *        negative
+     *
+     * @param  The value to be added to the current offset
+     */
+    void updateOffset(int16_t offset);
+
+    /**
+     * @brief Get the current offset of this sensor.
+     *        The offset is stored as a int16_t and can be both postive or
+     *        negative
+     */
+    int16_t getOffset();
+
 protected:
     ND015XData sampleImpl() override;
 
@@ -195,19 +220,23 @@ private:
     DMAStreamGuard* const streamRx;
     DMAStreamGuard* const streamTx;
     const std::chrono::nanoseconds timeoutDma;
+    int16_t pressureOffset = 0;
 
     /**
      * @brief settings for the mode control register,
      *        the initial values are the ones set by default
      *        in the sensor
+     *
+     * @note  The odr is before the other settings because
+     *        the sensors expects the data to be sent MSB first
      */
     struct
     {
+        uint8_t odr : 8;           // output data rate
         FullScaleRange fsr : 3;    // full scale range
         IOWatchdogEnable iow : 1;  // IO watchdog enable
         BWLimitFilter bwl : 3;     // bandwidth limit filter
         NotchEnable ntc : 1;       // notch filter enable
-        uint8_t odr : 8;           // output data rate
     } sensorSettings;
 
     static_assert(sizeof(sensorSettings) == 2,
