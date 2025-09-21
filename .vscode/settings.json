@@ -115,7 +115,13 @@
                 "polynomials": "cpp",
                 "autodiff": "cpp",
                 "sparseextra": "cpp",
-                "specialfunctions": "cpp"
+                "specialfunctions": "cpp",
+                "charconv": "cpp",
+                "numbers": "cpp",
+                "semaphore": "cpp",
+                "span": "cpp",
+                "stop_token": "cpp",
+                "text_encoding": "cpp"
         },
         "cSpell.words": [
                 "abom",
