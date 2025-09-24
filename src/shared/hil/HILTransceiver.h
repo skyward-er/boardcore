@@ -236,7 +236,7 @@ bool HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::writeDma(
 {
     // NOTE: change here and also in the constructor the required peripheral
     USARTType* usart      = UART4;  // TODO: SET PROPERLY
-    const auto trnTimeout = std::chrono::milliseconds(250);  // TODO: RESIZE
+    const auto trnTimeout = std::chrono::milliseconds(80);  // TODO: RESIZE
 
     DMATransaction setup{
         .direction         = DMATransaction::Direction::MEM_TO_PER,
