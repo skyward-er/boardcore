@@ -199,9 +199,9 @@ void ND030D::setNotch(NotchEnable ntc)
     spi.transfer16(spiDataOut);
 }
 
-void ND030D::setOffset(int16_t offset) { pressureOffset = offset; };
-void ND030D::updateOffset(int16_t offset) { pressureOffset += offset; };
-int16_t ND030D::getOffset() { return pressureOffset; };
+void ND030D::setOffset(float offset) { pressureOffset = offset; };
+void ND030D::updateOffset(float offset) { pressureOffset += offset; };
+float ND030D::getOffset() { return pressureOffset; };
 
 ND030XData ND030D::sampleImpl()
 {

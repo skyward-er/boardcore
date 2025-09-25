@@ -193,7 +193,7 @@ public:
      *
      * @param  The value the offset should be set to
      */
-    void setOffset(int16_t offset);
+    void setOffset(float offset);
 
     /**
      * @brief Modify the offset of this sensor.
@@ -202,14 +202,14 @@ public:
      *
      * @param  The value to be added to the current offset
      */
-    void updateOffset(int16_t offset);
+    void updateOffset(float offset);
 
     /**
      * @brief Get the current offset of this sensor.
      *        The offset is stored as a int16_t and can be both postive or
      *        negative
      */
-    int16_t getOffset();
+    float getOffset();
 
 protected:
     ND015XData sampleImpl() override;
@@ -220,7 +220,7 @@ private:
     DMAStreamGuard* const streamRx;
     DMAStreamGuard* const streamTx;
     const std::chrono::nanoseconds timeoutDma;
-    int16_t pressureOffset = 0;
+    float pressureOffset = 0;
 
     /**
      * @brief settings for the mode control register,
