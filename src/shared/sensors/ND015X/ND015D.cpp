@@ -224,7 +224,7 @@ ND015XData ND015D::sampleImpl()
     }
 
     float normalizedPressure =
-        std::bit_cast<int16_t>(spiDataIn) / (0.9f * pow(2, 15));
+        std::bit_cast<int16_t>(spiDataIn) / (0.9f * powf(2, 15));
 
     data.pressure =
         normalizedPressure * range * Constants::PSI_TO_PASCAL + pressureOffset;
