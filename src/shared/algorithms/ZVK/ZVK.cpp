@@ -217,8 +217,7 @@ void ZVK::correctZeroVel()
     S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
-    Eigen::Matrix<float, 6, 6> K =
-        (subP * H_ZERO_VEL.transpose() * S);
+    Eigen::Matrix<float, 6, 6> K = (subP * H_ZERO_VEL.transpose() * S);
 
     // Compute error
     Eigen::Matrix<float, 6, 1> error = Eigen::Matrix<float, 6, 1>::Zero();
@@ -256,8 +255,7 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S);
+    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
 
     // Accelerometer correction
     Eigen::Vector3f correctedAcc =
@@ -271,7 +269,7 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 6, 1> update = K * error;
 
     // Update acceleration and bias in state
-    x.block<3, 1>(IDX_ACC, 0)        += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_ACC, 0) += update.block<3, 1>(0, 0);
     x.block<3, 1>(IDX_BIAS_ACC_0, 0) += update.block<3, 1>(3, 0);
 
     // Update P
@@ -297,10 +295,9 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
 
     // Invert S
     S = S.completeOrthogonalDecomposition().pseudoInverse();
-    
+
     // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S);
+    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
 
     // Accelerometer correction
     Eigen::Vector3f correctedAcc =
@@ -341,8 +338,7 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
     S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S);
+    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
 
     // Gyroscpe correction
     Eigen::Vector3f estimatedAngVel = angVel + biasGyro0;
@@ -382,8 +378,7 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
     S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S);
+    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
 
     // Gyroscpe correction
     Eigen::Vector3f estimatedAngVel = angVel + biasGyro1;

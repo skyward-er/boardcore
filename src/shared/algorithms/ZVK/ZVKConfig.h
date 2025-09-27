@@ -28,12 +28,12 @@ namespace Boardcore
 {
 struct ZVKConfig
 {
-    float T;                //[s] Sample period
-    float SIGMA_ACC;        //[m/s^2] Accelerometer noise std
-    float SIGMA_BIAS_ACC;   //[m/s^2] Accelerometer bias std
-    float SIGMA_GYRO;       //[rad/s] Gyroscope noise std
-    float SIGMA_BIAS_GYRO;  //[rad/s] Gyroscope bias std
-    Eigen::Vector3f ON_RAMP_EULERO_ANGLES; //[deg]
+    float T;                                //[s] Sample period
+    float SIGMA_ACC;                        //[m/s^2] Accelerometer noise std
+    float SIGMA_BIAS_ACC;                   //[m/s^2] Accelerometer bias std
+    float SIGMA_GYRO;                       //[rad/s] Gyroscope noise std
+    float SIGMA_BIAS_GYRO;                  //[rad/s] Gyroscope bias std
+    Eigen::Vector3f ON_RAMP_EULERO_ANGLES;  //[deg]
 };
 
 }  // namespace Boardcore
