@@ -44,6 +44,7 @@ ZVK::ZVK(const ZVKConfig& config)
     // Q initialization
     {
         // clang-format-off
+        Q = std::make_unique<Eigen::Matrix<float, 24, 24>>();
         Eigen::Matrix<float, 24, 1> qDiag;
         qDiag << Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
             Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
@@ -212,13 +213,12 @@ void ZVK::correctZeroVel()
     Eigen::Matrix<float, 6, 6> S =
         H_ZERO_VEL * subP * H_ZERO_VEL.transpose() + R_ZERO_VEL;
 
-    // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-9)
-        return;
+    // Invert S
+    S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
     Eigen::Matrix<float, 6, 6> K =
-        (subP * H_ZERO_VEL.transpose() * S.inverse());
+        (subP * H_ZERO_VEL.transpose() * S);
 
     // Compute error
     Eigen::Matrix<float, 6, 1> error = Eigen::Matrix<float, 6, 1>::Zero();
@@ -252,13 +252,12 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 3, 3> S =
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_ACC;
 
-    // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-9)
-        return;
+    // Invert S
+    S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
     Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S.inverse());
+        (subP * H_ACC_GYRO.transpose() * S);
 
     // Accelerometer correction
     Eigen::Vector3f correctedAcc =
@@ -272,8 +271,8 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 6, 1> update = K * error;
 
     // Update acceleration and bias in state
-    x.block<3, 1>(IDX_ACC, 0)        = update.block<3, 1>(0, 0);
-    x.block<3, 1>(IDX_BIAS_ACC_0, 0) = update.block<3, 1>(3, 0);
+    x.block<3, 1>(IDX_ACC, 0)        += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_BIAS_ACC_0, 0) += update.block<3, 1>(3, 0);
 
     // Update P
     subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
@@ -296,13 +295,12 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 3, 3> S =
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_ACC;
 
-    // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-9)
-        return;
-
+    // Invert S
+    S = S.completeOrthogonalDecomposition().pseudoInverse();
+    
     // Compute kalman gain
     Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S.inverse());
+        (subP * H_ACC_GYRO.transpose() * S);
 
     // Accelerometer correction
     Eigen::Vector3f correctedAcc =
@@ -339,13 +337,12 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
     Eigen::Matrix<float, 3, 3> S =
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_GYRO;
 
-    // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-9)
-        return;
+    // Invert S
+    S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
     Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S.inverse());
+        (subP * H_ACC_GYRO.transpose() * S);
 
     // Gyroscpe correction
     Eigen::Vector3f estimatedAngVel = angVel + biasGyro0;
@@ -381,13 +378,12 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
     Eigen::Matrix<float, 3, 3> S =
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_GYRO;
 
-    // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-9)
-        return;
+    // Invert S
+    S = S.completeOrthogonalDecomposition().pseudoInverse();
 
     // Compute kalman gain
     Eigen::Matrix<float, 6, 3> K =
-        (subP * H_ACC_GYRO.transpose() * S.inverse());
+        (subP * H_ACC_GYRO.transpose() * S);
 
     // Gyroscpe correction
     Eigen::Vector3f estimatedAngVel = angVel + biasGyro1;

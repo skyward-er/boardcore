@@ -33,7 +33,7 @@ struct ZVKConfig
     float SIGMA_BIAS_ACC;   //[m/s^2] Accelerometer bias std
     float SIGMA_GYRO;       //[rad/s] Gyroscope noise std
     float SIGMA_BIAS_GYRO;  //[rad/s] Gyroscope bias std
-    Eigen::Vector3f ON_RAMP_EULERO_ANGLES;
+    Eigen::Vector3f ON_RAMP_EULERO_ANGLES; //[deg]
 };
 
 }  // namespace Boardcore
