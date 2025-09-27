@@ -39,12 +39,14 @@ namespace Boardcore
 
 ZVK::ZVK(const ZVKConfig& config)
     : config(config),
-      onRampQuaternion(SkyQuaternion::eul2quat(config.ON_RAMP_EULERO_ANGLES))
+      onRampQuaternion(SkyQuaternion::eul2quat(config.ON_RAMP_EULERO_ANGLES)),
+      Q(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
+      P(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
+      F(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
 {
     // Q initialization
     {
         // clang-format-off
-        Q = std::make_unique<Eigen::Matrix<float, 24, 24>>();
         Eigen::Matrix<float, 24, 1> qDiag;
         qDiag << Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
             Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
@@ -65,7 +67,6 @@ ZVK::ZVK(const ZVKConfig& config)
     // P initialization
     {
         // clang-format-off
-        P = std::make_unique<Eigen::Matrix<float, 24, 24>>();
         Eigen::Matrix<float, 24, 1> p0Diag;
         p0Diag << Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
             Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
@@ -82,9 +83,8 @@ ZVK::ZVK(const ZVKConfig& config)
     // F initialization
     {
         // clang-format-off
-        F                    = std::make_unique<Eigen::Matrix<float, 24, 24>>();
-        *F                   = Eigen::Matrix<float, 24, 24>::Identity();
-        F->block<3, 3>(0, 3) = Eigen::Matrix3f::Identity() * config.T;
+        *F                     = Eigen::Matrix<float, 24, 24>::Identity();
+        F->block<3, 3>(0, 3)   = Eigen::Matrix3f::Identity() * config.T;
         F->block<3, 3>(12, 15) = Eigen::Matrix3f::Identity() * config.T;
         // clang-format-on
     }
