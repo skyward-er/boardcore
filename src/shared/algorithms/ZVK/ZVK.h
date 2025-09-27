@@ -160,31 +160,28 @@ private:
     // State
     Eigen::Matrix<float, 24, 1> x;
 
-    // State covariance matrix 24x24
-    Eigen::SparseMatrix<float> Q;
+    // State covariance matrix
+    std::unique_ptr<Eigen::Matrix<float, 24, 24>> Q;
 
-    // State error covariance matrix 24x24
+    // State error covariance matrix
     std::unique_ptr<Eigen::Matrix<float, 24, 24>> P;
 
-    // State transition matrix 24x24
-    Eigen::SparseMatrix<float> F;
+    // State transition matrix
+    std::unique_ptr<Eigen::Matrix<float, 24, 24>> F;
 
     // Measurement noise covariance matrices
 
-    // 6x6
-    Eigen::SparseMatrix<float> R_ZERO_VEL;
+    Eigen::Matrix<float, 6, 6> R_ZERO_VEL;
 
-    // 3x3
-    Eigen::SparseMatrix<float> R_ACC;
+    Eigen::Matrix<float, 3, 3> R_ACC;
 
-    // 3x3
-    Eigen::SparseMatrix<float> R_GYRO;
+    Eigen::Matrix<float, 3, 3> R_GYRO;
 
-    // Zero velocity measurement matrix 6x6
-    Eigen::SparseMatrix<float> H_ZERO_VEL;
+    // Zero velocity measurement matrix
+    Eigen::Matrix<float, 6, 6> H_ZERO_VEL;
 
-    // Acceleration measurement matrix 3x6
-    Eigen::SparseMatrix<float> H_ACC_GYRO;
+    // Acceleration measurement matrix
+    Eigen::Matrix<float, 3, 6> H_ACC_GYRO;
 
     // Rotational matrix from body frame to inertial frame
     Eigen::Matrix<float, 3, 3> A_ROT;

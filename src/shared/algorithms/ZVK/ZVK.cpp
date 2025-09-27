@@ -22,7 +22,9 @@
 
 #include "ZVK.h"
 
+#include <diagnostic/CpuMeter/CpuMeter.h>
 #include <drivers/timer/TimestampTimer.h>
+#include <miosix.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <Eigen/Core>
@@ -55,9 +57,7 @@ ZVK::ZVK(const ZVKConfig& config)
                                       config.SIGMA_BIAS_GYRO),
             Eigen::Vector3f::Constant(config.SIGMA_BIAS_GYRO *
                                       config.SIGMA_BIAS_GYRO);
-
-        Q = qDiag.asDiagonal();
-        Q.makeCompressed();
+        (*Q) = qDiag.asDiagonal();
         // clang-format-on
     }
 
@@ -74,7 +74,17 @@ ZVK::ZVK(const ZVKConfig& config)
             Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
             Eigen::Vector3f::Constant((1e-3f) * (1e-3f)),
             Eigen::Vector3f::Constant((1e-3f) * (1e-3f));
-        P->block<24, 24>(0, 0) = p0Diag.asDiagonal();
+        (*P) = p0Diag.asDiagonal();
+        // clang-format-on
+    }
+
+    // F initialization
+    {
+        // clang-format-off
+        F                    = std::make_unique<Eigen::Matrix<float, 24, 24>>();
+        *F                   = Eigen::Matrix<float, 24, 24>::Identity();
+        F->block<3, 3>(0, 3) = Eigen::Matrix3f::Identity() * config.T;
+        F->block<3, 3>(12, 15) = Eigen::Matrix3f::Identity() * config.T;
         // clang-format-on
     }
 
@@ -85,7 +95,6 @@ ZVK::ZVK(const ZVKConfig& config)
         rZeroVelDiag << Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
             Eigen::Vector3f::Constant((1e-6f) * (1e-6f));
         R_ZERO_VEL = rZeroVelDiag.asDiagonal();
-        R_ZERO_VEL.makeCompressed();
         // clang-format-on
     }
 
@@ -96,7 +105,6 @@ ZVK::ZVK(const ZVKConfig& config)
         rAccDiag << Eigen::Vector3f::Constant(config.SIGMA_ACC *
                                               config.SIGMA_ACC);
         R_ACC = rAccDiag.asDiagonal();
-        R_ACC.makeCompressed();
         // clang-format-on
     }
 
@@ -107,7 +115,6 @@ ZVK::ZVK(const ZVKConfig& config)
         rGyroDiag << Eigen::Vector3f::Constant(config.SIGMA_GYRO *
                                                config.SIGMA_GYRO);
         R_GYRO = rGyroDiag.asDiagonal();
-        R_GYRO.makeCompressed();
         // clang-format-on
     }
 
@@ -116,9 +123,9 @@ ZVK::ZVK(const ZVKConfig& config)
         // clang-format-off
         Eigen::Matrix<float, 6, 6> tempHZeroVel =
             Eigen::Matrix<float, 6, 6>::Zero();
-        tempHZeroVel.block<3, 3>(0, IDX_VEL)     = Eigen::Matrix3f::Identity();
-        tempHZeroVel.block<3, 3>(3, IDX_EUL_ANG) = Eigen::Matrix3f::Identity();
-        H_ZERO_VEL                               = tempHZeroVel.sparseView();
+        tempHZeroVel.block<3, 3>(0, 0) = Eigen::Matrix3f::Identity();
+        tempHZeroVel.block<3, 3>(0, 3) = Eigen::Matrix3f::Identity();
+        H_ZERO_VEL                     = tempHZeroVel;
         // clang-format-on
     }
 
@@ -129,7 +136,7 @@ ZVK::ZVK(const ZVKConfig& config)
             Eigen::Matrix<float, 3, 6>::Zero();
         tempHAccGyro.block<3, 3>(0, 0) = Eigen::Matrix3f::Identity();
         tempHAccGyro.block<3, 3>(0, 3) = Eigen::Matrix3f::Identity();
-        H_ACC_GYRO                     = tempHAccGyro.sparseView();
+        H_ACC_GYRO                     = tempHAccGyro;
         //  clang-format-on
     }
 
@@ -147,23 +154,6 @@ ZVK::ZVK(const ZVKConfig& config)
             2 * (q1 * q3 + q2 * q4),
             2 * (q2 * q3 - q1 * q4),  // cppcheck-suppress constStatement
             -q1 * q1 - q2 * q2 + q3 * q3 + q4 * q4;
-        // clang-format-on
-    }
-
-    // F initialization
-    {
-        // clang-format-off
-        F.resize(24, 24);
-
-        // Set 3x3 diagonal matrix in (0, 3)
-        F.coeffRef(0, 3) = config.T;
-        F.coeffRef(1, 4) = config.T;
-        F.coeffRef(2, 5) = config.T;
-
-        // Set 3x3 diagonal matrix in (12, 15)
-        F.coeffRef(12, 15) = config.T;
-        F.coeffRef(13, 16) = config.T;
-        F.coeffRef(14, 17) = config.T;
         // clang-format-on
     }
 }
@@ -201,7 +191,7 @@ void ZVK::predict()
     x.block<3, 1>(IDX_BIAS_GYRO_1, 0) = biasGyro1Pred;
 
     // update P
-    *P = F * (*P) * F.transpose() + Q;
+    *P = ((*F) * (*P) * (*F).transpose()) + (*Q);
 }
 
 void ZVK::correctZeroVel()
@@ -209,7 +199,7 @@ void ZVK::correctZeroVel()
     const Eigen::Vector3f vel          = x.block<3, 1>(IDX_VEL, 0);
     const Eigen::Vector3f eulAng       = x.block<3, 1>(IDX_EUL_ANG, 0);
     const Eigen::Vector3f onRampVel    = Eigen::Vector3f::Zero();
-    const Eigen::Vector3f onRampEulAng = config.ON_RAMP_EULERO_ANGLES;
+    const Eigen::Vector3f onRampEulAng = Eigen::Vector3f::Zero();
 
     // Extract subP used in kalman gain computation
     Eigen::Matrix<float, 6, 6> subP;
@@ -223,7 +213,7 @@ void ZVK::correctZeroVel()
         H_ZERO_VEL * subP * H_ZERO_VEL.transpose() + R_ZERO_VEL;
 
     // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-9)
         return;
 
     // Compute kalman gain
@@ -231,7 +221,7 @@ void ZVK::correctZeroVel()
         (subP * H_ZERO_VEL.transpose() * S.inverse());
 
     // Compute error
-    Eigen::Matrix<float, 6, 1> error = Eigen::Matrix<float, 6, 1>::Zero(6);
+    Eigen::Matrix<float, 6, 1> error = Eigen::Matrix<float, 6, 1>::Zero();
     error.block<3, 1>(0, 0)          = onRampVel - vel;
     error.block<3, 1>(3, 0)          = onRampEulAng - eulAng;
 
@@ -239,8 +229,8 @@ void ZVK::correctZeroVel()
     Eigen::Matrix<float, 6, 1> update = K * error;
 
     // Update velocity and euler angles in state
-    x.block<3, 1>(IDX_VEL, 0)     = update.block<3, 1>(0, 0);
-    x.block<3, 1>(IDX_EUL_ANG, 0) = update.block<3, 1>(3, 0);
+    x.block<3, 1>(IDX_VEL, 0) += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_EUL_ANG, 0) += update.block<3, 1>(3, 0);
 
     // Update P
     subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
@@ -263,7 +253,7 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_ACC;
 
     // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-9)
         return;
 
     // Compute kalman gain
@@ -283,10 +273,10 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
 
     // Update acceleration and bias in state
     x.block<3, 1>(IDX_ACC, 0)        = update.block<3, 1>(0, 0);
-    x.block<3, 1>(IDX_BIAS_ACC_0, 0) = update.block<3, 1>(2, 0);
+    x.block<3, 1>(IDX_BIAS_ACC_0, 0) = update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
     P->block<6, 6>(3, 3) = subP;
 }
 
@@ -307,7 +297,7 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_ACC;
 
     // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-9)
         return;
 
     // Compute kalman gain
@@ -326,11 +316,11 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 6, 1> update = K * error;
 
     // Update acceleration and bias in state
-    x.block<3, 1>(IDX_ACC, 0)        = update.block<3, 1>(0, 0);
-    x.block<3, 1>(IDX_BIAS_ACC_1, 0) = update.block<3, 1>(2, 0);
+    x.block<3, 1>(IDX_ACC, 0) += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_BIAS_ACC_1, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
     P->block<3, 3>(3, 3) = subP.block<3, 3>(0, 0);
     P->block<3, 3>(3, 9) = subP.block<3, 3>(0, 3);
     P->block<3, 3>(9, 3) = subP.block<3, 3>(3, 0);
@@ -350,7 +340,7 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_GYRO;
 
     // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-9)
         return;
 
     // Compute kalman gain
@@ -367,11 +357,11 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
     Eigen::Matrix<float, 6, 1> update = K * error;
 
     // Update acceleration and bias in state
-    x.block<3, 1>(IDX_VEL_ANG, 0)     = update.block<3, 1>(0, 0);
-    x.block<3, 1>(IDX_BIAS_GYRO_0, 0) = update.block<3, 1>(2, 0);
+    x.block<3, 1>(IDX_VEL_ANG, 0) += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_BIAS_GYRO_0, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
     P->block<6, 6>(15, 15) = subP;
 }
 
@@ -392,7 +382,7 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
         H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_GYRO;
 
     // If S is not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-9)
         return;
 
     // Compute kalman gain
@@ -409,11 +399,11 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
     Eigen::Matrix<float, 6, 1> update = K * error;
 
     // Update acceleration and bias in state
-    x.block<3, 1>(IDX_VEL_ANG, 0)     = update.block<3, 1>(0, 0);
-    x.block<3, 1>(IDX_BIAS_GYRO_1, 0) = update.block<3, 1>(2, 0);
+    x.block<3, 1>(IDX_VEL_ANG, 0) += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_BIAS_GYRO_1, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
     P->block<3, 3>(15, 15) = subP.block<3, 3>(0, 0);
     P->block<3, 3>(15, 21) = subP.block<3, 3>(0, 3);
     P->block<3, 3>(21, 15) = subP.block<3, 3>(3, 0);
