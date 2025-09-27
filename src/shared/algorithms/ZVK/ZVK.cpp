@@ -42,7 +42,7 @@ ZVK::ZVK(const ZVKConfig& config)
       onRampQuaternion(SkyQuaternion::eul2quat(config.ON_RAMP_EULERO_ANGLES)),
       Q(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
       P(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
-      F(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
+      F(std::make_unique<Eigen::Matrix<float, 24, 24>>())
 {
     // Q initialization
     {
