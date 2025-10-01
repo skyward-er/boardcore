@@ -62,7 +62,7 @@ public:
     /**
      * @brief Changes the kalman filter configuration.
      */
-    void setKalmanConfig(KalmanFilter::KalmanConfig& config);
+    void setKalmanConfig(const KalmanFilter::KalmanConfig& config);
 
     /**
      * @brief Returns the current reference values.

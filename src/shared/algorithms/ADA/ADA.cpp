@@ -60,7 +60,7 @@ void ADA::setReferenceValues(const ReferenceValues& reference)
     this->reference = reference;
 }
 
-void ADA::setKalmanConfig(KalmanFilter::KalmanConfig& config)
+void ADA::setKalmanConfig(const KalmanFilter::KalmanConfig& config)
 {
     filter.setConfig(config);
 }
