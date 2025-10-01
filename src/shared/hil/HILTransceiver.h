@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ActiveObject.h>
+#include <drivers/dma/DMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <drivers/usart/USART.h>
 #include <utils/Debug.h>
@@ -97,8 +98,14 @@ public:
                             HILPhasesManager<FlightPhases, SimulatorData,
                                              ActuatorData>* hilPhasesManager)
         : HILTransceiverBase(hilSerial), actuatorData(),
-          hilPhasesManager(hilPhasesManager)
+          hilPhasesManager(hilPhasesManager),
+          dmaStreamTx(DMADriver::instance().acquireStreamForPeripheral(
+              // TODO: remove hardcoded UART
+              DMADefs::Peripherals::PE_UART4_TX, std::chrono::seconds(1)))
     {
+        if (dmaStreamTx.isValid())
+            hilSerial.getPeripheral()->CR3 |=
+                USART_CR3_DMAT;  // Enable DMA transmission
     }
 
     /**
@@ -128,6 +135,8 @@ public:
      */
     const SimulatorData* getSensorData() const { return &simulatorData; }
 
+    bool isDmaEnabled() { return dmaStreamTx.isValid(); }
+
 private:
     void run() override;
 
@@ -135,6 +144,15 @@ private:
     ActuatorData actuatorData;
     HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>*
         hilPhasesManager;
+
+    /**
+     * @brief Write with dma. Returns true if the operation is successful,
+     * false if the dma timeout was reached.
+     */
+    bool writeDma(void* buffer, uint16_t nBytes,
+                  std::chrono::nanoseconds timeout);
+
+    DMAStreamGuard dmaStreamTx;
 };
 
 /**
@@ -203,8 +221,57 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
 
         waitActuatorData();
         miosix::led2On();
-        hilSerial.write(&actuatorData, sizeof(ActuatorData));
+
+        if (isDmaEnabled())
+            writeDma(&actuatorData, sizeof(ActuatorData),
+                     std::chrono::milliseconds(100));
+        else
+            hilSerial.write(&actuatorData, sizeof(ActuatorData));
+
         miosix::led2Off();
     }
+}
+
+template <class FlightPhases, class SimulatorData, class ActuatorData>
+bool HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::writeDma(
+    void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout)
+{
+    USARTType* usart = hilSerial.getPeripheral();
+
+    DMATransaction setup{
+        .direction         = DMATransaction::Direction::MEM_TO_PER,
+        .priority          = DMATransaction::Priority::VERY_HIGH,
+        .srcSize           = DMATransaction::DataSize::BITS_8,
+        .dstSize           = DMATransaction::DataSize::BITS_8,
+        .srcAddress        = buffer,
+        .dstAddress        = (void*)&(usart->TDR),
+        .numberOfDataItems = nBytes,
+        .srcIncrement      = true,
+        .dstIncrement      = false,
+        .enableTransferCompleteInterrupt = true,
+        .enableTransferErrorInterrupt    = true,
+    };
+
+    dmaStreamTx->setup(setup);
+
+    // Clear the TC flag in the USART_ISR register by setting
+    // the TCCF bit in the USART_ICR register
+    usart->ICR |= USART_ICR_TCCF;
+
+    dmaStreamTx->enable();
+    bool ret = dmaStreamTx->timedWaitForTransferComplete(timeout);
+
+    /*
+    The TC flag can be monitored to make sure that the USART
+    communication is complete. This is required to avoid corrupting the last
+    transmission before disabling the USART or entering Stop mode. Software must
+    wait until TC=1. The TC flag remains cleared during all data transfers and
+    it is set by hardware at the end of transmission of the last frame.
+     */
+    while ((usart->ISR & USART_ISR_TC) == 0)
+    {
+    }
+
+    return ret;
 }
 }  // namespace Boardcore
