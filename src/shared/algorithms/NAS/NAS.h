@@ -171,6 +171,12 @@ public:
      */
     ReferenceValues getReferenceValues();
 
+    /**
+     * @brief Resets the covariance matrix to the initial state based on the
+     * configuration.
+     */
+    void resetCovariance();
+
 private:
     ///< Extended Kalman filter configuration parameters.
     NASConfig config;

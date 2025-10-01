@@ -37,26 +37,7 @@ namespace Boardcore
 NAS::NAS(const NASConfig& config) : config(config)
 {
     // Covariance setup
-    {
-        // clang-format off
-        Matrix3f P_pos{
-            {config.P_POS, 0,            0},
-            {0,            config.P_POS, 0},
-            {0,            0,            config.P_POS_VERTICAL}
-        };
-        Matrix3f P_vel{
-            {config.P_VEL, 0,            0},
-            {0,            config.P_VEL, 0},
-            {0,            0,            config.P_VEL_VERTICAL}
-        };
-        Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
-        Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
-        P << P_pos,               MatrixXf::Zero(3, 9),
-            MatrixXf::Zero(3, 3), P_vel, MatrixXf::Zero(3, 6),
-            MatrixXf::Zero(3, 6),        P_att, MatrixXf::Zero(3, 3),
-            MatrixXf::Zero(3, 9),               P_bias; // cppcheck-suppress constStatement
-        // clang-format on
-    }
+    resetCovariance();
 
     // Utility matrixes
     R_acc << config.SIGMA_ACC * config.SIGMA_ACC * Matrix3f::Identity();
@@ -497,5 +478,27 @@ void NAS::setReferenceValues(const ReferenceValues& reference)
 }
 
 ReferenceValues NAS::getReferenceValues() { return reference; }
+
+void NAS::resetCovariance()
+{
+    // clang-format off
+    Matrix3f P_pos{
+        {config.P_POS, 0,            0},
+        {0,            config.P_POS, 0},
+        {0,            0,            config.P_POS_VERTICAL}
+    };
+    Matrix3f P_vel{
+        {config.P_VEL, 0,            0},
+        {0,            config.P_VEL, 0},
+        {0,            0,            config.P_VEL_VERTICAL}
+    };
+    Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
+    Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
+    P << P_pos,               MatrixXf::Zero(3, 9),
+        MatrixXf::Zero(3, 3), P_vel, MatrixXf::Zero(3, 6),
+        MatrixXf::Zero(3, 6),        P_att, MatrixXf::Zero(3, 3),
+        MatrixXf::Zero(3, 9),               P_bias; // cppcheck-suppress constStatement
+    // clang-format on
+}
 
 }  // namespace Boardcore
