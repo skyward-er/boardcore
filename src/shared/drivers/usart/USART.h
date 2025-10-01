@@ -131,6 +131,8 @@ public:
      */
     int getId() { return id; };
 
+    USARTType* getPeripheral() { return usart; };
+
 protected:
     /**
      * @brief Read method implementation that supports both blocking and

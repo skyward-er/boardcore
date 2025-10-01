@@ -99,18 +99,13 @@ public:
                                              ActuatorData>* hilPhasesManager)
         : HILTransceiverBase(hilSerial), actuatorData(),
           hilPhasesManager(hilPhasesManager),
-          dmaStreamTransmit(DMADriver::instance().acquireStreamForPeripheral(
-              // NOTE: change here and also in writeDma() the required
-              // peripheral
+          dmaStreamTx(DMADriver::instance().acquireStreamForPeripheral(
+              // TODO: remove hardcoded UART
               DMADefs::Peripherals::PE_UART4_TX, std::chrono::seconds(1)))
     {
-        if (!dmaStreamTransmit.isValid())
-        {
-            std::cout << "Error, cannot acquire dma stream for usart"
-                      << std::endl;
-        }
-        else
-            UART4->CR3 |= USART_CR3_DMAT;  // Enable DMA transmission
+        if (dmaStreamTx.isValid())
+            hilSerial.getPeripheral()->CR3 |=
+                USART_CR3_DMAT;  // Enable DMA transmission
     }
 
     /**
@@ -140,6 +135,8 @@ public:
      */
     const SimulatorData* getSensorData() const { return &simulatorData; }
 
+    bool isDmaEnabled() { return dmaStreamTx.isValid(); }
+
 private:
     void run() override;
 
@@ -152,8 +149,10 @@ private:
      * @brief Write with dma. Returns true if the operation is successful,
      * false if the dma timeout was reached.
      */
-    bool writeDma(void* buffer, uint16_t nBytes);
-    DMAStreamGuard dmaStreamTransmit;
+    bool writeDma(void* buffer, uint16_t nBytes,
+                  std::chrono::nanoseconds timeout);
+
+    DMAStreamGuard dmaStreamTx;
 };
 
 /**
@@ -223,8 +222,11 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
         waitActuatorData();
         miosix::led2On();
 
-        // hilSerial.write(&actuatorData, sizeof(ActuatorData));
-        writeDma(&actuatorData, sizeof(ActuatorData));
+        if (isDmaEnabled())
+            writeDma(&actuatorData, sizeof(ActuatorData),
+                     std::chrono::milliseconds(100));
+        else
+            hilSerial.write(&actuatorData, sizeof(ActuatorData));
 
         miosix::led2Off();
     }
@@ -232,11 +234,9 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
 
 template <class FlightPhases, class SimulatorData, class ActuatorData>
 bool HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::writeDma(
-    void* buffer, uint16_t nBytes)
+    void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout)
 {
-    // NOTE: change here and also in the constructor the required peripheral
-    USARTType* usart      = UART4;  // TODO: SET PROPERLY
-    const auto trnTimeout = std::chrono::milliseconds(80);  // TODO: RESIZE
+    USARTType* usart = hilSerial.getPeripheral();
 
     DMATransaction setup{
         .direction         = DMATransaction::Direction::MEM_TO_PER,
@@ -252,14 +252,14 @@ bool HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::writeDma(
         .enableTransferErrorInterrupt    = true,
     };
 
-    dmaStreamTransmit->setup(setup);
+    dmaStreamTx->setup(setup);
 
     // Clear the TC flag in the USART_ISR register by setting
     // the TCCF bit in the USART_ICR register
     usart->ICR |= USART_ICR_TCCF;
 
-    dmaStreamTransmit->enable();
-    bool ret = dmaStreamTransmit->timedWaitForTransferComplete(trnTimeout);
+    dmaStreamTx->enable();
+    bool ret = dmaStreamTx->timedWaitForTransferComplete(timeout);
 
     /*
     The TC flag can be monitored to make sure that the USART
