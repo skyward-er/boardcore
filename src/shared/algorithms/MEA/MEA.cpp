@@ -59,14 +59,8 @@ void MEA::Step::withSpeedAndAlt(float verticalSpeed, float mslAltitude)
 }
 
 MEA::MEA(const Config& config)
-    : F{config.F}, Q{config.Q}, G{config.G}, baroH{config.baroH},
-      baroR{config.baroR}, P{config.P}, x{0, 0, config.initialMass},
-      mass{config.initialMass}, accelThresh{config.accelThresh},
-      speedThresh{config.speedThresh}, Kt{config.Kt}, alpha{config.alpha},
-      c{config.c}, coeffs{config.coeffs}, crossSection{config.crossSection},
-      ae{config.ae}, p0{config.p0}, minMass{config.minMass},
-      maxMass{config.maxMass}, cdCorrectionFactor(config.cdCorrectionFactor)
 {
+    reset(config);
     updateState();
 }
 
@@ -95,6 +89,30 @@ void MEA::update(const Step& step)
 }
 
 MEAState MEA::getState() { return state; }
+
+void MEA::reset(const Config& config)
+{
+    F                  = config.F;
+    Q                  = config.Q;
+    G                  = config.G;
+    baroH              = config.baroH;
+    baroR              = config.baroR;
+    P                  = config.P;
+    x                  = {0, 0, config.initialMass};
+    mass               = config.initialMass;
+    accelThresh        = config.accelThresh;
+    speedThresh        = config.speedThresh;
+    Kt                 = config.Kt;
+    alpha              = config.alpha;
+    c                  = config.c;
+    coeffs             = config.coeffs;
+    crossSection       = config.crossSection;
+    ae                 = config.ae;
+    p0                 = config.p0;
+    minMass            = config.minMass;
+    maxMass            = config.maxMass;
+    cdCorrectionFactor = config.cdCorrectionFactor;
+}
 
 void MEA::predict(const Step& step)
 {

@@ -105,6 +105,11 @@ public:
 
     MEAState getState();
 
+    /**
+     * @brief Resets the algorithm with the given configuration.
+     */
+    void reset(const Config& config);
+
 private:
     void predict(const Step& step);
     void computeForce(const Step& step);
