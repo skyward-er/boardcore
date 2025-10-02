@@ -214,7 +214,7 @@ void NAS::correctGPS(const Vector4f& gps)
     Matrix<float, 4, 4> S = H_gps * Pl * H_gps_tr + R_gps;
 
     // If not invertible, don't do the correction and return
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-10)
         return;
 
     Matrix<float, 6, 4> K = Pl * H_gps_tr * S.inverse();
