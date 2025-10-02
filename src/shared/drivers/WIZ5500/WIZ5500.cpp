@@ -448,7 +448,7 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
 
     while (intn.value() != 0 && result == TimedWaitResult::NoTimeout)
     {
-        long long now = getTime();
+        long long now = IRQgetTime();
         if (until == -1 || until > (now + INTN_TIMEOUT))
         {
             // The timeout either doesn't exist, or it's further in time
