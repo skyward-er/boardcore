@@ -92,7 +92,7 @@ void __attribute__((used)) EXTI3_IRQHandlerImpl()
 #error "Board not supported"
 #endif
     if (bmx160)
-        bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
+        bmx160->IRQupdateTimestamp(nsToUs(miosix::IRQgetTime()));
 }
 
 int menu();
