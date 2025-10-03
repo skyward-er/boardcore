@@ -469,7 +469,7 @@ private:
                     do
                     {
                         if (miosix::Thread::IRQenableIrqAndTimedWait(
-                                dLock, timeout_ns + miosix::getTime()) ==
+                                dLock, timeout_ns + miosix::IRQgetTime()) ==
                             miosix::TimedWaitResult::Timeout)
                         {
                             result = false;
