@@ -158,26 +158,18 @@ public:
 
     /**
      * @brief Set the offset of this sensor.
-     *        The offset is stored as a int16_t and can be both postive or
-     *        negative
-     *
-     * @param  The value the offset should be set to
+     * @param offset The value the offset should be set to
      */
     void setOffset(float offset);
 
     /**
      * @brief Modify the offset of this sensor.
-     *        The offset is stored as a int16_t and can be both postive or
-     *        negative
-     *
-     * @param  The value to be added to the current offset
+     * @param offset The value to be added to the current offset
      */
     void updateOffset(float offset);
 
     /**
      * @brief Get the current offset of this sensor.
-     *        The offset is stored as a int16_t and can be both postive or
-     *        negative
      */
     float getOffset();
 

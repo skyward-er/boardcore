@@ -227,7 +227,7 @@ ND030XData ND030D::sampleImpl()
         std::bit_cast<int16_t>(spiDataIn) / (0.9f * powf(2, 15));
 
     data.pressure =
-        normalizedPressure * range * Constants::PSI_TO_PASCAL + pressureOffset;
+        normalizedPressure * range * Constants::PSI_TO_PASCAL - pressureOffset;
 
     data.pressureTimestamp = TimestampTimer::getTimestamp();
 

@@ -191,7 +191,7 @@ ND015XData ND015A::sampleImpl()
         (0.9f * powf(2, 16));
 
     data.pressure =
-        normalizedPressure * ND015A::FULLSCALE * Constants::PSI_TO_PASCAL +
+        normalizedPressure * ND015A::FULLSCALE * Constants::PSI_TO_PASCAL -
         pressureOffset;
 
     data.pressureTimestamp = TimestampTimer::getTimestamp();
