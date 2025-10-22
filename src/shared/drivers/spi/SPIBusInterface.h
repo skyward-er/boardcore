@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/dma/DMA.h>
 #include <interfaces-impl/gpio_impl.h>
 #include <stddef.h>
 
@@ -301,9 +302,19 @@ struct SPISlave
     SPIBusConfig config;   ///< How the bus should be configured to communicate
                            ///< with the slave.
     GpioType cs;           ///< Chip select pin
+    DMAStreamGuard* const
+        streamRx;  ///< Receiver dma stream (nullptr if not using dma)
+    DMAStreamGuard* const
+        streamTx;  ///< Sender dma stream (nullptr if not using dma)
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
-        : bus(bus), config(config), cs(cs)
+        : bus(bus), config(config), cs(cs), streamRx(nullptr), streamTx(nullptr)
+    {
+    }
+
+    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config,
+             DMAStreamGuard* strmRx, DMAStreamGuard* strmTx)
+        : bus(bus), config(config), cs(cs), streamRx(strmRx), streamTx(strmTx)
     {
     }
 };

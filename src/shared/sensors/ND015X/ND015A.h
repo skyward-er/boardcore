@@ -178,8 +178,6 @@ protected:
 
 private:
     SPISlave slave;
-    DMAStreamGuard* const streamRx;
-    DMAStreamGuard* const streamTx;
     const std::chrono::nanoseconds timeoutDma;
     float pressureOffset = 0;
 

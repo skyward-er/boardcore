@@ -28,8 +28,8 @@ namespace Boardcore
 SPITransactionDMA::SPITransactionDMA(const SPISlave& slave,
                                      DMAStreamGuard& rxStream,
                                      DMAStreamGuard& txStream)
-    : slave(slave), spi(slave.bus.getSpi()), streamRx(rxStream),
-      streamTx(txStream)
+    : slave(slave)  //, spi(slave.bus.getSpi()), streamRx(rxStream),
+                    // streamTx(txStream)
 {
     slave.bus.configure(slave.config);
 }
@@ -37,214 +37,20 @@ SPITransactionDMA::SPITransactionDMA(const SPISlave& slave,
 uint8_t SPITransactionDMA::readRegister(uint8_t reg,
                                         std::chrono::nanoseconds timeout)
 {
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
-
-    volatile uint8_t dstBuf[]  = {0, 0};
-    volatile uint8_t sendBuf[] = {reg, 0};
-
-    DMATransaction trnRx;
-    defaultReceivingSetup(trnRx, (void*)dstBuf, 2);
-    streamRx->setup(trnRx);
-
-    DMATransaction trnTx;
-    defaultTransmittingSetup(trnTx, (void*)sendBuf, 2);
-    streamTx->setup(trnTx);
-
-    if (!dmaTransfer(timeout))
-        return 0;
-
-    return dstBuf[1];
+    return 0;
 }
 
 uint16_t SPITransactionDMA::transfer16(uint16_t data,
                                        std::chrono::nanoseconds timeout)
 {
-    volatile uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 8),
-                                   static_cast<uint8_t>(data)};
-    volatile uint8_t recvBuf[2] = {0};
-
-    DMATransaction trnRx;
-    defaultReceivingSetup(trnRx, (void*)recvBuf, 2);
-    streamRx->setup(trnRx);
-
-    DMATransaction trnTx;
-    defaultTransmittingSetup(trnTx, (void*)sendBuf, 2);
-    streamTx->setup(trnTx);
-
-    if (!dmaTransfer(timeout))
-        return 0;
-
-    return recvBuf[0] << 8 | recvBuf[1];
+    return 0;
 }
 
-void SPITransactionDMA::getLastErrors(SPITransactionDMAErrors& txError,
-                                      SPITransactionDMAErrors& rxError)
-{
-    txError = lastErrorTx;
-    rxError = lastErrorRx;
-}
-
-bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
-{
-    // Disable spi
-    spi->CR1 &= ~SPI_CR1_SPE;
-
-    // Start transaction
-    slave.bus.select(slave.cs);
-
-    // Enable spi rx buffer dma
-    spi->CR2 |= SPI_CR2_RXDMAEN;
-
-    // Enable the receiving stream
-    streamRx->enable();
-
-    // Enable the transmitting stream
-    streamTx->enable();
-
-    // Enable spi tx buffer dma
-    spi->CR2 |= SPI_CR2_TXDMAEN;
-
-    // Enable the spi peripheral
-    spi->CR1 |= SPI_CR1_SPE;
-
-    bool resultTransmit = streamTx->timedWaitForTransferComplete(timeout);
-    bool resultReceive  = streamRx->timedWaitForTransferComplete(timeout);
-
-    bool spiWaitResult = true;
-    if (resultTransmit && resultReceive)
-    {
-        // DMA completion doesn't guarantee that the SPI peripheral
-        // has finished transmitting
-        spiWaitResult = spiWaitForTransmissionComplete();
-    }
-
-    // Stop the transaction
-    slave.bus.deselect(slave.cs);
-
-    // Disable the dma streams
-    streamTx->disable();
-    streamRx->disable();
-
-    // Disable spi dma transmit and receive
-    spi->CR2 &= ~SPI_CR2_TXDMAEN;
-    spi->CR2 &= ~SPI_CR2_RXDMAEN;
-
-    // Check for transmitting errors
-    if (!resultTransmit)
-        lastErrorTx = SPITransactionDMAErrors::DMA_TIMEOUT;
-    else if (streamTx->getTransferErrorFlagStatus())
-        lastErrorTx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
-    else if (streamTx->getFifoErrorFlagStatus())
-        lastErrorTx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
-    else if (!spiWaitResult)
-        lastErrorTx = SPITransactionDMAErrors::SPI_TIMEOUT;
-    else
-        lastErrorTx = SPITransactionDMAErrors::NO_ERRORS;
-
-    // Check for receiving errors
-    if (!resultReceive)
-        lastErrorRx = SPITransactionDMAErrors::DMA_TIMEOUT;
-    else if (streamRx->getTransferErrorFlagStatus())
-        lastErrorRx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
-    else if (streamRx->getFifoErrorFlagStatus())
-        lastErrorRx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
-    else if (!spiWaitResult)
-        lastErrorRx = SPITransactionDMAErrors::SPI_TIMEOUT;
-    else
-        lastErrorRx = SPITransactionDMAErrors::NO_ERRORS;
-
-    return lastErrorRx == SPITransactionDMAErrors::NO_ERRORS &&
-           lastErrorTx == SPITransactionDMAErrors::NO_ERRORS;
-}
-
-bool SPITransactionDMA::spiWaitForTransmissionComplete()
-{
-    // First, ensure the TX buffer is empty, then check the SPI busy
-    // flag
-
-    const int64_t timeout = miosix::getTime() + spiTimeoutNs;
-
-#if defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
-    defined(STM32F777xx) || defined(STM32F779xx)
-    while ((spi->SR & SPI_SR_FTLVL) > 0 && miosix::getTime() < timeout)
-    {
-    }
-
-    if ((spi->SR & SPI_SR_FTLVL) > 0)
-    {
-        // Timeout expired
-        return false;
-    }
-
-#elif defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || \
-    defined(STM32F417xx) || defined(STM32F427xx) || defined(STM32F429xx) ||   \
-    defined(STM32F437xx) || defined(STM32F439xx)
-    while ((spi->SR & SPI_SR_TXE) == 0 && miosix::getTime() < timeout)
-    {
-    }
-
-    if ((spi->SR & SPI_SR_TXE) == 0)
-    {
-        // Timeout expired
-        return false;
-    }
-#else
-#warning This board is not officially supported. SPITransactionDMA might not work as expected.
-#endif
-
-    while ((spi->SR & SPI_SR_BSY) && miosix::getTime() < timeout)
-    {
-    }
-
-    if (spi->SR & SPI_SR_BSY)
-    {
-        // Timeout expired
-        return false;
-    }
-
-    return true;
-}
-
-void SPITransactionDMA::defaultTransmittingSetup(DMATransaction& txSetup,
-                                                 void* srcAddr, uint16_t nBytes)
-{
-    defaultSetup(txSetup, DMATransaction::Direction::MEM_TO_PER, srcAddr,
-                 (void*)&(spi->DR), nBytes, true, false);
-}
-
-void SPITransactionDMA::defaultReceivingSetup(DMATransaction& rxSetup,
-                                              void* dstAddr, uint16_t nBytes)
-{
-    defaultSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
-                 (void*)&(spi->DR), dstAddr, nBytes, false, true);
-}
-
-void SPITransactionDMA::defaultSetup(DMATransaction& streamSetup,
-                                     DMATransaction::Direction dir,
-                                     void* srcAddr, void* dstAddr,
-                                     uint16_t nBytes, bool srcIncr,
-                                     bool dstIncr)
-{
-    streamSetup = DMATransaction{
-        .direction                       = dir,
-        .priority                        = DMATransaction::Priority::MEDIUM,
-        .srcSize                         = DMATransaction::DataSize::BITS_8,
-        .dstSize                         = DMATransaction::DataSize::BITS_8,
-        .srcAddress                      = srcAddr,
-        .dstAddress                      = dstAddr,
-        .secondMemoryAddress             = nullptr,
-        .numberOfDataItems               = nBytes,
-        .srcIncrement                    = srcIncr,
-        .dstIncrement                    = dstIncr,
-        .circularMode                    = false,
-        .doubleBufferMode                = false,
-        .enableTransferCompleteInterrupt = true,
-        .enableHalfTransferInterrupt     = false,
-        .enableTransferErrorInterrupt    = true,
-        .enableFifoErrorInterrupt        = true,
-        .enableDirectModeErrorInterrupt  = false,
-    };
-}
+// void SPITransactionDMA::getLastErrors(SPITransactionDMAErrors& txError,
+//                                       SPITransactionDMAErrors& rxError)
+// {
+//     txError = lastErrorTx;
+//     rxError = lastErrorRx;
+// }
 
 }  // namespace Boardcore

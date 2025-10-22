@@ -28,6 +28,25 @@ namespace Boardcore
 {
 
 /**
+ * @brief Generic error codes that the spi transaction
+ * with dma can generate.
+ */
+enum class SPITransactionDMAErrors : uint8_t
+{
+    // Dma errors
+
+    NO_ERRORS             = static_cast<uint8_t>(DMAErrors::NO_ERRORS),
+    DMA_TIMEOUT           = static_cast<uint8_t>(DMAErrors::TIMEOUT),
+    DMA_FIFO_ERROR        = static_cast<uint8_t>(DMAErrors::FIFO_ERROR),
+    DMA_TRANSFER_ERROR    = static_cast<uint8_t>(DMAErrors::TRANSFER_ERROR),
+    DMA_DIRECT_MODE_ERROR = static_cast<uint8_t>(DMAErrors::DIRECT_MODE_ERROR),
+
+    // New spi transaction dma errors
+
+    SPI_TIMEOUT = static_cast<uint8_t>(DMAErrors::END_OF_BASE_ERRORS),
+};
+
+/**
  * @brief Provides high-level access to the SPI Bus for a single transaction.
  *
  * To make sure the bus is properly configured for the provided slave, you have
@@ -55,6 +74,17 @@ namespace Boardcore
  */
 class SPITransaction
 {
+private:
+    /**
+     * @brief The timeout for the method `spiWaitForTransmissionComplete()`,
+     * in nanoseconds.
+     */
+    static constexpr std::chrono::nanoseconds defaultTimeout =
+        std::chrono::milliseconds(250);
+    // static constexpr int64_t spiDefaultTimeoutNs =
+    //     std::chrono::duration_cast<std::chrono::nanoseconds>(
+    //         std::chrono::milliseconds(250))
+    //         .count();
 public:
     /**
      * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -86,6 +116,18 @@ public:
      * @return SPIBusInterface associated with this transaction.
      */
     SPIBusInterface& getBus();
+
+    /**
+     * @brief Disable dma for the upcoming operations.
+     */
+    void disableDma();
+
+    /**
+     * @brief Enable dma for the upcoming operations, if possible.
+     * @return True if the SPISlave is correctly configured with dma streams,
+     * false otherwise.
+     */
+    bool enableDma();
 
     // Read, write and transfer operations
 
@@ -191,7 +233,8 @@ public:
      * @param data Half word to write.
      * @return Half word read from the bus.
      */
-    uint16_t transfer16(uint16_t data);
+    uint16_t transfer16(uint16_t data,
+                        std::chrono::nanoseconds timeout = defaultTimeout);
 
     /**
      * @brief Full duplex transmission of 24 bits on the bus.
@@ -232,7 +275,8 @@ public:
      *
      * @return Byte read from the register.
      */
-    uint8_t readRegister(uint8_t reg);
+    uint8_t readRegister(uint8_t reg,
+                         std::chrono::nanoseconds timeout = defaultTimeout);
 
     /**
      * @brief Reads a 16 bit register.
@@ -306,6 +350,67 @@ public:
 
 private:
     const SPISlave& slave;
+    bool useDma;  ///< True if the DMA must be used during the transaction
+    // SPIType* const spiPtr;
+    SPI_TypeDef* const spiPtr;
+
+    // Last error for the transmitting stream
+    SPITransactionDMAErrors lastErrorTx = SPITransactionDMAErrors::NO_ERRORS;
+    // Last error for the receiving stream
+    SPITransactionDMAErrors lastErrorRx = SPITransactionDMAErrors::NO_ERRORS;
+
+    /**
+     * @brief Perform the dma transaction.
+     * @warning The streams must be setup and ready to go.
+     * @param timeout The maximum time that will be waited, defaults to waiting
+     * forever.
+     * @return True if the operation was successful. False otherwise, sets
+     * the last error.
+     */
+    bool dmaTransfer(const std::chrono::nanoseconds timeout);
+
+    /**
+     * @brief Wait until the spi peripheral has finished transmitting.
+     * @return True if operation successful, false if the timeout
+     * expired.
+     */
+    bool spiDmaWaitForTransmissionComplete();
+
+    /**
+     * @brief Setup the configuration struct with the default sender values
+     * needed for an spi transaction.
+     * @param txSetup The struct to be configured.
+     * @param srcAddr Source address.
+     * @param nBytes Number of bytes to be transmitted.
+     */
+    void defaultDmaTransmittingSetup(DMATransaction& txSetup, void* srcAddr,
+                                     uint16_t nBytes);
+
+    /**
+     * @brief Setup the configuration struct with the default receiver values
+     * needed for an spi transaction.
+     * @param rxSetup The struct to be configured.
+     * @param dstAddr Destination address.
+     * @param nBytes Number of bytes to be received.
+     */
+    void defaultDmaReceivingSetup(DMATransaction& rxSetup, void* dstAddr,
+                                  uint16_t nBytes);
+
+    /**
+     * @brief Setup the configuration struct with the default values needed
+     * for an spi transaction.
+     * @param streamSetup The struct to be configured.
+     * @param dir Direction of the transaction.
+     * @param srcAddr Source address.
+     * @param dstAddr Destination address.
+     * @param nBytes Number of bytes to be transmitted/received.
+     * @param srcIncr Flag, true if the source address must be incremented.
+     * @param dstIncr Flag, true if the destination address must be incremented.
+     */
+    void defaultDmaSetup(DMATransaction& streamSetup,
+                         DMATransaction::Direction dir, void* srcAddr,
+                         void* dstAddr, uint16_t nBytes, bool srcIncr,
+                         bool dstIncr);
 };
 
 }  // namespace Boardcore
