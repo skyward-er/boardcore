@@ -178,7 +178,6 @@ protected:
 
 private:
     SPISlave slave;
-    const std::chrono::nanoseconds timeoutDma;
     float pressureOffset = 0;
 
     /**

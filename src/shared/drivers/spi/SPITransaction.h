@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2020-2025 Skyward Experimental Rocketry
+ * Author: Luca Erbetta, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -118,16 +118,31 @@ public:
     SPIBusInterface& getBus();
 
     /**
+     * @brief Set the dma timeout to be used during the transaction.
+     */
+    void setDmaTimeout(std::chrono::nanoseconds t);
+
+    /**
      * @brief Disable dma for the upcoming operations.
      */
     void disableDma();
 
     /**
      * @brief Enable dma for the upcoming operations, if possible.
+     *
      * @return True if the SPISlave is correctly configured with dma streams,
      * false otherwise.
      */
     bool enableDma();
+
+    /**
+     * @brief Get last errors for debugging purposes. Avoid silent fails.
+     *
+     * @param txError Variable where the transmitting error will be stored.
+     * @param rxError Variable where the receiving error will be stored.
+     */
+    void getLastErrors(SPITransactionDMAErrors& txError,
+                       SPITransactionDMAErrors& rxError);
 
     // Read, write and transfer operations
 
@@ -231,10 +246,9 @@ public:
      * @brief Full duplex transmission of one half word on the bus.
      *
      * @param data Half word to write.
-     * @return Half word read from the bus.
+     * @return Half word read from the bus, 0 in case of dma errors.
      */
-    uint16_t transfer16(uint16_t data,
-                        std::chrono::nanoseconds timeout = defaultTimeout);
+    uint16_t transfer16(uint16_t data);
 
     /**
      * @brief Full duplex transmission of 24 bits on the bus.
@@ -273,10 +287,10 @@ public:
     /**
      * @brief Reads an 8 bit register.
      *
-     * @return Byte read from the register.
+     * @param reg Register address.
+     * @return Byte read from the register, 0 in case of dma errors.
      */
-    uint8_t readRegister(uint8_t reg,
-                         std::chrono::nanoseconds timeout = defaultTimeout);
+    uint8_t readRegister(uint8_t reg);
 
     /**
      * @brief Reads a 16 bit register.
@@ -353,6 +367,7 @@ private:
     bool useDma;  ///< True if the DMA must be used during the transaction
     // SPIType* const spiPtr;
     SPI_TypeDef* const spiPtr;
+    std::chrono::nanoseconds dmaTimeout;
 
     // Last error for the transmitting stream
     SPITransactionDMAErrors lastErrorTx = SPITransactionDMAErrors::NO_ERRORS;
@@ -362,6 +377,7 @@ private:
     /**
      * @brief Perform the dma transaction.
      * @warning The streams must be setup and ready to go.
+     *
      * @param timeout The maximum time that will be waited, defaults to waiting
      * forever.
      * @return True if the operation was successful. False otherwise, sets
@@ -371,6 +387,7 @@ private:
 
     /**
      * @brief Wait until the spi peripheral has finished transmitting.
+     *
      * @return True if operation successful, false if the timeout
      * expired.
      */
@@ -379,6 +396,7 @@ private:
     /**
      * @brief Setup the configuration struct with the default sender values
      * needed for an spi transaction.
+     *
      * @param txSetup The struct to be configured.
      * @param srcAddr Source address.
      * @param nBytes Number of bytes to be transmitted.
@@ -389,6 +407,7 @@ private:
     /**
      * @brief Setup the configuration struct with the default receiver values
      * needed for an spi transaction.
+     *
      * @param rxSetup The struct to be configured.
      * @param dstAddr Destination address.
      * @param nBytes Number of bytes to be received.
@@ -399,6 +418,7 @@ private:
     /**
      * @brief Setup the configuration struct with the default values needed
      * for an spi transaction.
+     *
      * @param streamSetup The struct to be configured.
      * @param dir Direction of the transaction.
      * @param srcAddr Source address.

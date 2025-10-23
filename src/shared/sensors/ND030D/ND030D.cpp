@@ -22,7 +22,6 @@
 
 #include "ND030D.h"
 
-#include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Constants.h>
 #include <utils/Numeric.h>
@@ -55,17 +54,15 @@ ND030D::ND030D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                std::chrono::nanoseconds timeout, FullScaleRange fsr,
                IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
                uint8_t odr)
-    : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)),
-      streamRx(streamRx), streamTx(streamTx), timeoutDma(timeout),
-      sensorSettings{odr, fsr, iow, bwl, ntc}
+    : slave(bus, cs, spiConfig, streamRx, streamTx, timeout),
+      range(rangeToPressure(fsr)), sensorSettings{odr, fsr, iow, bwl, ntc}
 {
 }
 
 ND030D::ND030D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                FullScaleRange fsr, IOWatchdogEnable iow, BWLimitFilter bwl,
                NotchEnable ntc, uint8_t odr)
-    : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)), streamRx(nullptr),
-      streamTx(nullptr), timeoutDma(std::chrono::nanoseconds::zero()),
+    : slave(bus, cs, spiConfig), range(rangeToPressure(fsr)),
       sensorSettings{odr, fsr, iow, bwl, ntc}
 {
 }
@@ -207,21 +204,11 @@ ND030XData ND030D::sampleImpl()
 {
     ND030XData data;
     uint16_t spiDataOut;
-    uint16_t spiDataIn = 0;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
 
-    if (streamRx != nullptr && streamTx != nullptr)
-    {
-        // Use dma
-        SPITransactionDMA spi(slave, *streamRx, *streamTx);
-        spiDataIn = spi.transfer16(spiDataOut, timeoutDma);
-    }
-    else
-    {
-        SPITransaction spi(slave);
-        spiDataIn = spi.transfer16(spiDataOut);
-    }
+    SPITransaction spi(slave);
+    uint16_t spiDataIn = spi.transfer16(spiDataOut);
 
     float normalizedPressure =
         std::bit_cast<int16_t>(spiDataIn) / (0.9f * powf(2, 15));
