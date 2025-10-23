@@ -306,15 +306,19 @@ struct SPISlave
         streamRx;  ///< Receiver dma stream (nullptr if not using dma)
     DMAStreamGuard* const
         streamTx;  ///< Sender dma stream (nullptr if not using dma)
+    std::chrono::nanoseconds dmaTimeout;  ///< Timeout for the dma transaction.
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
-        : bus(bus), config(config), cs(cs), streamRx(nullptr), streamTx(nullptr)
+        : bus(bus), config(config), cs(cs), streamRx(nullptr),
+          streamTx(nullptr), dmaTimeout(std::chrono::nanoseconds::zero())
     {
     }
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config,
-             DMAStreamGuard* strmRx, DMAStreamGuard* strmTx)
-        : bus(bus), config(config), cs(cs), streamRx(strmRx), streamTx(strmTx)
+             DMAStreamGuard* strmRx, DMAStreamGuard* strmTx,
+             std::chrono::nanoseconds dmaTimeout)
+        : bus(bus), config(config), cs(cs), streamRx(strmRx), streamTx(strmTx),
+          dmaTimeout(dmaTimeout)
     {
     }
 };

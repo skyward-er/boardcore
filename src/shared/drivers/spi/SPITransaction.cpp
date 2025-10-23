@@ -1,5 +1,5 @@
-/* Copyright (c) 2019-2021 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio, Davide Mor
+/* Copyright (c) 2019-2025 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Alberto Nidasio, Davide Mor, Fabrizio Monti
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ namespace Boardcore
 constexpr std::chrono::nanoseconds SPITransaction::defaultTimeout;
 
 SPITransaction::SPITransaction(const SPISlave& slave)
-    : slave(slave), spiPtr(slave.bus.getSpi())
+    : slave(slave), spiPtr(slave.bus.getSpi()), dmaTimeout(slave.dmaTimeout)
 {
     slave.bus.configure(slave.config);
 
@@ -39,12 +39,24 @@ SPITransaction::SPITransaction(const SPISlave& slave)
 
 SPIBusInterface& SPITransaction::getBus() { return slave.bus; }
 
+void SPITransaction::setDmaTimeout(std::chrono::nanoseconds t)
+{
+    dmaTimeout = t;
+}
+
 void SPITransaction::disableDma() { useDma = false; }
 
 bool SPITransaction::enableDma()
 {
     useDma = (slave.streamRx != nullptr) && (slave.streamTx != nullptr);
     return useDma;
+}
+
+void SPITransaction::getLastErrors(SPITransactionDMAErrors& txError,
+                                   SPITransactionDMAErrors& rxError)
+{
+    txError = lastErrorTx;
+    rxError = lastErrorRx;
 }
 
 // Read, write and transfer operations in master mode
@@ -148,8 +160,7 @@ uint8_t SPITransaction::transfer(uint8_t data)
     return data;
 }
 
-uint16_t SPITransaction::transfer16(uint16_t data,
-                                    std::chrono::nanoseconds timeout)
+uint16_t SPITransaction::transfer16(uint16_t data)
 {
     if (useDma)
     {
@@ -166,7 +177,7 @@ uint16_t SPITransaction::transfer16(uint16_t data,
         defaultDmaTransmittingSetup(trnTx, (void*)sendBuf, 2);
         (*slave.streamTx)->setup(trnTx);
 
-        if (!dmaTransfer(timeout))
+        if (!dmaTransfer(dmaTimeout))
             return 0;
 
         return recvBuf[0] << 8 | recvBuf[1];
@@ -213,8 +224,7 @@ void SPITransaction::transfer16(uint16_t* data, size_t size)
 
 // Read, write and transfer operations with registers
 
-uint8_t SPITransaction::readRegister(uint8_t reg,
-                                     std::chrono::nanoseconds timeout)
+uint8_t SPITransaction::readRegister(uint8_t reg)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
         reg |= 0x80;
@@ -233,7 +243,7 @@ uint8_t SPITransaction::readRegister(uint8_t reg,
         defaultDmaTransmittingSetup(trnTx, (void*)sendBuf, 2);
         (*slave.streamTx)->setup(trnTx);
 
-        if (!dmaTransfer(timeout))
+        if (!dmaTransfer(dmaTimeout))
             return 0;
 
         return dstBuf[1];
