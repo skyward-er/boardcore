@@ -53,8 +53,8 @@ void __attribute__((used)) DMA1_Stream0_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA1_Str0);
 }
 
-#ifndef STM32F407xx
-// This stream is used by miosix for STM32F407xx boards
+#if !defined(STM32F407xx) && !defined(STM32F767xx)
+// This stream is used by miosix for STM32F407xx and STM32F767xx boards
 void __attribute__((naked)) DMA1_Stream1_IRQHandler()
 {
     saveContext();
@@ -67,7 +67,7 @@ void __attribute__((used)) DMA1_Stream1_IRQImpl()
     Boardcore::DMADriver::instance().IRQhandleInterrupt(
         Boardcore::DMADefs::DMAStreamId::DMA1_Str1);
 }
-#endif  // STM32F407xx
+#endif  // STM32F407xx & STM32F767xx
 
 void __attribute__((naked)) DMA1_Stream2_IRQHandler()
 {
@@ -82,8 +82,8 @@ void __attribute__((used)) DMA1_Stream2_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA1_Str2);
 }
 
-#ifndef STM32F407xx
-// This stream is used by miosix for STM32F407xx boards
+#if !defined(STM32F407xx) && !defined(STM32F767xx)
+// This stream is used by miosix for STM32F407xx and STM32F767xx boards
 void __attribute__((naked)) DMA1_Stream3_IRQHandler()
 {
     saveContext();
@@ -96,7 +96,7 @@ void __attribute__((used)) DMA1_Stream3_IRQImpl()
     Boardcore::DMADriver::instance().IRQhandleInterrupt(
         Boardcore::DMADefs::DMAStreamId::DMA1_Str3);
 }
-#endif  // STM32F407xx
+#endif  // STM32F407xx & STM32F767xx
 
 void __attribute__((naked)) DMA1_Stream4_IRQHandler()
 {
@@ -217,9 +217,9 @@ void __attribute__((used)) DMA2_Stream4_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str4);
 }
 
-#if !defined(STM32F767xx) && !defined(STM32F429xx)
-// This stream is used by miosix for STM32F767xx
-// and STM32F429xx boards
+#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
+// This stream is used by miosix for STM32F767xx,
+// STM32F429xx and STM32F205xx boards
 void __attribute__((naked)) DMA2_Stream5_IRQHandler()
 {
     saveContext();
@@ -232,7 +232,7 @@ void __attribute__((used)) DMA2_Stream5_IRQImpl()
     Boardcore::DMADriver::instance().IRQhandleInterrupt(
         Boardcore::DMADefs::DMAStreamId::DMA2_Str5);
 }
-#endif  // STM32F767xx & STM32F429xx
+#endif  // STM32F767xx & STM32F429xx & STM32F205xx
 
 void __attribute__((naked)) DMA2_Stream6_IRQHandler()
 {
@@ -247,9 +247,9 @@ void __attribute__((used)) DMA2_Stream6_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str6);
 }
 
-#if !defined(STM32F767xx) && !defined(STM32F429xx)
-// This stream is used by miosix for STM32F767xx
-// and STM32F429xx boards
+#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
+// This stream is used by miosix for STM32F767xx,
+// STM32F429xx and STM32F205xx boards
 void __attribute__((naked)) DMA2_Stream7_IRQHandler()
 {
     saveContext();
@@ -262,7 +262,7 @@ void __attribute__((used)) DMA2_Stream7_IRQImpl()
     Boardcore::DMADriver::instance().IRQhandleInterrupt(
         Boardcore::DMADefs::DMAStreamId::DMA2_Str7);
 }
-#endif  // STM32F767xx & STM32F429xx
+#endif  // STM32F767xx & STM32F429xx & STM32F205xx
 
 namespace Boardcore
 {
