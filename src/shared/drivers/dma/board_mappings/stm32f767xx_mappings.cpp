@@ -63,8 +63,9 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
 
         {Peripherals::PE_SPI2_TX, {DMAStreamId::DMA1_Str4, Channel::CHANNEL0}},
         {Peripherals::PE_SPI2_TX, {DMAStreamId::DMA1_Str6, Channel::CHANNEL9}},
-        {Peripherals::PE_SPI2_RX, {DMAStreamId::DMA1_Str1, Channel::CHANNEL9}},
-        {Peripherals::PE_SPI2_RX, {DMAStreamId::DMA1_Str3, Channel::CHANNEL0}},
+        // {Peripherals::PE_SPI2_RX, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL9}}, {Peripherals::PE_SPI2_RX,
+        // {DMAStreamId::DMA1_Str3, Channel::CHANNEL0}},
 
         {Peripherals::PE_SPI3_TX, {DMAStreamId::DMA1_Str5, Channel::CHANNEL0}},
         {Peripherals::PE_SPI3_TX, {DMAStreamId::DMA1_Str7, Channel::CHANNEL0}},
@@ -108,12 +109,12 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
         {Peripherals::PE_USART2_RX,
          {DMAStreamId::DMA1_Str5, Channel::CHANNEL4}},
 
-        {Peripherals::PE_USART3_TX,
-         {DMAStreamId::DMA1_Str3, Channel::CHANNEL4}},
+        // {Peripherals::PE_USART3_TX,
+        //  {DMAStreamId::DMA1_Str3, Channel::CHANNEL4}},
         {Peripherals::PE_USART3_TX,
          {DMAStreamId::DMA1_Str4, Channel::CHANNEL7}},
-        {Peripherals::PE_USART3_RX,
-         {DMAStreamId::DMA1_Str1, Channel::CHANNEL4}},
+        // {Peripherals::PE_USART3_RX,
+        //  {DMAStreamId::DMA1_Str1, Channel::CHANNEL4}},
 
         {Peripherals::PE_UART4_TX, {DMAStreamId::DMA1_Str4, Channel::CHANNEL4}},
         {Peripherals::PE_UART4_RX, {DMAStreamId::DMA1_Str2, Channel::CHANNEL4}},
@@ -121,8 +122,9 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
         {Peripherals::PE_UART5_TX, {DMAStreamId::DMA1_Str7, Channel::CHANNEL4}},
         {Peripherals::PE_UART5_RX, {DMAStreamId::DMA1_Str0, Channel::CHANNEL4}},
 
-        {Peripherals::PE_UART7_TX, {DMAStreamId::DMA1_Str1, Channel::CHANNEL5}},
-        {Peripherals::PE_UART7_RX, {DMAStreamId::DMA1_Str3, Channel::CHANNEL5}},
+        // {Peripherals::PE_UART7_TX, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL5}}, {Peripherals::PE_UART7_RX,
+        // {DMAStreamId::DMA1_Str3, Channel::CHANNEL5}},
 
         {Peripherals::PE_UART8_TX, {DMAStreamId::DMA1_Str0, Channel::CHANNEL5}},
         {Peripherals::PE_UART8_RX, {DMAStreamId::DMA1_Str6, Channel::CHANNEL5}},
@@ -145,16 +147,19 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
         {Peripherals::PE_I2C2_TX, {DMAStreamId::DMA1_Str7, Channel::CHANNEL7}},
         {Peripherals::PE_I2C2_TX, {DMAStreamId::DMA1_Str4, Channel::CHANNEL8}},
         {Peripherals::PE_I2C2_RX, {DMAStreamId::DMA1_Str2, Channel::CHANNEL7}},
-        {Peripherals::PE_I2C2_RX, {DMAStreamId::DMA1_Str3, Channel::CHANNEL7}},
+        // {Peripherals::PE_I2C2_RX, {DMAStreamId::DMA1_Str3,
+        // Channel::CHANNEL7}},
 
         {Peripherals::PE_I2C3_TX, {DMAStreamId::DMA1_Str4, Channel::CHANNEL3}},
         {Peripherals::PE_I2C3_TX, {DMAStreamId::DMA1_Str0, Channel::CHANNEL8}},
         {Peripherals::PE_I2C3_RX, {DMAStreamId::DMA1_Str2, Channel::CHANNEL3}},
-        {Peripherals::PE_I2C3_RX, {DMAStreamId::DMA1_Str1, Channel::CHANNEL1}},
+        // {Peripherals::PE_I2C3_RX, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL1}},
 
         {Peripherals::PE_I2C4_TX, {DMAStreamId::DMA1_Str6, Channel::CHANNEL8}},
         {Peripherals::PE_I2C4_RX, {DMAStreamId::DMA1_Str2, Channel::CHANNEL2}},
-        {Peripherals::PE_I2C4_RX, {DMAStreamId::DMA1_Str1, Channel::CHANNEL8}},
+        // {Peripherals::PE_I2C4_RX, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL8}},
 
         // TIMERS
         // {Peripherals::PE_TIM1_UP, {DMAStreamId::DMA2_Str5,
@@ -174,11 +179,13 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
         {Peripherals::PE_TIM1_CH3, {DMAStreamId::DMA2_Str6, Channel::CHANNEL6}},
         {Peripherals::PE_TIM1_CH4, {DMAStreamId::DMA2_Str4, Channel::CHANNEL6}},
 
-        {Peripherals::PE_TIM2_UP, {DMAStreamId::DMA1_Str1, Channel::CHANNEL3}},
+        // {Peripherals::PE_TIM2_UP, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL3}},
         {Peripherals::PE_TIM2_UP, {DMAStreamId::DMA1_Str7, Channel::CHANNEL3}},
         {Peripherals::PE_TIM2_CH1, {DMAStreamId::DMA1_Str5, Channel::CHANNEL3}},
         {Peripherals::PE_TIM2_CH2, {DMAStreamId::DMA1_Str6, Channel::CHANNEL3}},
-        {Peripherals::PE_TIM2_CH3, {DMAStreamId::DMA1_Str1, Channel::CHANNEL3}},
+        // {Peripherals::PE_TIM2_CH3, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL3}},
         {Peripherals::PE_TIM2_CH4, {DMAStreamId::DMA1_Str6, Channel::CHANNEL3}},
         {Peripherals::PE_TIM2_CH4, {DMAStreamId::DMA1_Str7, Channel::CHANNEL3}},
 
@@ -192,22 +199,25 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
 
         {Peripherals::PE_TIM4_UP, {DMAStreamId::DMA1_Str6, Channel::CHANNEL2}},
         {Peripherals::PE_TIM4_CH1, {DMAStreamId::DMA1_Str0, Channel::CHANNEL2}},
-        {Peripherals::PE_TIM4_CH2, {DMAStreamId::DMA1_Str3, Channel::CHANNEL2}},
+        // {Peripherals::PE_TIM4_CH2, {DMAStreamId::DMA1_Str3,
+        // Channel::CHANNEL2}},
         {Peripherals::PE_TIM4_CH3, {DMAStreamId::DMA1_Str7, Channel::CHANNEL2}},
 
         {Peripherals::PE_TIM5_UP, {DMAStreamId::DMA1_Str0, Channel::CHANNEL6}},
         {Peripherals::PE_TIM5_UP, {DMAStreamId::DMA1_Str6, Channel::CHANNEL6}},
-        {Peripherals::PE_TIM5_TRIG,
-         {DMAStreamId::DMA1_Str1, Channel::CHANNEL6}},
-        {Peripherals::PE_TIM5_TRIG,
-         {DMAStreamId::DMA1_Str3, Channel::CHANNEL6}},
+        // {Peripherals::PE_TIM5_TRIG,
+        //  {DMAStreamId::DMA1_Str1, Channel::CHANNEL6}},
+        // {Peripherals::PE_TIM5_TRIG,
+        //  {DMAStreamId::DMA1_Str3, Channel::CHANNEL6}},
         {Peripherals::PE_TIM5_CH1, {DMAStreamId::DMA1_Str2, Channel::CHANNEL6}},
         {Peripherals::PE_TIM5_CH2, {DMAStreamId::DMA1_Str4, Channel::CHANNEL6}},
         {Peripherals::PE_TIM5_CH3, {DMAStreamId::DMA1_Str0, Channel::CHANNEL6}},
-        {Peripherals::PE_TIM5_CH4, {DMAStreamId::DMA1_Str1, Channel::CHANNEL6}},
-        {Peripherals::PE_TIM5_CH4, {DMAStreamId::DMA1_Str3, Channel::CHANNEL6}},
+        // {Peripherals::PE_TIM5_CH4, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL6}}, {Peripherals::PE_TIM5_CH4,
+        // {DMAStreamId::DMA1_Str3, Channel::CHANNEL6}},
 
-        {Peripherals::PE_TIM6_UP, {DMAStreamId::DMA1_Str1, Channel::CHANNEL7}},
+        // {Peripherals::PE_TIM6_UP, {DMAStreamId::DMA1_Str1,
+        // Channel::CHANNEL7}},
 
         {Peripherals::PE_TIM7_UP, {DMAStreamId::DMA1_Str2, Channel::CHANNEL1}},
         {Peripherals::PE_TIM7_UP, {DMAStreamId::DMA1_Str4, Channel::CHANNEL1}},
@@ -273,8 +283,8 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
         // {Peripherals::PE_HASH_IN, {DMAStreamId::DMA2_Str7,
         // Channel::CHANNEL2}},
 
-        {Peripherals::PE_SPDIFRX_DT,
-         {DMAStreamId::DMA1_Str1, Channel::CHANNEL0}},
+        // {Peripherals::PE_SPDIFRX_DT,
+        //  {DMAStreamId::DMA1_Str1, Channel::CHANNEL0}},
         {Peripherals::PE_SPDIFRX_CS,
          {DMAStreamId::DMA1_Str6, Channel::CHANNEL0}},
 
