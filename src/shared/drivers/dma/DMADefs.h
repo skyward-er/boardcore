@@ -62,17 +62,17 @@ enum class DMAStreamId : uint8_t
 
     DMA1_Str0 = 0,
 
-#ifndef STM32F407xx
-    // This stream is used by miosix for STM32F407xx boards
+#if !defined(STM32F407xx) && !defined(STM32F767xx)
+    // This stream is used by miosix for STM32F407xx and STM32F767xx boards
     DMA1_Str1 = 1,
-#endif  // STM32F407xx
+#endif  // STM32F407xx & STM32F767xx
 
     DMA1_Str2 = 2,
 
-#ifndef STM32F407xx
-    // This stream is used by miosix for STM32F407xx boards
+#if !defined(STM32F407xx) && !defined(STM32F767xx)
+    // This stream is used by miosix for STM32F407xx and STM32F767xx boards
     DMA1_Str3 = 3,
-#endif  // STM32F407xx
+#endif  // STM32F407xx & STM32F767xx
 
     DMA1_Str4 = 4,
     DMA1_Str5 = 5,
@@ -84,19 +84,19 @@ enum class DMAStreamId : uint8_t
     // DMA2_Str3 = 11, // Always used by miosix on currently supported boards
     DMA2_Str4 = 12,
 
-#if !defined(STM32F767xx) && !defined(STM32F429xx)
-    // This stream is used by miosix for STM32F767xx
-    // and STM32F429xx boards
+#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
+    // This stream is used by miosix for STM32F767xx,
+    // STM32F429xx and STM32F205xx boards
     DMA2_Str5 = 13,
-#endif  // STM32F767xx & STM32F429xx
+#endif  // STM32F767xx & STM32F429xx & STM32F205xx
 
     DMA2_Str6 = 14,
 
-#if !defined(STM32F767xx) && !defined(STM32F429xx)
-    // This stream is used by miosix for STM32F767xx
-    // and STM32F429xx boards
+#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
+    // This stream is used by miosix for STM32F767xx,
+    // STM32F429xx and STM32F205xx boards
     DMA2_Str7 = 15,
-#endif  // STM32F767xx & STM32F429xx
+#endif  // STM32F767xx & STM32F429xx & STM32F205xx
 };
 
 /**
