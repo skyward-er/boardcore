@@ -29,6 +29,7 @@
 #include <utils/Debug.h>
 
 #include "HIL.h"
+#include "HILSerialDebug.h"
 #include "drivers/usart/USART.h"
 
 namespace Boardcore
@@ -144,6 +145,7 @@ private:
     ActuatorData actuatorData;
     HILPhasesManager<FlightPhases, SimulatorData, ActuatorData>*
         hilPhasesManager;
+    HILSerialDebug serialLogData;
 
     /**
      * @brief Write with dma. Returns true if the operation is successful,
@@ -168,11 +170,19 @@ private:
 template <class FlightPhases, class SimulatorData, class ActuatorData>
 void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
 {
+    uint64_t timestamp;
     LOG_INFO(logger, "HIL Transceiver started");
     hilSerial.clearQueue();
 
     miosix::led2On();
+    timestamp = TimestampTimer::getTimestamp();
     hilSerial.write(&actuatorData, sizeof(ActuatorData));
+    serialLogData.timestamp = TimestampTimer::getTimestamp();
+    serialLogData.timeWrite = serialLogData.timestamp - timestamp;
+    serialLogData.timeRead  = 0;
+    serialLogData.timeout   = 0;
+    Logger::getInstance().log(serialLogData);
+
     miosix::led2Off();
 
     while (!shouldStop())
@@ -182,12 +192,20 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             SimulatorData tempData;
             nLostUpdates = 0;
             miosix::led3On();
-            size_t nRead = 0;
+            size_t nRead          = 0;
+            serialLogData.timeout = false;
+            timestamp             = TimestampTimer::getTimestamp();
+
             if (!hilSerial.readBlocking(&tempData, sizeof(SimulatorData),
                                         nRead))
             {
                 LOG_ERR(logger, "Failed serial read");
+                serialLogData.timeout = true;
             }
+            serialLogData.timestamp = TimestampTimer::getTimestamp();
+            serialLogData.timeWrite = 0;
+            serialLogData.timeRead  = serialLogData.timestamp - timestamp;
+            Logger::getInstance().log(serialLogData);
 
             assert(nRead == sizeof(SimulatorData) &&
                    "Read less then SimulatorData bytes");
@@ -222,11 +240,22 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
         waitActuatorData();
         miosix::led2On();
 
+        serialLogData.timeout = 0;
+        timestamp             = TimestampTimer::getTimestamp();
+
         if (isDmaEnabled())
-            writeDma(&actuatorData, sizeof(ActuatorData),
-                     std::chrono::milliseconds(100));
+            serialLogData.timeout =
+                !writeDma(&actuatorData, sizeof(ActuatorData),
+                          std::chrono::milliseconds(100));
+
         else
             hilSerial.write(&actuatorData, sizeof(ActuatorData));
+
+        serialLogData.timestamp = TimestampTimer::getTimestamp();
+        serialLogData.timeWrite = serialLogData.timestamp - timestamp;
+        serialLogData.timeRead  = 0;
+        serialLogData.sequenceNr++;
+        Logger::getInstance().log(serialLogData);
 
         miosix::led2Off();
     }
