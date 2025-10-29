@@ -326,8 +326,9 @@ public:
      *
      * @param reg Register address.
      * @param data Byte to write.
+     * @return True if operation successful, false otherwise.
      */
-    void writeRegister(uint8_t reg, uint8_t data);
+    bool writeRegister(uint8_t reg, uint8_t data);
 
     /**
      * @brief Writes a 16 bit register.
