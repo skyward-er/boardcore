@@ -169,13 +169,8 @@ uint16_t SPITransaction::transfer16(uint16_t data)
                                        static_cast<uint8_t>(data)};
         volatile uint8_t recvBuf[2] = {0};
 
-        DMATransaction trnRx;
-        defaultDmaReceivingSetup(trnRx, (void*)recvBuf, 2);
-        (*slave.streamRx)->setup(trnRx);
-
-        DMATransaction trnTx;
-        defaultDmaTransmittingSetup(trnTx, (void*)sendBuf, 2);
-        (*slave.streamTx)->setup(trnTx);
+        defaultDmaReceivingSetup((void*)recvBuf, 2);
+        defaultDmaTransmittingSetup((void*)sendBuf, 2);
 
         if (!dmaTransfer(dmaTimeout))
             return 0;
@@ -235,13 +230,8 @@ uint8_t SPITransaction::readRegister(uint8_t reg)
         volatile uint8_t dstBuf[]  = {0, 0};
         volatile uint8_t sendBuf[] = {reg, 0};
 
-        DMATransaction trnRx;
-        defaultDmaReceivingSetup(trnRx, (void*)dstBuf, 2);
-        (*slave.streamRx)->setup(trnRx);
-
-        DMATransaction trnTx;
-        defaultDmaTransmittingSetup(trnTx, (void*)sendBuf, 2);
-        (*slave.streamTx)->setup(trnTx);
+        defaultDmaReceivingSetup((void*)dstBuf, 2);
+        defaultDmaTransmittingSetup((void*)sendBuf, 2);
 
         if (!dmaTransfer(dmaTimeout))
             return 0;
@@ -328,13 +318,8 @@ bool SPITransaction::writeRegister(uint8_t reg, uint8_t data)
         volatile uint8_t dstBuf[]  = {0, 0};
         volatile uint8_t sendBuf[] = {reg, data};
 
-        DMATransaction trnRx;
-        defaultDmaReceivingSetup(trnRx, (void*)dstBuf, 2);
-        (*slave.streamRx)->setup(trnRx);
-
-        DMATransaction trnTx;
-        defaultDmaTransmittingSetup(trnTx, (void*)sendBuf, 2);
-        (*slave.streamTx)->setup(trnTx);
+        defaultDmaReceivingSetup((void*)dstBuf, 2);
+        defaultDmaTransmittingSetup((void*)sendBuf, 2);
 
         return dmaTransfer(dmaTimeout);
     }
@@ -516,18 +501,20 @@ bool SPITransaction::spiDmaWaitForTransmissionComplete()
     return true;
 }
 
-void SPITransaction::defaultDmaTransmittingSetup(DMATransaction& txSetup,
-                                                 void* srcAddr, uint16_t nBytes)
+void SPITransaction::defaultDmaTransmittingSetup(void* srcAddr, uint16_t nBytes)
 {
+    DMATransaction txSetup;
     defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER, srcAddr,
                     (void*)&(spiPtr->DR), nBytes, true, false);
+    (*slave.streamTx)->setup(txSetup);
 }
 
-void SPITransaction::defaultDmaReceivingSetup(DMATransaction& rxSetup,
-                                              void* dstAddr, uint16_t nBytes)
+void SPITransaction::defaultDmaReceivingSetup(void* dstAddr, uint16_t nBytes)
 {
+    DMATransaction rxSetup;
     defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
                     (void*)&(spiPtr->DR), dstAddr, nBytes, false, true);
+    (*slave.streamRx)->setup(rxSetup);
 }
 
 void SPITransaction::defaultDmaSetup(DMATransaction& streamSetup,
