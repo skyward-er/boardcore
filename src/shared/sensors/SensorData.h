@@ -97,6 +97,18 @@ struct PressureData
     }
 };
 
+struct ServoPositionData
+{
+    uint64_t positionTimestamp = 0;
+    float position             = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ServoPositionData,
+                          FIELD_DEF(positionTimestamp) FIELD_DEF(position));
+    }
+};
+
 /**
  * @brief Structure to handle humidity data.
  */
