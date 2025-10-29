@@ -330,6 +330,7 @@ struct SPISlave
 class SPIAcquireLock
 {
 public:
+    // cppcheck-suppress passedByValue
     explicit SPIAcquireLock(SPISlave slave)
         : SPIAcquireLock(slave.bus, slave.config)
     {
@@ -350,6 +351,7 @@ private:
 class SPISelectLock
 {
 public:
+    // cppcheck-suppress passedByValue
     explicit SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs)
     {
     }
