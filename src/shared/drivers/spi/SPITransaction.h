@@ -395,26 +395,22 @@ private:
     bool spiDmaWaitForTransmissionComplete();
 
     /**
-     * @brief Setup the configuration struct with the default sender values
+     * @brief Setup the transmitting stream with the default values
      * needed for an spi transaction.
      *
-     * @param txSetup The struct to be configured.
      * @param srcAddr Source address.
      * @param nBytes Number of bytes to be transmitted.
      */
-    void defaultDmaTransmittingSetup(DMATransaction& txSetup, void* srcAddr,
-                                     uint16_t nBytes);
+    void defaultDmaTransmittingSetup(void* srcAddr, uint16_t nBytes);
 
     /**
-     * @brief Setup the configuration struct with the default receiver values
+     * @brief Setup the receiving stream with the default values
      * needed for an spi transaction.
      *
-     * @param rxSetup The struct to be configured.
      * @param dstAddr Destination address.
      * @param nBytes Number of bytes to be received.
      */
-    void defaultDmaReceivingSetup(DMATransaction& rxSetup, void* dstAddr,
-                                  uint16_t nBytes);
+    void defaultDmaReceivingSetup(void* dstAddr, uint16_t nBytes);
 
     /**
      * @brief Setup the configuration struct with the default values needed
