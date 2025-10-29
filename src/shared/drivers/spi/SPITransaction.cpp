@@ -482,7 +482,7 @@ bool SPITransaction::spiDmaWaitForTransmissionComplete()
         return false;
     }
 #else
-#warning This board is not officially supported. SPITransactionDMA might not work as expected.
+#warning This board is not officially supported. SPITransaction with DMA might not work as expected.
 #endif
 
     while ((spiPtr->SR & SPI_SR_BSY) && miosix::getTime() < timeout)
