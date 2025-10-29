@@ -35,18 +35,32 @@ namespace Boardcore
  */
 struct HILSerialDebug
 {
-    uint64_t timestamp  = 0;
-    uint64_t timeRead   = 0;
-    uint64_t timeWrite  = 0;
-    bool timeout        = 0;
-    uint32_t sequenceNr = 0;
+    uint64_t timestamp             = 0;
+    uint64_t timeRead              = 0;
+    uint64_t timeWaitActuatorsData = 0;
+    uint64_t timeWrite             = 0;
+    bool timeout                   = 0;
+    uint32_t sequenceNr            = 0;
+
+    /**
+     * @brief Resets all the data with the exception of the sequence number
+     */
+    void cleanExceptSN()
+    {
+        timestamp             = 0;
+        timeRead              = 0;
+        timeWaitActuatorsData = 0;
+        timeWrite             = 0;
+        timeout               = false;
+    }
 
     static constexpr auto reflect()
     {
         return STRUCT_DEF(HILSerialDebug,
                           FIELD_DEF(timestamp) FIELD_DEF(timeRead)
-                              FIELD_DEF(timeWrite) FIELD_DEF(timeout)
-                                  FIELD_DEF(sequenceNr));
+                              FIELD_DEF(timeWaitActuatorsData)
+                                  FIELD_DEF(timeWrite) FIELD_DEF(timeout)
+                                      FIELD_DEF(sequenceNr));
     }
 };
 }  // namespace Boardcore

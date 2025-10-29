@@ -175,12 +175,11 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
     hilSerial.clearQueue();
 
     miosix::led2On();
-    timestamp = TimestampTimer::getTimestamp();
+    serialLogData = HILSerialDebug{};
+    timestamp     = TimestampTimer::getTimestamp();
     hilSerial.write(&actuatorData, sizeof(ActuatorData));
     serialLogData.timestamp = TimestampTimer::getTimestamp();
     serialLogData.timeWrite = serialLogData.timestamp - timestamp;
-    serialLogData.timeRead  = 0;
-    serialLogData.timeout   = 0;
     Logger::getInstance().log(serialLogData);
 
     miosix::led2Off();
@@ -192,9 +191,10 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             SimulatorData tempData;
             nLostUpdates = 0;
             miosix::led3On();
-            size_t nRead          = 0;
-            serialLogData.timeout = false;
-            timestamp             = TimestampTimer::getTimestamp();
+            size_t nRead = 0;
+
+            timestamp = TimestampTimer::getTimestamp();
+            serialLogData.cleanExceptSN();
 
             if (!hilSerial.readBlocking(&tempData, sizeof(SimulatorData),
                                         nRead))
@@ -203,7 +203,6 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
                 serialLogData.timeout = true;
             }
             serialLogData.timestamp = TimestampTimer::getTimestamp();
-            serialLogData.timeWrite = 0;
             serialLogData.timeRead  = serialLogData.timestamp - timestamp;
             Logger::getInstance().log(serialLogData);
 
@@ -237,11 +236,20 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
             LOG_WARN(logger, "{} lost updates", nLostUpdates);
         }
 
+        timestamp = TimestampTimer::getTimestamp();
+        serialLogData.cleanExceptSN();
+
         waitActuatorData();
+
+        serialLogData.timestamp = TimestampTimer::getTimestamp();
+        serialLogData.timeWaitActuatorsData =
+            serialLogData.timestamp - timestamp;
+        Logger::getInstance().log(serialLogData);
+
         miosix::led2On();
 
-        serialLogData.timeout = 0;
-        timestamp             = TimestampTimer::getTimestamp();
+        timestamp = TimestampTimer::getTimestamp();
+        serialLogData.cleanExceptSN();
 
         if (isDmaEnabled())
             serialLogData.timeout =
@@ -253,7 +261,6 @@ void HILTransceiver<FlightPhases, SimulatorData, ActuatorData>::run()
 
         serialLogData.timestamp = TimestampTimer::getTimestamp();
         serialLogData.timeWrite = serialLogData.timestamp - timestamp;
-        serialLogData.timeRead  = 0;
         serialLogData.sequenceNr++;
         Logger::getInstance().log(serialLogData);
 
