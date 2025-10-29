@@ -317,15 +317,33 @@ void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
+bool SPITransaction::writeRegister(uint8_t reg, uint8_t data)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
         reg |= 0x80;
+
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[]  = {0, 0};
+        volatile uint8_t sendBuf[] = {reg, data};
+
+        DMATransaction trnRx;
+        defaultDmaReceivingSetup(trnRx, (void*)dstBuf, 2);
+        (*slave.streamRx)->setup(trnRx);
+
+        DMATransaction trnTx;
+        defaultDmaTransmittingSetup(trnTx, (void*)sendBuf, 2);
+        (*slave.streamTx)->setup(trnTx);
+
+        return dmaTransfer(dmaTimeout);
+    }
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
     slave.bus.write(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 void SPITransaction::writeRegister16(uint8_t reg, uint16_t data)
