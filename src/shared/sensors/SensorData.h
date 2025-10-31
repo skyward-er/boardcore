@@ -99,13 +99,13 @@ struct PressureData
 
 struct ServoPositionData
 {
-    uint64_t servoPositionTimestamp = 0;
-    float servoPosition             = 0;
+    uint64_t positionTimestamp = 0;
+    float position             = 0;
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ServoPositionData, FIELD_DEF(servoPositionTimestamp)
-                                                 FIELD_DEF(servoPosition));
+        return STRUCT_DEF(ServoPositionData,
+                          FIELD_DEF(positionTimestamp) FIELD_DEF(position));
     }
 };
 
