@@ -46,18 +46,27 @@ public:
      * @param maxCurrent current at the maximum pressure point.
      */
     AnalogEncoder(std::function<VoltageData()> getVoltage,
-                  float shuntResistance, float minCurrent = 4,
-                  float maxCurrent = 20)
+                  float shuntResistance, float fullscaleVoltage,
+                  int sensorResistance, int currentGain, float maxAngle)
         : getVoltage{std::move(getVoltage)}, shuntResistance{shuntResistance},
-          minCurrent{minCurrent}, maxCurrent{maxCurrent}
+          fullscaleVoltage{fullscaleVoltage},
+          sensorResistance{sensorResistance}, currentGain{currentGain},
+          maxAngle{maxAngle}
     {
     }
 
     bool init() override { return true; }
 
-    bool selfTest() override { return true; }
+    bool calibrate()
+    {
+        offset            = 0.0f;
+        float rawPosition = sampleImpl().position;
+        offset            = rawPosition;
 
-    void setShuntResistance(float resistance) { shuntResistance = resistance; }
+        return true;
+    }
+
+    bool selfTest() override { return true; }
 
     float getShuntResistance() const { return shuntResistance; }
 
@@ -71,15 +80,26 @@ protected:
 private:
     float voltageToPosition(float voltage)
     {
-        // TODO: implement actual conversion
-        return voltage;
+        float rawPosition = (voltage * sensorResistance * maxAngle) /
+                            (shuntResistance * currentGain * fullscaleVoltage);
+
+        // Apply the offset to the raw value
+        float offsetPosition = rawPosition - offset;
+
+        /* if (offsetPosition <= 0.0f)
+            return std::abs(360.0f - offsetPosition); */
+
+        return std::abs(offsetPosition);
     }
 
     std::function<VoltageData()> getVoltage;
 
-    float shuntResistance;
-    const float minCurrent;
-    const float maxCurrent;
+    const float shuntResistance;
+    const float fullscaleVoltage;
+    const int sensorResistance;
+    const int currentGain;
+    const float maxAngle;
+    float offset = 0.0f;
 };
 
 }  // namespace Boardcore
