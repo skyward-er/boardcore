@@ -250,15 +250,15 @@ void IRQbspInit()
     interfaces::spi6::mosi::alternateFunction(5);
     interfaces::spi6::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::usart2::rx::alternateFunction(7);
-    interfaces::usart2::rx::mode(Mode::ALTERNATE);
     interfaces::usart2::tx::alternateFunction(7);
     interfaces::usart2::tx::mode(Mode::ALTERNATE);
+    interfaces::usart2::rx::alternateFunction(7);
+    interfaces::usart2::rx::mode(Mode::ALTERNATE_PULL_UP);
 
-    interfaces::uart4::rx::alternateFunction(8);
-    interfaces::uart4::rx::mode(Mode::ALTERNATE);
     interfaces::uart4::tx::alternateFunction(8);
     interfaces::uart4::tx::mode(Mode::ALTERNATE);
+    interfaces::uart4::rx::alternateFunction(8);
+    interfaces::uart4::rx::mode(Mode::ALTERNATE_PULL_UP);
 
     interfaces::timers::tim3ch3::alternateFunction(2);
     interfaces::timers::tim3ch3::mode(Mode::ALTERNATE);

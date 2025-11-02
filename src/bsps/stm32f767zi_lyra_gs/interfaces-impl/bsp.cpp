@@ -275,7 +275,7 @@ void IRQbspInit()
     interfaces::uart4::tx::alternateFunction(8);
     interfaces::uart4::tx::mode(Mode::ALTERNATE);
     interfaces::uart4::rx::alternateFunction(8);
-    interfaces::uart4::rx::mode(Mode::ALTERNATE);
+    interfaces::uart4::rx::mode(Mode::ALTERNATE_PULL_UP);
 
     interfaces::timers::tim1ch1::alternateFunction(1);
     interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
