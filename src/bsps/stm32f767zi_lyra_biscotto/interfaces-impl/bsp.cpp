@@ -289,7 +289,7 @@ void IRQbspInit()
     interfaces::uart4::tx::alternateFunction(8);
     interfaces::uart4::tx::mode(Mode::ALTERNATE);
     interfaces::uart4::rx::alternateFunction(8);
-    interfaces::uart4::rx::mode(Mode::ALTERNATE);
+    interfaces::uart4::rx::mode(Mode::ALTERNATE_PULL_UP);
 
     interfaces::i2c1::sda::alternateFunction(4);
     interfaces::i2c1::sda::mode(Mode::ALTERNATE);
