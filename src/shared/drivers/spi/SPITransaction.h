@@ -319,7 +319,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void readRegisters(uint8_t reg, uint8_t* data, size_t size);
+    bool readRegisters(uint8_t reg, uint8_t* data, uint16_t size);
 
     /**
      * @brief Writes an 8 bit register.
@@ -361,7 +361,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void writeRegisters(uint8_t reg, uint8_t* data, size_t size);
+    bool writeRegisters(uint8_t reg, uint8_t* data, uint16_t size);
 
 private:
     const SPISlave& slave;
@@ -385,6 +385,19 @@ private:
      * the last error.
      */
     bool dmaTransfer(const std::chrono::nanoseconds timeout);
+
+    /**
+     * @brief Perform the dma transaction, but the first data is sent without
+     * using dma.
+     *
+     * @param firstData The data that will be sent without using dma.
+     * @param timeout The maximum time that will be waited, defaults to waiting
+     * forever.
+     * @return True if the operation was successful. False otherwise, sets
+     * the last error.
+     */
+    bool dmaTransferMixed(const uint8_t firstData,
+                          const std::chrono::nanoseconds timeout);
 
     /**
      * @brief Wait until the spi peripheral has finished transmitting.
