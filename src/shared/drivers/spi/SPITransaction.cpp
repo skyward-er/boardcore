@@ -296,15 +296,42 @@ uint32_t SPITransaction::readRegister32(uint8_t reg)
     return data;
 }
 
-void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
+bool SPITransaction::readRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
         reg |= 0x80;
 
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t srcBuf = 0;
+
+        // TODO: can we use only the receiving stream?
+
+        // Manually setup the tx stream to send 0 during the reception
+        DMATransaction txSetup;
+        defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER,
+                        (void*)&srcBuf, (void*)&(spiPtr->DR), nBytes, false,
+                        false);
+        (*slave.streamTx)->setup(txSetup);
+
+        // Setup the rx stream normally
+        defaultDmaReceivingSetup((void*)data, nBytes);
+
+        // The register address will be sent without dma, then
+        // the reception will be performed by dma.
+        // This way we don't need to have a source buffer containing
+        // the reg address and as many zeroes as the length to be
+        // read (nBytes).
+        return dmaTransferMixed(reg, dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
-    slave.bus.read(data, size);
+    slave.bus.read(data, nBytes);
     slave.bus.deselect(slave.cs);
+
+    return true;
 }
 
 bool SPITransaction::writeRegister(uint8_t reg, uint8_t data)
@@ -364,15 +391,41 @@ void SPITransaction::writeRegister32(uint8_t reg, uint32_t data)
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, size_t size)
+bool SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
         reg |= 0x80;
 
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t recvBuf = 0;
+
+        // TODO: can we use only the transmitting stream?
+
+        // Manually setup the rx stream to keep overwriting recvBuf
+        // This way we don't need a buffer of size nBytes to handle
+        // the receiving part of the operation.
+        DMATransaction rxSetup;
+        defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
+                        (void*)&(spiPtr->DR), (void*)&recvBuf, nBytes, false,
+                        false);
+        (*slave.streamRx)->setup(rxSetup);
+
+        // Setup the tx stream normally
+        defaultDmaTransmittingSetup((void*)data, nBytes);
+
+        // The register address will be sent without dma, then
+        // the rest of the operation will be performed by dma
+        return dmaTransferMixed(reg, dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
-    slave.bus.write(data, size);
+    slave.bus.write(data, nBytes);
     slave.bus.deselect(slave.cs);
+
+    return true;
 }
 
 bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
@@ -397,6 +450,85 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
 
     // Enable the spi peripheral
     spiPtr->CR1 |= SPI_CR1_SPE;
+
+    bool resultTransmit =
+        (*slave.streamTx)->timedWaitForTransferComplete(timeout);
+    bool resultReceive =
+        (*slave.streamRx)->timedWaitForTransferComplete(timeout);
+
+    bool spiWaitResult = true;
+    if (resultTransmit && resultReceive)
+    {
+        // DMA completion doesn't guarantee that the SPI peripheral
+        // has finished transmitting
+        spiWaitResult = spiDmaWaitForTransmissionComplete();
+    }
+
+    // Stop the transaction
+    slave.bus.deselect(slave.cs);
+
+    // Disable the dma streams
+    (*slave.streamTx)->disable();
+    (*slave.streamRx)->disable();
+
+    // Disable spi dma transmit and receive
+    spiPtr->CR2 &= ~SPI_CR2_TXDMAEN;
+    spiPtr->CR2 &= ~SPI_CR2_RXDMAEN;
+
+    // Check for transmitting errors
+    if (!resultTransmit)
+        lastErrorTx = SPITransactionDMAErrors::DMA_TIMEOUT;
+    else if ((*slave.streamTx)->getTransferErrorFlagStatus())
+        lastErrorTx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
+    else if ((*slave.streamTx)->getFifoErrorFlagStatus())
+        lastErrorTx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
+    else if (!spiWaitResult)
+        lastErrorTx = SPITransactionDMAErrors::SPI_TIMEOUT;
+    else
+        lastErrorTx = SPITransactionDMAErrors::NO_ERRORS;
+
+    // Check for receiving errors
+    if (!resultReceive)
+        lastErrorRx = SPITransactionDMAErrors::DMA_TIMEOUT;
+    else if ((*slave.streamRx)->getTransferErrorFlagStatus())
+        lastErrorRx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
+    else if ((*slave.streamRx)->getFifoErrorFlagStatus())
+        lastErrorRx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
+    else if (!spiWaitResult)
+        lastErrorRx = SPITransactionDMAErrors::SPI_TIMEOUT;
+    else
+        lastErrorRx = SPITransactionDMAErrors::NO_ERRORS;
+
+    return lastErrorRx == SPITransactionDMAErrors::NO_ERRORS &&
+           lastErrorTx == SPITransactionDMAErrors::NO_ERRORS;
+}
+
+bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
+                                      const std::chrono::nanoseconds timeout)
+{
+    // Disable spi
+    spiPtr->CR1 &= ~SPI_CR1_SPE;
+
+    // Start transaction
+    slave.bus.select(slave.cs);
+
+    // Enable spi rx buffer dma
+    spiPtr->CR2 |= SPI_CR2_RXDMAEN;
+
+    // Enable spi tx buffer dma
+    spiPtr->CR2 |= SPI_CR2_TXDMAEN;
+
+    // Enable the spi peripheral
+    spiPtr->CR1 |= SPI_CR1_SPE;
+
+    // First send data without dma
+    slave.bus.write(firstData);
+
+    // Enable the receiving stream
+    (*slave.streamRx)->enable();
+
+    // Enable the transmitting stream
+    (*slave.streamTx)->enable();
 
     bool resultTransmit =
         (*slave.streamTx)->timedWaitForTransferComplete(timeout);
