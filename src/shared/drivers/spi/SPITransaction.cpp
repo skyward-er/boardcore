@@ -116,32 +116,99 @@ void SPITransaction::write(uint8_t data)
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::write16(uint16_t data)
+bool SPITransaction::write16(uint16_t data)
 {
+    if (useDma)
+    {
+        // DMA
+        // TODO: can we use only the transmitting stream?
+        volatile uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 8),
+                                       static_cast<uint8_t>(data)};
+        volatile uint8_t recvBuf[2] = {0};
+
+        defaultDmaReceivingSetup((void*)recvBuf, 2);
+        defaultDmaTransmittingSetup((void*)sendBuf, 2);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.write16(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
-void SPITransaction::write24(uint32_t data)
+bool SPITransaction::write24(uint32_t data)
 {
+    if (useDma)
+    {
+        // DMA
+        // TODO: can we use only the transmitting stream?
+        volatile uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 16),
+                                       static_cast<uint8_t>(data >> 8),
+                                       static_cast<uint8_t>(data)};
+        volatile uint8_t recvBuf[3] = {0};
+
+        defaultDmaReceivingSetup((void*)recvBuf, 3);
+        defaultDmaTransmittingSetup((void*)sendBuf, 3);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.write24(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
-void SPITransaction::write32(uint32_t data)
+bool SPITransaction::write32(uint32_t data)
 {
+    if (useDma)
+    {
+        // DMA
+        // TODO: can we use only the transmitting stream?
+        volatile uint8_t sendBuf[] = {
+            static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
+            static_cast<uint8_t>(data >> 8), static_cast<uint8_t>(data)};
+        volatile uint8_t recvBuf[4] = {0};
+
+        defaultDmaReceivingSetup((void*)recvBuf, 4);
+        defaultDmaTransmittingSetup((void*)sendBuf, 4);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.write32(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
-void SPITransaction::write(uint8_t* data, size_t size)
+bool SPITransaction::write(uint8_t* data, size_t nBytes)
 {
+    if (useDma)
+    {
+        // DMA
+        // TODO: can we use only the transmitting stream?
+        volatile uint8_t recvBuf = 0;
+
+        // Manually set the rx stream so that we don't need
+        // a buffer of nBytes for reception
+        DMATransaction rxSetup;
+        defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
+                        (void*)&(spiPtr->DR), (void*)&recvBuf, nBytes, false,
+                        false);
+        (*slave.streamRx)->setup(rxSetup);
+
+        defaultDmaTransmittingSetup((void*)data, nBytes);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
-    slave.bus.write(data, size);
+    slave.bus.write(data, nBytes);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 void SPITransaction::write16(uint16_t* data, size_t size)
@@ -403,7 +470,7 @@ bool SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
 
         // TODO: can we use only the transmitting stream?
 
-        // Manually setup the rx stream to keep overwriting recvBuf
+        // Manually setup the rx stream to keep overwriting recvBuf.
         // This way we don't need a buffer of size nBytes to handle
         // the receiving part of the operation.
         DMATransaction rxSetup;

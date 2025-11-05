@@ -201,30 +201,34 @@ public:
      * @brief Writes a single half word to the bus.
      *
      * @param data Half word to write.
+     * @return True if operation successful, false otherwise.
      */
-    void write16(uint16_t data);
+    bool write16(uint16_t data);
 
     /**
      * @brief Writes 24 bits to the bus.
      *
      * @param data Bytes to write (the MSB of the uint32_t is not used).
+     * @return True if operation successful, false otherwise.
      */
-    virtual void write24(uint32_t data);
+    virtual bool write24(uint32_t data);
 
     /**
      * @brief Writes 32 bits to the bus.
      *
      * @param data Word to write.
+     * @return True if operation successful, false otherwise.
      */
-    virtual void write32(uint32_t data);
+    virtual bool write32(uint32_t data);
 
     /**
      * @brief Writes multiple bytes to the bus.
      *
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
+     * @return True if operation successful, false otherwise.
      */
-    void write(uint8_t* data, size_t size);
+    bool write(uint8_t* data, size_t size);
 
     /**
      * @brief Writes multiple half words to the bus.
