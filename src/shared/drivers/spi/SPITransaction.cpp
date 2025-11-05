@@ -254,6 +254,23 @@ uint16_t SPITransaction::transfer16(uint16_t data)
 
 uint32_t SPITransaction::transfer24(uint32_t data)
 {
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t sendBuf[]  = {static_cast<uint8_t>(data >> 16),
+                                       static_cast<uint8_t>(data >> 8),
+                                       static_cast<uint8_t>(data)};
+        volatile uint8_t recvBuf[3] = {0};
+
+        defaultDmaReceivingSetup((void*)recvBuf, 3);
+        defaultDmaTransmittingSetup((void*)sendBuf, 3);
+
+        if (!dmaTransfer(dmaTimeout))
+            return 0;
+
+        return (recvBuf[0] << 16) | (recvBuf[1] << 8) | recvBuf[2];
+    }
+
     slave.bus.select(slave.cs);
     data = slave.bus.transfer24(data);
     slave.bus.deselect(slave.cs);
@@ -263,6 +280,24 @@ uint32_t SPITransaction::transfer24(uint32_t data)
 
 uint32_t SPITransaction::transfer32(uint32_t data)
 {
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t sendBuf[] = {
+            static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
+            static_cast<uint8_t>(data >> 8), static_cast<uint8_t>(data)};
+        volatile uint8_t recvBuf[4] = {0};
+
+        defaultDmaReceivingSetup((void*)recvBuf, 4);
+        defaultDmaTransmittingSetup((void*)sendBuf, 4);
+
+        if (!dmaTransfer(dmaTimeout))
+            return 0;
+
+        return (recvBuf[0] << 24) | (recvBuf[1] << 16) | (recvBuf[2] << 8) |
+               recvBuf[3];
+    }
+
     slave.bus.select(slave.cs);
     data = slave.bus.transfer32(data);
     slave.bus.deselect(slave.cs);
@@ -270,11 +305,21 @@ uint32_t SPITransaction::transfer32(uint32_t data)
     return data;
 }
 
-void SPITransaction::transfer(uint8_t* data, size_t size)
+bool SPITransaction::transfer(uint8_t* data, size_t size)
 {
+    if (useDma)
+    {
+        // DMA
+        defaultDmaReceivingSetup((void*)data, size);
+        defaultDmaTransmittingSetup((void*)data, size);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.transfer(data, size);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 void SPITransaction::transfer16(uint16_t* data, size_t size)
