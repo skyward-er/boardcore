@@ -259,6 +259,7 @@ public:
      *
      * @param data Bytes to write (the MSB of the uint32_t is not used).
      * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
+     * Returns 0 in case of dma errors.
      */
     virtual uint32_t transfer24(uint32_t data);
 
@@ -266,7 +267,7 @@ public:
      * @brief Full duplex transmission of 32 bits on the bus.
      *
      * @param data Word to write.
-     * @return Half word read from the bus.
+     * @return Word read from the bus, 0 in case of dma errors.
      */
     virtual uint32_t transfer32(uint32_t data);
 
@@ -275,8 +276,9 @@ public:
      *
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
+     * @return True if operation successful, false otherwise.
      */
-    void transfer(uint8_t* data, size_t size);
+    bool transfer(uint8_t* data, size_t size);
 
     /**
      * @brief Full duplex transmission of multiple half words on the bus.
