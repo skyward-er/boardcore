@@ -525,37 +525,82 @@ bool SPITransaction::writeRegister(uint8_t reg, uint8_t data)
     return true;
 }
 
-void SPITransaction::writeRegister16(uint8_t reg, uint16_t data)
+bool SPITransaction::writeRegister16(uint8_t reg, uint16_t data)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
         reg |= 0x80;
+
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[3] = {0};
+        volatile uint8_t sendBuf[] = {reg, static_cast<uint8_t>(data >> 8),
+                                      static_cast<uint8_t>(data)};
+
+        defaultDmaReceivingSetup((void*)dstBuf, 3);
+        defaultDmaTransmittingSetup((void*)sendBuf, 3);
+
+        return dmaTransfer(dmaTimeout);
+    }
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
     slave.bus.write16(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
-void SPITransaction::writeRegister24(uint8_t reg, uint32_t data)
+bool SPITransaction::writeRegister24(uint8_t reg, uint32_t data)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
         reg |= 0x80;
+
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[4] = {0};
+        volatile uint8_t sendBuf[] = {reg, static_cast<uint8_t>(data >> 16),
+                                      static_cast<uint8_t>(data >> 8),
+                                      static_cast<uint8_t>(data)};
+
+        defaultDmaReceivingSetup((void*)dstBuf, 4);
+        defaultDmaTransmittingSetup((void*)sendBuf, 4);
+
+        return dmaTransfer(dmaTimeout);
+    }
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
     slave.bus.write24(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
-void SPITransaction::writeRegister32(uint8_t reg, uint32_t data)
+bool SPITransaction::writeRegister32(uint8_t reg, uint32_t data)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
         reg |= 0x80;
+
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[5] = {0};
+        volatile uint8_t sendBuf[] = {reg, static_cast<uint8_t>(data >> 24),
+                                      static_cast<uint8_t>(data >> 16),
+                                      static_cast<uint8_t>(data >> 8),
+                                      static_cast<uint8_t>(data)};
+
+        defaultDmaReceivingSetup((void*)dstBuf, 5);
+        defaultDmaTransmittingSetup((void*)sendBuf, 5);
+
+        return dmaTransfer(dmaTimeout);
+    }
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
     slave.bus.write32(data);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 bool SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
