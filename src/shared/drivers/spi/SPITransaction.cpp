@@ -364,11 +364,29 @@ uint16_t SPITransaction::readRegister16(uint8_t reg)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
         reg |= 0x80;
+    uint16_t data = 0;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint16_t data = slave.bus.read16();
-    slave.bus.deselect(slave.cs);
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[]  = {0, 0, 0};
+        volatile uint8_t sendBuf[] = {reg, 0, 0};
+
+        defaultDmaReceivingSetup((void*)dstBuf, 3);
+        defaultDmaTransmittingSetup((void*)sendBuf, 3);
+
+        if (!dmaTransfer(dmaTimeout))
+            data = 0;
+        else
+            data = dstBuf[1] << 8 | dstBuf[2];
+    }
+    else
+    {
+        slave.bus.select(slave.cs);
+        slave.bus.write(reg);
+        data = slave.bus.read16();
+        slave.bus.deselect(slave.cs);
+    }
 
     if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
         data = swapBytes16(data);
@@ -380,11 +398,29 @@ uint32_t SPITransaction::readRegister24(uint8_t reg)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
         reg |= 0x80;
+    uint32_t data = 0;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint32_t data = slave.bus.read24();
-    slave.bus.deselect(slave.cs);
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[4] = {0};
+        volatile uint8_t sendBuf[] = {reg, 0, 0, 0};
+
+        defaultDmaReceivingSetup((void*)dstBuf, 4);
+        defaultDmaTransmittingSetup((void*)sendBuf, 4);
+
+        if (!dmaTransfer(dmaTimeout))
+            data = 0;
+        else
+            data = dstBuf[1] << 16 | dstBuf[2] << 8 | dstBuf[3];
+    }
+    else
+    {
+        slave.bus.select(slave.cs);
+        slave.bus.write(reg);
+        data = slave.bus.read24();
+        slave.bus.deselect(slave.cs);
+    }
 
     if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
         data = swapBytes32(data) >> 8;
@@ -396,11 +432,30 @@ uint32_t SPITransaction::readRegister32(uint8_t reg)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
         reg |= 0x80;
+    uint32_t data = 0;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint32_t data = slave.bus.read32();
-    slave.bus.deselect(slave.cs);
+    if (useDma)
+    {
+        // DMA
+        volatile uint8_t dstBuf[5] = {0};
+        volatile uint8_t sendBuf[] = {reg, 0, 0, 0, 0};
+
+        defaultDmaReceivingSetup((void*)dstBuf, 5);
+        defaultDmaTransmittingSetup((void*)sendBuf, 5);
+
+        if (!dmaTransfer(dmaTimeout))
+            data = 0;
+        else
+            data =
+                dstBuf[1] << 24 | dstBuf[2] << 16 | dstBuf[3] << 8 | dstBuf[4];
+    }
+    else
+    {
+        slave.bus.select(slave.cs);
+        slave.bus.write(reg);
+        data = slave.bus.read32();
+        slave.bus.deselect(slave.cs);
+    }
 
     if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
         data = swapBytes32(data) >> 8;
