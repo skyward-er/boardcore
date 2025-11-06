@@ -201,7 +201,7 @@ public:
      * @brief Writes a single half word to the bus.
      *
      * @param data Half word to write.
-     * @return True if operation successful, false otherwise.
+     * @return True if operation successful, false in case of dma errors.
      */
     bool write16(uint16_t data);
 
@@ -209,7 +209,7 @@ public:
      * @brief Writes 24 bits to the bus.
      *
      * @param data Bytes to write (the MSB of the uint32_t is not used).
-     * @return True if operation successful, false otherwise.
+     * @return True if operation successful, false in case of dma errors.
      */
     virtual bool write24(uint32_t data);
 
@@ -217,7 +217,7 @@ public:
      * @brief Writes 32 bits to the bus.
      *
      * @param data Word to write.
-     * @return True if operation successful, false otherwise.
+     * @return True if operation successful, false in case of dma errors.
      */
     virtual bool write32(uint32_t data);
 
@@ -226,7 +226,7 @@ public:
      *
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
-     * @return True if operation successful, false otherwise.
+     * @return True if operation successful, false in case of dma errors.
      */
     bool write(uint8_t* data, size_t size);
 
@@ -276,7 +276,7 @@ public:
      *
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
-     * @return True if operation successful, false otherwise.
+     * @return True if operation successful, false in case of dma errors.
      */
     bool transfer(uint8_t* data, size_t size);
 
@@ -332,7 +332,7 @@ public:
      *
      * @param reg Register address.
      * @param data Byte to write.
-     * @return True if operation successful, false otherwise.
+     * @return True if operation successful, false in case of dma errors.
      */
     bool writeRegister(uint8_t reg, uint8_t data);
 
@@ -341,24 +341,27 @@ public:
      *
      * @param reg Register address.
      * @param data Byte to write.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void writeRegister16(uint8_t reg, uint16_t data);
+    bool writeRegister16(uint8_t reg, uint16_t data);
 
     /**
      * @brief Writes a 24 bit register.
      *
      * @param reg Register address.
      * @param data Byte to write.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void writeRegister24(uint8_t reg, uint32_t data);
+    bool writeRegister24(uint8_t reg, uint32_t data);
 
     /**
      * @brief Writes a 32 bit register.
      *
      * @param reg Register address.
      * @param data Byte to write.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void writeRegister32(uint8_t reg, uint32_t data);
+    bool writeRegister32(uint8_t reg, uint32_t data);
 
     /**
      * @brief Writes multiple bytes starting from the specified register.
