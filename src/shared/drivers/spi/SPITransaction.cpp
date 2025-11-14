@@ -24,6 +24,7 @@
 
 #include <interfaces/endianness.h>
 #include <utils/Debug.h>
+#include <memory>
 
 namespace Boardcore
 {
@@ -196,10 +197,12 @@ bool SPITransaction::write(uint8_t* data, size_t nBytes)
     return true;
 }
 
-bool SPITransaction::write16(uint16_t* data, size_t size)
+bool SPITransaction::write16(uint16_t* data, uint16_t size)
 {
     if (useDma)
     {
+        // TODO: non dovrebbe essere size % 2, ma size % sizeof(uint16)
+
         D(assert((size % 2 == 0) &&
                  "SPITransaction::write16(): size should be a multiple of 2"));
         volatile uint16_t recvBuf = 0;
@@ -208,7 +211,7 @@ bool SPITransaction::write16(uint16_t* data, size_t size)
         // the LSB. The DMA does the opposite, so i need to
         // switch the bytes.
         for (int i = 0; i < size / 2; ++i)
-            data[i] = static_cast<uint8_t>(data[i] >> 8) | (data[i] & 255) << 8;
+            data[i] = swapBytes16(data[i]);//data[i] = static_cast<uint8_t>(data[i] >> 8) | (data[i] & 255) << 8;
 
         // Manually set the rx stream so that we don't need
         // a buffer for reception
@@ -317,10 +320,17 @@ bool SPITransaction::transfer(uint8_t* data, size_t size)
 {
     if (useDma)
     {
-        defaultDmaReceivingSetup((void*)data, size);
+        std::unique_ptr<uint8_t[]> recvBuffer = std::make_unique<uint8_t[]>(size);
+
+        defaultDmaReceivingSetup((void*)recvBuffer.get(), size);
         defaultDmaTransmittingSetup((void*)data, size);
 
-        return dmaTransfer(dmaTimeout);
+        bool ret = dmaTransfer(dmaTimeout);
+
+        for(auto i = 0; i < size; ++i)
+            data[i] = recvBuffer[i];
+
+        return ret;
     }
 
     slave.bus.select(slave.cs);
@@ -329,11 +339,59 @@ bool SPITransaction::transfer(uint8_t* data, size_t size)
     return true;
 }
 
-void SPITransaction::transfer16(uint16_t* data, size_t size)
+bool SPITransaction::transfer16(uint16_t* data, size_t size)
 {
+    if (useDma)
+    {
+        // TODO: non dovrebbe essere size%2, ma size % sizeof(uint16)
+        D(assert(
+            (size % 2 == 0) &&
+            "SPITransaction::transfer16(): size should be a multiple of 2"));
+
+        // This function is meant to send the MSB first, then
+        // the LSB. The DMA does the opposite, so i need to
+        // switch the bytes.
+        for (int i = 0; i < size / 2; ++i)
+            data[i] = swapBytes16(data[i]);//data[i] = static_cast<uint8_t>(data[i] >> 8) | (data[i] & 255) << 8;
+
+
+        return transfer(reinterpret_cast<uint8_t*>(data), size);
+
+
+            // roba a caso mia per test
+        uint8_t* recvBuf = (uint8_t*)malloc(size);
+        for(auto i = 0; i < size; ++i)
+            recvBuf[i] = 0;
+
+        // Manually set the rx stream so that we don't need
+        // a buffer for reception
+        // DMATransaction rxSetup;
+        // defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
+        //                 (void*)&(spiPtr->DR), (void*)&recvBuf, size, false,
+        //                 false);
+        // (*slave.streamRx)->setup(rxSetup);
+
+        // defaultDmaReceivingSetup(data, size);
+        defaultDmaReceivingSetup(recvBuf, size);
+
+        defaultDmaTransmittingSetup(data, size);
+
+        bool ret = dmaTransfer(dmaTimeout);
+
+        for(auto i = 0; i < size / 2; ++i)
+        {
+            data[i] = recvBuf[i] << 8 | recvBuf[i+1];
+        }
+
+        free(recvBuf);
+
+        return ret;
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.transfer16(data, size);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 // Read, write and transfer operations with registers

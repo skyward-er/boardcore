@@ -48,8 +48,26 @@ int main()
     cs.mode(miosix::Mode::OUTPUT);
     cs.high();
 
-    LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
+    auto streamRx = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_SPI1_RX);
+    if (!streamRx.isValid())
+    {
+        printf("Cannot acquire streamRx\n");
+        return 1;
+    }
+
+    auto streamTx = DMADriver::instance().acquireStreamForPeripheral(
+        DMADefs::Peripherals::PE_SPI1_TX);
+    if (!streamTx.isValid())
+    {
+        printf("Cannot acquire streamTx\n");
+        return 1;
+    }
+
+    LIS3DSH sensor(bus, cs, &streamTx, &streamRx, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
                    sensor.FULL_SCALE_4G);
+    // LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
+    //                sensor.FULL_SCALE_4G);
 
     LIS3DSHData data;
 
@@ -81,7 +99,7 @@ int main()
     Thread::sleep(500);
 
     // sample some data from the sensor
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 2; i++)
     {
         // sensor intitialized, should return error if no new data exist
         sensor.sample();
@@ -99,7 +117,162 @@ int main()
         Thread::sleep(200);
     }
 
-    printf("\nLIS3DSH TEST OK ! \n");
+    printf("\nLIS3DSH TEST OK ! \n\n\n");
 
+
+    printf("Beginning readRegisters() test\n");
+    if (!sensor.testDmaReadRegisters())
+    {
+        printf("readRegisters() test FAILED\n");
+        return 1;
+    }
+    printf("readRegisters() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning writeRegisters() test\n");
+    if(!sensor.testDmaWriteRegisters())
+    {
+        printf("writeRegisters() test FAILED\n");
+        return 1;
+    }
+    printf("writeRegisters() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning write16() test\n");
+    if(!sensor.testDmaWrite16())
+    {
+        printf("write16() test FAILED\n");
+        return 1;
+    }
+    printf("write16() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning write24() test\n");
+    if(!sensor.testDmaWrite24())
+    {
+        printf("write24() test FAILED\n");
+        return 1;
+    }
+    printf("write24() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning write32() test\n");
+    if(!sensor.testDmaWrite32())
+    {
+        printf("write32() test FAILED\n");
+        return 1;
+    }
+    printf("write32() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning writeBuffer() test\n");
+    if(!sensor.testDmaWriteBuffer())
+    {
+        printf("writeBuffer() test FAILED\n");
+        return 1;
+    }
+    printf("writeBuffer() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning transferBuffer() test\n");
+    if(!sensor.testDmaTransferBuffer())
+    {
+        printf("transferBuffer() test FAILED\n");
+        return 1;
+    }
+    printf("transferBuffer() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning transfer24() test\n");
+    if(!sensor.testDmaTransfer24())
+    {
+        printf("transfer24() test FAILED\n");
+        return 1;
+    }
+    printf("transfer24() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning transfer32() test\n");
+    if(!sensor.testDmaTransfer32())
+    {
+        printf("transfer32() test FAILED\n");
+        return 1;
+    }
+    printf("transfer32() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning readRegister16() test\n");
+    if(!sensor.testDmaReadRegister16())
+    {
+        printf("readRegister16() test FAILED\n");
+        return 1;
+    }
+    printf("readRegister16() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning readRegister24() test\n");
+    if(!sensor.testDmaReadRegister24())
+    {
+        printf("readRegister24() test FAILED\n");
+        return 1;
+    }
+    printf("readRegister24() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning readRegister32() test\n");
+    if(!sensor.testDmaReadRegister32())
+    {
+        printf("readRegister32() test FAILED\n");
+        return 1;
+    }
+    printf("readRegister32() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning writeRegister16() test\n");
+    if(!sensor.testDmaWriteRegister16())
+    {
+        printf("writeRegister16() test FAILED\n");
+        return 1;
+    }
+    printf("writeRegister16() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning writeRegister24() test\n");
+    if(!sensor.testDmaWriteRegister24())
+    {
+        printf("writeRegister24() test FAILED\n");
+        return 1;
+    }
+    printf("writeRegister24() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning writeRegister32() test\n");
+    if(!sensor.testDmaWriteRegister32())
+    {
+        printf("writeRegister32() test FAILED\n");
+        return 1;
+    }
+    printf("writeRegister32() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning write16buffer() test\n");
+    if(!sensor.testDmaWrite16Buffer())
+    {
+        printf("write16buffer() test FAILED\n");
+        return 1;
+    }
+    printf("write16buffer() test SUCCESSFUL\n\n");
+
+
+    printf("Beginning transfer16buffer() test\n");
+    if(!sensor.testDmaTransfer16Buffer())
+    {
+        printf("transfer16buffer() test FAILED\n");
+        return 1;
+    }
+    printf("transfer16buffer() test SUCCESSFUL\n\n");
+
+
+    printf("ALL TESTS TERMINATED CORRECTLY\n");
     return 0;
 }

@@ -237,7 +237,7 @@ public:
      * @param size Size of the buffer in bytes.
      * @return True if operation successful, false in case of dma errors.
      */
-    bool write16(uint16_t* data, size_t size);
+    bool write16(uint16_t* data, uint16_t size);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -286,8 +286,9 @@ public:
      *
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void transfer16(uint16_t* data, size_t size);
+    bool transfer16(uint16_t* data, size_t size);
 
     // Read, write and transfer operations with registers
 

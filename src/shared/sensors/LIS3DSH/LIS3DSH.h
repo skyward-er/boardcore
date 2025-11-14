@@ -70,6 +70,751 @@ public:
                                         // (maximum is 10 Mhz)
     }
 
+    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chipSelect,
+            DMAStreamGuard* txStream, DMAStreamGuard* rxStream,
+            uint8_t odr       = OutputDataRate::ODR_100_HZ,
+            uint8_t bdu       = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
+            uint8_t fullScale = FullScale::FULL_SCALE_2G)
+        : spiSlave(bus, chipSelect, {}, rxStream, txStream,
+                   std::chrono::milliseconds(250)),
+          odr(odr), bdu(bdu), fullScale(fullScale)
+    {
+        spiSlave.config.clockDivider =
+            SPI::ClockDivider::DIV_64;  // used to set the spi baud rate
+                                        // (maximum is 10 Mhz)
+    }
+
+    // void testDmaCustom()
+    // {
+    //     SPITransaction spi(spiSlave);
+
+    //     // first get the original value
+    //     spi.disableDma();
+    //     const auto originalValue = spi.readRegister(CTRL_REG4);
+    //     spi.enableDma();
+
+    //     // test1
+    //     spi.writeRegisterCustom(CTRL_REG4, 3);
+    //     auto value = spi.readRegister(CTRL_REG4);
+    //     if(value != 3)
+    //         printf("prima write failed: %u\n", value);
+    //     else
+    //         printf("prima write ok\n");
+
+    //     // test2
+    //     spi.writeRegisterCustom(CTRL_REG4, 8);
+    //     value = spi.readRegister(CTRL_REG4);
+    //     if(value != 8)
+    //         printf("seconda write failed: %u\n", value);
+    //     else
+    //         printf("seconda write ok\n");
+
+    //     // restore original value
+    //     spi.disableDma();
+    //     spi.writeRegister(CTRL_REG4, originalValue);
+    //     if(spi.readRegister(CTRL_REG4) != originalValue)
+    //         printf("ERROR, cannot restore original value\n");
+    //     else
+    //         printf("Original value restored\n");
+
+    //     printf("ENDING TEST\n");
+    // }
+
+    bool testDmaReadRegisters()
+    {
+        // Read REG1 to REG6 (REG4 has the lowest addr)
+
+        constexpr int SIZE          = 6;
+        uint8_t correctValues[SIZE] = {0};
+        uint8_t dmaValues[SIZE]     = {0};  // Values read by dma
+
+        SPITransaction spi(spiSlave);
+
+        // Read the correct values without dma
+        spi.disableDma();
+        spi.readRegisters(CTRL_REG4, correctValues, SIZE);
+        spi.enableDma();
+
+        // Now try with dma
+        spi.readRegisters(CTRL_REG4, dmaValues, SIZE);
+
+        for (int i = 0; i < SIZE; ++i)
+        {
+            printf("correct %d>\t\t%u\n", i, correctValues[i]);
+            printf("dma %d>\t\t%u\n", i, dmaValues[i]);
+        }
+
+        // Check
+        for (int i = 0; i < SIZE; ++i)
+            if (correctValues[i] != dmaValues[i])
+                return false;
+        return true;
+    }
+
+    bool testDmaWriteRegisters()
+    {
+        // Write REG1 to REG6 (REG4 has the lowest addr).
+        // Overwrite only REG3 (by enabling data ready int)
+        // otherwise it explodes.
+
+        bool ret = true;
+
+        constexpr int SIZE           = 6;
+        uint8_t originalValues[SIZE] = {0};
+
+        uint8_t sendBuf[SIZE];
+        uint8_t recvBuf[SIZE];
+
+        SPITransaction spi(spiSlave);
+
+        // Read the correct values without dma
+        spi.disableDma();
+        spi.readRegisters(CTRL_REG4, originalValues, SIZE);
+        spi.enableDma();
+
+        for (int i = 0; i < SIZE; ++i)
+        {
+            sendBuf[i] = originalValues[i];
+            recvBuf[i] = 0;
+        }
+        sendBuf[3] = 1 << 7;
+
+        // Overwrite with dma
+        if (!spi.writeRegisters(CTRL_REG4, sendBuf, SIZE))
+            printf("writeRegisters() with dma failed\n");
+
+        // Read back and verify
+        spi.disableDma();
+        spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+
+        // Check
+        printf("Expected | Received\n");
+        for (int i = 0; i < SIZE; ++i)
+        {
+            printf("value %d: %u | %u\n", i, sendBuf[i], recvBuf[i]);
+            if (recvBuf[i] != sendBuf[i])
+                ret = false;
+        }
+
+        // Restore and check that everything's fine
+        spi.writeRegisters(CTRL_REG4, originalValues, SIZE);
+        spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+        for (int i = 0; i < SIZE; ++i)
+        {
+            if (recvBuf[i] != originalValues[i])
+            {
+                printf("Error, couldn't restore the original values\n");
+                ret = false;
+            }
+        }
+
+        return ret;
+    }
+
+    bool testDmaWrite16()
+    {
+        // è l'equivalente di una write register
+        SPITransaction spi(spiSlave);
+        bool ret = true;
+
+        spi.disableDma();
+        const auto originalValue = spi.readRegister(CTRL_REG4);
+        spi.enableDma();
+
+        const uint8_t regValue = 5;
+        const uint16_t dataToSend =
+            (static_cast<uint16_t>(CTRL_REG4) << 8) |
+            regValue;  // non sono sicuro sul bit per la write, testare
+
+        spi.write16(dataToSend);
+
+        spi.disableDma();
+
+        // Check
+        if (spi.readRegister(CTRL_REG4) != regValue)
+            ret = false;
+
+        // Restore
+        spi.writeRegister(CTRL_REG4, originalValue);
+        if (spi.readRegister(CTRL_REG4) != originalValue)
+            printf("testWrite16> Cannot restore the original value\n");
+
+        return ret;
+    }
+
+    bool testDmaWrite24()
+    {
+        // è l'equivalente di una write di 2 registri
+        SPITransaction spi(spiSlave);
+
+        spi.disableDma();
+        uint8_t originalValues[2] = {0};
+        constexpr int SIZE        = sizeof(originalValues);
+        spi.readRegisters(CTRL_REG4, originalValues, SIZE);
+        spi.enableDma();
+
+        uint16_t regValues[] = {5, 1 << 3};
+        const uint32_t dataToSend =
+            (static_cast<uint32_t>(CTRL_REG4) << 16) | (regValues[0] << 8) |
+            regValues[1];  // non sono sicuro sul bit per la write, testare
+
+        spi.write24(dataToSend);
+
+        spi.disableDma();
+
+        // Check
+        uint8_t recvValues[SIZE] = {0};
+        spi.readRegisters(CTRL_REG4, recvValues, SIZE);
+        const bool ret =
+            (recvValues[0] == regValues[0]) && (recvValues[1] == regValues[1]);
+
+        // Restore
+        spi.writeRegisters(CTRL_REG4, originalValues, SIZE);
+        spi.readRegisters(CTRL_REG4, recvValues, SIZE);
+        for (int i = 0; i < SIZE; ++i)
+            if (recvValues[i] != originalValues[i])
+                printf("testWrite24> Cannot restore the original value\n");
+
+        return ret;
+    }
+
+    bool testDmaWrite32()
+    {
+        // è l'equivalente di una write di 2 registri
+        SPITransaction spi(spiSlave);
+
+        spi.disableDma();
+        uint8_t originalValues[3] = {0};
+        constexpr int SIZE        = sizeof(originalValues);
+        spi.readRegisters(CTRL_REG4, originalValues, SIZE);
+        spi.enableDma();
+
+        uint16_t regValues[] = {5, 1, 1};
+        const uint32_t dataToSend =
+            (static_cast<uint32_t>(CTRL_REG4) << 24) | (regValues[0] << 16) |
+            (regValues[1] << 8) |
+            regValues[2];  // non sono sicuro sul bit per la write, testare
+
+        spi.write32(dataToSend);
+
+        spi.disableDma();
+
+        // Check
+        uint8_t recvValues[SIZE] = {0};
+        spi.readRegisters(CTRL_REG4, recvValues, SIZE);
+        const bool ret = (recvValues[2] == regValues[2]) &&
+                         (recvValues[0] == regValues[0]) &&
+                         (recvValues[1] == regValues[1]);
+
+        // Restore
+        spi.writeRegisters(CTRL_REG4, originalValues, SIZE);
+        spi.readRegisters(CTRL_REG4, recvValues, SIZE);
+        for (int i = 0; i < SIZE; ++i)
+            if (recvValues[i] != originalValues[i])
+                printf("testWrite32> Cannot restore the original value\n");
+
+        return ret;
+    }
+
+    bool testDmaWriteBuffer()
+    {
+        // è l'equivalente di una write register
+        SPITransaction spi(spiSlave);
+        bool ret = true;
+
+        spi.disableDma();
+        const auto originalValue = spi.readRegister(CTRL_REG4);
+        spi.enableDma();
+
+        const uint8_t regValue = 5;
+        uint8_t dataToSend[]   = {
+            CTRL_REG4,
+            regValue};  // non sono sicuro sul bit per la write, testare
+
+        spi.write(dataToSend, 2);
+
+        spi.disableDma();
+
+        // Check
+        if (spi.readRegister(CTRL_REG4) != regValue)
+            ret = false;
+
+        // Restore
+        spi.writeRegister(CTRL_REG4, originalValue);
+        if (spi.readRegister(CTRL_REG4) != originalValue)
+            printf("testWriteBuffer> Cannot restore the original value\n");
+
+        return ret;
+    }
+
+    bool testDmaTransferBuffer()
+    {
+        // faccio una read di 2 registri
+        uint8_t transferBuff[3]  = {CTRL_REG4 | 0x80, 0, 0};
+        uint8_t correctValues[2] = {0};
+        constexpr int SIZE       = sizeof(correctValues);
+
+        SPITransaction spi(spiSlave);
+
+        // Read the correct values
+        spi.disableDma();
+        spi.readRegisters(CTRL_REG4, correctValues, SIZE);
+        spi.enableDma();
+
+        // Read with the transfer
+        spi.transfer(transferBuff, 3);
+
+        spi.disableDma();
+
+        // Check that the values did not change
+        uint8_t recvBuf[SIZE] = {0};
+        spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+        bool valuesHaveChanged = false;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            if (recvBuf[i] != correctValues[i])
+            {
+                printf(
+                    "transferBuffer> ERROR: the values from the read register "
+                    "have changed\n");
+                valuesHaveChanged = true;
+            }
+        }
+
+        if (valuesHaveChanged)
+        {
+            // Restore
+            spi.writeRegisters(CTRL_REG4, correctValues, SIZE);
+            // Check again
+            spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+            for (int i = 0; i < SIZE; ++i)
+            {
+                if (recvBuf[i] != correctValues[i])
+                {
+                    printf(
+                        "transferBuffer> ERROR: cannot restore the original "
+                        "values\n");
+                }
+            }
+        }
+
+        // Now check that the read was right
+        for (int i = 0; i < SIZE; ++i)
+            if (correctValues[i] != transferBuff[i + 1])
+                return false;
+        return true;
+    }
+
+    bool testDmaTransfer24()
+    {
+        // faccio una read di 2 registri
+        uint8_t transferBuff[3]  = {CTRL_REG4 | 0x80, 0, 0};
+        uint8_t correctValues[2] = {0};
+        constexpr int SIZE       = sizeof(correctValues);
+
+        SPITransaction spi(spiSlave);
+
+        // Read the correct values
+        spi.disableDma();
+        spi.readRegisters(CTRL_REG4, correctValues, SIZE);
+        spi.enableDma();
+
+        // Read with the transfer
+        const uint32_t sendValue =
+            (transferBuff[0] << 16) | (transferBuff[1] << 8) | transferBuff[0];
+        uint32_t recvValues = spi.transfer24(sendValue);
+
+        spi.disableDma();
+
+        // Check that the values did not change
+        uint8_t recvBuf[SIZE] = {0};
+        spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+        bool valuesHaveChanged = false;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            if (recvBuf[i] != correctValues[i])
+            {
+                printf(
+                    "transferBuffer> ERROR: the values from the read register "
+                    "have changed\n");
+                valuesHaveChanged = true;
+            }
+        }
+
+        if (valuesHaveChanged)
+        {
+            // Restore
+            spi.writeRegisters(CTRL_REG4, correctValues, SIZE);
+            // Check again
+            spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+            for (int i = 0; i < SIZE; ++i)
+            {
+                if (recvBuf[i] != correctValues[i])
+                {
+                    printf(
+                        "transferBuffer> ERROR: cannot restore the original "
+                        "values\n");
+                }
+            }
+        }
+
+        // Now check that the read was right
+        transferBuff[0] = static_cast<uint8_t>(recvValues >> 16);
+        transferBuff[1] = static_cast<uint8_t>(recvValues >> 8);
+        transferBuff[2] = static_cast<uint8_t>(recvValues);
+        for (int i = 0; i < SIZE; ++i)
+            if (correctValues[i] != transferBuff[i + 1])
+                return false;
+        return true;
+    }
+
+    bool testDmaTransfer32()
+    {
+        // faccio una read di 2 registri
+        uint8_t transferBuff[4]  = {CTRL_REG4 | 0x80, 0, 0, 0};
+        uint8_t correctValues[3] = {0};
+        constexpr int SIZE       = sizeof(correctValues);
+
+        SPITransaction spi(spiSlave);
+
+        // Read the correct values
+        spi.disableDma();
+        spi.readRegisters(CTRL_REG4, correctValues, SIZE);
+        spi.enableDma();
+
+        // Read with the transfer
+        const uint32_t sendValue = (transferBuff[0] << 24) |
+                                   (transferBuff[1] << 16) |
+                                   (transferBuff[2] << 8) | transferBuff[3];
+        uint32_t recvValues = spi.transfer32(sendValue);
+
+        spi.disableDma();
+
+        // Check that the values did not change
+        uint8_t recvBuf[SIZE] = {0};
+        spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+        bool valuesHaveChanged = false;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            if (recvBuf[i] != correctValues[i])
+            {
+                printf(
+                    "transferBuffer> ERROR: the values from the read register "
+                    "have changed\n");
+                valuesHaveChanged = true;
+            }
+        }
+
+        if (valuesHaveChanged)
+        {
+            // Restore
+            spi.writeRegisters(CTRL_REG4, correctValues, SIZE);
+            // Check again
+            spi.readRegisters(CTRL_REG4, recvBuf, SIZE);
+            for (int i = 0; i < SIZE; ++i)
+            {
+                if (recvBuf[i] != correctValues[i])
+                {
+                    printf(
+                        "transferBuffer> ERROR: cannot restore the original "
+                        "values\n");
+                }
+            }
+        }
+
+        // Now check that the read was right
+        transferBuff[0] = static_cast<uint8_t>(recvValues >> 24);
+        transferBuff[1] = static_cast<uint8_t>(recvValues >> 16);
+        transferBuff[2] = static_cast<uint8_t>(recvValues >> 8);
+        transferBuff[3] = static_cast<uint8_t>(recvValues);
+        for (int i = 0; i < SIZE; ++i)
+            if (correctValues[i] != transferBuff[i + 1])
+                return false;
+        return true;
+    }
+
+    bool testDmaReadRegister16()
+    {
+        SPITransaction spi(spiSlave);
+
+        spi.disableDma();
+        const auto correctValue = spi.readRegister16(CTRL_REG4);
+        spi.enableDma();
+
+        const auto dmaValue = spi.readRegister16(CTRL_REG4);
+
+        spi.disableDma();
+
+        // Check that the value didn't change
+        if (spi.readRegister16(CTRL_REG4) != correctValue)
+        {
+            printf(
+                "readRegister16> ERROR, the operation changed the register\n");
+            spi.writeRegister16(CTRL_REG4, correctValue);
+            if (spi.readRegister16(CTRL_REG4) != correctValue)
+            {
+                printf(
+                    "readRegister16> ERROR, cannot restore the original "
+                    "value\n");
+            }
+        }
+
+        return dmaValue == correctValue;
+    }
+
+    bool testDmaReadRegister24()
+    {
+        SPITransaction spi(spiSlave);
+
+        spi.disableDma();
+        const auto correctValue = spi.readRegister24(CTRL_REG4);
+        spi.enableDma();
+
+        const auto dmaValue = spi.readRegister24(CTRL_REG4);
+
+        spi.disableDma();
+
+        // Check that the value didn't change
+        if (spi.readRegister24(CTRL_REG4) != correctValue)
+        {
+            printf(
+                "readRegister24> ERROR, the operation changed the register\n");
+            spi.writeRegister24(CTRL_REG4, correctValue);
+            if (spi.readRegister24(CTRL_REG4) != correctValue)
+            {
+                printf(
+                    "readRegister24> ERROR, cannot restore the original "
+                    "value\n");
+            }
+        }
+
+        return dmaValue == correctValue;
+    }
+
+    bool testDmaReadRegister32()
+    {
+        SPITransaction spi(spiSlave);
+
+        spi.disableDma();
+        const auto correctValue = spi.readRegister32(CTRL_REG4);
+        spi.enableDma();
+
+        const auto dmaValue = spi.readRegister32(CTRL_REG4);
+
+        spi.disableDma();
+
+        // Check that the value didn't change
+        if (spi.readRegister32(CTRL_REG4) != correctValue)
+        {
+            printf(
+                "readRegister32> ERROR, the operation changed the register\n");
+            spi.writeRegister32(CTRL_REG4, correctValue);
+            if (spi.readRegister32(CTRL_REG4) != correctValue)
+            {
+                printf(
+                    "readRegister32> ERROR, cannot restore the original "
+                    "value\n");
+            }
+        }
+
+        return dmaValue == correctValue;
+    }
+
+    bool testDmaWriteRegister16()
+    {
+        SPITransaction spi(spiSlave);
+
+        // get original values
+        spi.disableDma();
+        const auto originalValue = spi.readRegister16(CTRL_REG4);
+        spi.enableDma();
+
+        const uint16_t sendValue = 5 << 8 | 1;
+        spi.writeRegister16(CTRL_REG4, sendValue);
+
+        spi.disableDma();
+
+        const auto recv = spi.readRegister16(CTRL_REG4);
+
+        // restore original
+        spi.writeRegister16(CTRL_REG4, originalValue);
+        if (spi.readRegister16(CTRL_REG4) != originalValue)
+        {
+            printf(
+                "writeRegister16> ERROR, cannot restore the original value\n");
+        }
+
+        return recv == sendValue;
+    }
+
+    bool testDmaWriteRegister24()
+    {
+        SPITransaction spi(spiSlave);
+
+        // get original values
+        spi.disableDma();
+        const auto originalValue = spi.readRegister24(CTRL_REG4);
+        spi.enableDma();
+
+        const uint32_t sendValue = 5 << 16 | 1 << 8 | 1;
+        spi.writeRegister24(CTRL_REG4, sendValue);
+
+        spi.disableDma();
+
+        const auto recv = spi.readRegister24(CTRL_REG4);
+
+        // restore original
+        spi.writeRegister24(CTRL_REG4, originalValue);
+        if (spi.readRegister24(CTRL_REG4) != originalValue)
+        {
+            printf(
+                "writeRegister24> ERROR, cannot restore the original value\n");
+        }
+
+        return recv == sendValue;
+    }
+
+    bool testDmaWriteRegister32()
+    {
+        SPITransaction spi(spiSlave);
+
+        // get original values
+        spi.disableDma();
+        const auto originalValue = spi.readRegister32(CTRL_REG4);
+        spi.enableDma();
+
+        const uint32_t sendValue = 5 << 24 | 1 << 16 | 1 << 8 | 3 << 3;
+        spi.writeRegister32(CTRL_REG4, sendValue);
+
+        spi.disableDma();
+
+        const auto recv = spi.readRegister32(CTRL_REG4);
+
+        // restore original
+        spi.writeRegister32(CTRL_REG4, originalValue);
+        if (spi.readRegister32(CTRL_REG4) != originalValue)
+        {
+            printf(
+                "writeRegister32> ERROR, cannot restore the original value\n");
+        }
+
+        return recv == sendValue;
+    }
+
+    bool testDmaWrite16Buffer()
+    {
+        SPITransaction spi(spiSlave);
+
+        // Get original values
+        spi.disableDma();
+        uint8_t originalValues[3] = {0};
+        spi.readRegisters(CTRL_REG4, originalValues, 3);
+        spi.enableDma();
+
+        uint8_t valuesToBeWritten[] = {CTRL_REG4, 5, 1, 1 << 3};
+        uint16_t sendBuffer[]       = {
+            static_cast<uint16_t>(valuesToBeWritten[0]) << 8 |
+                valuesToBeWritten[1],
+            static_cast<uint16_t>(valuesToBeWritten[2]) << 8 |
+                valuesToBeWritten[3]};
+
+        if (!spi.write16(sendBuffer, sizeof(sendBuffer)))
+            printf("write16buffer dma fails\n");
+
+        spi.disableDma();
+
+        // Check
+        uint8_t valuesWritten[3] = {0};
+        spi.readRegisters(CTRL_REG4, valuesWritten, 3);
+
+        // Restore original
+        spi.writeRegisters(CTRL_REG4, originalValues, 3);
+        uint8_t check[3] = {0};
+        spi.readRegisters(CTRL_REG4, check, 3);
+        for (int i = 0; i < 3; ++i)
+            if (check[i] != originalValues[i])
+                printf(
+                    "write16buffer> ERROR, cannot restore the original "
+                    "value\n");
+
+        for (int i = 0; i < 3; ++i)
+            if (valuesWritten[i] != valuesToBeWritten[i + 1])
+                return false;
+        return true;
+    }
+
+    bool testDmaTransfer16Buffer()
+    {
+        SPITransaction spi(spiSlave);
+
+        // faccio una read di 3 registri
+
+        // get original values
+        spi.disableDma();
+        uint8_t originalValues[3] = {0};
+        spi.readRegisters(CTRL_REG4, originalValues, 3);
+        printf("Original values:\n");
+        for(auto i = 0; i < sizeof(originalValues); ++i)
+            printf("%u\n", originalValues[i]);
+
+        spi.enableDma();
+
+        // preparo il buffer per fare una read
+        uint8_t bufferValues[] = {CTRL_REG4 | 0x80, 0, 0, 0};
+        uint16_t buffer[]      = {
+            static_cast<uint16_t>(bufferValues[0]) << 8 | bufferValues[1],
+            static_cast<uint16_t>(bufferValues[2]) << 8 | bufferValues[3]};
+
+        if (!spi.transfer16(buffer, sizeof(buffer)))
+            printf("transfer16buffer> DMA ERROR during transaction\n");
+
+        spi.disableDma();
+
+        // controllo che i valori nei registri non siano cambiati
+        bool valuesHaveChanged = false;
+        {
+            uint8_t check[3] = {0};
+            spi.readRegisters(CTRL_REG4, check, 3);
+            for(int i = 0; i < sizeof(check); ++i)
+            {
+                if(check[i] != originalValues[i])
+                {
+                    printf("transfer16buffer> ERROR, values have changed\n");
+                    valuesHaveChanged = true;
+                }
+            }
+        }
+
+        // se necessario ripristino i registri
+        if(valuesHaveChanged)
+        {
+            spi.writeRegisters(CTRL_REG4, originalValues, sizeof(originalValues));
+            // check again
+            uint8_t check[3] = {0};
+            spi.readRegisters(CTRL_REG4, check, 3);
+            bool valuesHaveChanged = false;
+            for(int i = 0; i < sizeof(check); ++i)
+            {
+                if(check[i] != originalValues[i])
+                {
+                    printf("transfer16buffer> ERROR, values have changed\n");
+                    valuesHaveChanged = true;
+                }
+            }
+        }
+
+        // controllo che i valori letti corrispondano agli originali
+        // TODO
+        printf("buffer after the transaction:\n");
+        for (int i = 0; i < sizeof(buffer) / sizeof(uint16_t); ++i)
+        {
+            printf("%u\n%u\n", static_cast<uint8_t>(buffer[i] >> 8),
+                   static_cast<uint8_t>(buffer[i] & 255));
+        }
+
+        return false;  // TODO
+    }
+
     /**
      *  @brief Constructor.
      *
@@ -171,7 +916,35 @@ public:
 
         {
             SPITransaction spi(spiSlave);
+
+            spi.writeRegister(CTRL_REG4, 3);
+            if (spi.readRegister(CTRL_REG4) != 3)
+                printf("prima write failed\n");
+            else
+                printf("prima write ok\n");
+
+            miosix::Thread::sleep(50);
+
+            spi.writeRegister(CTRL_REG4, 8);
+            if (spi.readRegister(CTRL_REG4) != 8)
+                printf("seconda write failed\n");
+            else
+                printf("seconda write ok\n");
+
+            miosix::Thread::sleep(50);
+
             spi.writeRegister(CTRL_REG4, ctrlReg4Value);
+            // if(!spi.writeRegister(CTRL_REG4, ctrlReg4Value))
+            // {
+            //     printf("write reg ctrl4 failed\n");
+            //     SPITransactionDMAErrors txErr, rxErr;
+            //     spi.getLastErrors(txErr, rxErr);
+            //     printf("%u | %u\n", txErr, rxErr);
+            // }
+            if (spi.readRegister(CTRL_REG4) != ctrlReg4Value)
+                printf("write ufficiale failed\n");
+            else
+                printf("write ufficiale ok\n");
         }
 
         // set full scale to default value +/-2g
