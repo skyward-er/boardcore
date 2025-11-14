@@ -23,6 +23,7 @@
 #include "SPITransaction.h"
 
 #include <interfaces/endianness.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
@@ -195,11 +196,37 @@ bool SPITransaction::write(uint8_t* data, size_t nBytes)
     return true;
 }
 
-void SPITransaction::write16(uint16_t* data, size_t size)
+bool SPITransaction::write16(uint16_t* data, size_t size)
 {
+    if (useDma)
+    {
+        D(assert((size % 2 == 0) &&
+                 "SPITransaction::write16(): size should be a multiple of 2"));
+        volatile uint16_t recvBuf = 0;
+
+        // This function is meant to send the MSB first, then
+        // the LSB. The DMA does the opposite, so i need to
+        // switch the bytes.
+        for (int i = 0; i < size / 2; ++i)
+            data[i] = static_cast<uint8_t>(data[i] >> 8) | (data[i] & 255) << 8;
+
+        // Manually set the rx stream so that we don't need
+        // a buffer for reception
+        DMATransaction rxSetup;
+        defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
+                        (void*)&(spiPtr->DR), (void*)&recvBuf, size, false,
+                        false);
+        (*slave.streamRx)->setup(rxSetup);
+
+        defaultDmaTransmittingSetup(data, size);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
     slave.bus.write16(data, size);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 uint8_t SPITransaction::transfer(uint8_t data)

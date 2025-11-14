@@ -235,8 +235,9 @@ public:
      *
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void write16(uint16_t* data, size_t size);
+    bool write16(uint16_t* data, size_t size);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
