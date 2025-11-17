@@ -188,8 +188,9 @@ public:
      *
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void read16(uint16_t* data, size_t size);
+    bool read16(uint16_t* data, uint16_t size);
 
     /**
      * @brief Writes a single byte to the bus.

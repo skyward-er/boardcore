@@ -130,11 +130,32 @@ bool SPITransaction::read(uint8_t* data, size_t nBytes)
     return true;
 }
 
-void SPITransaction::read16(uint16_t* data, size_t size)
+bool SPITransaction::read16(uint16_t* data, uint16_t nBytes)
 {
+    if (useDma)
+    {
+        D(assert((nBytes % 2 == 0) &&
+                 "SPITransaction::read16(): size should be a multiple of 2"));
+
+        volatile uint16_t sendBuf = 0;
+
+        // Manually set the tx stream so that we don't need
+        // a buffer for transmission
+        DMATransaction txSetup;
+        defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER,
+                        (void*)&sendBuf, (void*)&(spiPtr->DR), nBytes, false,
+                        false);
+        (*slave.streamTx)->setup(txSetup);
+
+        defaultDmaReceivingSetup(data, nBytes);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
-    slave.bus.read16(data, size);
+    slave.bus.read16(data, nBytes);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 void SPITransaction::write(uint8_t data)
