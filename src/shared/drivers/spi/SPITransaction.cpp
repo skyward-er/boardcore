@@ -171,7 +171,7 @@ bool SPITransaction::write32(uint32_t data)
     return true;
 }
 
-bool SPITransaction::write(uint8_t* data, size_t nBytes)
+bool SPITransaction::write(uint8_t* data, uint16_t nBytes)
 {
     if (useDma)
     {
@@ -196,35 +196,36 @@ bool SPITransaction::write(uint8_t* data, size_t nBytes)
     return true;
 }
 
-bool SPITransaction::write16(uint16_t* data, size_t size)
+bool SPITransaction::write16(uint16_t* data, uint16_t nBytes)
 {
     if (useDma)
     {
-        D(assert((size % 2 == 0) &&
+        D(assert((nBytes % 2 == 0) &&
                  "SPITransaction::write16(): size should be a multiple of 2"));
+
         volatile uint16_t recvBuf = 0;
 
         // This function is meant to send the MSB first, then
         // the LSB. The DMA does the opposite, so i need to
         // switch the bytes.
-        for (int i = 0; i < size / 2; ++i)
-            data[i] = static_cast<uint8_t>(data[i] >> 8) | (data[i] & 255) << 8;
+        for (int i = 0; i < nBytes / 2; ++i)
+            data[i] = swapBytes16(data[i]);
 
         // Manually set the rx stream so that we don't need
         // a buffer for reception
         DMATransaction rxSetup;
         defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
-                        (void*)&(spiPtr->DR), (void*)&recvBuf, size, false,
+                        (void*)&(spiPtr->DR), (void*)&recvBuf, nBytes, false,
                         false);
         (*slave.streamRx)->setup(rxSetup);
 
-        defaultDmaTransmittingSetup(data, size);
+        defaultDmaTransmittingSetup(data, nBytes);
 
         return dmaTransfer(dmaTimeout);
     }
 
     slave.bus.select(slave.cs);
-    slave.bus.write16(data, size);
+    slave.bus.write16(data, nBytes);
     slave.bus.deselect(slave.cs);
     return true;
 }
@@ -313,7 +314,7 @@ uint32_t SPITransaction::transfer32(uint32_t data)
     return data;
 }
 
-bool SPITransaction::transfer(uint8_t* data, size_t size)
+bool SPITransaction::transfer(uint8_t* data, uint16_t size)
 {
     if (useDma)
     {
@@ -329,11 +330,27 @@ bool SPITransaction::transfer(uint8_t* data, size_t size)
     return true;
 }
 
-void SPITransaction::transfer16(uint16_t* data, size_t size)
+bool SPITransaction::transfer16(uint16_t* data, uint16_t nBytes)
 {
+    if (useDma)
+    {
+        D(assert(
+            (nBytes % 2 == 0) &&
+            "SPITransaction::transfer16(): size should be a multiple of 2"));
+
+        // This function is meant to send the MSB first, then
+        // the LSB. The DMA does the opposite, so i need to
+        // switch the bytes.
+        for (int i = 0; i < nBytes / 2; ++i)
+            data[i] = swapBytes16(data[i]);
+
+        return transfer(reinterpret_cast<uint8_t*>(data), nBytes);
+    }
+
     slave.bus.select(slave.cs);
-    slave.bus.transfer16(data, size);
+    slave.bus.transfer16(data, nBytes);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 // Read, write and transfer operations with registers
