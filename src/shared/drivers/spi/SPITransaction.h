@@ -128,7 +128,8 @@ public:
     void disableDma();
 
     /**
-     * @brief Enable dma for the upcoming operations, if possible.
+     * @brief Enable dma for the upcoming operations, if possible (the spi
+     * slave must be correctly set up).
      *
      * @return True if the SPISlave is correctly configured with dma streams,
      * false otherwise.
@@ -150,6 +151,7 @@ public:
      * @brief Reads a single byte from the bus.
      *
      * @return Byte read from the bus.
+     * NOTE: this function does not support dma.
      */
     uint8_t read();
 
@@ -196,6 +198,7 @@ public:
      * @brief Writes a single byte to the bus.
      *
      * @param data Byte to write.
+     * NOTE: this function does not support dma.
      */
     void write(uint8_t data);
 
@@ -250,6 +253,7 @@ public:
      *
      * @param data Byte to write.
      * @return Byte read from the bus.
+     * NOTE: this function does not support dma.
      */
     uint8_t transfer(uint8_t data);
 

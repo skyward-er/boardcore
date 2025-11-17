@@ -767,6 +767,16 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
 bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
                                       const std::chrono::nanoseconds timeout)
 {
+    /**
+     * This method does not follow the exact sequence of operations
+     * described by ST to start the spi transaction.
+     * That is why there is a clear distinction between the code
+     * in dmaTransfer() and in this method.
+     *
+     * Nevertheless, this code works and manages to send a byte
+     * without dma before the dma transfer starts.
+     */
+
     // Disable spi
     spiPtr->CR1 &= ~SPI_CR1_SPE;
 
