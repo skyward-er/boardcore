@@ -102,14 +102,16 @@ template <typename T>
 struct TypePrinter
 {
     static constexpr void print(std::string& mappingString,
-                                uint8_t* numberOfTypes, const socrate::reflect::FieldMeta& meta)
+                                uint8_t* numberOfTypes,
+                                const socrate::reflect::FieldMeta& meta)
     {
         static_assert(TypeID<T>::VALUE != TypeIDByte::Unknown,
                       "Unknown TypeID '?'. This type is not supported for "
                       "logging, refer to the error log above for details.");
 
         mappingString += std::string(meta.name);
-        if (meta.unit != nullptr) {
+        if (meta.unit != nullptr)
+        {
             mappingString += " (";
             mappingString += std::string(meta.unit);
             mappingString += ")";
@@ -126,14 +128,15 @@ template <typename T, size_t I>
 struct TypePrinter<T[I]>
 {
     static constexpr void print(std::string& mappingString,
-                                uint8_t* numberOfTypes, const socrate::reflect::FieldMeta& meta)
+                                uint8_t* numberOfTypes,
+                                const socrate::reflect::FieldMeta& meta)
     {
         for (unsigned int i = 0; i < I; i++)
         {
-            mappingString += std::string(meta.name) + "[" + std::to_string(i) + "]";
-            if (meta.unit != nullptr) {
+            mappingString +=
+                std::string(meta.name) + "[" + std::to_string(i) + "]";
+            if (meta.unit != nullptr)
                 mappingString += " (" + std::string(meta.unit) + ")";
-            }
             mappingString += '\0';
             mappingString += TypeID<T>::VALUE;
             mappingString += '\0';
