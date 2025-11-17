@@ -120,7 +120,9 @@ static constexpr uint8_t DAEC_SETTING_POS         = 4;
 static constexpr uint16_t DATASELECT_SETTING_MASK = 0b1111'1111'1011'1111;
 static constexpr uint8_t DATASELECT_SETTING_POS   = 6;
 
-static constexpr Microsecond DELAY_BETWEEN_SPI_TRAN_US = 1_us;
+static constexpr Microsecond DELAY_BETWEEN_SPI_TRAN_US =
+    1_us;  // The real time is 350 ns but nanosleep is too complex to use :-)
+
 }  // namespace AS5047DDefs
 
 }  // namespace Boardcore
