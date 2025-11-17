@@ -237,6 +237,10 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      * @return True if operation successful, false in case of dma errors.
+     *
+     * NOTE: when using DMA, this method needs to swap the least and
+     * the most significant byte. Because of this, it might execute
+     * slower than expected.
      */
     bool write16(uint16_t* data, uint16_t size);
 
@@ -288,6 +292,10 @@ public:
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
      * @return True if operation successful, false in case of dma errors.
+     *
+     * NOTE: when using DMA, this method needs to swap the least and
+     * the most significant byte. Because of this, it might execute
+     * slower than expected.
      */
     bool transfer16(uint16_t* data, uint16_t size);
 
