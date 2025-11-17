@@ -357,4 +357,16 @@ struct ADCData
     }
 };
 
+struct AngleData
+{
+    float angle = 0;
+
+    operator AngleData() const { return AngleData{.angle = angle}; };
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(AngleData, FIELD_DEF(angle));
+    };
+};
+
 }  // namespace Boardcore
