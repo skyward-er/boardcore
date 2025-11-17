@@ -179,8 +179,9 @@ public:
      *
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
+     * @return True if operation successful, false in case of dma errors.
      */
-    void read(uint8_t* data, size_t size);
+    bool read(uint8_t* data, size_t size);
 
     /**
      * @brief Reads multiple half words from the bus

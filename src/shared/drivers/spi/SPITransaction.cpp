@@ -105,11 +105,29 @@ uint32_t SPITransaction::read32()
     return data;
 }
 
-void SPITransaction::read(uint8_t* data, size_t size)
+bool SPITransaction::read(uint8_t* data, size_t nBytes)
 {
+    if (useDma)
+    {
+        volatile uint8_t sendBuf = 0;
+
+        // Manually set the tx stream so that we don't need
+        // a buffer of nBytes for transmission
+        DMATransaction txSetup;
+        defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER,
+                        (void*)&sendBuf, (void*)&(spiPtr->DR), nBytes, false,
+                        false);
+        (*slave.streamTx)->setup(txSetup);
+
+        defaultDmaReceivingSetup((void*)data, nBytes);
+
+        return dmaTransfer(dmaTimeout);
+    }
+
     slave.bus.select(slave.cs);
-    slave.bus.read(data, size);
+    slave.bus.read(data, nBytes);
     slave.bus.deselect(slave.cs);
+    return true;
 }
 
 void SPITransaction::read16(uint16_t* data, size_t size)
