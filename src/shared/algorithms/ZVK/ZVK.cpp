@@ -39,14 +39,13 @@ namespace Boardcore
 
 ZVK::ZVK(const ZVKConfig& config)
     : config(config),
-      onRampQuaternion(SkyQuaternion::eul2quat(config.ON_RAMP_EULERO_ANGLES)),
-      Q(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
-      P(std::make_unique<Eigen::Matrix<float, 24, 24>>()),
-      F(std::make_unique<Eigen::Matrix<float, 24, 24>>())
+      onRampQuaternion(SkyQuaternion::eul2quat(config.ON_RAMP_EULERO_ANGLES))
 {
+
     // Q initialization
     {
         // clang-format-off
+        Q = std::make_unique<Eigen::Matrix<float, 24, 24>>();
         Eigen::Matrix<float, 24, 1> qDiag;
         qDiag << Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
             Eigen::Vector3f::Constant((1e-6f) * (1e-6f)),
@@ -67,10 +66,11 @@ ZVK::ZVK(const ZVKConfig& config)
     // P initialization
     {
         // clang-format-off
+        P = std::make_unique<Eigen::Matrix<float, 24, 24>>();
         Eigen::Matrix<float, 24, 1> p0Diag;
         p0Diag << Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
             Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
-            Eigen::Vector3f::Constant((1e-1f) * (1e-1f)),
+            Eigen::Vector3f::Constant((1e-2f) * (1e-2f)),
             Eigen::Vector3f::Constant((1e-1f) * (1e-1f)),
             Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
             Eigen::Vector3f::Constant((1e-5f) * (1e-5f)),
@@ -83,8 +83,9 @@ ZVK::ZVK(const ZVKConfig& config)
     // F initialization
     {
         // clang-format-off
-        *F                     = Eigen::Matrix<float, 24, 24>::Identity();
-        F->block<3, 3>(0, 3)   = Eigen::Matrix3f::Identity() * config.T;
+        F = std::make_unique<Eigen::Matrix<float, 24, 24>>();
+        *F                   = Eigen::Matrix<float, 24, 24>::Identity();
+        F->block<3, 3>(0, 3) = Eigen::Matrix3f::Identity() * config.T;
         F->block<3, 3>(12, 15) = Eigen::Matrix3f::Identity() * config.T;
         // clang-format-on
     }
@@ -125,7 +126,7 @@ ZVK::ZVK(const ZVKConfig& config)
         Eigen::Matrix<float, 6, 6> tempHZeroVel =
             Eigen::Matrix<float, 6, 6>::Zero();
         tempHZeroVel.block<3, 3>(0, 0) = Eigen::Matrix3f::Identity();
-        tempHZeroVel.block<3, 3>(0, 3) = Eigen::Matrix3f::Identity();
+        tempHZeroVel.block<3, 3>(3, 3) = Eigen::Matrix3f::Identity();
         H_ZERO_VEL                     = tempHZeroVel;
         // clang-format-on
     }
@@ -139,6 +140,41 @@ ZVK::ZVK(const ZVKConfig& config)
         tempHAccGyro.block<3, 3>(0, 3) = Eigen::Matrix3f::Identity();
         H_ACC_GYRO                     = tempHAccGyro;
         //  clang-format-on
+    }
+
+    // K_ZERO_VEL initialization
+    {
+        // clang-format-off
+        Eigen::Matrix<float, 6, 1> rZeroVelDiag;
+        rZeroVelDiag << Eigen::Vector3f::Constant(0.999932116787371),
+                        Eigen::Vector3f::Constant(0.999932136071026);       
+        K_ZERO_VEL = rZeroVelDiag.asDiagonal();
+        // clang-format-on
+    }
+
+
+    // K_ACC initialization
+    {
+        // clang-format-off
+        Eigen::Matrix<float, 3, 1> rAccDiagUp;
+        Eigen::Matrix<float, 3, 1> rAccDiagDown;
+        rAccDiagUp << Eigen::Vector3f::Constant(0.002194644802736);   
+        rAccDiagDown << Eigen::Vector3f::Constant(0.219464480273501);   
+        K_ACC.block<3, 3>(0,0) = rAccDiagUp.asDiagonal();
+        K_ACC.block<3, 3>(3,0) = rAccDiagDown.asDiagonal();
+        // clang-format-on
+    }
+
+    // K_GYRO initialization
+    {
+        // clang-format-off
+        Eigen::Matrix<float, 3, 1> rGyroDiagUp;
+        Eigen::Matrix<float, 3, 1> rGyroDiagDown;
+        rGyroDiagUp << Eigen::Vector3f::Constant(1.970174876641249e-04);   
+        rGyroDiagDown << Eigen::Vector3f::Constant(0.019701748766387);   
+        K_GYRO.block<3, 3>(0,0) = rGyroDiagUp.asDiagonal();
+        K_GYRO.block<3, 3>(3,0) = rGyroDiagDown.asDiagonal();
+        // clang-format-on
     }
 
     // A_ROT initialization
@@ -157,6 +193,7 @@ ZVK::ZVK(const ZVKConfig& config)
             -q1 * q1 - q2 * q2 + q3 * q3 + q4 * q4;
         // clang-format-on
     }
+
 }
 
 void ZVK::predict()
@@ -197,27 +234,17 @@ void ZVK::predict()
 
 void ZVK::correctZeroVel()
 {
-    const Eigen::Vector3f vel          = x.block<3, 1>(IDX_VEL, 0);
-    const Eigen::Vector3f eulAng       = x.block<3, 1>(IDX_EUL_ANG, 0);
-    const Eigen::Vector3f onRampVel    = Eigen::Vector3f::Zero();
-    const Eigen::Vector3f onRampEulAng = Eigen::Vector3f::Zero();
+    const Eigen::Vector3f vel          = x.block<3, 1>(IDX_VEL, 0); 
+    const Eigen::Vector3f eulAng       = x.block<3, 1>(IDX_EUL_ANG, 0); 
+    const Eigen::Vector3f onRampVel    = Eigen::Vector3f::Zero(); 
+    const Eigen::Vector3f onRampEulAng = Eigen::Vector3f::Zero(); 
 
     // Extract subP used in kalman gain computation
-    Eigen::Matrix<float, 6, 6> subP;
-    subP.block<3, 3>(0, 0) = P->block<3, 3>(0, 0);
-    subP.block<3, 3>(0, 3) = P->block<3, 3>(0, 12);
-    subP.block<3, 3>(3, 0) = P->block<3, 3>(12, 0);
-    subP.block<3, 3>(3, 3) = P->block<3, 3>(12, 12);
-
-    // Compute matrix S needed for kalman gain computation
-    Eigen::Matrix<float, 6, 6> S =
-        H_ZERO_VEL * subP * H_ZERO_VEL.transpose() + R_ZERO_VEL;
-
-    // Invert S
-    S = S.completeOrthogonalDecomposition().pseudoInverse();
-
-    // Compute kalman gain
-    Eigen::Matrix<float, 6, 6> K = (subP * H_ZERO_VEL.transpose() * S);
+    Eigen::Matrix<float, 6, 6> subP; 
+    subP.block<3, 3>(0, 0) = P->block<3, 3>(0, 0); 
+    subP.block<3, 3>(0, 3) = P->block<3, 3>(0, 12); 
+    subP.block<3, 3>(3, 0) = P->block<3, 3>(12, 0); 
+    subP.block<3, 3>(3, 3) = P->block<3, 3>(12, 12); 
 
     // Compute error
     Eigen::Matrix<float, 6, 1> error = Eigen::Matrix<float, 6, 1>::Zero();
@@ -225,18 +252,19 @@ void ZVK::correctZeroVel()
     error.block<3, 1>(3, 0)          = onRampEulAng - eulAng;
 
     // Compute update
-    Eigen::Matrix<float, 6, 1> update = K * error;
+    Eigen::Matrix<float, 6, 1> update = K_ZERO_VEL * error;
 
     // Update velocity and euler angles in state
     x.block<3, 1>(IDX_VEL, 0) += update.block<3, 1>(0, 0);
     x.block<3, 1>(IDX_EUL_ANG, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ZERO_VEL) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K_ZERO_VEL * H_ZERO_VEL) * subP;
     P->block<3, 3>(0, 0)   = subP.block<3, 3>(0, 0);
     P->block<3, 3>(0, 12)  = subP.block<3, 3>(0, 3);
     P->block<3, 3>(12, 0)  = subP.block<3, 3>(3, 0);
     P->block<3, 3>(12, 12) = subP.block<3, 3>(3, 3);
+
 }
 
 void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
@@ -247,16 +275,6 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     // Extract subP used in kalman gain computation
     Eigen::Matrix<float, 6, 6> subP = P->block<6, 6>(3, 3);
 
-    // Compute matrix S needed for kalman gain computation
-    Eigen::Matrix<float, 3, 3> S =
-        H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_ACC;
-
-    // Invert S
-    S = S.completeOrthogonalDecomposition().pseudoInverse();
-
-    // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
-
     // Accelerometer correction
     Eigen::Vector3f correctedAcc =
         accMeas - A_ROT * gravityNed;  // In NED frame without gravity
@@ -266,15 +284,16 @@ void ZVK::correctAcc0(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 3, 1> error = correctedAcc - biasCorrectedAcc;
 
     // Compute update
-    Eigen::Matrix<float, 6, 1> update = K * error;
+    Eigen::Matrix<float, 6, 1> update = K_ACC * error;
 
     // Update acceleration and bias in state
-    x.block<3, 1>(IDX_ACC, 0) += update.block<3, 1>(0, 0);
+    x.block<3, 1>(IDX_ACC, 0)        += update.block<3, 1>(0, 0);
     x.block<3, 1>(IDX_BIAS_ACC_0, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K_ACC * H_ACC_GYRO) * subP;
     P->block<6, 6>(3, 3) = subP;
+
 }
 
 void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
@@ -289,16 +308,6 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
     subP.block<3, 3>(3, 0) = P->block<3, 3>(9, 3);
     subP.block<3, 3>(3, 3) = P->block<3, 3>(9, 9);
 
-    // Compute matrix S needed for kalman gain computation
-    Eigen::Matrix<float, 3, 3> S =
-        H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_ACC;
-
-    // Invert S
-    S = S.completeOrthogonalDecomposition().pseudoInverse();
-
-    // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
-
     // Accelerometer correction
     Eigen::Vector3f correctedAcc =
         accMeas - A_ROT * gravityNed;  // In NED frame without gravity
@@ -308,18 +317,19 @@ void ZVK::correctAcc1(const Eigen::Vector3f& accMeas)
     Eigen::Matrix<float, 3, 1> error = correctedAcc - biasCorrectedAcc;
 
     // Compute update
-    Eigen::Matrix<float, 6, 1> update = K * error;
+    Eigen::Matrix<float, 6, 1> update = K_ACC * error;
 
     // Update acceleration and bias in state
     x.block<3, 1>(IDX_ACC, 0) += update.block<3, 1>(0, 0);
     x.block<3, 1>(IDX_BIAS_ACC_1, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K_ACC * H_ACC_GYRO) * subP;
     P->block<3, 3>(3, 3) = subP.block<3, 3>(0, 0);
     P->block<3, 3>(3, 9) = subP.block<3, 3>(0, 3);
     P->block<3, 3>(9, 3) = subP.block<3, 3>(3, 0);
     P->block<3, 3>(9, 9) = subP.block<3, 3>(3, 3);
+
 }
 
 void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
@@ -330,16 +340,6 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
     // Extract subP used in kalman gain computation
     Eigen::Matrix<float, 6, 6> subP = P->block<6, 6>(15, 15);
 
-    // Compute matrix S needed for kalman gain computation
-    Eigen::Matrix<float, 3, 3> S =
-        H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_GYRO;
-
-    // Invert S
-    S = S.completeOrthogonalDecomposition().pseudoInverse();
-
-    // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
-
     // Gyroscpe correction
     Eigen::Vector3f estimatedAngVel = angVel + biasGyro0;
 
@@ -347,15 +347,16 @@ void ZVK::correctGyro0(const Eigen::Vector3f& angVelMeas)
     Eigen::Matrix<float, 3, 1> error = angVelMeas - estimatedAngVel;
 
     // Compute update
-    Eigen::Matrix<float, 6, 1> update = K * error;
+    Eigen::Matrix<float, 6, 1> update = K_GYRO * error;
 
     // Update acceleration and bias in state
     x.block<3, 1>(IDX_VEL_ANG, 0) += update.block<3, 1>(0, 0);
     x.block<3, 1>(IDX_BIAS_GYRO_0, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K_GYRO * H_ACC_GYRO) * subP;
     P->block<6, 6>(15, 15) = subP;
+
 }
 
 void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
@@ -370,16 +371,6 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
     subP.block<3, 3>(3, 0) = P->block<3, 3>(21, 15);
     subP.block<3, 3>(3, 3) = P->block<3, 3>(21, 21);
 
-    // Compute matrix S needed for kalman gain computation
-    Eigen::Matrix<float, 3, 3> S =
-        H_ACC_GYRO * subP * H_ACC_GYRO.transpose() + R_GYRO;
-
-    // Invert S
-    S = S.completeOrthogonalDecomposition().pseudoInverse();
-
-    // Compute kalman gain
-    Eigen::Matrix<float, 6, 3> K = (subP * H_ACC_GYRO.transpose() * S);
-
     // Gyroscpe correction
     Eigen::Vector3f estimatedAngVel = angVel + biasGyro1;
 
@@ -387,18 +378,19 @@ void ZVK::correctGyro1(const Eigen::Vector3f& angVelMeas)
     Eigen::Matrix<float, 3, 1> error = angVelMeas - estimatedAngVel;
 
     // Compute update
-    Eigen::Matrix<float, 6, 1> update = K * error;
+    Eigen::Matrix<float, 6, 1> update = K_GYRO * error;
 
     // Update acceleration and bias in state
     x.block<3, 1>(IDX_VEL_ANG, 0) += update.block<3, 1>(0, 0);
     x.block<3, 1>(IDX_BIAS_GYRO_1, 0) += update.block<3, 1>(3, 0);
 
     // Update P
-    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K * H_ACC_GYRO) * subP;
+    subP = (Eigen::Matrix<float, 6, 6>::Identity() - K_GYRO * H_ACC_GYRO) * subP;
     P->block<3, 3>(15, 15) = subP.block<3, 3>(0, 0);
     P->block<3, 3>(15, 21) = subP.block<3, 3>(0, 3);
     P->block<3, 3>(21, 15) = subP.block<3, 3>(3, 0);
     P->block<3, 3>(21, 21) = subP.block<3, 3>(3, 3);
+
 }
 
 void ZVK::correctAcc0(const AccelerometerData& acceleration)

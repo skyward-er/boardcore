@@ -170,7 +170,6 @@ private:
     std::unique_ptr<Eigen::Matrix<float, 24, 24>> F;
 
     // Measurement noise covariance matrices
-
     Eigen::Matrix<float, 6, 6> R_ZERO_VEL;
 
     Eigen::Matrix<float, 3, 3> R_ACC;
@@ -182,6 +181,15 @@ private:
 
     // Acceleration measurement matrix
     Eigen::Matrix<float, 3, 6> H_ACC_GYRO;
+
+    // Fake velocity gain matrix 
+    Eigen::Matrix<float, 6, 6> K_ZERO_VEL;
+
+    // Acceleration gain matrix 
+    Eigen::Matrix<float, 6, 3> K_ACC;
+
+    // Gyroscope gain matrix 
+    Eigen::Matrix<float, 6, 3> K_GYRO;
 
     // Rotational matrix from body frame to inertial frame
     Eigen::Matrix<float, 3, 3> A_ROT;
