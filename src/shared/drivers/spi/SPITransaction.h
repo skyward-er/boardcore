@@ -53,6 +53,9 @@ enum class SPITransactionDMAErrors : uint8_t
  * to create a new instance of this class for every transaction, as the bus is
  * configured upon instantiation.
  *
+ * DMA will be automatically used if the slave is configured properly. It can
+ * be enabled/disabled during the transaction.
+ *
  * @warning DO NOT store an instance of this class for later use, as the bus may
  * be incorrectly configured by then.
  *
@@ -81,10 +84,7 @@ private:
      */
     static constexpr std::chrono::nanoseconds defaultTimeout =
         std::chrono::milliseconds(250);
-    // static constexpr int64_t spiDefaultTimeoutNs =
-    //     std::chrono::duration_cast<std::chrono::nanoseconds>(
-    //         std::chrono::milliseconds(250))
-    //         .count();
+
 public:
     /**
      * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -391,7 +391,6 @@ public:
 private:
     const SPISlave& slave;
     bool useDma;  ///< True if the DMA must be used during the transaction
-    // SPIType* const spiPtr;
     SPI_TypeDef* const spiPtr;
     std::chrono::nanoseconds dmaTimeout;
 
