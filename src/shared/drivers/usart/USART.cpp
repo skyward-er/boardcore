@@ -322,7 +322,7 @@ void USART::IRQhandleInterrupt()
     // Set error flags from status register
     framingError = status & USART_SR_FE;
     idle         = status & USART_SR_IDLE;
-    error &= framingError || (status & USART_SR_ORE);
+    error        = error || framingError || (status & USART_SR_ORE);
 
     // Always read data, since this clears interrupt flags
     c = usart->DR;
@@ -334,7 +334,7 @@ void USART::IRQhandleInterrupt()
     // Set error flags from status register
     framingError = status & (USART_ISR_FE | USART_ISR_NE);
     idle         = status & USART_ISR_IDLE;
-    error &= framingError || (status & USART_ISR_ORE);
+    error        = error || framingError || (status & USART_ISR_ORE);
 
     // Clears interrupt flags
     usart->ICR =
@@ -345,7 +345,8 @@ void USART::IRQhandleInterrupt()
 
     // Insert data into buffer if no framing error occurred
     if (!framingError && received)
-        error &= rxQueue.tryPut(c);
+        if (!rxQueue.tryPut(c))
+            error = true;
 
     // Wake up thread if communication finished (idle state), buffer reached
     // half of his capacity or error occurred
