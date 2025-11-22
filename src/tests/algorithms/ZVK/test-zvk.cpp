@@ -1,5 +1,5 @@
-/* Copyright (c) 2025 Skyward Experimental Rocketry
- * Author: Giovanni Annaloro
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,15 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-#include <Eigen/Core>
-#include <Eigen/Dense>
+#include <algorithms/ZVK/ZVK.h>
+#include <logger/Logger.h>
+#include <miosix.h>
 
-namespace Boardcore
-{
-struct ZVKConfig
-{
-    float T;                                //[s] Sample period
-    float SIGMA_ACC;                        //[m/s^2] Accelerometer noise std
-    float SIGMA_BIAS_ACC;                   //[m/s^2] Accelerometer bias std
-    float SIGMA_GYRO;                       //[rad/s] Gyroscope noise std
-    float SIGMA_BIAS_GYRO;                  //[rad/s] Gyroscope bias std
-    Eigen::Vector4f ON_RAMP_QUATERNION;  //[deg]
-};
+#include <iostream>
 
-}  // namespace Boardcore
+using namespace miosix;
+using namespace Boardcore;
+using namespace Eigen;
+
+int main() { ZVK* zvk = new ZVK({}); }
+

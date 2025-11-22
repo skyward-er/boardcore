@@ -39,7 +39,7 @@ namespace Boardcore
 
 ZVK::ZVK(const ZVKConfig& config)
     : config(config),
-      onRampQuaternion(SkyQuaternion::eul2quat(config.ON_RAMP_EULERO_ANGLES))
+      onRampQuaternion(config.ON_RAMP_QUATERNION)
 {
 
     // Q initialization
