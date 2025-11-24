@@ -44,4 +44,19 @@ struct ServoData
     }
 };
 
+struct ServoWinchData
+{
+    uint64_t timestamp;
+    uint8_t timer;
+    uint8_t channel;
+    float velocity;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(ServoWinchData,
+                          FIELD_DEF(timestamp) FIELD_DEF(timer)
+                              FIELD_DEF(channel) FIELD_DEF(velocity));
+    }
+};
+
 }  // namespace Boardcore
