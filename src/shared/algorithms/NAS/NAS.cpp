@@ -1,4 +1,4 @@
-/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2025 Skyward Experimental Rocketry
  * Authors: Alessandro Del Duca, Luca Conterio, Marco Cella
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -172,7 +172,6 @@ void NAS::correctGPS(const Vector4f& gps)
     // GPS
     H_gps = Matrix<float, 4, 6>::Zero();
 
-    //
     float angle_rad = (reference.refLatitude + x(0) / Constants::gpsLatConst) *
                       Constants::DEGREES_TO_RADIANS;
 
@@ -371,11 +370,11 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
 
     // Derivative of Rotation vector from NED to Body frame wrt states
     Matrix<float, 12, 3> dRot     = Matrix<float, 12, 3>::Zero();
-    dRot.block<3, 3>(IDX_QUAT, 0) = dRot_dQuat * dQuat;
+    dRot.block<3, 3>(IDX_QUAT, 0) = dQuat.transpose() * dRot_dQuat.transpose();
 
     // Derivative of velocity wrt states
     Matrix<float, 3, 12> dVel    = Matrix<float, 3, 12>::Zero();
-    dVel.block<3, 3>(IDX_VEL, 0) = Matrix3f::Identity();
+    dVel.block<3, 3>(0, IDX_VEL) = Matrix3f::Identity();
 
     // Derivative of Velocity in Body frame wrt states
     Vector<float, 12> dVbody =
@@ -458,7 +457,9 @@ void NAS::correctPitot(const float staticPressure, const float dynamicPressure)
     x = x + correction;
 
     // Update covariance matrix
-    P = (Matrix<float, 12, 12>::Identity() - K * H) * P;
+    Matrix<float, 12, 12> P_tmp =
+        (Matrix<float, 12, 12>::Identity() - K * H) * P;
+    P.block<6, 6>(IDX_POS, IDX_POS) = P_tmp.block<6, 6>(IDX_POS, IDX_POS);
 }
 
 NASState NAS::getState() const
