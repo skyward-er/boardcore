@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2026 Skyward Experimental Rocketry
+ * Authors: Raul Radu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,42 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <actuators/Servo/ServoWinch.h>
+#include <miosix.h>
+#include <scheduler/TaskScheduler.h>
+#include <utils/ClockUtils.h>
 
-#include <cstdint>
-#include <ostream>
-#include <reflect.hpp>
+#include <iostream>
 
-namespace Boardcore
+using namespace Boardcore;
+using namespace miosix;
+
+// Timer 4 CH2
+GpioPin pin1(GPIOD_BASE, 13);
+
+ServoWinch s1(TIM4, TimerUtils::Channel::CHANNEL_2);
+
+int main()
 {
+    pin1.mode(Mode::ALTERNATE);
+    pin1.alternateFunction(2);
 
-struct ServoData
-{
-    uint64_t timestamp;
-    uint8_t timer;
-    uint8_t channel;
-    float position;
+    // Enable the timers
+    s1.enable();
 
-    static constexpr auto reflect()
+    // Control the fourth servo manually
+    float percentage;
+
+    printf("Please enter a percentage for the servo speed ");
+    printf("or anything else to exit: ");
+
+    while (std::cin >> percentage)
     {
-        return STRUCT_DEF(ServoData,
-                          FIELD_DEF(timestamp) FIELD_DEF(timer)
-                              FIELD_DEF(channel) FIELD_DEF(position));
+        s1.setVelocity(percentage / 100);
+
+        printf("Velocity set to: %.2f%%\n", percentage);
+
+        printf("Please enter a percentage for the servo speed ");
+        printf("or anything else to exit: ");
     }
-};
-
-struct ServoWinchData
-{
-    uint64_t timestamp;
-    uint8_t timer;
-    uint8_t channel;
-    float velocity;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(ServoWinchData,
-                          FIELD_DEF(timestamp) FIELD_DEF(timer)
-                              FIELD_DEF(channel) FIELD_DEF(velocity));
-    }
-};
-
-}  // namespace Boardcore
+}
