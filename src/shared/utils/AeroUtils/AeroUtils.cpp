@@ -73,9 +73,9 @@ float verticalSpeed(float p, float dpDt, float pRef, float tRef)
 
 Vector2f geodetic2NED(const Vector2f& target, const Vector2f& origin)
 {
-    float mPerDegLat = 111132.95225;
+    float mPerDegLat = gpsLatConst;
     float mPerDegLon =
-        fabsf(111412.87733 * cosf(target[0] * Constants::DEGREES_TO_RADIANS));
+        fabsf(gpsLonConst * cosf(target[0] * Constants::DEGREES_TO_RADIANS));
 
     return {
         mPerDegLat * (target[0] - origin[0]),

@@ -38,7 +38,10 @@ static constexpr float g = 9.80665f;  // [m^s^2]
 static constexpr float TROPOSPHERE_HEIGHT = 11000.f;  // Troposphere height [m]
 static constexpr float a = 0.0065f;  // Troposphere temperature gradient [deg/m]
 static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
-static constexpr float n = g / (R * a);
+// FIXME: in matlab sometimes they an approximation computed without using the
+// constats below, uncomment at your discretion.
+// static constexpr float n = 5.255933;
+static constexpr float n    = g / (R * a);
 static constexpr float nInv = (R * a) / g;
 
 static constexpr float CO    = 340.3;  // Sound speed at ground altitude [m/s]
@@ -52,6 +55,9 @@ static constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
 
 static constexpr float gpsLatConst =
     111132.95225;  ///< Constants used in GPS correction(lat)
+// FIXME: on matlab they use the same constant for lon, uncomment to
+// replicate exactly.
+// static constexpr float gpsLonConst = 111132.95225;
 static constexpr float gpsLonConst =
     111412.87733;  ///< Constants used in GPS correction(lon)
 

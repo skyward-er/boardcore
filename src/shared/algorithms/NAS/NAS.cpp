@@ -50,6 +50,11 @@ NAS::NAS(const NASConfig& config) : config(config)
             (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * Matrix3f::Identity();
         // clang-format on
 
+        // FIXME: remove SIGMA_POS and SIGMA_VEL square if matlab uses SIGMA as
+        // variance (as in EuRoC 2025). Preferably change matlab standard to use
+        // std dev.
+        // Q_lin << config.SIGMA_POS * Matrix3f::Identity(), MatrixXf::Zero(3,
+        // 3), MatrixXf::Zero(3, 3), config.SIGMA_VEL * Matrix3f::Identity();
         Q_lin << config.SIGMA_POS * config.SIGMA_POS * Matrix3f::Identity(),
             MatrixXf::Zero(3, 3),
             // cppcheck-suppress constStatement
@@ -140,6 +145,10 @@ void NAS::correctBaro(const float pressure)
     float d        = x(2);
     float altitude = -d;
 
+    // FIXME: on matlab the reference temperature is directly used, without
+    // conditioning with altitude, here we are more precise, uncommment if you
+    // want to replicate matlab exactly
+    // float temp = reference.refTemperature;
     float temp = Aeroutils::relTemperature(altitude, reference.refTemperature);
 
     Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
