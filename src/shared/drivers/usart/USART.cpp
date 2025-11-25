@@ -337,8 +337,8 @@ void USART::IRQhandleInterrupt()
     error        = error || framingError || (status & USART_ISR_ORE);
 
     // Clears interrupt flags
-    usart->ICR =
-        USART_ICR_IDLECF | USART_ICR_FECF | USART_ICR_CMCF | USART_ICR_ORECF;
+    usart->ICR = USART_ICR_IDLECF | USART_ICR_FECF | USART_ICR_CMCF |
+                 USART_ICR_ORECF | USART_ICR_NCF;
     // Always read data, since this clears interrupt flags
     c = usart->RDR;
 #endif
