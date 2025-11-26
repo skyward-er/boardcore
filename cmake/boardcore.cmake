@@ -38,7 +38,8 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
 
     # Algorithms
-    ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA_Algorithm0.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA_Algorithm0_data.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp

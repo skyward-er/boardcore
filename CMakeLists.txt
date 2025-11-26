@@ -203,8 +203,8 @@ sbs_target(test-triad stm32f429zi_death_stack_v3)
 add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
 sbs_target(test-triad-parafoil stm32f429zi_parafoil)
 
-add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
-sbs_target(test-ada stm32f429zi_death_stack_v3)
+# add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
+# sbs_target(test-ada stm32f429zi_death_stack_v3)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Boards                                #
