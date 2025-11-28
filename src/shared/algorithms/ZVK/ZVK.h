@@ -1,5 +1,5 @@
 /* Copyright (c) 2025 Skyward Experimental Rocketry
- * Author: Giovanni Annaloro
+ * Author: Giovanni Annaloro, Alessandro Cartocci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -181,15 +181,6 @@ private:
 
     // Acceleration measurement matrix
     Eigen::Matrix<float, 3, 6> H_ACC_GYRO;
-
-    // Fake velocity gain matrix 
-    Eigen::Matrix<float, 6, 6> K_ZERO_VEL;
-
-    // Acceleration gain matrix 
-    Eigen::Matrix<float, 6, 3> K_ACC;
-
-    // Gyroscope gain matrix 
-    Eigen::Matrix<float, 6, 3> K_GYRO;
 
     // Rotational matrix from body frame to inertial frame
     Eigen::Matrix<float, 3, 3> A_ROT;
