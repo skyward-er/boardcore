@@ -26,6 +26,15 @@
 
 namespace Boardcore
 {
+
+PCA9685::PCA9685(I2C& i2c, I2CDriver::I2CSlaveConfig i2cConfig,
+                 uint8_t prescale, PCA9685::OutputType outputType,
+                 bool inverted, bool externalClock)
+    : i2c(i2c), i2cConfig(i2cConfig), prescale(prescale),
+      outputType(outputType), inverted(inverted), externalClock(externalClock)
+{
+}
+
 bool PCA9685::init()
 {
     if (isInitialized)
@@ -42,47 +51,62 @@ bool PCA9685::init()
     }
 
     uint8_t mode1;
+    // read current MODE1 register value
     if (!i2c.readRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to read MODE1 register");
         lastError = BUS_FAULT;
         return false;
     }
-    mode1 |= Mode1BitMask::SLEEP |
-             Mode1BitMask::ALLCALL;  // Set Sleep and ALLCALL bits
-    // Setting the prescale value. Returns false if something goes wrong
+    mode1 |= Mode1BitMask::SLEEP | Mode1BitMask::ALLCALL;
+    // Set Sleep and ALLCALL bits
     if (!i2c.writeRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to write MODE1 register");
         lastError = BUS_FAULT;
         return false;
-    }  // Set Sleep and ALLCALL bits
+    }
 
     // Wait for oscillator to stabilize
     miosix::Thread::sleep(1);
 
+    // Set prescale value
     if (!i2c.writeRegister(i2cConfig, Register::PRE_SCALE, prescale))
     {
+        LOG_ERR(logger, "Failed to write PRE_SCALE register");
         lastError = BUS_FAULT;
         return false;
-    }  // Set prescale value
-    mode1 &= ~Mode1BitMask::SLEEP;  // Clear Sleep bit
+    }
+
+    if (externalClock)
+        // set EXTCLK bit, if using an external clock we don't need to clear
+        mode1 |= Mode1BitMask::EXTCLK;
+    else
+        // clear Sleep bit to start the internal oscillator
+        mode1 &= ~Mode1BitMask::SLEEP;
+
     if (!i2c.writeRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to write MODE1 register");
         lastError = BUS_FAULT;
         return false;
-    }  // Clear Sleep bit to start the internal oscillator
+    }
 
     // Wait for oscillator to stabilize
     miosix::Thread::sleep(1);
 
     isInitialized = true;
+
     return true;
 }
 
 bool PCA9685::setAllCall(bool enable)
 {
     uint8_t mode1;
+    // read current MODE1 register value
     if (!i2c.readRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to read MODE1 register");
         lastError = BUS_FAULT;
         return false;
     }
@@ -91,8 +115,10 @@ bool PCA9685::setAllCall(bool enable)
     else
         mode1 &= ~Mode1BitMask::ALLCALL;  // Clear ALLCALL bit
 
+    // write updated MODE1 register value
     if (!i2c.writeRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to write MODE1 register");
         lastError = BUS_FAULT;
         return false;
     }
@@ -103,28 +129,37 @@ bool PCA9685::setAllCall(bool enable)
 bool PCA9685::setPWMFrequency(uint8_t prescale)
 {
     uint8_t mode1;
+    // read current MODE1 register value
     if (!i2c.readRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to read MODE1 register");
         lastError = BUS_FAULT;
         return false;
     }
-    mode1 |= Mode1BitMask::SLEEP;  // Set Sleep bit
+
+    // set Sleep bit
+    mode1 |= Mode1BitMask::SLEEP;
     if (!i2c.writeRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to write MODE1 register");
         lastError = BUS_FAULT;
         return false;
-    }  // Enter Sleep
+    }
+    // set prescale value
     if (!i2c.writeRegister(i2cConfig, Register::PRE_SCALE, prescale))
     {
+        LOG_ERR(logger, "Failed to write PRE_SCALE register");
         lastError = BUS_FAULT;
         return false;
-    }  // Set prescale value
-    mode1 &= ~Mode1BitMask::SLEEP;  // Clear Sleep bit
+    }
+    // clear Sleep bit
+    mode1 &= ~Mode1BitMask::SLEEP;
     if (!i2c.writeRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to write MODE1 register");
         lastError = BUS_FAULT;
         return false;
-    }  // Exit from Sleep
+    }
     return true;
 }
 
@@ -138,9 +173,10 @@ bool PCA9685::softwareReset()
     const uint8_t swrst = 0x06;
     if (!i2c.write(generalCall, &swrst, 1))
     {
+        LOG_ERR(logger, "Failed to send software reset command");
         lastError = BUS_FAULT;
         return false;
-    }  // Software reset
+    }
 
     // Wait for the reset to complete
     // According to the datasheet, the oscillator needs 500us to stabilize
@@ -155,6 +191,7 @@ bool PCA9685::setOutputState(bool totem_pole, bool invert)
     uint8_t mode2;
     if (!i2c.readRegister(i2cConfig, Register::MODE2, mode2))
     {
+        LOG_ERR(logger, "Failed to read MODE2 register");
         lastError = BUS_FAULT;
         return false;
     }
@@ -170,6 +207,7 @@ bool PCA9685::setOutputState(bool totem_pole, bool invert)
 
     if (!i2c.writeRegister(i2cConfig, Register::MODE2, mode2))
     {
+        LOG_ERR(logger, "Failed to write MODE2 register");
         lastError = BUS_FAULT;
         return false;
     }
@@ -182,6 +220,7 @@ bool PCA9685::enableAutoIncrement(bool enable)
     uint8_t mode1;
     if (!i2c.readRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to read MODE1 register");
         lastError = BUS_FAULT;
         return false;
     }
@@ -192,56 +231,56 @@ bool PCA9685::enableAutoIncrement(bool enable)
 
     if (!i2c.writeRegister(i2cConfig, Register::MODE1, mode1))
     {
+        LOG_ERR(logger, "Failed to write MODE1 register");
         lastError = BUS_FAULT;
         return false;
     }
     return true;
 }
 
-bool PCA9685::setPWM(uint8_t channel, uint16_t on, uint16_t off)
+bool PCA9685::setPWM(PCA9685::Channels channel, uint16_t on, uint16_t off)
 {
-    if (channel > 15 || on > 4095 || off > 4095)
+    if (on == off && on != 0)
     {
-        lastError = COMMAND_FAILED;
-        return false;
-    }  // Invalid channel and/or on/off values
-
-    if (on == off)
-    {
+        LOG_ERR(logger,
+                "Invalid PWM values: on and off cannot be the same value");
         lastError = COMMAND_FAILED;
         return false;
     }  // The LEDn_ON and LEDn_OFF count registers should never be programmed
        // with the same values.
 
-    uint8_t ledn_on_l  = Register::CHANNEL_BASE + 4 * channel;
-    uint8_t ledn_on_h  = ledn_on_l + 1;
-    uint8_t ledn_off_l = ledn_on_l + 2;
-    uint8_t ledn_off_h = ledn_on_l + 3;
+    uint8_t led_n_on_l =
+        Register::CHANNEL_BASE + 4 * static_cast<uint8_t>(channel);
+    uint8_t led_n_on_h  = led_n_on_l + 1;
+    uint8_t led_n_off_l = led_n_on_l + 2;
+    uint8_t led_n_off_h = led_n_on_l + 3;
 
     // Since we're working with 12-bit values, mask the upper bits
-    uint8_t on_8_lsb  = on & 0xFF;
-    uint8_t on_3_msb  = (on >> 8) & 0x0F;
+
+    // Mask the lower 8 bits
+    uint8_t on_8_lsb = on & 0xFF;
+    // Mask the upper 4 bits by shifting right 8 bits and masking with 0x0F
+    uint8_t on_3_msb = (on >> 8) & 0x0F;
+
     uint8_t off_8_lsb = off & 0xFF;
     uint8_t off_3_msb = (off >> 8) & 0x0F;
 
-    if (!i2c.writeRegister(i2cConfig, ledn_on_l, on_8_lsb) &&
-        !i2c.writeRegister(i2cConfig, ledn_on_h, on_3_msb) &&
-        !i2c.writeRegister(i2cConfig, ledn_off_l, off_8_lsb) &&
-        !i2c.writeRegister(i2cConfig, ledn_off_h, off_3_msb))
+    // Write to ALL_LED registers
+    if (!i2c.writeRegister(i2cConfig, led_n_on_l, on_8_lsb) ||
+        !i2c.writeRegister(i2cConfig, led_n_on_h, on_3_msb) ||
+        !i2c.writeRegister(i2cConfig, led_n_off_l, off_8_lsb) ||
+        !i2c.writeRegister(i2cConfig, led_n_off_h, off_3_msb))
     {
+        LOG_ERR(logger, "Failed to write LED registers for channel {}",
+                static_cast<uint8_t>(channel));
         lastError = BUS_FAULT;
         return false;
     }
+    return true;
 }
 
-bool PCA9685::setDutyCycle(uint8_t channel, float dutyCycle)
+bool PCA9685::setDutyCycle(PCA9685::Channels channel, float dutyCycle)
 {
-    if (channel > 15)
-    {
-        lastError = COMMAND_FAILED;
-        return false;
-    }  // Invalid channels
-
     if (dutyCycle < 0.0f)
         dutyCycle = 0.0f;
     else if (dutyCycle > 100.0f)
@@ -251,33 +290,37 @@ bool PCA9685::setDutyCycle(uint8_t channel, float dutyCycle)
     return setPWM(channel, 0, off);
 }
 
-bool PCA9685::setServoAngle(uint8_t channel, float angle)
-{
-    // TODO
-}
 bool PCA9685::setAllPWM(uint16_t on, uint16_t off)
 {
-    if (on > 4095 || off > 4095 || on == off)
+    if (on > 4095 || off > 4095 || (on == off && on != 0))
     {
+        LOG_ERR(logger,
+                "Invalid PWM values: on and off cannot be the same value");
         lastError = COMMAND_FAILED;
         return false;
     }  // Invalid on/off values
     // The LEDn_ON and LEDn_OFF count registers should never be programmed
     // with the same values.
     // Since we're working with 12-bit values, mask the upper bits
-    uint8_t on_8_lsb  = on & 0xFF;
+
+    // Mask the lower 8 bits
+    uint8_t on_8_lsb = on & 0xFF;
+    // Mask the upper 4 bits by shifting right 8 bits and masking with 0x0F
     uint8_t on_3_msb  = (on >> 8) & 0x0F;
     uint8_t off_8_lsb = off & 0xFF;
     uint8_t off_3_msb = (off >> 8) & 0x0F;
 
-    if (!i2c.writeRegister(i2cConfig, Register::ALL_LED_ON_L, on_8_lsb) &&
-        !i2c.writeRegister(i2cConfig, Register::ALL_LED_ON_H, on_3_msb) &&
-        !i2c.writeRegister(i2cConfig, Register::ALL_LED_OFF_L, off_8_lsb) &&
+    // Write to ALL_LED registers
+    if (!i2c.writeRegister(i2cConfig, Register::ALL_LED_ON_L, on_8_lsb) ||
+        !i2c.writeRegister(i2cConfig, Register::ALL_LED_ON_H, on_3_msb) ||
+        !i2c.writeRegister(i2cConfig, Register::ALL_LED_OFF_L, off_8_lsb) ||
         !i2c.writeRegister(i2cConfig, Register::ALL_LED_OFF_H, off_3_msb))
     {
+        LOG_ERR(logger, "Failed to write ALL_LED registers");
         lastError = BUS_FAULT;
         return false;
     }
+    return true;
 }
 bool PCA9685::setAllDutyCycle(float dutyCycle)
 {
@@ -285,9 +328,25 @@ bool PCA9685::setAllDutyCycle(float dutyCycle)
         dutyCycle = 0.0f;
     else if (dutyCycle > 100.0f)
         dutyCycle = 100.0f;
-
     uint16_t off = static_cast<uint16_t>((dutyCycle / 100.0f) * 4095.0f);
     return setAllPWM(0, off);
 }
+
+int PCA9685::prescaleCalculation(float targetFreq, float clkFreq)
+{
+    // prevent using the wrong clock frequency if not set
+    if (!externalClock)
+        clkFreq = 25000000.0f;
+
+    // According to the datasheet, the prescale value is computed as:
+    // prescale = round(clock / (4096 * target_frequency)) - 1
+    float prescaleVal =
+        static_cast<float>(clkFreq) / (4096.0f * targetFreq) - 1.0f;
+    // Round to the nearest integer
+    return static_cast<int>(prescaleVal + 0.5f);
+}
+
+Boardcore::SensorErrors PCA9685::getLastError() { return lastError; }
+
 }  // namespace Boardcore
 

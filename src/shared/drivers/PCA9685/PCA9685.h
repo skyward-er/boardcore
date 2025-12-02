@@ -27,19 +27,56 @@
 
 namespace Boardcore
 {
-class PCA9685 : public Sensor<int>
+class PCA9685
 {
 public:
+    enum class Channels : uint8_t
+    {
+        CHANNEL_0  = 0,
+        CHANNEL_1  = 1,
+        CHANNEL_2  = 2,
+        CHANNEL_3  = 3,
+        CHANNEL_4  = 4,
+        CHANNEL_5  = 5,
+        CHANNEL_6  = 6,
+        CHANNEL_7  = 7,
+        CHANNEL_8  = 8,
+        CHANNEL_9  = 9,
+        CHANNEL_10 = 10,
+        CHANNEL_11 = 11,
+        CHANNEL_12 = 12,
+        CHANNEL_13 = 13,
+        CHANNEL_14 = 14,
+        CHANNEL_15 = 15
+    };
+    enum class OutputType : uint8_t
+    {
+        OPEN_DRAIN,
+        TOTEM_POLE
+    };
+    // TODO Capire passettini per cambio di angolo - Chiedere a Pietro
+
+    /**
+     * @brief PCA9685 Constructor.
+     * @param i2c bus on which the sensor lays.
+     * @param i2cConfig I2C configuration struct for the sensor.
+     * @param prescale Prescale value for setting the PWM frequency. - Defaults
+     * to 0x11 (339 Hz).
+     * @param outputType Output driver type (open-drain or totem-pole).
+     * @param inverted true to invert the output logic, false for normal logic.
+     * @return true if setting the mode succeeded, false otherwise.
+     */
     PCA9685(I2C& i2c, I2CDriver::I2CSlaveConfig i2cConfig,
-            uint8_t prescale = 0x79)
-        : i2c(i2c), i2cConfig(i2cConfig), prescale(prescale) {};
-    ~PCA9685() override = default;
+            uint8_t prescale               = 0x11,
+            PCA9685::OutputType outputType = OutputType::OPEN_DRAIN,
+            bool inverted = true, bool externalClock = false);
+    ~PCA9685() {};
 
     /**
      * @brief Initializes the board with the current settings.
      * @return true if initialization succeeded, false otherwise.
      */
-    bool init() override;
+    bool init();
     /**
      * @brief When the ALLCALL bit is set the device only listens to the ALL
      * CALL I2C-bus address (0xE0 by default).
@@ -69,6 +106,26 @@ public:
      * @return true if setting the bit succeeded, false otherwise.
      */
     bool enableAutoIncrement(bool enable);
+
+    /**
+     * @brief Sets the duty cycle on a specific channel
+     * @param channel Channel number (0-15)
+     * @param dutyCycle Duty cycle percentage (0.0 - 100.0)
+     * @return true if setting the duty cycle succeeded, false otherwise.
+     */
+    bool setDutyCycle(PCA9685::Channels channel, float dutyCycle);
+    /**
+     * @brief Sets the duty cycle on all channels
+     * @param dutyCycle Duty cycle percentage (0.0 - 100.0)
+     * @return true if setting the duty cycle succeeded, false otherwise.
+     */
+    bool setAllDutyCycle(float dutyCycle);
+
+    /**
+     * @return The last error encountered by the driver.
+     */
+    SensorErrors getLastError();
+
     /**
      * @brief Sets the 12-bit PWM signal on a specific channel
      * @param channel Channel number (0-15)
@@ -78,37 +135,24 @@ public:
      * Note: on and off cannot be equal.
      * @return true if setting the bits succeeded, false otherwise.
      */
-    bool setPWM(uint8_t channel, uint16_t on, uint16_t off);
-    /**
-     * @brief Sets the duty cycle on a specific channel
-     * @param channel Channel number (0-15)
-     * @param dutyCycle Duty cycle percentage (0.0 - 100.0)
-     * @return true if setting the duty cycle succeeded, false otherwise.
-     */
-    bool setDutyCycle(uint8_t channel, float dutyCycle);
-    /**
-     * @brief Sets the servo angle on a specific channel
-     * @param channel Channel number (0-15)
-     * @param angle Servo angle in degrees (0.0 - 180.0)
-     * @return true if setting the servo angle succeeded, false otherwise.
-     */
-    bool setServoAngle(uint8_t channel, float angle);
-
+    bool setPWM(PCA9685::Channels channel, uint16_t on, uint16_t off);
     /**
      * @brief Sets the 12-bit PWM signal on all channels
      * @param on Tick where the signal should turn ON (0-4095)
      * @param off Tick where the signal should turn OFF (0-4095)
-     *
-     * Note: on and off cannot be equal.
-     * @return true if setting the bits succeeded, false otherwise.
-     */
-    bool setAllPWM(uint16_t on, uint16_t off);
-    /**
-     * @brief Sets the duty cycle on all channels
-     * @param dutyCycle Duty cycle percentage (0.0 - 100.0)
      * @return true if setting the duty cycle succeeded, false otherwise.
      */
-    bool setAllDutyCycle(float dutyCycle);
+    bool setAllPWM(uint16_t on, uint16_t off);
+
+    /**
+     * @brief Sets the 12-bit PWM signal on all channels
+     * @param targetFreq Target Frequency in Hz. BEWARE: the prescale value can
+     * only be an integer. Thus, the real frequency can (and probably will)
+     * differ from the target frequency.
+     * @param clkFreq Clock Frequency in Hz. Default is 25 MHz.
+     * @return true if setting the duty cycle succeeded, false otherwise.
+     */
+    int prescaleCalculation(float targetFreq, float clkFreq = 25000000.0f);
 
 private:
     enum Register : uint8_t
@@ -127,7 +171,7 @@ private:
     enum Mode1BitMask : uint8_t
     {
         RESTART = 0x80,  // Not used in this driver
-        EXTCLK  = 0x40,  // Not used in this driver
+        EXTCLK  = 0x40,
         AI      = 0x20,
         SLEEP   = 0x10,
         ALLCALL = 0x01
@@ -145,9 +189,24 @@ private:
     I2C& i2c;
     /* Prescale value for setting the PWM frequency, computed as:
      *
-     * prescale = round(25MHz / (4096 * frequency)) - 1
+     * prescale = round(Clock / (4096 * target-frequency)) - 1
+     *
+     * The internal clock is 25Mhz
      */
     uint8_t prescale;
+
+    // invert the output logic
+    uint8_t inverted;
+
+    // Output driver type (open-drain or totem-pole)
+    PCA9685::OutputType outputType;
+
     bool isInitialized = false;
+    bool externalClock = false;
+
+    PrintLogger logger = Logging::getLogger("pca9685");
+
+protected:
+    SensorErrors lastError = SensorErrors::NO_ERRORS;
 };
 }  // namespace Boardcore
