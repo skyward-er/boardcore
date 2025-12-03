@@ -77,9 +77,9 @@ struct BMX160FifoStats
     static constexpr auto reflect()
     {
         return STRUCT_DEF(BMX160FifoStats,
-                          FIELD_DEF(timestamp) FIELD_DEF(watermarkTimestamp)
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(watermarkTimestamp, microseconds)
                               FIELD_DEF(fifoDuration)
-                                  FIELD_DEF(interruptTimestampDelta)
+                                  FIELD_DEF_WITH_UNIT(interruptTimestampDelta, microseconds)
                                       FIELD_DEF(len));
     }
 };

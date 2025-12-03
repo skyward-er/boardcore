@@ -57,7 +57,7 @@ struct TimestampData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(TimestampData, FIELD_DEF(timestamp));
+        return STRUCT_DEF(TimestampData, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 
@@ -69,7 +69,7 @@ struct LoadCellData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(LoadCellData,
-                          FIELD_DEF(loadTimestamp) FIELD_DEF(load));
+                          FIELD_DEF_WITH_UNIT(loadTimestamp, microseconds) FIELD_DEF_WITH_UNIT(load, N));
     }
 };
 
@@ -80,8 +80,8 @@ struct TemperatureData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(TemperatureData, FIELD_DEF(temperatureTimestamp)
-                                               FIELD_DEF(temperature));
+        return STRUCT_DEF(TemperatureData, FIELD_DEF_WITH_UNIT(temperatureTimestamp, microseconds)
+                                               FIELD_DEF_WITH_UNIT(temperature, °C));
     }
 };
 
@@ -93,7 +93,7 @@ struct PressureData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(PressureData,
-                          FIELD_DEF(pressureTimestamp) FIELD_DEF(pressure));
+                          FIELD_DEF_WITH_UNIT(pressureTimestamp, microseconds) FIELD_DEF_WITH_UNIT(pressure, hPa));
     }
 };
 
@@ -108,7 +108,7 @@ struct HumidityData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(HumidityData,
-                          FIELD_DEF(humidityTimestamp) FIELD_DEF(humidity));
+                          FIELD_DEF_WITH_UNIT(humidityTimestamp, microseconds) FIELD_DEF_WITH_UNIT(humidity, %RE));
     }
 };
 
@@ -145,9 +145,9 @@ struct AccelerometerData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(AccelerometerData,
-                          FIELD_DEF(accelerationTimestamp)
-                              FIELD_DEF(accelerationX) FIELD_DEF(accelerationY)
-                                  FIELD_DEF(accelerationZ));
+                          FIELD_DEF_WITH_UNIT(accelerationTimestamp, microseconds)
+                              FIELD_DEF_WITH_UNIT(accelerationX, g) FIELD_DEF_WITH_UNIT(accelerationY, g)
+                                  FIELD_DEF_WITH_UNIT(accelerationZ, g));
     }
 };
 
@@ -186,7 +186,7 @@ struct QuaternionData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(QuaternionData,
-                          FIELD_DEF(quaternionTimestamp) FIELD_DEF(quaternionX)
+                          FIELD_DEF_WITH_UNIT(quaternionTimestamp, microseconds) FIELD_DEF(quaternionX)
                               FIELD_DEF(quaternionY) FIELD_DEF(quaternionZ)
                                   FIELD_DEF(quaternionW));
     }
@@ -225,9 +225,9 @@ struct GyroscopeData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(GyroscopeData,
-                          FIELD_DEF(angularSpeedTimestamp)
-                              FIELD_DEF(angularSpeedX) FIELD_DEF(angularSpeedY)
-                                  FIELD_DEF(angularSpeedZ));
+                          FIELD_DEF_WITH_UNIT(angularSpeedTimestamp, microseconds)
+                              FIELD_DEF_WITH_UNIT(angularSpeedX, deg/sec) FIELD_DEF_WITH_UNIT(angularSpeedY, deg/sec)
+                                  FIELD_DEF_WITH_UNIT(angularSpeedZ, deg/sec));
     }
 };
 
@@ -265,8 +265,8 @@ struct MagnetometerData
     {
         return STRUCT_DEF(
             MagnetometerData,
-            FIELD_DEF(magneticFieldTimestamp) FIELD_DEF(magneticFieldX)
-                FIELD_DEF(magneticFieldY) FIELD_DEF(magneticFieldZ));
+            FIELD_DEF_WITH_UNIT(magneticFieldTimestamp, microseconds) FIELD_DEF_WITH_UNIT(magneticFieldX, microTesla)
+                FIELD_DEF_WITH_UNIT(magneticFieldY, microTesla) FIELD_DEF_WITH_UNIT(magneticFieldZ, microTesla));
     }
 };
 
@@ -326,7 +326,7 @@ struct VoltageData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(VoltageData,
-                          FIELD_DEF(voltageTimestamp) FIELD_DEF(voltage));
+                          FIELD_DEF_WITH_UNIT(voltageTimestamp, microseconds) FIELD_DEF_WITH_UNIT(voltage, V));
     }
 };
 
@@ -352,8 +352,8 @@ struct ADCData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ADCData, FIELD_DEF(voltageTimestamp)
-                                       FIELD_DEF(channelId) FIELD_DEF(voltage));
+        return STRUCT_DEF(ADCData, FIELD_DEF_WITH_UNIT(voltageTimestamp, microseconds)
+                                       FIELD_DEF(channelId) FIELD_DEF_WITH_UNIT(voltage, V));
     }
 };
 
