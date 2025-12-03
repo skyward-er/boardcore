@@ -156,7 +156,7 @@ private:
 
     bool isInit = false;
 
-    SPISlave spiSlave;
+    SPISlave<uint8_t> spiSlave;
 
     /**
      * @brief The SyncOutSkipFactor defines how many times the sync out event

@@ -207,7 +207,7 @@ protected:
     ND015XData sampleImpl() override;
 
 private:
-    SPISlave slave;
+    SPISlave<void> slave;
     float range;
     DMAStreamGuard* const streamRx;
     DMAStreamGuard* const streamTx;

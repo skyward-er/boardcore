@@ -103,7 +103,7 @@ MPU9250Data MPU9250::sampleImpl()
     MPU9250Data data;
 
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
         transaction.readRegisters(REG_ACCEL_XOUT_H, (uint8_t*)rawData.bytes,
                                   sizeof(MPU9250RawData));
     }
@@ -138,14 +138,14 @@ MPU9250Data MPU9250::sampleImpl()
 
 void MPU9250::resetDevice()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.writeRegister(REG_PWR_MGMT_1, REG_PWR_MGMT_1_BIT_H_RESET);
 }
 
 void MPU9250::selectAutoClock()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     // Wake up by clearing sleep bit and set clock auto select
     writeSPIWithDelay(transaction, REG_PWR_MGMT_1, REG_PWR_MGMT_1_CLKSEL_AUTO);
@@ -153,14 +153,14 @@ void MPU9250::selectAutoClock()
 
 void MPU9250::setGyroFsr(GyroFSR fs)
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_GYRO_CONFIG, fs);
 }
 
 void MPU9250::setAccelFsr(AccelFSR fs)
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_ACCEL_CONFIG, fs);
 }
@@ -174,7 +174,7 @@ void MPU9250::setSampleRate(unsigned short rate)
 
     uint8_t data = 1000 / rate - 1;
 
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_SMPLRT_DIV, data);
 
@@ -187,14 +187,14 @@ void MPU9250::setSampleRate(unsigned short rate)
 
 void MPU9250::enableMpuI2CMasterInterface()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_USER_CTRL, REG_USER_CTRL_I2C_MST_EN);
 }
 
 void MPU9250::setMpuI2CMasterInterfaceClock(I2CMasterInterfaceClock clk)
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_I2C_MST_CTRL, clk);
 }
@@ -234,7 +234,7 @@ void MPU9250::setI2CMasterSlaveRead(uint8_t addr, uint8_t reg, uint8_t nBytes,
             return;
     }
 
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, regSlvAddr, addr | 0x80);  // Set read bit
     writeSPIWithDelay(transaction, regSlvReg, reg);
@@ -282,7 +282,7 @@ void MPU9250::setI2CMasterSlaveWrite(uint8_t addr, uint8_t reg, uint8_t data,
             return;
     }
 
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     writeSPIWithDelay(transaction, regSlvAddr, addr);
     writeSPIWithDelay(transaction, regSlvReg, reg);
@@ -323,7 +323,7 @@ void MPU9250::disableI2CMasterSlave(uint8_t slave)
             return;
     }
 
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     // Enable the data transfer on each sample
     writeSPIWithDelay(transaction, regSlvCtrl, 0);
@@ -337,9 +337,9 @@ uint8_t MPU9250::readFromAk(uint8_t reg)
     // Wait for the sample
     miosix::Thread::sleep(1);
 
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
-    return transaction.readRegister(REG_EXT_SENS_DATA_00);
+    return transaction.readRegister<uint8_t>(REG_EXT_SENS_DATA_00);
 }
 
 void MPU9250::writeToAk(uint8_t reg, uint8_t data)
@@ -402,9 +402,9 @@ bool MPU9250::initAk()
 
 bool MPU9250::checkWhoAmI()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
-    uint8_t whoAmIValue = transaction.readRegister(REG_WHO_AM_I);
+    uint8_t whoAmIValue = transaction.readRegister<uint8_t>(REG_WHO_AM_I);
 
     return whoAmIValue == REG_WHO_AM_I_VAL;
 }
@@ -416,8 +416,8 @@ bool MPU9250::checkAkWhoAmI()
     return whoAmIValue == AK8963_REG_WHO_AM_I_VAL;
 }
 
-void MPU9250::writeSPIWithDelay(SPITransaction& transaction, uint8_t reg,
-                                uint8_t data)
+void MPU9250::writeSPIWithDelay(SPITransaction<uint8_t>& transaction,
+                                uint8_t reg, uint8_t data)
 {
     transaction.writeRegister(reg, data);
     miosix::delayUs(1);

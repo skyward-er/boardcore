@@ -59,13 +59,13 @@ bool LIS2MDL::init()
     }
 
     {
-        SPITransaction spi(slave);
+        SPITransaction<uint8_t> spi(slave);
         spi.writeRegister(CFG_REG_C, ENABLE_4WSPI | I2C_DISABLE);
     }
 
     {
-        SPITransaction spi(slave);
-        uint8_t res = spi.readRegister(WHO_AM_I);
+        SPITransaction<uint8_t> spi(slave);
+        uint8_t res = spi.readRegister<uint8_t>(WHO_AM_I);
 
         if (res != WHO_AM_I_VALUE)
         {
@@ -104,12 +104,13 @@ bool LIS2MDL::selfTest()
 
     // 1. Set configuration for selfTest procedure. selfTest still not enabled
     {
-        SPITransaction spi(slave);
+        SPITransaction<uint8_t> spi(slave);
         spi.writeRegister(CFG_REG_A,
                           ENABLE_TEMPERATURE_COMP | ODR_100_HZ | MD_CONTINUOUS);
-        spi.writeRegister(CFG_REG_B,
-                          spi.readRegister(CFG_REG_B) | OFFSET_CANCELLATION);
-        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | ENABLE_BDU);
+        spi.writeRegister(CFG_REG_B, spi.readRegister<uint8_t>(CFG_REG_B) |
+                                         OFFSET_CANCELLATION);
+        spi.writeRegister(CFG_REG_C,
+                          spi.readRegister<uint8_t>(CFG_REG_C) | ENABLE_BDU);
     }
 
     // Wait for power up, ~20ms for a stable output
@@ -133,9 +134,9 @@ bool LIS2MDL::selfTest()
 
     // 3. Enable self-test
     {
-        SPITransaction spi(slave);
-        spi.writeRegister(CFG_REG_C,
-                          spi.readRegister(CFG_REG_C) | ENABLE_SELF_TEST);
+        SPITransaction<uint8_t> spi(slave);
+        spi.writeRegister(
+            CFG_REG_C, spi.readRegister<uint8_t>(CFG_REG_C) | ENABLE_SELF_TEST);
     }
 
     // Wait 60ms (suggested in AN)
@@ -189,14 +190,14 @@ bool LIS2MDL::selfTest()
 
 bool LIS2MDL::applyConfig(Config config)
 {
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
     uint8_t reg = 0;
 
     // CFG_REG_A: configuration register
     reg |= config.odr;
     reg |= config.deviceMode;
     reg |= (1 << 7);
-    reg |= (spi.readRegister(CFG_REG_A) & 0b01110000);
+    reg |= (spi.readRegister<uint8_t>(CFG_REG_A) & 0b01110000);
     spi.writeRegister(CFG_REG_A, reg);
 
     return true;
@@ -211,7 +212,7 @@ LIS2MDLData LIS2MDL::sampleImpl()
         return lastSample;
     }
 
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
     LIS2MDLData newData;
 
     // Check if the temperature has to be sampled
@@ -219,7 +220,7 @@ LIS2MDLData LIS2MDL::sampleImpl()
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-        int16_t outTemp              = spi.readRegister16(TEMP_OUT_L_REG);
+        int16_t outTemp = spi.readRegister<uint16_t>(TEMP_OUT_L_REG);
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
         newData.temperature          = DEG_PER_LSB * outTemp;
         newData.temperature += REFERENCE_TEMPERATURE;

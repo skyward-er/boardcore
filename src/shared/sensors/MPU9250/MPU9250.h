@@ -309,8 +309,8 @@ private:
      */
     bool checkAkWhoAmI();
 
-    inline void writeSPIWithDelay(SPITransaction& transaction, uint8_t reg,
-                                  uint8_t data);
+    inline void writeSPIWithDelay(SPITransaction<uint8_t>& transaction,
+                                  uint8_t reg, uint8_t data);
 
     inline float normalizeAcceleration(int16_t rawValue);
 
@@ -320,7 +320,7 @@ private:
 
     inline float normalizeMagnetometer(int16_t rawValue, float adjustmentCoeff);
 
-    SPISlave spiSlave;
+    SPISlave<uint8_t> spiSlave;
 
     const unsigned short samplingRate;
 

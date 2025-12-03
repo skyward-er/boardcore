@@ -111,7 +111,7 @@ private:
      * @param cmd Command to be executed.
      * @param pmu Powermode (MUST be set to PowerMode::SUSPEND when not needed).
      */
-    void sendCmd(SPITransaction& spi, BMX160Defs::Cmd cmd,
+    void sendCmd(SPITransaction<uint8_t>& spi, BMX160Defs::Cmd cmd,
                  BMX160Defs::PowerMode pmu = BMX160Defs::PowerMode::SUSPEND);
 
     /**
@@ -128,14 +128,14 @@ private:
      *
      * @param value bmm150 configuration value.
      */
-    void confMag(SPITransaction& spi, uint8_t value);
+    void confMag(SPITransaction<uint8_t>& spi, uint8_t value);
 
     /**
      * @brief Convenience function to map magnetometer for read.
      *
      * @param reg bmm150 register to be mapped in REG_DATA_MAG.
      */
-    void mapMag(SPITransaction& spi, uint8_t reg);
+    void mapMag(SPITransaction<uint8_t>& spi, uint8_t reg);
 
     /**
      * @brief Convenience function to read a single byte from magnetometer.
@@ -143,7 +143,7 @@ private:
      * @param reg Register to be read.
      * @return Value read from the register.
      */
-    uint8_t readMag(SPITransaction& spi, uint8_t reg);
+    uint8_t readMag(SPITransaction<uint8_t>& spi, uint8_t reg);
 
     /**
      * @brief Convenience function to read from magnetometer.
@@ -152,7 +152,8 @@ private:
      * @param[out] data Buffer to fill with the data.
      * @param size Size of the buffer.
      */
-    void readMag(SPITransaction& spi, uint8_t reg, uint8_t* data, size_t size);
+    void readMag(SPITransaction<uint8_t>& spi, uint8_t reg, uint8_t* data,
+                 size_t size);
 
     /**
      * @brief Convenience function to write to magnetometer.
@@ -160,7 +161,7 @@ private:
      * @param reg Register to be written to.
      * @param value Value to write to the register.
      */
-    void writeMag(SPITransaction& spi, uint8_t reg, uint8_t value);
+    void writeMag(SPITransaction<uint8_t>& spi, uint8_t reg, uint8_t value);
 
     /**
      * @brief Check for chipid validity.
@@ -256,7 +257,7 @@ private:
      *
      * @return String representing the error.
      */
-    const char* debugErr(SPITransaction& spi);
+    const char* debugErr(SPITransaction<uint8_t>& spi);
 
     /**
      * @brief Convert Output Data Rate to the time between samples.
@@ -306,7 +307,7 @@ private:
     /**
      * @brief Read and parse bosch trim registers
      */
-    void boschReadTrim(SPITransaction& spi);
+    void boschReadTrim(SPITransaction<uint8_t>& spi);
 
     /**
      * @brief Bosch black-box algorithm
@@ -329,7 +330,7 @@ private:
     AccelerometerData oldAcc;
 
     bool isInit = false;
-    SPISlave spiSlave;
+    SPISlave<uint8_t> spiSlave;
 
     BMX160Defs::TrimData trimData = {};
     BMX160Config config;

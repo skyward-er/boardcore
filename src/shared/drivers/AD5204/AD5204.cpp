@@ -33,7 +33,7 @@ AD5204::AD5204(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
 
 void AD5204::setResistance(Channel channel, uint32_t resistance)
 {
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
 
     if (resistance > static_cast<uint32_t>(resRange))
         return;

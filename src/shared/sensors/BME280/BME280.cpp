@@ -47,7 +47,7 @@ const BME280::BME280Config BME280::BME280_CONFIG_TEMP_SINGLE = {
     SKIPPED,        0, 0,          FORCED_MODE, SKIPPED,
     OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BME280::BME280(SPISlave spiSlave, BME280Config config)
+BME280::BME280(SPISlave<uint8_t> spiSlave, BME280Config config)
     : spiSlave(spiSlave), config(config)
 {
 }
@@ -139,7 +139,7 @@ HumidityData BME280::readHumidity()
 {
     uint8_t buffer[2];
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_HUM_MSB, buffer, 2);
     }
@@ -159,7 +159,7 @@ PressureData BME280::readPressure()
 {
     uint8_t buffer[3];
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_PRESS_MSB, buffer, 3);
     }
@@ -180,7 +180,7 @@ TemperatureData BME280::readTemperature()
 {
     uint8_t buffer[3];
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_TEMP_MSB, buffer, 3);
     }
@@ -219,7 +219,7 @@ BME280Data BME280::sampleImpl()
 
     uint8_t buffer[8];
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_PRESS_MSB, buffer, 8);
     }
@@ -258,16 +258,16 @@ BME280Data BME280::sampleImpl()
 
 void BME280::reset()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.writeRegister(REG_RESET, 0xB6);
 }
 
 bool BME280::checkWhoAmI()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
-    uint8_t whoAmIValue = transaction.readRegister(REG_ID);
+    uint8_t whoAmIValue = transaction.readRegister<uint8_t>(REG_ID);
 
     return whoAmIValue == REG_ID_VAL;
 }
@@ -276,7 +276,7 @@ void BME280::setConfiguration() { setConfiguration(config); }
 
 void BME280::setConfiguration(BME280Config config)
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.writeRegister(REG_CONFIG, config.bytes.config);
     transaction.writeRegister(REG_CTRL_HUM, config.bytes.ctrlHumidity);
@@ -287,7 +287,7 @@ void BME280::setConfiguration(BME280Config config)
 BME280::BME280Config BME280::readConfiguration()
 {
     BME280Config tmp;
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.readRegisters(REG_CTRL_HUM, (uint8_t*)&tmp, 4);
 
@@ -298,14 +298,14 @@ void BME280::loadCompensationParameters()
 {
     // Read first batch of compensation parameters
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_CALIB_0, (uint8_t*)&compParams, 25);
     }
 
     // Read second batch of compensation parameters
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_CALIB_26,
                                   (uint8_t*)&compParams.bits.dig_H2, 7);

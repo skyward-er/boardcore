@@ -97,7 +97,7 @@ protected:
 private:
     MS5803Data updateData();
 
-    SPISlave spiSlave;
+    SPISlave<uint8_t> spiSlave;
 
     MS5803CalibrationData calibrationData;
     uint16_t temperatureDivider;

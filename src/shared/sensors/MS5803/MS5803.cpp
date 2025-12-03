@@ -38,16 +38,18 @@ MS5803::MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
 
 bool MS5803::init()
 {
-    SPITransaction transaction{spiSlave};
+    SPITransaction<uint8_t> transaction{spiSlave};
 
     // Read calibration data
-    calibrationData.sens = transaction.readRegister16(REG_PROM_SENS_MASK);
-    calibrationData.off  = transaction.readRegister16(REG_PROM_OFF_MASK);
-    calibrationData.tcs  = transaction.readRegister16(REG_PROM_TCS_MASK);
-    calibrationData.tco  = transaction.readRegister16(REG_PROM_TCO_MASK);
-    calibrationData.tref = transaction.readRegister16(REG_PROM_TREF_MASK);
+    calibrationData.sens =
+        transaction.readRegister<uint16_t>(REG_PROM_SENS_MASK);
+    calibrationData.off = transaction.readRegister<uint16_t>(REG_PROM_OFF_MASK);
+    calibrationData.tcs = transaction.readRegister<uint16_t>(REG_PROM_TCS_MASK);
+    calibrationData.tco = transaction.readRegister<uint16_t>(REG_PROM_TCO_MASK);
+    calibrationData.tref =
+        transaction.readRegister<uint16_t>(REG_PROM_TREF_MASK);
     calibrationData.tempsens =
-        transaction.readRegister16(REG_PROM_TEMPSENS_MASK);
+        transaction.readRegister<uint16_t>(REG_PROM_TEMPSENS_MASK);
 
     LOG_INFO(
         logger,
@@ -62,7 +64,7 @@ bool MS5803::selfTest() { return true; }
 
 MS5803Data MS5803::sampleImpl()
 {
-    SPITransaction transaction{spiSlave};
+    SPITransaction<uint8_t> transaction{spiSlave};
 
     switch (deviceState)
     {
@@ -77,7 +79,7 @@ MS5803Data MS5803::sampleImpl()
         {
             // Read back the sampled temperature
             uint32_t tmpRawTemperature =
-                transaction.readRegister24(REG_ADC_READ);
+                transaction.readRegister<uint32_t>(REG_ADC_READ);
             lastTemperatureTimestamp = TimestampTimer::getTimestamp();
 
             // Check if the value is valid
@@ -94,7 +96,8 @@ MS5803Data MS5803::sampleImpl()
         case STATE_SAMPLED_PRESS:
         {
             // Read back the sampled pressure
-            uint32_t tmpRawPressure = transaction.readRegister24(REG_ADC_READ);
+            uint32_t tmpRawPressure =
+                transaction.readRegister<uint32_t>(REG_ADC_READ);
 
             // Check if the value is valid
             if (tmpRawPressure != 0)

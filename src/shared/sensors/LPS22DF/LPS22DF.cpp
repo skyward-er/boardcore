@@ -53,7 +53,7 @@ SPIBusConfig LPS22DF::getDefaultSPIConfig()
 
 bool LPS22DF::init()
 {
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
 
     if (isInitialized)
     {
@@ -85,8 +85,8 @@ bool LPS22DF::selfTest()
     }
 
     // Reading the whoami value to assure communication
-    SPITransaction spi(slave);
-    uint8_t whoamiValue = spi.readRegister(WHO_AM_I);
+    SPITransaction<uint8_t> spi(slave);
+    uint8_t whoamiValue = spi.readRegister<uint8_t>(WHO_AM_I);
 
     // Checking the whoami value to assure correct communication
     if (whoamiValue != WHO_AM_I_VALUE)
@@ -108,7 +108,7 @@ void LPS22DF::setConfig(const Config& config)
 
 void LPS22DF::setAverage(AVG avg)
 {
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
 
     /**
      * Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
@@ -123,7 +123,7 @@ void LPS22DF::setAverage(AVG avg)
 
 void LPS22DF::setOutputDataRate(ODR odr)
 {
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
 
     /**
      * Since the CTRL_REG1 contains only the AVG and ODR settings, we use the
@@ -138,7 +138,7 @@ void LPS22DF::setOutputDataRate(ODR odr)
 
 LPS22DFData LPS22DF::sampleImpl()
 {
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
 
     if (!isInitialized)
     {
@@ -153,7 +153,7 @@ LPS22DFData LPS22DF::sampleImpl()
     if (config.odr == ODR::ONE_SHOT)
     {
         // Reading previous value of Control Register 2
-        uint8_t ctrl_reg2_val = spi.readRegister(CTRL_REG2);
+        uint8_t ctrl_reg2_val = spi.readRegister<uint8_t>(CTRL_REG2);
 
         // Trigger sample
         spi.writeRegister(CTRL_REG2, ctrl_reg2_val | CTRL_REG2::ONE_SHOT_START);
@@ -161,13 +161,13 @@ LPS22DFData LPS22DF::sampleImpl()
         // Pull status register until the sample is ready
         do
         {
-            statusValue = spi.readRegister(STATUS);
+            statusValue = spi.readRegister<uint8_t>(STATUS);
         } while (!(statusValue & (STATUS::P_DA | STATUS::T_DA)));
     }
     else
     {
         // Read status register value
-        statusValue = spi.readRegister(STATUS);
+        statusValue = spi.readRegister<uint8_t>(STATUS);
     }
 
     auto ts = TimestampTimer::getTimestamp();
@@ -176,7 +176,7 @@ LPS22DFData LPS22DF::sampleImpl()
     if (statusValue & STATUS::P_DA)
     {
         data.pressureTimestamp = ts;
-        data.pressure          = spi.readRegister24(PRESS_OUT_XL) / PRES_SENS;
+        data.pressure = spi.readRegister<uint32_t>(PRESS_OUT_XL) / PRES_SENS;
     }
     else
     {
@@ -189,7 +189,7 @@ LPS22DFData LPS22DF::sampleImpl()
     if (statusValue & STATUS::T_DA)
     {
         data.temperatureTimestamp = ts;
-        data.temperature          = spi.readRegister16(TEMP_OUT_L) / TEMP_SENS;
+        data.temperature = spi.readRegister<uint16_t>(TEMP_OUT_L) / TEMP_SENS;
     }
     else
     {

@@ -45,7 +45,7 @@ const BMP280::BMP280Config BMP280::BMP280_CONFIG_ALL_ENABLED = {0,
 const BMP280::BMP280Config BMP280::BMP280_CONFIG_TEMP_SINGLE = {
     0, 0, FORCED_MODE, SKIPPED, OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BMP280::BMP280(SPISlave spiSlave, BMP280Config config)
+BMP280::BMP280(SPISlave<uint8_t> spiSlave, BMP280Config config)
     : spiSlave(spiSlave), config(config)
 {
 }
@@ -130,7 +130,7 @@ PressureData BMP280::readPressure()
     uint8_t buffer[3];
 
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_PRESS_MSB, buffer, 3);
     }
@@ -152,7 +152,7 @@ TemperatureData BMP280::readTemperature()
     uint8_t buffer[3];
 
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_TEMP_MSB, buffer, 3);
     }
@@ -192,7 +192,7 @@ BMP280Data BMP280::sampleImpl()
 
     uint8_t buffer[8];
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_PRESS_MSB, buffer, 8);
     }
@@ -223,16 +223,16 @@ BMP280Data BMP280::sampleImpl()
 
 void BMP280::reset()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.writeRegister(REG_RESET, 0xB6);
 }
 
 bool BMP280::checkWhoAmI()
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
-    uint8_t whoAmIValue = transaction.readRegister(REG_ID);
+    uint8_t whoAmIValue = transaction.readRegister<uint8_t>(REG_ID);
 
     return whoAmIValue == REG_ID_VAL;
 }
@@ -241,7 +241,7 @@ void BMP280::setConfiguration() { setConfiguration(config); }
 
 void BMP280::setConfiguration(BMP280Config config)
 {
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.writeRegister(REG_CONFIG, config.bytes.config);
     transaction.writeRegister(REG_CTRL_MEAS,
@@ -251,7 +251,7 @@ void BMP280::setConfiguration(BMP280Config config)
 BMP280::BMP280Config BMP280::readConfiguration()
 {
     BMP280Config tmp;
-    SPITransaction transaction(spiSlave);
+    SPITransaction<uint8_t> transaction(spiSlave);
 
     transaction.readRegisters(REG_STATUS, (uint8_t*)&tmp, 3);
 
@@ -262,7 +262,7 @@ void BMP280::loadCompensationParameters()
 {
     // Read compensation parameters
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
 
         transaction.readRegisters(REG_CALIB_0, (uint8_t*)&compParams, 25);
     }

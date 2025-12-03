@@ -53,8 +53,8 @@ HX711Data HX711::sampleImpl()
     int32_t sample;
 
     bus.configure(config);
-    sample = bus.read16() << 8;
-    sample |= bus.read();
+    sample = bus.read<uint16_t>() << 8;
+    sample |= bus.read<uint8_t>();
     sckPin.mode(miosix::Mode::OUTPUT);
     sckPin.high();
     miosix::delayUs(1);

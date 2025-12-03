@@ -34,12 +34,12 @@ const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
 
 ADS1118::ADS1118(SPIBusInterface& bus, miosix::GpioPin cs,
                  ADS1118Config config_, SPIBusConfig spiConfig)
-    : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
+    : ADS1118(SPISlave<uint8_t>(bus, cs, spiConfig), config_, false)
 {
 }
 
-ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
-                 int16_t tempDivider_)
+ADS1118::ADS1118(SPISlave<uint8_t> spiSlave_, ADS1118Config config_,
+                 bool busyWait_, int16_t tempDivider_)
     : spiSlave(spiSlave_), baseConfig(config_), busyWait(busyWait_),
       tempDivider(tempDivider_)
 
@@ -209,7 +209,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     // Write next configuration and read previous value if necessary
     transferData = writeData;
     {
-        SPITransaction transaction(spiSlave);
+        SPITransaction<uint8_t> transaction(spiSlave);
         transaction.transfer((uint8_t*)&transferData, configCheck ? 4 : 2);
     }
 

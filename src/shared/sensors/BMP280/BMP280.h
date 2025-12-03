@@ -146,7 +146,7 @@ public:
     ///< Temperature enabled in forced mode
     static const BMP280Config BMP280_CONFIG_TEMP_SINGLE;
 
-    explicit BMP280(SPISlave spiSlave,
+    explicit BMP280(SPISlave<uint8_t> spiSlave,
                     BMP280Config config = BMP280_CONFIG_ALL_ENABLED);
 
     /**
@@ -264,7 +264,7 @@ private:
         REG_TEMP_XLSB  = 0x7C
     };
 
-    const SPISlave spiSlave;
+    const SPISlave<uint8_t> spiSlave;
     BMP280Config config;
     BMP280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm

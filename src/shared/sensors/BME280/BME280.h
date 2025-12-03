@@ -157,7 +157,7 @@ public:
     ///< Temperature enabled in forced mode
     static const BME280Config BME280_CONFIG_TEMP_SINGLE;
 
-    explicit BME280(SPISlave spiSlave,
+    explicit BME280(SPISlave<uint8_t> spiSlave,
                     BME280Config config = BME280_CONFIG_ALL_ENABLED);
 
     /**
@@ -295,7 +295,7 @@ private:
         REG_HUM_LSB    = 0x7E,
     };
 
-    const SPISlave spiSlave;
+    const SPISlave<uint8_t> spiSlave;
     BME280Config config;
     BME280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm

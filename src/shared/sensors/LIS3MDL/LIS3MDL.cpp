@@ -45,8 +45,8 @@ bool LIS3MDL::init()
     }
 
     {
-        SPITransaction spi(slave);
-        uint8_t res = spi.readRegister(WHO_AM_I);
+        SPITransaction<uint8_t> spi(slave);
+        uint8_t res = spi.readRegister<uint8_t>(WHO_AM_I);
 
         if (res != WHO_AM_I_VALUE)
         {
@@ -85,7 +85,7 @@ bool LIS3MDL::selfTest()
     float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
     {
-        SPITransaction spi(slave);
+        SPITransaction<uint8_t> spi(slave);
         spi.writeRegister(CTRL_REG2, FS_12_GAUSS);
     }
     updateUnit(FS_12_GAUSS);
@@ -106,7 +106,7 @@ bool LIS3MDL::selfTest()
 
     // Setting up the sensor settings for proper usage of the self test mode.
     {
-        SPITransaction spi(slave);
+        SPITransaction<uint8_t> spi(slave);
 
         spi.writeRegister(CTRL_REG1, ODR_20_HZ | ENABLE_SELF_TEST |
                                          (OM_ULTRA_HIGH_POWER << 4));
@@ -148,7 +148,7 @@ bool LIS3MDL::selfTest()
 
 bool LIS3MDL::applyConfig(Config config)
 {
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
     uint8_t reg = 0, err = 0;
 
     configuration = config;
@@ -162,22 +162,22 @@ bool LIS3MDL::applyConfig(Config config)
     if (!(config.odr & FAST_ODR_BIT))
         reg |= config.xyMode << 4;
     spi.writeRegister(CTRL_REG1, reg);
-    err |= spi.readRegister(CTRL_REG1) != reg;
+    err |= spi.readRegister<uint8_t>(CTRL_REG1) != reg;
 
     // CTRL_REG2
     reg = config.scale;
     spi.writeRegister(CTRL_REG2, reg);
-    err |= spi.readRegister(CTRL_REG2) != reg;
+    err |= spi.readRegister<uint8_t>(CTRL_REG2) != reg;
 
     // CTRL_REG3
     reg = CONTINUOS_CONVERSION;
     spi.writeRegister(CTRL_REG3, reg);
-    err |= spi.readRegister(CTRL_REG3) != reg;
+    err |= spi.readRegister<uint8_t>(CTRL_REG3) != reg;
 
     // CTRL_REG4
     reg = config.zMode << 2;
     spi.writeRegister(CTRL_REG4, reg);
-    err |= spi.readRegister(CTRL_REG4) != reg;
+    err |= spi.readRegister<uint8_t>(CTRL_REG4) != reg;
 
     // CTRL_REG5
     if (config.doBlockDataUpdate)
@@ -186,7 +186,7 @@ bool LIS3MDL::applyConfig(Config config)
         reg = 0;
 
     spi.writeRegister(CTRL_REG5, reg);
-    err |= spi.readRegister(CTRL_REG5) != reg;
+    err |= spi.readRegister<uint8_t>(CTRL_REG5) != reg;
 
     // Set mUnit according to scale
     updateUnit(config.scale);
@@ -210,13 +210,14 @@ LIS3MDLData LIS3MDL::sampleImpl()
         return lastSample;
     }
 
-    SPITransaction spi(slave);
+    SPITransaction<uint8_t> spi(slave);
     LIS3MDLData newData;
     tempCounter++;
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-        int16_t outTemp = spi.readRegister16(TEMP_OUT_L | INCREMENT_REG_FLAG);
+        int16_t outTemp =
+            spi.readRegister<uint16_t>(TEMP_OUT_L | INCREMENT_REG_FLAG);
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
         newData.temperature          = DEG_PER_LSB * outTemp;
         newData.temperature += REFERENCE_TEMPERATURE;

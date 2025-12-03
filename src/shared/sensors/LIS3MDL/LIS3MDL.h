@@ -151,7 +151,7 @@ protected:
 private:
     void updateUnit(FullScale fs);
 
-    SPISlave slave;
+    SPISlave<uint8_t> slave;
     Config configuration;
 
     unsigned tempCounter = 0;

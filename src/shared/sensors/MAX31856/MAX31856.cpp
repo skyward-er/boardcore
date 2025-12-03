@@ -51,10 +51,10 @@ bool MAX31856::init()
     setColdJunctionOffset(0);
 
     {
-        SPITransaction spi{slave};
+        SPITransaction<uint8_t> spi{slave};
 
         // Enable continuous conversion mode
-        spi.writeRegister(CR0, CR0_CMODE);
+        spi.writeRegister(CR0, uint8_t{CR0_CMODE});
     }
 
     return true;
@@ -64,42 +64,42 @@ bool MAX31856::selfTest() { return true; }
 
 bool MAX31856::checkConnected()
 {
-    SPITransaction spi{slave};
+    SPITransaction<uint8_t> spi{slave};
 
     // Enable open-circuit detection
-    spi.writeRegister(CR0, CR0_CMODE | CR0_OCFAULT_0);
+    spi.writeRegister(CR0, uint8_t{CR0_CMODE | CR0_OCFAULT_0});
 
     // Wait for detection
     // Detection takes 40ms, waiting more to be extra sure
     miosix::Thread::sleep(100);
 
     // Read fault register
-    auto fault = spi.readRegister(SR);
+    auto fault = spi.readRegister<uint8_t>(SR);
 
     // Disable open-circuit detection
-    spi.writeRegister(CR0, CR0_CMODE);
+    spi.writeRegister(CR0, uint8_t{CR0_CMODE});
 
     return !(fault & SR_OPEN);
 }
 
 void MAX31856::setThermocoupleType(ThermocoupleType type)
 {
-    SPITransaction spi{slave};
+    SPITransaction<uint8_t> spi{slave};
     spi.writeRegister(CR1, static_cast<uint8_t>(type));
 }
 
 void MAX31856::setColdJunctionOffset(float offset)
 {
-    SPITransaction spi{slave};
-    spi.writeRegister(CJTO,
-                      static_cast<int8_t>(offset * 1 / CJ_TEMP_LSB_VALUE));
+    SPITransaction<uint8_t> spi{slave};
+    spi.writeRegister<uint8_t>(
+        CJTO, static_cast<int8_t>(offset * 1 / CJ_TEMP_LSB_VALUE));
 }
 
 MAX31856Data MAX31856::sampleImpl()
 {
-    SPITransaction spi{slave};
-    int16_t cjRaw = spi.readRegister16(CJTH);
-    int32_t tcRaw = spi.readRegister24(LTCBH);
+    SPITransaction<uint8_t> spi{slave};
+    int16_t cjRaw = spi.readRegister<uint16_t>(CJTH);
+    int32_t tcRaw = spi.readRegister<uint32_t>(LTCBH);
 
     MAX31856Data result;
     result.temperatureTimestamp = TimestampTimer::getTimestamp();

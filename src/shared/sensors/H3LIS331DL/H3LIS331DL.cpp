@@ -31,7 +31,6 @@ H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
                        H3LIS331DLDefs::FullScaleRange fs)
     : spi(spiBus, cs, cfg), odr(odr), bdu(bdu), fs(fs), initialized(false)
 {
-    spi.config = getDefaultSPIConfig();
 }
 
 H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
@@ -40,6 +39,7 @@ H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
                        H3LIS331DLDefs::FullScaleRange fs)
     : H3LIS331DL(spiBus, cs, {}, odr, bdu, fs)
 {
+    spi.config = getDefaultSPIConfig();
 }
 
 SPIBusConfig H3LIS331DL::getDefaultSPIConfig()
@@ -59,10 +59,10 @@ bool H3LIS331DL::init()
         return false;
     }
 
-    SPITransaction spiTr(spi);
+    SPITransaction<uint8_t> spiTr(spi);
 
     uint8_t whoami =
-        spiTr.readRegister(H3LIS331DLDefs::Registers::REG_WHO_AM_I);
+        spiTr.readRegister<uint8_t>(H3LIS331DLDefs::Registers::REG_WHO_AM_I);
 
     if (whoami != H3LIS331DLDefs::WHO_AM_I_ID)
     {
@@ -90,8 +90,8 @@ bool H3LIS331DL::init()
 
         miosix::delayUs(10);
 
-        uint8_t ctrlReg1OnChip =
-            spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1);
+        uint8_t ctrlReg1OnChip = spiTr.readRegister<uint8_t>(
+            H3LIS331DLDefs::Registers::REG_CTRL_REG1);
 
         initialized = (ctrlReg1 == ctrlReg1OnChip);
 
@@ -117,8 +117,8 @@ bool H3LIS331DL::init()
 
         miosix::delayUs(10);
 
-        uint8_t ctrlReg4OnChip =
-            spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4);
+        uint8_t ctrlReg4OnChip = spiTr.readRegister<uint8_t>(
+            H3LIS331DLDefs::Registers::REG_CTRL_REG4);
 
         initialized = (ctrlReg4 == ctrlReg4OnChip);
 
@@ -154,7 +154,7 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
 
     // Read output data registers (X, Y, Z)
     {
-        SPITransaction spiTr(spi);
+        SPITransaction<uint8_t> spiTr(spi);
         uint8_t buff[7];
 
         spiTr.readRegisters(H3LIS331DLDefs::Registers::REG_STATUS_REG |

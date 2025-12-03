@@ -49,7 +49,7 @@ public:
     void setResistance(Channel channel, uint32_t resistance);
 
 private:
-    SPISlave slave;
+    SPISlave<void> slave;
     Resistance resRange;
 };
 

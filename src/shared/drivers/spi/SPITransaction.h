@@ -53,6 +53,7 @@ namespace Boardcore
  *     // freed for use by someone else
  * }
  */
+template <typename AddressSize>
 class SPITransaction
 {
 public:
@@ -62,7 +63,7 @@ public:
      *
      * @param slave Slave to communicate with.
      */
-    explicit SPITransaction(const SPISlave& slave);
+    explicit SPITransaction(const SPISlave<AddressSize>& slave);
 
     // /**
     //  * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -94,28 +95,8 @@ public:
      *
      * @return Byte read from the bus.
      */
-    uint8_t read();
-
-    /**
-     * @brief Reads a single half word from the bus.
-     *
-     * @return Half word read from the bus.
-     */
-    uint16_t read16();
-
-    /**
-     * @brief Reads 24 bits from the bus.
-     *
-     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
-     */
-    virtual uint32_t read24();
-
-    /**
-     * @brief Reads 32 bits from the bus.
-     *
-     * @return Word read from the bus.
-     */
-    virtual uint32_t read32();
+    template <typename DataSize>
+    DataSize read();
 
     /**
      * @brief Reads multiple bytes from the bus
@@ -123,43 +104,16 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void read(uint8_t* data, size_t size);
-
-    /**
-     * @brief Reads multiple half words from the bus
-     *
-     * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer in bytes.
-     */
-    void read16(uint16_t* data, size_t size);
+    template <typename DataSize>
+    void read(DataSize* data, size_t size);
 
     /**
      * @brief Writes a single byte to the bus.
      *
      * @param data Byte to write.
      */
-    void write(uint8_t data);
-
-    /**
-     * @brief Writes a single half word to the bus.
-     *
-     * @param data Half word to write.
-     */
-    void write16(uint16_t data);
-
-    /**
-     * @brief Writes 24 bits to the bus.
-     *
-     * @param data Bytes to write (the MSB of the uint32_t is not used).
-     */
-    virtual void write24(uint32_t data);
-
-    /**
-     * @brief Writes 32 bits to the bus.
-     *
-     * @param data Word to write.
-     */
-    virtual void write32(uint32_t data);
+    template <typename DataSize>
+    void write(DataSize data);
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -167,15 +121,8 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void write(uint8_t* data, size_t size);
-
-    /**
-     * @brief Writes multiple half words to the bus.
-     *
-     * @param data Buffer containing data to write.
-     * @param size Size of the buffer in bytes.
-     */
-    void write16(uint16_t* data, size_t size);
+    template <typename DataSize>
+    void write(DataSize* data, size_t size);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -183,31 +130,8 @@ public:
      * @param data Byte to write.
      * @return Byte read from the bus.
      */
-    uint8_t transfer(uint8_t data);
-
-    /**
-     * @brief Full duplex transmission of one half word on the bus.
-     *
-     * @param data Half word to write.
-     * @return Half word read from the bus.
-     */
-    uint16_t transfer16(uint16_t data);
-
-    /**
-     * @brief Full duplex transmission of 24 bits on the bus.
-     *
-     * @param data Bytes to write (the MSB of the uint32_t is not used).
-     * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
-     */
-    virtual uint32_t transfer24(uint32_t data);
-
-    /**
-     * @brief Full duplex transmission of 32 bits on the bus.
-     *
-     * @param data Word to write.
-     * @return Half word read from the bus.
-     */
-    virtual uint32_t transfer32(uint32_t data);
+    template <typename DataSize>
+    DataSize transfer(DataSize data);
 
     /**
      * @brief Full duplex transmission of multiple bytes on the bus.
@@ -215,45 +139,16 @@ public:
      * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
      */
-    void transfer(uint8_t* data, size_t size);
-
-    /**
-     * @brief Full duplex transmission of multiple half words on the bus.
-     *
-     * @param data Buffer containing data to transfer.
-     * @param size Size of the buffer in bytes.
-     */
-    void transfer16(uint16_t* data, size_t size);
-
-    // Read, write and transfer operations with registers
+    template <typename DataSize>
+    void transfer(DataSize* data, size_t size);
 
     /**
      * @brief Reads an 8 bit register.
      *
      * @return Byte read from the register.
      */
-    uint8_t readRegister(uint8_t reg);
-
-    /**
-     * @brief Reads a 16 bit register.
-     *
-     * @return Byte read from the register.
-     */
-    uint16_t readRegister16(uint8_t reg);
-
-    /**
-     * @brief Reads a 24 bit register.
-     *
-     * @return Byte read from the register.
-     */
-    uint32_t readRegister24(uint8_t reg);
-
-    /**
-     * @brief Reads a 32 bit register.
-     *
-     * @return Byte read from the register.
-     */
-    uint32_t readRegister32(uint8_t reg);
+    template <typename RegisterSize>
+    RegisterSize readRegister(AddressSize reg);
 
     /**
      * @brief Reads multiple bytes starting from the specified register.
@@ -261,7 +156,8 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void readRegisters(uint8_t reg, uint8_t* data, size_t size);
+    template <typename RegisterSize>
+    void readRegisters(AddressSize reg, RegisterSize* data, size_t size);
 
     /**
      * @brief Writes an 8 bit register.
@@ -269,31 +165,8 @@ public:
      * @param reg Register address.
      * @param data Byte to write.
      */
-    void writeRegister(uint8_t reg, uint8_t data);
-
-    /**
-     * @brief Writes a 16 bit register.
-     *
-     * @param reg Register address.
-     * @param data Byte to write.
-     */
-    void writeRegister16(uint8_t reg, uint16_t data);
-
-    /**
-     * @brief Writes a 24 bit register.
-     *
-     * @param reg Register address.
-     * @param data Byte to write.
-     */
-    void writeRegister24(uint8_t reg, uint32_t data);
-
-    /**
-     * @brief Writes a 32 bit register.
-     *
-     * @param reg Register address.
-     * @param data Byte to write.
-     */
-    void writeRegister32(uint8_t reg, uint32_t data);
+    template <typename RegisterSize>
+    void writeRegister(AddressSize reg, RegisterSize data);
 
     /**
      * @brief Writes multiple bytes starting from the specified register.
@@ -302,10 +175,16 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void writeRegisters(uint8_t reg, uint8_t* data, size_t size);
+    template <typename RegisterSize>
+    void writeRegisters(AddressSize reg, RegisterSize* data, size_t size);
 
 private:
-    const SPISlave& slave;
+    template <typename DataSize>
+    inline DataSize swapBytes(DataSize data);
+    inline uint8_t swapBytes(uint8_t data);
+    inline uint16_t swapBytes(uint16_t data);
+    inline uint32_t swapBytes(uint32_t data);
+    const SPISlave<AddressSize>& slave;
 };
 
 }  // namespace Boardcore

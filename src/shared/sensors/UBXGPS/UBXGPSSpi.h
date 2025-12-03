@@ -138,7 +138,7 @@ private:
      */
     bool safeWriteUBXFrame(const UBXFrame& frame);
 
-    SPISlave spiSlave;
+    SPISlave<void> spiSlave;
     uint8_t sampleRate;
     int64_t lastSampleTimestamp = 0;
 

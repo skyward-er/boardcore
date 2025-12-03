@@ -59,7 +59,7 @@ protected:
     TemperatureData sampleImpl() override;
 
 private:
-    const SPISlave slave;
+    const SPISlave<void> slave;
 
     PrintLogger logger = Logging::getLogger("max6675");
 };

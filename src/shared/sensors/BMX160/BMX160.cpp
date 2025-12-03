@@ -168,7 +168,7 @@ BMX160Temperature BMX160::getTemperature()
 
 BMX160FifoStats BMX160::getFifoStats() { return stats; }
 
-void BMX160::sendCmd(SPITransaction& spi, BMX160Defs::Cmd cmd,
+void BMX160::sendCmd(SPITransaction<uint8_t>& spi, BMX160Defs::Cmd cmd,
                      BMX160Defs::PowerMode pmu)
 {
     spi.writeRegister(BMX160Defs::REG_CMD,
@@ -180,25 +180,25 @@ void BMX160::pushSample(BMX160Data sample)
     lastFifo[lastFifoLevel++] = sample;
 }
 
-void BMX160::confMag(SPITransaction& spi, uint8_t value)
+void BMX160::confMag(SPITransaction<uint8_t>& spi, uint8_t value)
 {
     spi.writeRegister(BMX160Defs::REG_MAG_IF_0, value);
     miosix::Thread::sleep(10);
 }
 
-void BMX160::mapMag(SPITransaction& spi, uint8_t reg)
+void BMX160::mapMag(SPITransaction<uint8_t>& spi, uint8_t reg)
 {
     spi.writeRegister(BMX160Defs::REG_MAG_IF_1, reg);
     miosix::Thread::sleep(10);
 }
 
-uint8_t BMX160::readMag(SPITransaction& spi, uint8_t reg)
+uint8_t BMX160::readMag(SPITransaction<uint8_t>& spi, uint8_t reg)
 {
     mapMag(spi, reg);
-    return spi.readRegister(BMX160Defs::REG_DATA_MAG);
+    return spi.readRegister<uint8_t>(BMX160Defs::REG_DATA_MAG);
 }
 
-void BMX160::readMag(SPITransaction& spi, uint8_t reg, uint8_t* data,
+void BMX160::readMag(SPITransaction<uint8_t>& spi, uint8_t reg, uint8_t* data,
                      size_t size)
 {
     while (size != 0)
@@ -240,7 +240,7 @@ void BMX160::readMag(SPITransaction& spi, uint8_t reg, uint8_t* data,
     confMag(spi, BMX160Defs::MAG_IF_0_MANUAL);
 }
 
-void BMX160::writeMag(SPITransaction& spi, uint8_t reg, uint8_t value)
+void BMX160::writeMag(SPITransaction<uint8_t>& spi, uint8_t reg, uint8_t value)
 {
     spi.writeRegister(BMX160Defs::REG_MAG_IF_3, value);
     spi.writeRegister(BMX160Defs::REG_MAG_IF_2, reg);
@@ -249,8 +249,8 @@ void BMX160::writeMag(SPITransaction& spi, uint8_t reg, uint8_t value)
 
 bool BMX160::checkChipid()
 {
-    SPITransaction spi(spiSlave);
-    auto chipId = spi.readRegister(BMX160Defs::REG_CHIPID);
+    SPITransaction<uint8_t> spi(spiSlave);
+    auto chipId = spi.readRegister<uint8_t>(BMX160Defs::REG_CHIPID);
 
 #ifdef DEBUG
     if (chipId != BMX160Defs::CHIPID)
@@ -262,20 +262,20 @@ bool BMX160::checkChipid()
 
 void BMX160::softReset()
 {
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     // Reset the state of the device, just to be sure.
     sendCmd(spi, BMX160Defs::Cmd::SOFTRESET);
     miosix::Thread::sleep(10);
 
     // Dummy read of REG_COMM_TEST to enable SPI
-    spi.readRegister(BMX160Defs::REG_COMM_TEST);
+    spi.readRegister<uint8_t>(BMX160Defs::REG_COMM_TEST);
     miosix::Thread::sleep(10);
 }
 
 bool BMX160::setPowerMode()
 {
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     sendCmd(spi, BMX160Defs::Cmd::MAG_IF_SET_PMU_MODE,
             BMX160Defs::PowerMode::NORMAL);
@@ -290,7 +290,7 @@ bool BMX160::setPowerMode()
     miosix::Thread::sleep(80);
 
     // Check if all sensors are up and running
-    return (spi.readRegister(BMX160Defs::REG_PMU_STATUS) &
+    return (spi.readRegister<uint8_t>(BMX160Defs::REG_PMU_STATUS) &
             BMX160Defs::PMU_STATUS_ALL_MASK) ==
            BMX160Defs::PMU_STATUS_ALL_NORMAL;
 }
@@ -314,7 +314,7 @@ void BMX160::initAcc()
             break;
     }
 
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     spi.writeRegister(BMX160Defs::REG_ACC_CONF,
                       static_cast<uint8_t>(config.accelerometerDataRate) |
@@ -345,7 +345,7 @@ void BMX160::initGyr()
             break;
     }
 
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
     spi.writeRegister(BMX160Defs::REG_GYR_CONF,
                       static_cast<uint8_t>(config.gyroscopeDataRate) |
                           static_cast<uint8_t>(config.gyroscopeBandwidth));
@@ -362,7 +362,7 @@ void BMX160::initMag()
     with its own register accessed with REG_MAG_IF_[1-3]
     */
 
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     // Enable manual configuration mode
     confMag(spi, BMX160Defs::MAG_IF_0_MANUAL);
@@ -394,7 +394,7 @@ void BMX160::initFifo()
 {
     if (config.fifoMode != BMX160Config::FifoMode::DISABLED)
     {
-        SPITransaction spi(spiSlave);
+        SPITransaction<uint8_t> spi(spiSlave);
 
         uint8_t configByte = BMX160Defs::FIFO_CONFIG_1_ACC_EN |
                              BMX160Defs::FIFO_CONFIG_1_GYR_EN |
@@ -424,7 +424,7 @@ void BMX160::initInt()
 {
     if (config.fifoInterrupt != BMX160Config::FifoInterruptPin::DISABLED)
     {
-        SPITransaction spi(spiSlave);
+        SPITransaction<uint8_t> spi(spiSlave);
 
         // Select mode between PUSH_PULL or OPEN_DRAIN
         uint8_t outCtrl = 0;
@@ -472,7 +472,7 @@ bool BMX160::testAcc()
     const uint8_t ACC_CONF_TEST    = 0x2C;
     const uint8_t ACC_RANGE_TEST   = 0x08;
 
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     // The acc will complain otherwise...
     spi.writeRegister(BMX160Defs::REG_ACC_CONF, ACC_CONF_TEST);
@@ -518,14 +518,14 @@ bool BMX160::testAcc()
 bool BMX160::testGyr()
 {
     // Start gyro self-test
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     spi.writeRegister(BMX160Defs::REG_SELF_TEST, BMX160Defs::SELF_TEST_GYR);
 
     miosix::Thread::sleep(50);
 
     // Read back the results
-    if (!(spi.readRegister(BMX160Defs::REG_STATUS) & 2))
+    if (!(spi.readRegister<uint8_t>(BMX160Defs::REG_STATUS) & 2))
     {
         LOG_ERR(logger, "Gyroscope self-test failed!");
         return false;
@@ -538,7 +538,7 @@ bool BMX160::testGyr()
 
 bool BMX160::testMag()
 {
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     // Enable manual configuration mode
     confMag(spi, BMX160Defs::MAG_IF_0_MANUAL);
@@ -627,9 +627,9 @@ GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
     }
 }
 
-const char* BMX160::debugErr(SPITransaction& spi)
+const char* BMX160::debugErr(SPITransaction<uint8_t>& spi)
 {
-    uint8_t err = spi.readRegister(BMX160Defs::REG_ERR);
+    uint8_t err = spi.readRegister<uint8_t>(BMX160Defs::REG_ERR);
 
     if (err & 1)
     {
@@ -677,10 +677,11 @@ uint64_t BMX160::odrToTimeOffset(BMX160Config::OutputDataRate odr,
 
 void BMX160::readTemp()
 {
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
-    int16_t val = spi.readRegister(BMX160Defs::REG_TEMPERATURE_0) |
-                  (spi.readRegister(BMX160Defs::REG_TEMPERATURE_1) << 8);
+    int16_t val =
+        spi.readRegister<uint8_t>(BMX160Defs::REG_TEMPERATURE_0) |
+        (spi.readRegister<uint8_t>(BMX160Defs::REG_TEMPERATURE_1) << 8);
 
     // Correct for sensibility and offset
     temperature = (val * BMX160Defs::TEMP_SENSIBILITY) + 23.0f;
@@ -688,7 +689,7 @@ void BMX160::readTemp()
 
 void BMX160::readData()
 {
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
     uint8_t buf[20];
     spi.readRegisters(BMX160Defs::REG_DATA, buf, sizeof(buf));
@@ -711,10 +712,11 @@ void BMX160::readFifo(bool headerless)
 {
     irqEnabled = false;
 
-    SPITransaction spi(spiSlave);
+    SPITransaction<uint8_t> spi(spiSlave);
 
-    int len = spi.readRegister(BMX160Defs::REG_FIFO_LENGTH_0) |
-              ((spi.readRegister(BMX160Defs::REG_FIFO_LENGTH_1) & 7) << 8);
+    int len =
+        spi.readRegister<uint8_t>(BMX160Defs::REG_FIFO_LENGTH_0) |
+        ((spi.readRegister<uint8_t>(BMX160Defs::REG_FIFO_LENGTH_1) & 7) << 8);
 
     if (len == 0)
     {
@@ -890,7 +892,7 @@ T BMX160::parseStruct(uint8_t* buf, int& idx)
  * ========================================================================
  */
 
-void BMX160::boschReadTrim(SPITransaction& spi)
+void BMX160::boschReadTrim(SPITransaction<uint8_t>& spi)
 {
     uint8_t trimX1y1[2]    = {0};
     uint8_t trimXyzData[4] = {0};

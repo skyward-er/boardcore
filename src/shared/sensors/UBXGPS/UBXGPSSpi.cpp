@@ -277,7 +277,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame, bool wait)
                 return false;
             }
 
-            uint8_t c = spiSlave.bus.read();
+            uint8_t c = spiSlave.bus.read<uint8_t>();
 
             if (c == UBXFrame::PREAMBLE[i])
             {
@@ -308,8 +308,8 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame, bool wait)
             }
         }
 
-        frame.message       = swapBytes16(spiSlave.bus.read16());
-        frame.payloadLength = swapBytes16(spiSlave.bus.read16());
+        frame.message       = swapBytes16(spiSlave.bus.read<uint16_t>());
+        frame.payloadLength = swapBytes16(spiSlave.bus.read<uint16_t>());
         spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
         spiSlave.bus.read(frame.checksum, 2);
 
@@ -339,7 +339,7 @@ bool UBXGPSSpi::writeUBXFrame(const UBXFrame& frame)
     frame.writePacked(packedFrame);
 
     {
-        SPITransaction spi{spiSlave};
+        SPITransaction<void> spi{spiSlave};
         spi.write(packedFrame, frame.getLength());
         Thread::sleep(1);  // GPS minimum time after deselect
     }

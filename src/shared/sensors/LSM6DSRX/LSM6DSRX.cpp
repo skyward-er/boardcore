@@ -73,7 +73,7 @@ bool LSM6DSRX::init()
 
     // Set BDU and multiple spi read/write
     {
-        SPITransaction spiTransaction{spiSlave};
+        SPITransaction<uint8_t> spiTransaction{spiSlave};
 
         uint8_t value = static_cast<uint8_t>(config.bdu) << 6;  // set bdu
         value |= 1 << 2;  // set multiple spi read/write
@@ -94,7 +94,7 @@ bool LSM6DSRX::init()
     {
         constexpr uint8_t REG_CTRL10_TIMESTAMP_EN = 1 << 5;
 
-        SPITransaction spiTransaction{spiSlave};
+        SPITransaction<uint8_t> spiTransaction{spiSlave};
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C,
                                      REG_CTRL10_TIMESTAMP_EN);
     }
@@ -116,7 +116,7 @@ bool LSM6DSRX::init()
 void LSM6DSRX::initAccelerometer()
 {
     uint8_t configByte = 0;
-    SPITransaction spiTransaction{spiSlave};
+    SPITransaction<uint8_t> spiTransaction{spiSlave};
 
     // Setup accelerometer
 
@@ -160,7 +160,7 @@ void LSM6DSRX::initAccelerometer()
 void LSM6DSRX::initGyroscope()
 {
     uint8_t configByte = 0;
-    SPITransaction spiTransaction{spiSlave};
+    SPITransaction<uint8_t> spiTransaction{spiSlave};
 
     // set odr and fullscale
     configByte = static_cast<uint8_t>(config.odrGyr) << 4 |  // odr
@@ -208,7 +208,7 @@ void LSM6DSRX::initFifo()
 {
     // setup Fifo
     uint8_t configByte = 0;
-    SPITransaction spiTransaction{spiSlave};
+    SPITransaction<uint8_t> spiTransaction{spiSlave};
 
     // select batch data rate in FIFO_CTRL3
     configByte = static_cast<uint8_t>(config.odrAcc) |  // accelerometer bdr
@@ -228,7 +228,7 @@ void LSM6DSRX::initFifo()
 void LSM6DSRX::initInterrupts()
 {
     uint8_t buf[] = {0, 0};
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
     buf[0] = static_cast<uint8_t>(
         config.int1InterruptSelection);  // set interrupt on pin INT1
@@ -250,7 +250,7 @@ bool LSM6DSRX::selfTestAcc()
     uint8_t byteValue       = 0;  // used to read and write in registers
     uint8_t idx             = 0;
     const uint8_t SIZE_DATA = 5;  // number of sample for the test
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
     // sleep time for data ready interrupt (150% odr during self-test)
     // expressed in milliseconds.
@@ -263,48 +263,48 @@ bool LSM6DSRX::selfTestAcc()
     // set registers
 
     // set odr=52Hz, fs=2g
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x30);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, uint8_t{0x30});
 
     // power off the gyro
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, uint8_t{0x00});
 
     // set bdu to UPDATE_AFTER_READ
     // register address automatically incremented during a multiple byte access
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, 0x44);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, uint8_t{0x44});
 
     // disable gyro sleep mode
     // disable data ready
     // disable i2c
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, uint8_t{0x00});
 
     // disable accelerometer and gyro self test (for acc it will be enabled
     // later on)
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, uint8_t{0x00});
 
     // more settings for the accelerometer (performance mode)
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, uint8_t{0x00});
 
     // gyro settings
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, uint8_t{0x00});
 
     // disables accelerometers additional filters
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, uint8_t{0x00});
 
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, uint8_t{0x00});
 
     // disable timestamp counter
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, uint8_t{0x00});
 
     // wait for stable output
     miosix::Thread::sleep(100);
 
     // wait for accelerometer data ready
-    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+    byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
         miosix::Thread::sleep(dataReadyWaitTime);
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
 
@@ -317,12 +317,12 @@ bool LSM6DSRX::selfTestAcc()
     for (idx = 0; idx < SIZE_DATA; ++idx)
     {
         // wait for accelerometer data ready
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
             miosix::Thread::sleep(dataReadyWaitTime);
-            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+            byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
 
@@ -342,18 +342,18 @@ bool LSM6DSRX::selfTestAcc()
     averageNormal.accelerationZ /= SIZE_DATA;
 
     // enable accelerometer positive sign self test
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x01);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, uint8_t{0x01});
 
     // wait for stable output
     miosix::Thread::sleep(100);
 
     // wait for accelerometer data ready
-    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+    byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
     byteValue = byteValue & 0x01;
     while (byteValue != 1)
     {
         miosix::Thread::sleep(dataReadyWaitTime);
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
     }
 
@@ -366,12 +366,12 @@ bool LSM6DSRX::selfTestAcc()
     for (idx = 0; idx < SIZE_DATA; ++idx)
     {
         // wait for accelerometer data ready
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = byteValue & 0x01;
         while (byteValue != 1)
         {
             miosix::Thread::sleep(dataReadyWaitTime);
-            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+            byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
             byteValue = byteValue & 0x01;
         }
 
@@ -412,9 +412,9 @@ bool LSM6DSRX::selfTestAcc()
     }
 
     // Disable self-test
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, uint8_t{0x00});
     // Disable sensor
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, uint8_t{0x00});
 
     return returnValue;
 }
@@ -425,7 +425,7 @@ bool LSM6DSRX::selfTestGyr()
     uint8_t byteValue       = 0;
     uint8_t idx             = 0;
     const uint8_t SIZE_DATA = 5;
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
     // sleep time for data ready interrupt (150% odr during self-test)
     // expressed in milliseconds.
@@ -438,49 +438,49 @@ bool LSM6DSRX::selfTestGyr()
     // set registers
 
     // disable accelerometer (power down)
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL1_XL, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL1_XL, uint8_t{0x00});
 
     // set odr and fullscale for the gyro
     // odr: 208Hz
     // fs: 2000 dps
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x5C);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL2_G, uint8_t{0x5C});
 
     // set bdu to UPDATE_AFTER_READ
     // register address automatically incremented during a multiple byte access
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL3_C, 0x44);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL3_C, uint8_t{0x44});
 
     // disable gyro sleep mode
     // disable data ready
     // disable i2c
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL4_C, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL4_C, uint8_t{0x00});
 
     // disable accelerometer and gyro self test
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL5_C, uint8_t{0x00});
 
     // more settings for the accelerometer (performance mode)
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL6_C, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL6_C, uint8_t{0x00});
 
     // enables high performance mode for the gyro
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL7_G, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL7_G, uint8_t{0x00});
 
     // disables accelerometer's filters
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL8_XL, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL8_XL, uint8_t{0x00});
 
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL9_XL, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL9_XL, uint8_t{0x00});
 
     // disable timestamp counter
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 0x00);
+    spi.writeRegister<uint8_t>(LSM6DSRXDefs::REG_CTRL10_C, uint8_t{0x00});
 
     // sleep for stable output
     miosix::Thread::sleep(100);
 
     // wait for gyroscope data ready
-    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+    byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
     byteValue = (byteValue & 0x02) >> 1;
     while (byteValue != 1)
     {
         miosix::Thread::sleep(dataReadyWaitTime);
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
     }
     // read and discard data
@@ -492,12 +492,12 @@ bool LSM6DSRX::selfTestGyr()
     for (idx = 0; idx < SIZE_DATA; ++idx)
     {
         // wait for gyroscope data ready
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
         while (byteValue != 1)
         {
             miosix::Thread::sleep(dataReadyWaitTime);
-            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+            byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
             byteValue = (byteValue & 0x02) >> 1;
         }
 
@@ -523,12 +523,12 @@ bool LSM6DSRX::selfTestGyr()
     miosix::Thread::sleep(100);
 
     // wait for gyroscope data ready
-    byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+    byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
     byteValue = (byteValue & 0x02) >> 1;
     while (byteValue != 1)
     {
         miosix::Thread::sleep(dataReadyWaitTime);
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
     }
     // read and discard data
@@ -540,12 +540,12 @@ bool LSM6DSRX::selfTestGyr()
     for (idx = 0; idx < SIZE_DATA; ++idx)
     {
         // wait for gyroscope data ready
-        byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+        byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
         byteValue = (byteValue & 0x02) >> 1;
         while (byteValue != 1)
         {
             miosix::Thread::sleep(dataReadyWaitTime);
-            byteValue = spi.readRegister(LSM6DSRXDefs::REG_STATUS);
+            byteValue = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_STATUS);
             byteValue = (byteValue & 0x02) >> 1;
         }
 
@@ -586,9 +586,9 @@ bool LSM6DSRX::selfTestGyr()
     }
 
     // Disable self test
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL5_C, uint8_t{0x00});
     // Disable sensor
-    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, 0x00);
+    spi.writeRegister(LSM6DSRXDefs::REG_CTRL2_G, uint8_t{0x00});
 
     return returnValue;
 }
@@ -597,8 +597,9 @@ bool LSM6DSRX::checkWhoAmI()
 {
     uint8_t regValue = 0;
     {
-        SPITransaction transaction{spiSlave};
-        regValue = transaction.readRegister(LSM6DSRXDefs::REG_WHO_AM_I);
+        SPITransaction<uint8_t> transaction{spiSlave};
+        regValue =
+            transaction.readRegister<uint8_t>(LSM6DSRXDefs::REG_WHO_AM_I);
     }
 
     return regValue == LSM6DSRXDefs::WHO_AM_I_VALUE;
@@ -656,12 +657,12 @@ void LSM6DSRX::getTemperatureData(LSM6DSRXData& data)
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
-    uint32_t value = spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP0);
-    value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP1) << 8;
-    value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP2) << 16;
-    value |= spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP3) << 24;
+    uint32_t value = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_TIMESTAMP0);
+    value |= spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_TIMESTAMP1) << 8;
+    value |= spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_TIMESTAMP2) << 16;
+    value |= spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_TIMESTAMP3) << 24;
 
     return value;
 }
@@ -727,10 +728,10 @@ float LSM6DSRX::readFloat16(LSM6DSRXDefs::Registers lowReg,
     int8_t low = 0, high = 0;
     int16_t sample = 0;
 
-    SPITransaction transaction{spiSlave};
+    SPITransaction<uint8_t> transaction{spiSlave};
 
-    high = transaction.readRegister(highReg);
-    low  = transaction.readRegister(lowReg);
+    high = transaction.readRegister<uint8_t>(highReg);
+    low  = transaction.readRegister<uint8_t>(lowReg);
 
     sample = combineHighLowBits(low, high);
 
@@ -744,10 +745,10 @@ int16_t LSM6DSRX::readInt16(LSM6DSRXDefs::Registers lowReg,
     int8_t low = 0, high = 0;
     int16_t sample = 0;
 
-    SPITransaction transaction{spiSlave};
+    SPITransaction<uint8_t> transaction{spiSlave};
 
-    high = transaction.readRegister(highReg);
-    low  = transaction.readRegister(lowReg);
+    high = transaction.readRegister<uint8_t>(highReg);
+    low  = transaction.readRegister<uint8_t>(lowReg);
 
     sample = combineHighLowBits(low, high);
 
@@ -781,9 +782,10 @@ void LSM6DSRX::correlateTimestamps()
 
 float LSM6DSRX::getSensorTimestampResolution()
 {
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
-    uint8_t value = spi.readRegister(LSM6DSRXDefs::REG_INTERNAL_FREQ_FINE);
+    uint8_t value =
+        spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_INTERNAL_FREQ_FINE);
 
     // TS_Res = 1 / (40000 + (0.0015 * INTERNAL_FREQ_FINE * 40000))
     float TS_Res = 1 / (40000 + (0.0015 * value * 40000));
@@ -795,7 +797,7 @@ void LSM6DSRX::readFromFifo()
     // Lock mutex for thread safe Fifo reading
     miosix::Lock<miosix::FastMutex> l(mutex);
 
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
     // get number of sample to read
     const uint16_t numSamples = unreadDataInFifo();
@@ -815,9 +817,9 @@ void LSM6DSRX::readFromFifo()
                                                           false};
 
     // read samples from the sensors
-    spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
-                      reinterpret_cast<uint8_t*>(rawFifo.data()),
-                      numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
+    spi.readRegisters<uint8_t>(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
+                               reinterpret_cast<uint8_t*>(rawFifo.data()),
+                               numSamples * sizeof(LSM6DSRXDefs::RawFifoData));
 
     // not all data extracted from fifo is sample data, timestamps are not
     // saved.
@@ -959,12 +961,13 @@ void LSM6DSRX::pushIntoFifo(LSM6DSRXDefs::FifoTimeslotData& timeslot,
 uint16_t LSM6DSRX::unreadDataInFifo()
 {
     uint16_t ris = 0;
-    SPITransaction spi{spiSlave};
+    SPITransaction<uint8_t> spi{spiSlave};
 
-    ris = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1);
-    ris = ris | (static_cast<uint16_t>(
-                     spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2) & 3)
-                 << 8);
+    ris = spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_FIFO_STATUS1);
+    ris = ris |
+          (static_cast<uint16_t>(
+               spi.readRegister<uint8_t>(LSM6DSRXDefs::REG_FIFO_STATUS2) & 3)
+           << 8);
     return ris;
 }
 

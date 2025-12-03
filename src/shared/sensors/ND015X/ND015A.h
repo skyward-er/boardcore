@@ -177,7 +177,7 @@ protected:
     ND015XData sampleImpl() override;
 
 private:
-    SPISlave slave;
+    SPISlave<void> slave;
     DMAStreamGuard* const streamRx;
     DMAStreamGuard* const streamTx;
     const std::chrono::nanoseconds timeoutDma;

@@ -185,7 +185,7 @@ public:
      * @param tempDivider_ Specify how many onSimpleUpdate calls between each
      * temperature reading.
      */
-    explicit ADS1118(SPISlave spiSlave_,
+    explicit ADS1118(SPISlave<uint8_t> spiSlave_,
                      ADS1118Config config_ = ADS1118_DEFAULT_CONFIG,
                      bool busyWait_ = false, int16_t tempDivider_ = 100);
 
@@ -309,7 +309,7 @@ private:
 
     int8_t findNextEnabledChannel(int8_t startChannel);
 
-    const SPISlave spiSlave;
+    const SPISlave<uint8_t> spiSlave;
     ADS1118Config baseConfig;
 
     ///< Read the written configuration on each transaction and checks it

@@ -75,7 +75,7 @@ protected:
 
 private:
     bool isInit = false;
-    SPISlave spiSlave;
+    SPISlave<uint8_t> spiSlave;
     LSM6DSRXConfig config;
 
     float sensitivityAcc = 0.0;  ///< Sensitivity value for the accelerator.

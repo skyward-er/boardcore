@@ -161,28 +161,8 @@ public:
      *
      * @return Byte read from the bus.
      */
-    uint8_t read() override;
-
-    /**
-     * @brief Reads 16 bits from the bus.
-     *
-     * @return Half word read from the bus.
-     */
-    uint16_t read16() override;
-
-    /**
-     * @brief Reads 24 bits from the bus.
-     *
-     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
-     */
-    uint32_t read24() override;
-
-    /**
-     * @brief Reads 32 bits from the bus.
-     *
-     * @return Word read from the bus.
-     */
-    uint32_t read32() override;
+    template <typename DataType>
+    DataType read();
 
     /**
      * @brief Reads multiple bytes from the bus
@@ -190,43 +170,16 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer.
      */
-    void read(uint8_t* data, size_t size) override;
-
-    /**
-     * @brief Reads multiple half words from the bus
-     *
-     * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
-     */
-    void read16(uint16_t* data, size_t size) override;
+    template <typename DataType>
+    void read(DataType* data, size_t size);
 
     /**
      * @brief Writes 8 bits to the bus.
      *
      * @param data Byte to write.
      */
-    void write(uint8_t data) override;
-
-    /**
-     * @brief Writes 16 bits to the bus.
-     *
-     * @param data Half word to write.
-     */
-    void write16(uint16_t data) override;
-
-    /**
-     * @brief Writes 24 bits to the bus.
-     *
-     * @param data Bytes to write (the MSB of the uint32_t is not used).
-     */
-    void write24(uint32_t data) override;
-
-    /**
-     * @brief Writes 32 bits to the bus.
-     *
-     * @param data Word to write.
-     */
-    void write32(uint32_t data) override;
+    template <typename DataType>
+    void write(DataType data);
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -234,63 +187,21 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    void write(const uint8_t* data, size_t size) override;
+    template <typename DataType>
+    void write(const DataType* data, size_t size);
 
     /**
-     * @brief Writes multiple half words to the bus.
+     * @brief Full duplex transmission of 8, 16 or 32 bits on the bus.
      *
-     * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param data Data to write.
+     * @return Data read from the bus.
      */
-    void write16(const uint16_t* data, size_t size) override;
+    uint8_t transfer(uint8_t data);
+    uint16_t transfer(uint16_t data);
+    uint32_t transfer(uint32_t data);
 
-    /**
-     * @brief Full duplex transmission of 8 bits on the bus.
-     *
-     * @param data Byte to write.
-     * @return Byte read from the bus.
-     */
-    uint8_t transfer(uint8_t data) override;
-
-    /**
-     * @brief Full duplex transmission of 16 bits on the bus.
-     *
-     * @param data Half word to write.
-     * @return Half word read from the bus.
-     */
-    uint16_t transfer16(uint16_t data) override;
-
-    /**
-     * @brief Full duplex transmission of 24 bits on the bus.
-     *
-     * @param data Bytes to write (the MSB of the uint32_t is not used).
-     * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
-     */
-    uint32_t transfer24(uint32_t data) override;
-
-    /**
-     * @brief Full duplex transmission of 32 bits on the bus.
-     *
-     * @param data Word to write.
-     * @return Half word read from the bus.
-     */
-    uint32_t transfer32(uint32_t data) override;
-
-    /**
-     * @brief Full duplex transmission of multiple bytes on the bus.
-     *
-     * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
-     */
-    void transfer(uint8_t* data, size_t size) override;
-
-    /**
-     * @brief Full duplex transmission of multiple half words on the bus.
-     *
-     * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
-     */
-    void transfer16(uint16_t* data, size_t size) override;
+    template <typename DataType>
+    void transfer(DataType* data, size_t nItems);
 
 private:
     SPIType* spi;
@@ -462,64 +373,30 @@ inline void SPIBus::deselect(GpioType cs)
     cs.high();
 }
 
-inline uint8_t SPIBus::read() { return transfer(0); }
+template <typename DataSize>
+inline DataSize SPIBus::read()
+{
+    return transfer<DataSize>(0);
+}
 
-inline uint16_t SPIBus::read16() { return transfer16(0); }
-
-inline uint32_t SPIBus::read24() { return transfer24(0); }
-
-inline uint32_t SPIBus::read32() { return transfer32(0); }
-
-inline void SPIBus::read(uint8_t* data, size_t nBytes)
+template <typename DataSize>
+inline void SPIBus::read(DataSize* data, size_t nBytes)
 {
     for (size_t i = 0; i < nBytes; i++)
-        data[i] = read();
+        data[i] = read<DataSize>();
 }
 
-inline void SPIBus::read16(uint16_t* data, size_t nBytes)
+template <typename DataSize>
+inline void SPIBus::write(DataSize data)
 {
-    // nBytes to be read must be a multiple of 2
-    assert(nBytes % 2 == 0);
-
-    uint16_t temp[2] = {0};
-    for (size_t i = 0; i < nBytes / 2; i++)
-    {
-        // Receiving MSB
-        temp[0] = static_cast<uint16_t>(read());
-        // Receiving LSB
-        temp[1] = static_cast<uint16_t>(read());
-
-        // MSB | LSB
-        data[i] = temp[0] << 8 | temp[1];
-    }
+    transfer(data);
 }
 
-inline void SPIBus::write(uint8_t data) { transfer(data); }
-
-inline void SPIBus::write16(uint16_t data) { transfer16(data); }
-
-inline void SPIBus::write24(uint32_t data) { transfer24(data); }
-
-inline void SPIBus::write32(uint32_t data) { transfer32(data); }
-
-inline void SPIBus::write(const uint8_t* data, size_t nBytes)
+template <typename DataSize>
+inline void SPIBus::write(const DataSize* data, size_t nBytes)
 {
     for (size_t i = 0; i < nBytes; i++)
         transfer(data[i]);
-}
-
-inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
-{
-    // nBytes to be read must be a multiple of 2
-    assert(nBytes % 2 == 0);
-
-    for (size_t i = 0; i < nBytes / 2; i++)
-    {
-        // Sending MSB
-        write(static_cast<uint8_t>(data[i] >> 8));
-        // Sending LSB
-        write(static_cast<uint8_t>(data[i]));
-    }
 }
 
 inline uint8_t SPIBus::transfer(uint8_t data)
@@ -558,7 +435,7 @@ inline uint8_t SPIBus::transfer(uint8_t data)
     return static_cast<uint8_t>(spi->DR);
 }
 
-inline uint16_t SPIBus::transfer16(uint16_t data)
+inline uint16_t SPIBus::transfer(uint16_t data)
 {
     uint16_t temp[2] = {0};
     // Transferring MSB, putting the read value in the MSB of temp
@@ -569,19 +446,7 @@ inline uint16_t SPIBus::transfer16(uint16_t data)
     return temp[0] << 8 | temp[1];
 }
 
-inline uint32_t SPIBus::transfer24(uint32_t data)
-{
-    uint32_t temp[3] = {0};
-    // Transferring MSB, putting the read value in the MSB of temp
-    temp[0] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 16)));
-    temp[1] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data >> 8)));
-    // Transferring LSB, putting the read value in the LSB of temp
-    temp[2] = static_cast<uint32_t>(transfer(static_cast<uint8_t>(data)));
-
-    return temp[0] << 16 | temp[1] << 8 | temp[2];
-}
-
-inline uint32_t SPIBus::transfer32(uint32_t data)
+inline uint32_t SPIBus::transfer(uint32_t data)
 {
     uint32_t temp[4] = {0};
     // Transferring MSB, putting the read value in the MSB of temp
@@ -594,27 +459,11 @@ inline uint32_t SPIBus::transfer32(uint32_t data)
     return temp[0] << 24 | temp[1] << 16 | temp[2] << 8 | temp[3];
 }
 
-inline void SPIBus::transfer(uint8_t* data, size_t nBytes)
+template <typename DataType>
+void SPIBus::transfer(DataType* data, size_t nItems)
 {
-    for (size_t i = 0; i < nBytes; i++)
+    for (size_t i = 0; i < nItems; i++)
         data[i] = transfer(data[i]);
-}
-
-inline void SPIBus::transfer16(uint16_t* data, size_t nBytes)
-{
-    // nBytes to be read must be a multiple of 2
-    assert(nBytes % 2 == 0);
-
-    uint16_t temp[2] = {0};
-
-    for (size_t i = 0; i < nBytes / 2; i++)
-    {
-        temp[0] =
-            static_cast<uint16_t>(transfer(static_cast<uint8_t>(data[i] >> 8)));
-        temp[1] =
-            static_cast<uint16_t>(transfer(static_cast<uint8_t>(data[i])));
-        data[i] = temp[0] << 8 | temp[1];
-    }
 }
 
 }  // namespace Boardcore

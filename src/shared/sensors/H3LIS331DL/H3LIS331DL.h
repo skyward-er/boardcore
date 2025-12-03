@@ -108,7 +108,7 @@ private:
     /**
      * @brief The SPI driver used to create SPI Transactions
      */
-    SPISlave spi;
+    SPISlave<uint8_t> spi;
 
     /**
      * @brief The OutputDataRate that is set to the sensor.

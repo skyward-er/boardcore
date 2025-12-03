@@ -86,7 +86,7 @@ protected:
     MAX31856Data sampleImpl() override;
 
 private:
-    SPISlave slave;
+    SPISlave<uint8_t> slave;
     ThermocoupleType type;
 
     PrintLogger logger = Logging::getLogger("max31856");

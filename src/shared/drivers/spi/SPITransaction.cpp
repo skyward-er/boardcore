@@ -27,16 +27,24 @@
 namespace Boardcore
 {
 
-SPITransaction::SPITransaction(const SPISlave& slave) : slave(slave)
+template <typename AddressSize>
+SPITransaction<AddressSize>::SPITransaction(const SPISlave<AddressSize>& slave)
+    : slave(slave)
 {
     slave.bus.configure(slave.config);
 }
 
-SPIBusInterface& SPITransaction::getBus() { return slave.bus; }
+template <typename AddressSize>
+SPIBusInterface& SPITransaction<AddressSize>::getBus()
+{
+    return slave.bus;
+}
 
 // Read, write and transfer operations in master mode
 
-uint8_t SPITransaction::read()
+template <typename AddressSize>
+template <typename DataSize>
+DataSize SPITransaction<AddressSize>::read()
 {
     slave.bus.select(slave.cs);
     uint8_t data = slave.bus.read();
@@ -45,88 +53,36 @@ uint8_t SPITransaction::read()
     return data;
 }
 
-uint16_t SPITransaction::read16()
-{
-    slave.bus.select(slave.cs);
-    uint16_t data = slave.bus.read16();
-    slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-uint32_t SPITransaction::read24()
-{
-    slave.bus.select(slave.cs);
-    uint32_t data = slave.bus.read24();
-    slave.bus.deselect(slave.cs);
-    return data;
-}
-
-uint32_t SPITransaction::read32()
-{
-    slave.bus.select(slave.cs);
-    uint32_t data = slave.bus.read32();
-    slave.bus.deselect(slave.cs);
-    return data;
-}
-
-void SPITransaction::read(uint8_t* data, size_t size)
+template <typename AddressSize>
+template <typename DataSize>
+void SPITransaction<AddressSize>::read(DataSize* data, size_t size)
 {
     slave.bus.select(slave.cs);
     slave.bus.read(data, size);
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::read16(uint16_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.read16(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write(uint8_t data)
+template <typename AddressSize>
+template <typename DataSize>
+void SPITransaction<AddressSize>::write(DataSize data)
 {
     slave.bus.select(slave.cs);
     slave.bus.write(data);
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::write16(uint16_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write16(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write24(uint32_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write24(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write32(uint32_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write32(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write(uint8_t* data, size_t size)
+template <typename AddressSize>
+template <typename DataSize>
+void SPITransaction<AddressSize>::write(DataSize* data, size_t size)
 {
     slave.bus.select(slave.cs);
     slave.bus.write(data, size);
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::write16(uint16_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write16(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
-uint8_t SPITransaction::transfer(uint8_t data)
+template <typename AddressSize>
+template <typename DataSize>
+DataSize SPITransaction<AddressSize>::transfer(DataSize data)
 {
     slave.bus.select(slave.cs);
     data = slave.bus.transfer(data);
@@ -135,114 +91,40 @@ uint8_t SPITransaction::transfer(uint8_t data)
     return data;
 }
 
-uint16_t SPITransaction::transfer16(uint16_t data)
-{
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer16(data);
-    slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-uint32_t SPITransaction::transfer24(uint32_t data)
-{
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer24(data);
-    slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-uint32_t SPITransaction::transfer32(uint32_t data)
-{
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer32(data);
-    slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-void SPITransaction::transfer(uint8_t* data, size_t size)
+template <typename AddressSize>
+template <typename DataSize>
+void SPITransaction<AddressSize>::transfer(DataSize* data, size_t size)
 {
     slave.bus.select(slave.cs);
     slave.bus.transfer(data, size);
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::transfer16(uint16_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.transfer16(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
 // Read, write and transfer operations with registers
-
-uint8_t SPITransaction::readRegister(uint8_t reg)
+template <typename AddressSize>
+template <typename RegisterSize>
+RegisterSize SPITransaction<AddressSize>::readRegister(AddressSize reg)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
+        reg = (reg & ~slave.readWriteMask) | slave.readWriteMask;
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
-    uint8_t data = slave.bus.read();
+    RegisterSize data = slave.bus.read();
     slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-uint16_t SPITransaction::readRegister16(uint8_t reg)
-{
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint16_t data = slave.bus.read16();
-    slave.bus.deselect(slave.cs);
-
     if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
-        data = swapBytes16(data);
+        data = swapBytes(data);
 
     return data;
 }
 
-uint32_t SPITransaction::readRegister24(uint8_t reg)
+template <typename AddressSize>
+template <typename RegisterSize>
+void SPITransaction<AddressSize>::readRegisters(AddressSize reg,
+                                                RegisterSize* data, size_t size)
 {
     if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint32_t data = slave.bus.read24();
-    slave.bus.deselect(slave.cs);
-
-    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
-        data = swapBytes32(data) >> 8;
-
-    return data;
-}
-
-uint32_t SPITransaction::readRegister32(uint8_t reg)
-{
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint32_t data = slave.bus.read32();
-    slave.bus.deselect(slave.cs);
-
-    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
-        data = swapBytes32(data) >> 8;
-
-    return data;
-}
-
-void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
-{
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
+        reg = (reg & ~slave.readWriteMask) | slave.readWriteMask;
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
@@ -250,10 +132,16 @@ void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
+template <typename AddressSize>
+template <typename RegisterSize>
+void SPITransaction<AddressSize>::writeRegister(AddressSize reg,
+                                                RegisterSize data)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
-        reg |= 0x80;
+        reg = (reg & ~slave.readWriteMask) | slave.readWriteMask;
+
+    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
+        data = swapBytes(data);
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
@@ -261,48 +149,48 @@ void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
     slave.bus.deselect(slave.cs);
 }
 
-void SPITransaction::writeRegister16(uint8_t reg, uint16_t data)
+template <typename AddressSize>
+template <typename RegisterSize>
+void SPITransaction<AddressSize>::writeRegisters(AddressSize reg,
+                                                 RegisterSize* data,
+                                                 size_t size)
 {
     if (slave.config.writeBit == SPI::WriteBit::INVERTED)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write16(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::writeRegister24(uint8_t reg, uint32_t data)
-{
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write24(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::writeRegister32(uint8_t reg, uint32_t data)
-{
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write32(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, size_t size)
-{
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
-        reg |= 0x80;
+        reg = (reg & ~slave.readWriteMask) | slave.readWriteMask;
 
     slave.bus.select(slave.cs);
     slave.bus.write(reg);
     slave.bus.write(data, size);
     slave.bus.deselect(slave.cs);
+}
+
+template <typename AddressSize>
+template <typename DataSize>
+DataSize SPITransaction<AddressSize>::swapBytes(DataSize data)
+{
+    static_assert(std::is_same<DataSize, uint8_t>::value ||
+                      std::is_same<DataSize, uint16_t>::value ||
+                      std::is_same<DataSize, uint32_t>::value,
+                  "Data should be 8, 16 or 32 bit (Available types: uint8_t, "
+                  "uint16_t, uint32_t)");
+}
+
+template <typename AddressSize>
+uint8_t SPITransaction<AddressSize>::swapBytes(uint8_t data)
+{
+    return data;
+}
+
+template <typename AddressSize>
+uint16_t SPITransaction<AddressSize>::swapBytes(uint16_t data)
+{
+    return swapBytes16(data);
+}
+
+template <typename AddressSize>
+uint32_t SPITransaction<AddressSize>::swapBytes(uint32_t data)
+{
+    return swapBytes32(data);
 }
 
 }  // namespace Boardcore

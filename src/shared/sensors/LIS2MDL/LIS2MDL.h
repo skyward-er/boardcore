@@ -103,7 +103,7 @@ protected:
     LIS2MDLData sampleImpl() override;
 
 private:
-    SPISlave slave;
+    SPISlave<uint8_t> slave;
     Config configuration;
 
     unsigned tempCounter = 0;

@@ -114,7 +114,7 @@ public:
             return false;  // sensor correctly initialized
         }
 
-        SPITransaction spi(spiSlave);
+        SPITransaction<uint8_t> spi(spiSlave);
 
         // set the full scale value in CTRL_REG5
         uint8_t ctrlReg5Value = (fullScale << 3);
@@ -170,7 +170,7 @@ public:
                                 (7 << 0);
 
         {
-            SPITransaction spi(spiSlave);
+            SPITransaction<uint8_t> spi(spiSlave);
             spi.writeRegister(CTRL_REG4, ctrlReg4Value);
         }
 
@@ -179,7 +179,7 @@ public:
         uint8_t ctrlReg5Value = (FullScale::FULL_SCALE_2G << 3) | (1 << 1);
 
         {
-            SPITransaction spi(spiSlave);
+            SPITransaction<uint8_t> spi(spiSlave);
             spi.writeRegister(CTRL_REG5, ctrlReg5Value);
         }
 
@@ -198,7 +198,7 @@ public:
         ctrlReg5Value |= (FULL_SCALE_2G << 3);
 
         {
-            SPITransaction spi(spiSlave);
+            SPITransaction<uint8_t> spi(spiSlave);
             spi.writeRegister(CTRL_REG5, ctrlReg5Value);
         }
 
@@ -237,14 +237,14 @@ public:
         ctrlReg4Value = (odr << 4) | (bdu << 3) | (7 << 0);
 
         {
-            SPITransaction spi(spiSlave);
+            SPITransaction<uint8_t> spi(spiSlave);
             spi.writeRegister(CTRL_REG4, ctrlReg4Value);
         }
         // set the full scale value in CTRL_REG5
         ctrlReg5Value = (fullScale << 3);  // normal mode
 
         {
-            SPITransaction spi(spiSlave);
+            SPITransaction<uint8_t> spi(spiSlave);
             spi.writeRegister(CTRL_REG5, ctrlReg5Value);
         }
 
@@ -348,10 +348,10 @@ private:
     {
         AccelerometerData accelData;
 
-        SPITransaction spi(spiSlave);
+        SPITransaction<uint8_t> spi(spiSlave);
 
         // read the sensor's status register
-        uint8_t status = spi.readRegister(STATUS);
+        uint8_t status = spi.readRegister<uint8_t>(STATUS);
 
         if (status & 0x08)
         {  // bit 3 of status set to 1 (new data available)
@@ -362,20 +362,20 @@ private:
                     TimestampTimer::getTimestamp();
 
                 // read acceleration on X
-                int8_t accel_L = spi.readRegister(OUT_X_L);
-                int8_t accel_H = spi.readRegister(OUT_X_H);
+                int8_t accel_L = spi.readRegister<uint8_t>(OUT_X_L);
+                int8_t accel_H = spi.readRegister<uint8_t>(OUT_X_H);
                 accelData.accelerationX =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Y
-                accel_L = spi.readRegister(OUT_Y_L);
-                accel_H = spi.readRegister(OUT_Y_H);
+                accel_L = spi.readRegister<uint8_t>(OUT_Y_L);
+                accel_H = spi.readRegister<uint8_t>(OUT_Y_H);
                 accelData.accelerationY =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Z
-                accel_L = spi.readRegister(OUT_Z_L);
-                accel_H = spi.readRegister(OUT_Z_H);
+                accel_L = spi.readRegister<uint8_t>(OUT_Z_L);
+                accel_H = spi.readRegister<uint8_t>(OUT_Z_H);
                 accelData.accelerationZ =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
@@ -397,10 +397,10 @@ private:
      */
     TemperatureData readTemperature()
     {
-        SPITransaction spi(spiSlave);
+        SPITransaction<uint8_t> spi(spiSlave);
 
         // the temperature is given as a 8-bits integer (in 2-complement)
-        int8_t t = spi.readRegister(OUT_T);
+        int8_t t = static_cast<int8_t>(spi.readRegister<uint8_t>(OUT_T));
 
         return TemperatureData{
             TimestampTimer::getTimestamp(),
@@ -416,10 +416,10 @@ private:
      */
     bool checkWhoAmI()
     {
-        SPITransaction spi(spiSlave);
+        SPITransaction<uint8_t> spi(spiSlave);
 
         // check the WHO_AM_I_REG register
-        uint8_t whoAmIValue = spi.readRegister(WHO_AM_I_REG);
+        uint8_t whoAmIValue = spi.readRegister<uint8_t>(WHO_AM_I_REG);
         if (whoAmIValue == WHO_AM_I_DEFAULT_VALUE)
         {
             LOG_DEBUG(logger, "Correct WHO_AM_I value");
@@ -517,7 +517,7 @@ private:
         OUT_T = 0x0C,
     };
 
-    SPISlave spiSlave;
+    SPISlave<uint8_t> spiSlave;
 
     bool initialized = false;  // whether the sensor has been initialized or not
 

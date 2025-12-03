@@ -49,8 +49,8 @@ bool MAX6675::checkConnection()
     uint16_t sample;
 
     {
-        SPITransaction spi{slave};
-        sample = spi.read16();
+        SPITransaction<void> spi{slave};
+        sample = spi.read<uint16_t>();
     }
 
     // The third bit (D2) indicates whether the thermocouple is connected or not
@@ -70,8 +70,8 @@ TemperatureData MAX6675::sampleImpl()
     uint16_t sample;
 
     {
-        SPITransaction spi{slave};
-        sample = spi.read16();
+        SPITransaction<void> spi{slave};
+        sample = spi.read<uint16_t>();
     }
 
     TemperatureData result{};

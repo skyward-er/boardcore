@@ -105,8 +105,8 @@ bool VN100Spi::checkModelNumber()
 
 void VN100Spi::sendDummyPacket()
 {
-    SPITransaction transaction(spiSlave);
-    transaction.write32(0);
+    SPITransaction<uint8_t> transaction(spiSlave);
+    transaction.write<uint32_t>(0);
 
     /**
      * After issuing a command the vn100 needs al least 100 microseconds
@@ -298,7 +298,7 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint8_t regId,
 
     // Send request packet
     spiSlave.bus.select(spiSlave.cs);
-    spiSlave.bus.write32(requestPacket);
+    spiSlave.bus.write<uint32_t>(requestPacket);
     spiSlave.bus.deselect(spiSlave.cs);
 
     // Wait at least 100us
@@ -309,7 +309,7 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint8_t regId,
 
     // Discard the first 3 bytes of the response
     VN100SpiDefs::VNErrors err =
-        (VN100SpiDefs::VNErrors)(spiSlave.bus.read32() & 255);
+        (VN100SpiDefs::VNErrors)(spiSlave.bus.read<uint32_t>() & 255);
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
@@ -352,7 +352,7 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint8_t regId,
 
     // Send request packet
     spiSlave.bus.select(spiSlave.cs);
-    spiSlave.bus.write32(requestPacket);
+    spiSlave.bus.write<uint32_t>(requestPacket);
     spiSlave.bus.write(payloadBuf, payloadSize);
     spiSlave.bus.deselect(spiSlave.cs);
 
@@ -363,7 +363,7 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint8_t regId,
     spiSlave.bus.select(spiSlave.cs);
 
     // Discard the first 3 bytes of the response
-    uint8_t err = spiSlave.bus.read32() & 255;
+    uint8_t err = spiSlave.bus.read<uint32_t>() & 255;
 
     spiSlave.bus.deselect(spiSlave.cs);
 

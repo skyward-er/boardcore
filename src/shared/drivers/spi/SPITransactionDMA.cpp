@@ -25,7 +25,7 @@
 namespace Boardcore
 {
 
-SPITransactionDMA::SPITransactionDMA(const SPISlave& slave,
+SPITransactionDMA::SPITransactionDMA(const SPISlave<uint8_t>& slave,
                                      DMAStreamGuard& rxStream,
                                      DMAStreamGuard& txStream)
     : slave(slave), spi(slave.bus.getSpi()), streamRx(rxStream),

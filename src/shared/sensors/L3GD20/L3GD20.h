@@ -119,9 +119,9 @@ public:
 
     bool init()
     {
-        SPITransaction spi(spislave);
+        SPITransaction<uint8_t> spi(spislave);
 
-        uint8_t whoami = spi.readRegister(REG_WHO_AM_I);
+        uint8_t whoami = spi.readRegister<uint8_t>(REG_WHO_AM_I);
 
         if (whoami != WHO_AM_I_VAL)
         {
@@ -204,7 +204,7 @@ public:
 
             // Read output data registers (X, Y, Z)
             {
-                SPITransaction spi(spislave);
+                SPITransaction<uint8_t> spi(spislave);
                 spi.readRegisters(REG_OUT_X_L | 0x40, buf, 6);
             }
 
@@ -228,9 +228,9 @@ public:
             // Lock mutex for thread safe Fifo reading
             miosix::Lock<miosix::FastMutex> l(mutex);
 
-            SPITransaction spi(spislave);
+            SPITransaction<uint8_t> spi(spislave);
             // Read last fifo level
-            uint8_t fifoSrc   = spi.readRegister(REG_FIFO_SRC);
+            uint8_t fifoSrc   = spi.readRegister<uint8_t>(REG_FIFO_SRC);
             uint8_t ovr       = (fifoSrc & 0x40) >> 7;  // Overrun bit
             uint8_t fifoLevel = (fifoSrc & 0x1F) + ovr;
 
@@ -304,7 +304,7 @@ private:
     static constexpr float SENSITIVITY_500  = 0.0175f;
     static constexpr float SENSITIVITY_2000 = 0.070f;
 
-    SPISlave spislave;
+    SPISlave<uint8_t> spislave;
 
     FullScaleRange fs  = FullScaleRange::FS_250;
     OutPutDataRate odr = OutPutDataRate::ODR_760;

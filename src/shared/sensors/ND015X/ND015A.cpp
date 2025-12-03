@@ -70,11 +70,11 @@ ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
 bool ND015A::init()
 {
     // setting the sensor settings to the correct values
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 
     // Using the sensor immediately after initialization results in incorrect
     // readings. To avoid this, we introduce a delay. The minimum delay required
@@ -95,7 +95,7 @@ bool ND015A::checkModelMatch()
     // setting the first 2 bytes of the data to the correct sensor settings
     memcpy(&extendedData, &sensorSettings, sizeof(sensorSettings));
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     spi.transfer(data, sizeof(extendedData));
 
     // this part checks if the model number returned by the sensor matches the
@@ -122,44 +122,44 @@ void ND015A::setOutputDataRate(uint8_t odr)
 {
     sensorSettings.odr = odr;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND015A::setIOWatchdog(IOWatchdogEnable iow)
 {
     sensorSettings.iow = iow;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND015A::setBWLimitFilter(BWLimitFilter bwl)
 {
     sensorSettings.bwl = bwl;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND015A::setNotch(NotchEnable ntc)
 {
     sensorSettings.ntc = ntc;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND015A::setOffset(float offset) { pressureOffset = offset; };
@@ -182,8 +182,8 @@ ND015XData ND015A::sampleImpl()
     }
     else
     {
-        SPITransaction spi(slave);
-        spiDataIn = spi.transfer16(spiDataOut);
+        SPITransaction<void> spi(slave);
+        spiDataIn = spi.transfer(spiDataOut);
     }
 
     float normalizedPressure =

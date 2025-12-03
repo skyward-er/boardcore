@@ -97,6 +97,43 @@ enum class WriteBit
     DISABLED,  ///< Do not set write bit in any way
 };
 
+/**
+ * Most of SPI slaves do not need the parity bit to be calculated,
+ * but there are some sensors that require it.
+ */
+enum class Parity
+{
+    /**
+     * Parity is never calculated
+     */
+    NONE,
+    /*
+     * Parity is set in the msb and is calculated on the other bits
+     * (including read/write bit)
+     */
+    MSBit,
+    /**
+     * Parity is set in the second msb and is calculated on the other
+     * bits (including read/write bit)
+     */
+    SMSBit,
+
+    /* Parity is set in the lsb and is calculated on the other bits
+     * (including read/write bit)
+     */
+    LSBit
+};
+
+/**
+ * Some sensors want the read/write bit in a different position rather than the
+ * mean significant bit
+ */
+enum class WriteBitPosition : int
+{
+    MSBit  = 1,  ///< The write bit is set in the most significant bit
+    SMSBit = 2   ///< The write bit is set in the second most significant bit
+};
+
 }  // namespace SPI
 
 }  // namespace Boardcore

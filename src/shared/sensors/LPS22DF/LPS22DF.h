@@ -142,7 +142,7 @@ protected:
     LPS22DFData sampleImpl() override;
 
 private:
-    SPISlave slave;
+    SPISlave<uint8_t> slave;
     Config config;
 
     bool isInitialized = false;

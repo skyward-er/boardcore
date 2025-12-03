@@ -62,7 +62,7 @@ protected:
     LIS331HHData sampleImpl() override;
 
 private:
-    SPISlave slave;
+    SPISlave<uint8_t> slave;
     float sensitivity = 6.0 / 32767.0;
 
     enum Register : uint8_t

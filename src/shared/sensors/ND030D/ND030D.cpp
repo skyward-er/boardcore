@@ -73,11 +73,11 @@ ND030D::ND030D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
 bool ND030D::init()
 {
     // setting the sensor settings to the correct values
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 
     // Using the sensor immediately after initialization results in incorrect
     // readings. To avoid this, we introduce a delay. The minimum delay required
@@ -98,7 +98,7 @@ bool ND030D::checkModelMatch()
     // setting the first 2 bytes of the data to the correct sensor settings
     memcpy(&extendedData, &sensorSettings, sizeof(sensorSettings));
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     spi.transfer(data, sizeof(extendedData));
 
     // this part checks if the model number returned by the sensor matches the
@@ -125,11 +125,11 @@ void ND030D::setOutputDataRate(uint8_t odr)
 {
     sensorSettings.odr = odr;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND030D::setFullScaleRange(FullScaleRange fsr)
@@ -138,11 +138,11 @@ void ND030D::setFullScaleRange(FullScaleRange fsr)
 
     range = rangeToPressure(fsr);
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 float ND030D::rangeToPressure(FullScaleRange fsr)
@@ -170,33 +170,33 @@ void ND030D::setIOWatchdog(IOWatchdogEnable iow)
 {
     sensorSettings.iow = iow;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND030D::setBWLimitFilter(BWLimitFilter bwl)
 {
     sensorSettings.bwl = bwl;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND030D::setNotch(NotchEnable ntc)
 {
     sensorSettings.ntc = ntc;
 
-    SPITransaction spi(slave);
+    SPITransaction<void> spi(slave);
     uint16_t spiDataOut;
 
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
-    spi.transfer16(spiDataOut);
+    spi.transfer(spiDataOut);
 }
 
 void ND030D::setOffset(float offset) { pressureOffset = offset; };
@@ -219,8 +219,8 @@ ND030XData ND030D::sampleImpl()
     }
     else
     {
-        SPITransaction spi(slave);
-        spiDataIn = spi.transfer16(spiDataOut);
+        SPITransaction<void> spi(slave);
+        spiDataIn = spi.transfer(spiDataOut);
     }
 
     float normalizedPressure =
