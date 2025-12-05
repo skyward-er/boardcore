@@ -77,14 +77,6 @@ enum class SPITransactionDMAErrors : uint8_t
  */
 class SPITransaction
 {
-private:
-    /**
-     * @brief The timeout for the method `spiWaitForTransmissionComplete()`,
-     * in nanoseconds.
-     */
-    static constexpr std::chrono::nanoseconds defaultTimeout =
-        std::chrono::milliseconds(250);
-
 public:
     /**
      * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -426,10 +418,11 @@ private:
     /**
      * @brief Wait until the spi peripheral has finished transmitting.
      *
+     * @param timeoutTime The time instant at which the timeout will expire.
      * @return True if operation successful, false if the timeout
      * expired.
      */
-    bool spiDmaWaitForTransmissionComplete();
+    bool spiDmaWaitForTransmissionComplete(const int64_t timeoutTime);
 
     /**
      * @brief Setup the transmitting stream with the default values

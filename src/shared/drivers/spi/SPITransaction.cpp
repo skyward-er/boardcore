@@ -28,8 +28,6 @@
 namespace Boardcore
 {
 
-constexpr std::chrono::nanoseconds SPITransaction::defaultTimeout;
-
 SPITransaction::SPITransaction(const SPISlave& slave)
     : slave(slave), spiPtr(slave.bus.getSpi()), dmaTimeout(slave.dmaTimeout)
 {
@@ -691,6 +689,8 @@ bool SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
 
 bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
 {
+    const auto operationBeginNs = miosix::getTime();
+
     // Disable spi
     spiPtr->CR1 &= ~SPI_CR1_SPE;
 
@@ -722,7 +722,8 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
     {
         // DMA completion doesn't guarantee that the SPI peripheral
         // has finished transmitting
-        spiWaitResult = spiDmaWaitForTransmissionComplete();
+        spiWaitResult = spiDmaWaitForTransmissionComplete(operationBeginNs +
+                                                          timeout.count());
     }
 
     // Stop the transaction
@@ -777,6 +778,8 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
      * without dma before the dma transfer starts.
      */
 
+    const auto operationBeginNs = miosix::getTime();
+
     // Disable spi
     spiPtr->CR1 &= ~SPI_CR1_SPE;
 
@@ -811,7 +814,8 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
     {
         // DMA completion doesn't guarantee that the SPI peripheral
         // has finished transmitting
-        spiWaitResult = spiDmaWaitForTransmissionComplete();
+        spiWaitResult = spiDmaWaitForTransmissionComplete(operationBeginNs +
+                                                          timeout.count());
     }
 
     // Stop the transaction
@@ -853,19 +857,15 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
            lastErrorTx == SPITransactionDMAErrors::NO_ERRORS;
 }
 
-bool SPITransaction::spiDmaWaitForTransmissionComplete()
+bool SPITransaction::spiDmaWaitForTransmissionComplete(
+    const int64_t timeoutTime)
 {
     // First, ensure the TX buffer is empty, then check the SPI busy
     // flag
-    static constexpr int64_t spiDefaultTimeoutNs =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(defaultTimeout)
-            .count();
-
-    const int64_t timeout = miosix::getTime() + spiDefaultTimeoutNs;
 
 #if defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
     defined(STM32F777xx) || defined(STM32F779xx)
-    while ((spiPtr->SR & SPI_SR_FTLVL) > 0 && miosix::getTime() < timeout)
+    while ((spiPtr->SR & SPI_SR_FTLVL) > 0 && miosix::getTime() < timeoutTime)
     {
     }
 
@@ -878,7 +878,7 @@ bool SPITransaction::spiDmaWaitForTransmissionComplete()
 #elif defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || \
     defined(STM32F417xx) || defined(STM32F427xx) || defined(STM32F429xx) ||   \
     defined(STM32F437xx) || defined(STM32F439xx)
-    while ((spiPtr->SR & SPI_SR_TXE) == 0 && miosix::getTime() < timeout)
+    while ((spiPtr->SR & SPI_SR_TXE) == 0 && miosix::getTime() < timeoutTime)
     {
     }
 
@@ -891,7 +891,7 @@ bool SPITransaction::spiDmaWaitForTransmissionComplete()
 #warning This board is not officially supported. SPITransaction with DMA might not work as expected.
 #endif
 
-    while ((spiPtr->SR & SPI_SR_BSY) && miosix::getTime() < timeout)
+    while ((spiPtr->SR & SPI_SR_BSY) && miosix::getTime() < timeoutTime)
     {
     }
 
