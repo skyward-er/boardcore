@@ -86,6 +86,8 @@ public:
      */
     explicit SPITransaction(const SPISlave& slave);
 
+    ~SPITransaction();
+
     // /**
     //  * @brief Instantiates a new SPITransaction, configuring the bus with the
     //  * provided parameters.
@@ -383,6 +385,8 @@ public:
 private:
     const SPISlave& slave;
     bool useDma;  ///< True if the DMA must be used during the transaction
+    bool disableDmaWhenDone = false;  ///< True if the destructor has to disable
+                                      ///< dma on the spi peripheral
     SPI_TypeDef* const spiPtr;
     std::chrono::nanoseconds dmaTimeout;
 

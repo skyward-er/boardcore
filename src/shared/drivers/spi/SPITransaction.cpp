@@ -34,6 +34,39 @@ SPITransaction::SPITransaction(const SPISlave& slave)
     slave.bus.configure(slave.config);
 
     useDma = (slave.streamRx != nullptr) && (slave.streamTx != nullptr);
+
+    if (useDma)
+    {
+        // Enable dma on the spi peripheral
+
+        // Disable spi
+        spiPtr->CR1 &= ~SPI_CR1_SPE;
+
+        // Enable spi rx and tx buffer dma
+        spiPtr->CR2 |= SPI_CR2_RXDMAEN;
+        spiPtr->CR2 |= SPI_CR2_TXDMAEN;
+
+        // Enable the spi peripheral
+        spiPtr->CR1 |= SPI_CR1_SPE;
+
+        disableDmaWhenDone = true;
+    }
+}
+
+SPITransaction::~SPITransaction()
+{
+    if (disableDmaWhenDone)
+    {
+        // Disable spi
+        spiPtr->CR1 &= ~SPI_CR1_SPE;
+
+        // Disable spi dma transmit and receive
+        spiPtr->CR2 &= ~SPI_CR2_TXDMAEN;
+        spiPtr->CR2 &= ~SPI_CR2_RXDMAEN;
+
+        // Enable again the spi peripheral
+        spiPtr->CR1 |= SPI_CR1_SPE;
+    }
 }
 
 SPIBusInterface& SPITransaction::getBus() { return slave.bus; }
@@ -697,17 +730,11 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
     // Start transaction
     slave.bus.select(slave.cs);
 
-    // Enable spi rx buffer dma
-    spiPtr->CR2 |= SPI_CR2_RXDMAEN;
-
     // Enable the receiving stream
     (*slave.streamRx)->enable();
 
     // Enable the transmitting stream
     (*slave.streamTx)->enable();
-
-    // Enable spi tx buffer dma
-    spiPtr->CR2 |= SPI_CR2_TXDMAEN;
 
     // Enable the spi peripheral
     spiPtr->CR1 |= SPI_CR1_SPE;
@@ -732,10 +759,6 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
     // Disable the dma streams
     (*slave.streamTx)->disable();
     (*slave.streamRx)->disable();
-
-    // Disable spi dma transmit and receive
-    spiPtr->CR2 &= ~SPI_CR2_TXDMAEN;
-    spiPtr->CR2 &= ~SPI_CR2_RXDMAEN;
 
     // Check for transmitting errors
     if (!resultTransmit)
@@ -786,12 +809,6 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
     // Start transaction
     slave.bus.select(slave.cs);
 
-    // Enable spi rx buffer dma
-    spiPtr->CR2 |= SPI_CR2_RXDMAEN;
-
-    // Enable spi tx buffer dma
-    spiPtr->CR2 |= SPI_CR2_TXDMAEN;
-
     // Enable the spi peripheral
     spiPtr->CR1 |= SPI_CR1_SPE;
 
@@ -824,10 +841,6 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
     // Disable the dma streams
     (*slave.streamTx)->disable();
     (*slave.streamRx)->disable();
-
-    // Disable spi dma transmit and receive
-    spiPtr->CR2 &= ~SPI_CR2_TXDMAEN;
-    spiPtr->CR2 &= ~SPI_CR2_RXDMAEN;
 
     // Check for transmitting errors
     if (!resultTransmit)
