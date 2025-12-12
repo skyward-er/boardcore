@@ -184,9 +184,10 @@ private:
     };
 
     // I2C address and speed mode
-    I2CDriver::I2CSlaveConfig i2cConfig;
     // I2C bus on which the sensor lays
     I2C& i2c;
+
+    I2CDriver::I2CSlaveConfig i2cConfig;
     /* Prescale value for setting the PWM frequency, computed as:
      *
      * prescale = round(Clock / (4096 * target-frequency)) - 1
@@ -195,14 +196,15 @@ private:
      */
     uint8_t prescale;
 
-    // invert the output logic
-    uint8_t inverted;
-
     // Output driver type (open-drain or totem-pole)
     PCA9685::OutputType outputType;
 
-    bool isInitialized = false;
+    // invert the output logic
+    uint8_t inverted;
+
     bool externalClock = false;
+
+    bool isInitialized = false;
 
     PrintLogger logger = Logging::getLogger("pca9685");
 
