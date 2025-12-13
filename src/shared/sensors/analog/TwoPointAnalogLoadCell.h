@@ -55,6 +55,20 @@ public:
     {
     }
 
+    /**
+     * @brief Construct a TwoPointAnalogLoadCell.
+     *
+     * @param getVoltage lambda to retrieve current voltage.
+     * @param staticScale the static scale factor.
+     * @param staticOffset the static offset.
+     */
+    TwoPointAnalogLoadCell(std::function<VoltageData()> getVoltage,
+                           float staticScale, float staticOffset)
+        : getVoltage{std::move(getVoltage)}, staticScale{staticScale},
+          staticOffset{staticOffset}
+    {
+    }
+
     TwoPointAnalogLoadCell(TwoPointAnalogLoadCell&& other)
         : getVoltage{std::move(other.getVoltage)},
           dynamicOffset{other.dynamicOffset.load()},
