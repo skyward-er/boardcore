@@ -116,8 +116,6 @@ void configureSdram()
     // All SDRAM GPIOs needs to be configured with alternate function 12 and
     // maximum speed
 
-    // WARNING: The current configuration is for the 8MB ram
-
     // Alternate functions
     GPIOB->AFR[0] = 0x0cc00000;
     GPIOC->AFR[0] = 0x0000000c;
@@ -313,7 +311,7 @@ void IRQbspInit()
     interfaces::can1::rx::alternateFunction(9);
     interfaces::can1::rx::mode(Mode::ALTERNATE);
 
-    interfaces::timers::tim3ch1::alternateFunction(9);
+    interfaces::timers::tim3ch1::alternateFunction(2);
     interfaces::timers::tim3ch1::mode(Mode::ALTERNATE);
 
     interfaces::adcs::adc123in3::mode(Mode::INPUT_ANALOG);
