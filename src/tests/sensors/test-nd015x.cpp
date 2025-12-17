@@ -59,8 +59,6 @@ int main()
     // Initialize SPI pins
     initPins();
 
-    SPIBus bus(SPI4);
-
     auto streamRx = DMADriver::instance().acquireStreamForPeripheral(
         DMADefs::Peripherals::PE_SPI4_RX);
     if (!streamRx.isValid())
@@ -77,10 +75,12 @@ int main()
         return 1;
     }
 
-    ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig(), &streamRx,
-                  &streamTx, std::chrono::milliseconds(100));
-    // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig(), &streamRx,
-    //               &streamTx, std::chrono::milliseconds(100));
+    SPIBus bus(SPI4, &streamRx, &streamTx);
+
+    ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig(),
+                  std::chrono::milliseconds(100));
+    // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig(),
+    //               std::chrono::milliseconds(100));
     // ND015A sensor(bus, csPinND015A, ND015A::getDefaultSPIConfig());
     // ND015D sensor(bus, csPinND015D, ND015D::getDefaultSPIConfig());
     ND015XData sensorData;

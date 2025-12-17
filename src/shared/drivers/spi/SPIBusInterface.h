@@ -291,6 +291,16 @@ public:
      * @brief Retrieve the pointer to the peripheral currently used.
      */
     virtual SPI_TypeDef* getSpi() = 0;
+
+    /**
+     * @return Pointer to the dma receiving stream, nullptr if not provided.
+     */
+    virtual DMAStreamGuard* getDmaStreamRx() = 0;
+
+    /**
+     * @return Pointer to the dma transmitting stream, nullptr if not provided.
+     */
+    virtual DMAStreamGuard* getDmaStreamTx() = 0;
 };
 
 /**
@@ -302,23 +312,17 @@ struct SPISlave
     SPIBusConfig config;   ///< How the bus should be configured to communicate
                            ///< with the slave.
     GpioType cs;           ///< Chip select pin
-    DMAStreamGuard* const
-        streamRx;  ///< Receiver dma stream (nullptr if not using dma)
-    DMAStreamGuard* const
-        streamTx;  ///< Sender dma stream (nullptr if not using dma)
     std::chrono::nanoseconds dmaTimeout;  ///< Timeout for the dma transaction.
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
-        : bus(bus), config(config), cs(cs), streamRx(nullptr),
-          streamTx(nullptr), dmaTimeout(std::chrono::nanoseconds::zero())
+        : bus(bus), config(config), cs(cs),
+          dmaTimeout(std::chrono::nanoseconds::zero())
     {
     }
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config,
-             DMAStreamGuard* strmRx, DMAStreamGuard* strmTx,
              std::chrono::nanoseconds dmaTimeout)
-        : bus(bus), config(config), cs(cs), streamRx(strmRx), streamTx(strmTx),
-          dmaTimeout(dmaTimeout)
+        : bus(bus), config(config), cs(cs), dmaTimeout(dmaTimeout)
     {
     }
 };

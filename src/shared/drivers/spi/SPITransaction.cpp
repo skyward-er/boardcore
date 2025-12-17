@@ -29,11 +29,13 @@ namespace Boardcore
 {
 
 SPITransaction::SPITransaction(const SPISlave& slave)
-    : slave(slave), spiPtr(slave.bus.getSpi()), dmaTimeout(slave.dmaTimeout)
+    : slave(slave), spiPtr(slave.bus.getSpi()),
+      streamRx(slave.bus.getDmaStreamRx()),
+      streamTx(slave.bus.getDmaStreamTx()), dmaTimeout(slave.dmaTimeout)
 {
     slave.bus.configure(slave.config);
 
-    useDma = (slave.streamRx != nullptr) && (slave.streamTx != nullptr);
+    useDma = (streamRx != nullptr) && (streamTx != nullptr);
 
     if (useDma)
     {
@@ -80,7 +82,7 @@ void SPITransaction::disableDma() { useDma = false; }
 
 bool SPITransaction::enableDma()
 {
-    useDma = (slave.streamRx != nullptr) && (slave.streamTx != nullptr);
+    useDma = (streamRx != nullptr) && (streamTx != nullptr);
     return useDma;
 }
 
@@ -148,7 +150,7 @@ bool SPITransaction::read(uint8_t* data, size_t nBytes)
         defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER,
                         (void*)&sendBuf, (void*)&(spiPtr->DR), nBytes, false,
                         false);
-        (*slave.streamTx)->setup(txSetup);
+        (*streamTx)->setup(txSetup);
 
         defaultDmaReceivingSetup((void*)data, nBytes);
 
@@ -176,7 +178,7 @@ bool SPITransaction::read16(uint16_t* data, uint16_t nBytes)
         defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER,
                         (void*)&sendBuf, (void*)&(spiPtr->DR), nBytes, false,
                         false);
-        (*slave.streamTx)->setup(txSetup);
+        (*streamTx)->setup(txSetup);
 
         defaultDmaReceivingSetup(data, nBytes);
 
@@ -253,7 +255,7 @@ bool SPITransaction::write(uint8_t* data, uint16_t nBytes)
         defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
                         (void*)&(spiPtr->DR), (void*)&recvBuf, nBytes, false,
                         false);
-        (*slave.streamRx)->setup(rxSetup);
+        (*streamRx)->setup(rxSetup);
 
         defaultDmaTransmittingSetup((void*)data, nBytes);
 
@@ -287,7 +289,7 @@ bool SPITransaction::write16(uint16_t* data, uint16_t nBytes)
         defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
                         (void*)&(spiPtr->DR), (void*)&recvBuf, nBytes, false,
                         false);
-        (*slave.streamRx)->setup(rxSetup);
+        (*streamRx)->setup(rxSetup);
 
         defaultDmaTransmittingSetup(data, nBytes);
 
@@ -567,7 +569,7 @@ bool SPITransaction::readRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
         defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER,
                         (void*)&srcBuf, (void*)&(spiPtr->DR), nBytes, false,
                         false);
-        (*slave.streamTx)->setup(txSetup);
+        (*streamTx)->setup(txSetup);
 
         // Setup the rx stream normally
         defaultDmaReceivingSetup((void*)data, nBytes);
@@ -702,7 +704,7 @@ bool SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, uint16_t nBytes)
         defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
                         (void*)&(spiPtr->DR), (void*)&recvBuf, nBytes, false,
                         false);
-        (*slave.streamRx)->setup(rxSetup);
+        (*streamRx)->setup(rxSetup);
 
         // Setup the tx stream normally
         defaultDmaTransmittingSetup((void*)data, nBytes);
@@ -731,18 +733,16 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
     slave.bus.select(slave.cs);
 
     // Enable the receiving stream
-    (*slave.streamRx)->enable();
+    (*streamRx)->enable();
 
     // Enable the transmitting stream
-    (*slave.streamTx)->enable();
+    (*streamTx)->enable();
 
     // Enable the spi peripheral
     spiPtr->CR1 |= SPI_CR1_SPE;
 
-    bool resultTransmit =
-        (*slave.streamTx)->timedWaitForTransferComplete(timeout);
-    bool resultReceive =
-        (*slave.streamRx)->timedWaitForTransferComplete(timeout);
+    bool resultTransmit = (*streamTx)->timedWaitForTransferComplete(timeout);
+    bool resultReceive  = (*streamRx)->timedWaitForTransferComplete(timeout);
 
     bool spiWaitResult = true;
     if (resultTransmit && resultReceive)
@@ -757,15 +757,15 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
     slave.bus.deselect(slave.cs);
 
     // Disable the dma streams
-    (*slave.streamTx)->disable();
-    (*slave.streamRx)->disable();
+    (*streamTx)->disable();
+    (*streamRx)->disable();
 
     // Check for transmitting errors
     if (!resultTransmit)
         lastErrorTx = SPITransactionDMAErrors::DMA_TIMEOUT;
-    else if ((*slave.streamTx)->getTransferErrorFlagStatus())
+    else if ((*streamTx)->getTransferErrorFlagStatus())
         lastErrorTx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
-    else if ((*slave.streamTx)->getFifoErrorFlagStatus())
+    else if ((*streamTx)->getFifoErrorFlagStatus())
         lastErrorTx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
     else if (!spiWaitResult)
         lastErrorTx = SPITransactionDMAErrors::SPI_TIMEOUT;
@@ -775,9 +775,9 @@ bool SPITransaction::dmaTransfer(const std::chrono::nanoseconds timeout)
     // Check for receiving errors
     if (!resultReceive)
         lastErrorRx = SPITransactionDMAErrors::DMA_TIMEOUT;
-    else if ((*slave.streamRx)->getTransferErrorFlagStatus())
+    else if ((*streamRx)->getTransferErrorFlagStatus())
         lastErrorRx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
-    else if ((*slave.streamRx)->getFifoErrorFlagStatus())
+    else if ((*streamRx)->getFifoErrorFlagStatus())
         lastErrorRx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
     else if (!spiWaitResult)
         lastErrorRx = SPITransactionDMAErrors::SPI_TIMEOUT;
@@ -816,15 +816,13 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
     slave.bus.write(firstData);
 
     // Enable the receiving stream
-    (*slave.streamRx)->enable();
+    (*streamRx)->enable();
 
     // Enable the transmitting stream
-    (*slave.streamTx)->enable();
+    (*streamTx)->enable();
 
-    bool resultTransmit =
-        (*slave.streamTx)->timedWaitForTransferComplete(timeout);
-    bool resultReceive =
-        (*slave.streamRx)->timedWaitForTransferComplete(timeout);
+    bool resultTransmit = (*streamTx)->timedWaitForTransferComplete(timeout);
+    bool resultReceive  = (*streamRx)->timedWaitForTransferComplete(timeout);
 
     bool spiWaitResult = true;
     if (resultTransmit && resultReceive)
@@ -839,15 +837,15 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
     slave.bus.deselect(slave.cs);
 
     // Disable the dma streams
-    (*slave.streamTx)->disable();
-    (*slave.streamRx)->disable();
+    (*streamTx)->disable();
+    (*streamRx)->disable();
 
     // Check for transmitting errors
     if (!resultTransmit)
         lastErrorTx = SPITransactionDMAErrors::DMA_TIMEOUT;
-    else if ((*slave.streamTx)->getTransferErrorFlagStatus())
+    else if ((*streamTx)->getTransferErrorFlagStatus())
         lastErrorTx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
-    else if ((*slave.streamTx)->getFifoErrorFlagStatus())
+    else if ((*streamTx)->getFifoErrorFlagStatus())
         lastErrorTx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
     else if (!spiWaitResult)
         lastErrorTx = SPITransactionDMAErrors::SPI_TIMEOUT;
@@ -857,9 +855,9 @@ bool SPITransaction::dmaTransferMixed(const uint8_t firstData,
     // Check for receiving errors
     if (!resultReceive)
         lastErrorRx = SPITransactionDMAErrors::DMA_TIMEOUT;
-    else if ((*slave.streamRx)->getTransferErrorFlagStatus())
+    else if ((*streamRx)->getTransferErrorFlagStatus())
         lastErrorRx = SPITransactionDMAErrors::DMA_TRANSFER_ERROR;
-    else if ((*slave.streamRx)->getFifoErrorFlagStatus())
+    else if ((*streamRx)->getFifoErrorFlagStatus())
         lastErrorRx = SPITransactionDMAErrors::DMA_FIFO_ERROR;
     else if (!spiWaitResult)
         lastErrorRx = SPITransactionDMAErrors::SPI_TIMEOUT;
@@ -922,7 +920,7 @@ void SPITransaction::defaultDmaTransmittingSetup(void* srcAddr, uint16_t nBytes)
     DMATransaction txSetup;
     defaultDmaSetup(txSetup, DMATransaction::Direction::MEM_TO_PER, srcAddr,
                     (void*)&(spiPtr->DR), nBytes, true, false);
-    (*slave.streamTx)->setup(txSetup);
+    (*streamTx)->setup(txSetup);
 }
 
 void SPITransaction::defaultDmaReceivingSetup(void* dstAddr, uint16_t nBytes)
@@ -930,7 +928,7 @@ void SPITransaction::defaultDmaReceivingSetup(void* dstAddr, uint16_t nBytes)
     DMATransaction rxSetup;
     defaultDmaSetup(rxSetup, DMATransaction::Direction::PER_TO_MEM,
                     (void*)&(spiPtr->DR), dstAddr, nBytes, false, true);
-    (*slave.streamRx)->setup(rxSetup);
+    (*streamRx)->setup(rxSetup);
 }
 
 void SPITransaction::defaultDmaSetup(DMATransaction& streamSetup,

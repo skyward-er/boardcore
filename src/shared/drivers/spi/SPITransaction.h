@@ -388,6 +388,10 @@ private:
     bool disableDmaWhenDone = false;  ///< True if the destructor has to disable
                                       ///< dma on the spi peripheral
     SPI_TypeDef* const spiPtr;
+    DMAStreamGuard* const streamRx;  ///< Receiver dma stream (nullptr if not
+                                     ///< using dma) taken from the SPIBus.
+    DMAStreamGuard* const streamTx;  ///< Sender dma stream (nullptr if not
+                                     ///< using dma) taken from the SPIBus.
     std::chrono::nanoseconds dmaTimeout;
 
     // Last error for the transmitting stream

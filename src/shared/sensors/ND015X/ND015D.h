@@ -96,12 +96,9 @@ public:
      * @param bus SPI bus interface.
      * @param cs Chip select GPIO pin.
      * @param spiConfig SPI bus configuration.
-     * @param streamRx Dma receiving stream for the spi bus.
-     * @param streamTx Dma transmitting stream for the spi bus.
      * @param timeoutDma Timeout for the dma transactions.
      */
     ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
            std::chrono::nanoseconds timeoutDma,
            FullScaleRange fsr   = FullScaleRange::FS_2,
            IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,

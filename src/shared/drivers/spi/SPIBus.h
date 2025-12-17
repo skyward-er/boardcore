@@ -62,6 +62,12 @@ class SPIBus : public SPIBusInterface
 public:
     SPIBus(SPIType* spi);
 
+    /**
+     * @param rxStream Dma receiving stream for the bus.
+     * @param txStream Dma transmitting stream for the bus.
+     */
+    SPIBus(SPIType* spi, DMAStreamGuard* rxStream, DMAStreamGuard* txStream);
+
     ///< Delete copy/move contructors/operators.
     SPIBus(const SPIBus&)            = delete;
     SPIBus& operator=(const SPIBus&) = delete;
@@ -292,13 +298,36 @@ public:
      */
     void transfer16(uint16_t* data, size_t size) override;
 
+    /**
+     * @return Pointer to the dma receiving stream, nullptr if not provided.
+     */
+    DMAStreamGuard* getDmaStreamRx() override;
+
+    /**
+     * @return Pointer to the dma transmitting stream, nullptr if not provided.
+     */
+    DMAStreamGuard* getDmaStreamTx() override;
+
 private:
     SPIType* spi;
     SPIBusConfig config{};
     bool firstConfigApplied = false;
+
+    DMAStreamGuard* const
+        streamRx;  ///< Receiver dma stream (nullptr if not using dma)
+    DMAStreamGuard* const
+        streamTx;  ///< Sender dma stream (nullptr if not using dma)
 };
 
-inline SPIBus::SPIBus(SPIType* spi) : spi(spi)
+inline SPIBus::SPIBus(SPIType* spi)
+    : spi(spi), streamRx(nullptr), streamTx(nullptr)
+{
+    ClockUtils::enablePeripheralClock(spi);
+}
+
+inline SPIBus::SPIBus(SPIType* spi, DMAStreamGuard* rxStream,
+                      DMAStreamGuard* txStream)
+    : spi(spi), streamRx(rxStream), streamTx(txStream)
 {
     ClockUtils::enablePeripheralClock(spi);
 }
@@ -616,5 +645,9 @@ inline void SPIBus::transfer16(uint16_t* data, size_t nBytes)
         data[i] = temp[0] << 8 | temp[1];
     }
 }
+
+inline DMAStreamGuard* SPIBus::getDmaStreamRx() { return streamRx; }
+
+inline DMAStreamGuard* SPIBus::getDmaStreamTx() { return streamTx; }
 
 }  // namespace Boardcore

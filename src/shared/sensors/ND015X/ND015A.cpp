@@ -49,10 +49,9 @@ SPIBusConfig ND015A::getDefaultSPIConfig()
 }
 
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
                std::chrono::nanoseconds timeout, IOWatchdogEnable iow,
                BWLimitFilter bwl, NotchEnable ntc, uint8_t odr)
-    : slave(bus, cs, spiConfig, streamRx, streamTx, timeout),
+    : slave(bus, cs, spiConfig, timeout),
       sensorSettings{odr, 0x7, iow, bwl, ntc}
 {
 }

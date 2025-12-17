@@ -50,12 +50,11 @@ SPIBusConfig ND015D::getDefaultSPIConfig()
 }
 
 ND015D::ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
                std::chrono::nanoseconds timeout, FullScaleRange fsr,
                IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
                uint8_t odr)
-    : slave(bus, cs, spiConfig, streamRx, streamTx, timeout),
-      range(rangeToPressure(fsr)), sensorSettings{odr, fsr, iow, bwl, ntc}
+    : slave(bus, cs, spiConfig, timeout), range(rangeToPressure(fsr)),
+      sensorSettings{odr, fsr, iow, bwl, ntc}
 {
 }
 
