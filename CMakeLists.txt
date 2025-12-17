@@ -81,6 +81,7 @@ add_executable(sx1278fsk-ebyterig-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-ebyterig-serial PRIVATE SX1278_IS_FSK)
 sbs_target(sx1278fsk-ebyterig-serial stm32f429zi_rig)
 
+
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
@@ -126,6 +127,9 @@ add_executable(test-hil
     src/tests/hil/Sensors/Sensors.cpp 
 )
 sbs_target(test-hil stm32f767zi_death_stack_v4)
+
+add_executable(test-mcp23s17 src/tests/drivers/test-mcp23s17.cpp)
+sbs_target(test-mcp23s17 stm32f767zi_rig_v2)
 
 #-----------------------------------------------------------------------------#
 #                                Tests - Catch                                #

@@ -78,6 +78,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/PCA9685/PCA9685.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/WIZ5500/WIZ5500.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/DipSwitch/DipSwitch.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/MCP23S17/MCP23S17.cpp
 
     # Events
     ${BOARDCORE_PATH}/src/shared/events/EventBroker.cpp
