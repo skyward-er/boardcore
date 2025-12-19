@@ -243,8 +243,8 @@ using servo_prz_ox = miosix::interfaces::timers::tim8ch1;
 #define MIOSIX_SERVOS_OX_VEN_CHANNEL CHANNEL_2
 using servo_ox_venting = miosix::interfaces::timers::tim12ch2;
 
-#define MIOSIX_SERVOS_PRZ_QUE_TIM TIM9
-#define MIOSIX_SERVOS_PRZ_QUE_CHANNEL CHANNEL_2
+#define MIOSIX_SERVOS_SPARK_PLUG_TIM TIM9  // changed prz que -> spark
+#define MIOSIX_SERVOS_SPARK_PLUG_CHANNEL CHANNEL_2
 using servo_PRZ_quenching = miosix::interfaces::timers::tim9ch2;
 
 #define MIOSIX_SERVOS_MAIN_OX_TIM TIM4  // changed main -> main OX
