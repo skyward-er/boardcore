@@ -68,6 +68,46 @@ public:
 
     bool selfTest() override;
 
+    void testReadDma()
+    {
+        // VN-100
+        // The model number starts from the 10th position
+        const int modelNumberOffset = 10;
+
+        // Clear the receiving queue
+        usart.clearQueue();
+
+        if (!sendStringCommand("VNRRG,01"))
+        {
+            LOG_WARN(logger, "Unable to send string command");
+            return;
+        }
+
+        miosix::Thread::sleep(100);
+
+        if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+        {
+            LOG_WARN(logger, "Unable to receive string command");
+            return;
+        }
+
+        if (strncmp("VN-100", recvString.data() + modelNumberOffset,
+                    strlen("VN-100")) != 0)
+        {
+            LOG_ERR(logger, "Model number not corresponding: {} != {}",
+                    recvString.data(), "VN-100");
+            return;
+        }
+
+        if (!verifyChecksum(recvString.data(), recvStringLength))
+        {
+            LOG_ERR(logger, "Checksum verification failed: {}", recvString.data());
+            return;
+        }
+
+        printf("Everything went smooth, like a smooooooth operator\n");
+    }
+
 protected:
     /**
      * @brief Sample action implementation.

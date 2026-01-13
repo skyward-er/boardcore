@@ -23,6 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/dma/DMA.h>
 #include <interfaces/arch_registers.h>
 #include <miosix.h>
 #include <utils/ClockUtils.h>
@@ -211,6 +212,17 @@ public:
     USART(USARTType* usart, int baudrate,
           unsigned int queueLen = INTERNAL_QUEUE_LENGTH);
 
+    USART(USARTType* usart, int baudrate, DMAStreamGuard* rxStream,
+          DMAStreamGuard* txStream,
+          unsigned int queueLen = INTERNAL_QUEUE_LENGTH);
+
+    void disableDma() { useDma = false; }
+    bool enableDma()
+    {
+        useDma = dmaRxStream != nullptr && dmaTxStream != nullptr;
+        return useDma;
+    }
+
     ///< Delete copy/move constructors/operators.
     USART(const USART&)            = delete;
     USART& operator=(const USART&) = delete;
@@ -336,6 +348,8 @@ private:
     [[nodiscard]] bool readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
                                 const bool blocking,
                                 std::chrono::nanoseconds timeout) override;
+    
+    bool readImplDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout);
 
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
@@ -353,6 +367,10 @@ private:
 
     ///< Default queue length
     static constexpr unsigned int INTERNAL_QUEUE_LENGTH = 256;
+
+    DMAStreamGuard* const dmaRxStream;
+    DMAStreamGuard* const dmaTxStream;
+    bool useDma = false;
 };
 
 /**

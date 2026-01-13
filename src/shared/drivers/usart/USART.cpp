@@ -367,7 +367,8 @@ void USART::IRQhandleInterrupt()
 }
 
 USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
-    : USARTInterface(usart, baudrate), rxQueue(queueLen)
+    : USARTInterface(usart, baudrate), rxQueue(queueLen), dmaRxStream(nullptr),
+      dmaTxStream(nullptr)
 {
     // Enabling the peripheral on the right APB
     ClockUtils::enablePeripheralClock(usart);
@@ -404,6 +405,58 @@ USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
 
     // Clearing the queue for random data read at the beginning
     this->clearQueue();
+
+    // Disabling dma (no stream was given)
+    useDma = false;
+}
+
+USART::USART(USARTType* usart, int baudrate, DMAStreamGuard* rxStream,
+             DMAStreamGuard* txStream, unsigned int queueLen)
+    : USARTInterface(usart, baudrate), rxQueue(queueLen), dmaRxStream(rxStream),
+      dmaTxStream(txStream)
+{
+    // Enabling the peripheral on the right APB
+    ClockUtils::enablePeripheralClock(usart);
+
+    // Setting the baudrate chosen
+    setBaudrate(baudrate);
+
+    // Default settings
+    setStopBits(1);
+    setWordLength(USART::WordLength::BIT8);
+    setParity(USART::ParityBit::NO_PARITY);
+    setOversampling(false);
+
+    {
+        miosix::FastInterruptDisableLock dLock;
+
+        // Enable usart, receiver, receiver interrupt and idle interrupt
+        usart->CR1 |= USART_CR1_UE        // Enabling the uart peripheral
+                      | USART_CR1_RXNEIE  // Interrupt on data received
+                      | USART_CR1_IDLEIE  // interrupt on idle line
+                      | USART_CR1_TE      // Transmission enabled
+                      | USART_CR1_RE;     // Reception enabled
+
+        // Sample only one bit
+        usart->CR3 |= USART_CR3_ONEBIT;
+    }
+
+    // Add to the array of usarts so that the interrupts can see it
+    ports[id - 1] = this;
+
+    // Enabling the interrupt for the relative serial port
+    NVIC_SetPriority(irqn, 15);
+    NVIC_EnableIRQ(irqn);
+
+    // Clearing the queue for random data read at the beginning
+    this->clearQueue();
+
+    // Checking dma
+    useDma = dmaRxStream != nullptr && dmaTxStream != nullptr;
+
+    // TODO
+    // Per ora attivo solo DMAR (read)
+    usart->CR3 |= USART_CR3_DMAR;
 }
 
 USART::~USART()
@@ -489,6 +542,13 @@ bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
+    if(useDma && blocking)
+    {
+        nBytesRead = nBytes;
+        // TODO: nBytes must be uint16_t
+        return readImplDma(buffer, nBytes, timeout);
+    }
+
     char* buf     = reinterpret_cast<char*>(buffer);
     size_t result = 0;
     error         = false;
@@ -547,6 +607,35 @@ bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
     nBytesRead = result;
 
     return (result > 0) && !timedOut && !error;
+}
+
+bool USART::readImplDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout)
+{
+    DMATransaction streamSetup = DMATransaction{
+        .direction                       = DMATransaction::Direction::PER_TO_MEM,
+        .priority                        = DMATransaction::Priority::MEDIUM,
+        .srcSize                         = DMATransaction::DataSize::BITS_8,
+        .dstSize                         = DMATransaction::DataSize::BITS_8,
+        .srcAddress                      = (void*)&(usart->DR),
+        .dstAddress                      = buffer,
+        .secondMemoryAddress             = nullptr,
+        .numberOfDataItems               = nBytes,
+        .srcIncrement                    = false,
+        .dstIncrement                    = true,
+        .circularMode                    = false,
+        .doubleBufferMode                = false,
+        .enableTransferCompleteInterrupt = true,
+        .enableHalfTransferInterrupt     = false,
+        .enableTransferErrorInterrupt    = true,
+        .enableFifoErrorInterrupt        = true,
+        .enableDirectModeErrorInterrupt  = false,
+    };
+
+    (*dmaRxStream)->setup(streamSetup);
+
+    (*dmaRxStream)->enable();
+
+    return (*dmaRxStream)->timedWaitForTransferComplete(timeout);
 }
 
 void USART::write(const void* buffer, size_t nBytes)

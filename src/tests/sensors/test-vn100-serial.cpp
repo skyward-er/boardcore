@@ -31,7 +31,7 @@ int main()
     VN100SerialData sample;
 
     GpioPin u2tx1(GPIOA_BASE, 2);
-    GpioPin u2rx1(GPIOA_BASE, 3);
+    GpioPin u2rx1(GPIOA_BASE, 3); // verde
 
     u2rx1.alternateFunction(7);
     u2rx1.mode(Mode::ALTERNATE);
@@ -39,6 +39,9 @@ int main()
     u2tx1.mode(Mode::ALTERNATE);
 
     USART usart(USART2, 115200);
+
+    usart.disableDma();
+
     VN100Serial sensor{usart, 115200, VNCommonSerial::CRCOptions::CRC_ENABLE_16,
                        std::chrono::seconds(5)};
 
@@ -59,7 +62,7 @@ int main()
         return 0;
     }
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 3; i++)
     {
         sensor.sample();
         sample = sensor.getLastSample();
@@ -77,6 +80,11 @@ int main()
 
         Thread::sleep(500);
     }
+
+    // my test
+    usart.enableDma();
+    printf("\nStarting dma read test...\n\n");
+    sensor.testReadDma();
 
     sensor.closeAndReset();
     printf("Sensor communication closed!\n");
