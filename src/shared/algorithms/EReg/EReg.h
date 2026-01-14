@@ -76,10 +76,11 @@ private:
     std::function<float()> getPressure;
     std::function<void(float)> setValvePosition;
 
-    float i         = 0;      // Integral contribution.
-    float d         = 0;      // Derivative contribution.
-    float lastError = 0;      // Error at the previous step.
-    bool saturation = false;  ///< have we reached saturation?
+    float i            = 0;      // Integral contribution.
+    float d            = 0;      // Derivative contribution.
+    float lastError    = 0;      // Error at the previous step.
+    bool saturation    = false;  ///< have we reached saturation?
+    float lastPosition = 0;
 };
 
 }  // namespace Boardcore

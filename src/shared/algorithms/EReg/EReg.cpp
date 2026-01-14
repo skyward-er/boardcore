@@ -59,7 +59,11 @@ void EReg::step()
 
     float u = config.KP * error + i + d;
 
-    setValvePosition(antiWindUp(u, config.uMin, config.uMax));
+    if (std::abs(u - lastPosition) > 0.03)
+    {
+        setValvePosition(antiWindUp(u, config.uMin, config.uMax));
+        lastPosition = u;
+    }
 }
 
 float EReg::antiWindUp(float u, float uMin, float uMax)
