@@ -235,8 +235,7 @@ private:
     void changeRegister(ADS131M04Defs::Register reg, uint16_t newValue,
                         uint16_t mask);
 
-    void sendCommand(SPITransaction<uint8_t>& transaction,
-                     ADS131M04Defs::Command cmd,
+    void sendCommand(SPITransaction& transaction, ADS131M04Defs::Command cmd,
                      uint8_t data[ADS131M04Defs::FULL_FRAME_SIZE]);
 
     /**
@@ -245,7 +244,7 @@ private:
      */
     float getLSBSizeFromGain(ADS131M04Defs::PGA gain);
 
-    SPISlave<uint8_t> spiSlave;
+    SPISlave spiSlave;
 
     // Current device configuration
     Config config;

@@ -254,24 +254,12 @@ public:
 /**
  * @brief Contains information about a single SPI slave device.
  */
-template <typename AddressSize>
 struct SPISlave
 {
-    static_assert(std::is_same<AddressSize, uint8_t>::value ||
-                      std::is_same<AddressSize, uint16_t>::value ||
-                      std::is_same<AddressSize, uint32_t>::value ||
-                      std::is_same<AddressSize, void>::value,
-                  "AddressSize can be one of uint8_t, uint16_t, uint32_t. void "
-                  "is used when no registers are involved");
-
     SPIBusInterface& bus;  ///< Bus on which the slave is connected.
     SPIBusConfig config;   ///< How the bus should be configured to communicate
                            ///< with the slave.
     GpioType cs;           ///< Chip select pin
-
-    AddressSize readWriteMask =
-        0b1 << ((8 * sizeof(AddressSize)) -
-                static_cast<AddressSize>(config.writeBitPosition));
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
         : bus(bus), config(config), cs(cs)
@@ -283,11 +271,10 @@ struct SPISlave
  * @brief RAII Interface for SPI bus acquisition
  *
  */
-template <typename AddressSize>
 class SPIAcquireLock
 {
 public:
-    explicit SPIAcquireLock(SPISlave<AddressSize> slave)
+    explicit SPIAcquireLock(SPISlave slave)
         : SPIAcquireLock(slave.bus, slave.config)
     {
     }
@@ -304,12 +291,10 @@ private:
 /**
  * @brief RAII Interface for SPI chip selection.
  */
-template <typename AddressSize>
 class SPISelectLock
 {
 public:
-    explicit SPISelectLock(SPISlave<AddressSize> slave)
-        : SPISelectLock(slave.bus, slave.cs)
+    explicit SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs)
     {
     }
 

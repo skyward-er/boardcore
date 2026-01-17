@@ -49,8 +49,47 @@ namespace Boardcore
  * - Hardware CRC feature for reliable communication
  * - DMA capability
  */
+
 namespace SPI
 {
+
+// class UInt24
+// {
+// public:
+//     explicit constexpr UInt24(uint32_t value) : value(value) {}
+//     explicit constexpr UInt24(uint16_t value)
+//         : UInt24(static_cast<uint32_t>(value))
+//     {
+//     }
+//     explicit constexpr UInt24(uint8_t value)
+//         : UInt24(static_cast<uint32_t>(value))
+//     {
+//     }
+
+//     friend uint32_t operator+(uint32_t lhs, UInt24 rhs)
+//     {
+//         return lhs + rhs.getValue();
+//     }
+
+//     friend uint32_t operator+(UInt24 lhs, uint32_t rhs) { return rhs + lhs; }
+
+//     friend UInt24 operator+(UInt24 lhs, uint16_t rhs)
+//     {
+//         auto val = lhs.getValue() + static_cast<uint32_t>(rhs);
+//     }
+
+//     friend UInt24 operator+(UInt24 lhs, UInt24 rhs)
+//     {
+//         auto sum = lhs.getValue() + rhs.getValue();
+//         if (sum > 0x00ffffff)  // Overflow
+//             sum = sum - 0x00ffffff;
+//         return UInt24{sum};
+//     }
+
+// private:
+//     uint32_t getValue() { return value & 0x00ffffff; }
+//     uint32_t value;
+// };
 
 enum class Order : uint16_t
 {

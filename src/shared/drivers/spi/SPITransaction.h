@@ -53,7 +53,6 @@ namespace Boardcore
  *     // freed for use by someone else
  * }
  */
-template <typename AddressSize>
 class SPITransaction
 {
 public:
@@ -63,7 +62,7 @@ public:
      *
      * @param slave Slave to communicate with.
      */
-    explicit SPITransaction(const SPISlave<AddressSize>& slave);
+    explicit SPITransaction(const SPISlave& slave);
 
     // /**
     //  * @brief Instantiates a new SPITransaction, configuring the bus with the
@@ -147,7 +146,7 @@ public:
      *
      * @return Byte read from the register.
      */
-    template <typename RegisterSize>
+    template <typename AddressSize, typename RegisterSize>
     RegisterSize readRegister(AddressSize reg);
 
     /**
@@ -156,7 +155,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    template <typename RegisterSize>
+    template <typename AddressSize, typename RegisterSize>
     void readRegisters(AddressSize reg, RegisterSize* data, size_t size);
 
     /**
@@ -165,7 +164,7 @@ public:
      * @param reg Register address.
      * @param data Byte to write.
      */
-    template <typename RegisterSize>
+    template <typename AddressSize, typename RegisterSize>
     void writeRegister(AddressSize reg, RegisterSize data);
 
     /**
@@ -175,16 +174,19 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    template <typename RegisterSize>
+    template <typename AddressSize, typename RegisterSize>
     void writeRegisters(AddressSize reg, RegisterSize* data, size_t size);
 
 private:
+    template <typename AddressSize>
+    inline AddressSize applyReadWriteMask(AddressSize data);
+
     template <typename DataSize>
     inline DataSize swapBytes(DataSize data);
     inline uint8_t swapBytes(uint8_t data);
     inline uint16_t swapBytes(uint16_t data);
     inline uint32_t swapBytes(uint32_t data);
-    const SPISlave<AddressSize>& slave;
+    const SPISlave& slave;
 };
 
 }  // namespace Boardcore

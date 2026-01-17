@@ -50,7 +50,7 @@ bool ADS131M04::init()
 
 bool ADS131M04::reset()
 {
-    SPITransaction<uint8_t> transaction(spiSlave);
+    SPITransaction transaction(spiSlave);
 
     uint8_t data[FULL_FRAME_SIZE] = {0};
     sendCommand(transaction, Command::RESET, data);
@@ -506,7 +506,7 @@ bool ADS131M04::readSamples(int32_t rawValues[CHANNELS_NUM])
     data[0] = (static_cast<uint16_t>(Command::NULL_CMD) & 0xff00) >> 8;
     data[1] = (static_cast<uint16_t>(Command::NULL_CMD) & 0x00ff);
 
-    SPITransaction<uint8_t> transaction(spiSlave);
+    SPITransaction transaction(spiSlave);
     transaction.transfer(data, sizeof(data));
 
     // Extract and verify the CRC
@@ -547,7 +547,7 @@ uint16_t ADS131M04::readRegister(Register reg)
               static_cast<uint16_t>(reg) >> 1;
     data[1] = static_cast<uint16_t>(reg) << 7;
 
-    SPITransaction<uint8_t> transaction(spiSlave);
+    SPITransaction transaction(spiSlave);
     transaction.write(data, sizeof(data));
     transaction.read(data, sizeof(data));
 
@@ -567,7 +567,7 @@ void ADS131M04::writeRegister(Register reg, uint16_t data)
     writeCommand[3] = data >> 8;
     writeCommand[4] = data;
 
-    SPITransaction<uint8_t> transaction(spiSlave);
+    SPITransaction transaction(spiSlave);
     transaction.write(writeCommand, sizeof(writeCommand));
 
     // The response contains a fixed part and the register address.
@@ -594,8 +594,8 @@ void ADS131M04::changeRegister(Register reg, uint16_t newValue, uint16_t mask)
     writeRegister(reg, regValue);
 }
 
-void ADS131M04::sendCommand(SPITransaction<uint8_t>& transaction,
-                            Command command, uint8_t data[FULL_FRAME_SIZE])
+void ADS131M04::sendCommand(SPITransaction& transaction, Command command,
+                            uint8_t data[FULL_FRAME_SIZE])
 {
     // All commands (a part from read and write) needs the full 10 words
     // communication frame. Each word is (by default) 3 bytes long

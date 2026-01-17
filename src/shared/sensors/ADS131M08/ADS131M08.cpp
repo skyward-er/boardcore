@@ -49,7 +49,7 @@ bool ADS131M08::init()
 
 bool ADS131M08::reset()
 {
-    SPITransaction<uint8_t> transaction(spiSlave);
+    SPITransaction transaction(spiSlave);
 
     uint8_t data[FULL_FRAME_SIZE] = {};
     sendCommand(transaction, Command::RESET, data);
