@@ -70,25 +70,37 @@ public:
 
     // void setUVWPolePairsNumber(AS5047DDefs::UVWPolePairs pairs);
 
-    void enableDAEC() { setDAECStatus(AS5047DDefs::DAEC_ON); }
-    void disableDAEC() { setDAECStatus(AS5047DDefs::DAEC_OFF); }
+    void enableDAEC() { setDAECStatus(AS5047DDefs::DAECStatus::DAEC_ON); }
+    void disableDAEC() { setDAECStatus(AS5047DDefs::DAECStatus::DAEC_ON); }
     void setDataSource(AS5047DDefs::DataSelect dataSource);
-
-    void dumpErrorRegister(SPITransaction& spiTr);
 
 protected:
     AS5047DData sampleImpl() override;
 
 private:
+    void dumpErrorRegister();
+    typedef struct
+    {
+        uint16_t data;
+        AS5047DDefs::Error error;
+
+        bool hasError() { return error != AS5047DDefs::Error::NONE; }
+    } ReadResult;
+
     // void setPWMStatus(AS5047DDefs::PWMSelect pwmEnable);
     // void selectActiveInterface(AS5047DDefs::UVWABISelect interface);
     void setDAECStatus(AS5047DDefs::DAECStatus status);
+    void writeRegister(AS5047DDefs::Registers reg, uint16_t data);
+    ReadResult readRegister(AS5047DDefs::Registers reg);
     SPIBusConfig getDefaultSPIConfig();
+    uint16_t getParity(uint16_t data);
+
+    void logReadRegisterError(std::string regName, AS5047DDefs::Error error);
 
     /**
      * @brief The SPI driver used to create SPI Transactions
      */
-    SPISlave spi;
+    SPISlave spiSlave;
 
     /// true if init completes successfully, false otherwise
     bool initialized;

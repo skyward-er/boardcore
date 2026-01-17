@@ -36,7 +36,7 @@ namespace AS5047DDefs
  * as volatile registers, resetting to the
  * OTP-programmed value.
  */
-enum Registers
+enum class Registers : uint16_t
 {
     NOP       = 0x0000,
     ERRFL     = 0x0001,
@@ -51,7 +51,7 @@ enum Registers
     ANGLECOM  = 0x3fff,
 };
 
-enum ABIResolution : uint8_t
+enum class ABIResolution : uint8_t
 {
     RES_2000 = 0b0000,  /// ABIBIN = 0, ABIRES = 000
     RES_1600 = 0b0001,  /// ABIBIN = 0, ABIRES = 001
@@ -65,37 +65,37 @@ enum ABIResolution : uint8_t
     RES_1024 = 0b1001,  /// ABIBIN = 1, ABIRES = 001
 };
 
-enum DataSelect : uint8_t
+enum class DataSelect : uint8_t
 {
     DAECANG   = 0b0,
     CORDICANG = 0b1
 };
 
-enum DAECStatus : uint8_t
+enum class DAECStatus : uint8_t
 {
     DAEC_ON  = 0b0,
     DAEC_OFF = 0b1
 };
 
-enum UVWABISelect : uint8_t
+enum class UVWABISelect : uint8_t
 {
     ABI = 0b0,
     UVW = 0b1
 };
 
-enum PWMSelect : uint8_t
+enum class PWMSelect : uint8_t
 {
     PWM_OFF = 0b0,
     PWM_OFF = 0b1
 };
 
-enum ABIRotationDirection : uint8_t
+enum class ABIRotationDirection : uint8_t
 {
     NORMAL   = 0b0,
     INVERSED = 0b1
 };
 
-enum UVWPolePairs : uint8_t
+enum class UVWPolePairs : uint8_t
 {
     ONE   = 0b000,
     TWO   = 0b001,
@@ -106,12 +106,19 @@ enum UVWPolePairs : uint8_t
     SEVEN = 0b110
 };
 
-enum HysteresisConfiguration : uint8_t
+enum class HysteresisConfiguration : uint8_t
 {
     CONFIG0 = 0b00,
     CONFIG1 = 0b01,
     CONFIG2 = 0b10,
     CONFIG3 = 0b11
+};
+
+enum class Error
+{
+    NONE,
+    PARITY_ERROR,
+    OTHER_ERROR
 };
 
 static constexpr float SPI_ANGLE_RES              = 360.f / 14.f;
@@ -122,6 +129,8 @@ static constexpr uint8_t DATASELECT_SETTING_POS   = 6;
 
 static constexpr Microsecond DELAY_BETWEEN_SPI_TRAN_US =
     1_us;  // The real time is 350 ns but nanosleep is too complex to use :-)
+
+static constexpr uint16_t PARITY_BIT_POSITION = 15;
 
 }  // namespace AS5047DDefs
 
