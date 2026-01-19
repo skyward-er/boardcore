@@ -95,6 +95,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/ADS1118/ADS1118.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ADS131M04/ADS131M04.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ADS131M08/ADS131M08.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/AS5047D/AS5047DSPI.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BME280/BME280.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BME280/BME280I2C.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BMP280/BMP280.cpp

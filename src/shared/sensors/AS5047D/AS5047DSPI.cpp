@@ -173,7 +173,7 @@ AS5047DData AS5047DSPI::sampleImpl()
         {
             logReadRegisterError("ANGLECOM", daecAngInt.error);
             lastError = COMMAND_FAILED;
-            return;
+            return lastSample;
         }
 
         daecAngle = Units::Angle::Degree(static_cast<float>(daecAngInt.data) *
@@ -189,7 +189,7 @@ void AS5047DSPI::dumpErrorRegister()
     auto errReg = readRegister(AS5047DDefs::Registers::ERRFL);
 
     if (errReg.hasError())
-        logReadRegisterError("ERROR_REGISTER", errReg.error);
+        logReadRegisterError("ERROR_REGISTER", errReg.error, false);
 
     LOG_ERR(logger,
             "An error has occured, dumping error register. Parity "
@@ -314,7 +314,8 @@ void AS5047DSPI::writeRegister(AS5047DDefs::Registers reg, uint16_t data)
 
     SPITransaction spiTr{spiSlave};
 
-    spiTr.write16(transaction, 4);
+    spiTr.write16(transaction[0]);
+    spiTr.write16(transaction[1]);
 }
 
 AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
@@ -354,13 +355,20 @@ AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
     transaction[1] |= getParity(transaction[1])
                       << AS5047DDefs::PARITY_BIT_POSITION;
 
+    LOG_ERR(logger, "Transaction (data sent): ({:X}, {:X})", transaction[0],
+            transaction[1]);
+
     SPITransaction spiTr{spiSlave};
 
-    spiTr.transfer16(transaction, 4);
+    transaction[0] = spiTr.transfer16(transaction[0]);
+    transaction[1] = spiTr.transfer16(transaction[1]);
 
     // now we can discard the first half word and check the parity on the
     // second one, if the parity of the whole frame (including the parity
     // bit) is 0 it means that the frame is likely correct
+
+    LOG_ERR(logger, "Transaction (data received): ({:X}, {:X})", transaction[0],
+            transaction[1]);
 
     transaction[0] =
         transaction[1] &
@@ -382,12 +390,13 @@ uint16_t AS5047DSPI::getParity(uint16_t data)
 {
     uint16_t parity = 0;
     for (size_t i = 0; i < sizeof(uint16_t) * 8; i++)
-        parity ^= (data >> 0) & 0b1;
+        parity ^= (data >> i) & 0b1;
     return parity;
 }
 
 void AS5047DSPI::logReadRegisterError(std::string regName,
-                                      AS5047DDefs::Error error)
+                                      AS5047DDefs::Error error,
+                                      bool showErrorReg)
 {
     LOG_ERR(logger,
             "Error while reading {}. What happened? -> Received "
@@ -395,7 +404,8 @@ void AS5047DSPI::logReadRegisterError(std::string regName,
             ": {}, Other Error (see error register below): {}",
             regName, error == AS5047DDefs::Error::PARITY_ERROR,
             error == AS5047DDefs::Error::OTHER_ERROR);
-    dumpErrorRegister();
+    if (showErrorReg)
+        dumpErrorRegister();
 }
 
 }  // namespace Boardcore

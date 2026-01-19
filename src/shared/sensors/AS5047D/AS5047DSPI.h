@@ -95,7 +95,8 @@ private:
     SPIBusConfig getDefaultSPIConfig();
     uint16_t getParity(uint16_t data);
 
-    void logReadRegisterError(std::string regName, AS5047DDefs::Error error);
+    void logReadRegisterError(std::string regName, AS5047DDefs::Error error,
+                              bool showErrorReg = true);
 
     /**
      * @brief The SPI driver used to create SPI Transactions
