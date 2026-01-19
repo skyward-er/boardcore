@@ -86,7 +86,7 @@ enum class UVWABISelect : uint8_t
 enum class PWMSelect : uint8_t
 {
     PWM_OFF = 0b0,
-    PWM_OFF = 0b1
+    PWM_ON  = 0b1
 };
 
 enum class ABIRotationDirection : uint8_t
