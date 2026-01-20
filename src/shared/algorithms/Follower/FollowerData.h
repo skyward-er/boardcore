@@ -100,9 +100,14 @@ struct FollowerState
     float pitch;  // [deg]
     float horizontalSpeed;
     float verticalSpeed;
+    float yawOffset;    //[deg] offset variables to reset to "zero" the yaw
+                        // position externally
+    float pitchOffset;  //[deg] offset variables to reset to "zero" the pitch
+                        // position externally
 
     FollowerState()
-        : timestamp(0), yaw(0), pitch(0), horizontalSpeed(0), verticalSpeed(0)
+        : timestamp(0), yaw(0), pitch(0), horizontalSpeed(0), verticalSpeed(0),
+          yawOffset(0), pitchOffset(0)
     {
     }
 
@@ -111,7 +116,8 @@ struct FollowerState
         return STRUCT_DEF(FollowerState,
                           FIELD_DEF(timestamp) FIELD_DEF(yaw) FIELD_DEF(pitch)
                               FIELD_DEF(horizontalSpeed)
-                                  FIELD_DEF(verticalSpeed));
+                                  FIELD_DEF(verticalSpeed) FIELD_DEF(yawOffset)
+                                      FIELD_DEF(pitchOffset));
     }
 };
 

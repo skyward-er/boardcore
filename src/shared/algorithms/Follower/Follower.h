@@ -113,6 +113,24 @@ public:
      */
     AntennaAngles getTargetAngles();
 
+    /**
+     * @brief Adds some degrees to the offset, used to move ARP while in the
+     * active state to offset imprecise positioning
+     *
+     * @param yawOffset The offset to be added to the existing one for the yaw
+     * @param pitchOffset The offset to be added to the existing one for the
+     * pitch
+     */
+    void addToOffset(float yawOffset, float pitchOffset);
+
+    /**
+     * @brief Initializes the offset to the current position of the algorithm.
+     * The current target angles become the 0° position for the steppers.
+     * @note This may cause ARP to move back to 0° in the case that the current
+     * stepper position is different than 0°
+     */
+    void initOffset();
+
 private:
     /**
      * @brief Use the last rocket NAS state and initial rocket-antenna distance

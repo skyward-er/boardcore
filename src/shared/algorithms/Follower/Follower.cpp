@@ -42,6 +42,7 @@ namespace Boardcore
  */
 float minimizeRotation(float angle)
 {
+    // TODO: This works assuming that the angle is less than 180 + x + 360°
     if (angle > 180)
         angle -= 360;
     else if (angle < -180)
@@ -170,8 +171,9 @@ void Follower::step()
         targetAngles = rocketPositionToAntennaAngles(rocketPosition);
 
         // Calculate the amount to move from the current position
-        diffAngles = {targetAngles.timestamp, targetAngles.yaw - vn300.yaw,
-                      targetAngles.pitch - vn300.pitch};
+        diffAngles = {targetAngles.timestamp,
+                      targetAngles.yaw - (vn300.yaw + state.yawOffset),
+                      targetAngles.pitch - (vn300.pitch + state.pitchOffset)};
 
         // Rotate in the shortest direction
         diffAngles.yaw = std::min(yawGain, YAW_GAIN_LIMIT) *
@@ -197,6 +199,8 @@ void Follower::step()
     newState.pitch           = diffAngles.pitch;
     newState.horizontalSpeed = horizontalSpeed;
     newState.verticalSpeed   = verticalSpeed;
+    newState.yawOffset       = state.yawOffset;
+    newState.pitchOffset     = state.pitchOffset;
 
     // Write the new state for the follower
     {
@@ -252,6 +256,21 @@ AntennaAngles Follower::rocketPositionToAntennaAngles(
     angles.pitch = std::atan2(-ned.d, distance) / EIGEN_PI * 180;
 
     return angles;
+}
+
+void Follower::addToOffset(float yawOffset, float pitchOffset)
+{
+    Lock<FastMutex> lock(followerMutex);
+
+    state.yawOffset += yawOffset;
+    state.pitchOffset += pitchOffset;
+}
+
+void Follower::initOffset()
+{
+    Lock<FastMutex> lock(followerMutex);
+    state.yawOffset   = targetAngles.yaw - lastAntennaAttitude.yaw;
+    state.pitchOffset = targetAngles.pitch - lastAntennaAttitude.pitch;
 }
 
 }  // namespace Boardcore
