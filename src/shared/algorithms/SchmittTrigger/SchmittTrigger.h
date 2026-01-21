@@ -38,13 +38,25 @@ namespace Boardcore
     class SchmittTrigger : public Algorithm
     {
     public:
+
+        enum class Activation
+        {
+            BACKWARDS   = -1,
+            STOP        = 0,
+            FORWARD     = 1
+            
+        };
+        /**
+         * @brief Constructor for the SchmittTrigger class.
+         */
+        SchmittTrigger();
+
         /**
          * @brief Constructor for the SchmittTrigger class.
          *
-         * @param lowerThreshold The lower threshold value for the trigger.
-         * @param upperThreshold The upper threshold value for the trigger.
+         * @param thresholds The thresholds array for the trigger.
          */
-        SchmittTrigger(float lowerThreshold, float upperThreshold);
+        SchmittTrigger(uint8_t thresholds[2]);
 
         /**
          * @brief Initializes the SchmittTrigger object.
@@ -54,31 +66,44 @@ namespace Boardcore
         bool init() override;
 
         /**
-         * @brief Sets the state value for the Schmitt Trigger.
+         * @brief Sets the thresholds for the Schmitt Trigger.
          *
-         * @param input The state value to be evaluated.
+         * @param thresholds The thresholds array to be set, first element is the lower threshold and second is the upper threshold.
          */
-        void setState(float input);
+        void setThresholds(uint8_t newThresholds[2]);
 
         /**
-         * @brief Gets the current output state of the Schmitt Trigger.
+         * @brief Sets the state value for the Schmitt Trigger.
          *
-         * @return true if the output is high, false if it is low.
+         * @param state The state value to be evaluated.
          */
-        bool getOutput() const;
+        void setState(uint16_t newState);
+
+        /**
+         * @brief Sets the reference value for the Schmitt Trigger.
+         *
+         * @param reference The reference value to be used in the evaluation.
+         */
+        void setReference(uint16_t newReference);
+
+        /**
+         * @brief Returns the current activation state of the Schmitt Trigger.
+         *
+         * @return The current activation state.
+         */
+        Activation getActivation();
+
     protected:
         uint16_t    state;
         uint16_t    reference;
         uint8_t     thresholds[2];
+        Activation  activation;
 
-        enum class Activation
-        {
-            STOP        = 0,
-            FORWARD     = 1,
-            BACKWARDS   = 2
-        } currentState;
-        
-        bool outputState;
+        bool thresholdsSet = false;
+
+        PrintLogger logger = Logging::getLogger("SchmittTrigger");
+
+        miosix::FastMutex schmittMutex;
 
         void step() override;
     }
