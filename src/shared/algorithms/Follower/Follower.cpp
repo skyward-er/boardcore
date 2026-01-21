@@ -258,12 +258,22 @@ AntennaAngles Follower::rocketPositionToAntennaAngles(
     return angles;
 }
 
-void Follower::addToOffset(float yawOffset, float pitchOffset)
+bool Follower::addToOffset(float yawOffset, float pitchOffset)
 {
     Lock<FastMutex> lock(followerMutex);
 
-    state.yawOffset += yawOffset;
-    state.pitchOffset += pitchOffset;
+    // Check that the offset will be within the maximum limits
+    if (YAW_OFFSET_LIMIT_MIN < state.yawOffset + yawOffset &&
+        state.yawOffset + yawOffset < YAW_OFFSET_LIMIT_MAX &&
+        PITCH_OFFSET_LIMIT_MIN < state.pitchOffset + pitchOffset &&
+        state.pitchOffset + pitchOffset < PITCH_OFFSET_LIMIT_MAX)
+    {
+        state.yawOffset += yawOffset;
+        state.pitchOffset += pitchOffset;
+        return true;
+    }
+
+    return false;
 }
 
 void Follower::initOffset()

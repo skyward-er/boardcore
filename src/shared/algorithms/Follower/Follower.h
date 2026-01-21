@@ -43,6 +43,12 @@ static constexpr float YAW_GAIN_LIMIT =
 static constexpr float PITCH_GAIN_LIMIT =
     1.0;  ///< Max limit for the pirch gain cannot be set more
 
+static constexpr float YAW_OFFSET_LIMIT_MAX = 180;
+static constexpr float YAW_OFFSET_LIMIT_MIN = -180;
+
+static constexpr float PITCH_OFFSET_LIMIT_MAX = 90;
+static constexpr float PITCH_OFFSET_LIMIT_MIN = 0;
+
 /**
  * @brief Follower class to output the yaw ad pitch necessary to track from the
  * GPS origin the rocket. Computes the angle to follow the rocket using its NAS
@@ -121,7 +127,7 @@ public:
      * @param pitchOffset The offset to be added to the existing one for the
      * pitch
      */
-    void addToOffset(float yawOffset, float pitchOffset);
+    bool addToOffset(float yawOffset, float pitchOffset);
 
     /**
      * @brief Initializes the offset to the current position of the algorithm.
