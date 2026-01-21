@@ -23,8 +23,89 @@
 #pragma once
 
 #include "SchmittTrigger.h"
+#include <diagnostic/PrintLogger.h>
+#include <logger/Logger.h>
+
+using namespace miosix;
 
 namespace Boardcore
 {
-    
+    SchmittTrigger::SchmittTrigger()
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        activation    = Activation::STOP; //Vedere se ha senso inizializzare a STOP
+    }
+ 
+    SchmittTrigger::SchmittTrigger(uint8_t inputThresholds[2])
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        thresholds[0] = inputThresholds[0];
+        thresholds[1] = inputThresholds[1];
+        activation    = Activation::STOP; //Vedere se ha senso inizializzare a STOP
+        thresholdsSet = true;
+    }
+
+    bool SchmittTrigger::init()
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        if(!thresholdsSet)
+        {
+            LOG_ERR(logger, "Thresholds not set\n");
+            return false;
+        }
+        return true;
+    }
+
+    void SchmittTrigger::setThresholds(uint8_t newThresholds[2])
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        thresholds[0] = newThresholds[0];
+        thresholds[1] = newThresholds[1];
+        thresholdsSet = true;
+    }
+
+    void SchmittTrigger::setState(uint16_t newState)
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        state = newState;
+    }
+
+    void SchmittTrigger::setReference(uint16_t newReference)
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        reference = newReference;
+    }
+
+    SchmittTrigger::Activation SchmittTrigger::getActivation()
+    {
+        Lock<FastMutex> lock(schmittMutex);
+        return activation;
+    }
+
+    void SchmittTrigger::step()
+    {
+        Lock<FastMutex> lock(schmittMutex);
+
+        if(!thresholdsSet)
+        {
+            LOG_ERR(logger, "Thresholds not set\n");
+            return;
+        }
+
+        //TODO: controllare bene logica in caso di overflow
+
+        if (state <= reference - thresholds[0])
+        {
+            activation = Activation::FORWARD;
+        }
+        else if (state >= reference + thresholds[1])
+        {
+            activation = Activation::BACKWARDS;
+        }
+        else
+        {
+            activation = Activation::STOP;
+        }
+    }
+
 }
