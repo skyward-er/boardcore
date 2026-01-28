@@ -32,17 +32,11 @@ namespace Boardcore
 {
     SchmittTrigger::SchmittTrigger()
     {
-        Lock<FastMutex> lock(schmittMutex);
-        activation    = Activation::STOP; //Vedere se ha senso inizializzare a STOP
     }
  
-    SchmittTrigger::SchmittTrigger(uint8_t inputThresholds[2])
+    SchmittTrigger::SchmittTrigger(float thresholdLow, float thresholdHigh)
     {
-        Lock<FastMutex> lock(schmittMutex);
-        thresholds[0] = inputThresholds[0];
-        thresholds[1] = inputThresholds[1];
-        activation    = Activation::STOP; //Vedere se ha senso inizializzare a STOP
-        thresholdsSet = true;
+        setThresholds(thresholdLow, thresholdHigh);
     }
 
     bool SchmittTrigger::init()
@@ -56,24 +50,28 @@ namespace Boardcore
         return true;
     }
 
-    void SchmittTrigger::setThresholds(uint8_t newThresholds[2])
+    void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
     {
         Lock<FastMutex> lock(schmittMutex);
-        thresholds[0] = newThresholds[0];
-        thresholds[1] = newThresholds[1];
+        thresholds[0] = thresholdLow;
+        thresholds[1] = thresholdHigh;
         thresholdsSet = true;
     }
 
-    void SchmittTrigger::setState(uint16_t newState)
+    void SchmittTrigger::setState(float newState)
     {
         Lock<FastMutex> lock(schmittMutex);
         state = newState;
+        if(!stateSet)
+            stateSet = true;
     }
 
-    void SchmittTrigger::setReference(uint16_t newReference)
+    void SchmittTrigger::setReference(float newReference)
     {
         Lock<FastMutex> lock(schmittMutex);
         reference = newReference;
+        if(!referenceSet)
+            referenceSet = true;
     }
 
     SchmittTrigger::Activation SchmittTrigger::getActivation()
@@ -91,16 +89,24 @@ namespace Boardcore
             LOG_ERR(logger, "Thresholds not set\n");
             return;
         }
-
-        //TODO: controllare bene logica in caso di overflow
+        if(!referenceSet)
+        {
+            LOG_ERR(logger, "Reference not set\n");
+            return;
+        }
+        if(!stateSet)
+        {
+            LOG_ERR(logger, "State not set\n");
+            return;
+        }
 
         if (state <= reference - thresholds[0])
         {
-            activation = Activation::FORWARD;
+            activation = Activation::HIGH;
         }
         else if (state >= reference + thresholds[1])
         {
-            activation = Activation::BACKWARDS;
+            activation = Activation::LOW;
         }
         else
         {
