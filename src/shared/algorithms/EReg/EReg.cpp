@@ -22,15 +22,14 @@
 
 #include "EReg.h"
 
+#include <math.h>
+
 namespace Boardcore
 {
 
-EReg::EReg(const ERegPIDConfig& config, float targetPressure,
-           std::function<float()> getPressure,
-           std::function<void(float)> setValvePosition)
-    : config(config), targetPressure(targetPressure),
-      getPressure(std::move(getPressure)),
-      setValvePosition(std::move(setValvePosition))
+EReg::EReg(const ERegPIDConfig& pidConfig, const ERegValveInfo& valveInfo,
+           float targetPressure)
+    : pidConfig(pidConfig), valveInfo(valveInfo), targetPressure(targetPressure)
 {
 }
 
@@ -42,48 +41,81 @@ void EReg::setReferencePoint(float newTargetPressure)
 
 void EReg::changePIDConfig(const ERegPIDConfig& newConfig)
 {
-    config = newConfig;
+    pidConfig = newConfig;
     resetState();
 }
 
-void EReg::step()
+void EReg::setInput(float downstreamPressure, float upstreamPressure)
 {
-    float sample = getPressure();
-
-    float error = targetPressure - sample;
-
-    d = (error - lastError) / config.Ts * config.KD;
-
-    if (!saturation)
-        i = i + config.KI * config.Ts * error;
-
-    float u = config.KP * error + i + d;
-
-    if (std::abs(u - lastPosition) > 0.03)
-    {
-        setValvePosition(antiWindUp(u, config.uMin, config.uMax));
-        lastPosition = u;
-    }
+    lastDownstreamPressureSample = downstreamPressure;
+    lastUpstreamPressureSample   = upstreamPressure;
 }
 
-float EReg::antiWindUp(float u, float uMin, float uMax)
+float EReg::getOutput() { return nextServoPosition; }
+
+void EReg::step()
 {
-    if (u < uMin)
+    float error = targetPressure - lastDownstreamPressureSample;
+
+    d = (error - lastError) / pidConfig.Ts * pidConfig.KD;
+
+    if (!saturation)
+        i = i + pidConfig.KI * pidConfig.Ts * error;
+
+    float u =
+        (pidConfig.KP * error + i + d) /
+        std::sqrt(lastUpstreamPressureSample - lastDownstreamPressureSample);
+
+    lastError         = error;
+    nextServoPosition = antiWindUp(u);
+}
+
+float EReg::antiWindUp(float PIDCommand)
+{
+    float servoCommand;
+
+    if (PIDCommand <= 0.0f)
     {
-        u          = uMin;
-        saturation = true;
+        saturation   = true;
+        servoCommand = valveInfo.minServoPosition;
     }
-    else if (u > uMax)
+    else if (PIDCommand >= 1.0f)
     {
-        u          = uMax;
-        saturation = true;
+        saturation   = true;
+        servoCommand = 1.0f;
     }
     else
     {
-        saturation = false;
+        saturation   = false;
+        servoCommand = convertCvToServoCommand(PIDCommand);
     }
 
-    return u;
+    return servoCommand;
+}
+
+float EReg::convertCvToServoCommand(float PIDCommand)
+{
+    float servoCommand;
+
+    // Rescale the cv to the range [0, maxCv]
+    PIDCommand *= valveInfo.maxCv;
+
+    // clang-format off
+        // Calculate the angle of the valve from the cv
+        servoCommand = PIDCommand * (PIDCommand * (PIDCommand * (PIDCommand * (valveInfo.polyValveCoeff[0] *
+        PIDCommand + valveInfo.polyValveCoeff[1]) + valveInfo.polyValveCoeff[2]) + valveInfo.polyValveCoeff[3])
+        + valveInfo.polyValveCoeff[4]) + valveInfo.polyValveCoeff[5];
+
+        // Rescale to the range [minAngle, 90]
+        servoCommand = servoCommand * (90 - valveInfo.minValveAngle) + valveInfo.minValveAngle; 
+
+        // Calculate the position of the servo from the angle of the valve
+        servoCommand = servoCommand * (servoCommand * (servoCommand * (servoCommand * (valveInfo.polyServoCoeff[0] * 
+        servoCommand + valveInfo.polyServoCoeff[1]) + valveInfo.polyServoCoeff[2]) + valveInfo.polyServoCoeff[3])
+        + valveInfo.polyServoCoeff[4]) + valveInfo.polyServoCoeff[5];
+    // clang-format on
+
+    return servoCommand;
 }
 
 void EReg::resetState()

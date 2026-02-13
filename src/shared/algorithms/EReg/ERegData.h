@@ -22,17 +22,38 @@
 
 #pragma once
 
+#include <reflect.hpp>
+
 namespace Boardcore
 {
-struct ERegPIDConfig
+struct ERegData
 {
-    float KP = 0;
-    float KI = 0;
-    float KD = 0;
-    float Ts = 0;
+    uint64_t timestamp;
+    float downstreamPressure;
+    float upstreamPressure;
+    float servoPosition;
 
-    float uMin = 0;
-    float uMax = 1;
+    ERegData()
+    {
+        timestamp          = 0;
+        downstreamPressure = 0.0f;
+        upstreamPressure   = 0.0f;
+        servoPosition      = 0.0f;
+    }
+
+    ERegData(uint64_t timestamp, float downstreamPressure,
+             float upstreamPressure, float servoPosition)
+        : timestamp(timestamp), downstreamPressure(downstreamPressure),
+          upstreamPressure(upstreamPressure), servoPosition(servoPosition)
+    {
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            ERegData, FIELD_DEF(timestamp) FIELD_DEF(downstreamPressure)
+                          FIELD_DEF(upstreamPressure) FIELD_DEF(servoPosition));
+    }
 };
 
 }  // namespace Boardcore
