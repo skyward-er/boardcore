@@ -28,7 +28,7 @@
 #include <limits>
 #include <vector>
 
-#include "ERegPIDConfig.h"
+#include "ERegConfig.h"
 
 namespace Boardcore
 {
@@ -36,9 +36,8 @@ namespace Boardcore
 class EReg : public Algorithm
 {
 public:
-    EReg(const ERegPIDConfig& config, float targetPressure,
-         std::function<float()> getPressure,
-         std::function<void(float)> setValvePosition);
+    EReg(const ERegPIDConfig& pidConfig, const ERegValveInfo& valveInfo,
+         float targetPressure);
 
     bool init() { return true; }
 
@@ -53,6 +52,21 @@ public:
      */
     void changePIDConfig(const ERegPIDConfig& newConfig);
 
+    /**
+     * @brief Setter function to input pressures into the algorithm
+     *
+     * @param downstreamPressure The pressure downstream of the regulator
+     * @param upstreamPressure The pressure upstream of the regulator
+     */
+    void setInput(float downstreamPressure, float upstreamPressure);
+
+    /**
+     * @brief Getter function to retrieve the output of the algorithm
+     *
+     * @return The next position the servo should move to
+     */
+    float getOutput();
+
 protected:
     /**
      * @brief Update the PID internal state.
@@ -63,24 +77,28 @@ private:
     /**
      * @brief Anti-windup mechanism.
      */
-    float antiWindUp(float u, float uMin, float uMax);
+    float antiWindUp(float PIDCommand);
+
+    float convertCvToServoCommand(float PIDCommand);
 
     /**
      * @brief Resets the PID internal state.
      */
     void resetState();
 
-    ERegPIDConfig config;  // PID configs.
+    ERegPIDConfig pidConfig;  // PID config.
+    ERegValveInfo valveInfo;  // Information about the valve mechanism.
+
     float targetPressure;  // Reference point.
 
-    std::function<float()> getPressure;
-    std::function<void(float)> setValvePosition;
+    float lastDownstreamPressureSample = 0;
+    float lastUpstreamPressureSample   = 0;
+    float nextServoPosition            = 0;
 
-    float i            = 0;      // Integral contribution.
-    float d            = 0;      // Derivative contribution.
-    float lastError    = 0;      // Error at the previous step.
-    bool saturation    = false;  ///< have we reached saturation?
-    float lastPosition = 0;
+    float i         = 0;      // Integral contribution.
+    float d         = 0;      // Derivative contribution.
+    float lastError = 0;      // Error at the previous step.
+    bool saturation = false;  // have we reached saturation?
 };
 
 }  // namespace Boardcore
