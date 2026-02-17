@@ -31,28 +31,39 @@ struct ERegData
     uint64_t timestamp;
     float downstreamPressure;
     float upstreamPressure;
+    float filteredDownstreamPressure;
+    float filteredUpstreamPressure;
     float servoPosition;
 
     ERegData()
     {
-        timestamp          = 0;
-        downstreamPressure = 0.0f;
-        upstreamPressure   = 0.0f;
-        servoPosition      = 0.0f;
+        timestamp                  = 0;
+        downstreamPressure         = 0.0f;
+        upstreamPressure           = 0.0f;
+        filteredDownstreamPressure = 0.0f;
+        filteredUpstreamPressure   = 0.0f;
+        servoPosition              = 0.0f;
     }
 
     ERegData(uint64_t timestamp, float downstreamPressure,
-             float upstreamPressure, float servoPosition)
+             float upstreamPressure, float filteredDownstreamPressure,
+             float filteredUpstreamPressure, float servoPosition)
         : timestamp(timestamp), downstreamPressure(downstreamPressure),
-          upstreamPressure(upstreamPressure), servoPosition(servoPosition)
+          upstreamPressure(upstreamPressure),
+          filteredDownstreamPressure(filteredDownstreamPressure),
+          filteredUpstreamPressure(filteredUpstreamPressure),
+          servoPosition(servoPosition)
     {
     }
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(
-            ERegData, FIELD_DEF(timestamp) FIELD_DEF(downstreamPressure)
-                          FIELD_DEF(upstreamPressure) FIELD_DEF(servoPosition));
+        return STRUCT_DEF(ERegData,
+                          FIELD_DEF(timestamp) FIELD_DEF(downstreamPressure)
+                              FIELD_DEF(upstreamPressure)
+                                  FIELD_DEF(filteredDownstreamPressure)
+                                      FIELD_DEF(filteredUpstreamPressure)
+                                          FIELD_DEF(servoPosition));
     }
 };
 

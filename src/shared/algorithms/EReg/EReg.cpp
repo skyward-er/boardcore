@@ -47,24 +47,23 @@ void EReg::changePIDConfig(const ERegPIDConfig& newConfig)
 
 void EReg::setInput(float downstreamPressure, float upstreamPressure)
 {
-    lastDownstreamPressureSample = downstreamPressure;
-    lastUpstreamPressureSample   = upstreamPressure;
+    downstreamPressureSample = downstreamPressure;
+    upstreamPressureSample   = upstreamPressure;
 }
 
 float EReg::getOutput() { return nextServoPosition; }
 
 void EReg::step()
 {
-    float error = targetPressure - lastDownstreamPressureSample;
+    float error = targetPressure - downstreamPressureSample;
 
-    d = (error - lastError) / pidConfig.Ts * pidConfig.KD;
+    d = derivativeAvgFilter(error - lastError) / pidConfig.Ts * pidConfig.KD;
 
     if (!saturation)
         i = i + pidConfig.KI * pidConfig.Ts * error;
 
-    float u =
-        (pidConfig.KP * error + i + d) /
-        std::sqrt(lastUpstreamPressureSample - lastDownstreamPressureSample);
+    float u = (pidConfig.KP * error + i + d) /
+              std::sqrt(upstreamPressureSample - downstreamPressureSample);
 
     lastError         = error;
     nextServoPosition = antiWindUp(u);
@@ -117,6 +116,18 @@ float EReg::convertCvToServoCommand(float PIDCommand)
 
     return servoCommand;
 }
+
+float EReg::derivativeAvgFilter(float newValue)
+{
+    derivativeLifo[derivativeErrorsIdx] = newValue;
+    derivativeErrorsIdx = (derivativeErrorsIdx + 1) % DERIVATIVE_LIFO_SIZE;
+
+    float accumulator = 0;
+    for (int i = 0; i < DERIVATIVE_LIFO_SIZE; i++)
+        accumulator += derivativeLifo[i];
+
+    return accumulator / DERIVATIVE_LIFO_SIZE;
+};
 
 void EReg::resetState()
 {
