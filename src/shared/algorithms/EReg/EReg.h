@@ -30,6 +30,8 @@
 
 #include "ERegConfig.h"
 
+#define DERIVATIVE_LIFO_SIZE 3
+
 namespace Boardcore
 {
 
@@ -82,6 +84,16 @@ private:
     float convertCvToServoCommand(float PIDCommand);
 
     /**
+     * @brief Moving average filter for the derivative errors
+     *
+     * @param newValue The new value to replace the oldest one in the LIFO
+     *
+     * @return The average of the three values in the LIFO, values equal to 0.0f
+     * are discarded
+     */
+    float derivativeAvgFilter(float newValue);
+
+    /**
      * @brief Resets the PID internal state.
      */
     void resetState();
@@ -91,13 +103,18 @@ private:
 
     float targetPressure;  // Reference point.
 
-    float lastDownstreamPressureSample = 0;
-    float lastUpstreamPressureSample   = 0;
-    float nextServoPosition            = 0;
+    float downstreamPressureSample = 0;
+    float upstreamPressureSample   = 0;
+    float nextServoPosition        = 0;
 
-    float i         = 0;      // Integral contribution.
-    float d         = 0;      // Derivative contribution.
-    float lastError = 0;      // Error at the previous step.
+    float i         = 0;  // Integral contribution.
+    float d         = 0;  // Derivative contribution.
+    float lastError = 0;  // Error at the previous step.
+
+    float derivativeLifo[DERIVATIVE_LIFO_SIZE] = {
+        0.0f, 0.0f, 0.0f};  // Circular buffer containing the last 3 values
+    uint8_t derivativeErrorsIdx = 0;  // Index of the oldest value
+
     bool saturation = false;  // have we reached saturation?
 };
 
