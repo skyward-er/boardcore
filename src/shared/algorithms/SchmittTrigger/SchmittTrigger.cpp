@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
 #include "SchmittTrigger.h"
+
 #include <diagnostic/PrintLogger.h>
 #include <logger/Logger.h>
 
@@ -30,88 +29,52 @@ using namespace miosix;
 
 namespace Boardcore
 {
-    SchmittTrigger::SchmittTrigger()
-    {
-    }
- 
-    SchmittTrigger::SchmittTrigger(float thresholdLow, float thresholdHigh)
-    {
-        setThresholds(thresholdLow, thresholdHigh);
-    }
-
-    bool SchmittTrigger::init()
-    {
-        Lock<FastMutex> lock(schmittMutex);
-        if(!thresholdsSet)
-        {
-            LOG_ERR(logger, "Thresholds not set\n");
-            return false;
-        }
-        return true;
-    }
-
-    void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
-    {
-        Lock<FastMutex> lock(schmittMutex);
-        thresholds[0] = thresholdLow;
-        thresholds[1] = thresholdHigh;
-        thresholdsSet = true;
-    }
-
-    void SchmittTrigger::setState(float newState)
-    {
-        Lock<FastMutex> lock(schmittMutex);
-        state = newState;
-        if(!stateSet)
-            stateSet = true;
-    }
-
-    void SchmittTrigger::setReference(float newReference)
-    {
-        Lock<FastMutex> lock(schmittMutex);
-        reference = newReference;
-        if(!referenceSet)
-            referenceSet = true;
-    }
-
-    SchmittTrigger::Activation SchmittTrigger::getActivation()
-    {
-        Lock<FastMutex> lock(schmittMutex);
-        return activation;
-    }
-
-    void SchmittTrigger::step()
-    {
-        Lock<FastMutex> lock(schmittMutex);
-
-        if(!thresholdsSet)
-        {
-            LOG_ERR(logger, "Thresholds not set\n");
-            return;
-        }
-        if(!referenceSet)
-        {
-            LOG_ERR(logger, "Reference not set\n");
-            return;
-        }
-        if(!stateSet)
-        {
-            LOG_ERR(logger, "State not set\n");
-            return;
-        }
-
-        if (state <= reference - thresholds[0])
-        {
-            activation = Activation::HIGH;
-        }
-        else if (state >= reference + thresholds[1])
-        {
-            activation = Activation::LOW;
-        }
-        else
-        {
-            activation = Activation::STOP;
-        }
-    }
-
+SchmittTrigger::SchmittTrigger(float thresholdLow, float thresholdHigh)
+{
+    setThresholds(thresholdLow, thresholdHigh);
 }
+
+bool SchmittTrigger::init()
+{
+    Lock<FastMutex> lock(schmittMutex);
+    return true;
+}
+
+void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
+{
+    Lock<FastMutex> lock(schmittMutex);
+    this->thresholdLow  = thresholdLow;
+    this->thresholdHigh = thresholdHigh;
+}
+
+void SchmittTrigger::setState(float state)
+{
+    Lock<FastMutex> lock(schmittMutex);
+    this->state = state;
+}
+
+void SchmittTrigger::setReference(float reference)
+{
+    Lock<FastMutex> lock(schmittMutex);
+    this->reference = reference;
+}
+
+SchmittTrigger::Activation SchmittTrigger::getActivation()
+{
+    Lock<FastMutex> lock(schmittMutex);
+    return activation;
+}
+
+void SchmittTrigger::step()
+{
+    Lock<FastMutex> lock(schmittMutex);
+
+    if (state <= reference - thresholdLow)
+        activation = Activation::HIGH;
+    else if (state >= reference + thresholdHigh)
+        activation = Activation::LOW;
+    else
+        activation = Activation::STOP;
+}
+
+}  // namespace Boardcore

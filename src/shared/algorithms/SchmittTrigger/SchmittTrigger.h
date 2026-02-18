@@ -28,79 +28,70 @@
 
 namespace Boardcore
 {
-    /**
-     * @brief Schmitt Trigger algorithm class.
-     *
-     * The Schmitt Trigger class takes 2 thresholds (low and high), a reference and a state and
-     * returns an activation value that is STOP if the state is between the thresholds of the reference,
-     * HIGH if the state is below the low threshold of the reference and LOW if the state is above the high threshold of the reference.
-     */
-    class SchmittTrigger : public Algorithm
+/**
+ * @brief Schmitt Trigger algorithm class.
+ *
+ * The Schmitt Trigger class takes 2 thresholds (low and high), a reference and
+ * a state and returns an activation value that is STOP if the state is between
+ * the thresholds of the reference, HIGH if the state is below the low threshold
+ * of the reference and LOW if the state is above the high threshold of the
+ * reference.
+ */
+class SchmittTrigger : public Algorithm
+{
+public:
+    enum class Activation
     {
-    public:
+        LOW,
+        STOP,
+        HIGH
 
-        enum class Activation
-        {
-            LOW,
-            STOP,
-            HIGH
-            
-        };
-
-        /**
-         * @brief Constructor for the SchmittTrigger class.
-         */
-        SchmittTrigger();
-
-        /**
-         * @brief Constructor for the SchmittTrigger class.
-         */
-        SchmittTrigger(float thresholdLow, float thresholdHigh);
-
-        /**
-         * @brief Initializes the SchmittTrigger object.
-         *
-         * @return true if thresholds have been set, false otherwise.
-         */
-        bool init() override;
-
-        /**
-         * @brief Sets the thresholds for the Schmitt Trigger.
-         */
-        void setThresholds(float thresholdLow, float thresholdHigh);
-
-        /**
-         * @brief Sets the state value for the Schmitt Trigger.
-         */
-        void setState(float newState);
-
-        /**
-         * @brief Sets the reference value for the Schmitt Trigger.
-         */
-        void setReference(float newReference);
-
-        /**
-         * @brief Returns the current activation state of the Schmitt Trigger.
-         *
-         * @return The current activation state.
-         */
-        Activation getActivation();
-
-    protected:
-        float    state;
-        float    reference;
-        float    thresholds[2];
-
-        Activation  activation = Activation::STOP;
-
-        bool thresholdsSet = false;
-        bool referenceSet  = false;
-        bool stateSet      = false;
-
-        PrintLogger logger = Logging::getLogger("SchmittTrigger");
-
-        miosix::FastMutex schmittMutex;
-
-        void step() override;
     };
-}
+
+    /**
+     * @brief Constructor for the SchmittTrigger class.
+     */
+    SchmittTrigger(float thresholdLow, float thresholdHigh);
+
+    /**
+     * @brief Initializes the SchmittTrigger object.
+     *
+     * @return true if thresholds have been set, false otherwise.
+     */
+    bool init() override;
+
+    /**
+     * @brief Sets the thresholds for the Schmitt Trigger.
+     */
+    void setThresholds(float thresholdLow, float thresholdHigh);
+
+    /**
+     * @brief Sets the state value for the Schmitt Trigger.
+     */
+    void setState(float newState);
+
+    /**
+     * @brief Sets the reference value for the Schmitt Trigger.
+     */
+    void setReference(float newReference);
+
+    /**
+     * @brief Returns the current activation state of the Schmitt Trigger.
+     *
+     * @return The current activation state.
+     */
+    Activation getActivation();
+
+protected:
+    float state     = 0.0f;
+    float reference = 0.0f;
+    float thresholdLow;
+    float thresholdHigh;
+
+    Activation activation = Activation::STOP;
+
+    miosix::FastMutex schmittMutex;
+
+    void step() override;
+};
+}  // namespace Boardcore
