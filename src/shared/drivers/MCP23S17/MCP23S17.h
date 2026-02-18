@@ -22,7 +22,8 @@
 
 #pragma once
 
-#include "drivers/spi/SPIDriver.h"
+#include <drivers/spi/SPIDriver.h>
+#include <drivers/MCP23S17/MCP23S17Defs.h>
 
 namespace Boardcore
 {
@@ -38,8 +39,8 @@ public:
 
     void init();
 
-    uint8_t getGpioAddress(GPIO_REG reg);
-    uint8_t getCtrlAddress(CTRL_REG reg);
+    uint8_t getGpioAddress(MCP23S17Defs::GPIO_REG reg);
+    uint8_t getCtrlAddress(MCP23S17Defs::CTRL_REG reg);
 
     // Helper functions
     void wipeRegister(uint8_t address);
