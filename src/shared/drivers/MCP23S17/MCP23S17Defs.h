@@ -27,8 +27,8 @@ namespace Boardcore
 namespace MCP23S17Defs
 {
 
-static constexpr int READ_OPCODE  = 0x40;
-static constexpr int WRITE_OPCODE = 0x41;
+static constexpr uint16_t WRITE_OPCODE = 0b01000000;
+static constexpr uint16_t READ_OPCODE  = 0b01000001;
 
 enum CONFIG_FIELDS
 {
