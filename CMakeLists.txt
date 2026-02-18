@@ -81,6 +81,9 @@ add_executable(sx1278fsk-ebyterig-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-ebyterig-serial PRIVATE SX1278_IS_FSK)
 sbs_target(sx1278fsk-ebyterig-serial stm32f429zi_rig)
 
+add_executable(test-expander src/entrypoints/test-mcp23s17.cpp)
+sbs_target(test-expander stm32f767zi_rig_v2)
+
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
