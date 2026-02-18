@@ -34,7 +34,7 @@ SPIBusConfig MCP23S17::getDefaultSPIConfig()
     SPIBusConfig config{};
 
     config.clockDivider = SPI::ClockDivider::DIV_32;
-    config.mode         = SPI::Mode::MODE_2;
+    config.mode         = SPI::Mode::MODE_0;
 
     return config;
 }
@@ -61,7 +61,7 @@ void MCP23S17::wipeRegister(uint8_t address)
 
 uint8_t MCP23S17::readRegister(uint8_t address)
 {
-    uint32_t msg;
+    uint16_t msg;
     uint8_t result;
 
     SPITransaction spiTransaction{this->spiSlave};
