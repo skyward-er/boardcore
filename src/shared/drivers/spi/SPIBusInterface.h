@@ -25,6 +25,7 @@
 #include <drivers/dma/DMA.h>
 #include <interfaces-impl/gpio_impl.h>
 #include <stddef.h>
+#include <utils/Debug.h>
 
 #include "SPIDefs.h"
 
@@ -315,8 +316,7 @@ struct SPISlave
     std::chrono::nanoseconds dmaTimeout;  ///< Timeout for the dma transaction.
 
     SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
-        : bus(bus), config(config), cs(cs),
-          dmaTimeout(std::chrono::nanoseconds::zero())
+        : bus(bus), config(config), cs(cs), dmaTimeout(std::chrono::seconds(1))
     {
     }
 
@@ -324,6 +324,8 @@ struct SPISlave
              std::chrono::nanoseconds dmaTimeout)
         : bus(bus), config(config), cs(cs), dmaTimeout(dmaTimeout)
     {
+        D(assert((dmaTimeout != std::chrono::nanoseconds::zero()) &&
+                 "Error, dmaTimeout cannot be null"));
     }
 };
 
