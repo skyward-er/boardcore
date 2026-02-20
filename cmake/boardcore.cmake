@@ -34,6 +34,7 @@ set(BOARDCORE_SRC
     # Actuators
     ${BOARDCORE_PATH}/src/shared/actuators/HBridge/HBridge.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/Servo.cpp
+    ${BOARDCORE_PATH}/src/shared/actuators/Servo/ServoWinch.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
 
