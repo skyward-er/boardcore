@@ -24,9 +24,11 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/AS5047D/AS5047DSPI.h>
+#include <units/Angle.h>
 
 using namespace miosix;
 using namespace Boardcore;
+using namespace Units::Angle;
 
 GpioPin sckPin  = GpioPin(GPIOA_BASE, 5);
 GpioPin misoPin = GpioPin(GPIOA_BASE, 6);
@@ -53,13 +55,12 @@ int main()
 
     AS5047DSPIConfig config;
     config.dataType    = AS5047DDefs::DataSelect::DAECANG;
-    config.daecEnabled = AS5047DDefs::DAECStatus::DAEC_ON;
+    config.daecEnabled = AS5047DDefs::DAECStatus::DAEC_OFF;
 
     // Device initialization
     SPIBus spiBus(SPI1);
     AS5047DSPI as5047d(spiBus, csPin, config);
     delayMs(10);
-    // as5047d.init();
     if (!as5047d.init())
     {
         printf("Failed initialization\n");
@@ -80,7 +81,8 @@ int main()
 
         AS5047DData data = as5047d.getLastSample();
 
-        printf("timestamp:%lld,angle:%f\r\n", data.timestamp, data.angle);
+        printf("timestamp:%lld,angle:%f\r\n", data.timestamp,
+               Degree(Radian(data.angle)).value());
         delayMs(10);
     }
 }

@@ -121,7 +121,7 @@ enum class Error
     OTHER_ERROR
 };
 
-static constexpr float SPI_ANGLE_RES              = 360.f / 14.f;
+static constexpr float SPI_ANGLE_RES              = 0.02197265625f;
 static constexpr uint16_t DAEC_SETTING_MASK       = 0b1111'1111'1110'1111;
 static constexpr uint8_t DAEC_SETTING_POS         = 4;
 static constexpr uint16_t DATASELECT_SETTING_MASK = 0b1111'1111'1011'1111;
