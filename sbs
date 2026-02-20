@@ -88,6 +88,7 @@ found_clangtidy=false
 found_clangformat=false
 found_stflash=false
 found_stlink=false
+found_stinfo=false
 
 config_build_dir=
 config_host=false
@@ -125,6 +126,7 @@ print_configuration() {
     printf "cppcheck:            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
     printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
     printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
+    printf "st-info:             "; [ "$found_stinfo" = true      ] && printf "$yf\n" || printf "$nf\n"
 
     printf "flasher:             ";
     if [ "$found_stflash" = true ]; then
@@ -134,6 +136,7 @@ print_configuration() {
     else
         printf "$nf\n"
     fi
+
 }
 
 # Print a step message
@@ -171,6 +174,7 @@ find_deps() {
     command -v clang-format        > /dev/null 2>&1 && found_clangformat=true
     command -v st-flash            > /dev/null 2>&1 && found_stflash=true
     command -v ST-LINK_CLI.exe     > /dev/null 2>&1 && found_stlink=true
+    command -v st-info             > /dev/null 2>&1 && found_stinfo=true
 }
 
 # Initialize all the directories
@@ -628,6 +632,17 @@ format() {
     echo "$files" | xargs -n $files_per_proc -P 0 clang-format "${opts[@]}"
 }
 
+reset() {
+    if [ "$found_stinfo" = false ]; then
+        error "st-info must be installed"
+        return $ENOPKG
+    fi
+    
+    printf "Resetting board... "
+    st-info --connect-under-reset
+    echo "DONE"
+}
+
 help() {
     echo "Usage: sbs (command) <args> [options] "
     echo ""
@@ -641,6 +656,8 @@ help() {
     echo "                       [-D | --device=<device>] [-B | --baudrate=<baudrate>]"
     echo " test      - Run the specified test. If none is specified, catch tests are run"
     echo "           -> <target> [-d | --debug] [-v | --verbose] [-j | --jobs=<jobs>]"
+    echo " reset     - Tries to connect to the board and reset it from software, without the need"
+    echo "           -> to use the physical button"
     echo " list      - List the available targets or boards"
     echo "           -> <targets | boards>"
     echo " clean     - Clean the build directory"
@@ -737,6 +754,7 @@ case $1 in
     flash)     welcome; shift; flash "$@"; exit $? ;;
     run)       welcome; shift; run "$@"; exit $? ;;
     test)      welcome; shift; test "$@"; exit $? ;;
+    reset)     welcome; shift; reset "$@"; exit $? ;;
     lint)      welcome; shift; lint "$@"; exit $? ;;
     format)    welcome; shift; format "$@"; exit $? ;;
     install)   welcome; shift; install "$@"; exit $? ;;
