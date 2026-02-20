@@ -166,6 +166,9 @@ sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
 add_executable(test-servo src/tests/actuators/test-servo.cpp)
 sbs_target(test-servo stm32f429zi_stm32f4discovery)
 
+add_executable(test-servo-winch src/tests/actuators/test-servo-winch.cpp)
+sbs_target(test-servo-winch stm32f767zi_lyra_biscotto)
+
 # add_executable(test-buzzer src/tests/actuators/test-buzzer.cpp)
 # sbs_target(test-buzzer stm32f429zi_hre_test_stand)
 
