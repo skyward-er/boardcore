@@ -76,12 +76,12 @@ bool AS5047DSPI::init()
 
         settings1 &= 0x0003;  // The first two bits MUST NEVER BE CHANGED
         settings1 =
-            (static_cast<uint16_t>(config.rotationDirection) << 2) |
-            (static_cast<uint16_t>(config.dataInterface) << 3) |
-            (static_cast<uint16_t>(config.daecEnabled) << 4) |
+            ((static_cast<uint16_t>(config.rotationDirection) & 0b1) << 2) |
+            ((static_cast<uint16_t>(config.dataInterface) & 0b1) << 3) |
+            ((static_cast<uint16_t>(config.daecEnabled) & 0b1) << 4) |
             ((static_cast<uint16_t>(config.abiResolution) & 0b1000) << 1) |
-            (static_cast<uint16_t>(config.dataType) << 6) |
-            (static_cast<uint16_t>(config.pwmEnabled) << 7);
+            ((static_cast<uint16_t>(config.dataType) & 0b1) << 6) |
+            ((static_cast<uint16_t>(config.pwmEnabled) & 0b1) << 7);
 
         writeRegister(AS5047DDefs::Registers::SETTINGS1, settings1);
         reading = readRegister(AS5047DDefs::Registers::SETTINGS1);
@@ -111,8 +111,8 @@ bool AS5047DSPI::init()
         ReadResult reading;
         uint16_t settings2;
         settings2 =
-            static_cast<uint16_t>(config.uvwPolePairs) |
-            (static_cast<uint16_t>(config.hystConfig) << 2) |
+            (static_cast<uint16_t>(config.uvwPolePairs) & 0b11) |
+            ((static_cast<uint16_t>(config.hystConfig) & 0b11) << 2) |
             ((static_cast<uint16_t>(config.abiResolution) & 0b0111) << 4);
 
         writeRegister(AS5047DDefs::Registers::SETTINGS2, settings2);
@@ -165,10 +165,9 @@ AS5047DData AS5047DSPI::sampleImpl()
     // Units::Angle::Degree cordicMagnitude = Units::Angle::Degree(0);
     // Units::Angle::Degree cordicAngle     = Units::Angle::Degree(0);
     {
-        SPITransaction spiTr(spiSlave);
         Units::Angle::Degree daecAngle = Units::Angle::Degree(0);
 
-        auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLECOM);
+        auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLEUNC);
         if (daecAngInt.hasError())
         {
             logReadRegisterError("ANGLECOM", daecAngInt.error);
@@ -315,6 +314,7 @@ void AS5047DSPI::writeRegister(AS5047DDefs::Registers reg, uint16_t data)
     SPITransaction spiTr{spiSlave};
 
     spiTr.write16(transaction[0]);
+    miosix::delayUs(1);
     spiTr.write16(transaction[1]);
 }
 
@@ -355,21 +355,15 @@ AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
     transaction[1] |= getParity(transaction[1])
                       << AS5047DDefs::PARITY_BIT_POSITION;
 
-    LOG_ERR(logger, "Transaction (data sent): ({:X}, {:X})", transaction[0],
-            transaction[1]);
-
     SPITransaction spiTr{spiSlave};
 
     transaction[0] = spiTr.transfer16(transaction[0]);
+    miosix::delayUs(1);
     transaction[1] = spiTr.transfer16(transaction[1]);
 
     // now we can discard the first half word and check the parity on the
     // second one, if the parity of the whole frame (including the parity
     // bit) is 0 it means that the frame is likely correct
-
-    LOG_ERR(logger, "Transaction (data received): ({:X}, {:X})", transaction[0],
-            transaction[1]);
-
     transaction[0] =
         transaction[1] &
         0x3fff;  // here I'm discarding the first data frame by
