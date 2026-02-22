@@ -76,14 +76,14 @@ uint8_t MCP23S17::readRegister(uint8_t address)
     return result;
 }
 
-bool MCP23S17::readBit(uint8_t regAddress, uint8_t pinNumber)
+bool MCP23S17::readBit(uint8_t address, uint8_t pinNumber)
 {
-    return (readRegister(regAddress) >> pinNumber) & 1;
+    return (readRegister(address) >> pinNumber) & 1;
 }
 
-void MCP23S17::writeBit(uint8_t regAddress, uint8_t bitNumber, bool value)
+void MCP23S17::writeBit(uint8_t address, uint8_t bitNumber, bool value)
 {
-    uint8_t old  = readRegister(regAddress);
+    uint8_t old  = readRegister(address);
     uint8_t mask = (1 << bitNumber);
     uint8_t newValue;
 
@@ -93,19 +93,19 @@ void MCP23S17::writeBit(uint8_t regAddress, uint8_t bitNumber, bool value)
         newValue = old & ~mask;
 
     uint32_t msg =
-        (MCP23S17Defs::WRITE_OPCODE << 16) | (regAddress << 8) | newValue;
+        (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | newValue;
 
     SPITransaction spiTransaction{this->spiSlave};
 
     spiTransaction.write24(msg);
 }
 
-void MCP23S17::writeRegister(uint8_t regAddress, uint8_t value)
+void MCP23S17::writeRegister(uint8_t address, uint8_t value)
 {
     uint32_t data;
     SPITransaction spiTransaction{this->spiSlave};
 
-    data = (MCP23S17Defs::WRITE_OPCODE << 16) | (regAddress << 8) | value;
+    data = (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | value;
     spiTransaction.write24(data);
 }
 
@@ -164,12 +164,12 @@ void MCP23S17::setPinOut_B(uint8_t pinNumber)
 
 void MCP23S17::setPinPolarity_A(uint8_t pinNumber, bool polarity)
 {
-    writeBit(getGpioAddress(GPIO_REG::IOPOLA), pinNumber, polarity);
+    writeBit(getGpioAddress(GPIO_REG::IPOLA), pinNumber, polarity);
 }
 
 void MCP23S17::setPinPolarity_B(uint8_t pinNumber, bool polarity)
 {
-    writeBit(getGpioAddress(GPIO_REG::IOPOLB), pinNumber, polarity);
+    writeBit(getGpioAddress(GPIO_REG::IPOLB), pinNumber, polarity);
 }
 
 void MCP23S17::setBANK(bool value)

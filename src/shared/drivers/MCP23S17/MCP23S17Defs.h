@@ -52,8 +52,8 @@ enum class GPIO_REG
 {
     IODIRA,
     IODIRB,
-    IOPOLA,
-    IOPOLB,
+    IPOLA,
+    IPOLB,
     GPINTENA,
     GPINTENB,
     GPPUA,
@@ -71,8 +71,8 @@ inline constexpr uint8_t GPIO_REG_LUT[(int)Bank::Last][(int)GPIO_REG::Last] = {
         // BANK 0
         0x00,  // IODIRA
         0x01,  // IODIRB
-        0x02,  // IOPOLA
-        0x03,  // IOPOLB
+        0x02,  // IPOLA
+        0x03,  // IPOLB
         0x04,  // GPINTENA
         0x05,  // GPINTENB
         0x0C,  // GPPUA
@@ -85,13 +85,13 @@ inline constexpr uint8_t GPIO_REG_LUT[(int)Bank::Last][(int)GPIO_REG::Last] = {
     {
         // BANK 1
         0x00,  // IODIRA
-        0x01,  // IOPOLA
+        0x01,  // IPOLA
         0x02,  // GPINTENA
         0x06,  // GPPUA
         0x09,  // GPIOA_EXT
         0x0A,  // OLATA
         0x10,  // IODIRB
-        0x11,  // IOPOLB
+        0x11,  // IPOLB
         0x12,  // GPINTENB
         0x16,  // GPIOB_EXT
         0x19,  // GPPUB
