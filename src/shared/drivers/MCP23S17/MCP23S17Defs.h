@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace Boardcore
 {
 namespace MCP23S17Defs
