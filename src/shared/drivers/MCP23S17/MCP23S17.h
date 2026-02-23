@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <drivers/spi/SPIDriver.h>
 #include <drivers/MCP23S17/MCP23S17Defs.h>
+#include <drivers/spi/SPIDriver.h>
 
 namespace Boardcore
 {
