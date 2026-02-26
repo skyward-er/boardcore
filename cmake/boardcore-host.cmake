@@ -33,7 +33,6 @@ set(BOARDCORE_HOST_SRC
     ${SBS_BASE}/src/shared/events/EventBroker.cpp
 
     # Algorithms
-    ${SBS_BASE}/src/shared/algorithms/MEA/MEA.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
     ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp

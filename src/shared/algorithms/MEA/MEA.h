@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <algorithms/MEA/MEAData.h>
 #include <sensors/SensorData.h>
 #include <utils/AeroUtils/AeroUtils.h>
 
@@ -69,95 +68,7 @@ public:
                                    // by the plume
     };
 
-    struct Step
-    {
-        float mainValveOpen =
-            0.0f;  //< How open is the main valve? (between 0-1)
 
-        float ccPressure =
-            0.0f;  //< What is the current combustion chamber pressure? [bar]
-        bool hasCCPressure = false;  //< Is ccPressure valid?
-
-        Eigen::Vector<float, 3> acceleration =
-            Eigen::Vector<float, 3>::Zero();  //< Acceleration [m/s^2]
-        bool hasAcceleration = false;         //< Is acceleration valid?
-
-        float verticalSpeed =
-            0.0f;  //< Vertical component of speed [up positive] [m/s]
-        float mslAltitude = 0.0f;  //< Mean sea level altitude [m]
-        bool hasSpeedAndAlt =
-            false;  //< Are verticalSpeed and mslAltitude valid?
-
-        explicit Step(float mainValveOpen);
-
-        void withCCPressure(PressureData ccPressure);
-        void withCCPressure(float ccPressure);
-
-        void withAcceleration(AccelerometerData acceleration);
-        void withAcceleration(Eigen::Vector<float, 3> acceleration);
-
-        void withSpeedAndAlt(float verticalSpeed, float mslAltitude);
-    };
-
-    explicit MEA(const Config& config);
-
-    void update(const Step& step);
-
-    MEAState getState();
-
-    /**
-     * @brief Resets the algorithm with the given configuration.
-     */
-    void reset(const Config& config);
-
-private:
-    void predict(const Step& step);
-    void computeForce(const Step& step);
-    void correctBaro(const Step& step);
-    void correctAccel(const Step& step);
-    void computeMass();
-    void computeApogee(const Step& step);
-    void updateState();
-
-    Eigen::Matrix<float, 3, 3> F;  //< State propagation matrix
-    Eigen::Matrix<float, 3, 3> Q;  //< Model variance matrix
-
-    Eigen::Vector<float, 3> G;  //< Input Vector
-
-    Eigen::Matrix<float, 1, 3> baroH;
-    float baroR;
-
-    Eigen::Matrix<float, 3, 3> P;  //< Error covariance matrix
-    Eigen::Vector<float, 3> x;     //< State vector
-
-    float mach  = 0.0f;  //< Latest computed mach
-    float cd    = 0.0f;  //< Latest computed CD
-    float rho   = 0.0f;  //< Latest computed rho
-    float q     = 0.0f;  //< Latest computed dynamic pressure
-    float force = 0.0f;  //< Latest computed force
-
-    float apogee = 0.0f;  //< Latest computed apogee
-    float mass;           //< Latest computed mass
-
-    float accelThresh;
-    float speedThresh;
-
-    float Kt;
-    float alpha;
-    float c;
-
-    Aeroutils::AerodynamicCoeff coeffs;
-    float crossSection;
-
-    float ae;
-    float p0;
-
-    float minMass;
-    float maxMass;
-
-    float cdCorrectionFactor;
-
-    MEAState state;
 };
 
 }  // namespace Boardcore
