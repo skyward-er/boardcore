@@ -24,6 +24,7 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/usart/USART.h>
+#include <drivers/usart/USARTDma.h>
 #include <sensors/SensorData.h>
 
 namespace Boardcore
@@ -49,7 +50,7 @@ public:
      * @param timeout The maximum time that will be waited when reading from the
      * sensor.
      */
-    VNCommonSerial(USART& usart, int baudrate, const char* sensorName,
+    VNCommonSerial(USARTInterface& usart, int baudrate, const char* sensorName,
                    CRCOptions crc, const std::chrono::milliseconds timeout);
 
     ~VNCommonSerial();
@@ -272,7 +273,7 @@ protected:
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
-    USART& usart;
+    USARTInterface& usart;
     int baudRate;
 
     CRCOptions crc;

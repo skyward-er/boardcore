@@ -61,7 +61,7 @@ public:
      * @param timeout The maximum time that will be waited when reading from the
      * sensor.
      */
-    VN100Serial(USART& usart, int baudrate, CRCOptions crc,
+    VN100Serial(USARTInterface& usart, int baudrate, CRCOptions crc,
                 std::chrono::milliseconds timeout);
 
     bool init() override;
@@ -88,8 +88,22 @@ public:
         if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
         {
             LOG_WARN(logger, "Unable to receive string command");
+
+            // provo a tirare fuori dalla queue
+            // usart.disableDma();
+            // if (!recvStringCommand(recvString.data(), recvStringMaxDimension))
+            // {
+            //     printf("Anche tirando fuori dopo non ho ricevuto niente\n");
+            // }
+            // else
+            // {
+            //     printf("hobbella, erano nella queue: %s\n", recvString.data());
+            // }
+
             return;
         }
+
+        printf("received with dma: %s\n", recvString.data());
 
         if (strncmp("VN-100", recvString.data() + modelNumberOffset,
                     strlen("VN-100")) != 0)

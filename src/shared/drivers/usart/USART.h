@@ -134,6 +134,10 @@ public:
 
     USARTType* getPeripheral() { return usart; };
 
+    // TODO: al momento mi servono esposte, poi fixare
+    virtual void clearQueue() = 0;
+    virtual void setBaudrate(int baudrate) = 0;
+
 protected:
     /**
      * @brief Read method implementation that supports both blocking and
@@ -216,12 +220,14 @@ public:
           DMAStreamGuard* txStream,
           unsigned int queueLen = INTERNAL_QUEUE_LENGTH);
 
-    void disableDma() { useDma = false; }
-    bool enableDma()
-    {
-        useDma = dmaRxStream != nullptr && dmaTxStream != nullptr;
-        return useDma;
-    }
+    // void disableDma() { useDma = false; }
+    // bool enableDma()
+    // {
+    //     useDma = dmaRxStream != nullptr && dmaTxStream != nullptr;
+    //     return useDma;
+    // }
+    void disableDma();
+    bool enableDma();
 
     ///< Delete copy/move constructors/operators.
     USART(const USART&)            = delete;
@@ -350,6 +356,8 @@ private:
                                 std::chrono::nanoseconds timeout) override;
     
     bool readImplDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout);
+
+    bool writeStringDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout);
 
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial

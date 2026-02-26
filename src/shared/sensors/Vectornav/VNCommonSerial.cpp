@@ -28,7 +28,7 @@
 namespace Boardcore
 {
 
-VNCommonSerial::VNCommonSerial(USART& usart, int baudrate,
+VNCommonSerial::VNCommonSerial(USARTInterface& usart, int baudrate,
                                const char* sensorName, CRCOptions crc,
                                const std::chrono::milliseconds timeout)
     : usart(usart), baudRate(baudrate), crc(crc),

@@ -68,6 +68,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransaction.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransactionDMA.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/usart/USART.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/usart/USARTDma.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f4.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f7.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2C.cpp

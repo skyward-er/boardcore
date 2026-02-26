@@ -281,7 +281,7 @@ add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
 add_executable(test-usart-f4 src/tests/drivers/usart/test-usart.cpp)
-sbs_target(test-usart-f4 stm32f429zi_stm32f4discovery)
+sbs_target(test-usart-f4 stm32f407vg_stm32f4discovery)
 
 add_executable(test-usart-f7 src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart-f7 stm32f767zi_nucleo)

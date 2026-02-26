@@ -22,6 +22,7 @@
 
 #include <inttypes.h>
 #include <sensors/Vectornav/VN100/VN100Serial.h>
+#include <drivers/usart/USARTDma.h>
 
 using namespace miosix;
 using namespace Boardcore;
@@ -38,12 +39,26 @@ int main()
     u2tx1.alternateFunction(7);
     u2tx1.mode(Mode::ALTERNATE);
 
-    USART usart(USART2, 115200);
+    auto rxStream = DMADriver::instance().acquireStreamForPeripheral(DMADefs::Peripherals::PE_USART2_RX, std::chrono::milliseconds(200));
+    if(!rxStream.isValid())
+    {
+        printf("Error, cannot allocate rx stream\n");
+        return 0;
+    }
+    auto txStream = DMADriver::instance().acquireStreamForPeripheral(DMADefs::Peripherals::PE_USART2_TX, std::chrono::milliseconds(200));
+    if(!txStream.isValid())
+    {
+        printf("Error, cannot allocate tx stream\n");
+        return 0;
+    }
+
+    // USART usart(USART2, 115200, &rxStream, &txStream);
+    USARTDma usart(USART2, 115200, &rxStream, &txStream);
 
     usart.disableDma();
 
     VN100Serial sensor{usart, 115200, VNCommonSerial::CRCOptions::CRC_ENABLE_16,
-                       std::chrono::seconds(5)};
+                       std::chrono::seconds(1)};
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -82,9 +97,15 @@ int main()
     }
 
     // my test
-    usart.enableDma();
-    printf("\nStarting dma read test...\n\n");
-    sensor.testReadDma();
+    if(!usart.enableDma())
+    {
+        printf("Error, cannot enable dma on usart\n");
+    }
+    else
+    {
+        printf("\nStarting dma read test...\n\n");
+        sensor.testReadDma();
+    }
 
     sensor.closeAndReset();
     printf("Sensor communication closed!\n");

@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-VN100Serial::VN100Serial(USART& usart, int baud, CRCOptions crc,
+VN100Serial::VN100Serial(USARTInterface& usart, int baud, CRCOptions crc,
                          std::chrono::milliseconds timeout)
     : VNCommonSerial(usart, baud, "vn100-serial", crc, timeout)
 {

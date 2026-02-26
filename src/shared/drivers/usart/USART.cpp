@@ -455,8 +455,8 @@ USART::USART(USARTType* usart, int baudrate, DMAStreamGuard* rxStream,
     useDma = dmaRxStream != nullptr && dmaTxStream != nullptr;
 
     // TODO
-    // Per ora attivo solo DMAR (read)
     usart->CR3 |= USART_CR3_DMAR;
+    usart->CR3 |= USART_CR3_DMAT;
 }
 
 USART::~USART()
@@ -471,6 +471,33 @@ USART::~USART()
 
     // Disabling the interrupt of the serial port
     NVIC_DisableIRQ(irqn);
+}
+
+void USART::disableDma()
+{
+    useDma = false;
+
+    // // disabilito lettura dma
+    // usart->CR3 &= ~USART_CR3_DMAR;
+
+    // // riabilito rxne
+    // usart->CR1 |= USART_CR1_RXNEIE; // Interrupt on data received
+}
+
+bool USART::enableDma()
+{
+    useDma = dmaRxStream != nullptr && dmaTxStream != nullptr;
+
+    // if(useDma)
+    // {
+    //     // abilito lettura
+    //     usart->CR3 |= USART_CR3_DMAR;
+
+    //     // disabilito rxne
+    //     usart->CR1 &= ~USART_CR1_RXNEIE; // Interrupt on data received
+    // }
+
+    return useDma;
 }
 
 void USART::setWordLength(WordLength wordLength)
@@ -542,12 +569,12 @@ bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
-    if(useDma && blocking)
-    {
-        nBytesRead = nBytes;
-        // TODO: nBytes must be uint16_t
-        return readImplDma(buffer, nBytes, timeout);
-    }
+    // if(useDma && blocking)
+    // {
+    //     nBytesRead = nBytes;
+    //     // TODO: nBytes must be uint16_t
+    //     return readImplDma(buffer, nBytes, timeout);
+    // }
 
     char* buf     = reinterpret_cast<char*>(buffer);
     size_t result = 0;
@@ -611,6 +638,9 @@ bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
 
 bool USART::readImplDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout)
 {
+    /**
+     * qui roba
+     */
     DMATransaction streamSetup = DMATransaction{
         .direction                       = DMATransaction::Direction::PER_TO_MEM,
         .priority                        = DMATransaction::Priority::MEDIUM,
@@ -638,6 +668,36 @@ bool USART::readImplDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds 
     return (*dmaRxStream)->timedWaitForTransferComplete(timeout);
 }
 
+bool USART::writeStringDma(void* buffer, uint16_t nBytes, std::chrono::nanoseconds timeout)
+{
+    printf("faccio writeString con dma\n");
+    DMATransaction streamSetup = DMATransaction{
+        .direction                       = DMATransaction::Direction::MEM_TO_PER,
+        .priority                        = DMATransaction::Priority::MEDIUM,
+        .srcSize                         = DMATransaction::DataSize::BITS_8,
+        .dstSize                         = DMATransaction::DataSize::BITS_8,
+        .srcAddress                      = buffer,
+        .dstAddress                      = (void*)&(usart->DR),
+        .secondMemoryAddress             = nullptr,
+        .numberOfDataItems               = nBytes,
+        .srcIncrement                    = true,
+        .dstIncrement                    = false,
+        .circularMode                    = false,
+        .doubleBufferMode                = false,
+        .enableTransferCompleteInterrupt = true,
+        .enableHalfTransferInterrupt     = false,
+        .enableTransferErrorInterrupt    = true,
+        .enableFifoErrorInterrupt        = true,
+        .enableDirectModeErrorInterrupt  = false,
+    };
+
+    (*dmaTxStream)->setup(streamSetup);
+
+    (*dmaTxStream)->enable();
+
+    return (*dmaTxStream)->timedWaitForTransferComplete(timeout);
+}
+
 void USART::write(const void* buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
@@ -662,6 +722,15 @@ void USART::write(const void* buffer, size_t nBytes)
 
 void USART::writeString(const char* buffer)
 {
+    if(useDma)
+    {
+        if(!writeStringDma((void*)buffer, strlen(buffer), std::chrono::milliseconds(500)))
+        {
+            printf("error, writeStringDma returned error\n");
+        }
+        return;
+    }
+
     int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
