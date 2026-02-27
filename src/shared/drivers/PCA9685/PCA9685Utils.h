@@ -1,7 +1,7 @@
 #include <stdint.h>
 namespace Boardcore
 {
-namespace PCA9685Channels
+namespace PCA9685Utils
 {
 enum class Channel : uint8_t
 {

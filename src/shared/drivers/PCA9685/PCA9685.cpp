@@ -238,8 +238,7 @@ bool PCA9685::enableAutoIncrement(bool enable)
     return true;
 }
 
-bool PCA9685::setPWM(PCA9685Channels::Channel channel, uint16_t on,
-                     uint16_t off)
+bool PCA9685::setPWM(PCA9685Utils::Channel channel, uint16_t on, uint16_t off)
 {
     if (on == off && on != 0)
     {
@@ -280,7 +279,7 @@ bool PCA9685::setPWM(PCA9685Channels::Channel channel, uint16_t on,
     return true;
 }
 
-bool PCA9685::setDutyCycle(PCA9685Channels::Channel channel, float dutyCycle)
+bool PCA9685::setDutyCycle(PCA9685Utils::Channel channel, float dutyCycle)
 {
     if (dutyCycle < 0.0f)
         dutyCycle = 0.0f;
@@ -327,9 +326,9 @@ bool PCA9685::setAllDutyCycle(float dutyCycle)
 {
     if (dutyCycle < 0.0f)
         dutyCycle = 0.0f;
-    else if (dutyCycle > 100.0f)
-        dutyCycle = 100.0f;
-    uint16_t off = static_cast<uint16_t>((dutyCycle / 100.0f) * 4095.0f);
+    else if (dutyCycle > 1.0f)
+        dutyCycle = 1.0f;
+    uint16_t off = static_cast<uint16_t>((dutyCycle * 4095.0f));
     return setAllPWM(0, off);
 }
 

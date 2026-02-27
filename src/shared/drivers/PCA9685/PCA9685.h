@@ -25,7 +25,7 @@
 #include <drivers/i2c/I2C.h>
 #include <sensors/Sensor.h>
 
-#include "PCA9685Channels.h"
+#include "PCA9685Utils.h"
 
 namespace Boardcore
 {
@@ -37,7 +37,6 @@ public:
         OPEN_DRAIN,
         TOTEM_POLE
     };
-    // TODO Capire passettini per cambio di angolo - Chiedere a Pietro
 
     /**
      * @brief PCA9685 Constructor.
@@ -93,13 +92,13 @@ public:
     /**
      * @brief Sets the duty cycle on a specific channel
      * @param channel Channel number (0-15)
-     * @param dutyCycle Duty cycle percentage (0.0 - 100.0)
+     * @param dutyCycle Duty cycle percentage (0.0 - 1.0)
      * @return true if setting the duty cycle succeeded, false otherwise.
      */
-    bool setDutyCycle(PCA9685Channels::Channel channel, float dutyCycle);
+    bool setDutyCycle(PCA9685Utils::Channel channel, float dutyCycle);
     /**
      * @brief Sets the duty cycle on all channels
-     * @param dutyCycle Duty cycle percentage (0.0 - 100.0)
+     * @param dutyCycle Duty cycle percentage (0.0 - 1.0)
      * @return true if setting the duty cycle succeeded, false otherwise.
      */
     bool setAllDutyCycle(float dutyCycle);
@@ -118,7 +117,7 @@ public:
      * Note: on and off cannot be equal.
      * @return true if setting the bits succeeded, false otherwise.
      */
-    bool setPWM(PCA9685Channels::Channel channel, uint16_t on, uint16_t off);
+    bool setPWM(PCA9685Utils::Channel channel, uint16_t on, uint16_t off);
     /**
      * @brief Sets the 12-bit PWM signal on all channels
      * @param on Tick where the signal should turn ON (0-4095)
