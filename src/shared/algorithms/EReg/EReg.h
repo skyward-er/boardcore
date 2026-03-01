@@ -55,6 +55,11 @@ public:
     void changePIDConfig(const ERegPIDConfig& newConfig);
 
     /**
+     * @brief Change the value of the integral conntritution.
+     */
+    void setIntegralContribution(float newIntegral);
+
+    /**
      * @brief Setter function to input pressures into the algorithm
      *
      * @param downstreamPressure The pressure downstream of the regulator
@@ -108,7 +113,6 @@ private:
     float nextServoPosition        = 0;
 
     float i         = 0;  // Integral contribution.
-    float d         = 0;  // Derivative contribution.
     float lastError = 0;  // Error at the previous step.
 
     float derivativeLifo[DERIVATIVE_LIFO_SIZE] = {
