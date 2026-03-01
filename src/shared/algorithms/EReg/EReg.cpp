@@ -45,6 +45,8 @@ void EReg::changePIDConfig(const ERegPIDConfig& newConfig)
     resetState();
 }
 
+void EReg::setIntegralContribution(float newIntegral) { i = newIntegral; };
+
 void EReg::setInput(float downstreamPressure, float upstreamPressure)
 {
     downstreamPressureSample = downstreamPressure;
@@ -57,13 +59,15 @@ void EReg::step()
 {
     float error = targetPressure - downstreamPressureSample;
 
-    d = derivativeAvgFilter(error - lastError) / pidConfig.Ts * pidConfig.KD;
+    float d =
+        derivativeAvgFilter(error - lastError) / pidConfig.Ts * pidConfig.KD;
 
     if (!saturation)
         i = i + pidConfig.KI * pidConfig.Ts * error;
 
-    float u = (pidConfig.KP * error + i + d) /
-              std::sqrt(upstreamPressureSample - downstreamPressureSample);
+    float u =
+        (pidConfig.KP * error + i + d) /
+        std::sqrt(std::abs(upstreamPressureSample - downstreamPressureSample));
 
     lastError         = error;
     nextServoPosition = antiWindUp(u);
@@ -131,10 +135,12 @@ float EReg::derivativeAvgFilter(float newValue)
 
 void EReg::resetState()
 {
-    i          = 0;
-    d          = 0;
-    lastError  = 0;
-    saturation = false;
+    i                 = 0.0f;
+    lastError         = 0.0f;
+    saturation        = false;
+    derivativeLifo[0] = 0.0f;
+    derivativeLifo[1] = 0.0f;
+    derivativeLifo[2] = 0.0f;
 }
 
 }  // namespace Boardcore
