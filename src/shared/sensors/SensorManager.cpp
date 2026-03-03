@@ -243,38 +243,39 @@ SensorSampler* SensorManager::createSampler(uint8_t id,
 }
 
 template <typename T>
-void SensorManager::insertOffsetInfo(const T* sensor) {
-
-    static_assert(std::is_base_of<AbstractSensor, T>, "Sensor must be derived from AbstractSensor");
-    static_assert(is_same_template<Sensor<typename T::DataType>, T>::value, "Argument must be a Sensor");
+void SensorManager::insertOffsetInfo(const T* sensor)
+{
+    static_assert(std::is_base_of<AbstractSensor, T>,
+                  "Sensor must be derived from AbstractSensor");
+    static_assert(is_same_template<Sensor<typename T::DataType>, T>::value,
+                  "Argument must be a Sensor");
 
     off_t offset;
     size_t dataSize = sizeof(sensor->DataType);
 
     // Evaluate offset
-    if (!offsetVector.empty()) { 
-        offset = offsetVector.back().second.offset + offsetVector.back().second.dataSize;
-    } else {
-
+    if (!offsetVector.empty())
+    {
+        offset = offsetVector.back().second.offset +
+                 offsetVector.back().second.dataSize;
+    }
+    else
+    {
         offset = 0;
     }
 
-    auto off = OffsetInfo {
-        .dataSize = dataSize,
-        .offset = offset
-    };
+    auto off = OffsetInfo{.dataSize = dataSize, .offset = offset};
 
-    std::pair<AbstractSensor*, OffsetInfo> p = std::make_pair<AbstractSensor*, OffsetInfo>(sensor, off);
+    std::pair<AbstractSensor*, OffsetInfo> p =
+        std::make_pair<AbstractSensor*, OffsetInfo>(sensor, off);
     offsetVector.push_back(p);
-
 }
 
-void SensorManager::ensureOffsetSorted() {
-    
-    std::sort(offsetVector.begin(), offsetVector.end(), 
-        [](const auto& a, const auto& b) {
-            return a.second.offset < b.second.offset;
-        });
+void SensorManager::ensureOffsetSorted()
+{
+    std::sort(offsetVector.begin(), offsetVector.end(),
+              [](const auto& a, const auto& b)
+              { return a.second.offset < b.second.offset; });
 }
 
 }  // namespace Boardcore

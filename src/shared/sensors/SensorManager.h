@@ -168,13 +168,13 @@ private:
 
     PrintLogger logger = Logging::getLogger("sensormanager");
 
-    struct OffsetInfo {
+    struct OffsetInfo
+    {
         size_t dataSize;
         off_t offset;
     };
 
     std::vector<std::pair<AbstractSensor*, OffsetInfo>> offsetVector;
-
 };
 
 }  // namespace Boardcore
