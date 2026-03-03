@@ -147,6 +147,11 @@ private:
      */
     SensorSampler* createSampler(uint8_t id, std::chrono::nanoseconds period);
 
+    template <typename T>
+    void insertOffsetInfo(const T* sensor);
+
+    void ensureOffsetSorted();
+
     const uint8_t MAX_TASK_ID = 255;  ///< Max id for tasks in the scheduler.
 
     TaskScheduler*
@@ -162,6 +167,14 @@ private:
     bool initResult = true;  ///< true if sensors are initialized correctly.
 
     PrintLogger logger = Logging::getLogger("sensormanager");
+
+    struct OffsetInfo {
+        size_t dataSize;
+        off_t offset;
+    };
+
+    std::vector<std::pair<AbstractSensor*, OffsetInfo>> offsetVector;
+
 };
 
 }  // namespace Boardcore
