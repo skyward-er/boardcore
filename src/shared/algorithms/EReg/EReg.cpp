@@ -59,8 +59,7 @@ void EReg::step()
 {
     float error = targetPressure - downstreamPressureSample;
 
-    float d =
-        derivativeAvgFilter(error - lastError) / pidConfig.Ts * pidConfig.KD;
+    float d = (error - lastError) / pidConfig.Ts * pidConfig.KD;
 
     if (!saturation)
         i = i + pidConfig.KI * pidConfig.Ts * error;
@@ -121,26 +120,11 @@ float EReg::convertCvToServoCommand(float PIDCommand)
     return servoCommand;
 }
 
-float EReg::derivativeAvgFilter(float newValue)
-{
-    derivativeLifo[derivativeErrorsIdx] = newValue;
-    derivativeErrorsIdx = (derivativeErrorsIdx + 1) % DERIVATIVE_LIFO_SIZE;
-
-    float accumulator = 0;
-    for (int i = 0; i < DERIVATIVE_LIFO_SIZE; i++)
-        accumulator += derivativeLifo[i];
-
-    return accumulator / DERIVATIVE_LIFO_SIZE;
-};
-
 void EReg::resetState()
 {
-    i                 = 0.0f;
-    lastError         = 0.0f;
-    saturation        = false;
-    derivativeLifo[0] = 0.0f;
-    derivativeLifo[1] = 0.0f;
-    derivativeLifo[2] = 0.0f;
+    i          = 0.0f;
+    lastError  = 0.0f;
+    saturation = false;
 }
 
 }  // namespace Boardcore
