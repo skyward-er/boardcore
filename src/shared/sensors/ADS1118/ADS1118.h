@@ -309,7 +309,7 @@ private:
 
     int8_t findNextEnabledChannel(int8_t startChannel);
 
-    const SPISlave spiSlave;
+    SPISlave spiSlave;
     ADS1118Config baseConfig;
 
     ///< Read the written configuration on each transaction and checks it

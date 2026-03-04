@@ -639,27 +639,29 @@ TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
 void Wiz5500::spiRead(uint8_t block, uint16_t address, uint8_t* data,
                       size_t len)
 {
-    // Do a manual SPI transaction
-    slave.bus.configure(slave.config);
+    SPISelectGuard guard(slave);
+    SPITransaction spi(slave, guard);
 
-    slave.bus.select(slave.cs);
-    slave.bus.write16(address);
-    slave.bus.write(Wiz::buildControlWord(block, false));
-    slave.bus.read(data, len);
-    slave.bus.deselect(slave.cs);
+    // MSB of the address, LSB of the address, control byte
+    uint8_t header[] = {(uint8_t)(address >> 8), (uint8_t)(address & 0xFF),
+                        Wiz::buildControlWord(block, false)};
+
+    spi.write(header, sizeof(header));
+    spi.read(data, len);
 }
 
 void Wiz5500::spiWrite(uint8_t block, uint16_t address, const uint8_t* data,
                        size_t len)
 {
-    // Do a manual SPI transaction
-    slave.bus.configure(slave.config);
+    SPISelectGuard guard(slave);
+    SPITransaction spi(slave, guard);
 
-    slave.bus.select(slave.cs);
-    slave.bus.write16(address);
-    slave.bus.write(Wiz::buildControlWord(block, true));
-    slave.bus.write(data, len);
-    slave.bus.deselect(slave.cs);
+    // MSB of the address, LSB of the address, control byte
+    uint8_t header[] = {(uint8_t)(address >> 8), (uint8_t)(address & 0xFF),
+                        Wiz::buildControlWord(block, true)};
+
+    spi.write(header, sizeof(header));
+    spi.write(data, len);
 }
 
 uint8_t Wiz5500::spiRead8(uint8_t block, uint16_t address)

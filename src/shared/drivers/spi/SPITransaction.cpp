@@ -1,5 +1,5 @@
-/* Copyright (c) 2019-2021 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio, Davide Mor
+/* Copyright (c) 2026 Skyward Experimental Rocketry
+ * Author: Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,287 +22,216 @@
 
 #include "SPITransaction.h"
 
-#include <interfaces/endianness.h>
-
 namespace Boardcore
 {
 
-SPITransaction::SPITransaction(const SPISlave& slave) : slave(slave)
-{
-    slave.bus.configure(slave.config);
-}
-
-SPIBusInterface& SPITransaction::getBus() { return slave.bus; }
-
-// Read, write and transfer operations in master mode
-
-uint8_t SPITransaction::read()
-{
-    slave.bus.select(slave.cs);
-    uint8_t data = slave.bus.read();
-    slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-uint16_t SPITransaction::read16()
-{
-    slave.bus.select(slave.cs);
-    uint16_t data = slave.bus.read16();
-    slave.bus.deselect(slave.cs);
-
-    return data;
-}
-
-uint32_t SPITransaction::read24()
-{
-    slave.bus.select(slave.cs);
-    uint32_t data = slave.bus.read24();
-    slave.bus.deselect(slave.cs);
-    return data;
-}
-
-uint32_t SPITransaction::read32()
-{
-    slave.bus.select(slave.cs);
-    uint32_t data = slave.bus.read32();
-    slave.bus.deselect(slave.cs);
-    return data;
-}
-
-void SPITransaction::read(uint8_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.read(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::read16(uint16_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.read16(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write(uint8_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write16(uint16_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write16(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write24(uint32_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write24(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write32(uint32_t data)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write32(data);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write(uint8_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
-void SPITransaction::write16(uint16_t* data, size_t size)
-{
-    slave.bus.select(slave.cs);
-    slave.bus.write16(data, size);
-    slave.bus.deselect(slave.cs);
-}
-
 uint8_t SPITransaction::transfer(uint8_t data)
 {
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer(data);
-    slave.bus.deselect(slave.cs);
-
+    transferImpl(&data, &data, sizeof(data));
     return data;
 }
 
 uint16_t SPITransaction::transfer16(uint16_t data)
 {
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer16(data);
-    slave.bus.deselect(slave.cs);
-
-    return data;
+    uint8_t buf[2] = {static_cast<uint8_t>(data >> 8),
+                      static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, buf, sizeof(buf));
+    return buf[0] << 8 | buf[1];
 }
 
 uint32_t SPITransaction::transfer24(uint32_t data)
 {
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer24(data);
-    slave.bus.deselect(slave.cs);
-
-    return data;
+    uint8_t buf[3] = {static_cast<uint8_t>(data >> 16),
+                      static_cast<uint8_t>(data >> 8),
+                      static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, buf, sizeof(buf));
+    return buf[0] << 16 | buf[1] << 8 | buf[2];
 }
 
 uint32_t SPITransaction::transfer32(uint32_t data)
 {
-    slave.bus.select(slave.cs);
-    data = slave.bus.transfer32(data);
-    slave.bus.deselect(slave.cs);
+    uint8_t buf[4] = {
+        static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
+        static_cast<uint8_t>(data >> 8), static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, buf, sizeof(buf));
+    return buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+}
 
+uint8_t SPITransaction::read()
+{
+    uint8_t data;
+    transferImpl(nullptr, &data, sizeof(data));
     return data;
 }
 
-void SPITransaction::transfer(uint8_t* data, size_t size)
+uint16_t SPITransaction::read16()
 {
-    slave.bus.select(slave.cs);
-    slave.bus.transfer(data, size);
-    slave.bus.deselect(slave.cs);
+    uint8_t data[2];
+    transferImpl(nullptr, data, sizeof(data));
+    return data[0] << 8 | data[1];
 }
 
-void SPITransaction::transfer16(uint16_t* data, size_t size)
+uint32_t SPITransaction::read24()
 {
-    slave.bus.select(slave.cs);
-    slave.bus.transfer16(data, size);
-    slave.bus.deselect(slave.cs);
+    uint8_t data[3];
+    transferImpl(nullptr, data, sizeof(data));
+    return data[0] << 16 | data[1] << 8 | data[2];
 }
 
-// Read, write and transfer operations with registers
+uint32_t SPITransaction::read32()
+{
+    uint8_t data[4];
+    transferImpl(nullptr, data, sizeof(data));
+    return data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3];
+}
+
+void SPITransaction::write(uint8_t data)
+{
+    transferImpl(&data, nullptr, sizeof(data));
+}
+
+void SPITransaction::write16(uint16_t data)
+{
+    // Prepare data in MSB first order
+    uint8_t buf[2] = {static_cast<uint8_t>(data >> 8),
+                      static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, nullptr, sizeof(buf));
+}
+
+void SPITransaction::write24(uint32_t data)
+{
+    // Prepare data in MSB first order
+    uint8_t buf[3] = {static_cast<uint8_t>(data >> 16),
+                      static_cast<uint8_t>(data >> 8),
+                      static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, nullptr, sizeof(buf));
+}
+
+void SPITransaction::write32(uint32_t data)
+{
+    // Prepare data in MSB first order
+    uint8_t buf[4] = {
+        static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
+        static_cast<uint8_t>(data >> 8), static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, nullptr, sizeof(buf));
+}
 
 uint8_t SPITransaction::readRegister(uint8_t reg)
 {
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL) [[likely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint8_t data = slave.bus.read();
-    slave.bus.deselect(slave.cs);
+    uint8_t buf[2] = {reg};
+    transferImpl(buf, buf, sizeof(buf));
 
-    return data;
+    return buf[1];
 }
 
 uint16_t SPITransaction::readRegister16(uint8_t reg)
 {
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL) [[likely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint16_t data = slave.bus.read16();
-    slave.bus.deselect(slave.cs);
+    uint8_t buf[3] = {reg};
+    transferImpl(buf, buf, sizeof(buf));
 
-    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
-        data = swapBytes16(data);
-
-    return data;
+    if (slave.config.byteOrder == SPI::Order::LSB_FIRST) [[unlikely]]
+        return buf[2] << 8 | buf[1];
+    else
+        return buf[1] << 8 | buf[2];
 }
 
 uint32_t SPITransaction::readRegister24(uint8_t reg)
 {
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL) [[unlikely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint32_t data = slave.bus.read24();
-    slave.bus.deselect(slave.cs);
+    uint8_t buf[4] = {reg};
+    transferImpl(buf, buf, sizeof(buf));
 
-    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
-        data = swapBytes32(data) >> 8;
-
-    return data;
+    if (slave.config.byteOrder == SPI::Order::LSB_FIRST) [[unlikely]]
+        return buf[3] << 16 | buf[2] << 8 | buf[1];
+    else
+        return buf[1] << 16 | buf[2] << 8 | buf[3];
 }
 
 uint32_t SPITransaction::readRegister32(uint8_t reg)
 {
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL) [[likely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    uint32_t data = slave.bus.read32();
-    slave.bus.deselect(slave.cs);
+    uint8_t buf[5] = {reg};
+    transferImpl(buf, buf, sizeof(buf));
 
-    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
-        data = swapBytes32(data) >> 8;
-
-    return data;
-}
-
-void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
-{
-    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
-        reg |= 0x80;
-
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.read(data, size);
-    slave.bus.deselect(slave.cs);
+    if (slave.config.byteOrder == SPI::Order::LSB_FIRST) [[unlikely]]
+        return buf[4] << 24 | buf[3] << 16 | buf[2] << 8 | buf[1];
+    else
+        return buf[1] << 24 | buf[2] << 16 | buf[3] << 8 | buf[4];
 }
 
 void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
 {
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
+    if (slave.config.writeBit == SPI::WriteBit::INVERTED) [[unlikely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write(data);
-    slave.bus.deselect(slave.cs);
+    uint8_t buf[2] = {reg, data};
+    transferImpl(buf, nullptr, sizeof(buf));
 }
 
 void SPITransaction::writeRegister16(uint8_t reg, uint16_t data)
 {
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
+    if (slave.config.writeBit == SPI::WriteBit::INVERTED) [[unlikely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write16(data);
-    slave.bus.deselect(slave.cs);
+    // Data needs to be sent MSB first
+    uint8_t buf[3] = {reg, static_cast<uint8_t>(data >> 8),
+                      static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, nullptr, sizeof(buf));
 }
 
 void SPITransaction::writeRegister24(uint8_t reg, uint32_t data)
 {
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
+    if (slave.config.writeBit == SPI::WriteBit::INVERTED) [[unlikely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write24(data);
-    slave.bus.deselect(slave.cs);
+    // Data needs to be sent MSB first
+    uint8_t buf[4] = {reg, static_cast<uint8_t>(data >> 16),
+                      static_cast<uint8_t>(data >> 8),
+                      static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, nullptr, sizeof(buf));
 }
 
 void SPITransaction::writeRegister32(uint8_t reg, uint32_t data)
 {
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
+    if (slave.config.writeBit == SPI::WriteBit::INVERTED) [[unlikely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write32(data);
-    slave.bus.deselect(slave.cs);
+    // Data needs to be sent MSB first
+    uint8_t buf[5] = {
+        reg, static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
+        static_cast<uint8_t>(data >> 8), static_cast<uint8_t>(data & 0xFF)};
+    transferImpl(buf, nullptr, sizeof(buf));
 }
 
-void SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, size_t size)
+void SPITransaction::readRegisters(uint8_t reg, uint8_t* out, size_t size)
 {
-    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL) [[likely]]
         reg |= 0x80;
 
-    slave.bus.select(slave.cs);
-    slave.bus.write(reg);
-    slave.bus.write(data, size);
-    slave.bus.deselect(slave.cs);
+    TransactionSelectGuard guard(slave, !externallySelected);
+    slave.bus.transfer(&reg, nullptr, sizeof(reg));
+    slave.bus.transfer(nullptr, out, size);
+}
+
+void SPITransaction::writeRegisters(uint8_t reg, const uint8_t* data,
+                                    size_t size)
+{
+    if (slave.config.writeBit == SPI::WriteBit::INVERTED) [[unlikely]]
+        reg |= 0x80;
+
+    TransactionSelectGuard guard(slave, !externallySelected);
+    slave.bus.transfer(&reg, nullptr, sizeof(reg));
+    slave.bus.transfer(data, nullptr, size);
 }
 
 }  // namespace Boardcore
