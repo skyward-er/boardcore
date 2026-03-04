@@ -144,6 +144,23 @@ bool AS5047DSPI::init()
 
 bool AS5047DSPI::selfTest() { return true; }
 
+void AS5047DSPI::resetAngleZero()
+{
+    auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLEUNC);
+    if (daecAngInt.hasError())
+    {
+        logReadRegisterError("ANGLECOM", daecAngInt.error);
+        lastError = COMMAND_FAILED;
+        return;
+    }
+
+    miosix::delayUs(AS5047DDefs::DELAY_BETWEEN_SPI_TRAN_US.value());
+    writeRegister(AS5047DDefs::Registers::ZPOSM, (daecAngInt.data >> 5) & 0xff);
+
+    miosix::delayUs(AS5047DDefs::DELAY_BETWEEN_SPI_TRAN_US.value());
+    writeRegister(AS5047DDefs::Registers::ZPOSL, daecAngInt.data & 0x1f);
+}
+
 AS5047DData AS5047DSPI::sampleImpl()
 {
     if (!initialized)
@@ -161,7 +178,8 @@ AS5047DData AS5047DSPI::sampleImpl()
     // automatically done by the sensor. The correction can be disabled and this
     // will fill ANGLECOM with raw angle data, thus we don't really need to read
     // all three data registers MAG, ANGLEUNC and ANGLECOM but only ANGLECOM
-    // also ANGLEUNC can be read by selecting data source via
+    // also ANGLEUNC can be read by selecting data source via setDataSource
+    // method
     // Units::Angle::Degree cordicMagnitude = Units::Angle::Degree(0);
     // Units::Angle::Degree cordicAngle     = Units::Angle::Degree(0);
     {
@@ -299,8 +317,9 @@ void AS5047DSPI::writeRegister(AS5047DDefs::Registers reg, uint16_t data)
      *
      */
 
-    uint16_t transaction[2] = {static_cast<uint16_t>(reg) & 0x3fff,
-                               static_cast<uint16_t>(data) & 0x3fff};
+    uint16_t transaction[2] = {
+        static_cast<uint16_t>(reg) & static_cast<uint16_t>(0x3fff),
+        static_cast<uint16_t>(data) & static_cast<uint16_t>(0x3fff)};
 
     // we take out the 2 ms bits and by doing so both commmand and data
     // frame are ready for the transaction, the only missing thing is
@@ -338,8 +357,9 @@ AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
      */
 
     uint16_t transaction[2] = {
-        static_cast<uint16_t>(reg) & 0x3fff,
-        static_cast<uint16_t>(AS5047DDefs::Registers::NOP) & 0x3fff};
+        static_cast<uint16_t>(reg) & static_cast<uint16_t>(0x3fff),
+        static_cast<uint16_t>(AS5047DDefs::Registers::NOP) &
+            static_cast<uint16_t>(0x3fff)};
 
     // we take out the 2 ms bits and by doing so both commands are ready
     // we send a nop because the data is ready only after one SPI
@@ -382,10 +402,10 @@ AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
 
 uint16_t AS5047DSPI::getParity(uint16_t data)
 {
-    uint16_t parity = 0;
-    for (size_t i = 0; i < sizeof(uint16_t) * 8; i++)
-        parity ^= (data >> i) & 0b1;
-    return parity;
+    data = (data & 0xff) ^ ((data >> 8) & 0xff);
+    data = (data & 0xf) ^ ((data >> 4) & 0xf);
+    data = (data & 0x3) ^ ((data >> 2) & 0x3);
+    return (data & 0x1) ^ ((data >> 1) & 0x1);
 }
 
 void AS5047DSPI::logReadRegisterError(std::string regName,
