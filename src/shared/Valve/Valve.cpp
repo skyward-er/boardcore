@@ -22,42 +22,21 @@
 
 #include "Valve.h"
 
-namespace RIGv2
+namespace Boardcore
 {
 
 uint8_t Valve::getClosingEvent() const { return config.closingEvent; }
 uint8_t Valve::getOpeningEvent() const { return config.openingEvent; }
 
-bool Valve::setOpeningTime(uint32_t time)
-{
-    getModule<Registry>()->setUnsafe(config.openingTimeRegKey, time);
-    return true;
-}
+uint8_t Valve::getOpeningTimeRegKey() const { return config.openingTimeRegKey; }
+uint8_t Valve::getMaxApertureRegKey() const { return config.maxApertureRegKey; }
 
-float Valve::getMaxAperture()
+uint8_t Valve::getDefaultOpeningTime() const
 {
-    return getModule<Registry>()->getOrSetDefaultUnsafe(
-        config.maxApertureRegKey, config.defaultMaxAperture);
+    return config.defaultOpeningTime;
 }
-
-bool Valve::setMaxAperture(float aperture)
+uint8_t Valve::getDefaultMaxAperture() const
 {
-    if (aperture >= 0.0 && aperture <= 1.0)
-    {
-        getModule<Registry>()->setUnsafe(config.maxApertureRegKey, aperture);
-        return true;
-    }
-    else
-    {
-        // What? Who would ever set this to above 100%?
-        return false;
-    }
-}
-
-uint32_t Valve::getOpeningTime()
-{
-    return getModule<Registry>()->getOrSetDefaultUnsafe(
-        config.openingTimeRegKey, config.defaultOpeningTime);
-}
-
-}  // namespace RIGv2
+    return config.defaultMaxAperture;
+};
+}  // namespace Boardcore

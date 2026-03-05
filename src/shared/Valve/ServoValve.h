@@ -22,29 +22,28 @@
 
 #pragma once
 
+#include "Servo.h"
 #include "Valve.h"
-
-namespace RIGv2
+namespace Boardcore
 {
-class ValveServo : public Valve
+class ServoValve : public Valve
 {
 public:
     /**
      * @brief ValveSolenoid Constructor
      * @param pin Solenoid valve control pin
      */
-    ValveServo(const ValveConfig& config,
-               std::unique_ptr<Boardcore::Servo> servo)
+    ServoValve(const ValveConfig& config, std::unique_ptr<Servo> servo)
         : Valve(config), servo(std::move(servo))
     {
     }
-    ~ValveServo() {};
+    ~ServoValve() {};
 
     // Move-only
-    ValveServo(ValveServo&&)                 = default;
-    ValveServo& operator=(ValveServo&&)      = default;
-    ValveServo(const ValveServo&)            = delete;
-    ValveServo& operator=(const ValveServo&) = delete;
+    ServoValve(ServoValve&&)                 = default;
+    ServoValve& operator=(ServoValve&&)      = default;
+    ServoValve(const ServoValve&)            = delete;
+    ServoValve& operator=(const ServoValve&) = delete;
 
     /**
      * @brief Sets the state of the solenoid valve (open/closed).
@@ -59,7 +58,7 @@ public:
 
         servo->setPosition(position, true);
         return true;
-        };
+    };
 
     /**
      * @brief Returns the state of the solenoid valve (open/closed).
@@ -103,4 +102,4 @@ public:
 private:
     std::unique_ptr<Boardcore::Servo> servo;
 };
-}  // namespace RIGv2
+}  // namespace Boardcore

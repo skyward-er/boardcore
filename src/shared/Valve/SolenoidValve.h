@@ -24,17 +24,22 @@
 
 #include "Valve.h"
 
-namespace RIGv2
+namespace Boardcore
 {
-class ValveSolenoid : public Valve
+class SolenoidValve : public Valve
 {
 public:
     /**
-     * @brief ValveSolenoid Constructor
+     * @brief SolenoidValve Constructor
      * @param pin Solenoid valve control pin
      */
-    ValveSolenoid(const ValveConfig& config, miosix::GpioPin pin)
+    SolenoidValve(const ValveConfig& config, miosix::GpioPin pin)
         : Valve(config), pin(pin) {};
+
+    /**
+     * @brief Does nothing to the solenoids, as they are enabled by default.
+     */
+    void enable() override {};
 
     /**
      * @brief Sets the state of the solenoid valve (open/closed).
@@ -44,12 +49,12 @@ public:
     {
         if (position < 0.5f)
         {
-            ValveSolenoid::pin.low();
+            SolenoidValve::pin.low();
 
         }  // set PIN to low
         else
         {
-            ValveSolenoid::pin.high();
+            SolenoidValve::pin.high();
         }  // set PIN to high
         return true;
     };
@@ -62,7 +67,7 @@ public:
      */
     float getPosition() override
     {
-        float position = ValveSolenoid::pin.value();
+        float position = SolenoidValve::pin.value();
 
         if (config.flipped)
             position = 1.0f - position;
@@ -80,4 +85,4 @@ public:
 private:
     miosix::GpioPin pin;
 };
-}  // namespace RIGv2
+}  // namespace Boardcore

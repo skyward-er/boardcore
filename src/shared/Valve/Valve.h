@@ -22,14 +22,13 @@
 
 #pragma once
 
-#include <RIGv2/Registry/Registry.h>
 #include <utils/DependencyManager/DependencyManager.h>
 
 #include "ServoPCAValve.h"
 #include "ServoValve.h"
 #include "SolenoidValve.h"
 
-namespace RIGv2
+namespace Boardcore
 {
 
 enum class ValveType
@@ -46,16 +45,14 @@ struct ValveConfig
     uint32_t defaultOpeningTime = 1000;   // Default opening time [ms]
     float defaultMaxAperture    = 1.0;    // Max aperture
 
-    uint8_t openingEvent = 0;  ///< Event to fire after opening
-    uint8_t closingEvent = 0;  ///< Event to fire after closing
-    uint32_t openingTimeRegKey =
-        CONFIG_ID_DEFAULT_OPENING_TIME;  ///< Registry key for opening
-                                         ///< time
-    uint32_t maxApertureRegKey =
-        CONFIG_ID_DEFAULT_MAX_APERTURE;  ///< Registry key for max
-                                         ///< aperture
+    uint8_t openingEvent       = 0;  ///< Event to fire after opening
+    uint8_t closingEvent       = 0;  ///< Event to fire after closing
+    uint32_t openingTimeRegKey = 0;  ///< Registry key for opening
+                                     ///< time
+    uint32_t maxApertureRegKey = 0;  ///< Registry key for max
+                                     ///< aperture
 };
-class Valve : public Boardcore::InjectableWithDeps<Registry>
+class Valve
 {
 public:
     virtual ~Valve() = default;
@@ -71,11 +68,11 @@ public:
     uint8_t getClosingEvent() const;
     uint8_t getOpeningEvent() const;
 
-    float getMaxAperture();
-    uint32_t getOpeningTime();
+    uint8_t getOpeningTimeRegKey() const;
+    uint8_t getMaxApertureRegKey() const;
 
-    bool setMaxAperture(float aperture);
-    bool setOpeningTime(uint32_t time);
+    uint8_t getDefaultOpeningTime() const;
+    uint8_t getDefaultMaxAperture() const;
 
     virtual ValveType getType() const = 0;
 
@@ -97,4 +94,4 @@ protected:
     Valve(const ValveConfig& config) : config(config) {};
     ValveConfig config;
 };
-}  // namespace RIGv2
+}  // namespace Boardcore

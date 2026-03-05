@@ -25,16 +25,18 @@
 #include "Valve.h"
 #include "drivers/PCA9685/PCA9685.h"
 
-namespace RIGv2
+namespace Boardcore
 {
-class ValveServoPCA : public Valve
+class ServoPCAValve : public Valve
 {
 public:
-    ValveServoPCA(const ValveConfig& config, Boardcore::PCA9685& pca,
+    ServoPCAValve(const ValveConfig& config, Boardcore::PCA9685& pca,
                   Boardcore::PCA9685Utils::Channel channel)
         : Valve(config), pca(pca), channel(channel)
     {
     }
+
+    void enable() override {};
 
     bool setPosition(float position) override
     {
@@ -87,4 +89,4 @@ private:
     Boardcore::PCA9685Utils::Channel channel;
     float lastPosition = 0.0f;
 };
-}  // namespace RIGv2
+}  // namespace Boardcore
