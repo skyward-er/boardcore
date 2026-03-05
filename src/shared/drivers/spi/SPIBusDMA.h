@@ -22,57 +22,41 @@
 
 #pragma once
 
-#include "SPIBusInterface.h"
+#include <drivers/dma/DMA.h>
+
+#include "SPIBus.h"
 
 namespace Boardcore
 {
-
-/**
- * @brief Driver for the STM32 low level SPI peripheral.
- *
- * This driver applies to the whole STM32F4xx/STM32F7xx families.
- *
- * The serial peripheral interface (SPI) allows half/full-duplex, synchronous,
- * serial communication with external devices. The interface can be configured
- * as the master and in this case it provides the communication clock (SCK) to
- * the external slave device. The peripheral is also capable of reliable
- * communication using CRC checking.
- *
- * Supported features:
- * - Full-duplex synchronous transfers on three lines
- * - 8-bit transfer frame formats
- * - Master operation
- * - 8 master mode baud rate prescaler values (f_PCLK/2 max.)
- * - Programmable clock polarity and phase
- * - Programmable bit order (MSBit-first or LSBit-first)
- */
-class SPIBus : public SPIBusInterface
+class SPIBusDMA : public SPIBus
 {
 public:
-    explicit SPIBus(SPI_TypeDef* spi);
+    SPIBusDMA(SPI_TypeDef* spi, DMAStreamGuard&& txStream,
+              DMAStreamGuard&& rxStream);
 
     ///< Delete copy/move contructors/operators.
-    SPIBus(const SPIBus&)            = delete;
-    SPIBus& operator=(const SPIBus&) = delete;
-    SPIBus(SPIBus&&)                 = delete;
-    SPIBus& operator=(SPIBus&&)      = delete;
-
-    SPI_TypeDef* getSpi() override;
+    SPIBusDMA(const SPIBusDMA&)            = delete;
+    SPIBusDMA& operator=(const SPIBusDMA&) = delete;
+    SPIBusDMA(SPIBusDMA&&)                 = delete;
+    SPIBusDMA& operator=(SPIBusDMA&&)      = delete;
 
     void configure(const SPIBusConfig& newConfig) override;
 
     void transfer(const uint8_t* txData, uint8_t* rxData, size_t size) override;
 
-protected:
+private:
     /**
-     * @brief Full duplex transmission of 8 bits on the bus.
-     * @param data Byte to write.
-     * @return Byte read from the bus.
+     * @brief Determines if a transfer with the provided size is worth
+     * performing with DMA or not.
      */
-    uint8_t transferByte(uint8_t data);
+    bool shouldUseDMA(size_t size);
 
-    SPI_TypeDef* spi;
-    SPIBusConfig config{};
+    static DMATransaction makeDMASetup(DMATransaction::Direction dir,
+                                       const void* source, void* destination,
+                                       uint16_t size, bool sourceIncrement,
+                                       bool destinationIncrement);
+
+    DMAStreamGuard txStream;
+    DMAStreamGuard rxStream;
 };
-
 }  // namespace Boardcore
