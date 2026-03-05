@@ -89,7 +89,7 @@ struct DMATransaction
     Priority priority                  = Priority::LOW;
     DataSize srcSize                   = DataSize::BITS_32;
     DataSize dstSize                   = DataSize::BITS_32;
-    volatile void* srcAddress          = nullptr;
+    volatile const void* srcAddress    = nullptr;
     volatile void* dstAddress          = nullptr;
     volatile void* secondMemoryAddress = nullptr;
     uint16_t numberOfDataItems         = 0;
