@@ -82,9 +82,7 @@ struct SPIBusConfig
     bool operator==(const SPIBusConfig& other) const
     {
         return clockDivider == other.clockDivider && mode == other.mode &&
-               bitOrder == other.bitOrder &&
-               csSetupTimeUs == other.csSetupTimeUs &&
-               csHoldTimeUs == other.csHoldTimeUs;
+               bitOrder == other.bitOrder;
     }
 
     bool operator!=(const SPIBusConfig& other) const

@@ -29,45 +29,40 @@ namespace Boardcore
 SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi)
 {
     ClockUtils::enablePeripheralClock(spi);
+
+    // Set slave-independent configuration
     SPI::Reset(spi);
+    SPI::EnableSoftwareSlaveManagement(spi);
+    SPI::EnableInternalSlaveSelect(spi);
+    SPI::SetMasterConfiguration(spi);
+    SPI::Set8bitFrameFormat(spi);
+    // Set initial default configuration
+    SPI::SetMode(spi, config.mode);
+    SPI::SetClockDiver(spi, config.clockDivider);
+    SPI::SetBitOrder(spi, config.bitOrder);
 }
 
 SPI_TypeDef* SPIBus::getSpi() { return spi; }
 
 void SPIBus::configure(const SPIBusConfig& newConfig)
 {
-    // Do not reconfigure if already in the correct configuration.
-    if (!firstConfigApplied || newConfig != config)
-    {
-        // Save the new configuration
-        config             = newConfig;
-        firstConfigApplied = true;
+    if (newConfig == config)
+        return;
 
-        // Wait until the peripheral is done before changing configuration
-        SPI::WaitNotBusy(spi);
+    config = newConfig;
 
-        // Disable the peripheral
-        SPI::Disable(spi);
+    // Wait until the peripheral is done before changing configuration
+    SPI::WaitNotBusy(spi);
+    SPI::Disable(spi);
 
-        // Configure clock polarity and phase
-        SPI::SetMode(spi, config.mode);
+    // Configure clock polarity and phase
+    SPI::SetMode(spi, config.mode);
+    // Configure clock frequency
+    SPI::SetClockDiver(spi, config.clockDivider);
+    // Configure bit order
+    SPI::SetBitOrder(spi, config.bitOrder);
 
-        // Configure clock frequency
-        SPI::SetClockDiver(spi, config.clockDivider);
-
-        // Configure bit order
-        SPI::SetBitOrder(spi, config.bitOrder);
-
-        // Configure chip select and master mode
-        SPI::EnableSoftwareSlaveManagement(spi);
-        SPI::EnableInternalSlaveSelect(spi);
-        SPI::SetMasterConfiguration(spi);
-
-        SPI::Set8bitFrameFormat(spi);
-
-        // Enable the peripheral
-        SPI::Enable(spi);
-    }
+    SPI::Enable(spi);
 }
 
 void SPIBus::transfer(const uint8_t* txData, uint8_t* rxData, size_t size)
