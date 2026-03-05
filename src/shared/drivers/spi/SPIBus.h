@@ -73,7 +73,6 @@ private:
 
     SPI_TypeDef* spi;
     SPIBusConfig config{};
-    bool firstConfigApplied = false;
 };
 
 }  // namespace Boardcore
