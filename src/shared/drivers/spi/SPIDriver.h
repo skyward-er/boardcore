@@ -27,7 +27,7 @@
  * the SPI driver.
  *
  * The driver is divided into 3 levels:
- * - Low: SPIBus is the actual driver that talks directly to the STM32
+ * - Low: SPIBus/SPIBusDMA is the actual driver that talks directly to the STM32
  * pheripheral
  * - Middle: SPIBusInterface is a common interface that defines which operations
  * the implementation has to privde
@@ -36,5 +36,6 @@
  */
 
 #include "SPIBus.h"
+#include "SPIBusDMA.h"
 #include "SPIBusInterface.h"
 #include "SPITransaction.h"
