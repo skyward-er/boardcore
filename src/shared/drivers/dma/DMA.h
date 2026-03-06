@@ -568,8 +568,16 @@ public:
     DMAStreamGuard(const DMAStreamGuard&)            = delete;
     DMAStreamGuard& operator=(const DMAStreamGuard&) = delete;
 
-    DMAStreamGuard(DMAStreamGuard&&) noexcept            = default;
-    DMAStreamGuard& operator=(DMAStreamGuard&&) noexcept = default;
+    DMAStreamGuard(DMAStreamGuard&& other) noexcept : pStream(other.pStream)
+    {
+        other.pStream = nullptr;
+    }
+
+    DMAStreamGuard& operator=(DMAStreamGuard&& other) noexcept
+    {
+        std::swap(pStream, other.pStream);
+        return *this;
+    }
 
     DMAStream* operator->();
 
@@ -580,7 +588,7 @@ public:
     inline bool isValid() { return pStream != nullptr; }
 
 private:
-    DMAStream* const pStream;
+    DMAStream* pStream;
 };
 
 }  // namespace Boardcore
