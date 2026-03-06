@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 Skyward Experimental Rocketry
- * Authors: Riccardo Sironi
+ * Author: Riccardo Sironi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,23 +24,49 @@
 
 namespace Boardcore
 {
-
+/**
+ * @brief returns the closingEvent member of the valve's config struct
+ *
+ * @return closing event value - Defaults to 0
+ */
 uint8_t Valve::getClosingEvent() const { return config.closingEvent; }
+/**
+ * @brief returns the openingEvent member of the valve's config struct
+ *
+ * @return opening event value - Defaults to 0
+ */
 uint8_t Valve::getOpeningEvent() const { return config.openingEvent; }
-
+/**
+ * @brief returns the openingTimeRegKey member of the valve's config struct
+ *
+ * @return opening time Registry key - Defaults to 0 (INVALID_ID)
+ */
 uint32_t Valve::getOpeningTimeRegKey() const
 {
     return config.openingTimeRegKey;
-}
+} /**
+   * @brief returns the maxApertureRegKey member of the valve's config struct
+   *
+   * @return max aperture Registry key - Defaults to 0 (INVALID_ID)
+   */
 uint32_t Valve::getMaxApertureRegKey() const
 {
     return config.maxApertureRegKey;
 }
-
+/**
+ * @brief returns the defaultOpeningTime member of the valve's config struct
+ *
+ * @return the default value for the opening time
+ */
 uint32_t Valve::getDefaultOpeningTime() const
 {
     return config.defaultOpeningTime;
 }
+/**
+ * @brief returns the defaultMaxAperture member of the valve's config struct
+ *
+ * @return the default value for the max aperture
+ */
 float Valve::getDefaultMaxAperture() const
 {
     return config.defaultMaxAperture;

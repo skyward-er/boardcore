@@ -75,8 +75,17 @@ public:
         return position;
     };
 
+    /**
+     * @brief Returns the type of the valve
+     *
+     * @returns the ValveType
+     */
     ValveType getType() const override { return ValveType::SOLENOID; }
 
+    /**
+     * @brief  Does nothing on solenoids, as they can't possibly backstep.
+     *
+     */
     void backstep() override
     {
         // Do nothing

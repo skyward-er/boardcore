@@ -35,9 +35,16 @@ public:
         : Valve(config), pca(pca), channel(channel)
     {
     }
-
+    /**
+     * @brief Does nothing when called on PCA controlled Valves
+     */
     void enable() override {};
 
+    /**
+     * @brief Sets the position of the servo valve
+     * @param position Where to, in the range from 0 to 1, set the servo
+     * aperture
+     */
     bool setPosition(float position) override
     {
         position *= config.limit;
@@ -47,12 +54,14 @@ public:
 
         lastPosition = position;
         if (!pca.setDutyCycle(channel, position))
-        {
-            // How can I handle this error?
             return pca.setDutyCycle(channel, position);
-        };
+        ;
     };
 
+    /**
+     * @brief Returns the last known position
+     * @return The position
+     */
     float getPosition() override
     {
         float position = lastPosition;
@@ -62,19 +71,28 @@ public:
         position /= config.limit;
         return position;
     };
-
+    /**
+     * @brief Get the type of the valve ( Timer controlled servo, PCA controlled
+     * servo, Solnoid )
+     *
+     * @returns the ValveType
+     */
     ValveType getType() const override { return ValveType::SERVO_PCA; }
 
+    /**
+     * @brief Moves the valve via a small backstep.
+     *
+     */
     void backstep() override
     {
         switch (direction)
         {
             case Direction::OPEN:
-                currentPosition -= Config::Servos::SERVO_BACKSTEP_AMOUNT;
+                currentPosition -= SERVO_BACKSTEP_AMOUNT;
                 break;
 
             case Direction::CLOSE:
-                currentPosition += Config::Servos::SERVO_BACKSTEP_AMOUNT;
+                currentPosition += SERVO_BACKSTEP_AMOUNT;
                 break;
         }
 
@@ -87,6 +105,7 @@ public:
 private:
     Boardcore::PCA9685& pca;
     Boardcore::PCA9685Utils::Channel channel;
-    float lastPosition = 0.0f;
+    float lastPosition                       = 0.0f;
+    static const float SERVO_BACKSTEP_AMOUNT = 0.02f;
 };
 }  // namespace Boardcore

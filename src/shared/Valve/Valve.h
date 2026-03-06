@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 Skyward Experimental Rocketry
- * Authors: Riccardo Sironi
+ * Author: Riccardo Sironi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ public:
     Valve(Valve&&)            = default;
     Valve& operator=(Valve&&) = default;
 
-    // Delete copy to enforce unique ownership of hardware resources
+    // Delete copy
     Valve(const Valve&)            = delete;
     Valve& operator=(const Valve&) = delete;
 
@@ -74,6 +74,11 @@ public:
     uint32_t getDefaultOpeningTime() const;
     float getDefaultMaxAperture() const;
 
+    /**
+     * @brief Returns the type of the valve
+     *
+     * @returns the ValveType
+     */
     virtual ValveType getType() const = 0;
 
     virtual bool setPosition(float position) = 0;
@@ -92,6 +97,6 @@ public:
 
 protected:
     Valve(const ValveConfig& config) : config(config) {};
-    ValveConfig config;
+    ValveConfig config;  ///< Valve Config struct
 };
 }  // namespace Boardcore

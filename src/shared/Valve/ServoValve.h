@@ -46,8 +46,9 @@ public:
     ServoValve& operator=(const ServoValve&) = delete;
 
     /**
-     * @brief Sets the state of the solenoid valve (open/closed).
-     * @param position position values greater than 0.5f are treated as high.
+     * @brief Sets the position of the servo valve
+     * @param position Where to, in the range from 0 to 1, set the servo
+     * aperture
      */
     bool setPosition(float position) override
     {
@@ -76,20 +77,33 @@ public:
         return position;
     };
 
+    /**
+     * @brief Enable the Servo
+     */
     void enable() override { servo->enable(); }
 
+    /**
+     * @brief Get the type of the valve ( Timer controlled servo, PCA controlled
+     * servo, Solnoid )
+     *
+     * @returns the ValveType
+     */
     ValveType getType() const override { return ValveType::SERVO; }
 
+    /**
+     * @brief Moves the valve via a small backstep.
+     *
+     */
     void backstep() override
     {
         switch (direction)
         {
             case Direction::OPEN:
-                currentPosition -= Config::Servos::SERVO_BACKSTEP_AMOUNT;
+                currentPosition -= SERVO_BACKSTEP_AMOUNT;
                 break;
 
             case Direction::CLOSE:
-                currentPosition += Config::Servos::SERVO_BACKSTEP_AMOUNT;
+                currentPosition += SERVO_BACKSTEP_AMOUNT;
                 break;
         }
 
@@ -101,5 +115,6 @@ public:
 
 private:
     std::unique_ptr<Boardcore::Servo> servo;
+    static const float SERVO_BACKSTEP_AMOUNT = 0.02f;
 };
 }  // namespace Boardcore
