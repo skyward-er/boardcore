@@ -54,7 +54,7 @@ static SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
     return bus_config;
 }
 
-Wiz5500::Wiz5500(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
+Wiz5500::Wiz5500(SPIBusInterface& bus, miosix::GpioPin cs, miosix::GpioPin intn,
                  SPI::ClockDivider clock_divider)
     : intn(intn), slave(bus, cs, getSpiBusConfig(clock_divider))
 {

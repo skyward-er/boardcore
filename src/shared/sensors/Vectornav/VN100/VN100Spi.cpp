@@ -29,7 +29,7 @@
 namespace Boardcore
 {
 
-VN100Spi::VN100Spi(SPIBus& bus, miosix::GpioPin csPin,
+VN100Spi::VN100Spi(SPIBusInterface& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, uint16_t syncOutSkipFactor)
     : spiSlave(bus, csPin, busConfiguration),
       syncOutSkipFactor(syncOutSkipFactor)

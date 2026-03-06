@@ -93,7 +93,7 @@ public:
      * @param intn The INTn pin.
      * @param clock_divider Selected SPI clock divider.
      */
-    Wiz5500(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin intn,
+    Wiz5500(SPIBusInterface& bus, miosix::GpioPin cs, miosix::GpioPin intn,
             SPI::ClockDivider clock_divider);
     ~Wiz5500();
 

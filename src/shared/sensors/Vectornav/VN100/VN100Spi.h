@@ -64,8 +64,8 @@ public:
      * data ready event should be skipped before actually triggering the
      * interrupt pin.
      */
-    VN100Spi(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
-             uint16_t syncOutSkipFactor);
+    VN100Spi(SPIBusInterface& bus, miosix::GpioPin csPin,
+             SPIBusConfig busConfiguration, uint16_t syncOutSkipFactor);
 
     /**
      * @brief Initialize the sensor.
