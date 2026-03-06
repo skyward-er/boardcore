@@ -55,7 +55,7 @@ public:
         lastPosition = position;
         if (!pca.setDutyCycle(channel, position))
             return pca.setDutyCycle(channel, position);
-        ;
+        return true;
     };
 
     /**
