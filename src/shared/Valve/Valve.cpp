@@ -28,14 +28,20 @@ namespace Boardcore
 uint8_t Valve::getClosingEvent() const { return config.closingEvent; }
 uint8_t Valve::getOpeningEvent() const { return config.openingEvent; }
 
-uint8_t Valve::getOpeningTimeRegKey() const { return config.openingTimeRegKey; }
-uint8_t Valve::getMaxApertureRegKey() const { return config.maxApertureRegKey; }
+uint32_t Valve::getOpeningTimeRegKey() const
+{
+    return config.openingTimeRegKey;
+}
+uint32_t Valve::getMaxApertureRegKey() const
+{
+    return config.maxApertureRegKey;
+}
 
-uint8_t Valve::getDefaultOpeningTime() const
+uint32_t Valve::getDefaultOpeningTime() const
 {
     return config.defaultOpeningTime;
 }
-uint8_t Valve::getDefaultMaxAperture() const
+float Valve::getDefaultMaxAperture() const
 {
     return config.defaultMaxAperture;
 };

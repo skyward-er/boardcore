@@ -68,11 +68,11 @@ public:
     uint8_t getClosingEvent() const;
     uint8_t getOpeningEvent() const;
 
-    uint8_t getOpeningTimeRegKey() const;
-    uint8_t getMaxApertureRegKey() const;
+    uint32_t getOpeningTimeRegKey() const;
+    uint32_t getMaxApertureRegKey() const;
 
-    uint8_t getDefaultOpeningTime() const;
-    uint8_t getDefaultMaxAperture() const;
+    uint32_t getDefaultOpeningTime() const;
+    float getDefaultMaxAperture() const;
 
     virtual ValveType getType() const = 0;
 
