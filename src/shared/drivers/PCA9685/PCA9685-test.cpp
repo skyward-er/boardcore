@@ -63,7 +63,7 @@ int main()
 
         return 1;
     }
-    printf("PCA9685 initialized successfully\n");
+    // printf("PCA9685 initialized successfully\n");
     while (true)
     {
         if (!pca9685.setAllDutyCycle(20))
