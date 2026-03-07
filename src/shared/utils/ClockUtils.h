@@ -37,7 +37,8 @@ namespace ClockUtils
 enum class APB
 {
     APB1,
-    APB2
+    APB2,
+    INVALID,  // Error value when the peripheral bus cannot be determined
 };
 
 /**
@@ -68,6 +69,11 @@ bool enablePeripheralClock(void* peripheral);
  */
 bool disablePeripheralClock(void* peripheral);
 
+/**
+ * @brief Returns the APB bus to which the peripheral is connected.
+ */
+APB getPeripheralBus(void* peripheral);
+
 }  // namespace ClockUtils
 
 inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
@@ -93,7 +99,7 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
         if (RCC->CFGR & RCC_CFGR_PPRE1_2)
             inputFrequency /= 2 << ((RCC->CFGR >> ppre1) & 0b11);
     }
-    else
+    else if (bus == APB::APB2)
     {
         // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
 #ifdef _ARCH_CORTEXM3_STM32F1
@@ -106,6 +112,10 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
             inputFrequency /= 2 << ((RCC->CFGR >> ppre2) & 0b11);
+    }
+    else
+    {
+        return 0;  // Invalid APB bus
     }
 
     return inputFrequency;
@@ -902,6 +912,200 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
     RCC_SYNC();
 
     return true;
+}
+
+inline ClockUtils::APB ClockUtils::getPeripheralBus(void* peripheral)
+{
+    switch (reinterpret_cast<uint32_t>(peripheral))
+    {
+        // APB1 peripherals
+        {
+#ifdef TIM2_BASE
+            case TIM2_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM3_BASE
+            case TIM3_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM4_BASE
+            case TIM4_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM5_BASE
+            case TIM5_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM6_BASE
+            case TIM6_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM7_BASE
+            case TIM7_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM12_BASE
+            case TIM12_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM13_BASE
+            case TIM13_BASE:
+                return APB::APB1;
+#endif
+#ifdef TIM14_BASE
+            case TIM14_BASE:
+                return APB::APB1;
+#endif
+// RTC register interface gate only on stm32f7 micro controllers
+#if defined(RTC_BASE) && defined(_ARCH_CORTEXM7_STM32F7)
+            case RTC_BASE:
+                return APB::APB1;
+#endif
+#ifdef WWDG_BASE
+            case WWDG_BASE:
+                return APB::APB1;
+#endif
+#ifdef SPI2_BASE
+            case SPI2_BASE:
+                return APB::APB1;
+#endif
+#ifdef SPI3_BASE
+            case SPI3_BASE:
+                return APB::APB1;
+#endif
+#ifdef USART2_BASE
+            case USART2_BASE:
+                return APB::APB1;
+#endif
+#ifdef USART3_BASE
+            case USART3_BASE:
+                return APB::APB1;
+#endif
+#ifdef UART4_BASE
+            case UART4_BASE:
+                return APB::APB1;
+#endif
+#ifdef UART5_BASE
+            case UART5_BASE:
+                return APB::APB1;
+#endif
+#ifdef I2C1_BASE
+            case I2C1_BASE:
+                return APB::APB1;
+#endif
+#ifdef I2C2_BASE
+            case I2C2_BASE:
+                return APB::APB1;
+#endif
+#ifdef I2C3_BASE
+            case I2C3_BASE:
+                return APB::APB1;
+#endif
+#ifdef CAN1_BASE
+            case CAN1_BASE:
+                return APB::APB1;
+#endif
+#ifdef CAN2_BASE
+            case CAN2_BASE:
+                return APB::APB1;
+#endif
+#ifdef PWR_BASE
+            case PWR_BASE:
+                return APB::APB1;
+#endif
+#ifdef DAC_BASE
+            case DAC_BASE:
+                return APB::APB1;
+#endif
+#ifdef UART7_BASE
+            case UART7_BASE:
+                return APB::APB1;
+#endif
+#ifdef UART8_BASE
+            case UART8_BASE:
+                return APB::APB1;
+#endif
+        }
+
+        // APB2 peripherals
+        {
+#ifdef TIM1_BASE
+            case TIM1_BASE:
+                return APB::APB2;
+#endif
+#ifdef TIM8_BASE
+            case TIM8_BASE:
+                return APB::APB2;
+#endif
+#ifdef USART1_BASE
+            case USART1_BASE:
+                return APB::APB2;
+#endif
+#ifdef USART6_BASE
+            case USART6_BASE:
+                return APB::APB2;
+#endif
+#ifdef ADC1_BASE
+            case ADC1_BASE:
+                return APB::APB2;
+#endif
+#ifdef ADC2_BASE
+            case ADC2_BASE:
+                return APB::APB2;
+#endif
+#ifdef ADC3_BASE
+            case ADC3_BASE:
+                return APB::APB2;
+#endif
+#ifdef SDIO_BASE
+            case SDIO_BASE:
+                return APB::APB2;
+#endif
+#ifdef SPI1_BASE
+            case SPI1_BASE:
+                return APB::APB2;
+#endif
+#ifdef SPI4_BASE
+            case SPI4_BASE:
+                return APB::APB2;
+#endif
+#ifdef SYSCFG_BASE
+            case SYSCFG_BASE:
+                return APB::APB2;
+#endif
+#ifdef TIM9_BASE
+            case TIM9_BASE:
+                return APB::APB2;
+#endif
+#ifdef TIM10_BASE
+            case TIM10_BASE:
+                return APB::APB2;
+#endif
+#ifdef TIM11_BASE
+            case TIM11_BASE:
+                return APB::APB2;
+#endif
+#ifdef SPI5_BASE
+            case SPI5_BASE:
+                return APB::APB2;
+#endif
+#ifdef SPI6_BASE
+            case SPI6_BASE:
+                return APB::APB2;
+#endif
+#ifdef SAI1_BASE
+            case SAI1_BASE:
+                return APB::APB2;
+#endif
+#ifdef LTDC_BASE
+            case LTDC_BASE:
+                return APB::APB2;
+#endif
+        }
+
+        default:
+            return APB::INVALID;
+    }
 }
 
 }  // namespace Boardcore
