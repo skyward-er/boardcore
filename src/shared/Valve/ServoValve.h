@@ -22,7 +22,8 @@
 
 #pragma once
 
-#include "Servo.h"
+#include <actuators/Servo/Servo.h>
+
 #include "Valve.h"
 namespace Boardcore
 {
