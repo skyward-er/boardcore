@@ -24,6 +24,8 @@
 
 #include <interfaces-impl/gpio_impl.h>
 #include <interfaces/delays.h>
+#include <units/Frequency.h>
+#include <utils/ClockUtils.h>
 
 #include <cstddef>
 
@@ -88,6 +90,46 @@ struct SPIBusConfig
     bool operator!=(const SPIBusConfig& other) const
     {
         return !(*this == other);
+    }
+
+    /**
+     * @brief Computes the clock divider to use for the given target frequency.
+     * The computed divider will yield the highest possible SPI clock frequency
+     * which is not higher than the target frequency.
+     * The spi peripheral is needed to get the source clock frequency, which
+     * depends on which APB bus the spi is connected to.
+     *
+     * @note The target frequency will most likely not be achieved exactly,
+     * because the clock divider can only be set to discrete power-of-2 values.
+     *
+     * @param spi SPI peripheral for which to compute the divider.
+     * @param frequency Desired frequency for the SPI bus in hertz.
+     * @return The optimal clock divider to use for the given frequency.
+     */
+    static SPI::ClockDivider computeDivider(SPI_TypeDef* spi,
+                                            uint32_t targetFrequency)
+    {
+        auto apb = ClockUtils::getPeripheralBus(spi);
+
+        uint32_t sourceFreq   = ClockUtils::getAPBPeripheralsClock(apb);
+        uint32_t idealDivider = sourceFreq / targetFrequency;
+
+        if (idealDivider <= 2)
+            return SPI::ClockDivider::DIV_2;
+        else if (idealDivider <= 4)
+            return SPI::ClockDivider::DIV_4;
+        else if (idealDivider <= 8)
+            return SPI::ClockDivider::DIV_8;
+        else if (idealDivider <= 16)
+            return SPI::ClockDivider::DIV_16;
+        else if (idealDivider <= 32)
+            return SPI::ClockDivider::DIV_32;
+        else if (idealDivider <= 64)
+            return SPI::ClockDivider::DIV_64;
+        else if (idealDivider <= 128)
+            return SPI::ClockDivider::DIV_128;
+        else
+            return SPI::ClockDivider::DIV_256;
     }
 };
 
