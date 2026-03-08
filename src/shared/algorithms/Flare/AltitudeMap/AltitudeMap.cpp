@@ -33,64 +33,67 @@ AltitudeMap::AltitudeMap(const uint8_t* startAddress)
         startAddress;  // Flash memory altitude map start address
     this->header = reinterpret_cast<const MapHeader*>(
         startAddress);  // Altitude map header address
-    this->tiles = reinterpret_cast<const TileDescriptor*>(
-        startAddress + sizeof(MapHeader));  // Address pointing to the start of
-                                            // the tile descriptors
 }
 
-bool AltitudeMap::isInsideMap(float x, float y) const
+bool AltitudeMap::init()
 {
-    return ((x > header->xMin && x < header->xMax) &&
-            (y > header->yMin && y < header->yMax));
-}
-
-const TileDescriptor* AltitudeMap::getTileDescriptor(float x, float y) const
-{
-    for (uint16_t i = 0; i < header->numTilesX * header->numTilesY; i++)
+    if (header->whoAmI != 0x42)
     {
-        const TileDescriptor* tile = &tiles[i];
-
-        float bottomRightX =
-            tile->topleftX + tile->stepX * (tile->numPointsX - 1);
-        float bottomRightY =
-            tile->topleftY + tile->stepY * (tile->numPointsY - 1);
-
-        if ((x >= tile->topleftX && x <= bottomRightX) &&
-            (y <= tile->topleftY && y >= bottomRightY))
-            return tile;
+        LOG_ERR(logger, "WhoAmI mismatch: expected 0x42, got 0x%02X",
+                header->whoAmI);
+        return false;
     }
-    return nullptr;
+
+    xMin = header->topleftX;
+    yMax = header->topleftY;
+    xMax = header->topleftX + header->stepX * (header->numPointsX - 1);
+    yMin = header->topleftY - header->stepY * (header->numPointsY - 1);
+
+    isInitialized = true;
+
+    return true;
 }
 
-float AltitudeMap::getGroundAltitude(float x, float y) const
+bool AltitudeMap::isInsideMap(float x, float y)
 {
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return false;
+    }
+
+    return ((x > xMin && x < xMax) && (y > yMin && y < yMax));
+}
+
+float AltitudeMap::getGroundAltitude(float x, float y)
+{
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return NAN;
+    }
+
     if (!isInsideMap(x, y))
+    {
+        LOG_ERR(logger, "Point (%f, %f) is outside the altitude map!", x, y);
         return NAN;
+    }
 
-    const TileDescriptor* tile = getTileDescriptor(x, y);
+    uint16_t indexX = static_cast<uint16_t>(std::round(x / header->stepX));
+    uint16_t indexY = static_cast<uint16_t>(std::round(y / header->stepY));
 
-    if (tile == nullptr)
-        return NAN;
+    if (indexX >= header->numPointsX)
+        indexX = header->numPointsX - 1;
+    if (indexY >= header->numPointsY)
+        indexY = header->numPointsY - 1;
 
-    float localX = x - tile->topleftX;
-    float localY = y - tile->topleftY;
+    uint16_t altitudeIndex = indexY * header->numPointsX + indexX;
 
-    uint16_t indexX = static_cast<uint16_t>(std::round(localX / tile->stepX));
-    uint16_t indexY = static_cast<uint16_t>(std::round(localX / tile->stepX));
+    uint8_t compressedAltitude = *(startAddress + altitudeIndex);
 
-    if (indexX >= tile->numPointsX)
-        indexX = tile->numPointsX - 1;
-    if (indexY >= tile->numPointsY)
-        indexY = tile->numPointsY - 1;
-
-    uint16_t altitudeIndex = indexY * tile->numPointsX + indexX;
-
-    uint8_t compressedAltitude =
-        *(startAddress + tile->dataOffset + altitudeIndex);
-
-    float groundAltitude = tile->tileMinAltitude +
+    float groundAltitude = header->minAltitude +
                            (static_cast<float>(compressedAltitude) / 255.0f) *
-                               (tile->tileMaxAltitude - tile->tileMinAltitude);
+                               (header->maxAltitude - header->minAltitude);
 
     return groundAltitude;
 }

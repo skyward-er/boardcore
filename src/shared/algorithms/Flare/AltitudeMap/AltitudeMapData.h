@@ -30,33 +30,21 @@ namespace Boardcore
 
 struct MapHeader
 {
-    uint16_t numTilesX;
-    uint16_t numTilesY;
-
-    float xMin;
-    float xMax;
-    float yMin;
-    float yMax;
-};
-
-struct TileDescriptor
-{
     float topleftX;
     float topleftY;
+
+    float maxAltitude;
+    float minAltitude;
 
     float stepX;
     float stepY;
 
-    float tileMinAltitude;
-    float tileMaxAltitude;
-
     uint16_t numPointsX;
     uint16_t numPointsY;
 
-    uint32_t dataOffset;  // Offset from the file's startAddress to the tile's
-                          // altitude data
+    uint8_t whoAmI = 0x42;
 };
 
-#pragma pack(pop)  // Restore default packing
+#pragma pack(pop)  // restore default packing
 
 }  // namespace Boardcore

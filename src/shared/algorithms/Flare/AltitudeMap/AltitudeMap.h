@@ -39,19 +39,26 @@ class AltitudeMap
 public:
     AltitudeMap(const uint8_t* startAddress);
 
-    bool isInsideMap(float x, float y) const;
+    bool init();
 
-    float getGroundAltitude(float x, float y) const;
+    bool isInsideMap(float x, float y);
+
+    float getGroundAltitude(float x, float y);
 
 private:
     const uint8_t* startAddress;
     const MapHeader* header;
-    const TileDescriptor* tiles;
 
-    const TileDescriptor* getTileDescriptor(float x, float y) const;
+    bool isInitialized = false;
 
-    // PrintLogger logger = Logging::getLogger("AltitudeMap");
+    int xMin;
+    int xMax;
+    int yMin;
+    int yMax;
 
+    int getTileIndex(float x, float y) const;
+
+    PrintLogger logger = Logging::getLogger("AltitudeMap");
     miosix::FastMutex altitudeMapMutex;
 };
 }  // namespace Boardcore
