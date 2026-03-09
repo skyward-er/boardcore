@@ -36,6 +36,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/Servo.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
+    ${BOARDCORE_PATH}/src/shared/actuators/Valve/Valve.cpp
 
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
@@ -152,6 +153,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/Registry/RegistrySerializer.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Registry/Backend/FileBackend.cpp
     ${BOARDCORE_PATH}/src/shared/utils/DependencyManager/DependencyManager.cpp
+    
 )
 
 # Creates the Skyward::Boardcore::${BOARD_NAME} library

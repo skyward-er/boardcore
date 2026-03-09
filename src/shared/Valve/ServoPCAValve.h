@@ -31,8 +31,10 @@ class ServoPCAValve : public Valve
 {
 public:
     ServoPCAValve(const ValveConfig& config, Boardcore::PCA9685& pca,
-                  Boardcore::PCA9685Utils::Channel channel)
-        : Valve(config), pca(pca), channel(channel)
+                  Boardcore::PCA9685Utils::Channel channel, float minPulse,
+                  float maxPulse)
+        : Valve(config), pca(pca), channel(channel), minPulse(minPulse),
+          maxPulse(maxPulse)
     {
     }
     /**
@@ -47,14 +49,18 @@ public:
      */
     bool setPosition(float position) override
     {
+        // Clamp the position to the [0, 1] range
+        position = std::min(1.0f, std::max(0.0f, position));
+
         position *= config.limit;
 
         if (config.flipped)
             position = 1.0f - position;
 
         lastPosition = position;
-        if (!pca.setDutyCycle(channel, position))
-            return pca.setDutyCycle(channel, position);
+
+        if (!pca.setPWM(channel, minPulse, maxPulse * position))
+            return pca.setPWM(channel, minPulse, maxPulse * position);
         return true;
     };
 
@@ -105,6 +111,8 @@ public:
 private:
     Boardcore::PCA9685& pca;
     Boardcore::PCA9685Utils::Channel channel;
+    float minPulse;
+    float maxPulse;
     float lastPosition                       = 0.0f;
     static const float SERVO_BACKSTEP_AMOUNT = 0.02f;
 };
