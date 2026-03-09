@@ -24,15 +24,37 @@
 
 #include <drivers/dma/DMA.h>
 
+#include <chrono>
+
 #include "SPIBus.h"
 
 namespace Boardcore
 {
+
+/**
+ * @brief DMA-enabled driver for the STM32 low level SPI peripheral.
+ *
+ * This is a DMA-enabled version of SPIBus. It uses the provided DMA streams to
+ * perform transfers when the transfer size is above a certain given threshold,
+ * while it falls back to the CPU for transfer sizes below the threshold.
+ *
+ * Supported features are the same as SPIBus, see its documentation for details.
+ */
 class SPIBusDMA : public SPIBus
 {
 public:
+    /**
+     * @brief Construct a new SPIBusDMA object.
+     *
+     * @param spi SPI peripheral to use.
+     * @param txStream DMA stream to use for SPI transmissions, must be valid
+     * @param rxStream DMA stream to use for SPI receptions, must be valid
+     * @param maxCpuTime Maximum CPU time allowed for a transfer above which the
+     * driver should use DMA. A value of 0 always uses DMA.
+     */
     SPIBusDMA(SPI_TypeDef* spi, DMAStreamGuard&& txStream,
-              DMAStreamGuard&& rxStream);
+              DMAStreamGuard&& rxStream,
+              std::chrono::microseconds maxCpuTime = DEFAULT_MAX_CPU_TIME);
 
     ///< Delete copy/move contructors/operators.
     SPIBusDMA(const SPIBusDMA&)            = delete;
@@ -55,6 +77,11 @@ private:
                                        const void* source, void* destination,
                                        uint16_t size, bool sourceIncrement,
                                        bool destinationIncrement);
+
+    // Default max CPU time set to ~2x DMA overhead
+    static constexpr auto DEFAULT_MAX_CPU_TIME = std::chrono::microseconds(20);
+
+    size_t dmaThreshold;  ///< Threshold used to decide when to use DMA
 
     DMAStreamGuard txStream;
     DMAStreamGuard rxStream;
