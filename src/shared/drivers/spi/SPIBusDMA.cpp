@@ -96,10 +96,10 @@ void SPIBusDMA::transfer(const uint8_t* txData, uint8_t* rxData, size_t size)
     txStream->enable();
     SPI::Enable(spi);  // <-- Transfer starts here
 
-    rxStream->timedWaitForTransferComplete(std::chrono::milliseconds(1));
+    rxStream->timedWaitForTransferComplete(std::chrono::milliseconds(100));
 
-    // DMA completion doesn't guarantee that the SPI peripheral is done
-    // TODO: wait with timeout
+    // RX DMA completion should guarantee that the SPI peripheral is done
+    // Check the peripheral anyway to avoid interrupting transactions
     SPI::WaitNotBusy(spi);
 
     // Disable the dma streams
