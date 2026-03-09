@@ -1,5 +1,5 @@
 /* Copyright (c) 2025 Skyward Experimental Rocketry
- * Author: Fabrizio Monti
+ * Authors: Fabrizio Monti, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,8 @@
 #pragma once
 
 #include <interfaces/arch_registers.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <map>
 
 namespace Boardcore
@@ -50,30 +50,13 @@ namespace DMADefs
 enum class DMAStreamId : uint8_t
 {
     /**
-     * Here are defined the selectable streams.
-     *
-     * The problem is that some of these stream are used
-     * by miosix. The corresponding IRQHandlers are already defined
-     * in there, causing conflicts.
-     * Moreover, the used streams might differ from different boards.
-     * That's why some streams are available only for a particular
-     * board.
+     * Some of these streams might not be available because of Miosix on some
+     * boards. Always check the mappings before using a stream.
      */
-
     DMA1_Str0 = 0,
-
-#if !defined(STM32F407xx) && !defined(STM32F767xx)
-    // This stream is used by miosix for STM32F407xx and STM32F767xx boards
     DMA1_Str1 = 1,
-#endif  // STM32F407xx & STM32F767xx
-
     DMA1_Str2 = 2,
-
-#if !defined(STM32F407xx) && !defined(STM32F767xx)
-    // This stream is used by miosix for STM32F407xx and STM32F767xx boards
     DMA1_Str3 = 3,
-#endif  // STM32F407xx & STM32F767xx
-
     DMA1_Str4 = 4,
     DMA1_Str5 = 5,
     DMA1_Str6 = 6,
@@ -81,23 +64,36 @@ enum class DMAStreamId : uint8_t
     DMA2_Str0 = 8,
     DMA2_Str1 = 9,
     DMA2_Str2 = 10,
-    // DMA2_Str3 = 11, // Always used by miosix on currently supported boards
+    DMA2_Str3 = 11,
     DMA2_Str4 = 12,
-
-#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
-    // This stream is used by miosix for STM32F767xx,
-    // STM32F429xx and STM32F205xx boards
     DMA2_Str5 = 13,
-#endif  // STM32F767xx & STM32F429xx & STM32F205xx
-
     DMA2_Str6 = 14,
-
-#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
-    // This stream is used by miosix for STM32F767xx,
-    // STM32F429xx and STM32F205xx boards
     DMA2_Str7 = 15,
-#endif  // STM32F767xx & STM32F429xx & STM32F205xx
 };
+
+inline const char* to_string(DMAStreamId s)
+{
+    switch (s)
+    {  // clang-format off
+        case DMAStreamId::DMA1_Str0: return "DMA1_Stream0";
+        case DMAStreamId::DMA1_Str1: return "DMA1_Stream1";
+        case DMAStreamId::DMA1_Str2: return "DMA1_Stream2";
+        case DMAStreamId::DMA1_Str3: return "DMA1_Stream3";
+        case DMAStreamId::DMA1_Str4: return "DMA1_Stream4";
+        case DMAStreamId::DMA1_Str5: return "DMA1_Stream5";
+        case DMAStreamId::DMA1_Str6: return "DMA1_Stream6";
+        case DMAStreamId::DMA1_Str7: return "DMA1_Stream7";
+        case DMAStreamId::DMA2_Str0: return "DMA2_Stream0";
+        case DMAStreamId::DMA2_Str1: return "DMA2_Stream1";
+        case DMAStreamId::DMA2_Str2: return "DMA2_Stream2";
+        case DMAStreamId::DMA2_Str3: return "DMA2_Stream3";
+        case DMAStreamId::DMA2_Str4: return "DMA2_Stream4";
+        case DMAStreamId::DMA2_Str5: return "DMA2_Stream5";
+        case DMAStreamId::DMA2_Str6: return "DMA2_Stream6";
+        case DMAStreamId::DMA2_Str7: return "DMA2_Stream7";
+        default: return "Unknown";
+    }  // clang-format on
+}
 
 /**
  * @brief Channels selectable for each dma stream.
@@ -122,6 +118,28 @@ enum class Channel : uint32_t
     CHANNEL11 = DMA_SxCR_CHSEL_3 | DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0,
 #endif  // STM32F767xx
 };
+
+inline const char* to_string(Channel c)
+{
+    switch (c)
+    {  // clang-format off
+        case Channel::CHANNEL0: return "Channel 0";
+        case Channel::CHANNEL1: return "Channel 1";
+        case Channel::CHANNEL2: return "Channel 2";
+        case Channel::CHANNEL3: return "Channel 3";
+        case Channel::CHANNEL4: return "Channel 4";
+        case Channel::CHANNEL5: return "Channel 5";
+        case Channel::CHANNEL6: return "Channel 6";
+        case Channel::CHANNEL7: return "Channel 7";
+#ifdef STM32F767xx
+        case Channel::CHANNEL8: return "Channel 8";
+        case Channel::CHANNEL9: return "Channel 9";
+        case Channel::CHANNEL10: return "Channel 10";
+        case Channel::CHANNEL11: return "Channel 11";
+#endif  // STM32F767xx
+        default: return "Unknown";
+    }  // clang-format on
+}
 
 /**
  * @brief All the peripherals connected to dma.
@@ -234,12 +252,37 @@ enum class Peripherals : uint8_t
     PE_JPEG_OUT,
 };
 
+inline const char* to_string(Peripherals p)
+{
+    switch (p)
+    {  // clang-format off
+        case Peripherals::PE_MEM_ONLY: return "MEM_ONLY";
+        case Peripherals::PE_SPI1_TX: return "SPI1_TX";
+        case Peripherals::PE_SPI1_RX: return "SPI1_RX";
+        case Peripherals::PE_SPI2_TX: return "SPI2_TX";
+        case Peripherals::PE_SPI2_RX: return "SPI2_RX";
+        case Peripherals::PE_SPI3_TX: return "SPI3_TX";
+        case Peripherals::PE_SPI3_RX: return "SPI3_RX";
+        case Peripherals::PE_SPI4_TX: return "SPI4_TX";
+        case Peripherals::PE_SPI4_RX: return "SPI4_RX";
+        case Peripherals::PE_SPI5_TX: return "SPI5_TX";
+        case Peripherals::PE_SPI5_RX: return "SPI5_RX";
+        case Peripherals::PE_SPI6_TX: return "SPI6_TX";
+        case Peripherals::PE_SPI6_RX: return "SPI6_RX";
+        // ... add other peripherals as needed
+        default: return "Unknown";
+    }  // clang-format on
+}
+
 /**
  * @brief Mapping between `DMAStreamId` and the corresponding irq number.
  * This is needed because irq number values are not contiguous and they are
  * architecture dependent.
  */
 extern const IRQn_Type irqNumberMapping[];
+
+using DMAStreamPeripheralMappings =
+    std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>;
 
 /**
  * @brief Maps the peripherals to the dma streams (and
@@ -249,8 +292,7 @@ extern const IRQn_Type irqNumberMapping[];
  * specific, and can be found inside the "board_mappings"
  * folder.
  */
-extern const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
-    mapPeripherals;
+extern const DMAStreamPeripheralMappings mapPeripherals;
 
 }  // namespace DMADefs
 
