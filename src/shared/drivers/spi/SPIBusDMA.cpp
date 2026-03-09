@@ -25,9 +25,16 @@
 namespace Boardcore
 {
 SPIBusDMA::SPIBusDMA(SPI_TypeDef* spi, DMAStreamGuard&& txStream,
-                     DMAStreamGuard&& rxStream)
+                     DMAStreamGuard&& rxStream,
+                     std::chrono::microseconds maxCpuTime)
     : SPIBus(spi), txStream(std::move(txStream)), rxStream(std::move(rxStream))
 {
+    // Compute the dma threshold based on the current APB bus clock speed
+    auto apb           = ClockUtils::getPeripheralBus(spi);
+    uint32_t apbClock  = ClockUtils::getAPBPeripheralsClock(apb);
+    uint32_t byteSpeed = apbClock / 8;
+
+    dmaThreshold = maxCpuTime.count() * byteSpeed / 1000000;
 }
 
 void SPIBusDMA::configure(const SPIBusConfig& newConfig)
@@ -117,9 +124,6 @@ bool SPIBusDMA::shouldUseDMA(size_t size)
     // the clock divider (size * divider). This is used in heuristic evaluation
     // of whether using DMA is worth it or not for a transfer of a given size at
     // the current clock divider.
-    // NOTE: APB1/2 frequencies are not taken into account, therefore the
-    // workload metric is a best-effort, fast-to-compute approximation of the
-    // actual transfer time.
 
     // config.clockDivider uses the STM32 register bit-pattern (0, 8, 16... 56)
     // Every increment of 8 in the pattern represents a doubling of the divider
@@ -137,23 +141,7 @@ bool SPIBusDMA::shouldUseDMA(size_t size)
     // (size * 2^shift), which is (size * divider)
     size_t workload = size << shift;
 
-    // For transfers with a workload value smaller than this threshold, the
-    // fixed DMA overhead is higher than the time it would take to perform the
-    // transfer with the CPU.
-    //
-    // NOTE: This threshold value does not take into account APB1/2 frequencies!
-    // It might cause different performance based on the used SPI bus. It is
-    // a best-effort approximation that works well for our general use cases,
-    // but it might need to be further tuned if max performance is required.
-    //
-    // e.g. On STM32F7xx chips, SPI2/3 are on APB1 (max 54MHz) while SPI1..6 are
-    // on APB2 (max 108MHz). Since the peripheral bus clocks are different, the
-    // same divider will result in different SPI clock frequencies.
-    constexpr size_t DMA_WORKLOAD_THRESHOLD = 256;
-
-    // We only use DMA if the time saved (workload) is greater than the
-    // fixed cost of the DMA setup and the context switch overhead.
-    return workload >= DMA_WORKLOAD_THRESHOLD;
+    return workload >= dmaThreshold;
 }
 
 DMATransaction SPIBusDMA::makeDMASetup(DMATransaction::Direction dir,
