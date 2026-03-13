@@ -83,6 +83,8 @@ public:
      */
     Activation getOutput();
 
+    float getCurrentTarget() { return target; }
+
 protected:
     float state  = 0.0f;
     float target = 0.0f;
