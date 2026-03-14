@@ -20,11 +20,26 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
+#include <cstdint>
+
 namespace Boardcore
 {
-namespace PCA9685Utils
+namespace PCA9685Defs
 {
+enum class Error : uint8_t
+{
+    NO_ERROR = 0,
+    ALREADY_INIT,
+    BUS_FAULT,  // The I2C bus failed
+    INVALID_ARGS
+};
+
+enum class OutputType : uint8_t
+{
+    OPEN_DRAIN,
+    TOTEM_POLE
+};
+
 enum class Channel : uint8_t
 {
     CHANNEL_0  = 0,
@@ -44,5 +59,33 @@ enum class Channel : uint8_t
     CHANNEL_14 = 14,
     CHANNEL_15 = 15
 };
-}
+
+enum Register : uint8_t
+{
+    MODE1         = 0x00,
+    MODE2         = 0x01,
+    PRE_SCALE     = 0xFE,
+    ALLCALLADR    = 0xE0,
+    CHANNEL_BASE  = 0x06,  // Base address for channel 0
+    ALL_LED_ON_L  = 0xFA,
+    ALL_LED_ON_H  = 0xFB,
+    ALL_LED_OFF_L = 0xFC,
+    ALL_LED_OFF_H = 0xFD
+};
+
+enum Mode1BitMask : uint8_t
+{
+    RESTART = 0x80,  // Not used in this driver
+    EXTCLK  = 0x40,
+    AI      = 0x20,
+    SLEEP   = 0x10,
+    ALLCALL = 0x01
+};
+
+enum Mode2BitMask : uint8_t
+{
+    TOTEM_POLE = 0x04,
+    INVERT     = 0x10
+};
+}  // namespace PCA9685Defs
 }  // namespace Boardcore
