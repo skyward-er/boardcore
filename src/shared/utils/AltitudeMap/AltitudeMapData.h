@@ -47,6 +47,8 @@ struct MapHeader
 
 #pragma pack(pop)  // restore default packing
 
+// Coordinates are stored as meters from the target landing point, with the target landing point being roughly at (0, 0).
+
 struct MapBoundaries
 {
     float xMax;
