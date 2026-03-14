@@ -71,4 +71,7 @@ float Valve::getDefaultMaxAperture() const
 {
     return config.defaultMaxAperture;
 };
+
+void Valve::enable() {}
+
 }  // namespace Boardcore

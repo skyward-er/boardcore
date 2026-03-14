@@ -20,14 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "PCA9685.h"
-
 #include <miosix.h>
 #include <utils/Debug.h>
 
 #include <bitset>
 #include <iostream>
 
+#include "drivers/PCA9685/PCA9685.h"
 #include "drivers/i2c/I2CDriver.h"
 
 // Based on the board schematics, the following pins are used for SPI
@@ -63,16 +62,20 @@ int main()
 
         return 1;
     }
+
+    std::cout << "PCA9685 Controller initialized successfully" << std::endl;
     while (true)
     {
-        if (!pca9685.setAllDutyCycle(20))
+        if (!pca9685.setAllDutyCycle(0.20f))
         {
-            std::cout << "Error setting the Duty Cycle a 0" << std::endl;
+            std::cout << "Error setting the Duty Cycle to 20" << std::endl;
             std::cout << "Last error code: "
                       << static_cast<int>(pca9685.getLastError()) << std::endl;
 
             return 1;
         }
+
+        std::cout << "Set all channels to 20% duty cycle" << std::endl;
 
         // if (!pca9685.setPWM(Boardcore::PCA9685::Channels::CHANNEL_5, 0, 500))
         // {

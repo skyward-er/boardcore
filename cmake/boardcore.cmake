@@ -36,7 +36,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/Servo.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
-    ${BOARDCORE_PATH}/src/shared/actuators/Valve/Valve.cpp
+    ${BOARDCORE_PATH}/src/shared/Valve/Valve.cpp
 
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
@@ -72,6 +72,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f4.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f7.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2C.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/PCA9685/PCA9685.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/WIZ5500/WIZ5500.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/DipSwitch/DipSwitch.cpp
 

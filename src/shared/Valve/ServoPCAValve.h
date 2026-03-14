@@ -30,7 +30,8 @@ namespace Boardcore
 class ServoPCAValve : public Valve
 {
 public:
-    ServoPCAValve(const ValveConfig& config, Boardcore::PCA9685& pca,
+    ServoPCAValve(const ValveConfig& config,
+                  std::shared_ptr<Boardcore::PCA9685> pca,
                   Boardcore::PCA9685Utils::Channel channel, float minPulse,
                   float maxPulse)
         : Valve(config), pca(pca), channel(channel), minPulse(minPulse),
@@ -59,8 +60,12 @@ public:
 
         lastPosition = position;
 
-        if (!pca.setPWM(channel, minPulse, maxPulse * position))
-            return pca.setPWM(channel, minPulse, maxPulse * position);
+        /* if (!pca.setPWM(channel, static_cast<uint16_t>(minPulse),
+                        static_cast<uint16_t>(maxPulse * position)))
+            return pca.setPWM(channel, static_cast<uint16_t>(minPulse),
+                              static_cast<uint16_t>(maxPulse * position)); */
+        if (!pca->setDutyCycle(channel, position))
+            return pca->setDutyCycle(channel, position);
         return true;
     };
 
@@ -109,11 +114,11 @@ public:
     }
 
 private:
-    Boardcore::PCA9685& pca;
+    std::shared_ptr<Boardcore::PCA9685> pca;
     Boardcore::PCA9685Utils::Channel channel;
     float minPulse;
     float maxPulse;
-    float lastPosition                       = 0.0f;
-    static const float SERVO_BACKSTEP_AMOUNT = 0.02f;
+    float lastPosition                           = 0.0f;
+    static constexpr float SERVO_BACKSTEP_AMOUNT = 0.02f;
 };
 }  // namespace Boardcore

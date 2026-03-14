@@ -302,9 +302,9 @@ void IRQbspInit()
     interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
     interfaces::i2c1::sda::alternateFunction(4);
-    interfaces::i2c1::sda::mode(Mode::ALTERNATE);
+    interfaces::i2c1::sda::mode(Mode::ALTERNATE_OD);
     interfaces::i2c1::scl::alternateFunction(4);
-    interfaces::i2c1::scl::mode(Mode::ALTERNATE);
+    interfaces::i2c1::scl::mode(Mode::ALTERNATE_OD);
 
     // We do not need to setup the miosix usart
 

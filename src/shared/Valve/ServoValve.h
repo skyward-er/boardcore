@@ -116,6 +116,6 @@ public:
 
 private:
     std::unique_ptr<Boardcore::Servo> servo;
-    static const float SERVO_BACKSTEP_AMOUNT = 0.02f;
+    static constexpr float SERVO_BACKSTEP_AMOUNT = 0.02f;
 };
 }  // namespace Boardcore
