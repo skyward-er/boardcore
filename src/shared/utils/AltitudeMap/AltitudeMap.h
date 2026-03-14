@@ -37,7 +37,7 @@ namespace Boardcore
 class AltitudeMap
 {
 public:
-    AltitudeMap(const uint8_t* startAddress);
+    AltitudeMap(const unsigned char* startAddress);
 
     bool init();
 
@@ -46,17 +46,15 @@ public:
     float getGroundAltitude(float x, float y);
 
 private:
-    const uint8_t* startAddress;
+    const unsigned char* startAddress;
     const MapHeader* header;
 
     bool isInitialized = false;
 
-    int xMin;
-    int xMax;
-    int yMin;
-    int yMax;
-
-    int getTileIndex(float x, float y) const;
+    float xMin;
+    float xMax;
+    float yMin;
+    float yMax;
 
     PrintLogger logger = Logging::getLogger("AltitudeMap");
     miosix::FastMutex altitudeMapMutex;
