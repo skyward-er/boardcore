@@ -50,7 +50,7 @@ struct EnergyScanData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(EnergyScanData,
-                          FIELD_DEF(timestamp) FIELD_DEF(channelData));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(channelData));
     }
 };
 

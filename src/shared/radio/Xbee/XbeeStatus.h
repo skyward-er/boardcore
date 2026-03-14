@@ -53,7 +53,7 @@ struct XbeeStatus
     {
         return STRUCT_DEF(
             XbeeStatus,
-            FIELD_DEF(timestamp) FIELD_DEF(lastTxStatusError) FIELD_DEF(
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(lastTxStatusError) FIELD_DEF(
                 lastTxStatus) FIELD_DEF2(timeToSendStats, minValue)
                 FIELD_DEF2(timeToSendStats, maxValue) FIELD_DEF2(
                     timeToSendStats, mean) FIELD_DEF2(timeToSendStats, stdDev)

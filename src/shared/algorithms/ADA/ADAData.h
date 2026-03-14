@@ -41,8 +41,8 @@ struct ADAState
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ADAState,
-                          FIELD_DEF(timestamp) FIELD_DEF(mslAltitude)
-                              FIELD_DEF(aglAltitude) FIELD_DEF(verticalSpeed)
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(mslAltitude, meters)
+                              FIELD_DEF_WITH_UNIT(aglAltitude, meters) FIELD_DEF_WITH_UNIT(verticalSpeed, m/s)
                                   FIELD_DEF(x0) FIELD_DEF(x1) FIELD_DEF(x2));
     }
 };

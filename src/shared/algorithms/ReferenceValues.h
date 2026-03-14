@@ -80,10 +80,10 @@ struct ReferenceValues
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ReferenceValues,
-                          FIELD_DEF(refAltitude) FIELD_DEF(refPressure)
-                              FIELD_DEF(refTemperature) FIELD_DEF(refLatitude)
-                                  FIELD_DEF(refLongitude) FIELD_DEF(mslPressure)
-                                      FIELD_DEF(mslTemperature));
+                          FIELD_DEF_WITH_UNIT(refAltitude, meters) FIELD_DEF_WITH_UNIT(refPressure, Pascal)
+                              FIELD_DEF_WITH_UNIT(refTemperature, Celsius) FIELD_DEF_WITH_UNIT(refLatitude, degrees)
+                                  FIELD_DEF_WITH_UNIT(refLongitude, degrees) FIELD_DEF_WITH_UNIT(mslPressure, Pascal)
+                                      FIELD_DEF_WITH_UNIT(mslTemperature, Celsius));
     }
 };
 

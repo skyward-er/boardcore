@@ -56,7 +56,7 @@ struct MavlinkStatus
     {
         return STRUCT_DEF(
             MavlinkStatus,
-            FIELD_DEF(timestamp) FIELD_DEF(nSendQueue) FIELD_DEF(maxSendQueue)
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(nSendQueue) FIELD_DEF(maxSendQueue)
                 FIELD_DEF(nSendErrors) FIELD_DEF(nDroppedPackets) FIELD_DEF2(
                     mavStats, msg_received) FIELD_DEF2(mavStats, buffer_overrun)
                     FIELD_DEF2(mavStats, parse_error) FIELD_DEF2(

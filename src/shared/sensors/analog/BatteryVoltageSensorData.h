@@ -39,7 +39,7 @@ struct BatteryVoltageSensorData : public ADCData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(BatteryVoltageSensorData,
-                          EXTEND_DEF(ADCData) FIELD_DEF(batVoltage));
+                          EXTEND_DEF(ADCData) FIELD_DEF_WITH_UNIT(batVoltage, V));
     }
 };
 

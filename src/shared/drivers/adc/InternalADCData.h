@@ -41,8 +41,8 @@ struct InternalADCData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(InternalADCData,
-                          FIELD_DEF(timestamp) FIELD_DEF(voltage)
-                              FIELD_DEF(temperature) FIELD_DEF(vBat));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(voltage, V)
+                              FIELD_DEF_WITH_UNIT(temperature, Celsius) FIELD_DEF(vBat));
     }
 };
 

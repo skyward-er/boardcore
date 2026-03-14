@@ -149,7 +149,7 @@ struct DeviceStatus
     static constexpr auto reflect()
     {
         return STRUCT_DEF(DeviceStatus,
-                          FIELD_DEF(timestamp) FIELD_DEF(logNumber)
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(logNumber)
                               FIELD_DEF(state) FIELD_DEF(armed) FIELD_DEF(hil)
                                   FIELD_DEF(logGood));
     }
@@ -176,7 +176,7 @@ struct ServoCommand
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ServoCommand,
-                          FIELD_DEF(timestamp) FIELD_DEF(openingTime));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(openingTime));
     }
 };
 
@@ -201,7 +201,7 @@ struct ServoFeedback
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ServoFeedback, FIELD_DEF(timestamp) FIELD_DEF(
+        return STRUCT_DEF(ServoFeedback, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(
                                              aperture) FIELD_DEF(open));
     }
 };
@@ -228,7 +228,7 @@ struct CanEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(CanEvent, FIELD_DEF(timestamp) FIELD_DEF(source)
+        return STRUCT_DEF(CanEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(source)
                                         FIELD_DEF(target) FIELD_DEF(event));
     }
 };

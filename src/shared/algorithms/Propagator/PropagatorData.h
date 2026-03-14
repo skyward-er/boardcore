@@ -58,7 +58,7 @@ struct PropagatorState
     {
         return STRUCT_DEF(
             PropagatorState,
-            FIELD_DEF(timestamp) FIELD_DEF(nPropagations) FIELD_DEF2(nas, n)
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(nPropagations) FIELD_DEF2(nas, n)
                 FIELD_DEF2(nas, e) FIELD_DEF2(nas, d) FIELD_DEF2(nas, vn)
                     FIELD_DEF2(nas, ve) FIELD_DEF2(nas, vd) FIELD_DEF2(nas, qx)
                         FIELD_DEF2(nas, qy) FIELD_DEF2(nas, qz) FIELD_DEF2(

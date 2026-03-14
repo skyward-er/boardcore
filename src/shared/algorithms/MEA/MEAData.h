@@ -45,9 +45,9 @@ struct MEAState
     static constexpr auto reflect()
     {
         return STRUCT_DEF(
-            MEAState, FIELD_DEF(timestamp) FIELD_DEF(estimatedPressure)
-                          FIELD_DEF(estimatedMass) FIELD_DEF(estimatedApogee)
-                              FIELD_DEF(estimatedForce) FIELD_DEF(x0)
+            MEAState, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(estimatedPressure, Pascal)
+                          FIELD_DEF_WITH_UNIT(estimatedMass, kg) FIELD_DEF_WITH_UNIT(estimatedApogee, meters)
+                              FIELD_DEF_WITH_UNIT(estimatedForce, N) FIELD_DEF(x0)
                                   FIELD_DEF(x1) FIELD_DEF(x2));
     }
 };

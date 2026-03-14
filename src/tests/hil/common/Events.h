@@ -245,7 +245,7 @@ struct LiftoffEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(LiftoffEvent, FIELD_DEF(timestamp));
+        return STRUCT_DEF(LiftoffEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 
@@ -255,7 +255,7 @@ struct ApogeeEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ApogeeEvent, FIELD_DEF(timestamp));
+        return STRUCT_DEF(ApogeeEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 
@@ -265,7 +265,7 @@ struct NoseconeEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(NoseconeEvent, FIELD_DEF(timestamp));
+        return STRUCT_DEF(NoseconeEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 
@@ -275,7 +275,7 @@ struct ExpulsionEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ExpulsionEvent, FIELD_DEF(timestamp));
+        return STRUCT_DEF(ExpulsionEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 
@@ -285,7 +285,7 @@ struct MainEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(MainEvent, FIELD_DEF(timestamp));
+        return STRUCT_DEF(MainEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 
@@ -295,7 +295,7 @@ struct LandingEvent
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(LandingEvent, FIELD_DEF(timestamp));
+        return STRUCT_DEF(LandingEvent, FIELD_DEF_WITH_UNIT(timestamp, microseconds));
     }
 };
 

@@ -292,10 +292,10 @@ struct GPSData
     {
         return STRUCT_DEF(
             GPSData,
-            FIELD_DEF(gpsTimestamp) FIELD_DEF(latitude) FIELD_DEF(longitude)
-                FIELD_DEF(height) FIELD_DEF(velocityNorth)
-                    FIELD_DEF(velocityEast) FIELD_DEF(velocityDown)
-                        FIELD_DEF(speed) FIELD_DEF(track) FIELD_DEF(positionDOP)
+            FIELD_DEF_WITH_UNIT(gpsTimestamp, microseconds) FIELD_DEF_WITH_UNIT(latitude, degrees) FIELD_DEF_WITH_UNIT(longitude, degrees)
+                FIELD_DEF_WITH_UNIT(height, meters) FIELD_DEF_WITH_UNIT(velocityNorth, m/s)
+                    FIELD_DEF_WITH_UNIT(velocityEast, m/s) FIELD_DEF_WITH_UNIT(velocityDown, m/s)
+                        FIELD_DEF_WITH_UNIT(speed, m/s) FIELD_DEF(track) FIELD_DEF(positionDOP)
                             FIELD_DEF(satellites) FIELD_DEF(fix));
     }
 };
@@ -311,7 +311,7 @@ struct CurrentData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(CurrentData,
-                          FIELD_DEF(currentTimestamp) FIELD_DEF(current));
+                          FIELD_DEF_WITH_UNIT(currentTimestamp, microseconds) FIELD_DEF_WITH_UNIT(current, A));
     }
 };
 

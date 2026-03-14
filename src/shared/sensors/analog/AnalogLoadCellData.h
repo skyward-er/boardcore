@@ -36,7 +36,7 @@ struct AnalogLoadCellData : LoadCellData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(AnalogLoadCellData,
-                          EXTEND_DEF(LoadCellData) FIELD_DEF(voltage));
+                          EXTEND_DEF(LoadCellData) FIELD_DEF_WITH_UNIT(voltage, V));
     }
 };
 

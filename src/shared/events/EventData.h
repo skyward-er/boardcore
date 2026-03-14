@@ -42,7 +42,7 @@ struct EventData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(
-            EventData, FIELD_DEF(timestamp) FIELD_DEF(event) FIELD_DEF(topic));
+            EventData, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(event) FIELD_DEF(topic));
     }
 };
 

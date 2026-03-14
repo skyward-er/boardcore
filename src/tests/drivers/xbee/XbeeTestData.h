@@ -60,7 +60,7 @@ struct XbeeConfig
     static constexpr auto reflect()
     {
         return STRUCT_DEF(XbeeConfig,
-                          FIELD_DEF(timestamp) FIELD_DEF(txEnabled)
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(txEnabled)
                               FIELD_DEF(packetSize) FIELD_DEF(sendInterval)
                                   FIELD_DEF(freqHop) FIELD_DEF(dataRate80k));
     }
@@ -78,7 +78,7 @@ struct TxData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(TxData,
-                          FIELD_DEF(timestamp) FIELD_DEF(packetSize)
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(packetSize)
                               FIELD_DEF(timeSinceLastSend) FIELD_DEF(timeToSend)
                                   FIELD_DEF(txSuccessCounter)
                                       FIELD_DEF(txFailCounter));
@@ -99,7 +99,7 @@ struct RxData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(RxData,
-                          FIELD_DEF(timestamp) FIELD_DEF(pktSize)
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(pktSize)
                               FIELD_DEF(lastPacketTimestamp) FIELD_DEF(RSSI)
                                   FIELD_DEF(rcvCount) FIELD_DEF(packetsLost)
                                       FIELD_DEF(rcvErrors)
@@ -125,7 +125,7 @@ struct EnergyScanData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(EnergyScanData,
-                          FIELD_DEF(timestamp) FIELD_DEF(channelData));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(channelData));
     }
 };
 

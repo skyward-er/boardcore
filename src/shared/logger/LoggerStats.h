@@ -56,7 +56,7 @@ struct LoggerStats
     {
         return STRUCT_DEF(
             LoggerStats,
-            FIELD_DEF(timestamp) FIELD_DEF(logNumber) FIELD_DEF(tooLargeSamples)
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(logNumber) FIELD_DEF(tooLargeSamples)
                 FIELD_DEF(droppedSamples) FIELD_DEF(queuedSamples)
                     FIELD_DEF(queuedMappings) FIELD_DEF(buffersFilled)
                         FIELD_DEF(buffersWritten) FIELD_DEF(writesFailed)

@@ -72,7 +72,7 @@ struct NASState
     static constexpr auto reflect()
     {
         return STRUCT_DEF(NASState,
-                          FIELD_DEF(timestamp) FIELD_DEF(n) FIELD_DEF(e)
+                          FIELD_DEF_WITH_UNIT(timestamp, microsenconds) FIELD_DEF(n) FIELD_DEF(e)
                               FIELD_DEF(d) FIELD_DEF(vn) FIELD_DEF(ve)
                                   FIELD_DEF(vd) FIELD_DEF(qx) FIELD_DEF(qy)
                                       FIELD_DEF(qz) FIELD_DEF(qw) FIELD_DEF(bx)
