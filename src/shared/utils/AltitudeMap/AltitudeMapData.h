@@ -47,4 +47,12 @@ struct MapHeader
 
 #pragma pack(pop)  // restore default packing
 
+struct MapBoundaries
+{
+    float xMax;
+    float xMin;
+    float yMax;
+    float yMin;
+};
+
 }  // namespace Boardcore

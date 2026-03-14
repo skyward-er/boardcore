@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-AltitudeMap::AltitudeMap(const uint8_t* startAddress)
+AltitudeMap::AltitudeMap(const unsigned char* startAddress)
 {
     this->startAddress =
         startAddress;  // Flash memory altitude map start address
@@ -37,6 +37,7 @@ AltitudeMap::AltitudeMap(const uint8_t* startAddress)
 
 bool AltitudeMap::init()
 {
+    printf("WhoAmI: %x\n", header->whoAmI);
     if (header->whoAmI != 0x42)
     {
         LOG_ERR(logger, "WhoAmI mismatch: expected 0x42, got 0x%02X",

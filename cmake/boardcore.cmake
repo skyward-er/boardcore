@@ -45,7 +45,6 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/Flare/AltitudeMap/AltitudeMap.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
 
@@ -153,6 +152,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/Registry/RegistrySerializer.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Registry/Backend/FileBackend.cpp
     ${BOARDCORE_PATH}/src/shared/utils/DependencyManager/DependencyManager.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMap.cpp
 )
 
 # Creates the Skyward::Boardcore::${BOARD_NAME} library
