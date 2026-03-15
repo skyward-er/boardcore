@@ -186,6 +186,15 @@ public:
     }
 
     /**
+ * @brief Returns a pointer to the flattened Q matrix (n*n elements).
+ * Note: Data is stored in Column-Major order by default.
+ */
+    const T* getFlattenedQ() const 
+    { 
+    return Q.data(); 
+    }
+
+    /**
      * @brief Predicts k steps ahead the output.
      */
     const CVectorP predictOutput(uint32_t k) { return H * predictState(k); }
