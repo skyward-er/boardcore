@@ -315,6 +315,10 @@ void IRQbspInit()
 
     sensors::ADS131M08::cs::mode(Mode::OUTPUT);
     sensors::ADS131M08::cs::high();
+    sensors::AS5047D_1::cs::mode(Mode::OUTPUT);
+    sensors::AS5047D_1::cs::high();
+    sensors::AS5047D_2::cs::mode(Mode::OUTPUT);
+    sensors::AS5047D_2::cs::high();
     sensors::LPS22DF::cs::mode(Mode::OUTPUT);
     sensors::LPS22DF::cs::high();
     sensors::LIS2MDL::cs::mode(Mode::OUTPUT);
@@ -334,7 +338,7 @@ void IRQbspInit()
 
     sensors::VN100::cs::mode(Mode::OUTPUT);
     sensors::VN100::cs::high();
-    sensors::VN100::syncIn::mode(Mode::INPUT);
+    // sensors::VN100::syncIn::mode(Mode::INPUT);
     sensors::VN100::syncOut::mode(Mode::OUTPUT);
     sensors::VN100::syncOut::low();
 

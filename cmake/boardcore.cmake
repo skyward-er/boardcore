@@ -34,6 +34,7 @@ set(BOARDCORE_SRC
     # Actuators
     ${BOARDCORE_PATH}/src/shared/actuators/HBridge/HBridge.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/Servo.cpp
+    ${BOARDCORE_PATH}/src/shared/actuators/Servo/ServoWinch.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
 
@@ -47,6 +48,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
 
     # Debug
     ${BOARDCORE_PATH}/src/shared/utils/Debug.cpp
@@ -95,6 +97,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/ADS1118/ADS1118.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ADS131M04/ADS131M04.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ADS131M08/ADS131M08.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/AS5047D/AS5047DSPI.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BME280/BME280.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BME280/BME280I2C.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BMP280/BMP280.cpp

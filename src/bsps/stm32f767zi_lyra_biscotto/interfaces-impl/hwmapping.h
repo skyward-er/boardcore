@@ -173,6 +173,16 @@ namespace UBXGps
 using cs = Gpio<GPIOG_BASE, 7>;
 }
 
+namespace AS5047D_1
+{
+using cs = Gpio<GPIOA_BASE, 15>;
+}
+
+namespace AS5047D_2
+{
+using cs = Gpio<GPIOB_BASE, 7>;
+}
+
 namespace VN100
 {
 using cs      = Gpio<GPIOA_BASE, 15>;

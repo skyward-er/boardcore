@@ -4,6 +4,9 @@
 <a href="https://git.skywarder.eu/avn/swd/skyward-boardcore/-/pipelines"><img src="https://git.skywarder.eu/avn/swd/skyward-boardcore/badges/main/pipeline.svg"></a>
 </div>
 
+
+# THIS BRANCH IS FOR TEMPORARY USE DURING THE PARAFOIL HYDRA TEST IN MARCH 2026 DO NOT USE THIS BRANCH FOR FURTHER DEVELOPMENT
+
 Boardcore is a C++14 rocket software framework targeting custom embedded boards designed by Skyward Experimental Rocketry.
 
 Boardcore runs on top of [Miosix](https://miosix.org/), a lightweight operating system for microcontrollers. It implements a POSIX-like API, the C standard library and the C++ standard library. It also provides a pre-emptive scheduler (among others) and a custom concurrency API with support for Threads and synchronization primitives.

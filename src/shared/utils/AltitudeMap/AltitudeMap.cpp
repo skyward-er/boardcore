@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-AltitudeMap::AltitudeMap(const unsigned char* startAddress)
+AltitudeMap::AltitudeMap(const uint8_t* startAddress)
 {
     this->startAddress =
         startAddress;  // Flash memory altitude map start address
@@ -45,10 +45,10 @@ bool AltitudeMap::init()
         return false;
     }
 
-    xMin = header->topleftX;
-    yMax = header->topleftY;
-    xMax = header->topleftX + header->stepX * (header->numPointsX - 1);
-    yMin = header->topleftY - header->stepY * (header->numPointsY - 1);
+    boundaries.xMin = header->topleftX;
+    boundaries.yMax = header->topleftY;
+    boundaries.xMax = header->topleftX + header->stepX * (header->numPointsX - 1);
+    boundaries.yMin = header->topleftY - header->stepY * (header->numPointsY - 1);
 
     isInitialized = true;
 
@@ -63,7 +63,18 @@ bool AltitudeMap::isInsideMap(float x, float y)
         return false;
     }
 
-    return ((x > xMin && x < xMax) && (y > yMin && y < yMax));
+    return ((x > boundaries.xMin && x < boundaries.xMax) && (y > boundaries.yMin && y < boundaries.yMax));
+}
+
+MapBoundaries AltitudeMap::getMapBoundaries()
+{
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return {NAN, NAN, NAN, NAN};
+    }
+
+    return boundaries;
 }
 
 float AltitudeMap::getGroundAltitude(float x, float y)

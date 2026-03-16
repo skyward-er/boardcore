@@ -31,31 +31,52 @@ namespace Boardcore
 /**
  * @brief Class to retrieve altitude data from flash memory.
  *
- * This class provides methods to retrieve altitude data from flash memory.
+ * This class provides methods to retrieve altitude data from flash memory if provided with a correctly formatted binary file.
  * It is used by the Flare algorithm determine when to activate.
  */
 class AltitudeMap
 {
 public:
-    AltitudeMap(const unsigned char* startAddress);
+    /*
+        @param startAddress: the flash memory address where the altitude map is stored. The altitude map must be stored in a binary file that begins with data structured as MapHeader, followed by a sequence of uint8_t values representing the altitude at each point in the map, stored in row-major order.
+    */
+    AltitudeMap(const uint8_t* startAddress);
 
+    /**
+     * @brief Initialize the altitude map. Sets the map boundaries and checks the validity of the map header.
+     * @return true if initialization was successful, false otherwise.
+     */
     bool init();
 
+    /**
+    * @brief Check if the given coordinates are inside the map boundaries.
+    * @param x: x coordinate in meters from the target landing point. x is positive in the east direction and negative in the west direction.
+    * @param y: y coordinate in meters from the target landing point. y is positive in the north direction and negative in the south direction.
+    */
     bool isInsideMap(float x, float y);
 
+    /**
+     * @brief Get the ground altitude at the given coordinates.
+     * @param x: x coordinate in meters from the target landing point. x is positive in the east direction and negative in the west direction.
+     * @param y: y coordinate in meters from the target landing point. y is positive in the north direction and negative in the south direction.
+     * @return the ground altitude at the given coordinates, or NaN if the coordinates are outside the map boundaries or the map is not initialized.
+     */
     float getGroundAltitude(float x, float y);
 
+
+    /**
+     * @brief Get the map boundaries.
+     * @return the map boundaries as a MapBoundaries struct. The coordinates are in meters from the target landing point, with the target landing point being roughly at (0, 0). x is positive in the east direction and negative in the west direction, y is positive in the north direction and negative in the south direction.
+     */
+    MapBoundaries getMapBoundaries();
+
 private:
-    const unsigned char* startAddress;
+    const uint8_t* startAddress;
     const MapHeader* header;
 
+    MapBoundaries boundaries;
+
     bool isInitialized = false;
-
-    float xMin;
-    float xMax;
-    float yMin;
-    float yMax;
-
     PrintLogger logger = Logging::getLogger("AltitudeMap");
     miosix::FastMutex altitudeMapMutex;
 };

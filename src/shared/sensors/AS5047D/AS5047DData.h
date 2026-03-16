@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2025 Skyward Experimental Rocketry
+ * Author: Raul Radu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,23 @@
 
 #pragma once
 
-#include <cstdint>
-#include <ostream>
+#include <sensors/SensorData.h>
+
 #include <reflect.hpp>
 
 namespace Boardcore
 {
 
-struct ServoData
+struct AS5047DData : TimestampData, AngleData
 {
-    uint64_t timestamp;
-    uint8_t timer;
-    uint8_t channel;
-    float position;
+    AS5047DData() : TimestampData{0}, AngleData{0} {}
+
+    AS5047DData(uint64_t t, float angle) : TimestampData{t}, AngleData{angle} {}
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ServoData,
-                          FIELD_DEF(timestamp) FIELD_DEF(timer)
-                              FIELD_DEF(channel) FIELD_DEF(position));
-    }
-};
-
-struct ServoWinchData
-{
-    uint64_t timestamp;
-    uint8_t timer;
-    uint8_t channel;
-    float velocity;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(ServoWinchData,
-                          FIELD_DEF(timestamp) FIELD_DEF(timer)
-                              FIELD_DEF(channel) FIELD_DEF(velocity));
+        return STRUCT_DEF(AS5047DData,
+                          EXTEND_DEF(TimestampData) EXTEND_DEF(AngleData));
     }
 };
 

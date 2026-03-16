@@ -20,41 +20,53 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-#include <atomic>
+#include "SchmittTrigger.h"
+
+#include <diagnostic/PrintLogger.h>
+#include <logger/Logger.h>
+
+using namespace miosix;
 
 namespace Boardcore
 {
-
-#pragma pack(push, 1)  // Disable padding to match binary layout in flash memory
-
-struct MapHeader
+SchmittTrigger::SchmittTrigger(float thresholdLow, float thresholdHigh)
 {
-    float topleftX;
-    float topleftY;
+    setThresholds(thresholdLow, thresholdHigh);
+}
 
-    float maxAltitude;
-    float minAltitude;
+bool SchmittTrigger::init() { return true; }
 
-    float stepX;
-    float stepY;
-
-    uint16_t numPointsX;
-    uint16_t numPointsY;
-
-    uint8_t whoAmI = 0x42;
-};
-
-#pragma pack(pop)  // restore default packing
-
-// Coordinates are stored as meters from the target landing point, with the target landing point being roughly at (0, 0).
-
-struct MapBoundaries
+void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
 {
-    float xMax;
-    float xMin;
-    float yMax;
-    float yMin;
-};
+    Lock<FastMutex> lock(schmittMutex);
+    this->thresholdLow  = thresholdLow;
+    this->thresholdHigh = thresholdHigh;
+}
+
+void SchmittTrigger::setCurrentState(float state)
+{
+    Lock<FastMutex> lock(schmittMutex);
+    this->state = state;
+}
+
+void SchmittTrigger::setTargetState(float target)
+{
+    Lock<FastMutex> lock(schmittMutex);
+    this->target = target;
+}
+
+SchmittTrigger::Activation SchmittTrigger::getOutput() { return activation; }
+
+void SchmittTrigger::step()
+{
+    Lock<FastMutex> lock(schmittMutex);
+
+    if (state <= target - thresholdLow)
+        activation = Activation::HIGH;
+    else if (state >= target + thresholdHigh)
+        activation = Activation::LOW;
+    else
+        activation = Activation::STOP;
+}
 
 }  // namespace Boardcore
