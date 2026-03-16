@@ -286,6 +286,9 @@ bool PCA9685::setDutyCycle(PCA9685Utils::Channel channel, float dutyCycle)
     else if (dutyCycle > 1.0f)
         dutyCycle = 1.0f;
 
+    if (inverted)
+        dutyCycle = 1.0f - dutyCycle;
+
     uint16_t off = static_cast<uint16_t>(dutyCycle * 4095.0f);
     return setPWM(channel, 0, off);
 }

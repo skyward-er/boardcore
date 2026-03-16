@@ -47,11 +47,11 @@ int main()
     Boardcore::I2C bus(I2C1, sck::getPin(), sda::getPin());
 
     Boardcore::I2CDriver::I2CSlaveConfig PCA9685Config{
-        0b1001100, Boardcore::I2CDriver::Addressing::BIT7,
+        0b1001011, Boardcore::I2CDriver::Addressing::BIT7,
         Boardcore::I2CDriver::Speed::MAX_SPEED};
 
     // Create an instance of the PCA9685 sensor
-    Boardcore::PCA9685 pca9685(bus, PCA9685Config, static_cast<uint8_t>(0x11));
+    Boardcore::PCA9685 pca9685(bus, PCA9685Config, static_cast<uint8_t>(0x12));
 
     // Initialize the sensor
     if (!pca9685.init())
@@ -63,19 +63,23 @@ int main()
         return 1;
     }
 
+    uint16_t off;
     std::cout << "PCA9685 Controller initialized successfully" << std::endl;
     while (true)
     {
-        if (!pca9685.setAllDutyCycle(0.20f))
+        std::cout << "choose an off position: ";
+        std::cin >> off;
+
+        if (!pca9685.setAllPWM(0, off))
         {
-            std::cout << "Error setting the Duty Cycle to 20" << std::endl;
+            std::cout << "Error setting the PWM signal" << std::endl;
             std::cout << "Last error code: "
                       << static_cast<int>(pca9685.getLastError()) << std::endl;
 
             return 1;
         }
 
-        std::cout << "Set all channels to 20% duty cycle" << std::endl;
+        // std::cout << "Set all channels to 20% duty cycle" << std::endl;
 
         // if (!pca9685.setPWM(Boardcore::PCA9685::Channels::CHANNEL_5, 0, 500))
         // {

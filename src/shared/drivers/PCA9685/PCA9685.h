@@ -49,7 +49,7 @@ public:
      * @return true if setting the mode succeeded, false otherwise.
      */
     PCA9685(I2C& i2c, I2CDriver::I2CSlaveConfig i2cConfig,
-            uint8_t prescale               = 0x11,
+            uint8_t prescale               = 0x12,
             PCA9685::OutputType outputType = OutputType::OPEN_DRAIN,
             bool inverted = true, bool externalClock = false);
     ~PCA9685() {};

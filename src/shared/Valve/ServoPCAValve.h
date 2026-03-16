@@ -50,22 +50,17 @@ public:
      */
     bool setPosition(float position) override
     {
-        // Clamp the position to the [0, 1] range
-        position = std::min(1.0f, std::max(0.0f, position));
-
         position *= config.limit;
 
         if (config.flipped)
             position = 1.0f - position;
 
-        lastPosition = position;
+        lastPosition    = position;
+        float dutyCycle = minPulse / 3003.0f +
+                          position * (maxPulse / 3003.0f - minPulse / 3003.0f);
 
-        /* if (!pca.setPWM(channel, static_cast<uint16_t>(minPulse),
-                        static_cast<uint16_t>(maxPulse * position)))
-            return pca.setPWM(channel, static_cast<uint16_t>(minPulse),
-                              static_cast<uint16_t>(maxPulse * position)); */
-        if (!pca->setDutyCycle(channel, position))
-            return pca->setDutyCycle(channel, position);
+        if (!pca->setDutyCycle(channel, dutyCycle))
+            return pca->setDutyCycle(channel, dutyCycle);
         return true;
     };
 
