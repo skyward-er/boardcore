@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2026 Skyward Experimental Rocketry
+ * Author: Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,10 @@
 
 #pragma once
 
+#include <utils/Numeric.h>
+
+#include <type_traits>
+
 #include "SPIBusInterface.h"
 
 namespace Boardcore
@@ -41,11 +45,12 @@ namespace Boardcore
  *
  * {
  *     // Transaction begin:
- *     SPITransaction spi(bus, cs, config); // Configures the bus with the
- *                                          // provided parameters.
+ *     SPITransaction spi(spiSlave); // Configures the bus with the
+ *                                   // slave parameters.
  *
- *     spi.write(REG_EX, 0x56); // writes data to REG_EX
- *     uint8_t reg2 = spi.read(REG_EX_2); // reads from REG_EX_2
+ *     spi.writeRegister(REG_EX, 0x56); // writes data to REG_EX
+ *     uint8_t reg2;
+ *     spi.readRegister(REG_EX_2, reg2); // reads from REG_EX_2 into reg2
  *
  *     // ...As many read/writes as you wish...
  *
@@ -57,22 +62,30 @@ class SPITransaction
 {
 public:
     /**
+     * @brief Instantiates a new SPITransaction, using the provided select guard
+     * to manage the slave selection.
+     * @note Slave selection will be managed by this class only if the provided
+     * guard does not already own the selection.
+     * @param slave Slave to communicate with.
+     * @param selectGuard Guard object which will manage the slave selection for
+     * this transaction.
+     */
+    SPITransaction(SPISlave& slave, const SPISelectGuard& guard)
+        : slave(slave), externallySelected(guard.owns_selection())
+    {
+        slave.bus.configure(slave.config);
+    }
+
+    /**
      * @brief Instantiates a new SPITransaction, configuring the bus with the
      * provided parameters.
-     *
      * @param slave Slave to communicate with.
      */
-    explicit SPITransaction(const SPISlave& slave);
-
-    // /**
-    //  * @brief Instantiates a new SPITransaction, configuring the bus with the
-    //  * provided parameters.
-    //  *
-    //  * @param bus Bus to communicate on.
-    //  * @param cs Chip select of the slave to communicate to.
-    //  * @param config Configuration of the bus for the selected slave.
-    //  */
-    // SPITransaction(SPIBusInterface &bus, GpioType cs, SPIBusConfig config);
+    explicit SPITransaction(SPISlave& slave)
+        : slave(slave), externallySelected(false)
+    {
+        slave.bus.configure(slave.config);
+    }
 
     ///< Delete copy/move constructors/operators.
     SPITransaction(const SPITransaction&)            = delete;
@@ -81,105 +94,34 @@ public:
     SPITransaction& operator=(SPITransaction&&)      = delete;
 
     /**
-     * @brief Returns the underlying bus for low level access.
-     *
-     * @return SPIBusInterface associated with this transaction.
+     * @return The SPIBusInterface associated with this transaction.
      */
-    SPIBusInterface& getBus();
-
-    // Read, write and transfer operations
+    SPIBusInterface& getBus() { return slave.bus; }
 
     /**
-     * @brief Reads a single byte from the bus.
-     *
-     * @return Byte read from the bus.
+     * Re-export of base bus functions with automatic slave selection
+     * management.
      */
-    uint8_t read();
+
+    void transfer(uint8_t* data, size_t size)
+    {
+        transferImpl(data, data, size);
+    }
+
+    void read(uint8_t* data, size_t size) { transferImpl(nullptr, data, size); }
+
+    void write(const uint8_t* data, size_t size)
+    {
+        transferImpl(data, nullptr, size);
+    }
 
     /**
-     * @brief Reads a single half word from the bus.
-     *
-     * @return Half word read from the bus.
+     * Optimized routines for small transfers, implemented with a single
+     * transfer and automatically handling endianess.
      */
-    uint16_t read16();
-
-    /**
-     * @brief Reads 24 bits from the bus.
-     *
-     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
-     */
-    virtual uint32_t read24();
-
-    /**
-     * @brief Reads 32 bits from the bus.
-     *
-     * @return Word read from the bus.
-     */
-    virtual uint32_t read32();
-
-    /**
-     * @brief Reads multiple bytes from the bus
-     *
-     * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer in bytes.
-     */
-    void read(uint8_t* data, size_t size);
-
-    /**
-     * @brief Reads multiple half words from the bus
-     *
-     * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer in bytes.
-     */
-    void read16(uint16_t* data, size_t size);
-
-    /**
-     * @brief Writes a single byte to the bus.
-     *
-     * @param data Byte to write.
-     */
-    void write(uint8_t data);
-
-    /**
-     * @brief Writes a single half word to the bus.
-     *
-     * @param data Half word to write.
-     */
-    void write16(uint16_t data);
-
-    /**
-     * @brief Writes 24 bits to the bus.
-     *
-     * @param data Bytes to write (the MSB of the uint32_t is not used).
-     */
-    virtual void write24(uint32_t data);
-
-    /**
-     * @brief Writes 32 bits to the bus.
-     *
-     * @param data Word to write.
-     */
-    virtual void write32(uint32_t data);
-
-    /**
-     * @brief Writes multiple bytes to the bus.
-     *
-     * @param data Buffer containing data to write.
-     * @param size Size of the buffer in bytes.
-     */
-    void write(uint8_t* data, size_t size);
-
-    /**
-     * @brief Writes multiple half words to the bus.
-     *
-     * @param data Buffer containing data to write.
-     * @param size Size of the buffer in bytes.
-     */
-    void write16(uint16_t* data, size_t size);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
-     *
      * @param data Byte to write.
      * @return Byte read from the bus.
      */
@@ -187,7 +129,6 @@ public:
 
     /**
      * @brief Full duplex transmission of one half word on the bus.
-     *
      * @param data Half word to write.
      * @return Half word read from the bus.
      */
@@ -195,11 +136,10 @@ public:
 
     /**
      * @brief Full duplex transmission of 24 bits on the bus.
-     *
      * @param data Bytes to write (the MSB of the uint32_t is not used).
      * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
      */
-    virtual uint32_t transfer24(uint32_t data);
+    uint32_t transfer24(uint32_t data);
 
     /**
      * @brief Full duplex transmission of 32 bits on the bus.
@@ -207,65 +147,102 @@ public:
      * @param data Word to write.
      * @return Half word read from the bus.
      */
-    virtual uint32_t transfer32(uint32_t data);
+    uint32_t transfer32(uint32_t data);
 
     /**
-     * @brief Full duplex transmission of multiple bytes on the bus.
-     *
-     * @param data Buffer containing data to transfer.
-     * @param size Size of the buffer in bytes.
+     * Optimized routines for small reads, implemented with a single
+     * transfer and automatically handling endianess.
      */
-    void transfer(uint8_t* data, size_t size);
 
     /**
-     * @brief Full duplex transmission of multiple half words on the bus.
-     *
-     * @param data Buffer containing data to transfer.
-     * @param size Size of the buffer in bytes.
+     * @brief Reads a single byte from the bus.
+     * @return Byte read from the bus.
      */
-    void transfer16(uint16_t* data, size_t size);
+    uint8_t read();
 
-    // Read, write and transfer operations with registers
+    /**
+     * @brief Reads a single half word from the bus.
+     * @return Half word read from the bus.
+     */
+    uint16_t read16();
+
+    /**
+     * @brief Reads 24 bits from the bus.
+     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
+     */
+    uint32_t read24();
+
+    /**
+     * @brief Reads 32 bits from the bus.
+     * @return Word read from the bus.
+     */
+    uint32_t read32();
+
+    /**
+     * Optimized routines for small writes, implemented with a single
+     * transfer and automatically handling endianess.
+     */
+
+    /**
+     * @brief Writes a single byte to the bus.
+     * @param data Byte to write.
+     */
+    void write(uint8_t data);
+
+    /**
+     * @brief Writes a single half word to the bus.
+     * @param data Half word to write.
+     */
+    void write16(uint16_t data);
+
+    /**
+     * @brief Writes 24 bits to the bus.
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     */
+    void write24(uint32_t data);
+
+    /**
+     * @brief Writes 32 bits to the bus.
+     * @param data Word to write.
+     */
+    void write32(uint32_t data);
+
+    /**
+     * Optimized routines for small register reads, implemented with a single
+     * transfer and automatically handling endianess.
+     */
 
     /**
      * @brief Reads an 8 bit register.
-     *
      * @return Byte read from the register.
      */
     uint8_t readRegister(uint8_t reg);
 
     /**
      * @brief Reads a 16 bit register.
-     *
-     * @return Byte read from the register.
+     * @return Half word read from the register.
      */
     uint16_t readRegister16(uint8_t reg);
 
     /**
      * @brief Reads a 24 bit register.
-     *
-     * @return Byte read from the register.
+     * @return Bytes read from the register (the MSB of the uint32_t will be 0).
      */
     uint32_t readRegister24(uint8_t reg);
 
     /**
      * @brief Reads a 32 bit register.
-     *
-     * @return Byte read from the register.
+     * @return Word read from the register.
      */
     uint32_t readRegister32(uint8_t reg);
 
     /**
-     * @brief Reads multiple bytes starting from the specified register.
-     *
-     * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer in bytes.
+     * Optimized routines for small register writes, implemented with a single
+     * transfer and automatically handling endianess.
      */
-    void readRegisters(uint8_t reg, uint8_t* data, size_t size);
 
     /**
      * @brief Writes an 8 bit register.
-     *
      * @param reg Register address.
      * @param data Byte to write.
      */
@@ -273,39 +250,100 @@ public:
 
     /**
      * @brief Writes a 16 bit register.
-     *
      * @param reg Register address.
-     * @param data Byte to write.
+     * @param data Half word to write.
      */
     void writeRegister16(uint8_t reg, uint16_t data);
 
     /**
      * @brief Writes a 24 bit register.
-     *
      * @param reg Register address.
-     * @param data Byte to write.
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
      */
     void writeRegister24(uint8_t reg, uint32_t data);
 
     /**
      * @brief Writes a 32 bit register.
-     *
      * @param reg Register address.
-     * @param data Byte to write.
+     * @param data Word to write.
      */
     void writeRegister32(uint8_t reg, uint32_t data);
 
     /**
-     * @brief Writes multiple bytes starting from the specified register.
-     *
+     * Routines for arbitrary length register reads/writes.
+     */
+
+    /**
+     * @brief Reads multiple bytes starting from the specified register,
+     * for slaves that support auto-incrementing the register address.
+     * @note This function does not handle endianess, byte order must be managed
+     * by the user!
+     * @param data Buffer to store received data.
+     * @param size Size of the buffer in bytes.
+     */
+    void readRegisters(uint8_t reg, uint8_t* data, size_t size);
+
+    /**
+     * @brief Writes multiple bytes starting from the specified register,
+     * for slaves that support auto-incrementing the register address.
+     * @note This function does not handle endianess, byte order must be managed
+     * by the user!
      * @param reg Register start address.
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void writeRegisters(uint8_t reg, uint8_t* data, size_t size);
+    void writeRegisters(uint8_t reg, const uint8_t* data, size_t size);
 
 private:
-    const SPISlave& slave;
+    /**
+     * @brief Internal transfer function which handles slave selection and
+     * deselection if not already managed by an external guard.
+     */
+    void transferImpl(const uint8_t* txData, uint8_t* rxData, size_t size)
+    {
+        TransactionSelectGuard guard(slave, !externallySelected);
+        slave.bus.transfer(txData, rxData, size);
+    }
+
+    /**
+     * @brief RAII helper class to manage slave selection for each transfer,
+     * if not already managed by an external guard.
+     */
+    class TransactionSelectGuard
+    {
+    public:
+        TransactionSelectGuard(SPISlave& slave, bool shouldSelect)
+            : slave(slave), shouldSelect(shouldSelect)
+        {
+            if (shouldSelect)
+                slave.select();
+        }
+        ~TransactionSelectGuard()
+        {
+            if (shouldSelect)
+                slave.deselect();
+        }
+
+    private:
+        SPISlave& slave;
+        bool shouldSelect = true;
+    };
+
+    SPISlave& slave;
+
+    /**
+     * @brief Whether the slave is already selected by an external guard or not,
+     * at the time of this transaction's instantiation.
+     * This allows users of this class to manage slave selection themselves if
+     * they want/need to.
+     *
+     * If true, slave is assumed to be selected for the entire lifetime of this
+     * transaction object, and no attempt to select/deselect it will be made by
+     * this class.
+     * If false, slave selection will be managed by this class for each
+     * transfer.
+     */
+    bool externallySelected = false;
 };
 
 }  // namespace Boardcore

@@ -50,11 +50,12 @@ bool HX711::selfTest() { return true; }
 
 HX711Data HX711::sampleImpl()
 {
+    uint8_t bytes[3] = {};
     int32_t sample;
 
     bus.configure(config);
-    sample = bus.read16() << 8;
-    sample |= bus.read();
+    bus.transfer(nullptr, bytes, sizeof(bytes));
+    sample = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
     sckPin.mode(miosix::Mode::OUTPUT);
     sckPin.high();
     miosix::delayUs(1);

@@ -186,7 +186,7 @@ void Xbee::reset()
         // Assert SSEL on every iteration as we don't exactly know when the
         // xbee will be ready.
         {
-            SPIAcquireLock acq(spiXbee);
+            spiXbee.bus.configure(spiXbee.config);
             spiXbee.cs.low();
             miosix::delayUs(10);
             spiXbee.cs.high();
@@ -268,13 +268,13 @@ size_t Xbee::fillReceiveBuf(uint8_t* buf, size_t bufMaxSize)
 
 ParseResult Xbee::readOneFrame()
 {
-    SPIAcquireLock acq(spiXbee);
-    SPISelectLock sel(spiXbee);
+    SPISelectGuard guard(spiXbee);
+    SPITransaction spi(spiXbee, guard);
 
     ParseResult result = ParseResult::IDLE;
     do
     {
-        result = parser.parse(spiXbee.bus.read(), &parsingApiFrame);
+        result = parser.parse(spi.read(), &parsingApiFrame);
     } while (attn.value() == 0 && result == ParseResult::PARSING);
 
     return result;
