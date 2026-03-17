@@ -28,15 +28,15 @@
 #include <limits>
 #include <vector>
 
-#include "ERegConfig.h"
+#include "EregConfig.h"
 
 namespace Boardcore
 {
 
-class EReg : public Algorithm
+class Ereg : public Algorithm
 {
 public:
-    EReg(const ERegPIDConfig& pidConfig, const ERegValveInfo& valveInfo,
+    Ereg(const EregPIDConfig& pidConfig, const EregValveInfo& valveInfo,
          float targetPressure);
 
     bool init() { return true; }
@@ -50,7 +50,7 @@ public:
     /**
      * @brief Change the config of the PID, this also resets the state.
      */
-    void changePIDConfig(const ERegPIDConfig& newConfig);
+    void changePIDConfig(const EregPIDConfig& newConfig);
 
     /**
      * @brief Change the value of the integral conntritution.
@@ -91,8 +91,8 @@ private:
      */
     void resetState();
 
-    ERegPIDConfig pidConfig;  // PID config.
-    ERegValveInfo valveInfo;  // Information about the valve mechanism.
+    EregPIDConfig pidConfig;  // PID config.
+    EregValveInfo valveInfo;  // Information about the valve mechanism.
 
     float targetPressure;  // Reference point.
 

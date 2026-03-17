@@ -26,7 +26,7 @@
 
 namespace Boardcore
 {
-struct ERegData
+struct EregData
 {
     uint64_t timestamp;
     float downstreamPressure;
@@ -35,7 +35,7 @@ struct ERegData
     float filteredUpstreamPressure;
     float servoPosition;
 
-    ERegData()
+    EregData()
     {
         timestamp                  = 0;
         downstreamPressure         = 0.0f;
@@ -45,7 +45,7 @@ struct ERegData
         servoPosition              = 0.0f;
     }
 
-    ERegData(uint64_t timestamp, float downstreamPressure,
+    EregData(uint64_t timestamp, float downstreamPressure,
              float upstreamPressure, float filteredDownstreamPressure,
              float filteredUpstreamPressure, float servoPosition)
         : timestamp(timestamp), downstreamPressure(downstreamPressure),
@@ -58,7 +58,7 @@ struct ERegData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ERegData,
+        return STRUCT_DEF(EregData,
                           FIELD_DEF(timestamp) FIELD_DEF(downstreamPressure)
                               FIELD_DEF(upstreamPressure)
                                   FIELD_DEF(filteredDownstreamPressure)

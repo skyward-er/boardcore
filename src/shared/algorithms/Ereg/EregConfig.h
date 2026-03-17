@@ -26,7 +26,7 @@
 
 namespace Boardcore
 {
-struct ERegPIDConfig
+struct EregPIDConfig
 {
     float KP;
     float KI;
@@ -34,7 +34,7 @@ struct ERegPIDConfig
     float Ts;
 };
 
-struct ERegValveInfo
+struct EregValveInfo
 {
     float minServoPosition;  // Servo position before which the valve is closed
     uint8_t minValveAngle;   // Valve angle before which the valve is closed

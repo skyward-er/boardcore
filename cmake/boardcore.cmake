@@ -46,7 +46,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/EReg/EReg.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
     

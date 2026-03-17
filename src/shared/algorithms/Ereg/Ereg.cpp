@@ -20,42 +20,42 @@
  * THE SOFTWARE.
  */
 
-#include "EReg.h"
+#include "Ereg.h"
 
 #include <math.h>
 
 namespace Boardcore
 {
 
-EReg::EReg(const ERegPIDConfig& pidConfig, const ERegValveInfo& valveInfo,
+Ereg::Ereg(const EregPIDConfig& pidConfig, const EregValveInfo& valveInfo,
            float targetPressure)
     : pidConfig(pidConfig), valveInfo(valveInfo), targetPressure(targetPressure)
 {
 }
 
-void EReg::setReferencePoint(float newTargetPressure)
+void Ereg::setReferencePoint(float newTargetPressure)
 {
     targetPressure = newTargetPressure;
     resetState();
 }
 
-void EReg::changePIDConfig(const ERegPIDConfig& newConfig)
+void Ereg::changePIDConfig(const EregPIDConfig& newConfig)
 {
     pidConfig = newConfig;
     resetState();
 }
 
-void EReg::setIntegralContribution(float newIntegral) { i = newIntegral; };
+void Ereg::setIntegralContribution(float newIntegral) { i = newIntegral; };
 
-void EReg::setInput(float downstreamPressure, float upstreamPressure)
+void Ereg::setInput(float downstreamPressure, float upstreamPressure)
 {
     downstreamPressureSample = downstreamPressure;
     upstreamPressureSample   = upstreamPressure;
 }
 
-float EReg::getOutput() { return nextServoPosition; }
+float Ereg::getOutput() { return nextServoPosition; }
 
-void EReg::step()
+void Ereg::step()
 {
     float error = targetPressure - downstreamPressureSample;
 
@@ -72,7 +72,7 @@ void EReg::step()
     nextServoPosition = antiWindUp(u);
 }
 
-float EReg::antiWindUp(float PIDCommand)
+float Ereg::antiWindUp(float PIDCommand)
 {
     float servoCommand;
 
@@ -95,7 +95,7 @@ float EReg::antiWindUp(float PIDCommand)
     return servoCommand;
 }
 
-float EReg::convertCvToServoCommand(float PIDCommand)
+float Ereg::convertCvToServoCommand(float PIDCommand)
 {
     float servoCommand;
 
@@ -120,7 +120,7 @@ float EReg::convertCvToServoCommand(float PIDCommand)
     return servoCommand;
 }
 
-void EReg::resetState()
+void Ereg::resetState()
 {
     i          = 0.0f;
     lastError  = 0.0f;
