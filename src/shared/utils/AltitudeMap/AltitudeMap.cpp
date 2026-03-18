@@ -47,8 +47,10 @@ bool AltitudeMap::init()
 
     boundaries.xMin = header->topleftX;
     boundaries.yMax = header->topleftY;
-    boundaries.xMax = header->topleftX + header->stepX * (header->numPointsX - 1);
-    boundaries.yMin = header->topleftY - header->stepY * (header->numPointsY - 1);
+    boundaries.xMax =
+        header->topleftX + header->stepX * (header->numPointsX - 1);
+    boundaries.yMin =
+        header->topleftY - header->stepY * (header->numPointsY - 1);
 
     isInitialized = true;
 
@@ -63,7 +65,8 @@ bool AltitudeMap::isInsideMap(float x, float y)
         return false;
     }
 
-    return ((x > boundaries.xMin && x < boundaries.xMax) && (y > boundaries.yMin && y < boundaries.yMax));
+    return ((x > boundaries.xMin && x < boundaries.xMax) &&
+            (y > boundaries.yMin && y < boundaries.yMax));
 }
 
 MapBoundaries AltitudeMap::getMapBoundaries()
@@ -108,6 +111,28 @@ float AltitudeMap::getGroundAltitude(float x, float y)
                                (header->maxAltitude - header->minAltitude);
 
     return groundAltitude;
+}
+
+float AltitudeMap::getClosestGroundAltitude(float x, float y)
+{
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return NAN;
+    }
+
+    if (!isInsideMap(x, y))
+    {
+        LOG_WARN(logger,
+                 "Point (%f, %f) is outside the altitude map, using closest "
+                 "point on the map to calculate altitude",
+                 x, y);
+    }
+
+    float closestX = std::max(boundaries.xMin, std::min(boundaries.xMax, x));
+    float closestY = std::max(boundaries.yMin, std::min(boundaries.yMax, y));
+
+    return getGroundAltitude(closestX, closestY);
 }
 
 }  // namespace Boardcore
