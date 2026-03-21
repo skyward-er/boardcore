@@ -72,11 +72,11 @@ struct NASState
     static constexpr auto reflect()
     {
         return STRUCT_DEF(NASState,
-                          FIELD_DEF_WITH_UNIT(timestamp, microsenconds) FIELD_DEF(n) FIELD_DEF(e)
-                              FIELD_DEF(d) FIELD_DEF(vn) FIELD_DEF(ve)
-                                  FIELD_DEF(vd) FIELD_DEF(qx) FIELD_DEF(qy)
-                                      FIELD_DEF(qz) FIELD_DEF(qw) FIELD_DEF(bx)
-                                          FIELD_DEF(by) FIELD_DEF(bz));
+                          FIELD_DEF_WITH_UNIT(timestamp, microsenconds) FIELD_DEF_WITH_UNIT(n, meters) FIELD_DEF_WITH_UNIT(e, meters)
+                              FIELD_DEF_WITH_UNIT(d, meters) FIELD_DEF_WITH_UNIT(vn, m/s) FIELD_DEF_WITH_UNIT(ve, m/s)
+                                  FIELD_DEF_WITH_UNIT(vd, m/s) FIELD_DEF(qx) FIELD_DEF(qy)
+                                      FIELD_DEF(qz) FIELD_DEF(qw) FIELD_DEF_WITH_UNIT(bx, rad/s)
+                                          FIELD_DEF_WITH_UNIT(by, rad/s) FIELD_DEF_WITH_UNIT(bz, rad/s));
     }
 };
 

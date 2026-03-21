@@ -47,8 +47,8 @@ struct MEAState
         return STRUCT_DEF(
             MEAState, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(estimatedPressure, Pascal)
                           FIELD_DEF_WITH_UNIT(estimatedMass, kg) FIELD_DEF_WITH_UNIT(estimatedApogee, meters)
-                              FIELD_DEF_WITH_UNIT(estimatedForce, N) FIELD_DEF(x0)
-                                  FIELD_DEF(x1) FIELD_DEF(x2));
+                              FIELD_DEF_WITH_UNIT(estimatedForce, N) FIELD_DEF_WITH_UNIT(x0, Pascal)
+                                  FIELD_DEF_WITH_UNIT(x1, Pascal) FIELD_DEF_WITH_UNIT(x2, Kg));
     }
 };
 

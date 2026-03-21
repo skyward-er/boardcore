@@ -43,7 +43,7 @@ struct ADAState
         return STRUCT_DEF(ADAState,
                           FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(mslAltitude, meters)
                               FIELD_DEF_WITH_UNIT(aglAltitude, meters) FIELD_DEF_WITH_UNIT(verticalSpeed, m/s)
-                                  FIELD_DEF(x0) FIELD_DEF(x1) FIELD_DEF(x2));
+                                  FIELD_DEF_WITH_UNIT(x0, Pascal) FIELD_DEF_WITH_UNIT(x1, Pascal/s) FIELD_DEF_WITH_UNIT(x2, Pascal/s^2));
     }
 };
 

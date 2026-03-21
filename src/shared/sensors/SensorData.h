@@ -93,7 +93,7 @@ struct PressureData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(PressureData,
-                          FIELD_DEF_WITH_UNIT(pressureTimestamp, microseconds) FIELD_DEF_WITH_UNIT(pressure, hPa));
+                          FIELD_DEF_WITH_UNIT(pressureTimestamp, microseconds) FIELD_DEF_WITH_UNIT(pressure, Pascal));
     }
 };
 
@@ -146,8 +146,8 @@ struct AccelerometerData
     {
         return STRUCT_DEF(AccelerometerData,
                           FIELD_DEF_WITH_UNIT(accelerationTimestamp, microseconds)
-                              FIELD_DEF_WITH_UNIT(accelerationX, g) FIELD_DEF_WITH_UNIT(accelerationY, g)
-                                  FIELD_DEF_WITH_UNIT(accelerationZ, g));
+                              FIELD_DEF_WITH_UNIT(accelerationX, m/s^2) FIELD_DEF_WITH_UNIT(accelerationY, m/s^2)
+                                  FIELD_DEF_WITH_UNIT(accelerationZ, m/s^2));
     }
 };
 
@@ -226,8 +226,8 @@ struct GyroscopeData
     {
         return STRUCT_DEF(GyroscopeData,
                           FIELD_DEF_WITH_UNIT(angularSpeedTimestamp, microseconds)
-                              FIELD_DEF_WITH_UNIT(angularSpeedX, deg/sec) FIELD_DEF_WITH_UNIT(angularSpeedY, deg/sec)
-                                  FIELD_DEF_WITH_UNIT(angularSpeedZ, deg/sec));
+                              FIELD_DEF_WITH_UNIT(angularSpeedX, rad/sec) FIELD_DEF_WITH_UNIT(angularSpeedY, rad/sec)
+                                  FIELD_DEF_WITH_UNIT(angularSpeedZ, rad/sec));
     }
 };
 
@@ -265,8 +265,8 @@ struct MagnetometerData
     {
         return STRUCT_DEF(
             MagnetometerData,
-            FIELD_DEF_WITH_UNIT(magneticFieldTimestamp, microseconds) FIELD_DEF_WITH_UNIT(magneticFieldX, microTesla)
-                FIELD_DEF_WITH_UNIT(magneticFieldY, microTesla) FIELD_DEF_WITH_UNIT(magneticFieldZ, microTesla));
+            FIELD_DEF_WITH_UNIT(magneticFieldTimestamp, microseconds) FIELD_DEF_WITH_UNIT(magneticFieldX, gauss)
+                FIELD_DEF_WITH_UNIT(magneticFieldY, gauss) FIELD_DEF_WITH_UNIT(magneticFieldZ, gauss));
     }
 };
 
