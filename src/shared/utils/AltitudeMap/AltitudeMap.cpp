@@ -65,8 +65,8 @@ bool AltitudeMap::isInsideMap(float x, float y)
         return false;
     }
 
-    return ((x > boundaries.xMin && x < boundaries.xMax) &&
-            (y > boundaries.yMin && y < boundaries.yMax));
+    return ((x >= boundaries.xMin && x <= boundaries.xMax) &&
+            (y >= boundaries.yMin && y <= boundaries.yMax));
 }
 
 MapBoundaries AltitudeMap::getMapBoundaries()
@@ -89,10 +89,7 @@ float AltitudeMap::getGroundAltitude(float x, float y)
     }
 
     if (!isInsideMap(x, y))
-    {
         LOG_ERR(logger, "Point (%f, %f) is outside the altitude map!", x, y);
-        return NAN;
-    }
 
     uint16_t indexX = static_cast<uint16_t>(std::round(x / header->stepX));
     uint16_t indexY = static_cast<uint16_t>(std::round(y / header->stepY));
