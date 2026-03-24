@@ -501,4 +501,9 @@ void NAS::resetCovariance()
     // clang-format on
 }
 
+const float* NAS::getFlatqLin() const 
+{ 
+    return Q_lin.data();
+}
+
 }  // namespace Boardcore

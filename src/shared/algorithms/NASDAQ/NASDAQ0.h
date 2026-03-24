@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.127
+// Model version                  : 11.128
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Thu Feb 26 12:58:24 2026
+// C/C++ source code generated on : Tue Mar 24 12:53:07 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: STMicroelectronics->ST10/Super10
@@ -23,8 +23,8 @@
 #define NASDAQ0_h_
 #include <stdbool.h>
 #include <stdint.h>
-#include "NASDAQState.h"
 #include "NASDAQ0_types.h"
+#include "NASDAQState.h"
 
 // Class declaration for model NASDAQ0
 class NASDAQ0 final
@@ -35,8 +35,8 @@ class NASDAQ0 final
   struct DW_NASDAQ0_T {
     uint64_t Memory_PreviousInput;     // '<S24>/Memory'
     uint64_t Memory_PreviousInput_m;   // '<S15>/Memory'
-    float Memory2_PreviousInput[36];   // '<S1>/Memory2'
-    float Memory3_PreviousInput[6];    // '<S1>/Memory3'
+    float NASVarianceInterface_PreviousIn[36];// '<S1>/NAS Variance Interface'
+    float NASStateInterface_PreviousInput[6];// '<S1>/NAS State Interface'
     float MatrixDivide_DWORK4[16];     // '<S28>/Matrix Divide'
     float MatrixDivide_DWORK4_k;       // '<S19>/Matrix Divide'
     float Memory_PreviousInput_mp;     // '<S8>/Memory'
@@ -55,6 +55,7 @@ class NASDAQ0 final
     float Position[3];                 // '<Root>/Position'
     float Velocity[3];                 // '<Root>/Velocity'
     float Covariance[6];               // '<Root>/Covariance'
+    float Timestamp;                   // '<Root>/Timestamp'
   };
 
   // Parameters (default storage)
@@ -206,12 +207,12 @@ class NASDAQ0 final
     float Gain_Gain_b;                 // Computed Parameter: Gain_Gain_b
                                           //  Referenced by: '<S3>/Gain'
 
-    float Memory2_InitialCondition[36];// Expression: nas.initMatrix.linearP0
-                                          //  Referenced by: '<S1>/Memory2'
+    float NASVarianceInterface_InitialCon[36];// Expression: init.NASVariance
+                                                 //  Referenced by: '<S1>/NAS Variance Interface'
 
-    float Memory3_InitialCondition[6];
-                                 // Computed Parameter: Memory3_InitialCondition
-                                    //  Referenced by: '<S1>/Memory3'
+    float NASStateInterface_InitialCondit[6];
+                          // Computed Parameter: NASStateInterface_InitialCondit
+                             //  Referenced by: '<S1>/NAS State Interface'
 
     bool Constant1_Value_m;            // Expression: nasdaq.flags.ADAdynamicR
                                           //  Referenced by: '<S7>/Constant1'

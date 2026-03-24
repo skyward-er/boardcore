@@ -177,6 +177,11 @@ public:
      */
     void resetCovariance();
 
+    /**
+     * @brief Returns a pointer to the flatted Q_lin matrix
+     */
+    const float* getFlatqLin() const;
+
 private:
     ///< Extended Kalman filter configuration parameters.
     NASConfig config;

@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.127
+// Model version                  : 11.128
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Thu Feb 26 12:58:24 2026
+// C/C++ source code generated on : Tue Mar 24 12:53:07 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: STMicroelectronics->ST10/Super10
@@ -314,15 +314,15 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   0.01F,
 
-  // Expression: nas.initMatrix.linearP0
-  //  Referenced by: '<S1>/Memory2'
+  // Expression: init.NASVariance
+  //  Referenced by: '<S1>/NAS Variance Interface'
 
-  { 0.1F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.1F },
+  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F },
 
-  // Computed Parameter: Memory3_InitialCondition
-  //  Referenced by: '<S1>/Memory3'
+  // Computed Parameter: NASStateInterface_InitialCondit
+  //  Referenced by: '<S1>/NAS State Interface'
 
   { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F },
 

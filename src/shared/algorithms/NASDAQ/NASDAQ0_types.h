@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.127
+// Model version                  : 11.128
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Thu Feb 26 12:58:24 2026
+// C/C++ source code generated on : Tue Mar 24 12:53:07 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: STMicroelectronics->ST10/Super10
@@ -22,17 +22,6 @@
 #ifndef NASDAQ0_types_h_
 #define NASDAQ0_types_h_
 #include <stdint.h>
-#ifndef DEFINED_TYPEDEF_FOR_Bus_Baro_
-#define DEFINED_TYPEDEF_FOR_Bus_Baro_
-
-struct Bus_Baro
-{
-  float Measure;
-  uint64_t Timestamp;
-};
-
-#endif
-
 #ifndef DEFINED_TYPEDEF_FOR_Bus_AdaState_
 #define DEFINED_TYPEDEF_FOR_Bus_AdaState_
 
@@ -49,6 +38,17 @@ struct Bus_AdaState
   float x2;
   uint8_t apogeeCounter;
   uint8_t parachuteCounter;
+};
+
+#endif
+
+#ifndef DEFINED_TYPEDEF_FOR_Bus_Baro_
+#define DEFINED_TYPEDEF_FOR_Bus_Baro_
+
+struct Bus_Baro
+{
+  float Measure;
+  uint64_t Timestamp;
 };
 
 #endif

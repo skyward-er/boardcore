@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.127
+// Model version                  : 11.128
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Thu Feb 26 12:58:24 2026
+// C/C++ source code generated on : Tue Mar 24 12:53:07 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: STMicroelectronics->ST10/Super10
@@ -226,10 +226,10 @@ void NASDAQ0::step()
   float rtb_Square_l[16];
   float rtb_Transpose1_0[16];
   float rtb_MatrixConcatenate1[12];
-  float rtb_Memory3[6];
   float rtb_Merge[6];
   float rtb_Merge1_a[6];
   float rtb_Merge1_b[6];
+  float rtb_NASStateInterface[6];
   float rtb_VectorConcatenate[6];
   float rtb_Gain1_hp;
   float rtb_MatrixDivide_1;
@@ -242,12 +242,12 @@ void NASDAQ0::step()
   bool rtb_AND;
 
   // Outputs for Atomic SubSystem: '<Root>/NASDAQ'
-  // Memory: '<S1>/Memory3'
+  // Memory: '<S1>/NAS State Interface'
   for (i = 0; i < 6; i++) {
-    rtb_Memory3[i] = NASDAQ0_DW.Memory3_PreviousInput[i];
+    rtb_NASStateInterface[i] = NASDAQ0_DW.NASStateInterface_PreviousInput[i];
   }
 
-  // End of Memory: '<S1>/Memory3'
+  // End of Memory: '<S1>/NAS State Interface'
 
   // Outputs for Atomic SubSystem: '<S1>/Prediction Step'
   // Bias: '<S3>/Bias' incorporates:
@@ -264,15 +264,16 @@ void NASDAQ0::step()
 
   // Product: '<S3>/Matrix Multiply' incorporates:
   //   Math: '<S3>/Transpose'
-  //   Memory: '<S1>/Memory2'
+  //   Memory: '<S1>/NAS Variance Interface'
   //   Product: '<S10>/Matrix Multiply'
 
   for (i = 0; i < 6; i++) {
     for (rtb_Transpose1_tmp = 0; rtb_Transpose1_tmp < 6; rtb_Transpose1_tmp++) {
       rtb_MatrixDivide_1 = 0.0F;
       for (rtb_Bias1_tmp = 0; rtb_Bias1_tmp < 6; rtb_Bias1_tmp++) {
-        rtb_MatrixDivide_1 += NASDAQ0_DW.Memory2_PreviousInput[6 * rtb_Bias1_tmp
-          + i] * rtb_MatrixMultiply[6 * rtb_Bias1_tmp + rtb_Transpose1_tmp];
+        rtb_MatrixDivide_1 += NASDAQ0_DW.NASVarianceInterface_PreviousIn[6 *
+          rtb_Bias1_tmp + i] * rtb_MatrixMultiply[6 * rtb_Bias1_tmp +
+          rtb_Transpose1_tmp];
       }
 
       rtb_MatrixMultiply_0[i + 6 * rtb_Transpose1_tmp] = rtb_MatrixDivide_1;
@@ -300,34 +301,34 @@ void NASDAQ0::step()
   // End of Bias: '<S3>/Bias1'
 
   // SignalConversion generated from: '<S3>/Vector Concatenate'
-  rtb_VectorConcatenate[3] = rtb_Memory3[3];
+  rtb_VectorConcatenate[3] = rtb_NASStateInterface[3];
 
   // Sum: '<S3>/Add1' incorporates:
   //   Gain: '<S3>/Gain'
   //   SignalConversion generated from: '<S3>/Previous State'
 
-  rtb_VectorConcatenate[0] = NASDAQ0_P.Gain_Gain_b * rtb_Memory3[3] +
-    rtb_Memory3[0];
+  rtb_VectorConcatenate[0] = NASDAQ0_P.Gain_Gain_b * rtb_NASStateInterface[3] +
+    rtb_NASStateInterface[0];
 
   // SignalConversion generated from: '<S3>/Vector Concatenate'
-  rtb_VectorConcatenate[4] = rtb_Memory3[4];
+  rtb_VectorConcatenate[4] = rtb_NASStateInterface[4];
 
   // Sum: '<S3>/Add1' incorporates:
   //   Gain: '<S3>/Gain'
   //   SignalConversion generated from: '<S3>/Previous State'
 
-  rtb_VectorConcatenate[1] = NASDAQ0_P.Gain_Gain_b * rtb_Memory3[4] +
-    rtb_Memory3[1];
+  rtb_VectorConcatenate[1] = NASDAQ0_P.Gain_Gain_b * rtb_NASStateInterface[4] +
+    rtb_NASStateInterface[1];
 
   // SignalConversion generated from: '<S3>/Vector Concatenate'
-  rtb_VectorConcatenate[5] = rtb_Memory3[5];
+  rtb_VectorConcatenate[5] = rtb_NASStateInterface[5];
 
   // Sum: '<S3>/Add1' incorporates:
   //   Gain: '<S3>/Gain'
   //   SignalConversion generated from: '<S3>/Previous State'
 
-  rtb_VectorConcatenate[2] = NASDAQ0_P.Gain_Gain_b * rtb_Memory3[5] +
-    rtb_Memory3[2];
+  rtb_VectorConcatenate[2] = NASDAQ0_P.Gain_Gain_b * rtb_NASStateInterface[5] +
+    rtb_NASStateInterface[2];
 
   // End of Outputs for SubSystem: '<S1>/Prediction Step'
 
@@ -598,9 +599,9 @@ void NASDAQ0::step()
       NASDAQ0_P.Gain_Gain_jx[1];
 
     // Outputs for Atomic SubSystem: '<S1>/Prediction Step'
-    rtb_Gain1_hp = (NASDAQ0_U.GPS.Measure[3] - rtb_Memory3[3]) *
+    rtb_Gain1_hp = (NASDAQ0_U.GPS.Measure[3] - rtb_NASStateInterface[3]) *
       NASDAQ0_P.Gain_Gain_jx[2];
-    rtb_MatrixDivide_2 = (NASDAQ0_U.GPS.Measure[4] - rtb_Memory3[4]) *
+    rtb_MatrixDivide_2 = (NASDAQ0_U.GPS.Measure[4] - rtb_NASStateInterface[4]) *
       NASDAQ0_P.Gain_Gain_jx[3];
 
     // End of Outputs for SubSystem: '<S1>/Prediction Step'
@@ -647,8 +648,8 @@ void NASDAQ0::step()
 
   if (rtb_AND) {
     // Constant: '<S18>/Constant'
-    rtb_Memory3[0] = NASDAQ0_P.Constant_Value_j[0];
-    rtb_Memory3[1] = NASDAQ0_P.Constant_Value_j[1];
+    rtb_NASStateInterface[0] = NASDAQ0_P.Constant_Value_j[0];
+    rtb_NASStateInterface[1] = NASDAQ0_P.Constant_Value_j[1];
 
     // Sum: '<S18>/Sum1' incorporates:
     //   Constant: '<S18>/StandardAirTemperature T0'
@@ -670,14 +671,14 @@ void NASDAQ0::step()
     //  About '<S18>/Exp':
     //   Operator: exp
 
-    rtb_Memory3[2] = NASDAQ0_P.Gain3_Gain *
+    rtb_NASStateInterface[2] = NASDAQ0_P.Gain3_Gain *
       NASDAQ0_P.StandardAirPressureP0_Value / (rtb_Gain1_hp * rtb_Gain1_hp) *
       std::exp(NASDAQ0_P.gR_Value / rtb_Gain1_hp * rtb_Merge[2]);
 
     // Constant: '<S18>/Constant1'
-    rtb_Memory3[3] = NASDAQ0_P.Constant1_Value[0];
-    rtb_Memory3[4] = NASDAQ0_P.Constant1_Value[1];
-    rtb_Memory3[5] = NASDAQ0_P.Constant1_Value[2];
+    rtb_NASStateInterface[3] = NASDAQ0_P.Constant1_Value[0];
+    rtb_NASStateInterface[4] = NASDAQ0_P.Constant1_Value[1];
+    rtb_NASStateInterface[5] = NASDAQ0_P.Constant1_Value[2];
 
     // Math: '<S14>/Square' incorporates:
     //   Constant: '<S14>/Constant'
@@ -699,11 +700,11 @@ void NASDAQ0::step()
       for (rtb_Transpose1_tmp = 0; rtb_Transpose1_tmp < 6; rtb_Transpose1_tmp++)
       {
         rtb_Gain1_hp += rtb_Merge1[6 * rtb_Transpose1_tmp + i] *
-          rtb_Memory3[rtb_Transpose1_tmp];
+          rtb_NASStateInterface[rtb_Transpose1_tmp];
       }
 
       rtb_VectorConcatenate[i] = rtb_Gain1_hp;
-      rtb_MatrixDivide_1 += rtb_Memory3[i] * rtb_Gain1_hp;
+      rtb_MatrixDivide_1 += rtb_NASStateInterface[i] * rtb_Gain1_hp;
     }
 
     // Sum: '<S19>/Add' incorporates:
@@ -734,7 +735,7 @@ void NASDAQ0::step()
         rtb_Bias1_tmp = 6 * i + rtb_Transpose1_tmp;
         rtb_MatrixMultiply[rtb_Bias1_tmp] =
           NASDAQ0_P.Constant_Value_h[rtb_Bias1_tmp] -
-          rtb_VectorConcatenate[rtb_Transpose1_tmp] * rtb_Memory3[i];
+          rtb_VectorConcatenate[rtb_Transpose1_tmp] * rtb_NASStateInterface[i];
       }
     }
 
@@ -1023,17 +1024,17 @@ void NASDAQ0::step()
   //   Merge: '<S4>/Merge'
 
   for (i = 0; i < 6; i++) {
-    rtb_Memory3[static_cast<int32_t>(i)] = rtb_Merge_j[static_cast<int32_t>(i *
-      7LL)];
+    rtb_NASStateInterface[static_cast<int32_t>(i)] = rtb_Merge_j
+      [static_cast<int32_t>(i * 7LL)];
   }
 
   // End of S-Function (sdspdiag2): '<S1>/Extract Diagonal'
 
-  // Update for Memory: '<S1>/Memory2' incorporates:
+  // Update for Memory: '<S1>/NAS Variance Interface' incorporates:
   //   Merge: '<S4>/Merge'
 
-  std::memcpy(&NASDAQ0_DW.Memory2_PreviousInput[0], &rtb_Merge_j[0], 36U *
-              sizeof(float));
+  std::memcpy(&NASDAQ0_DW.NASVarianceInterface_PreviousIn[0], &rtb_Merge_j[0],
+              36U * sizeof(float));
 
   // End of Outputs for SubSystem: '<Root>/NASDAQ'
 
@@ -1057,11 +1058,11 @@ void NASDAQ0::step()
 
   // Outputs for Atomic SubSystem: '<Root>/NASDAQ'
   for (i = 0; i < 6; i++) {
-    // Update for Memory: '<S1>/Memory3'
-    NASDAQ0_DW.Memory3_PreviousInput[i] = rtb_Merge1_b[i];
+    // Update for Memory: '<S1>/NAS State Interface'
+    NASDAQ0_DW.NASStateInterface_PreviousInput[i] = rtb_Merge1_b[i];
 
     // Outport: '<Root>/Covariance'
-    NASDAQ0_Y.Covariance[i] = rtb_Memory3[i];
+    NASDAQ0_Y.Covariance[i] = rtb_NASStateInterface[i];
   }
 
   // End of Outputs for SubSystem: '<Root>/NASDAQ'
@@ -1075,16 +1076,18 @@ void NASDAQ0::initialize()
     int16_t i;
 
     // SystemInitialize for Atomic SubSystem: '<Root>/NASDAQ'
-    // InitializeConditions for Memory: '<S1>/Memory2'
-    std::memcpy(&NASDAQ0_DW.Memory2_PreviousInput[0],
-                &NASDAQ0_P.Memory2_InitialCondition[0], 36U * sizeof(float));
+    // InitializeConditions for Memory: '<S1>/NAS Variance Interface'
+    std::memcpy(&NASDAQ0_DW.NASVarianceInterface_PreviousIn[0],
+                &NASDAQ0_P.NASVarianceInterface_InitialCon[0], 36U * sizeof
+                (float));
 
-    // InitializeConditions for Memory: '<S1>/Memory3'
+    // InitializeConditions for Memory: '<S1>/NAS State Interface'
     for (i = 0; i < 6; i++) {
-      NASDAQ0_DW.Memory3_PreviousInput[i] = NASDAQ0_P.Memory3_InitialCondition[i];
+      NASDAQ0_DW.NASStateInterface_PreviousInput[i] =
+        NASDAQ0_P.NASStateInterface_InitialCondit[i];
     }
 
-    // End of InitializeConditions for Memory: '<S1>/Memory3'
+    // End of InitializeConditions for Memory: '<S1>/NAS State Interface'
 
     // SystemInitialize for Atomic SubSystem: '<S1>/Correction Step'
     // SystemInitialize for Atomic SubSystem: '<S2>/GPS Correction'
