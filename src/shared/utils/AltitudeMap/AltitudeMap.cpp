@@ -99,7 +99,7 @@ Meter AltitudeMap::getGroundAltitude(float x, float y)
     if (indexY >= header->numPointsY)
         indexY = header->numPointsY - 1;
 
-    uint16_t altitudeIndex = indexY * header->numPointsX + indexX;
+    uint32_t altitudeIndex = indexY * header->numPointsX + indexX;
 
     uint8_t compressedAltitude = *(startAddress + altitudeIndex);
 
