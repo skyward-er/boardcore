@@ -101,21 +101,29 @@ using rxEn = Gpio<GPIOA_BASE, 11>;
 
 namespace btns
 {
-using ox_filling   = Gpio<GPIOE_BASE, 3>;
-using ox_release   = Gpio<GPIOD_BASE, 5>;
-using ox_detach    = Gpio<GPIOD_BASE, 6>;
-using n2_3way      = Gpio<GPIOD_BASE, 3>;
-using n2_filling   = Gpio<GPIOA_BASE, 15>;
-using n2_release   = Gpio<GPIOG_BASE, 7>;
-using n2_detach    = Gpio<GPIOG_BASE, 6>;
-using nitrogen     = Gpio<GPIOG_BASE, 3>;
-using ox_venting   = Gpio<GPIOD_BASE, 11>;
-using n2_quenching = Gpio<GPIOB_BASE, 15>;
-using ignition     = Gpio<GPIOB_BASE, 14>;  // Port: IGN1
-using arm          = Gpio<GPIOD_BASE, 13>;  // Port: ARM
-using tars1        = Gpio<GPIOE_BASE, 6>;
-using tars3        = Gpio<GPIOB_BASE, 4>;
-using clacson      = Gpio<GPIOG_BASE, 9>;
+using ox_filling  = Gpio<GPIOD_BASE, 6>;
+using ox_release  = Gpio<GPIOD_BASE, 5>;
+using prz_filling = Gpio<GPIOA_BASE, 15>;
+using prz_release = Gpio<GPIOG_BASE, 7>;
+
+using prz_ox     = Gpio<GPIOG_BASE, 6>;
+using prz_fuel   = Gpio<GPIOE_BASE, 3>;
+using ox_venting = Gpio<GPIOD_BASE, 11>;
+using detach     = Gpio<GPIOG_BASE, 3>;
+
+using spare_0 = Gpio<GPIOB_BASE, 12>;
+using spare_1 = Gpio<GPIOB_BASE, 15>;
+using spare_2 = Gpio<GPIOG_BASE, 6>;
+using spare_3 = Gpio<GPIOB_BASE, 13>;
+using spare_4 = Gpio<GPIOB_BASE, 1>;
+using spare_5 = Gpio<GPIOB_BASE, 11>;
+
+using prz_3way = Gpio<GPIOD_BASE, 3>;
+using tars1    = Gpio<GPIOE_BASE, 6>;
+using tars3    = Gpio<GPIOB_BASE, 4>;
+
+using ignition = Gpio<GPIOB_BASE, 14>;  // Port: IGN1
+using arm      = Gpio<GPIOD_BASE, 13>;  // Port: ARM
 }  // namespace btns
 
 namespace ui

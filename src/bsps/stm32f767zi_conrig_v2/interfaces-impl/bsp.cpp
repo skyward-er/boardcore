@@ -281,14 +281,19 @@ void IRQbspInit()
 
     btns::ox_filling::mode(Mode::INPUT);
     btns::ox_release::mode(Mode::INPUT);
-    btns::ox_detach::mode(Mode::INPUT);
-    btns::n2_3way::mode(Mode::INPUT);
-    btns::n2_filling::mode(Mode::INPUT);
-    btns::n2_release::mode(Mode::INPUT);
-    btns::n2_detach::mode(Mode::INPUT);
-    btns::nitrogen::mode(Mode::INPUT);
+    btns::prz_filling::mode(Mode::INPUT);
+    btns::prz_release::mode(Mode::INPUT);
+    btns::prz_ox::mode(Mode::INPUT);
+    btns::prz_fuel::mode(Mode::INPUT);
     btns::ox_venting::mode(Mode::INPUT);
-    btns::n2_quenching::mode(Mode::INPUT);
+    btns::detach::mode(Mode::INPUT);
+    btns::spare_0::mode(Mode::INPUT);
+    btns::spare_1::mode(Mode::INPUT);
+    btns::spare_2::mode(Mode::INPUT);
+    btns::spare_3::mode(Mode::INPUT_PULL_UP);
+    btns::spare_4::mode(Mode::INPUT);
+    btns::spare_5::mode(Mode::INPUT_PULL_UP);
+    btns::prz_3way::mode(Mode::INPUT);
     btns::ignition::mode(Mode::INPUT);
     btns::arm::mode(Mode::INPUT);
     btns::tars1::mode(Mode::INPUT);
