@@ -87,7 +87,7 @@ NASState getStatePID()
     return state;
 }
 
-TEST_CASE("ABK Update Test")
+TEST_CASE("ABK PID Update Test")
 {
     AirBrakesInterpPID abk(
         []() { return static_cast<TimedTrajectoryPoint>(getStatePID()); },

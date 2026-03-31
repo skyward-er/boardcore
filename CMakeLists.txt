@@ -70,6 +70,7 @@ sbs_declare_target(catch-tests-boardcore stm32f429zi_stm32f4discovery
     src/tests/catch/test-aero.cpp
     # src/tests/catch/test-buttonhandler.cpp
     src/tests/catch/test-circularbuffer.cpp
+    src/tests/catch/test-circularallocator.cpp
     src/tests/catch/test-eventbroker.cpp
     src/tests/catch/test-gptimer.cpp
     src/tests/catch/test-kalman.cpp

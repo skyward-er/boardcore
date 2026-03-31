@@ -627,12 +627,13 @@ clean() {
 
 test() {
     # Parse test arguments
+    fwd_args=()
     for arg in "$@"; do
         case $arg in
             -d|--debug) config_debug=true ;;
             -v|--verbose) config_verbose=true ;;
             -j|--jobs=*) config_jobs="${arg#*=}" ;;
-            -*) error "Unknown argument: $arg"; return $EINVAL ;;
+            -*) fwd_args+=("$arg") ;; # forward args to ctest
             *) target="$arg" ;;
         esac
     done
@@ -658,7 +659,7 @@ test() {
     step "Test"
 
     cmake_disable_excluded_tests
-    ( cd "$config_build_dir" || return; ctest )
+    ( cd "$config_build_dir" || return; ctest "${fwd_args[@]}" )
 }
 
 list() {
