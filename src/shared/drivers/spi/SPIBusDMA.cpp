@@ -62,10 +62,7 @@ void SPIBusDMA::transfer(const uint8_t* txData, uint8_t* rxData, size_t size)
 {
     if (!shouldUseDMA(size))
     {
-        SPI::Disable(spi);
-        SPI::DisableDMA(spi);
         SPI::Enable(spi);
-
         SPIBus::transfer(txData, rxData, size);
         return;
     }
@@ -97,21 +94,20 @@ void SPIBusDMA::transfer(const uint8_t* txData, uint8_t* rxData, size_t size)
     rxStream->setup(rxConfig);
 
     // Enable DMA streams and DMA request generation
-    SPI::Disable(spi);
-    SPI::EnableDMA(spi);
+    SPI::EnableRxDMA(spi);
     rxStream->enable();
     txStream->enable();
+    SPI::EnableTxDMA(spi);
     SPI::Enable(spi);  // <-- Transfer starts here
 
     rxStream->timedWaitForTransferComplete(std::chrono::milliseconds(100));
 
-    // RX DMA completion should guarantee that the SPI peripheral is done
-    // Check the peripheral anyway to avoid interrupting transactions
-    SPI::WaitNotBusy(spi);
-
-    // Disable the dma streams
+    // Disable DMA streams and DMA request generation
     txStream->disable();
     rxStream->disable();
+    SPI::WaitNotBusy(spi);
+    SPI::Disable(spi);
+    SPI::DisableDMA(spi);
 }
 
 bool SPIBusDMA::shouldUseDMA(size_t size)
