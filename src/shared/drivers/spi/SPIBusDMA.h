@@ -85,6 +85,9 @@ private:
                                        bool destinationIncrement);
 
     size_t dmaThreshold;  ///< Threshold used to decide when to use DMA
+    std::chrono::microseconds
+        maxByteTime;  ///< Max time allowed to transfer a single byte, used to
+                      ///< compute timeouts
 
     DMAStreamGuard txStream;
     DMAStreamGuard rxStream;
