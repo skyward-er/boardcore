@@ -22,19 +22,22 @@
 
 #include "SPIBusDMA.h"
 
+using namespace std::chrono;
+
 namespace Boardcore
 {
 SPIBusDMA::SPIBusDMA(SPI_TypeDef* spi, DMAStreamGuard&& txStream,
-                     DMAStreamGuard&& rxStream,
-                     std::chrono::microseconds maxCpuTime)
+                     DMAStreamGuard&& rxStream, microseconds maxCpuTime)
     : SPIBus(spi), txStream(std::move(txStream)), rxStream(std::move(rxStream))
 {
     // Compute the dma threshold based on the current APB bus clock speed
     auto apb           = ClockUtils::getPeripheralBus(spi);
-    uint32_t apbClock  = ClockUtils::getAPBPeripheralsClock(apb);
-    uint32_t byteSpeed = apbClock / 8;
+    uint32_t apbClock  = ClockUtils::getAPBPeripheralsClock(apb);  // [Hz]
+    uint32_t byteSpeed = apbClock / 8;                             // [bytes/s]
 
-    dmaThreshold = maxCpuTime.count() * byteSpeed / 1000000;
+    dmaThreshold = maxCpuTime.count() * byteSpeed / 1'000'000;
+    // 5x the ideal time to transfer a byte, strictly greater than 0
+    maxByteTime = std::max(1us, microseconds(5 * 1'000'000 / byteSpeed));
 }
 
 void SPIBusDMA::configure(const SPIBusConfig& newConfig)
@@ -100,7 +103,10 @@ void SPIBusDMA::transfer(const uint8_t* txData, uint8_t* rxData, size_t size)
     SPI::EnableTxDMA(spi);
     SPI::Enable(spi);  // <-- Transfer starts here
 
-    rxStream->timedWaitForTransferComplete(std::chrono::milliseconds(100));
+    auto timeout           = maxByteTime * size;
+    bool transferCompleted = rxStream->timedWaitForTransferComplete(timeout);
+    (void)transferCompleted;  // Avoid unused variable warning in release builds
+    assert(transferCompleted && "SPI: RX DMA stream transfer timed out");
 
     // Disable DMA streams and DMA request generation
     txStream->disable();
