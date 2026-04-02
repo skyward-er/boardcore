@@ -127,10 +127,10 @@ inline void DisableInternalSlaveSelect(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_
 inline void SetSlaveConfiguration(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_MSTR; }
 inline void SetMasterConfiguration(SPI_TypeDef* spi) { spi->CR1 |= SPI_CR1_MSTR; }
 
-inline void EnableTxDMARequest(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_TXDMAEN; }
-inline void DisableTxDMARequest(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_TXDMAEN; }
-inline void EnableRxDMARequest(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_RXDMAEN; }
-inline void DisableRxDMARequest(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_RXDMAEN; }
+inline void EnableTxDMA(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_TXDMAEN; }
+inline void EnableRxDMA(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_RXDMAEN; }
+inline void DisableTxDMA(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_TXDMAEN; }
+inline void DisableRxDMA(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_RXDMAEN; }
 // clang-format on
 
 #ifdef _ARCH_CORTEXM7_STM32F7
