@@ -108,8 +108,8 @@ using cs = Gpio<GPIOC_BASE, 7>;
 namespace HeatingPad
 {
 using measure  = Gpio<GPIOB_BASE, 1>;
-using enable     = Gpio<GPIOB_BASE, 11>;
-using sense     = Gpio<GPIOB_BASE, 12>;
+using enable   = Gpio<GPIOB_BASE, 11>;
+using sense    = Gpio<GPIOB_BASE, 12>;
 }  // namespace HeatingPad
 
 namespace gpios
