@@ -45,4 +45,5 @@ set(BOARDCORE_BOARDS_OPTIONS_FILES
     ${BOARDCORE_PATH}/src/bsps/stm32f429zi_lyra_cubesat/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_orion_biscotto/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_orion_engine/config/board_options.cmake
+    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_pitot/config/board_options.cmake
 )
