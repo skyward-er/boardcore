@@ -113,7 +113,7 @@ using detach     = Gpio<GPIOG_BASE, 3>;
 
 using spare_0 = Gpio<GPIOB_BASE, 12>;
 using spare_1 = Gpio<GPIOB_BASE, 15>;
-using spare_2 = Gpio<GPIOG_BASE, 6>;
+using spare_2 = Gpio<GPIOG_BASE, 9>;
 using spare_3 = Gpio<GPIOB_BASE, 13>;
 using spare_4 = Gpio<GPIOB_BASE, 1>;
 using spare_5 = Gpio<GPIOB_BASE, 11>;

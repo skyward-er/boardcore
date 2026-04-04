@@ -313,7 +313,7 @@ void IRQbspInit()
     interfaces::can1::rx::alternateFunction(9);
     interfaces::can1::rx::mode(Mode::ALTERNATE);
 
-    interfaces::timers::tim3ch1::alternateFunction(9);
+    interfaces::timers::tim3ch1::alternateFunction(2);
     interfaces::timers::tim3ch1::mode(Mode::ALTERNATE);
 
     interfaces::adcs::adc123in3::mode(Mode::INPUT_ANALOG);
