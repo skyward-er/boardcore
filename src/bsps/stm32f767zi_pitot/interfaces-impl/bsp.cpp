@@ -295,6 +295,10 @@ void IRQbspInit()
     sensors::ND030D::cs::high();
     sensors::ND030D::cs::mode(Mode::OUTPUT);
 
+    HeatingPad::measure::mode(Mode::INPUT_ANALOG);
+    HeatingPad::enable::mode(Mode::OUTPUT);
+    HeatingPad::sense::mode(Mode::INPUT); //may need PULLUP or PULLDOWN
+
     gpios::boardLed::mode(Mode::OUTPUT);
     gpios::boardLed::low();
     gpios::statusLed::mode(Mode::OUTPUT);
