@@ -50,58 +50,6 @@ public:
     void init();
 
     /**
-     * @brief Helper function to get the wanted GPIO register from the LUT.
-     * @param reg Register name
-     * @return Address of the target GPIO register
-     */
-    uint8_t getGpioAddress(MCP23S17Defs::GPIO_REG reg);
-
-    /**
-     * @brief Helper function to get the wanted control register from the LUT.
-     * @param reg Register name
-     * @return Address of the target control register
-     */
-    uint8_t getCtrlAddress(MCP23S17Defs::CTRL_REG reg);
-
-    /**
-     * @brief Helper function to write all zeroes in a register.
-     * @param address Register address
-     */
-    void wipeRegister(uint8_t address);
-
-    /**
-     * @brief Read all the values stored in a register.
-     * @param address Register address
-     * @return Byte stored in the target register
-     */
-    uint8_t readRegister(uint8_t address);
-
-    /**
-     * @brief Read a specific bit from a register.
-     * @param address Register address
-     * @param bitNumber Number of the target bit within the register (between 0
-     * and 7)
-     * @return Value stored in the target bit
-     */
-    bool readBit(uint8_t address, uint8_t bitNumber);
-
-    /**
-     * @brief Write a value in a specific bit of a register.
-     * @param address Register address
-     * @param bitNumber Number of the target bit within the register (between 0
-     * and 7)
-     * @param value Value to write
-     */
-    void writeBit(uint8_t address, uint8_t bitNumber, bool value);
-
-    /**
-     * @brief Write 8 bits in a specific register.
-     * @param address Register address
-     * @param value Byte of data to be written in the register
-     */
-    void writeRegister(uint8_t address, uint8_t value);
-
-    /**
      * @brief Set a specific Port A pin as an input pin.
      * @param pinNumber Number of the target pin
      */
@@ -357,6 +305,58 @@ public:
     void writeLatch_B(uint8_t pinNumber, bool value);
 
 private:
+    /**
+     * @brief Helper function to get the wanted GPIO register from the LUT.
+     * @param reg Register name
+     * @return Address of the target GPIO register
+     */
+    uint8_t getGpioAddress(MCP23S17Defs::GPIO_REG reg);
+
+    /**
+     * @brief Helper function to get the wanted control register from the LUT.
+     * @param reg Register name
+     * @return Address of the target control register
+     */
+    uint8_t getCtrlAddress(MCP23S17Defs::CTRL_REG reg);
+
+    /**
+     * @brief Helper function to write all zeroes in a register.
+     * @param address Register address
+     */
+    void wipeRegister(uint8_t address);
+
+    /**
+     * @brief Read all the values stored in a register.
+     * @param address Register address
+     * @return Byte stored in the target register
+     */
+    uint8_t readRegister(uint8_t address);
+
+    /**
+     * @brief Read a specific bit from a register.
+     * @param address Register address
+     * @param bitNumber Number of the target bit within the register (between 0
+     * and 7)
+     * @return Value stored in the target bit
+     */
+    bool readBit(uint8_t address, uint8_t bitNumber);
+
+    /**
+     * @brief Write a value in a specific bit of a register.
+     * @param address Register address
+     * @param bitNumber Number of the target bit within the register (between 0
+     * and 7)
+     * @param value Value to write
+     */
+    void writeBit(uint8_t address, uint8_t bitNumber, bool value);
+
+    /**
+     * @brief Write 8 bits in a specific register.
+     * @param address Register address
+     * @param value Byte of data to be written in the register
+     */
+    void writeRegister(uint8_t address, uint8_t value);
+
     SPISlave spiSlave;
     MCP23S17Defs::Bank activeBank = MCP23S17Defs::Bank::Bank0;
 };
