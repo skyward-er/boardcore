@@ -90,7 +90,9 @@ struct BMX160GyroscopeCalibrationBiases
     static constexpr auto reflect()
     {
         return STRUCT_DEF(BMX160GyroscopeCalibrationBiases,
-                          FIELD_DEF_WITH_UNIT(bx, deg/sec) FIELD_DEF_WITH_UNIT(by, deg/sec) FIELD_DEF_WITH_UNIT(bz, deg/sec));
+                          FIELD_DEF_WITH_UNIT(bx, deg / sec)
+                              FIELD_DEF_WITH_UNIT(by, deg / sec)
+                                  FIELD_DEF_WITH_UNIT(bz, deg / sec));
     }
 };
 

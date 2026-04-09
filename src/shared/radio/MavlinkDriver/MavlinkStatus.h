@@ -56,14 +56,15 @@ struct MavlinkStatus
     {
         return STRUCT_DEF(
             MavlinkStatus,
-            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(nSendQueue) FIELD_DEF(maxSendQueue)
-                FIELD_DEF(nSendErrors) FIELD_DEF(nDroppedPackets) FIELD_DEF2(
-                    mavStats, msg_received) FIELD_DEF2(mavStats, buffer_overrun)
-                    FIELD_DEF2(mavStats, parse_error) FIELD_DEF2(
-                        mavStats, parse_state) FIELD_DEF2(mavStats, packet_idx)
-                        FIELD_DEF2(mavStats, current_rx_seq)
-                            FIELD_DEF2(mavStats, current_tx_seq)
-                                FIELD_DEF2(mavStats, packet_rx_success_count)
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(nSendQueue)
+                FIELD_DEF(maxSendQueue) FIELD_DEF(nSendErrors) FIELD_DEF(
+                    nDroppedPackets) FIELD_DEF2(mavStats, msg_received)
+                    FIELD_DEF2(mavStats, buffer_overrun) FIELD_DEF2(
+                        mavStats, parse_error) FIELD_DEF2(mavStats, parse_state)
+                        FIELD_DEF2(mavStats, packet_idx)
+                            FIELD_DEF2(mavStats, current_rx_seq)
+                                FIELD_DEF2(mavStats, current_tx_seq) FIELD_DEF2(
+                                    mavStats, packet_rx_success_count)
                                     FIELD_DEF2(mavStats, packet_rx_drop_count));
     }
 };

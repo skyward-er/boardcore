@@ -53,13 +53,16 @@ struct XbeeStatus
     {
         return STRUCT_DEF(
             XbeeStatus,
-            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(lastTxStatusError) FIELD_DEF(
-                lastTxStatus) FIELD_DEF2(timeToSendStats, minValue)
-                FIELD_DEF2(timeToSendStats, maxValue) FIELD_DEF2(
-                    timeToSendStats, mean) FIELD_DEF2(timeToSendStats, stdDev)
-                    FIELD_DEF2(timeToSendStats, nSamples)
-                        FIELD_DEF(txTimeoutCount) FIELD_DEF(rxDroppedBuffers)
-                            FIELD_DEF(frameBufMaxLength));
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                FIELD_DEF(lastTxStatusError) FIELD_DEF(lastTxStatus)
+                    FIELD_DEF2(timeToSendStats, minValue)
+                        FIELD_DEF2(timeToSendStats, maxValue)
+                            FIELD_DEF2(timeToSendStats, mean)
+                                FIELD_DEF2(timeToSendStats, stdDev)
+                                    FIELD_DEF2(timeToSendStats, nSamples)
+                                        FIELD_DEF(txTimeoutCount)
+                                            FIELD_DEF(rxDroppedBuffers)
+                                                FIELD_DEF(frameBufMaxLength));
     }
 };
 

@@ -36,8 +36,10 @@ struct PitotData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(PitotData, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(deltaP)
-                                         FIELD_DEF_WITH_UNIT(airspeed, m/s));
+        return STRUCT_DEF(PitotData,
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(deltaP)
+                                  FIELD_DEF_WITH_UNIT(airspeed, m / s));
     }
 };
 

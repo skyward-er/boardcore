@@ -51,10 +51,11 @@ struct StepperData
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(StepperData,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(enabled)
-                              FIELD_DEF_WITH_UNIT(positionDeg, Degrees) FIELD_DEF(speed)
-                                  FIELD_DEF_WITH_UNIT(moveDeg, Degrees));
+        return STRUCT_DEF(
+            StepperData,
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(enabled)
+                FIELD_DEF_WITH_UNIT(positionDeg, Degrees) FIELD_DEF(speed)
+                    FIELD_DEF_WITH_UNIT(moveDeg, Degrees));
     }
 };
 

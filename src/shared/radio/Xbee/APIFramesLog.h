@@ -64,8 +64,9 @@ struct APIFrameLog
     static constexpr auto reflect()
     {
         return STRUCT_DEF(APIFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameType)
-                              FIELD_DEF(frameDataLength) FIELD_DEF(frameData));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(frameType) FIELD_DEF(frameDataLength)
+                                  FIELD_DEF(frameData));
     }
 };
 
@@ -106,9 +107,10 @@ struct ATCommandFrameLog
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ATCommandFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameId)
-                              FIELD_DEF(atCommand) FIELD_DEF(commandData)
-                                  FIELD_DEF(commandDataLength));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(frameId) FIELD_DEF(atCommand)
+                                  FIELD_DEF(commandData)
+                                      FIELD_DEF(commandDataLength));
     }
 };
 
@@ -155,11 +157,12 @@ struct TXRequestFrameLog
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(TXRequestFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameId) FIELD_DEF(
-                              destinationAddress) FIELD_DEF(broadcastRadius)
-                              FIELD_DEF(transmitOptions) FIELD_DEF(rfData)
-                                  FIELD_DEF(rfDataLength));
+        return STRUCT_DEF(
+            TXRequestFrameLog,
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameId)
+                FIELD_DEF(destinationAddress) FIELD_DEF(broadcastRadius)
+                    FIELD_DEF(transmitOptions) FIELD_DEF(rfData)
+                        FIELD_DEF(rfDataLength));
     }
 };
 
@@ -202,11 +205,11 @@ struct ATCommandResponseFrameLog
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ATCommandResponseFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameId)
-                              FIELD_DEF(atCommand) FIELD_DEF(commandStatus)
-                                  FIELD_DEF(commandData)
-                                      FIELD_DEF(commandDataLength));
+        return STRUCT_DEF(
+            ATCommandResponseFrameLog,
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameId)
+                FIELD_DEF(atCommand) FIELD_DEF(commandStatus)
+                    FIELD_DEF(commandData) FIELD_DEF(commandDataLength));
     }
 };
 
@@ -234,7 +237,8 @@ struct ModemStatusFrameLog
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ModemStatusFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(modemStatus));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(modemStatus));
     }
 };
 
@@ -269,9 +273,10 @@ struct TXStatusFrameLog
     static constexpr auto reflect()
     {
         return STRUCT_DEF(TXStatusFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(frameId)
-                              FIELD_DEF(txRetryCount) FIELD_DEF(deliveryStatus)
-                                  FIELD_DEF(discoveryStatus));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(frameId) FIELD_DEF(txRetryCount)
+                                  FIELD_DEF(deliveryStatus)
+                                      FIELD_DEF(discoveryStatus));
     }
 };
 
@@ -314,9 +319,9 @@ struct RXPacketFrameLog
     static constexpr auto reflect()
     {
         return STRUCT_DEF(RXPacketFrameLog,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(sourceAddress)
-                              FIELD_DEF(receiveOptions) FIELD_DEF(rxData)
-                                  FIELD_DEF(rxDataLength));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(sourceAddress) FIELD_DEF(receiveOptions)
+                                  FIELD_DEF(rxData) FIELD_DEF(rxDataLength));
     }
 };
 

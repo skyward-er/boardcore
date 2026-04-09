@@ -58,7 +58,9 @@ struct AntennaAngles
     constexpr static auto reflect()
     {
         return STRUCT_DEF(AntennaAngles,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(yaw, degrees) FIELD_DEF_WITH_UNIT(pitch, degrees));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF_WITH_UNIT(yaw, degrees)
+                                  FIELD_DEF_WITH_UNIT(pitch, degrees));
     }
 };
 
@@ -108,10 +110,12 @@ struct FollowerState
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(FollowerState,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(yaw, degrees) FIELD_DEF_WITH_UNIT(pitch, degrees)
-                              FIELD_DEF_WITH_UNIT(horizontalSpeed, m/s)
-                                  FIELD_DEF_WITH_UNIT(verticalSpeed, m/s));
+        return STRUCT_DEF(
+            FollowerState,
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(
+                yaw, degrees) FIELD_DEF_WITH_UNIT(pitch, degrees)
+                FIELD_DEF_WITH_UNIT(horizontalSpeed, m / s)
+                    FIELD_DEF_WITH_UNIT(verticalSpeed, m / s));
     }
 };
 

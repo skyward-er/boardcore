@@ -207,11 +207,14 @@ struct INSData
     {
         return STRUCT_DEF(
             INSData,
-            FIELD_DEF_WITH_UNIT(insTimestamp, microseconds) FIELD_DEF(gpsFix) FIELD_DEF(insStatus)
-                FIELD_DEF(yaw) FIELD_DEF(pitch) FIELD_DEF(roll)
-                    FIELD_DEF_WITH_UNIT(latitude, degrees) FIELD_DEF_WITH_UNIT(longitude, degrees) FIELD_DEF_WITH_UNIT(altitude, meters)
-                        FIELD_DEF_WITH_UNIT(velocityX, m/s) FIELD_DEF_WITH_UNIT(velocityY, m/s)
-                            FIELD_DEF_WITH_UNIT(velocityZ, m/s));
+            FIELD_DEF_WITH_UNIT(insTimestamp, microseconds) FIELD_DEF(gpsFix)
+                FIELD_DEF(insStatus) FIELD_DEF(yaw) FIELD_DEF(pitch)
+                    FIELD_DEF(roll) FIELD_DEF_WITH_UNIT(latitude, degrees)
+                        FIELD_DEF_WITH_UNIT(longitude, degrees)
+                            FIELD_DEF_WITH_UNIT(altitude, meters)
+                                FIELD_DEF_WITH_UNIT(velocityX, m / s)
+                                    FIELD_DEF_WITH_UNIT(velocityY, m / s)
+                                        FIELD_DEF_WITH_UNIT(velocityZ, m / s));
     }
 };
 

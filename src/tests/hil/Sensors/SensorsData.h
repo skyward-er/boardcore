@@ -52,9 +52,11 @@ struct SensorsCalibrationParameter
     static constexpr auto reflect()
     {
         return STRUCT_DEF(SensorsCalibrationParameter,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(referencePressure, Pascal)
-                              FIELD_DEF(offsetStatic1) FIELD_DEF(offsetStatic2)
-                                  FIELD_DEF(offsetDeployment));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF_WITH_UNIT(referencePressure, Pascal)
+                                  FIELD_DEF(offsetStatic1)
+                                      FIELD_DEF(offsetStatic2)
+                                          FIELD_DEF(offsetDeployment));
     }
 };
 struct LPS28DFW_1Data : Boardcore::LPS28DFWData

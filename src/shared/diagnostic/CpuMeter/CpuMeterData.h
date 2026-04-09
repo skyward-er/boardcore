@@ -59,10 +59,11 @@ struct CpuMeterData
     {
         return STRUCT_DEF(
             CpuMeterData,
-            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(minValue) FIELD_DEF(maxValue)
-                FIELD_DEF(mean) FIELD_DEF(stdDev) FIELD_DEF(nSamples)
-                    FIELD_DEF(minFreeHeap) FIELD_DEF(freeHeap)
-                        FIELD_DEF(minFreeStack) FIELD_DEF(freeStack));
+            FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(minValue)
+                FIELD_DEF(maxValue) FIELD_DEF(mean) FIELD_DEF(stdDev)
+                    FIELD_DEF(nSamples) FIELD_DEF(minFreeHeap)
+                        FIELD_DEF(freeHeap) FIELD_DEF(minFreeStack)
+                            FIELD_DEF(freeStack));
     }
 };
 

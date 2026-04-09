@@ -58,7 +58,8 @@ struct ADS131M08Data
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ADS131M08Data,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF_WITH_UNIT(voltage, V));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF_WITH_UNIT(voltage, V));
     }
 };
 

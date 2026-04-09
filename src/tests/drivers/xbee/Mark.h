@@ -41,7 +41,8 @@ struct Mark
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(Mark, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(seq));
+        return STRUCT_DEF(
+            Mark, FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(seq));
     }
 };
 

@@ -39,8 +39,9 @@ struct ServoData
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ServoData,
-                          FIELD_DEF_WITH_UNIT(timestamp, microseconds) FIELD_DEF(timer)
-                              FIELD_DEF(channel) FIELD_DEF(position));
+                          FIELD_DEF_WITH_UNIT(timestamp, microseconds)
+                              FIELD_DEF(timer) FIELD_DEF(channel)
+                                  FIELD_DEF(position));
     }
 };
 
