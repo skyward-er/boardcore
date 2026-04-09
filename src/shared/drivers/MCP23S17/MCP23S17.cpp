@@ -61,19 +61,16 @@ void MCP23S17::wipeRegister(uint8_t address)
 
 uint8_t MCP23S17::readRegister(uint8_t address)
 {
-    uint16_t msg;
-    uint8_t result;
+    uint8_t buf[3];
+
+    buf[0] = MCP23S17Defs::READ_OPCODE;
+    buf[1] = address;
+    buf[2] = 0;
 
     SPITransaction spiTransaction{this->spiSlave};
+    spiTransaction.transfer(buf, sizeof(buf));
 
-    msg = (MCP23S17Defs::READ_OPCODE << 8) | (address);
-
-    spiSlave.bus.select(spiSlave.cs);
-    spiSlave.bus.write16(msg);
-    result = spiSlave.bus.read();
-    spiSlave.bus.deselect(spiSlave.cs);
-
-    return result;
+    return buf[2];
 }
 
 bool MCP23S17::readBit(uint8_t address, uint8_t pinNumber)

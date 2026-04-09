@@ -68,7 +68,7 @@ enum class GPIO_REG
     Last
 };
 
-inline constexpr uint8_t GPIO_REG_LUT[(int)Bank::Last][(int)GPIO_REG::Last] = {
+constexpr uint8_t GPIO_REG_LUT[(int)Bank::Last][(int)GPIO_REG::Last] = {
     {
         // BANK 0
         0x00,  // IODIRA
@@ -114,7 +114,7 @@ enum class CTRL_REG
     Last
 };
 
-inline constexpr uint8_t CTRL_REG_LUT[(int)Bank::Last][(int)CTRL_REG::Last] = {
+constexpr uint8_t CTRL_REG_LUT[(int)Bank::Last][(int)CTRL_REG::Last] = {
     {
         // BANK 0
         0x06,  // DEFVALA
