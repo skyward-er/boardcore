@@ -320,12 +320,6 @@ private:
     uint8_t getCtrlAddress(MCP23S17Defs::CTRL_REG reg);
 
     /**
-     * @brief Helper function to write all zeroes in a register.
-     * @param address Register address
-     */
-    void wipeRegister(uint8_t address);
-
-    /**
      * @brief Read all the values stored in a register.
      * @param address Register address
      * @return Byte stored in the target register
