@@ -49,6 +49,16 @@ uint8_t MCP23S17::getCtrlAddress(CTRL_REG reg)
     return CTRL_REG_LUT[(int)activeBank][(int)reg];
 }
 
+void MCP23S17::wipeRegister(uint8_t address)
+{
+    uint32_t data;
+    SPITransaction spiTransaction{this->spiSlave};
+
+    data = (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | 0x00;
+
+    spiTransaction.write24(data);
+}
+
 uint8_t MCP23S17::readRegister(uint8_t address)
 {
     uint16_t msg;
