@@ -95,7 +95,7 @@ using cs = Gpio<GPIOC_BASE, 4>;
 
 namespace ND030D
 {
-using cs = Gpio<GPIOC_BASE, 5>;
+using cs = Gpio<GPIOD_BASE, 11>;
 }
 
 namespace Thermocouple
