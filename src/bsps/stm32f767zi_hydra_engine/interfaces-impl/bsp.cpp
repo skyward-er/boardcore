@@ -299,8 +299,12 @@ void IRQbspInit()
     interfaces::timers::tim9ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim11ch1::alternateFunction(3);
     interfaces::timers::tim11ch1::mode(Mode::ALTERNATE);
-    interfaces::timers::tim14ch1::alternateFunction(9);
-    interfaces::timers::tim14ch1::mode(Mode::ALTERNATE);
+
+    // Extra Valves that are currently not in use.
+    // interfaces::timers::tim13ch1::alternateFunction(9);
+    // interfaces::timers::tim13ch1::mode(Mode::ALTERNATE);
+    // interfaces::timers::tim14ch1::alternateFunction(9);
+    // interfaces::timers::tim14ch1::mode(Mode::ALTERNATE);
 
     interfaces::adcs::adc12in9::mode(Mode::INPUT_ANALOG);
     interfaces::adcs::adc12in14::mode(Mode::INPUT_ANALOG);
