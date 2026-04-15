@@ -96,12 +96,12 @@ using adc12in14 = Gpio<GPIOC_BASE, 4>;
 
 namespace sensors
 {
-namespace ADS131M08_1
+namespace ADC_1
 {
 using cs = Gpio<GPIOG_BASE, 9>;
 }
 
-namespace ADS131M08_2
+namespace ADC_2
 {
 using cs = Gpio<GPIOE_BASE, 4>;
 }
