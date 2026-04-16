@@ -1,5 +1,5 @@
 /* Copyright (c) 2025 Skyward Experimental Rocketry
- * Authors: Tommaso Lamon
+ * Authors: Tommaso Lamon, Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,27 @@
 
 #pragma once
 
-#include <drivers/MCP23S17/MCP23S17Defs.h>
 #include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
+
+#include "MCP23S17Defs.h"
 
 namespace Boardcore
 {
+
+struct ExternalGpioPin
+{
+    constexpr ExternalGpioPin(MCP23S17Defs::PORT port, MCP23S17Defs::PIN pin)
+        : port(port), pin(pin)
+    {
+    }
+
+    MCP23S17Defs::PORT port;
+    MCP23S17Defs::PIN pin;
+
+    constexpr MCP23S17Defs::PORT getPort() const { return port; }
+    constexpr MCP23S17Defs::PIN getPin() const { return pin; }
+};
 
 class MCP23S17
 {
@@ -50,112 +66,9 @@ public:
     void init();
 
     /**
-     * @brief Helper function to get the wanted GPIO register from the LUT.
-     * @param reg Register name
-     * @return Address of the target GPIO register
-     */
-    uint8_t getGpioAddress(MCP23S17Defs::GPIO_REG reg);
-
-    /**
-     * @brief Helper function to get the wanted control register from the LUT.
-     * @param reg Register name
-     * @return Address of the target control register
-     */
-    uint8_t getCtrlAddress(MCP23S17Defs::CTRL_REG reg);
-
-    /**
-     * @brief Helper function to write all zeroes in a register.
-     * @param address Register address
-     */
-    void wipeRegister(uint8_t address);
-
-    /**
-     * @brief Read all the values stored in a register.
-     * @param address Register address
-     * @return Byte stored in the target register
-     */
-    uint8_t readRegister(uint8_t address);
-
-    /**
-     * @brief Read a specific bit from a register.
-     * @param address Register address
-     * @param bitNumber Number of the target bit within the register (between 0
-     * and 7)
-     * @return Value stored in the target bit
-     */
-    bool readBit(uint8_t address, uint8_t bitNumber);
-
-    /**
-     * @brief Write a value in a specific bit of a register.
-     * @param address Register address
-     * @param bitNumber Number of the target bit within the register (between 0
-     * and 7)
-     * @param value Value to write
-     */
-    void writeBit(uint8_t address, uint8_t bitNumber, bool value);
-
-    /**
-     * @brief Write 8 bits in a specific register.
-     * @param address Register address
-     * @param value Byte of data to be written in the register
-     */
-    void writeRegister(uint8_t address, uint8_t value);
-
-    /**
-     * @brief Set a specific Port A pin as an input pin.
-     * @param pinNumber Number of the target pin
-     */
-    void setPinIn_A(uint8_t pinNumber);
-
-    /**
-     * @brief Set a specific Port B pin as an input pin.
-     * @param pinNumber Number of the target pin
-     */
-    void setPinIn_B(uint8_t pinNumber);
-
-    /**
-     * @brief Set a specific Port A pin as an output pin.
-     * @param pinNumber Number of the target pin
-     */
-    void setPinOut_A(uint8_t pinNumber);
-
-    /**
-     * @brief Set a specific Port B pin as an output pin.
-     * @param pinNumber Number of the target pin
-     */
-    void setPinOut_B(uint8_t pinNumber);
-
-    /**
-     * @brief Set polarity of a Port A pin.
-     * @param pinNumber Number of the target pin
-     * @param polarity: 1 - GPIO register bit will reflet the opposite logic
-     * state of the input pin; 0 - GPIO register bit will reflet the same logic
-     * state of the input pin
-     */
-    void setPinPolarity_A(uint8_t pinNumber, bool polarity);
-
-    /**
-     * @brief Set polarity of a Port B pin.
-     * @param pinNumber Number of the target pin
-     * @param polarity 1 - GPIO register bit will reflet the opposite logic
-     * state of the input pin; 0 - GPIO register bit will reflet the same logic
-     * state of the input pin
-     */
-    void setPinPolarity_B(uint8_t pinNumber, bool polarity);
-
-    /**
-     * @brief Set BANK value.
-     * @param value 1 - The registers associated with each port are separated
-     * into different banks; 0 - The registers are in the same bank (addresses
-     * are sequential)
-     */
-    void setBANK(bool value);
-
-    /**
      * @brief Set MIRROR value.
-     * @param value 1 - The INT pins are internally connected;
-     *              0 - The INT pins are not connected; INTA refers to port A
-     * and INTB refers to port B
+     * @param value 1 - The interrupt pins are internally connected;
+     *              0 - The interrupt pins are not connected;
      */
     void setMIRROR(bool value);
 
@@ -195,170 +108,130 @@ public:
     void setINTPOL(bool value);
 
     /**
-     * @brief Enables interrupt on change for a Port A pin. Note: DEFVAL and
+     * @brief Set the mode (input/ouput) of a pin.
+     * @param port Port of the target pin
+     * @param pinNumber Number of the target pin
+     * @param mode Either INPUT, OUTPUT, or INPUT_PULL_UP
+     *
+     * @note Only pins set as input can be configured as pull-up
+     */
+    void setPinMode(MCP23S17Defs::PORT port, MCP23S17Defs::PIN pinNumber,
+                    MCP23S17Defs::MODE mode);
+
+    /**
+     * @brief Set polarity of a pin.
+     * @param port Port of the target pin
+     * @param pinNumber Number of the target pin
+     * @param polarity 1 - GPIO register bit reflects the inverted logic state
+     * of the input pin; 0 - GPIO register bit reflects the same logic state of
+     * the input pin
+     */
+    void setPinPolarity(MCP23S17Defs::PORT port, MCP23S17Defs::PIN pinNumber,
+                        bool polarity);
+
+    /**
+     * @brief Enables interrupt on change for a pin. Note: DEFVAL and
      * INTCON registers must also be configured.
+     * @param port Port of the target pin
      * @param pinNumber Number of the target pin
      */
-    void enableInterruptOnChange_A(uint8_t pinNumber);
+    void enableInterruptOnChange(MCP23S17Defs::PORT port,
+                                 MCP23S17Defs::PIN pinNumber);
 
     /**
-     * @brief Enables interrupt on change for a Port B pin. Note: DEFVAL and
-     * INTCON registers must also be configured.
+     * @brief Disables interrupt on change for a pin.
+     * @param port Port of the target pin
      * @param pinNumber Number of the target pin
      */
-    void enableInterruptOnChange_B(uint8_t pinNumber);
+    void disableInterruptOnChange(MCP23S17Defs::PORT port,
+                                  MCP23S17Defs::PIN pinNumber);
 
     /**
-     * @brief Disables interrupt on change for a Port A pin.
+     * @brief Sets value to compare against when a pin is configured to trigger
+     * an interrupt on change.
+     * @param port Port of the target pin
      * @param pinNumber Number of the target pin
-     */
-    void disableInterruptOnChange_A(uint8_t pinNumber);
-
-    /**
-     * @brief Disables interrupt on change for a Port B pin.
-     * @param pinNumber Number of the target pin
-     */
-    void disableInterruptOnChange_B(uint8_t pinNumber);
-
-    /**
-     * @brief Enables pull up resistors for a Port A pin.
-     * @param pinNumber Number of the target pin
-     */
-    void enablePullUp_A(uint8_t pinNumber);
-
-    /**
-     * @brief Enables pull up resistors for a Port B pin.
-     * @param pinNumber Number of the target pin
-     */
-    void enablePullUp_B(uint8_t pinNumber);
-
-    /**
-     * @brief Disables pull up resistors for a Port A pin.
-     * @param pinNumber Number of the target pin
-     */
-    void disablePullUp_A(uint8_t pinNumber);
-
-    /**
-     * @brief Disables pull up resistors for a Port B pin.
-     * @param pinNumber Number of the target pin
-     */
-    void disablePullUp_B(uint8_t pinNumber);
-
-    /**
-     * @brief Sets default comparison value for a Port A pin set as an interrupt
-     * pin.
      * @param value Comparison value
      */
-    void setDefaultValue_A(uint8_t pinNumber, bool value);
+    void setDefaultValue(MCP23S17Defs::PORT port, MCP23S17Defs::PIN pinNumber,
+                         bool value);
 
     /**
-     * @brief Sets default comparison value for a Port B pin set as an interrupt
-     * pin.
-     * @param value Comparison value
-     */
-    void setDefaultValue_B(uint8_t pinNumber, bool value);
-
-    /**
-     * @brief Sets comparison mode for a Port A pin set as an interrupt.
+     * @brief Sets comparison mode for a pin set as an interrupt.
+     * @param port Port of the target pin
      * @param pinNumber Number of the target pin
      * @param mode 1 - Compared against the corresponding value in DEFVAL;
      *             0 - Compared against the previous value
      */
-    void setInterruptComparison_A(uint8_t pinNumber, bool mode);
+    void setInterruptComparison(MCP23S17Defs::PORT port,
+                                MCP23S17Defs::PIN pinNumber, bool mode);
 
     /**
-     * @brief Sets comparison mode for a Port B pin set as an interrupt.
-     * @param pinNumber Number of the target pin
-     * @param mode 1 - Compared against the corresponding value in DEFVAL;
-     *             0 - Compared against the previous value
+     * @brief Read which pins caused an interrupt on a specific port.
+     * @param port Port to check for interrupts
+     * @return Snapshot of the pins that triggered the interrupt
      */
-    void setInterruptComparison_B(uint8_t pinNumber, bool mode);
+    uint8_t readInterruptFlag(MCP23S17Defs::PORT port);
 
     /**
-     * @brief Read which pin in Port A caused an interrupt.
-     * @return Number of the pin
-     */
-    uint8_t readInterruptFlag_A();
-
-    /**
-     * @brief Read which pin in Port B caused an interrupt.
-     * @return Number of the pin
-     */
-    uint8_t readInterruptFlag_B();
-
-    /**
-     * @brief Read the value of the GPIO (Port A) when the interrupt got
+     * @brief Read the value of the pins on a port when the interrupt got
      * triggered.
-     * @return GPIO register values
+     * @return Snapshot of the pins when the interrupt was triggered
      */
-    uint8_t readInterruptCapture_A();
+    uint8_t readInterruptCapture(MCP23S17Defs::PORT port);
 
     /**
-     * @brief Read the value of the GPIO (Port B) when the interrupt got
-     * triggered.
-     * @return GPIO register values
-     */
-    uint8_t readInterruptCapture_B();
-
-    /**
-     * @brief Read the value of a specific Port A pin.
+     * @brief Read the value of a specific pin.
+     * @param port Port of the target pin
      * @param pinNumber Number of the target pin
-     * @return Pin value
+     * @return Value stored in the target pin
      */
-    bool readPin_A(uint8_t pinNumber);
+    bool getPinValue(MCP23S17Defs::PORT port, MCP23S17Defs::PIN pinNumber);
 
     /**
-     * @brief Read the value of a specific Port B pin.
+     * @brief Set the value of a specific pin
+     * @param port Port of the target pin
      * @param pinNumber Number of the target pin
-     * @return Pin value
+     * @param value Value to be set on the target pin
      */
-    bool readPin_B(uint8_t pinNumber);
-
-    /**
-     * @brief Read the value of a specific Port A latch (associated to a pin).
-     * @param pinNumber Number of the pin related to the target latch
-     * @return Latch value
-     */
-    bool readLatch_A(uint8_t pinNumber);
-
-    /**
-     * @brief Read the value of a specific Port B latch (associated to a pin).
-     * @param pinNumber Number of the pin related to the target latch
-     * @return Latch value
-     */
-    bool readLatch_B(uint8_t pinNumber);
-
-    /**
-     * @brief Write a value to a specific Port A pin - Note: Updates the value
-     * of the associated latch (OLATA).
-     * @param pinNumber Number of the target pin
-     */
-    void writePin_A(uint8_t pinNumber, bool value);
-
-    /**
-     * @brief Write a value to a specific Port B pin - Note: Updates the value
-     * of the associated latch (OLATB).
-     * @param pinNumber Number of the target pin
-     */
-    void writePin_B(uint8_t pinNumber, bool value);
-
-    /**
-     * @brief Write a value to a specific Port A latch - Note: Updates the value
-     * of the associated GPIO pin (if configured as output).
-     * @param pinNumber Number of the pin associated to the target latch
-     */
-    void writeLatch_A(uint8_t pinNumber, bool value);
-
-    /**
-     * @brief Write a value to a specific Port A latch - Note: Updates the value
-     * of the associated GPIO pin (if configured as output).
-     * @param pinNumber Number of the pin associated to the target latch
-     */
-    void writeLatch_B(uint8_t pinNumber, bool value);
+    void setPinValue(MCP23S17Defs::PORT port, MCP23S17Defs::PIN pinNumber,
+                     bool value);
 
 private:
+    /**
+     * @brief Read all the values stored in a register.
+     * @param address Register address
+     * @return Byte stored in the target register
+     */
+    uint8_t readRegister(uint8_t address);
+
+    /**
+     * @brief Read a specific bit from a register.
+     * @param address Register address
+     * @param bitNumber Number of the target bit within the register (between 0
+     * and 7)
+     * @return Value stored in the target bit
+     */
+    bool readBit(uint8_t address, uint8_t bitNumber);
+
+    /**
+     * @brief Write a value in a specific bit of a register.
+     * @param address Register address
+     * @param bitNumber Number of the target bit within the register (between 0
+     * and 7)
+     * @param value Value to write
+     */
+    void writeBit(uint8_t address, uint8_t bitNumber, bool value);
+
+    /**
+     * @brief Write 8 bits in a specific register.
+     * @param address Register address
+     * @param value Byte of data to be written in the register
+     */
+    void writeRegister(uint8_t address, uint8_t value);
+
     SPISlave spiSlave;
-    MCP23S17Defs::Bank activeBank = MCP23S17Defs::Bank::Bank0;
+    miosix::FastMutex spiMutex;
 };
 
 }  // namespace Boardcore

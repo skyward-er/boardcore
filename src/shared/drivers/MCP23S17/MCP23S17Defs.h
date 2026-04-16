@@ -32,6 +32,31 @@ namespace MCP23S17Defs
 static constexpr uint16_t WRITE_OPCODE = 0b01000000;
 static constexpr uint16_t READ_OPCODE  = 0b01000001;
 
+enum PORT
+{
+    PORT_A = 0,
+    PORT_B = 1
+};
+
+enum PIN
+{
+    PIN0 = 0,
+    PIN1 = 1,
+    PIN2 = 2,
+    PIN3 = 3,
+    PIN4 = 4,
+    PIN5 = 5,
+    PIN6 = 6,
+    PIN7 = 7
+};
+
+enum class MODE
+{
+    INPUT         = 0,
+    OUTPUT        = 1,
+    INPUT_PULL_UP = 2,
+};
+
 enum CONFIG_FIELDS
 {
     BANK   = 0x07,
@@ -43,103 +68,23 @@ enum CONFIG_FIELDS
     INTPOL = 0x01
 };
 
-enum class Bank
+enum GPIO_REG
 {
-    Bank0,
-    Bank1,
-    Last
+    IODIR_BASE    = 0x00,
+    IPOL_BASE     = 0x02,
+    GPINTEN_BASE  = 0x04,
+    GPPU_BASE     = 0x0C,
+    GPIO_EXT_BASE = 0x12,  // Nel datasheet è GPIO
+    OLAT_BASE     = 0x14,
 };
 
-enum class GPIO_REG
+enum CTRL_REG
 {
-    IODIRA,
-    IODIRB,
-    IPOLA,
-    IPOLB,
-    GPINTENA,
-    GPINTENB,
-    GPPUA,
-    GPPUB,
-    GPIOA_EXT,  // Aggiunto _EXT causa conflitto nomi con miosix -> su
-                // datasheet é solo GPIOA(B)
-    GPIOB_EXT,
-    OLATA,
-    OLATB,
-    Last
-};
-
-constexpr uint8_t GPIO_REG_LUT[(int)Bank::Last][(int)GPIO_REG::Last] = {
-    {
-        // BANK 0
-        0x00,  // IODIRA
-        0x01,  // IODIRB
-        0x02,  // IPOLA
-        0x03,  // IPOLB
-        0x04,  // GPINTENA
-        0x05,  // GPINTENB
-        0x0C,  // GPPUA
-        0x0D,  // GPPUB
-        0x12,  // GPIOA_EXT
-        0x13,  // GPIOB_EXT
-        0x14,  // OLATA
-        0x15   // OLATB
-    },
-    {
-        // BANK 1
-        0x00,  // IODIRA
-        0x01,  // IPOLA
-        0x02,  // GPINTENA
-        0x06,  // GPPUA
-        0x09,  // GPIOA_EXT
-        0x0A,  // OLATA
-        0x10,  // IODIRB
-        0x11,  // IPOLB
-        0x12,  // GPINTENB
-        0x16,  // GPIOB_EXT
-        0x19,  // GPPUB
-        0x1A   // OLATB
-    }};
-
-enum class CTRL_REG
-{
-    DEFVALA,
-    INTCONA,
-    IOCON,
-    INTFA,
-    INTCAPA,
-    DEFVALB,
-    INTCONB,
-    INTFB,
-    INTCAPB,
-    Last
-};
-
-constexpr uint8_t CTRL_REG_LUT[(int)Bank::Last][(int)CTRL_REG::Last] = {
-    {
-        // BANK 0
-        0x06,  // DEFVALA
-        0x08,  // INTCONA
-        0x0A,  // IOCON
-        0x0E,  // INTFA
-        0x10,  // INTCAPA
-        0x07,  // DEFVALB
-        0x09,  // INTCONB
-        0x0F,  // INTFB
-        0x11   // INTCAPB
-    },
-    {
-        // BANK 1
-        0x03,  // DEFVALA
-        0x04,  // INTCONA
-        0x05,  // IOCON
-        0x07,  // INTFA
-        0x08,  // INTCAPA
-        0x13,  // DEFVALB
-        0x14,  // INTCONB
-        0x17,  // INTFB
-        0x18   // INTCAPB
-    }
-
+    DEFVAL_BASE = 0x06,
+    INTCON_BASE = 0x08,
+    IOCON_BASE  = 0x0A,
+    INTF_BASE   = 0x0E,
+    INTCAP_BASE = 0x10
 };
 
 }  // namespace MCP23S17Defs

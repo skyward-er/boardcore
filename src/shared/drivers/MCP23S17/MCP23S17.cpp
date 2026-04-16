@@ -1,5 +1,5 @@
 /* Copyright (c) 2025 Skyward Experimental Rocketry
- * Authors: Tommaso Lamon
+ * Authors: Tommaso Lamon, Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,6 @@
 
 #include "MCP23S17.h"
 
-#include "MCP23S17Defs.h"
-
 namespace Boardcore
 {
 
@@ -39,26 +37,6 @@ SPIBusConfig MCP23S17::getDefaultSPIConfig()
     return config;
 }
 
-uint8_t MCP23S17::getGpioAddress(GPIO_REG reg)
-{
-    return GPIO_REG_LUT[(int)activeBank][(int)reg];
-}
-
-uint8_t MCP23S17::getCtrlAddress(CTRL_REG reg)
-{
-    return CTRL_REG_LUT[(int)activeBank][(int)reg];
-}
-
-void MCP23S17::wipeRegister(uint8_t address)
-{
-    uint32_t data;
-    SPITransaction spiTransaction{this->spiSlave};
-
-    data = (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | 0x00;
-
-    spiTransaction.write24(data);
-}
-
 uint8_t MCP23S17::readRegister(uint8_t address)
 {
     uint8_t buf[3];
@@ -67,8 +45,11 @@ uint8_t MCP23S17::readRegister(uint8_t address)
     buf[1] = address;
     buf[2] = 0;
 
-    SPITransaction spiTransaction{this->spiSlave};
-    spiTransaction.transfer(buf, sizeof(buf));
+    {
+        miosix::Lock<miosix::FastMutex> lock(spiMutex);
+        SPITransaction spiTransaction{this->spiSlave};
+        spiTransaction.transfer(buf, sizeof(buf));
+    }
 
     return buf[2];
 }
@@ -92,270 +73,140 @@ void MCP23S17::writeBit(uint8_t address, uint8_t bitNumber, bool value)
     uint32_t msg =
         (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | newValue;
 
-    SPITransaction spiTransaction{this->spiSlave};
-
-    spiTransaction.write24(msg);
+    {
+        miosix::Lock<miosix::FastMutex> lock(spiMutex);
+        SPITransaction spiTransaction{this->spiSlave};
+        spiTransaction.write24(msg);
+    }
 }
 
 void MCP23S17::writeRegister(uint8_t address, uint8_t value)
 {
-    uint32_t data;
-    SPITransaction spiTransaction{this->spiSlave};
+    uint32_t data = (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | value;
 
-    data = (MCP23S17Defs::WRITE_OPCODE << 16) | (address << 8) | value;
-    spiTransaction.write24(data);
+    {
+        miosix::Lock<miosix::FastMutex> lock(spiMutex);
+        SPITransaction spiTransaction{this->spiSlave};
+        spiTransaction.write24(data);
+    }
 }
 
 void MCP23S17::init()
 {
-    bool enableHAEN = false;
-    bool mirror     = false;
-    bool seqOP      = true;
-    bool disableSLW = true;
-    bool intPOL     = false;
-
     // Setup IOCON
-
-    setHAEN(enableHAEN);
-    setMIRROR(mirror);
-    setSEQOP(seqOP);
-    setDISSLW(disableSLW);
-    setINTPOL(intPOL);
+    setHAEN(false);
+    setMIRROR(false);
+    setSEQOP(true);
+    setDISSLW(true);
+    setINTPOL(false);
 
     // Setup pins (all inputs)
-    writeRegister(getGpioAddress(GPIO_REG::IODIRA), 0xFF);
-    writeRegister(getGpioAddress(GPIO_REG::IODIRB), 0xFF);
+    writeRegister(GPIO_REG::IODIR_BASE + PORT::PORT_A, 0xFF);
+    writeRegister(GPIO_REG::IODIR_BASE + PORT::PORT_B, 0xFF);
 
     // Setup Pull-Ups (default off)
-    writeRegister(getGpioAddress(GPIO_REG::GPPUA), 0x00);
-    writeRegister(getGpioAddress(GPIO_REG::GPPUB), 0x00);
+    writeRegister(GPIO_REG::GPPU_BASE + PORT::PORT_A, 0x00);
+    writeRegister(GPIO_REG::GPPU_BASE + PORT::PORT_B, 0x00);
 
-    // Cleared Interrupt configs
-    writeRegister(getGpioAddress(GPIO_REG::GPINTENA), 0x00);
-    writeRegister(getGpioAddress(GPIO_REG::GPINTENB), 0x00);
-    writeRegister(getCtrlAddress(CTRL_REG::DEFVALA), 0x00);
-    writeRegister(getCtrlAddress(CTRL_REG::DEFVALB), 0x00);
-    writeRegister(getCtrlAddress(CTRL_REG::INTCONA), 0x00);
-    writeRegister(getCtrlAddress(CTRL_REG::INTCONB), 0x00);
+    // Clear Interrupt configs
+    writeRegister(GPIO_REG::GPINTEN_BASE + PORT::PORT_A, 0x00);
+    writeRegister(GPIO_REG::GPINTEN_BASE + PORT::PORT_B, 0x00);
+    writeRegister(CTRL_REG::DEFVAL_BASE + PORT::PORT_A, 0x00);
+    writeRegister(CTRL_REG::DEFVAL_BASE + PORT::PORT_B, 0x00);
+    writeRegister(CTRL_REG::INTCON_BASE + PORT::PORT_A, 0x00);
+    writeRegister(CTRL_REG::INTCON_BASE + PORT::PORT_B, 0x00);
 }
 
-void MCP23S17::setPinIn_A(uint8_t pinNumber)
-{
-    writeBit(getGpioAddress(GPIO_REG::IODIRA), pinNumber, 1);
-}
-
-void MCP23S17::setPinIn_B(uint8_t pinNumber)
-{
-    writeBit(getGpioAddress(GPIO_REG::IODIRB), pinNumber, 1);
-}
-
-void MCP23S17::setPinOut_A(uint8_t pinNumber)
-{
-    writeBit(getGpioAddress(GPIO_REG::IODIRA), pinNumber, 0);
-}
-
-void MCP23S17::setPinOut_B(uint8_t pinNumber)
-{
-    writeBit(getGpioAddress(GPIO_REG::IODIRB), pinNumber, 0);
-}
-
-void MCP23S17::setPinPolarity_A(uint8_t pinNumber, bool polarity)
-{
-    writeBit(getGpioAddress(GPIO_REG::IPOLA), pinNumber, polarity);
-}
-
-void MCP23S17::setPinPolarity_B(uint8_t pinNumber, bool polarity)
-{
-    writeBit(getGpioAddress(GPIO_REG::IPOLB), pinNumber, polarity);
-}
-
-void MCP23S17::setBANK(bool value)
-{
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::BANK, value);
-
-    activeBank = value ? Bank::Bank1 : Bank::Bank0;
-}
+/**
+ * Expander configuration methods
+ */
 
 void MCP23S17::setMIRROR(bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::MIRROR, value);
+    writeBit(CTRL_REG::IOCON_BASE, CONFIG_FIELDS::MIRROR, value);
 }
 
 void MCP23S17::setSEQOP(bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::SEQOP, value);
+    writeBit(CTRL_REG::IOCON_BASE, CONFIG_FIELDS::SEQOP, value);
 }
 
 void MCP23S17::setDISSLW(bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::DISSLW, value);
+    writeBit(CTRL_REG::IOCON_BASE, CONFIG_FIELDS::DISSLW, value);
 }
 
 void MCP23S17::setHAEN(bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::HAEN, value);
+    writeBit(CTRL_REG::IOCON_BASE, CONFIG_FIELDS::HAEN, value);
 }
 
 void MCP23S17::setODR(bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::ODR, value);
+    writeBit(CTRL_REG::IOCON_BASE, CONFIG_FIELDS::ODR, value);
 }
 
 void MCP23S17::setINTPOL(bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::IOCON), CONFIG_FIELDS::INTPOL, value);
+    writeBit(CTRL_REG::IOCON_BASE, CONFIG_FIELDS::INTPOL, value);
 }
 
-void MCP23S17::enableInterruptOnChange_A(uint8_t pinNumber)
+/**
+ * Pin specific methods
+ */
+
+void MCP23S17::setPinMode(PORT port, PIN pinNumber, MODE mode)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPINTENA), pinNumber, 1);
+    writeBit(GPIO_REG::IODIR_BASE + port, pinNumber,
+             (mode == MODE::INPUT) || (mode == MODE::INPUT_PULL_UP));
+
+    writeBit(GPIO_REG::GPPU_BASE + port, pinNumber,
+             (mode == MODE::INPUT_PULL_UP));
 }
 
-void MCP23S17::enableInterruptOnChange_B(uint8_t pinNumber)
+void MCP23S17::setPinPolarity(PORT port, PIN pinNumber, bool polarity)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPINTENB), pinNumber, 1);
+    writeBit(GPIO_REG::IPOL_BASE + port, pinNumber, polarity);
 }
 
-void MCP23S17::disableInterruptOnChange_A(uint8_t pinNumber)
+void MCP23S17::setDefaultValue(PORT port, PIN pinNumber, bool value)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPINTENA), pinNumber, 0);
+    writeBit(CTRL_REG::DEFVAL_BASE + port, pinNumber, value);
 }
 
-void MCP23S17::disableInterruptOnChange_B(uint8_t pinNumber)
+void MCP23S17::enableInterruptOnChange(PORT port, PIN pinNumber)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPINTENB), pinNumber, 0);
+    writeBit(GPIO_REG::GPINTEN_BASE + port, pinNumber, 1);
 }
 
-void MCP23S17::enablePullUp_A(uint8_t pinNumber)
+void MCP23S17::disableInterruptOnChange(PORT port, PIN pinNumber)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPPUA), pinNumber, 1);
+    writeBit(GPIO_REG::GPINTEN_BASE + port, pinNumber, 0);
 }
 
-void MCP23S17::enablePullUp_B(uint8_t pinNumber)
+void MCP23S17::setInterruptComparison(PORT port, PIN pinNumber, bool mode)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPPUB), pinNumber, 1);
+    writeBit(CTRL_REG::INTCON_BASE + port, pinNumber, mode);
 }
 
-void MCP23S17::disablePullUp_A(uint8_t pinNumber)
+uint8_t MCP23S17::readInterruptFlag(PORT port)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPPUA), pinNumber, 0);
+    return readRegister(CTRL_REG::INTF_BASE + port);
 }
 
-void MCP23S17::disablePullUp_B(uint8_t pinNumber)
+uint8_t MCP23S17::readInterruptCapture(PORT port)
 {
-    writeBit(getGpioAddress(GPIO_REG::GPPUB), pinNumber, 0);
+    return readRegister(CTRL_REG::INTCAP_BASE + port);
 }
 
-void MCP23S17::setDefaultValue_A(uint8_t pinNumber, bool value)
+bool MCP23S17::getPinValue(PORT port, PIN pinNumber)
 {
-    writeBit(getCtrlAddress(CTRL_REG::DEFVALA), pinNumber, value);
+    return readBit(GPIO_REG::GPIO_EXT_BASE + port, pinNumber);
 }
 
-void MCP23S17::setDefaultValue_B(uint8_t pinNumber, bool value)
+void MCP23S17::setPinValue(PORT port, PIN pinNumber, bool value)
 {
-    writeBit(getCtrlAddress(CTRL_REG::DEFVALB), pinNumber, value);
-}
-
-void MCP23S17::setInterruptComparison_A(uint8_t pinNumber, bool mode)
-{
-    writeBit(getCtrlAddress(CTRL_REG::INTCONA), pinNumber, mode);
-}
-
-void MCP23S17::setInterruptComparison_B(uint8_t pinNumber, bool mode)
-{
-    writeBit(getCtrlAddress(CTRL_REG::INTCONB), pinNumber, mode);
-}
-
-uint8_t MCP23S17::readInterruptFlag_A()
-{
-    uint8_t result;
-
-    result = readRegister(getCtrlAddress(CTRL_REG::INTFA));
-
-    return result;
-}
-
-uint8_t MCP23S17::readInterruptFlag_B()
-{
-    uint8_t result;
-
-    result = readRegister(getCtrlAddress(CTRL_REG::INTFB));
-
-    return result;
-}
-
-uint8_t MCP23S17::readInterruptCapture_A()
-{
-    uint8_t result;
-
-    result = readRegister(getCtrlAddress(CTRL_REG::INTCAPA));
-
-    return result;
-}
-
-uint8_t MCP23S17::readInterruptCapture_B()
-{
-    uint8_t result;
-
-    result = readRegister(getCtrlAddress(CTRL_REG::INTCAPB));
-
-    return result;
-}
-
-bool MCP23S17::readPin_A(uint8_t pinNumber)
-{
-    bool result;
-
-    result = readBit(getGpioAddress(GPIO_REG::GPIOA_EXT), pinNumber);
-
-    return result;
-}
-
-bool MCP23S17::readPin_B(uint8_t pinNumber)
-{
-    bool result;
-
-    result = readBit(getGpioAddress(GPIO_REG::GPIOB_EXT), pinNumber);
-
-    return result;
-}
-
-bool MCP23S17::readLatch_A(uint8_t pinNumber)
-{
-    bool result;
-
-    result = readBit(getGpioAddress(GPIO_REG::OLATA), pinNumber);
-
-    return result;
-}
-
-bool MCP23S17::readLatch_B(uint8_t pinNumber)
-{
-    bool result;
-
-    result = readBit(getGpioAddress(GPIO_REG::OLATB), pinNumber);
-
-    return result;
-}
-
-void MCP23S17::writePin_A(uint8_t pinNumber, bool value)
-{
-    writeBit(getGpioAddress(GPIO_REG::GPIOA_EXT), pinNumber, value);
-}
-
-void MCP23S17::writePin_B(uint8_t pinNumber, bool value)
-{
-    writeBit(getGpioAddress(GPIO_REG::GPIOB_EXT), pinNumber, value);
-}
-
-void MCP23S17::writeLatch_A(uint8_t pinNumber, bool value)
-{
-    writeBit(getGpioAddress(GPIO_REG::OLATA), pinNumber, value);
-}
-
-void MCP23S17::writeLatch_B(uint8_t pinNumber, bool value)
-{
-    writeBit(getGpioAddress(GPIO_REG::OLATB), pinNumber, value);
+    writeBit(GPIO_REG::GPIO_EXT_BASE + port, pinNumber, value);
 }
 
 }  // namespace Boardcore

@@ -318,9 +318,9 @@ void IRQbspInit()
     interfaces::adcs::adc12in8::mode(Mode::INPUT_ANALOG);
     interfaces::adcs::adc12in9::mode(Mode::INPUT_ANALOG);
 
-    expander::cs::mode(Mode::OUTPUT);
-    expander::cs::high();
-    expander::intA::mode(Mode::INPUT_PULL_UP);
+    gpioExpander::cs::mode(Mode::OUTPUT);
+    gpioExpander::cs::high();
+    gpioExpander::intA::mode(Mode::INPUT_PULL_UP);
 
     radio::cs::mode(Mode::OUTPUT);
     radio::cs::high();

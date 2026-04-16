@@ -31,7 +31,7 @@ using namespace Boardcore;
 
 int main()
 {
-    // Pin config
+/*     // Pin config
     GpioPin cs(GPIOA_BASE, 0);
     GpioPin sck(GPIOB_BASE, 3);
     GpioPin miso(GPIOB_BASE, 4);
@@ -385,19 +385,12 @@ int main()
 
     // Pins and Latches (GPIO*_EXT, OLAT)
 
-    mcp.writePin_A(0, 0);
+    mcp.setPinValue(MCP23S17Defs::PIN_REG::GPIOA_EXT,
+                    MCP23S17Defs::PIN::PIN0, 0);
     std::cout << mcp.readPin_A(0) << '\n';
 
-    mcp.writePin_B(0, 0);
+    mcp.setPinValue(MCP23S17Defs::GPIO_REG::GPIOB_EXT, 0, 0);
     std::cout << mcp.readPin_B(0) << '\n';
 
-    mcp.writeLatch_A(0, 1);
-    std::cout << mcp.readLatch_A(0) << '\n';
-    std::cout << mcp.readLatch_A(0) << '\n';
-
-    mcp.writeLatch_B(0, 1);
-    std::cout << mcp.readLatch_B(0) << '\n';
-    std::cout << mcp.readLatch_B(0) << '\n';
-
     return 0;
-}
+ */}

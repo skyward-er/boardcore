@@ -114,12 +114,12 @@ using adc12in9  = Gpio<GPIOB_BASE, 1>;
 }  // namespace adcs
 }  // namespace interfaces
 
-namespace expander
+namespace gpioExpander
 {
 using cs = Gpio<GPIOA_BASE, 0>;
 
 using intA = Gpio<GPIOB_BASE, 15>;
-}  // namespace expander
+}  // namespace gpioExpander
 
 namespace radio
 {
