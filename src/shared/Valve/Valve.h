@@ -31,6 +31,7 @@ enum class ValveType
 {
     SERVO,
     SOLENOID,
+    EXTERNAL_SOLENOID,
     SERVO_PCA
 };
 
