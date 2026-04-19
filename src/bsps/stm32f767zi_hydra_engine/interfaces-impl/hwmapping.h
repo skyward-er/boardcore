@@ -117,37 +117,37 @@ using servoCur = miosix::interfaces::adcs::adc12in9;
 namespace servos
 {
 
-#define MIOSIX_OX_VENTING_VALVE_TIM TIM11
-#define MIOSIX_OX_VENTING_VALVE_CHANNEL CHANNEL_1
+#define MIOSIX_SERVOS_OX_VEN_TIM TIM11
+#define MIOSIX_SERVOS_OX_VEN_CHANNEL CHANNEL_1
 using ventOx = miosix::interfaces::timers::tim11ch1;
 
-#define MIOSIX_FUEL_VENTING_VALVE_CHANNEL CHANNEL_1
-#define MIOSIX_FUEL_VENTING_VALVE_TIM TIM9
-using ventingFuel = miosix::interfaces::timers::tim9ch1;
+#define MIOSIX_SERVOS_FUEL_VEN_CHANNEL CHANNEL_1
+#define MIOSIX_SERVOS_FUEL_VEN_TIM TIM9
+using ventFuel = miosix::interfaces::timers::tim9ch1;
 
 // Extra Valves that are currently not in use.
-// #define MIOSIX_EXTRA_TOP_VALVE_TIM TIM13
-// #define MIOSIX_EXTRA_TOP_VALVE_CHANNEL CHANNEL_1
+// #define MIOSIX_SERVOS_EXTRA_TOP_TIM TIM13
+// #define MIOSIX_SERVOS_EXTRA_TOP_CHANNEL CHANNEL_1
 // using extraTop = miosix::interfaces::timers::tim13ch1;
 
-// #define MIOSIX_EXTRA_BOTTOM_VALVE_TIM TIM14
-// #define MIOSIX_EXTRA_BOTTOM_VALVE_CHANNEL CHANNEL_1
+// #define MIOSIX_SERVOS_EXTRA_BOTTOM_TIM TIM14
+// #define MIOSIX_SERVOS_EXTRA_BOTTOM_CHANNEL CHANNEL_1
 // using extraBot = miosix::interfaces::timers::tim14ch1;
 
-#define MIOSIX_MAIN_OX_VALVE_TIM TIM3
-#define MIOSIX_MAIN_OX_VALVE_CHANNEL CHANNEL_1
+#define MIOSIX_SERVOS_MAIN_OX_TIM TIM3
+#define MIOSIX_SERVOS_MAIN_OX_CHANNEL CHANNEL_1
 using mainOx = miosix::interfaces::timers::tim3ch1;
 
-#define MIOSIX_MAIN_FUEL_VALVE_TIM TIM8
-#define MIOSIX_MAIN_FUEL_VALVE_CHANNEL CHANNEL_2
+#define MIOSIX_SERVOS_MAIN_FUEL_TIM TIM8
+#define MIOSIX_SERVOS_MAIN_FUEL_CHANNEL CHANNEL_2
 using mainFuel = miosix::interfaces::timers::tim8ch2;
 
-#define MIOSIX_PRZ_OX_VALVE_TIM TIM1
-#define MIOSIX_PRZ_OX_VALVE_CHANNEL CHANNEL_1
+#define MIOSIX_SERVOS_PRZ_OX_TIM TIM1
+#define MIOSIX_SERVOS_PRZ_OX_CHANNEL CHANNEL_1
 using przOx = miosix::interfaces::timers::tim1ch1;
 
-#define MIOSIX_PRZ_FUEL_VALVE_TIM TIM4
-#define MIOSIX_PRZ_FUEL_VALVE_CHANNEL CHANNEL_1
+#define MIOSIX_SERVOS_PRZ_FUEL_TIM TIM4
+#define MIOSIX_SERVOS_PRZ_FUEL_CHANNEL CHANNEL_1
 using przFuel = miosix::interfaces::timers::tim4ch1;
 
 #define MIOSIX_IGNITER_TIM TIM12
@@ -170,5 +170,11 @@ using debugLedOrange = Gpio<GPIOB_BASE, 15>;
 using debugLedYellow = Gpio<GPIOD_BASE, 11>;
 using debugLedGreen  = Gpio<GPIOG_BASE, 3>;
 }  // namespace gpios
+
+namespace actuators
+{
+using oxSolenoid   = Gpio<GPIOA_BASE, 15>;
+using fuelSolenoid = Gpio<GPIOA_BASE, 5>;
+}  // namespace actuators
 
 }  // namespace miosix
