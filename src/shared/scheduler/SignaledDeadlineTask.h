@@ -109,6 +109,9 @@ protected:
     {
         while (!shouldStop())
         {
+            // Run the task
+            task();
+
             // Get the time when the task should run next
             auto deadline = nextTaskDeadline();
 
@@ -120,9 +123,6 @@ protected:
                 // Reset the signaled flag
                 signaled = false;
             }
-
-            // Run the task
-            task();
         }
     }
 

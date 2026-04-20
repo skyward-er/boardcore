@@ -37,6 +37,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/ServoWinch.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
+    ${BOARDCORE_PATH}/src/shared/Valve/Valve.cpp
 
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
@@ -46,6 +47,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
@@ -74,8 +76,10 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f4.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2CDriver-f7.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/i2c/I2C.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/PCA9685/PCA9685.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/WIZ5500/WIZ5500.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/DipSwitch/DipSwitch.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/MCP23S17/MCP23S17.cpp
 
     # Events
     ${BOARDCORE_PATH}/src/shared/events/EventBroker.cpp

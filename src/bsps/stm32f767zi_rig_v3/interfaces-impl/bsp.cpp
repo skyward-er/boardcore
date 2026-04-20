@@ -1,5 +1,5 @@
-/* Copyright (c) 2025 Skyward Experimental Rocketry
- * Authors: Davide Mor, Ettore Pane
+/* Copyright (c) 2026 Skyward Experimental Rocketry
+ * Author: Niccolò Betto, Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 #include "drivers/sd_stm32f2_f4_f7.h"
 #include "drivers/serial.h"
 #include "drivers/serial_stm32.h"
-#include "drivers/stm32_sgm.h"
+#include "drivers/stm32_bsram.h"
 #include "filesystem/console/console_device.h"
 #include "filesystem/file_access.h"
 #include "hwmapping.h"
@@ -115,8 +115,6 @@ void configureSdram()
 
     // All SDRAM GPIOs needs to be configured with alternate function 12 and
     // maximum speed
-
-    // WARNING: The current configuration is for the 8MB ram
 
     // Alternate functions
     GPIOB->AFR[0] = 0x0cc00000;
@@ -224,82 +222,123 @@ void configureSdram()
 #endif
 }
 
+void configureBackupSram()
+{
+    // Initialize the backup SRAM device
+    BSRAM::init();
+
+    // Defined in the linker script
+    extern unsigned char _preserve_start asm("_preserve_start");
+    extern unsigned char _preserve_end asm("_preserve_end");
+    extern unsigned char _preserve_load asm("_preserve_load");
+
+    unsigned char* preserve_start = &_preserve_start;
+    unsigned char* preserve_end   = &_preserve_end;
+    unsigned char* preserve_load  = &_preserve_load;
+
+    // Load the .preserve section from flash if not a software reset
+    if (miosix::lastResetReason() != miosix::ResetReason::SOFTWARE)
+    {
+        BSRAM::EnableWriteLock l;
+        memcpy(preserve_start, preserve_load, preserve_end - preserve_start);
+    }
+}
+
 void IRQbspInit()
 {
     // Enable USART1 pins port
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 
+    // Base compute unit stuff
     userLed1::mode(Mode::OUTPUT);
     userLed2::mode(Mode::OUTPUT);
     userLed3::mode(Mode::OUTPUT);
     userLed4::mode(Mode::OUTPUT);
 
-    ledOff();
+    // RIG stuff
+    interfaces::spi2::sck::alternateFunction(5);
+    interfaces::spi2::sck::mode(Mode::ALTERNATE);
+    interfaces::spi2::miso::alternateFunction(5);
+    interfaces::spi2::miso::mode(Mode::ALTERNATE);
+    interfaces::spi2::mosi::alternateFunction(5);
+    interfaces::spi2::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::spi1::sck::alternateFunction(5);
-    interfaces::spi1::sck::mode(Mode::ALTERNATE);
-    interfaces::spi1::miso::alternateFunction(5);
-    interfaces::spi1::miso::mode(Mode::ALTERNATE);
-    interfaces::spi1::mosi::alternateFunction(5);
-    interfaces::spi1::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi2::cs1::mode(Mode::OUTPUT);
+    interfaces::spi2::cs1::high();
+    interfaces::spi2::cs2::mode(Mode::OUTPUT);
+    interfaces::spi2::cs2::high();
+    interfaces::spi2::cs3::mode(Mode::OUTPUT);
+    interfaces::spi2::cs3::high();
+    interfaces::spi2::cs4::mode(Mode::OUTPUT);
+    interfaces::spi2::cs4::high();
+    interfaces::spi2::cs5::mode(Mode::OUTPUT);
+    interfaces::spi2::cs5::high();
 
-    interfaces::spi6::sck::alternateFunction(5);
-    interfaces::spi6::sck::mode(Mode::ALTERNATE);
-    interfaces::spi6::miso::alternateFunction(5);
-    interfaces::spi6::miso::mode(Mode::ALTERNATE);
-    interfaces::spi6::mosi::alternateFunction(5);
-    interfaces::spi6::mosi::mode(Mode::ALTERNATE);
+    interfaces::spi3::sck::alternateFunction(6);
+    interfaces::spi3::sck::mode(Mode::ALTERNATE);
+    interfaces::spi3::miso::alternateFunction(6);
+    interfaces::spi3::miso::mode(Mode::ALTERNATE);
+    interfaces::spi3::mosi::alternateFunction(5);
+    interfaces::spi3::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::usart2::tx::alternateFunction(7);
-    interfaces::usart2::tx::mode(Mode::ALTERNATE);
-    interfaces::usart2::rx::alternateFunction(7);
-    interfaces::usart2::rx::mode(Mode::ALTERNATE_PULL_UP);
+    interfaces::spi3::cs6::mode(Mode::OUTPUT);
+    interfaces::spi3::cs6::high();
+    interfaces::spi3::cs7::mode(Mode::OUTPUT);
+    interfaces::spi3::cs7::high();
+    interfaces::spi3::cs8::mode(Mode::OUTPUT);
+    interfaces::spi3::cs8::high();
+    interfaces::spi3::cs9::mode(Mode::OUTPUT);
+    interfaces::spi3::cs9::high();
+    interfaces::spi3::cs10::mode(Mode::OUTPUT);
+    interfaces::spi3::cs10::high();
 
-    interfaces::uart4::tx::alternateFunction(8);
-    interfaces::uart4::tx::mode(Mode::ALTERNATE);
-    interfaces::uart4::rx::alternateFunction(8);
-    interfaces::uart4::rx::mode(Mode::ALTERNATE_PULL_UP);
+    interfaces::spi4::sck::alternateFunction(5);
+    interfaces::spi4::sck::mode(Mode::ALTERNATE);
+    interfaces::spi4::miso::alternateFunction(5);
+    interfaces::spi4::miso::mode(Mode::ALTERNATE);
+    interfaces::spi4::mosi::alternateFunction(5);
+    interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
-    interfaces::timers::tim3ch3::alternateFunction(2);
-    interfaces::timers::tim3ch3::mode(Mode::ALTERNATE);
+    interfaces::i2c1::sda::alternateFunction(4);
+    interfaces::i2c1::sda::mode(Mode::ALTERNATE_OD);
+    interfaces::i2c1::scl::alternateFunction(4);
+    interfaces::i2c1::scl::mode(Mode::ALTERNATE_OD);
 
-    ethernet::cs::mode(Mode::OUTPUT);
-    ethernet::cs::high();
-    ethernet::nrst::mode(Mode::OUTPUT);
-    ethernet::nrst::high();
-    ethernet::intr::mode(Mode::INPUT);
+    // We do not need to setup the miosix usart
+
+    interfaces::can1::tx::alternateFunction(9);
+    interfaces::can1::tx::mode(Mode::ALTERNATE);
+    interfaces::can1::rx::alternateFunction(9);
+    interfaces::can1::rx::mode(Mode::ALTERNATE);
+
+    interfaces::timers::tim3ch1::alternateFunction(2);
+    interfaces::timers::tim3ch1::mode(Mode::ALTERNATE);
+
+    interfaces::adcs::adc123in3::mode(Mode::INPUT_ANALOG);
+    interfaces::adcs::adc12in8::mode(Mode::INPUT_ANALOG);
+    interfaces::adcs::adc12in9::mode(Mode::INPUT_ANALOG);
+
+    gpioExpander::cs::mode(Mode::OUTPUT);
+    gpioExpander::cs::high();
+    gpioExpander::intA::mode(Mode::INPUT_PULL_UP);
 
     radio::cs::mode(Mode::OUTPUT);
     radio::cs::high();
-    radio::dio0::mode(Mode::INPUT_PULL_UP);
-    radio::dio1::mode(Mode::INPUT_PULL_UP);
-    radio::dio3::mode(Mode::INPUT_PULL_UP);
     radio::txEn::mode(Mode::OUTPUT);
     radio::txEn::low();
     radio::rxEn::mode(Mode::OUTPUT);
     radio::rxEn::low();
+    radio::dio0::mode(Mode::INPUT_PULL_UP);
+    radio::dio1::mode(Mode::INPUT_PULL_UP);
+    radio::dio2::mode(Mode::INPUT_PULL_UP);
+    radio::dio3::mode(Mode::INPUT_PULL_UP);
+    radio::dio4::mode(Mode::INPUT_PULL_UP);
+    radio::dio5::mode(Mode::INPUT_PULL_UP);
 
-    btns::ox_filling::mode(Mode::INPUT);
-    btns::ox_release::mode(Mode::INPUT);
-    btns::prz_filling::mode(Mode::INPUT);
-    btns::prz_release::mode(Mode::INPUT);
-    btns::prz_ox::mode(Mode::INPUT);
-    btns::prz_fuel::mode(Mode::INPUT);
-    btns::ox_venting::mode(Mode::INPUT);
-    btns::detach::mode(Mode::INPUT);
-    btns::spare_0::mode(Mode::INPUT);
-    btns::spare_1::mode(Mode::INPUT);
-    btns::spare_2::mode(Mode::INPUT);
-    btns::spare_3::mode(Mode::INPUT_PULL_UP);
-    btns::spare_4::mode(Mode::INPUT);
-    btns::spare_5::mode(Mode::INPUT_PULL_UP);
-    btns::prz_3way::mode(Mode::INPUT);
-    btns::ignition::mode(Mode::INPUT);
-    btns::arm::mode(Mode::INPUT);
-    btns::tars1::mode(Mode::INPUT);
-    btns::tars3::mode(Mode::INPUT);
-
-    ui::armedLed::mode(Mode::OUTPUT);
+    actuators::oxSolenoid::mode(Mode::OUTPUT);
+    actuators::oxSolenoid::low();
+    actuators::fuelSolenoid::mode(Mode::OUTPUT);
+    actuators::fuelSolenoid::low();
 
     DefaultConsole::instance().IRQset(intrusive_ref_ptr<Device>(new STM32Serial(
         defaultSerial, defaultSerialSpeed, STM32Serial::NOFLOWCTRL)));

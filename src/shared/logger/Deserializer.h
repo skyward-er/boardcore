@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2025 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio, Pietro Bortolus, Niccolò Betto
+/* Copyright (c) 2015-2026 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Alberto Nidasio, Pietro Bortolus, Niccolò Betto, Raul Radu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,8 @@ void deserializeField(std::ifstream& in, std::ofstream& out)
     if constexpr (std::is_same_v<T, int8_t>)
         out << std::format("{}", static_cast<int>(value));
     else if constexpr (std::is_same_v<T, uint8_t>)
+        out << std::format("{}", static_cast<unsigned int>(value));
+    else if constexpr (std::is_same_v<T, bool>)
         out << std::format("{}", static_cast<unsigned int>(value));
     else
         out << std::format("{}", value);
