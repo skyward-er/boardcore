@@ -88,7 +88,6 @@ found_clangtidy=false
 found_clangformat=false
 found_stflash=false
 found_stlink=false
-found_stinfo=false
 
 config_build_dir=
 config_host=false
@@ -126,7 +125,6 @@ print_configuration() {
     printf "cppcheck:            "; [ "$found_cppcheck" = true    ] && printf "$yf\n" || printf "$nf\n"
     printf "clang-tidy:          "; [ "$found_clangtidy" = true   ] && printf "$yf\n" || printf "$nf\n"
     printf "clang-format:        "; [ "$found_clangformat" = true ] && printf "$yf\n" || printf "$nf\n"
-    printf "st-info:             "; [ "$found_stinfo" = true      ] && printf "$yf\n" || printf "$nf\n"
 
     printf "flasher:             ";
     if [ "$found_stflash" = true ]; then
@@ -174,7 +172,6 @@ find_deps() {
     command -v clang-format        > /dev/null 2>&1 && found_clangformat=true
     command -v st-flash            > /dev/null 2>&1 && found_stflash=true
     command -v ST-LINK_CLI.exe     > /dev/null 2>&1 && found_stlink=true
-    command -v st-info             > /dev/null 2>&1 && found_stinfo=true
 }
 
 # Initialize all the directories
@@ -633,13 +630,13 @@ format() {
 }
 
 reset() {
-    if [ "$found_stinfo" = false ]; then
-        error "st-info must be installed"
+    if [ "$found_stflash" = false ]; then
+        error "st-flash must be installed"
         return $ENOPKG
     fi
     
     printf "Resetting board... "
-    st-info --connect-under-reset
+    st-flash reset --connect-under-reset
     echo "DONE"
 }
 
