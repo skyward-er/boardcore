@@ -260,8 +260,8 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame, bool wait)
     long long end   = start + READ_TIMEOUT;
 
     {
-        spiSlave.bus.configure(spiSlave.config);
-        spiSlave.bus.select(spiSlave.cs);
+        SPISelectGuard selectGuard(spiSlave);
+        SPITransaction transaction(spiSlave, selectGuard);
 
         // Search UBX frame preamble byte by byte
         size_t i     = 0;
@@ -271,13 +271,13 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame, bool wait)
             if (Kernel::getOldTick() >= end)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
-                spiSlave.bus.deselect(spiSlave.cs);
+                selectGuard.deselect();
                 if (wait)
                     Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
             }
 
-            uint8_t c = spiSlave.bus.read();
+            uint8_t c = transaction.read();
 
             if (c == UBXFrame::PREAMBLE[i])
             {
@@ -308,15 +308,14 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame, bool wait)
             }
         }
 
-        frame.message       = swapBytes16(spiSlave.bus.read16());
-        frame.payloadLength = swapBytes16(spiSlave.bus.read16());
-        spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
-        spiSlave.bus.read(frame.checksum, 2);
-
-        spiSlave.bus.deselect(spiSlave.cs);
-        if (wait)
-            Thread::sleep(1);  // GPS minimum time after deselect
+        frame.message       = swapBytes16(transaction.read16());
+        frame.payloadLength = swapBytes16(transaction.read16());
+        transaction.read(frame.payload, frame.getRealPayloadLength());
+        transaction.read(frame.checksum, 2);
     }
+
+    if (wait)
+        Thread::sleep(1);  // GPS minimum time after deselect
 
     if (!frame.isValid())
     {

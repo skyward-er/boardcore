@@ -264,7 +264,7 @@ private:
         REG_TEMP_XLSB  = 0x7C
     };
 
-    const SPISlave spiSlave;
+    SPISlave spiSlave;
     BMP280Config config;
     BMP280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm

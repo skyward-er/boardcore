@@ -48,8 +48,8 @@ public:
      * @param busConfiguration SPI bus configuration.
      * @param config LSM6DSRX configuration.
      */
-    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
-             LSM6DSRXConfig& config);
+    LSM6DSRX(SPIBusInterface& bus, miosix::GpioPin csPin,
+             SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
 
     /**
      * @brief Initialize the sensor.

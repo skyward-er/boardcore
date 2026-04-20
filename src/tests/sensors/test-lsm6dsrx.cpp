@@ -37,20 +37,20 @@ using namespace miosix;
 /**
  * @brief Test how much time it takes to fill completely the fifo from empty.
  */
-void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
+void testFifoFillingTime(SPIBusInterface& bus, miosix::GpioPin csPin,
                          SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
                          miosix::GpioPin intPin);
 
 /**
  * @brief Test the execution time of sample().
  */
-void testSampleTime(SPIBus& bus, miosix::GpioPin csPin,
+void testSampleTime(SPIBusInterface& bus, miosix::GpioPin csPin,
                     SPIBusConfig busConfiguration, LSM6DSRXConfig& config);
 
 /**
  * @brief Test fifo read.
  */
-void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
+void testFifoRead(SPIBusInterface& bus, miosix::GpioPin csPin,
                   SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
                   miosix::GpioPin intPin);
 
@@ -130,7 +130,7 @@ int main()
     return 0;
 }
 
-void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
+void testFifoFillingTime(SPIBusInterface& bus, miosix::GpioPin csPin,
                          SPIBusConfig busConfiguration,
                          LSM6DSRXConfig& sensConfig, miosix::GpioPin intPin)
 {
@@ -188,7 +188,7 @@ void testFifoFillingTime(SPIBus& bus, miosix::GpioPin csPin,
     }
 }
 
-void testSampleTime(SPIBus& bus, miosix::GpioPin csPin,
+void testSampleTime(SPIBusInterface& bus, miosix::GpioPin csPin,
                     SPIBusConfig busConfiguration, LSM6DSRXConfig& sensConfig)
 {
     std::unique_ptr<LSM6DSRX> sens =
@@ -237,7 +237,7 @@ void testSampleTime(SPIBus& bus, miosix::GpioPin csPin,
     }
 }
 
-void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
+void testFifoRead(SPIBusInterface& bus, miosix::GpioPin csPin,
                   SPIBusConfig busConfiguration, LSM6DSRXConfig& config,
                   miosix::GpioPin intPin)
 {

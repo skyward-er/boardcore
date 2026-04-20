@@ -68,7 +68,7 @@ public:
      * @param rxStream Dma receiving stream for the spi bus.
      * @param txStream Dma transmitting stream for the spi bus.
      */
-    SPITransactionDMA(const SPISlave& slave, DMAStreamGuard& rxStream,
+    SPITransactionDMA(SPISlave& slave, DMAStreamGuard& rxStream,
                       DMAStreamGuard& txStream);
 
     // Delete copy/move constructors/operators
@@ -107,8 +107,8 @@ public:
                        SPITransactionDMAErrors& rxError);
 
 private:
-    const SPISlave& slave;
-    SPIType* spi;
+    SPISlave& slave;
+    SPI_TypeDef* spi;
     DMAStreamGuard& streamRx;
     DMAStreamGuard& streamTx;
     // Last error for the transmitting stream

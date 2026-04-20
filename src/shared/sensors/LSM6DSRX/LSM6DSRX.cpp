@@ -32,7 +32,7 @@
 namespace Boardcore
 {
 
-LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
+LSM6DSRX::LSM6DSRX(SPIBusInterface& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, LSM6DSRXConfig& configuration)
     : spiSlave(bus, csPin, busConfiguration), config(configuration)
 {

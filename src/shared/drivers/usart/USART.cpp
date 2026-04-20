@@ -315,38 +315,29 @@ void USART::IRQhandleInterrupt()
     bool framingError;
 
 #ifndef _ARCH_CORTEXM7_STM32F7
-    uint32_t status = usart->SR;
-
     // If read data register is empty then read data
-    received = status & USART_SR_RXNE;
-    // Set error flags from status register
-    framingError = status & USART_SR_FE;
-    idle         = status & USART_SR_IDLE;
-    error        = error || framingError || (status & USART_SR_ORE);
-
+    received = ((usart->SR & USART_SR_RXNE) == 0 ? false : true);
+    // If no error put data in buffer
+    framingError = ((usart->SR & USART_SR_FE) == 0 ? false : true);
+    idle         = ((usart->SR & USART_SR_IDLE) == 0 ? false : true);
     // Always read data, since this clears interrupt flags
     c = usart->DR;
 #else
-    uint32_t status = usart->ISR;
-
     // If read data register is empty then read data
-    received = status & USART_ISR_RXNE;
-    // Set error flags from status register
-    framingError = status & (USART_ISR_FE | USART_ISR_NE);
-    idle         = status & USART_ISR_IDLE;
-    error        = error || framingError || (status & USART_ISR_ORE);
-
+    received = ((usart->ISR & USART_ISR_RXNE) == 0 ? false : true);
+    // If no error put data in buffer
+    framingError = ((usart->ISR & USART_ISR_FE) == 0 ? false : true);
+    idle         = ((usart->ISR & USART_ISR_IDLE) == 0 ? false : true);
     // Clears interrupt flags
-    usart->ICR = USART_ICR_IDLECF | USART_ICR_FECF | USART_ICR_CMCF |
-                 USART_ICR_ORECF | USART_ICR_NCF;
+    usart->ICR = USART_ICR_IDLECF;
     // Always read data, since this clears interrupt flags
     c = usart->RDR;
 #endif
 
-    // Insert data into buffer if no framing error occurred
-    if (!framingError && received)
-        if (!rxQueue.tryPut(c))
-            error = true;
+    // If we received some data without framing error but the tryPut failed,
+    // report a FIFO overflow
+    if (framingError || (received && !rxQueue.tryPut(c)))
+        error = true;
 
     // Wake up thread if communication finished (idle state), buffer reached
     // half of his capacity or error occurred
@@ -546,7 +537,7 @@ bool USART::readImpl(void* buffer, size_t nBytes, size_t& nBytesRead,
     }
     nBytesRead = result;
 
-    return (result > 0) && !timedOut && !error;
+    return (result > 0) && !timedOut;
 }
 
 void USART::write(const void* buffer, size_t nBytes)

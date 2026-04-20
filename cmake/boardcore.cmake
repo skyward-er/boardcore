@@ -67,6 +67,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/timer/PWM.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/timer/CountedPWM.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/runcam/Runcam.cpp
+    ${BOARDCORE_PATH}/src/shared/drivers/spi/SPIBus.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransaction.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/spi/SPITransactionDMA.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/usart/USART.cpp
@@ -146,6 +147,7 @@ set(BOARDCORE_SRC
 
     # Utils
     ${BOARDCORE_PATH}/src/shared/utils/AeroUtils/AeroUtils.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMap.cpp
     ${BOARDCORE_PATH}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/PinObserver.cpp
     ${BOARDCORE_PATH}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp

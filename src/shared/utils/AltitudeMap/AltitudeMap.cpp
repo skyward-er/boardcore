@@ -80,12 +80,12 @@ MapBoundaries AltitudeMap::getMapBoundaries()
     return boundaries;
 }
 
-float AltitudeMap::getGroundAltitude(float x, float y)
+Meter AltitudeMap::getGroundAltitude(float x, float y)
 {
     if (!isInitialized)
     {
         LOG_ERR(logger, "AltitudeMap not initialized!");
-        return NAN;
+        return Meter(NAN);
     }
 
     if (!isInsideMap(x, y))
@@ -99,7 +99,7 @@ float AltitudeMap::getGroundAltitude(float x, float y)
     if (indexY >= header->numPointsY)
         indexY = header->numPointsY - 1;
 
-    uint16_t altitudeIndex = indexY * header->numPointsX + indexX;
+    uint32_t altitudeIndex = indexY * header->numPointsX + indexX;
 
     uint8_t compressedAltitude = *(startAddress + altitudeIndex);
 
@@ -107,15 +107,15 @@ float AltitudeMap::getGroundAltitude(float x, float y)
                            (static_cast<float>(compressedAltitude) / 255.0f) *
                                (header->maxAltitude - header->minAltitude);
 
-    return groundAltitude;
+    return Meter(groundAltitude);
 }
 
-float AltitudeMap::getClosestGroundAltitude(float x, float y)
+Meter AltitudeMap::getClosestGroundAltitude(float x, float y)
 {
     if (!isInitialized)
     {
         LOG_ERR(logger, "AltitudeMap not initialized!");
-        return NAN;
+        return Meter(NAN);
     }
 
     if (!isInsideMap(x, y))

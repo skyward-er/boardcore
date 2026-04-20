@@ -25,8 +25,7 @@
 namespace Boardcore
 {
 
-SPITransactionDMA::SPITransactionDMA(const SPISlave& slave,
-                                     DMAStreamGuard& rxStream,
+SPITransactionDMA::SPITransactionDMA(SPISlave& slave, DMAStreamGuard& rxStream,
                                      DMAStreamGuard& txStream)
     : slave(slave), spi(slave.bus.getSpi()), streamRx(rxStream),
       streamTx(txStream)
@@ -91,7 +90,7 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
     spi->CR1 &= ~SPI_CR1_SPE;
 
     // Start transaction
-    slave.bus.select(slave.cs);
+    slave.select();
 
     // Enable spi rx buffer dma
     spi->CR2 |= SPI_CR2_RXDMAEN;
@@ -120,7 +119,7 @@ bool SPITransactionDMA::dmaTransfer(const std::chrono::nanoseconds timeout)
     }
 
     // Stop the transaction
-    slave.bus.deselect(slave.cs);
+    slave.deselect();
 
     // Disable the dma streams
     streamTx->disable();

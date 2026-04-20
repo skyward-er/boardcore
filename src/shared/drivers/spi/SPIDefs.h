@@ -23,10 +23,18 @@
 #pragma once
 
 #include <interfaces/arch_registers.h>
-#include <stdint.h>
+
+#include <cstdint>
 
 namespace Boardcore
 {
+
+#ifndef USE_MOCK_PERIPHERALS
+using GpioType = miosix::GpioPin;
+#else
+#include <utils/TestUtils/MockGpioPin.h>
+using GpioType = Boardcore::MockGpioPin;
+#endif
 
 /**
  * @brief Driver for STM32 low level SPI peripheral.
@@ -97,6 +105,103 @@ enum class WriteBit
     DISABLED,  ///< Do not set write bit in any way
 };
 
-}  // namespace SPI
+inline void Reset(SPI_TypeDef* spi)
+{
+    spi->CR1    = 0x0000;  // NOTE: this also disables the peripheral
+    spi->CR2    = 0x0700;
+    spi->CRCPR  = 0x0007;
+    spi->RXCRCR = 0x0000;
+    spi->TXCRCR = 0x0000;
+}
 
+// clang-format off
+inline void Enable(SPI_TypeDef* spi) { spi->CR1 |= SPI_CR1_SPE; }
+inline void Disable(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_SPE; }
+inline void EnableDMA(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN; }
+inline void DisableDMA(SPI_TypeDef* spi) { spi->CR2 &= ~(SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN); }
+
+inline void EnableSoftwareSlaveManagement(SPI_TypeDef* spi) { spi->CR1 |= SPI_CR1_SSM; }
+inline void DisableSoftwareSlaveManagement(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_SSM; }
+inline void EnableInternalSlaveSelect(SPI_TypeDef* spi) { spi->CR1 |= SPI_CR1_SSI; }
+inline void DisableInternalSlaveSelect(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_SSI; }
+inline void SetSlaveConfiguration(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_MSTR; }
+inline void SetMasterConfiguration(SPI_TypeDef* spi) { spi->CR1 |= SPI_CR1_MSTR; }
+
+inline void EnableTxDMARequest(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_TXDMAEN; }
+inline void DisableTxDMARequest(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_TXDMAEN; }
+inline void EnableRxDMARequest(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_RXDMAEN; }
+inline void DisableRxDMARequest(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_RXDMAEN; }
+// clang-format on
+
+#ifdef _ARCH_CORTEXM7_STM32F7
+/**
+ * The SPI peripheral differs on stm32f7 microcontrollers. Refer to AN4660 for a
+ * comprehensive differences list between different peripherals versions.
+ *
+ * The main difference here is that on the f7 you can transmit between 4 and 16.
+ * There is also a 32bit fifo and a threshold that generates the RXNE event.
+ * For this reason, on f7s we need to configure the 16 bit frame format
+ * differently and change the fifo threshold level.
+ */
+
+inline void Set8bitRXNE(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_FRXTH; }
+inline void Set8bitFrameFormat(SPI_TypeDef* spi)
+{
+    // Set data size to 8 bit
+    spi->CR2 &= ~SPI_CR2_DS;
+    Set8bitRXNE(spi);
+}
+#else
+inline void Set8bitFrameFormat(SPI_TypeDef* spi) { spi->CR1 &= ~SPI_CR1_DFF; }
+#endif
+
+inline void SetBitOrder(SPI_TypeDef* spi, SPI::Order bitOrder)
+{
+    // First clear the configuration
+    spi->CR1 &= ~SPI_CR1_LSBFIRST;
+    // Set the new value
+    spi->CR1 |= static_cast<uint32_t>(bitOrder);
+}
+
+inline void SetClockDiver(SPI_TypeDef* spi, SPI::ClockDivider divider)
+{
+    // First clear the configuration
+    spi->CR1 &= ~SPI_CR1_BR;
+    // Set the new value
+    spi->CR1 |= static_cast<uint32_t>(divider);
+}
+
+inline void SetMode(SPI_TypeDef* spi, SPI::Mode mode)
+{
+    // First clear the configuration
+    spi->CR1 &= ~(SPI_CR1_CPOL | SPI_CR1_CPHA);
+    // Set the new value
+    spi->CR1 |= static_cast<uint32_t>(mode);
+}
+
+inline void WaitNotBusy(SPI_TypeDef* spi)
+{
+    while ((spi->SR & SPI_SR_BSY) > 0)
+        ;
+}
+
+inline void WaitTxEmpty(SPI_TypeDef* spi)
+{
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+}
+
+inline void WaitRxNotEmpty(SPI_TypeDef* spi)
+{
+    while ((spi->SR & SPI_SR_RXNE) == 0)
+        ;
+}
+
+inline void FlushRx(SPI_TypeDef* spi)
+{
+    while ((spi->SR & SPI_SR_RXNE) != 0)
+        spi->DR;
+}
+
+}  // namespace SPI
 }  // namespace Boardcore

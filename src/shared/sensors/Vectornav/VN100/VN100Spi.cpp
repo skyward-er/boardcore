@@ -29,7 +29,7 @@
 namespace Boardcore
 {
 
-VN100Spi::VN100Spi(SPIBus& bus, miosix::GpioPin csPin,
+VN100Spi::VN100Spi(SPIBusInterface& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, uint16_t syncOutSkipFactor)
     : spiSlave(bus, csPin, busConfiguration),
       syncOutSkipFactor(syncOutSkipFactor)
@@ -297,30 +297,29 @@ VN100SpiDefs::VNErrors VN100Spi::readRegister(const uint8_t regId,
         (regId << 16);                    // Id of the register
 
     // Send request packet
-    spiSlave.bus.select(spiSlave.cs);
-    spiSlave.bus.write32(requestPacket);
-    spiSlave.bus.deselect(spiSlave.cs);
+    {
+        SPITransaction transaction(spiSlave);
+        transaction.write32(requestPacket);
+    }
 
     // Wait at least 100us
     miosix::delayUs(100);
 
     // Read response
-    spiSlave.bus.select(spiSlave.cs);
+    SPISelectGuard selectGuard(spiSlave);
+    SPITransaction transaction(spiSlave, selectGuard);
 
     // Discard the first 3 bytes of the response
     VN100SpiDefs::VNErrors err =
-        (VN100SpiDefs::VNErrors)(spiSlave.bus.read32() & 255);
+        (VN100SpiDefs::VNErrors)(transaction.read32() & 255);
 
     if (err != VN100SpiDefs::VNErrors::NO_ERROR)
     {
         // An error occurred while attempting to service the request
-        spiSlave.bus.deselect(spiSlave.cs);
         return err;
     }
 
-    spiSlave.bus.read(payloadBuf, payloadSize);
-
-    spiSlave.bus.deselect(spiSlave.cs);
+    transaction.read(payloadBuf, payloadSize);
 
     return VN100SpiDefs::VNErrors::NO_ERROR;
 }
@@ -351,21 +350,23 @@ VN100SpiDefs::VNErrors VN100Spi::writeRegister(const uint8_t regId,
         (regId << 16);                     // Id of the register
 
     // Send request packet
-    spiSlave.bus.select(spiSlave.cs);
-    spiSlave.bus.write32(requestPacket);
-    spiSlave.bus.write(payloadBuf, payloadSize);
-    spiSlave.bus.deselect(spiSlave.cs);
+    {
+        SPISelectGuard selectGuard(spiSlave);
+        SPITransaction transaction(spiSlave, selectGuard);
+        transaction.write32(requestPacket);
+        transaction.write(payloadBuf, payloadSize);
+    }
 
     // Wait at least 100us
     miosix::delayUs(100);
 
     // Read response
-    spiSlave.bus.select(spiSlave.cs);
-
-    // Discard the first 3 bytes of the response
-    uint8_t err = spiSlave.bus.read32() & 255;
-
-    spiSlave.bus.deselect(spiSlave.cs);
+    uint8_t err = 0;
+    {
+        SPITransaction transaction(spiSlave);
+        // Discard the first 3 bytes of the response
+        err = transaction.read32() & 255;
+    }
 
     return (VN100SpiDefs::VNErrors)err;
 }

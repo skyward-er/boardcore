@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Conterio
+/* Copyright (c) 2021-2026 Skyward Experimental Rocketry
+ * Authors: Luca Conterio, Niccolò Betto
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,6 @@ int main()
     SPITransaction transaction(spiSlave);
 
     uint8_t buffer8[6];
-    uint16_t buffer16[6];
 
     // Reads
     {
@@ -68,8 +67,6 @@ int main()
         transaction.read32();
         delayMs(1);
         transaction.read(buffer8, sizeof(buffer8));
-        delayMs(1);
-        transaction.read16(buffer16, sizeof(buffer16));
         delayMs(1);
     }
 
@@ -91,14 +88,6 @@ int main()
         buffer8[5] = 0xAB;
         transaction.write(buffer8, sizeof(buffer8));
         delayMs(1);
-        buffer16[0] = 0x0101;
-        buffer16[1] = 0x2323;
-        buffer16[2] = 0x4545;
-        buffer16[3] = 0x6767;
-        buffer16[4] = 0x8989;
-        buffer16[5] = 0xABAB;
-        transaction.write16(buffer16, sizeof(buffer16));
-        delayMs(1);
     }
 
     // Transaction
@@ -113,8 +102,6 @@ int main()
         delayMs(1);
         transaction.transfer(buffer8, sizeof(buffer8));
         delayMs(1);
-        transaction.transfer16(buffer16, sizeof(buffer16));
-        delayMs(1);
     }
 
     // Registers
@@ -125,11 +112,16 @@ int main()
         delayMs(1);
         transaction.readRegister24(0x56);
         delayMs(1);
+        transaction.readRegister32(0x78);
+        delayMs(1);
+
         transaction.writeRegister(0x12, 0xAB);
         delayMs(1);
         transaction.writeRegister16(0x34, 0xABCD);
         delayMs(1);
         transaction.writeRegister24(0x56, 0xABCDEF);
+        delayMs(1);
+        transaction.writeRegister32(0x78, 0xABCDEF01);
         delayMs(1);
     }
 

@@ -23,11 +23,13 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <units/Length.h>
 
 #include "AltitudeMapData.h"
 
 namespace Boardcore
 {
+using namespace Units::Length;
 /**
  * @brief Class to retrieve altitude data from flash memory.
  *
@@ -67,7 +69,7 @@ public:
      * the map boundaries. Returns NAN if the map is not initialized.
      */
 
-    float getClosestGroundAltitude(float x, float y);
+    Meter getClosestGroundAltitude(float x, float y);
 
     /**
      * @brief Get the map boundaries.
@@ -85,7 +87,7 @@ private:
 
     MapBoundaries boundaries;
 
-    float getGroundAltitude(float x, float y);
+    Meter getGroundAltitude(float x, float y);
 
     bool isInitialized = false;
     PrintLogger logger = Logging::getLogger("AltitudeMap");

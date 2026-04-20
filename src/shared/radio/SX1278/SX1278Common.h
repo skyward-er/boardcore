@@ -132,9 +132,9 @@ public:
     void handleDioIRQ();
 
 protected:
-    explicit SX1278Common(SPIBus& bus, miosix::GpioPin cs, miosix::GpioPin dio0,
-                          miosix::GpioPin dio1, miosix::GpioPin dio3,
-                          SPI::ClockDivider clock_divider,
+    explicit SX1278Common(SPIBusInterface& bus, miosix::GpioPin cs,
+                          miosix::GpioPin dio0, miosix::GpioPin dio1,
+                          miosix::GpioPin dio3, SPI::ClockDivider clock_divider,
                           std::unique_ptr<ISX1278Frontend> frontend)
         : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider))), dio0(dio0),
           dio1(dio1), dio3(dio3), frontend(std::move(frontend))
