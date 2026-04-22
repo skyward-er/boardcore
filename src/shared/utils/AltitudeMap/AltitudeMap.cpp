@@ -29,10 +29,10 @@ namespace Boardcore
 
 AltitudeMap::AltitudeMap(const uint8_t* startAddress)
 {
-    this->startAddress =
-        startAddress;  // Flash memory altitude map start address
     this->header = reinterpret_cast<const MapHeader*>(
         startAddress);  // Altitude map header address
+    this->mapData =
+            startAddress + sizeof(MapHeader);  // Flash memory altitude map data start address
 }
 
 bool AltitudeMap::init()
@@ -89,19 +89,19 @@ Meter AltitudeMap::getGroundAltitude(float x, float y)
     }
 
     if (!isInsideMap(x, y))
-        LOG_ERR(logger, "Point (%f, %f) is outside the altitude map!", x, y);
+        LOG_ERR(logger, "Point ({:.6f}, {:.6f}) is outside the altitude map!", x, y);
 
-    uint16_t indexX = static_cast<uint16_t>(std::round(x / header->stepX));
-    uint16_t indexY = static_cast<uint16_t>(std::round(y / header->stepY));
-
+    uint16_t indexX = static_cast<uint16_t>(std::round((x - header->topleftX) / header->stepX));
+    uint16_t indexY = static_cast<uint16_t>(std::round((header->topleftY - y) / header->stepY));
+    
     if (indexX >= header->numPointsX)
         indexX = header->numPointsX - 1;
     if (indexY >= header->numPointsY)
         indexY = header->numPointsY - 1;
 
-    uint32_t altitudeIndex = indexY * header->numPointsX + indexX;
+    uint32_t altitudeIndex = indexX * header->numPointsY + indexY;
 
-    uint8_t compressedAltitude = *(startAddress + altitudeIndex);
+    uint8_t compressedAltitude = *(mapData + altitudeIndex);
 
     float groundAltitude = header->minAltitude +
                            (static_cast<float>(compressedAltitude) / 255.0f) *
@@ -121,7 +121,7 @@ Meter AltitudeMap::getClosestGroundAltitude(float x, float y)
     if (!isInsideMap(x, y))
     {
         LOG_WARN(logger,
-                 "Point (%f, %f) is outside the altitude map, using closest "
+                 "Point ({:.6f}, {:.6f}) is outside the altitude map, using closest "
                  "point on the map to calculate altitude",
                  x, y);
     }
