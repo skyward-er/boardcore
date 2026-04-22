@@ -82,7 +82,7 @@ public:
     MapBoundaries getMapBoundaries();
 
 private:
-    const uint8_t* startAddress;
+    const uint8_t* mapData;
     const MapHeader* header;
 
     MapBoundaries boundaries;
