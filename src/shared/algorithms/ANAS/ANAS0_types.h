@@ -57,13 +57,6 @@ struct NASOut
     float Velocity[3];
     float Quaternion[4];
     uint32_t Timestamp;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(NASOut,
-                          FIELD_DEF(Position) FIELD_DEF(Velocity)
-                              FIELD_DEF(Quaternion) FIELD_DEF(Timestamp));
-    }
 };
 
 #endif
@@ -81,18 +74,6 @@ struct NASLogs
     bool MagActivation;
     bool AccActivation;
     float Position[3];
-
-    // Niente log timestamp?
-
-    // Mergiare logger e aggiornare il log con le units
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(
-            NASLogs, FIELD_DEF(Velocity) FIELD_DEF(Quaternion)
-                         FIELD_DEF(Covariance) FIELD_DEF(BaroActivation)
-                             FIELD_DEF(GPSActivation) FIELD_DEF(MagActivation)
-                                 FIELD_DEF(AccActivation) FIELD_DEF(Position));
-    }
 };
 
 #endif
