@@ -292,8 +292,9 @@ void IRQbspInit()
     interfaces::timers::tim9ch1::mode(Mode::ALTERNATE);
 
     sensors::ND015A::cs::mode(Mode::OUTPUT);
-    sensors::ND030D::cs::high();
-    sensors::ND030D::cs::mode(Mode::OUTPUT);
+    sensors::ND015A::cs::high();
+    sensors::ND030A::cs::mode(Mode::OUTPUT);
+    sensors::ND030A::cs::high();
 
     HeatingPad::measure::mode(Mode::INPUT_ANALOG);
     HeatingPad::enable::mode(Mode::OUTPUT);

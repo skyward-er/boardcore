@@ -93,7 +93,7 @@ namespace ND015A
 using cs = Gpio<GPIOC_BASE, 4>;
 }
 
-namespace ND030D
+namespace ND030A
 {
 using cs = Gpio<GPIOD_BASE, 11>;
 }
