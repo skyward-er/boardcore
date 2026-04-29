@@ -318,8 +318,8 @@ void AS5047DSPI::writeRegister(AS5047DDefs::Registers reg, uint16_t data)
      */
 
     uint16_t transaction[2] = {
-        static_cast<uint16_t>(reg) & static_cast<uint16_t>(0x3fff),
-        static_cast<uint16_t>(data) & static_cast<uint16_t>(0x3fff)};
+        static_cast<uint16_t>(static_cast<uint16_t>(reg) & 0x3fff),
+        static_cast<uint16_t>(data & 0x3fff)};
 
     // we take out the 2 ms bits and by doing so both commmand and data
     // frame are ready for the transaction, the only missing thing is
@@ -357,9 +357,8 @@ AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
      */
 
     uint16_t transaction[2] = {
-        static_cast<uint16_t>(reg) & static_cast<uint16_t>(0x3fff),
-        static_cast<uint16_t>(AS5047DDefs::Registers::NOP) &
-            static_cast<uint16_t>(0x3fff)};
+        static_cast<uint16_t>(static_cast<uint16_t>(reg) & 0x3fff),
+        static_cast<uint16_t>(static_cast<uint16_t>(AS5047DDefs::Registers::NOP) & 0x3fff)};
 
     // we take out the 2 ms bits and by doing so both commands are ready
     // we send a nop because the data is ready only after one SPI
