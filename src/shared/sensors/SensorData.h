@@ -299,6 +299,8 @@ struct GPSData
     float positionDOP     = 0;  // [?]
     uint8_t satellites    = 0;  // [1]
     uint8_t fix           = 0;  // 0 = no fix
+    float hAcc            = 0;  // [m]
+    float sAcc            = 0;  // [m/s]
 
     static constexpr auto reflect()
     {
@@ -308,7 +310,7 @@ struct GPSData
                 FIELD_DEF(height) FIELD_DEF(velocityNorth)
                     FIELD_DEF(velocityEast) FIELD_DEF(velocityDown)
                         FIELD_DEF(speed) FIELD_DEF(track) FIELD_DEF(positionDOP)
-                            FIELD_DEF(satellites) FIELD_DEF(fix));
+                            FIELD_DEF(satellites) FIELD_DEF(fix) FIELD_DEF(hAcc) FIELD_DEF(sAcc));
     }
 };
 

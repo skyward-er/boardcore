@@ -20,35 +20,55 @@
  * THE SOFTWARE.
  */
 
+#pragma once
 
 #include <algorithms/ANAS/ANAS0_types.h>
 
 #include <reflect.hpp>
 
-
-struct ANASOutData
+namespace Boardcore
 {
-    uint64_t timestamp;
-    ANAS0_types_h_::NASOut ANASOut;
 
-    ANASOutData() : timestamp(0), ANASOut() {};
+struct ANASState
+{
+    uint64_t timestamp = 0;
 
-    ANASOutData(uint64_t timestamp, ANAS0_types_h_::NASOut anasOut)
-        : timestamp(timestamp), ANASOut(anasOut) {};
+    // Position [m]
+    float n = 0;  ///< North (x)
+    float e = 0;  ///< East  (y)
+    float d = 0;  ///< Down  (z)
+
+    // Velocity [m/s]
+    float vn = 0;  ///< Velocity North (x)
+    float ve = 0;  ///< Velocity East  (y)
+    float vd = 0;  ///< Velocity Down  (z)
+
+    // Attitude as quaternion, from body to NED frame
+    float qx = 0;  ///< Quaternion x
+    float qy = 0;  ///< Quaternion y
+    float qz = 0;  ///< Quaternion z
+    float qw = 1;  ///< Quaternion w
+
+    ANASState() : timestamp(0) {};
+
+    ANASState(uint64_t timestamp, const float position[3],
+                const float velocity[3], const float quaternions[4])
+        : timestamp(timestamp), n(position[0]), e(position[1]), d(position[2]),
+          vn(velocity[0]), ve(velocity[1]), vd(velocity[2]), qx(quaternions[0]),
+          qy(quaternions[1]), qz(quaternions[2]), qw(quaternions[3]) {};
 
     // Ci sono due timestamp, uno interno (dell'alg) e uno esterno
     // (timestamptimer)
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ANASOutData,
-                          FIELD_DEF(timestamp) FIELD_DEF2(ANASOut, Position)
-                              FIELD_DEF2(ANASOut, Velocity)
-                                  FIELD_DEF2(ANASOut, Quaternion)
-                                      FIELD_DEF2(ANASOut, Timestamp));
+        return STRUCT_DEF(ANASState,
+                          FIELD_DEF(timestamp) FIELD_DEF(n) FIELD_DEF(e)
+                              FIELD_DEF(d) FIELD_DEF(vn) FIELD_DEF(ve)
+                                  FIELD_DEF(vd) FIELD_DEF(qx) FIELD_DEF(qy)
+                                      FIELD_DEF(qz) FIELD_DEF(qw));
     }
 };
-
 
 struct ANASLogsData
 {
@@ -73,5 +93,6 @@ struct ANASLogsData
     }
 };
 
-
 // Non so se logghiamo la LinearCovariance
+
+}  // namespace Boardcore
