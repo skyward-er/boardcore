@@ -1,5 +1,6 @@
 /* Copyright (c) 2015-2026 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio, Pietro Bortolus, Niccolò Betto, Raul Radu
+ * Authors: Luca Erbetta, Alberto Nidasio, Pietro Bortolus, Niccolò Betto, Raul
+ * Radu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
