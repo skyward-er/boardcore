@@ -298,7 +298,7 @@ void IRQbspInit()
 
     HeatingPad::measure::mode(Mode::INPUT_ANALOG);
     HeatingPad::enable::mode(Mode::OUTPUT);
-    HeatingPad::sense::mode(Mode::INPUT); //may need PULLUP or PULLDOWN
+    HeatingPad::sense::mode(Mode::INPUT_PULL_DOWN);
 
     gpios::boardLed::mode(Mode::OUTPUT);
     gpios::boardLed::low();
