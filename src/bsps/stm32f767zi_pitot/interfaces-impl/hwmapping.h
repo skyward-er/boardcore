@@ -112,10 +112,4 @@ using enable   = Gpio<GPIOB_BASE, 11>;
 using sense    = Gpio<GPIOB_BASE, 12>;
 }  // namespace HeatingPad
 
-namespace gpios
-{
-using boardLed   = Gpio<GPIOB_BASE, 12>;
-using statusLed  = Gpio<GPIOB_BASE, 13>;
-}  // namespace gpios
-
 }  // namespace miosix

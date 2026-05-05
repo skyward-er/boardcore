@@ -300,11 +300,6 @@ void IRQbspInit()
     HeatingPad::enable::mode(Mode::OUTPUT);
     HeatingPad::sense::mode(Mode::INPUT_PULL_DOWN);
 
-    gpios::boardLed::mode(Mode::OUTPUT);
-    gpios::boardLed::low();
-    gpios::statusLed::mode(Mode::OUTPUT);
-    gpios::statusLed::low();
-
     DefaultConsole::instance().IRQset(intrusive_ref_ptr<Device>(new STM32Serial(
         defaultSerial, defaultSerialSpeed, STM32Serial::NOFLOWCTRL)));
 }
