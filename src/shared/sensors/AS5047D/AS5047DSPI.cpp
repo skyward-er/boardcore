@@ -74,8 +74,9 @@ bool AS5047DSPI::init()
             return false;
         }
 
-        settings1 &= 0x0003;  // The first two bits MUST NEVER BE CHANGED
         settings1 =
+            reading.data & 0x0003;  // The first two bits MUST NEVER BE CHANGED
+        settings1 |=
             ((static_cast<uint16_t>(config.rotationDirection) & 0b1) << 2) |
             ((static_cast<uint16_t>(config.dataInterface) & 0b1) << 3) |
             ((static_cast<uint16_t>(config.daecEnabled) & 0b1) << 4) |
@@ -183,8 +184,6 @@ AS5047DData AS5047DSPI::sampleImpl()
     // Units::Angle::Degree cordicMagnitude = Units::Angle::Degree(0);
     // Units::Angle::Degree cordicAngle     = Units::Angle::Degree(0);
     {
-        Units::Angle::Degree daecAngle = Units::Angle::Degree(0);
-
         auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLEUNC);
         if (daecAngInt.hasError())
         {
@@ -193,8 +192,8 @@ AS5047DData AS5047DSPI::sampleImpl()
             return lastSample;
         }
 
-        daecAngle = Units::Angle::Degree(static_cast<float>(daecAngInt.data) *
-                                         AS5047DDefs::SPI_ANGLE_RES);
+        Units::Angle::Degree daecAngle = Units::Angle::Degree(
+            static_cast<float>(daecAngInt.data) * AS5047DDefs::SPI_ANGLE_RES);
         return AS5047DData(
             lastSampleTimestamp,
             static_cast<Units::Angle::Radian>(daecAngle).value());
@@ -285,7 +284,7 @@ void AS5047DSPI::setDataSource(AS5047DDefs::DataSelect dataSource)
         return;
     }
 
-    if (result.data != settings1 || result.error != AS5047DDefs::Error::NONE)
+    if (result.data != settings1)
     {
         LOG_ERR(logger,
                 "Error while setting data source. Expected {:X} but got {:X}",
@@ -318,8 +317,8 @@ void AS5047DSPI::writeRegister(AS5047DDefs::Registers reg, uint16_t data)
      */
 
     uint16_t transaction[2] = {
-        static_cast<uint16_t>(reg) & static_cast<uint16_t>(0x3fff),
-        static_cast<uint16_t>(data) & static_cast<uint16_t>(0x3fff)};
+        static_cast<uint16_t>(static_cast<uint16_t>(reg) & 0x3fff),
+        static_cast<uint16_t>(data & 0x3fff)};
 
     // we take out the 2 ms bits and by doing so both commmand and data
     // frame are ready for the transaction, the only missing thing is
@@ -357,9 +356,9 @@ AS5047DSPI::ReadResult AS5047DSPI::readRegister(AS5047DDefs::Registers reg)
      */
 
     uint16_t transaction[2] = {
-        static_cast<uint16_t>(reg) & static_cast<uint16_t>(0x3fff),
-        static_cast<uint16_t>(AS5047DDefs::Registers::NOP) &
-            static_cast<uint16_t>(0x3fff)};
+        static_cast<uint16_t>(static_cast<uint16_t>(reg) & 0x3fff),
+        static_cast<uint16_t>(
+            static_cast<uint16_t>(AS5047DDefs::Registers::NOP) & 0x3fff)};
 
     // we take out the 2 ms bits and by doing so both commands are ready
     // we send a nop because the data is ready only after one SPI
