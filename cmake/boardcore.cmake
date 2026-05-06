@@ -154,6 +154,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/AeroUtils/AeroUtils.cpp
     ${BOARDCORE_PATH}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/PinObserver.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/PinObserver/ExternalPinObserver.cpp
     ${BOARDCORE_PATH}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Stats/Stats.cpp
     ${BOARDCORE_PATH}/src/shared/utils/TestUtils/TestHelper.cpp
