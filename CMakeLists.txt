@@ -104,6 +104,9 @@ sbs_target(test-max485 stm32f407vg_stm32f4discovery)
 add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
 sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)
 
+add_executable(test-externalpinobserver src/tests/test-externalpinobserver.cpp)
+sbs_target(test-externalpinobserver stm32f767zi_hydra_biscotto)
+
 add_executable(test-rtc src/tests/test-rtc.cpp)
 sbs_target(test-rtc stm32f767zi_compute_unit)
 
