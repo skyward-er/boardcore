@@ -60,11 +60,11 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
         0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.22 }    // Process Noise Covariance
     },
 
-    { // GPS Parameters (Jesolo commented)
-      111141.679169, // A Parameter - 111143.047242
-      78157.195039,  // B Parameter - 78068.307521
-      45.501085,     // Latitude - 45.564594
-      9.156451,      // Longitude - 12.575059
+    { // GPS Parameters (Jesolo and Casale Monferrato commented)
+      111141.679169, // A Parameter - 111143.047242 - 111133.953255
+      78157.195039,  // B Parameter - 78068.307521 - 78695.539158
+      45.501085,     // Latitude - 45.564594 - 45.110556
+      9.156451,      // Longitude - 12.575059 - 8.456389
       34.0           // Max Acc 
     },
 
@@ -123,12 +123,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: StandardAirPressureP0_Value
   //  Referenced by: '<S18>/StandardAirPressure P0'
 
-  99737.42F,     // Ground Pressure - 101337.013
+  99737.42F,     // Ground Pressure - 101337.013 - 99998.623
 
   // Computed Parameter: Gain3_Gain
   //  Referenced by: '<S18>/Gain3'
 
-  9.806241F,     // Local Gravity - 9.8067119
+  9.806241F,     // Local Gravity - 9.8067119 - 9.805939
 
   // Computed Parameter: Gain4_Gain
   //  Referenced by: '<S18>/Gain4'
@@ -138,12 +138,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: StandardAirTemperatureT0_Value
   //  Referenced by: '<S18>/StandardAirTemperature T0'
 
-  287.286F,       // Ground Temperature - 288.1565
+  287.286F,       // Ground Temperature - 288.1565 - 287.43
 
   // Computed Parameter: gR_Value
   //  Referenced by: '<S18>/g R'
 
-  0.034161795F,   // Local Gravity / Gas Constant - 0.034163436
+  0.034161795F,   // Local Gravity / Gas Constant - 0.034163436 - 0,034160744
 
   // Computed Parameter: Constant1_Value
   //  Referenced by: '<S18>/Constant1'
@@ -158,12 +158,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: StandardAirPressureP0_Value_a
   //  Referenced by: '<S22>/StandardAirPressure P0'
 
-  99737.42F,     // Ground Pressure - 101337.013
+  99737.42F,     // Ground Pressure - 101337.013 - 99998.623
 
   // Computed Parameter: StandardAirTemperatureT0_Valu_o
   //  Referenced by: '<S22>/StandardAirTemperature T0'
 
-  287.286F,      // Ground Temperature - 288.1565
+  287.286F,      // Ground Temperature - 288.1565 - 287.43
 
   // Computed Parameter: Gain_Gain_j
   //  Referenced by: '<S20>/Gain'
@@ -178,7 +178,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: gravity_Value
   //  Referenced by: '<S22>/gravity'
 
-  9.806241F,     // Local Gravity - 9.8067119
+  9.806241F,     // Local Gravity - 9.8067119 - 9.805939
 
   // Computed Parameter: Rair_Value
   //  Referenced by: '<S22>/R air'
@@ -195,7 +195,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: Constant_Value_c
   //  Referenced by: '<S27>/Constant'
 
-  8.99823135E-6F,
+  8.997524E-6F,  // 1/a - 8.997414E-6F - 8.998150-6F
 
   // Computed Parameter: Constant1_Value_e
   //  Referenced by: '<S27>/Constant1'
@@ -205,22 +205,22 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: Gain_Gain_a
   //  Referenced by: '<S27>/Gain'
 
-  8.99823135E-6F,
+  8.997524E-6F, // 1/a - 8.997414E-6F - 8.998150-6F
 
   // Expression: nasdaq.gps.lat0
   //  Referenced by: '<S27>/Bias'
 
-  45.501085,     // Latitude - 45.564594
+  45.501085,     // Latitude - 45.564594 - 45.110556
 
   // Computed Parameter: Gain1_Gain
   //  Referenced by: '<S31>/Gain1'
 
-  0.0174532924F,
+  0.0174532924F, 
 
   // Computed Parameter: Constant3_Value
   //  Referenced by: '<S27>/Constant3'
 
-  1.23816417E+10F,
+  8.686522E+9F, // a*b 8.676750E+9F - 8.745746E+9F
 
   // Computed Parameter: Constant4_Value
   //  Referenced by: '<S27>/Constant4'
@@ -230,7 +230,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Expression: nasdaq.gps.b
   //  Referenced by: '<S27>/Gain1'
 
-  78157.195039,  // B Parameter - 78068.307521
+  78157.195039,  // B Parameter - 78068.307521 - 78695.539158
 
   // Computed Parameter: Gain3_Gain_b
   //  Referenced by: '<S27>/Gain3'
@@ -256,12 +256,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: Gain3_Gain_g
   //  Referenced by: '<S29>/Gain3'
 
-  8.99823135E-6F,
+  8.997524E-6F,  // 1/a - 8.997414E-6F - 8.998150-6F
 
   // Expression: nasdaq.gps.lat0
   //  Referenced by: '<S29>/Bias'
 
-  45.501085,     // Latitude - 45.564594
+  45.501085,     // Latitude - 45.564594 - 45.110556
 
   // Computed Parameter: Gain1_Gain_g
   //  Referenced by: '<S32>/Gain1'
@@ -271,12 +271,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Expression: nasdaq.gps.b
   //  Referenced by: '<S29>/Gain4'
 
-  78157.195039,  // B Parameter - 78068.307521
+  78157.195039,  // B Parameter - 78068.307521 - 78695.539158
 
   // Expression: nasdaq.gps.lon0
   //  Referenced by: '<S29>/Bias1'
 
-  9.156451,      // Longitude - 12.575059
+  9.156451,      // Longitude - 12.575059 - 8.456389
 
   // Computed Parameter: Gain_Gain_jx
   //  Referenced by: '<S29>/Gain'
