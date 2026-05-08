@@ -29,17 +29,10 @@
 #include <functional>
 #include <map>
 
+#include "PinObserverUtils.h"
+
 namespace Boardcore
 {
-
-/**
- * @brief Pin transition.
- */
-enum class PinTransition : uint8_t
-{
-    FALLING_EDGE = 0,  ///< The pin goes from high to low.
-    RISING_EDGE        ///< The pin goes from low to high.
-};
 
 /**
  * Class used to call a callback after a pin performs a specific transition
@@ -56,47 +49,6 @@ class PinObserver
 public:
     using Clock     = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
-
-    /**
-     * @brief Pin information.
-     */
-    struct PinData
-    {
-        // Number of periods the value was the same.
-        uint32_t periodCount;
-        // Last time the pin transitioned to a different state
-        PinObserver::TimePoint lastTransitionTs;
-        // Time when the last state change was detected
-        PinObserver::TimePoint lastStateChangeTs;
-        bool lastState;         ///< The last detected pin state
-        uint32_t changesCount;  ///< Incremental count of the pin changes
-
-        std::chrono::milliseconds getLastDetectionDelay() const
-        {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(
-                lastStateChangeTs - lastTransitionTs);
-        }
-    };
-
-    /**
-     * @brief Callback function type for pin transitions.
-     *
-     * @param transition The type of transition that triggered the callback.
-     * @param data The data associated with the pin, updated with the latest
-     * transition information.
-     */
-    using PinCallback =
-        std::function<void(PinTransition transition, const PinData& data)>;
-
-    /**
-     * @brief Pin configuration.
-     */
-    struct PinConfig
-    {
-        PinObserver::PinCallback callback;  ///< The callback function.
-        uint32_t threshold;  ///< Number of periods to trigger an event.
-        bool reverted;       ///< Whether to revert the pin state.
-    };
 
     /**
      * @brief Construct a new PinObserver object.
@@ -159,8 +111,5 @@ private:
     /// Map of all the callbacks registered in the PinObserver.
     std::map<miosix::GpioPin, PinEntry, GpioPinCompare> callbacks;
 };
-
-// Re-export the PinData type, was moved inside PinObserver for convenience
-using PinData = PinObserver::PinData;
 
 }  // namespace Boardcore
