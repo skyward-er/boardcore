@@ -270,6 +270,11 @@ void IRQbspInit()
     interfaces::spi4::mosi::alternateFunction(5);
     interfaces::spi4::mosi::mode(Mode::ALTERNATE);
 
+    sensors::ADC_1::cs::mode(Mode::OUTPUT);
+    sensors::ADC_1::cs::high();
+    sensors::ADC_2::cs::mode(Mode::OUTPUT);
+    sensors::ADC_2::cs::high();
+
     interfaces::i2c1::scl::alternateFunction(4);
     interfaces::i2c1::scl::mode(Mode::ALTERNATE);
     interfaces::i2c1::sda::alternateFunction(4);
@@ -299,6 +304,8 @@ void IRQbspInit()
     interfaces::timers::tim9ch1::mode(Mode::ALTERNATE);
     interfaces::timers::tim11ch1::alternateFunction(3);
     interfaces::timers::tim11ch1::mode(Mode::ALTERNATE);
+    interfaces::timers::tim12ch1::alternateFunction(9);
+    interfaces::timers::tim12ch1::mode(Mode::ALTERNATE);
 
     // Extra Valves that are currently not in use.
     // interfaces::timers::tim13ch1::alternateFunction(9);
@@ -306,15 +313,19 @@ void IRQbspInit()
     // interfaces::timers::tim14ch1::alternateFunction(9);
     // interfaces::timers::tim14ch1::mode(Mode::ALTERNATE);
 
+    interfaces::adcs::adc12in8::mode(Mode::INPUT_ANALOG);
     interfaces::adcs::adc12in9::mode(Mode::INPUT_ANALOG);
+    interfaces::adcs::adc12in13::mode(Mode::INPUT_ANALOG);
     interfaces::adcs::adc12in14::mode(Mode::INPUT_ANALOG);
 
     solenoidal::igniterOx::mode(Mode::OUTPUT);
-    solenoidal::igniterOx::high();
-    solenoidal::igniterFuelSense::mode(Mode::OUTPUT);
-    solenoidal::igniterFuelSense::high();
-    solenoidal::igniterExtraSense::mode(Mode::OUTPUT);
-    solenoidal::igniterExtraSense::high();
+    solenoidal::igniterOx::low();
+    solenoidal::igniterFuel::mode(Mode::OUTPUT);
+    solenoidal::igniterFuel::low();
+    solenoidal::igniterFuelSense::mode(Mode::INPUT);
+    solenoidal::igniterFuelSense::low();
+    solenoidal::igniterExtraSense::mode(Mode::INPUT);
+    solenoidal::igniterExtraSense::low();
 
     gpios::debugLedRed::mode(Mode::OUTPUT);
     gpios::debugLedRed::low();
