@@ -81,14 +81,17 @@ using tim3ch1  = Gpio<GPIOC_BASE, 6>;
 using tim4ch1  = Gpio<GPIOD_BASE, 12>;
 using tim8ch2  = Gpio<GPIOC_BASE, 7>;
 using tim9ch1  = Gpio<GPIOA_BASE, 2>;
+using tim12ch1 = Gpio<GPIOB_BASE, 14>;
 using tim11ch1 = Gpio<GPIOB_BASE, 9>;
-using tim13ch1 = Gpio<GPIOA_BASE, 6>;
-using tim14ch1 = Gpio<GPIOA_BASE, 7>;
+// using tim13ch1 = Gpio<GPIOA_BASE, 6>;
+// using tim14ch1 = Gpio<GPIOA_BASE, 7>;
 }  // namespace timers
 
 namespace adcs
 {
+using adc12in8  = Gpio<GPIOB_BASE, 0>;
 using adc12in9  = Gpio<GPIOB_BASE, 1>;
+using adc12in13 = Gpio<GPIOC_BASE, 3>;
 using adc12in14 = Gpio<GPIOC_BASE, 4>;
 }  // namespace adcs
 
@@ -152,14 +155,15 @@ using przFuel = miosix::interfaces::timers::tim4ch1;
 
 #define MIOSIX_IGNITER_TIM TIM12
 #define MIOSIX_IGNITER_CHANNEL CHANNEL_1
-using igniter = miosix::interfaces::timers::tim4ch1;
+using igniter = miosix::interfaces::timers::tim12ch1;
 
 }  // namespace servos
 
 namespace solenoidal
 {
-using igniterOx         = Gpio<GPIOG_BASE, 12>;
-using igniterFuelSense  = Gpio<GPIOG_BASE, 13>;
+using igniterOx         = Gpio<GPIOG_BASE, 10>;
+using igniterFuel       = Gpio<GPIOD_BASE, 7>;
+using igniterFuelSense  = Gpio<GPIOG_BASE, 12>;
 using igniterExtraSense = Gpio<GPIOG_BASE, 14>;
 }  // namespace solenoidal
 
@@ -170,11 +174,5 @@ using debugLedOrange = Gpio<GPIOB_BASE, 15>;
 using debugLedYellow = Gpio<GPIOD_BASE, 11>;
 using debugLedGreen  = Gpio<GPIOG_BASE, 3>;
 }  // namespace gpios
-
-namespace actuators
-{
-using oxSolenoid   = Gpio<GPIOA_BASE, 15>;
-using fuelSolenoid = Gpio<GPIOA_BASE, 5>;
-}  // namespace actuators
 
 }  // namespace miosix
