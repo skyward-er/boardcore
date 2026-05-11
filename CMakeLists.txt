@@ -81,6 +81,21 @@ add_executable(sx1278fsk-ebyterig-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278fsk-ebyterig-serial PRIVATE SX1278_IS_FSK)
 sbs_target(sx1278fsk-ebyterig-serial stm32f429zi_rig)
 
+set(SX127X_ENTRYPOINT_SOURCES
+    src/shared/radio/SX127X/SX127X.cpp
+    src/shared/radio/SX127X/SX127XCommon.cpp
+    src/shared/radio/SX127X/SX127XFsk.cpp
+    src/shared/radio/SX127X/SX127XLora.cpp
+)
+
+function(configure_sx127x_target TARGET)
+    target_sources(${TARGET} PRIVATE ${SX127X_ENTRYPOINT_SOURCES})
+endfunction()
+
+add_executable(sx127xfsk-skyward433-serial-868-test
+    src/entrypoints/sx127x-fsk-serial-868-test.cpp)
+configure_sx127x_target(sx127xfsk-skyward433-serial-868-test)
+sbs_target(sx127xfsk-skyward433-serial-868-test stm32f767zi_gemini_gs)
 
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
@@ -118,19 +133,15 @@ sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
-
 add_executable(test-PCA9685 src/tests/drivers/test-PCA9685.cpp)
 sbs_target(test-PCA9685 stm32f767zi_lyra_biscotto)
-
 add_executable(test-hil 
     src/tests/hil/test-hil.cpp 
     src/tests/hil/Sensors/Sensors.cpp 
 )
 sbs_target(test-hil stm32f767zi_death_stack_v4)
-
 add_executable(test-mcp23s17 src/tests/drivers/test-mcp23s17.cpp)
 sbs_target(test-mcp23s17 stm32f767zi_rig_v2)
-
 #-----------------------------------------------------------------------------#
 #                                Tests - Catch                                #
 #-----------------------------------------------------------------------------#
@@ -398,10 +409,8 @@ sbs_target(test-ads131m08 stm32f767zi_compute_unit)
 
 add_executable(test-analog-pressure-sensors src/tests/sensors/analog/test-analog-pressure-sensors.cpp)
 sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)
-
 add_executable(test-as5047d src/tests/sensors/test-as5047d.cpp)
 sbs_target(test-as5047d stm32f767zi_lyra_biscotto)
-
 add_executable(test-battery-voltage src/tests/sensors/analog/test-battery-voltage.cpp)
 sbs_target(test-battery-voltage stm32f429zi_stm32f4discovery)
 
@@ -508,6 +517,7 @@ sbs_target(test-nd015x stm32f767zi_lyra_biscotto)
 add_executable(test-nd030d src/tests/sensors/test-nd030d.cpp)
 sbs_target(test-nd030d stm32f767zi_lyra_biscotto)
 
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
@@ -520,3 +530,4 @@ sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
 
 add_executable(test-syncpacketqueue src/tests/utils/test-syncpacketqueue.cpp)
 sbs_target(test-syncpacketqueue stm32f407vg_stm32f4discovery)
+
