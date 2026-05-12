@@ -228,17 +228,17 @@ namespace sense
 {
 using detachPayload  = Gpio<GPIOC_BASE, 3>;
 using detachMain     = Gpio<GPIOA_BASE, 4>;
-using detachRamp     = Gpio<GPIOB_BASE, 11>;
 using expulsionSense = Gpio<GPIOA_BASE, 3>;
 using cutterSense    = Gpio<GPIOC_BASE, 1>;
 }  // namespace sense
 
 namespace gpios
 {
-using mainDeploy = Gpio<GPIOD_BASE, 4>;
+using mainDeploy = Gpio<GPIOD_BASE, 4>;   // sradCutter
+using detachRamp = Gpio<GPIOB_BASE, 11>;  // va cambiato da input a output
 using boardLed   = Gpio<GPIOB_BASE, 12>;
 using statusLed  = Gpio<GPIOB_BASE, 13>;
-using camEnable  = Gpio<GPIOB_BASE, 14>;
+using camEnable  = Gpio<GPIOB_BASE, 14>;  // camEnable
 }  // namespace gpios
 
 }  // namespace miosix

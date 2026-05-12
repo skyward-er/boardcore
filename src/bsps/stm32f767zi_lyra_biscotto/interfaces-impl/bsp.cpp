@@ -356,12 +356,13 @@ void IRQbspInit()
 
     sense::detachPayload::mode(Mode::INPUT);
     sense::detachMain::mode(Mode::INPUT);
-    sense::detachRamp::mode(Mode::INPUT);
     // Expulsion needs a pull up due to the way the "forcella" works
     // It's normally floating, pulling down the line when it feels something
     sense::expulsionSense::mode(Mode::INPUT_PULL_UP);
     sense::cutterSense::mode(Mode::INPUT);
 
+    gpios::detachRamp::mode(Mode::OUTPUT);
+    gpios::detachRamp::low();
     gpios::mainDeploy::mode(Mode::OUTPUT);
     gpios::mainDeploy::low();
     gpios::boardLed::mode(Mode::OUTPUT);
