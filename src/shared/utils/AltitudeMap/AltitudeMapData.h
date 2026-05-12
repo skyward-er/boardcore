@@ -26,6 +26,8 @@
 namespace Boardcore
 {
 
+using namespace Units::Length;
+
 #pragma pack(push, 1)  // Disable padding to match binary layout in flash memory
 
 struct MapHeader
@@ -52,10 +54,14 @@ struct MapHeader
 
 struct MapBoundaries
 {
-    float eMax;
-    float eMin;
-    float nMax;
-    float nMin;
+    MapBoundaries()
+        : eMax(Meter(NAN)), eMin(Meter(NAN)), nMax(Meter(NAN)),
+          nMin(Meter(NAN)) {};
+
+    Meter eMax;
+    Meter eMin;
+    Meter nMax;
+    Meter nMin;
 };
 
 }  // namespace Boardcore

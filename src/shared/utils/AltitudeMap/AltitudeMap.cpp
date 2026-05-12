@@ -32,7 +32,8 @@ AltitudeMap::AltitudeMap(const uint8_t* startAddress)
     this->header = reinterpret_cast<const MapHeader*>(
         startAddress);  // Altitude map header address
     this->mapData =
-            startAddress + sizeof(MapHeader);  // Flash memory altitude map data start address
+        startAddress +
+        sizeof(MapHeader);  // Flash memory altitude map data start address
 }
 
 bool AltitudeMap::init()
@@ -45,17 +46,19 @@ bool AltitudeMap::init()
         return false;
     }
 
-    boundaries.eMin = header->topleftE;
-    boundaries.nMax = header->topleftN;
-    boundaries.eMax = header->topleftE + header->stepE * (header->numPointsE - 1);
-    boundaries.nMin = header->topleftN - header->stepN * (header->numPointsN - 1);
+    boundaries.eMin = Meter(header->topleftE);
+    boundaries.nMax = Meter(header->topleftN);
+    boundaries.eMax =
+        Meter(header->topleftE + header->stepE * (header->numPointsE - 1));
+    boundaries.nMin =
+        Meter(header->topleftN - header->stepN * (header->numPointsN - 1));
 
     isInitialized = true;
 
     return true;
 }
 
-bool AltitudeMap::isInsideMap(float n, float e)
+bool AltitudeMap::isInsideMap(Meter n, Meter e)
 {
     if (!isInitialized)
     {
@@ -72,7 +75,7 @@ MapBoundaries AltitudeMap::getMapBoundaries()
     if (!isInitialized)
     {
         LOG_ERR(logger, "AltitudeMap not initialized!");
-        return {NAN, NAN, NAN, NAN};
+        return MapBoundaries();
     }
 
     return boundaries;
@@ -85,15 +88,17 @@ Meter AltitudeMap::getAltitudeAtIndex(uint16_t indexN, uint16_t indexE)
     if (indexN >= header->numPointsN)
         indexN = header->numPointsN - 1;
 
-    uint32_t altitudeIndex = indexN * header->numPointsE + indexE;
+    uint32_t altitudeIndex     = indexN * header->numPointsE + indexE;
     uint8_t compressedAltitude = *(mapData + altitudeIndex);
 
-    float altitude = header->minAltitude + (static_cast<float>(compressedAltitude) / 255.0f) * (header->maxAltitude - header->minAltitude);
+    float altitude = header->minAltitude +
+                     (static_cast<float>(compressedAltitude) / 255.0f) *
+                         (header->maxAltitude - header->minAltitude);
 
     return Meter(altitude);
 }
 
-Meter AltitudeMap::getGroundAltitude(float n, float e)
+Meter AltitudeMap::getGroundAltitude(Meter n, Meter e)
 {
     if (!isInitialized)
     {
@@ -102,15 +107,20 @@ Meter AltitudeMap::getGroundAltitude(float n, float e)
     }
 
     if (!isInsideMap(n, e))
-        LOG_ERR(logger, "Point (n:{:.6f}, e:{:.6f}) is outside the altitude map!", n, e);
+        LOG_ERR(logger,
+                "Point (n:{:.6f} m, e:{:.6f} m) is outside the altitude map!",
+                n.value(), e.value());
 
-    uint16_t indexE = static_cast<uint16_t>(std::round((e - header->topleftE) / header->stepE));
-    uint16_t indexN = static_cast<uint16_t>(std::round((header->topleftN - n) / header->stepN));
-    
-    return getAltitudeAtIndex(indexN, indexE);;
+    uint16_t indexE = static_cast<uint16_t>(
+        std::round((e.value() - header->topleftE) / header->stepE));
+    uint16_t indexN = static_cast<uint16_t>(
+        std::round((header->topleftN - n.value()) / header->stepN));
+
+    return getAltitudeAtIndex(indexN, indexE);
+    ;
 }
 
-Meter AltitudeMap::getClosestGroundAltitude(float n, float e)
+Meter AltitudeMap::getClosestGroundAltitude(Meter n, Meter e)
 {
     if (!isInitialized)
     {
@@ -121,18 +131,20 @@ Meter AltitudeMap::getClosestGroundAltitude(float n, float e)
     if (!isInsideMap(n, e))
     {
         LOG_WARN(logger,
-                 "Point (n:{:.6f}, e:{:.6f}) is outside the altitude map, using closest "
+                 "Point (n:{:.6f} m, e:{:.6f} m) is outside the altitude map, "
+                 "using closest "
                  "point on the map to calculate altitude",
-                 n, e);
+                 n.value(), e.value());
     }
 
-    float closestE = std::max(boundaries.eMin, std::min(boundaries.eMax, e));
-    float closestN = std::max(boundaries.nMin, std::min(boundaries.nMax, n));
+    Meter closestE = std::max(boundaries.eMin, std::min(boundaries.eMax, e));
+    Meter closestN = std::max(boundaries.nMin, std::min(boundaries.nMax, n));
 
     return getGroundAltitude(closestN, closestE);
 }
 
-Meter AltitudeMap::getInterpolatedGroundAltitude(float n, float e){
+Meter AltitudeMap::getInterpolatedGroundAltitude(Meter n, Meter e)
+{
     if (!isInitialized)
     {
         LOG_ERR(logger, "AltitudeMap not initialized!");
@@ -141,15 +153,15 @@ Meter AltitudeMap::getInterpolatedGroundAltitude(float n, float e){
 
     if (!isInsideMap(n, e))
         return getClosestGroundAltitude(n, e);
-    
-    float fe = (e - header->topleftE) / header->stepE;
-    float fn = (header->topleftN - n) / header->stepN;
 
-    //TopLeft of interpolation square
+    float fe = (e.value() - header->topleftE) / header->stepE;
+    float fn = (header->topleftN - n.value()) / header->stepN;
+
+    // TopLeft of interpolation square
     uint16_t e0 = static_cast<uint16_t>(std::floor(fe));
     uint16_t n0 = static_cast<uint16_t>(std::floor(fn));
-    
-    //BottomRight of interpolation square
+
+    // BottomRight of interpolation square
     uint16_t e1 = e0 + 1;
     uint16_t n1 = n0 + 1;
 
@@ -159,12 +171,12 @@ Meter AltitudeMap::getInterpolatedGroundAltitude(float n, float e){
     if (e0 >= header->numPointsE - 1)
     {
         e0 = e1 = header->numPointsE - 1;
-        de = 0.0f;
+        de      = 0.0f;
     }
     if (n0 >= header->numPointsN - 1)
     {
         n0 = n1 = header->numPointsN - 1;
-        dn = 0.0f;
+        dn      = 0.0f;
     }
 
     Meter z00 = getAltitudeAtIndex(n0, e0);
@@ -172,13 +184,12 @@ Meter AltitudeMap::getInterpolatedGroundAltitude(float n, float e){
     Meter z01 = getAltitudeAtIndex(n1, e0);
     Meter z11 = getAltitudeAtIndex(n1, e1);
 
-    Meter z0 = z00 * (1.0f - de) + z10 * de; 
-    Meter z1 = z01 * (1.0f - de) + z11 * de; 
+    Meter z0 = z00 * (1.0f - de) + z10 * de;
+    Meter z1 = z01 * (1.0f - de) + z11 * de;
 
     Meter interpolatedAltitude = z0 * (1.0f - dn) + z1 * dn;
 
     return interpolatedAltitude;
-
 }
 
 }  // namespace Boardcore

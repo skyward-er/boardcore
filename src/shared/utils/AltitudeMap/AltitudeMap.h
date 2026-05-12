@@ -41,13 +41,12 @@ using namespace Units::Length;
 class AltitudeMap
 {
 public:
-
     /**
      *   @param startAddress: the flash memory address where the altitude map is
-     *   stored. The altitude map must be stored in a binary file that begins with
-     *   data structured as MapHeader, followed by a sequence of uint8_t values
-     *   representing the altitude at each point in the map, stored in row-major
-     *   order.
+     *   stored. The altitude map must be stored in a binary file that begins
+     * with data structured as MapHeader, followed by a sequence of uint8_t
+     * values representing the altitude at each point in the map, stored in
+     * row-major order.
      */
     AltitudeMap(const uint8_t* startAddress);
 
@@ -61,7 +60,7 @@ public:
     /**
      * @brief Check if the given coordinates are inside the map boundaries.
      */
-    bool isInsideMap(float n, float e);
+    bool isInsideMap(Meter n, Meter e);
 
     /**
      * @brief Uses the map data to find the closest ground altitude.
@@ -70,22 +69,25 @@ public:
      * the map boundaries. Returns NAN if the map is not initialized.
      */
 
-    Meter getClosestGroundAltitude(float n, float e);
+    Meter getClosestGroundAltitude(Meter n, Meter e);
 
     /**
-     * @brief Uses the map data to find the closest ground altitude interpolated bilinearly.
-     * @return the bilinearly interpolated ground altitude at the given coordinates or (if out of bounds) the closest ground altitude to the coordinates.
+     * @brief Uses the map data to find the closest ground altitude interpolated
+     * bilinearly.
+     * @return the bilinearly interpolated ground altitude at the given
+     * coordinates or (if out of bounds) the closest ground altitude to the
+     * coordinates.
      */
 
-    Meter getInterpolatedGroundAltitude(float n, float e);
+    Meter getInterpolatedGroundAltitude(Meter n, Meter e);
 
     /**
      * @brief Get the map boundaries.
      * @return the map boundaries as a MapBoundaries struct. The coordinates are
      * in meters from the target landing point, with the target landing point
-     * being roughly at (0, 0). n is positive in the north direction and negative
-     * in the south direction, e is positive in the east direction and negative
-     * in the west direction.
+     * being roughly at (0, 0). n is positive in the north direction and
+     * negative in the south direction, e is positive in the east direction and
+     * negative in the west direction.
      */
     MapBoundaries getMapBoundaries();
 
@@ -95,7 +97,7 @@ private:
 
     MapBoundaries boundaries;
 
-    Meter getGroundAltitude(float n, float e);
+    Meter getGroundAltitude(Meter n, Meter e);
 
     Meter getAltitudeAtIndex(uint16_t indexN, uint16_t indexE);
 
