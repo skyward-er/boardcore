@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.128
+// Model version                  : 11.240
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Mar 24 12:53:07 2026
+// C/C++ source code generated on : Tue May 12 11:57:35 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: STMicroelectronics->ST10/Super10
@@ -17,144 +17,94 @@
 //    1. Execution efficiency
 //    2. Debugging
 //    3. RAM efficiency
-// Validation result: Passed (3), Warning (1), Error (0)
+// Validation result: Not run
 //
 #ifndef NASDAQ0_types_h_
 #define NASDAQ0_types_h_
+#include <stdbool.h>
 #include <stdint.h>
-#ifndef DEFINED_TYPEDEF_FOR_Bus_AdaState_
-#define DEFINED_TYPEDEF_FOR_Bus_AdaState_
+#ifndef DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
+#define DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
 
-struct Bus_AdaState
+// Output Structure for ANAS GNC Algorithm used for NASDAQ GNC Algorithm
+// initialization
+struct ANAS_NASDAQ
 {
-  float covariance[9];
-  float verticalSpeedCovariance;
-  float timestamp;
-  float mslAltitude;
-  float aglAltitude;
-  float verticalSpeed;
-  float x0;
-  float x1;
-  float x2;
-  uint8_t apogeeCounter;
-  uint8_t parachuteCounter;
+    float LinearCovariance[36];
+    float Position[3];
+    float Velocity[3];
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_Bus_Baro_
-#define DEFINED_TYPEDEF_FOR_Bus_Baro_
+#ifndef DEFINED_TYPEDEF_FOR_NASDAQOut_
+#define DEFINED_TYPEDEF_FOR_NASDAQOut_
 
-struct Bus_Baro
+// Output Stucture for NASDAQ GNC Algorithm
+struct NASDAQOut
 {
-  float Measure;
-  uint64_t Timestamp;
+    uint64_t Timestamp;
+    float Position[3];
+    float Velocity[3];
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_Bus_GPS_
-#define DEFINED_TYPEDEF_FOR_Bus_GPS_
+#ifndef DEFINED_TYPEDEF_FOR_NASDAQLogs_
+#define DEFINED_TYPEDEF_FOR_NASDAQLogs_
 
-struct Bus_GPS
+// Output Structure for NASDAQ GNC Algorithm used for OBSW Logging
+struct NASDAQLogs
 {
-  float Measure[10];
-  uint64_t Timestamp;
+    uint64_t Timestamp;
+    float Position[3];
+    float Velocity[3];
+    float CovarianceMatrixDiagonal[6];
+    bool BaroActivation;
+    bool GPSActivation;
+    bool ADAActovation;
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_struct_yJUZSwkrTKNshoCnRn6b2E_
-#define DEFINED_TYPEDEF_FOR_struct_yJUZSwkrTKNshoCnRn6b2E_
+#ifndef DEFINED_TYPEDEF_FOR_NASDAQInADA_
+#define DEFINED_TYPEDEF_FOR_NASDAQInADA_
 
-struct struct_yJUZSwkrTKNshoCnRn6b2E
+// ADA Input Structure for NASDAQ GNC Algorithm
+struct NASDAQInADA
 {
-  double GPS;
-  double baro;
-  double ADA;
-  double ADAdynamicR;
+    float VerticalSpeed;
+    float VerticalSpeedCovariance;
+    uint64_t Timestamp;
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_struct_sE07iPeH2fcFuyDctof9lB_
-#define DEFINED_TYPEDEF_FOR_struct_sE07iPeH2fcFuyDctof9lB_
+#ifndef DEFINED_TYPEDEF_FOR_ISAReference_
+#define DEFINED_TYPEDEF_FOR_ISAReference_
 
-struct struct_sE07iPeH2fcFuyDctof9lB
+struct ISAReference
 {
-  double predictor;
-  double GPS;
-  double baro;
-  double ADA;
+    float GroundTemperature;
+    float GroundPressure;
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_struct_7PVAQObeoH08VqIRAhlRKD_
-#define DEFINED_TYPEDEF_FOR_struct_7PVAQObeoH08VqIRAhlRKD_
+#ifndef DEFINED_TYPEDEF_FOR_NASDAQInSensors_
+#define DEFINED_TYPEDEF_FOR_NASDAQInSensors_
 
-struct struct_7PVAQObeoH08VqIRAhlRKD
+// Sensors Input Structure for NASDAQ GNC Algorithm
+struct NASDAQInSensors
 {
-  double GPS[16];
-  double baro;
-  double ADA;
+    float BaroMeasure;
+    uint64_t BaroTimestamp;
+    float GPSMeasure[4];
+    uint64_t GPSTimestamp;
 };
 
 #endif
-
-#ifndef DEFINED_TYPEDEF_FOR_struct_WmcIulKf1n1h4Ys2kSojGD_
-#define DEFINED_TYPEDEF_FOR_struct_WmcIulKf1n1h4Ys2kSojGD_
-
-struct struct_WmcIulKf1n1h4Ys2kSojGD
-{
-  double P0[36];
-  double Q[36];
-};
-
-#endif
-
-#ifndef DEFINED_TYPEDEF_FOR_struct_8YttkCbEoudiA6ENJJVZ3C_
-#define DEFINED_TYPEDEF_FOR_struct_8YttkCbEoudiA6ENJJVZ3C_
-
-struct struct_8YttkCbEoudiA6ENJJVZ3C
-{
-  double a;
-  double b;
-  double lat0;
-  double lon0;
-  double accLimit;
-};
-
-#endif
-
-#ifndef DEFINED_TYPEDEF_FOR_struct_9Ht3NaUwqaCNU0KBZn3mBF_
-#define DEFINED_TYPEDEF_FOR_struct_9Ht3NaUwqaCNU0KBZn3mBF_
-
-struct struct_9Ht3NaUwqaCNU0KBZn3mBF
-{
-  double a;
-  double n;
-  double refTemp;
-  double refPres;
-};
-
-#endif
-
-#ifndef DEFINED_TYPEDEF_FOR_struct_UyXIlhvkjCvDDDjTjsnNlD_
-#define DEFINED_TYPEDEF_FOR_struct_UyXIlhvkjCvDDDjTjsnNlD_
-
-struct struct_UyXIlhvkjCvDDDjTjsnNlD
-{
-  struct_yJUZSwkrTKNshoCnRn6b2E flags;
-  struct_sE07iPeH2fcFuyDctof9lB frequency;
-  struct_7PVAQObeoH08VqIRAhlRKD sigma;
-  struct_WmcIulKf1n1h4Ys2kSojGD initMatrix;
-  struct_8YttkCbEoudiA6ENJJVZ3C gps;
-  struct_9Ht3NaUwqaCNU0KBZn3mBF baro;
-};
-
-#endif
-#endif                                 // NASDAQ0_types_h_
+#endif  // NASDAQ0_types_h_
 
 //
 // File trailer for generated code.
