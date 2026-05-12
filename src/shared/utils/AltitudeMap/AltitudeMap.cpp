@@ -45,19 +45,17 @@ bool AltitudeMap::init()
         return false;
     }
 
-    boundaries.xMin = header->topleftX;
-    boundaries.yMax = header->topleftY;
-    boundaries.xMax =
-        header->topleftX + header->stepX * (header->numPointsX - 1);
-    boundaries.yMin =
-        header->topleftY - header->stepY * (header->numPointsY - 1);
+    boundaries.eMin = header->topleftE;
+    boundaries.nMax = header->topleftN;
+    boundaries.eMax = header->topleftE + header->stepE * (header->numPointsE - 1);
+    boundaries.nMin = header->topleftN - header->stepN * (header->numPointsN - 1);
 
     isInitialized = true;
 
     return true;
 }
 
-bool AltitudeMap::isInsideMap(float x, float y)
+bool AltitudeMap::isInsideMap(float n, float e)
 {
     if (!isInitialized)
     {
@@ -65,8 +63,8 @@ bool AltitudeMap::isInsideMap(float x, float y)
         return false;
     }
 
-    return ((x >= boundaries.xMin && x <= boundaries.xMax) &&
-            (y >= boundaries.yMin && y <= boundaries.yMax));
+    return ((e >= boundaries.eMin && e <= boundaries.eMax) &&
+            (n >= boundaries.nMin && n <= boundaries.nMax));
 }
 
 MapBoundaries AltitudeMap::getMapBoundaries()
@@ -80,37 +78,22 @@ MapBoundaries AltitudeMap::getMapBoundaries()
     return boundaries;
 }
 
-Meter AltitudeMap::getGroundAltitude(float x, float y)
+Meter AltitudeMap::getAltitudeAtIndex(uint16_t indexN, uint16_t indexE)
 {
-    if (!isInitialized)
-    {
-        LOG_ERR(logger, "AltitudeMap not initialized!");
-        return Meter(NAN);
-    }
+    if (indexE >= header->numPointsE)
+        indexE = header->numPointsE - 1;
+    if (indexN >= header->numPointsN)
+        indexN = header->numPointsN - 1;
 
-    if (!isInsideMap(x, y))
-        LOG_ERR(logger, "Point ({:.6f}, {:.6f}) is outside the altitude map!", x, y);
-
-    uint16_t indexX = static_cast<uint16_t>(std::round((x - header->topleftX) / header->stepX));
-    uint16_t indexY = static_cast<uint16_t>(std::round((header->topleftY - y) / header->stepY));
-    
-    if (indexX >= header->numPointsX)
-        indexX = header->numPointsX - 1;
-    if (indexY >= header->numPointsY)
-        indexY = header->numPointsY - 1;
-
-    uint32_t altitudeIndex = indexX * header->numPointsY + indexY;
-
+    uint32_t altitudeIndex = indexN * header->numPointsE + indexE;
     uint8_t compressedAltitude = *(mapData + altitudeIndex);
 
-    float groundAltitude = header->minAltitude +
-                           (static_cast<float>(compressedAltitude) / 255.0f) *
-                               (header->maxAltitude - header->minAltitude);
+    float altitude = header->minAltitude + (static_cast<float>(compressedAltitude) / 255.0f) * (header->maxAltitude - header->minAltitude);
 
-    return Meter(groundAltitude);
+    return Meter(altitude);
 }
 
-Meter AltitudeMap::getClosestGroundAltitude(float x, float y)
+Meter AltitudeMap::getGroundAltitude(float n, float e)
 {
     if (!isInitialized)
     {
@@ -118,18 +101,84 @@ Meter AltitudeMap::getClosestGroundAltitude(float x, float y)
         return Meter(NAN);
     }
 
-    if (!isInsideMap(x, y))
+    if (!isInsideMap(n, e))
+        LOG_ERR(logger, "Point (n:{:.6f}, e:{:.6f}) is outside the altitude map!", n, e);
+
+    uint16_t indexE = static_cast<uint16_t>(std::round((e - header->topleftE) / header->stepE));
+    uint16_t indexN = static_cast<uint16_t>(std::round((header->topleftN - n) / header->stepN));
+    
+    return getAltitudeAtIndex(indexN, indexE);;
+}
+
+Meter AltitudeMap::getClosestGroundAltitude(float n, float e)
+{
+    if (!isInitialized)
     {
-        LOG_WARN(logger,
-                 "Point ({:.6f}, {:.6f}) is outside the altitude map, using closest "
-                 "point on the map to calculate altitude",
-                 x, y);
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return Meter(NAN);
     }
 
-    float closestX = std::max(boundaries.xMin, std::min(boundaries.xMax, x));
-    float closestY = std::max(boundaries.yMin, std::min(boundaries.yMax, y));
+    if (!isInsideMap(n, e))
+    {
+        LOG_WARN(logger,
+                 "Point (n:{:.6f}, e:{:.6f}) is outside the altitude map, using closest "
+                 "point on the map to calculate altitude",
+                 n, e);
+    }
 
-    return getGroundAltitude(closestX, closestY);
+    float closestE = std::max(boundaries.eMin, std::min(boundaries.eMax, e));
+    float closestN = std::max(boundaries.nMin, std::min(boundaries.nMax, n));
+
+    return getGroundAltitude(closestN, closestE);
+}
+
+Meter AltitudeMap::getInterpolatedGroundAltitude(float n, float e){
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return Meter(NAN);
+    }
+
+    if (!isInsideMap(n, e))
+        return getClosestGroundAltitude(n, e);
+    
+    float fe = (e - header->topleftE) / header->stepE;
+    float fn = (header->topleftN - n) / header->stepN;
+
+    //TopLeft of interpolation square
+    uint16_t e0 = static_cast<uint16_t>(std::floor(fe));
+    uint16_t n0 = static_cast<uint16_t>(std::floor(fn));
+    
+    //BottomRight of interpolation square
+    uint16_t e1 = e0 + 1;
+    uint16_t n1 = n0 + 1;
+
+    float de = fe - e0;
+    float dn = fn - n0;
+
+    if (e0 >= header->numPointsE - 1)
+    {
+        e0 = e1 = header->numPointsE - 1;
+        de = 0.0f;
+    }
+    if (n0 >= header->numPointsN - 1)
+    {
+        n0 = n1 = header->numPointsN - 1;
+        dn = 0.0f;
+    }
+
+    Meter z00 = getAltitudeAtIndex(n0, e0);
+    Meter z10 = getAltitudeAtIndex(n0, e1);
+    Meter z01 = getAltitudeAtIndex(n1, e0);
+    Meter z11 = getAltitudeAtIndex(n1, e1);
+
+    Meter z0 = z00 * (1.0f - de) + z10 * de; 
+    Meter z1 = z01 * (1.0f - de) + z11 * de; 
+
+    Meter interpolatedAltitude = z0 * (1.0f - dn) + z1 * dn;
+
+    return interpolatedAltitude;
+
 }
 
 }  // namespace Boardcore

@@ -30,17 +30,17 @@ namespace Boardcore
 
 struct MapHeader
 {
-    float topleftX;
-    float topleftY;
+    float topleftE;
+    float topleftN;
 
     float maxAltitude;
     float minAltitude;
 
-    float stepX;
-    float stepY;
+    float stepE;
+    float stepN;
 
-    uint16_t numPointsX;
-    uint16_t numPointsY;
+    uint16_t numPointsE;
+    uint16_t numPointsN;
 
     uint8_t whoAmI = 0x42;
 };
@@ -52,10 +52,10 @@ struct MapHeader
 
 struct MapBoundaries
 {
-    float xMax;
-    float xMin;
-    float yMax;
-    float yMin;
+    float eMax;
+    float eMin;
+    float nMax;
+    float nMin;
 };
 
 }  // namespace Boardcore
