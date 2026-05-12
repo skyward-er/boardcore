@@ -1042,19 +1042,19 @@ void NASDAQ0::step()
   NASDAQ0_Y.Position[0] = rtb_Merge1_b[0];
 
   // Outport: '<Root>/Velocity'
-  NASDAQ0_Y.Velocity[0] = rtb_Merge1_b[0];
+  NASDAQ0_Y.Velocity[0] = rtb_Merge1_b[3];
 
   // Outport: '<Root>/Position'
   NASDAQ0_Y.Position[1] = rtb_Merge1_b[1];
 
   // Outport: '<Root>/Velocity'
-  NASDAQ0_Y.Velocity[1] = rtb_Merge1_b[1];
+  NASDAQ0_Y.Velocity[1] = rtb_Merge1_b[4];
 
   // Outport: '<Root>/Position'
   NASDAQ0_Y.Position[2] = rtb_Merge1_b[2];
 
   // Outport: '<Root>/Velocity'
-  NASDAQ0_Y.Velocity[2] = rtb_Merge1_b[2];
+  NASDAQ0_Y.Velocity[2] = rtb_Merge1_b[5];
 
   // Outputs for Atomic SubSystem: '<Root>/NASDAQ'
   for (i = 0; i < 6; i++) {
