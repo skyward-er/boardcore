@@ -44,13 +44,14 @@ public:
      * @param refResistance NTC reference resistance.
      * @param refTemperature reference temperature.
      * @param beta beta parameter for the NTC thermistor.
-     * 
-     * 
+     *
+     *
      */
-    HeatingPadNTC(std::function<VoltageData()> getVoltage,
-                   float refVoltage, float refResistance, float refTemperature, float beta)
-        : getVoltage{std::move(getVoltage)}, refVoltage{refVoltage}, refResistance{refResistance},
-          refTemperature{refTemperature}, beta{beta}
+    HeatingPadNTC(std::function<VoltageData()> getVoltage, float refVoltage,
+                  float refResistance, float refTemperature, float beta)
+        : getVoltage{std::move(getVoltage)}, refVoltage{refVoltage},
+          refResistance{refResistance}, refTemperature{refTemperature},
+          beta{beta}
     {
     }
 
@@ -58,12 +59,12 @@ public:
 
     bool selfTest() override { return true; }
 
-
 protected:
     TemperatureData sampleImpl() override
     {
         auto voltage = getVoltage();
-        return {voltage.voltageTimestamp, voltageToTemperature(voltage.voltage)};
+        return {voltage.voltageTimestamp,
+                voltageToTemperature(voltage.voltage)};
     }
 
 private:
@@ -71,11 +72,13 @@ private:
     {
         float resistance = (refResistance * voltage) / (refVoltage - voltage);
 
-    float temperature = 1.0f / ((1.0f / refTemperature) + (1.0f / beta) * std::log(resistance / refResistance));
+        float temperature =
+            1.0f / ((1.0f / refTemperature) +
+                    (1.0f / beta) * std::log(resistance / refResistance));
 
         return temperature;
     }
-                                      
+
     std::function<VoltageData()> getVoltage;
 
     float refVoltage;

@@ -27,7 +27,6 @@
 #define MIOSIX_SENSOR_ND015A_SPI SPI1
 #define MIOSIX_SENSOR_ND030D_SPI SPI1
 
-
 namespace miosix
 {
 
@@ -42,8 +41,6 @@ using miso = Gpio<GPIOA_BASE, 6>;
 using mosi = Gpio<GPIOA_BASE, 7>;
 }  // namespace spi1
 
-
-
 // Thermocouple
 namespace spi4
 {
@@ -51,7 +48,6 @@ using sck  = Gpio<GPIOE_BASE, 2>;
 using miso = Gpio<GPIOE_BASE, 5>;
 using mosi = Gpio<GPIOE_BASE, 6>;
 }  // namespace spi4
-
 
 // Miosix UART
 namespace usart1
@@ -81,8 +77,6 @@ using tim4ch2 = Gpio<GPIOD_BASE, 13>;
 using tim9ch1 = Gpio<GPIOA_BASE, 2>;
 }  // namespace timers
 
-
-
 }  // namespace interfaces
 
 namespace sensors
@@ -107,9 +101,9 @@ using cs = Gpio<GPIOC_BASE, 7>;
 
 namespace HeatingPad
 {
-using measure  = Gpio<GPIOB_BASE, 1>;
-using enable   = Gpio<GPIOB_BASE, 11>;
-using sense    = Gpio<GPIOB_BASE, 12>;
+using measure = Gpio<GPIOB_BASE, 1>;
+using enable  = Gpio<GPIOB_BASE, 11>;
+using sense   = Gpio<GPIOB_BASE, 12>;
 }  // namespace HeatingPad
 
 }  // namespace miosix
