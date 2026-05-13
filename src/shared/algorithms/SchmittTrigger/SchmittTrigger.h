@@ -31,11 +31,11 @@ namespace Boardcore
 /**
  * @brief Schmitt Trigger algorithm class.
  *
- * The Schmitt Trigger class takes 2 thresholds (low and high), a reference and
- * a state and returns an activation value that is STOP if the state is between
- * the thresholds of the reference, HIGH if the state is below the low threshold
- * of the reference and LOW if the state is above the high threshold of the
- * reference.
+ * The Schmitt Trigger class takes 2 thresholds (low and high), a target and
+ * a state and as an output returns an activation value that is:
+ *     STOP    if the state is between the thresholds of the target;
+ *     HIGH    if the state is below the low threshold of the target;
+ *     LOW     if the state is above the high threshold of the target.
  */
 class SchmittTrigger : public Algorithm
 {
@@ -56,35 +56,36 @@ public:
     /**
      * @brief Initializes the SchmittTrigger object.
      *
-     * @return true if thresholds have been set, false otherwise.
+     * @return Always true.
      */
     bool init() override;
 
     /**
-     * @brief Sets the thresholds for the Schmitt Trigger.
+     * @brief Setter function for the thresholds for the Schmitt Trigger.
      */
     void setThresholds(float thresholdLow, float thresholdHigh);
 
     /**
-     * @brief Sets the state value for the Schmitt Trigger.
+     * @brief Setter function for the state value for the Schmitt Trigger.
      */
-    void setState(float newState);
+    void setCurrentState(float state);
 
     /**
-     * @brief Sets the reference value for the Schmitt Trigger.
+     * @brief Setter function for the target value for the Schmitt Trigger.
      */
-    void setReference(float newReference);
+    void setTargetState(float target);
 
     /**
-     * @brief Returns the current activation state of the Schmitt Trigger.
+     * @brief Getter function for the current activation state of the Schmitt
+     * Trigger.
      *
-     * @return The current activation state.
+     * @return The current activation state: LOW, STOP, or HIGH.
      */
-    Activation getActivation();
+    Activation getOutput();
 
 protected:
-    float state     = 0.0f;
-    float reference = 0.0f;
+    float state  = 0.0f;
+    float target = 0.0f;
     float thresholdLow;
     float thresholdHigh;
 
