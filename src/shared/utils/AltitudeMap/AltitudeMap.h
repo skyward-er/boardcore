@@ -68,7 +68,8 @@ public:
      * the map boundaries. Returns NAN if the map is not initialized.
      */
 
-    Units::Length::Meter getClosestGroundAltitude(Units::Length::Meter n, Units::Length::Meter e);
+    Units::Length::Meter getClosestGroundAltitude(Units::Length::Meter n,
+                                                  Units::Length::Meter e);
 
     /**
      * @brief Uses the map data to find the closest ground altitude interpolated
@@ -78,7 +79,8 @@ public:
      * coordinates.
      */
 
-    Units::Length::Meter getInterpolatedGroundAltitude(Units::Length::Meter n, Units::Length::Meter e);
+    Units::Length::Meter getInterpolatedGroundAltitude(Units::Length::Meter n,
+                                                       Units::Length::Meter e);
 
     /**
      * @brief Get the map boundaries.
@@ -96,7 +98,8 @@ private:
 
     MapBoundaries boundaries;
 
-    Units::Length::Meter getGroundAltitude(Units::Length::Meter n, Units::Length::Meter e);
+    Units::Length::Meter getGroundAltitude(Units::Length::Meter n,
+                                           Units::Length::Meter e);
 
     Units::Length::Meter getAltitudeAtIndex(uint16_t indexN, uint16_t indexE);
 

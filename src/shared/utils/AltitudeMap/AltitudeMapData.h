@@ -53,8 +53,8 @@ struct MapHeader
 struct MapBoundaries
 {
     MapBoundaries()
-        : eMax(Units::Length::Meter(NAN)), eMin(Units::Length::Meter(NAN)), nMax(Units::Length::Meter(NAN)),
-          nMin(Units::Length::Meter(NAN)) {};
+        : eMax(Units::Length::Meter(NAN)), eMin(Units::Length::Meter(NAN)),
+          nMax(Units::Length::Meter(NAN)), nMin(Units::Length::Meter(NAN)) {};
 
     Units::Length::Meter eMax;
     Units::Length::Meter eMin;
