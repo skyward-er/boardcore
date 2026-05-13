@@ -34,7 +34,7 @@ namespace Boardcore
  *
  * This class provides methods to retrieve altitude data from flash memory if
  * provided with a correctly formatted binary file. It is used by the Flare
- * algorithm determine when to activate. x and y coordinates are NED in the
+ * algorithm determine when to activate. n and e coordinates are NED in the
  * target's frame of reference.
  */
 class AltitudeMap
