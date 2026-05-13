@@ -29,7 +29,6 @@
 
 namespace Boardcore
 {
-using namespace Units::Length;
 /**
  * @brief Class to retrieve altitude data from flash memory.
  *
@@ -48,7 +47,7 @@ public:
      * values representing the altitude at each point in the map, stored in
      * row-major order.
      */
-    AltitudeMap(const uint8_t* startAddress);
+    explicit AltitudeMap(const uint8_t* startAddress);
 
     /**
      * @brief Initialize the altitude map. Sets the map boundaries and checks
@@ -60,7 +59,7 @@ public:
     /**
      * @brief Check if the given coordinates are inside the map boundaries.
      */
-    bool isInsideMap(Meter n, Meter e);
+    bool isInsideMap(Units::Length::Meter n, Units::Length::Meter e);
 
     /**
      * @brief Uses the map data to find the closest ground altitude.
@@ -69,7 +68,7 @@ public:
      * the map boundaries. Returns NAN if the map is not initialized.
      */
 
-    Meter getClosestGroundAltitude(Meter n, Meter e);
+    Units::Length::Meter getClosestGroundAltitude(Units::Length::Meter n, Units::Length::Meter e);
 
     /**
      * @brief Uses the map data to find the closest ground altitude interpolated
@@ -79,7 +78,7 @@ public:
      * coordinates.
      */
 
-    Meter getInterpolatedGroundAltitude(Meter n, Meter e);
+    Units::Length::Meter getInterpolatedGroundAltitude(Units::Length::Meter n, Units::Length::Meter e);
 
     /**
      * @brief Get the map boundaries.
@@ -97,9 +96,9 @@ private:
 
     MapBoundaries boundaries;
 
-    Meter getGroundAltitude(Meter n, Meter e);
+    Units::Length::Meter getGroundAltitude(Units::Length::Meter n, Units::Length::Meter e);
 
-    Meter getAltitudeAtIndex(uint16_t indexN, uint16_t indexE);
+    Units::Length::Meter getAltitudeAtIndex(uint16_t indexN, uint16_t indexE);
 
     bool isInitialized = false;
     PrintLogger logger = Logging::getLogger("AltitudeMap");

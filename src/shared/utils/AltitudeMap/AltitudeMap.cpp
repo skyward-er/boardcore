@@ -27,6 +27,8 @@
 namespace Boardcore
 {
 
+using namespace Units::Length;
+
 AltitudeMap::AltitudeMap(const uint8_t* startAddress)
 {
     this->header = reinterpret_cast<const MapHeader*>(
