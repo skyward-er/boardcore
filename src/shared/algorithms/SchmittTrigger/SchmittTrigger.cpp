@@ -34,11 +34,7 @@ SchmittTrigger::SchmittTrigger(float thresholdLow, float thresholdHigh)
     setThresholds(thresholdLow, thresholdHigh);
 }
 
-bool SchmittTrigger::init()
-{
-    Lock<FastMutex> lock(schmittMutex);
-    return true;
-}
+bool SchmittTrigger::init() { return true; }
 
 void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
 {
@@ -47,31 +43,27 @@ void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
     this->thresholdHigh = thresholdHigh;
 }
 
-void SchmittTrigger::setState(float state)
+void SchmittTrigger::setCurrentState(float state)
 {
     Lock<FastMutex> lock(schmittMutex);
     this->state = state;
 }
 
-void SchmittTrigger::setReference(float reference)
+void SchmittTrigger::setTargetState(float target)
 {
     Lock<FastMutex> lock(schmittMutex);
-    this->reference = reference;
+    this->target = target;
 }
 
-SchmittTrigger::Activation SchmittTrigger::getActivation()
-{
-    Lock<FastMutex> lock(schmittMutex);
-    return activation;
-}
+SchmittTrigger::Activation SchmittTrigger::getOutput() { return activation; }
 
 void SchmittTrigger::step()
 {
     Lock<FastMutex> lock(schmittMutex);
 
-    if (state <= reference - thresholdLow)
+    if (state <= target - thresholdLow)
         activation = Activation::HIGH;
-    else if (state >= reference + thresholdHigh)
+    else if (state >= target + thresholdHigh)
         activation = Activation::LOW;
     else
         activation = Activation::STOP;
