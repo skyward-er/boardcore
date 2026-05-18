@@ -20,53 +20,11 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include "SchmittTrigger.h"
-
-#include <diagnostic/PrintLogger.h>
-#include <logger/Logger.h>
-
-using namespace miosix;
 
 namespace Boardcore
 {
-SchmittTrigger::SchmittTrigger(float thresholdLow, float thresholdHigh)
-{
-    setThresholds(thresholdLow, thresholdHigh);
+    
 }
-
-bool SchmittTrigger::init() { return true; }
-
-void SchmittTrigger::setThresholds(float thresholdLow, float thresholdHigh)
-{
-    Lock<FastMutex> lock(schmittMutex);
-    this->thresholdLow  = thresholdLow;
-    this->thresholdHigh = thresholdHigh;
-}
-
-void SchmittTrigger::setCurrentState(float state)
-{
-    Lock<FastMutex> lock(schmittMutex);
-    this->state = state;
-}
-
-void SchmittTrigger::setTargetState(float target)
-{
-    Lock<FastMutex> lock(schmittMutex);
-    this->target = target;
-}
-
-SchmittTrigger::Activation SchmittTrigger::getOutput() { return activation; }
-
-void SchmittTrigger::step()
-{
-    Lock<FastMutex> lock(schmittMutex);
-
-    if (state <= target - thresholdLow)
-        activation = Activation::HIGH;
-    else if (state >= target + thresholdHigh)
-        activation = Activation::LOW;
-    else
-        activation = Activation::STOP;
-}
-
-}  // namespace Boardcore

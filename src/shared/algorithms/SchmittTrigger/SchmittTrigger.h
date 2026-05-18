@@ -28,75 +28,58 @@
 
 namespace Boardcore
 {
-/**
- * @brief Schmitt Trigger algorithm class.
- *
- * The Schmitt Trigger class takes 2 thresholds (low and high), a target and
- * a state and as an output returns an activation value that is:
- *     STOP    if the state is between the thresholds of the target;
- *     HIGH    if the state is below the low threshold of the target;
- *     LOW     if the state is above the high threshold of the target.
- */
-class SchmittTrigger : public Algorithm
-{
-public:
-    enum class Activation
+    /**
+     * @brief Schmitt Trigger algorithm class.
+     *
+     * This class implements a Schmitt Trigger, which is a type of comparator circuit
+     * with hysteresis. It is used to convert an analog input signal into a digital
+     * output signal, providing noise immunity and preventing rapid switching.
+     */
+    class SchmittTrigger : public Algorithm
     {
-        LOW,
-        STOP,
-        HIGH
+    public:
+        /**
+         * @brief Constructor for the SchmittTrigger class.
+         *
+         * @param lowerThreshold The lower threshold value for the trigger.
+         * @param upperThreshold The upper threshold value for the trigger.
+         */
+        SchmittTrigger(float lowerThreshold, float upperThreshold);
 
-    };
+        /**
+         * @brief Initializes the SchmittTrigger object.
+         *
+         * @return true if initialization is successful, false otherwise.
+         */
+        bool init() override;
 
-    /**
-     * @brief Constructor for the SchmittTrigger class.
-     */
-    SchmittTrigger(float thresholdLow, float thresholdHigh);
+        /**
+         * @brief Sets the state value for the Schmitt Trigger.
+         *
+         * @param input The state value to be evaluated.
+         */
+        void setState(float input);
 
-    /**
-     * @brief Initializes the SchmittTrigger object.
-     *
-     * @return Always true.
-     */
-    bool init() override;
+        /**
+         * @brief Gets the current output state of the Schmitt Trigger.
+         *
+         * @return true if the output is high, false if it is low.
+         */
+        bool getOutput() const;
+    protected:
+        uint16_t    state;
+        uint16_t    reference;
+        uint8_t     thresholds[2];
 
-    /**
-     * @brief Setter function for the thresholds for the Schmitt Trigger.
-     * @param thresholdLow  lower relative threshold to the target value, should
-     * be positive.
-     * @param thresholdHigh higher relative threshold to the target value,
-     * should be positive.
-     */
-    void setThresholds(float thresholdLow, float thresholdHigh);
+        enum class Activation
+        {
+            STOP        = 0,
+            FORWARD     = 1,
+            BACKWARDS   = 2
+        } currentState;
+        
+        bool outputState;
 
-    /**
-     * @brief Setter function for the state value for the Schmitt Trigger.
-     */
-    void setCurrentState(float state);
-
-    /**
-     * @brief Setter function for the target value for the Schmitt Trigger.
-     */
-    void setTargetState(float target);
-
-    /**
-     * @brief Getter function for the current activation state of the Schmitt
-     * Trigger.
-     *
-     * @return The current activation state: LOW, STOP, or HIGH.
-     */
-    Activation getOutput();
-
-protected:
-    float state  = 0.0f;
-    float target = 0.0f;
-    float thresholdLow;
-    float thresholdHigh;
-
-    std::atomic<Activation> activation{Activation::STOP};
-
-    miosix::FastMutex schmittMutex;
-
-    void step() override;
-};
-}  // namespace Boardcore
+        void step() override;
+    }
+}
