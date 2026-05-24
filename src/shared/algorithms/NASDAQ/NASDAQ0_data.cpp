@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.128
+// Model version                  : 11.240
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Mar 24 12:53:07 2026
+// C/C++ source code generated on : Tue May 12 11:57:35 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: STMicroelectronics->ST10/Super10
@@ -17,329 +17,404 @@
 //    1. Execution efficiency
 //    2. Debugging
 //    3. RAM efficiency
-// Validation result: Passed (3), Warning (1), Error (0)
+// Validation result: Not run
 //
 #include "NASDAQ0.h"
 
 // Block parameters (default storage)
 NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
-  // Variable: nasdaq
-  //  Referenced by:
-  //    '<S8>/Constant'
-  //    '<S24>/Constant'
+    // Computed Parameter: UnitDelay1_InitialCondition
+    //  Referenced by: '<S19>/Unit Delay1'
 
-  {
-    { // Correction Flags 
-      1.0,    // GPS
-      1.0,    // Baro
-      1.0,    // ADA
-      1.0     // ADA Dynamic R
+    {
+        0.0F,  // GroundTemperature
+        0.0F   // GroundPressure
     },
 
-    { // Frequencies
-      100.0,  // Predictor
-      10.0,   // GPS
-      50.0,   // Baro
-      50.0    // ADA
-    },
+    // Expression: minCond
+    //  Referenced by: '<S11>/NASCondLim'
 
-    { // Sigma
-      { 0.0447, 0.0, 0.0, 0.0, 0.0, 0.0447, 0.0, 0.0, 0.0, 0.0, 0.0183, 0.0, 0.0,
-        0.0, 0.0, 0.0183 },   // GPS
-      100.0,  // Baro
-      0.5     // ADA
-    },
+    0.001,
 
-    { // Noise Covariances 
-      { 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1 },     // Initial State Covariance
+    // Expression: flagADA
+    //  Referenced by: '<S8>/Constant'
 
-      { 0.006, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.006, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        0.75, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.22 }    // Process Noise Covariance
-    },
+    1.0,
 
-    { // GPS Parameters (Jesolo and Casale Monferrato commented)
-      111141.679169, // A Parameter - 111143.047242 - 111133.953255
-      78157.195039,  // B Parameter - 78068.307521 - 78695.539158
-      45.501085,     // Latitude - 45.564594 - 45.110556
-      9.156451,      // Longitude - 12.575059 - 8.456389
-      34.0           // Max Acc 
-    },
+    // Expression: minCond
+    //  Referenced by: '<S24>/NASCondLim'
 
-    { // Isa Model
-      0.0065,         // Temperature Gradient
-      5.2559,         // Pressure Exponent
-      288.15,         // Sea Level Temperature
-      101325.0        // Sea Level Pressure
-    }
-  },
+    0.001,
 
-  // Computed Parameter: Memory_InitialCondition
-  //  Referenced by: '<S15>/Memory'
+    // Expression: minCond
+    //  Referenced by: '<S38>/NASCondLim'
 
-  (0ULL),
+    0.001,
 
-  // Computed Parameter: Memory_InitialCondition_b
-  //  Referenced by: '<S24>/Memory'
+    // Expression: flagGPS
+    //  Referenced by: '<S34>/Constant'
 
-  (0ULL),
+    1.0,
 
-  // Expression: nasdaq.sigma.ADA
-  //  Referenced by: '<S7>/Constant'
+    // Computed Parameter: Memory_InitialCondition
+    //  Referenced by: '<S8>/Memory'
 
-  0.5F,
+    (0ULL),
 
-  // Computed Parameter: Constant_Value_g
-  //  Referenced by: '<S13>/Constant'
+    // Computed Parameter: Memory_InitialCondition_m
+    //  Referenced by: '<S20>/Memory'
 
-  { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
+    (0ULL),
 
-  // Computed Parameter: Gain_Gain
-  //  Referenced by: '<S4>/Gain'
+    // Computed Parameter: Memory_InitialCondition_o
+    //  Referenced by: '<S34>/Memory'
 
-  -1.0F,
+    (0ULL),
 
-  // Computed Parameter: Memory_InitialCondition_l
-  //  Referenced by: '<S8>/Memory'
+    // Computed Parameter: Constant_Value_g
+    //  Referenced by: '<S16>/Constant'
 
-  0.0F,
+    0.0F,
 
-  // Computed Parameter: Constant_Value_h
-  //  Referenced by: '<S21>/Constant'
+    // Computed Parameter: IdentityMatrix_IDMatrixData
+    //  Referenced by: '<S18>/Identity Matrix'
 
-  { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
+    1.0F,
 
-  // Computed Parameter: Constant_Value_j
-  //  Referenced by: '<S18>/Constant'
+    // Computed Parameter: Constant_Value_an
+    //  Referenced by: '<S7>/Constant'
 
-  { 0.0F, 0.0F },
+    0.5F,
 
-  // Computed Parameter: StandardAirPressureP0_Value
-  //  Referenced by: '<S18>/StandardAirPressure P0'
+    // Computed Parameter: Constant_Value_f
+    //  Referenced by: '<S13>/Constant'
 
-  99737.42F,     // Ground Pressure - 101337.013 - 99998.623
+    {1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F},
 
-  // Computed Parameter: Gain3_Gain
-  //  Referenced by: '<S18>/Gain3'
+    // Computed Parameter: Gain_Gain
+    //  Referenced by: '<S4>/Gain'
 
-  9.806241F,     // Local Gravity - 9.8067119 - 9.805939
+    -1.0F,
 
-  // Computed Parameter: Gain4_Gain
-  //  Referenced by: '<S18>/Gain4'
+    // Computed Parameter: Constant_Value_h
+    //  Referenced by: '<S29>/Constant'
 
-  0.0065F,
+    0.0F,
 
-  // Computed Parameter: StandardAirTemperatureT0_Value
-  //  Referenced by: '<S18>/StandardAirTemperature T0'
+    // Computed Parameter: IdentityMatrix_IDMatrixData_b
+    //  Referenced by: '<S31>/Identity Matrix'
 
-  287.286F,       // Ground Temperature - 288.1565 - 287.43
+    1.0F,
 
-  // Computed Parameter: gR_Value
-  //  Referenced by: '<S18>/g R'
+    // Computed Parameter: Constant_Value_c
+    //  Referenced by: '<S26>/Constant'
 
-  0.034161795F,   // Local Gravity / Gas Constant - 0.034163436 - 0,034160744
+    {1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F},
 
-  // Computed Parameter: Constant1_Value
-  //  Referenced by: '<S18>/Constant1'
+    // Computed Parameter: Constant_Value_n
+    //  Referenced by: '<S23>/Constant'
 
-  { 0.0F, 0.0F, 0.0F },
+    {0.0F, 0.0F},
 
-  // Expression: nasdaq.sigma.baro
-  //  Referenced by: '<S14>/Constant'
+    // Computed Parameter: Gain3_Gain
+    //  Referenced by: '<S23>/Gain3'
 
-  100.0F,
+    0.0341423526F,
 
-  // Computed Parameter: StandardAirPressureP0_Value_a
-  //  Referenced by: '<S22>/StandardAirPressure P0'
+    // Computed Parameter: Gain4_Gain
+    //  Referenced by: '<S23>/Gain4'
 
-  99737.42F,     // Ground Pressure - 101337.013 - 99998.623
+    0.0065F,
 
-  // Computed Parameter: StandardAirTemperatureT0_Valu_o
-  //  Referenced by: '<S22>/StandardAirTemperature T0'
+    // Computed Parameter: gR_Value
+    //  Referenced by: '<S23>/g R'
 
-  287.286F,      // Ground Temperature - 288.1565 - 287.43
+    0.0341423526F,
 
-  // Computed Parameter: Gain_Gain_j
-  //  Referenced by: '<S20>/Gain'
+    // Computed Parameter: Constant1_Value
+    //  Referenced by: '<S23>/Constant1'
 
-  -1.0F,
+    {0.0F, 0.0F, 0.0F},
 
-  // Expression: nasdaq.baro.a
-  //  Referenced by: '<S22>/HeightTemperatureGradient'
+    // Computed Parameter: Constant_Value_p
+    //  Referenced by: '<S19>/Constant'
 
-  0.0065F,
+    100.0F,
 
-  // Computed Parameter: gravity_Value
-  //  Referenced by: '<S22>/gravity'
+    // Computed Parameter: Gain_Gain_d
+    //  Referenced by: '<S25>/Gain'
 
-  9.806241F,     // Local Gravity - 9.8067119 - 9.805939
+    -1.0F,
 
-  // Computed Parameter: Rair_Value
-  //  Referenced by: '<S22>/R air'
+    // Computed Parameter: HeightTemperatureGradient_Value
+    //  Referenced by: '<S32>/HeightTemperatureGradient'
 
-  287.052856F,
+    0.0065F,
 
-  // Computed Parameter: Constant_Value_a
-  //  Referenced by: '<S30>/Constant'
+    // Computed Parameter: gravity_Value
+    //  Referenced by: '<S32>/gravity'
 
-  { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
+    9.80066F,
 
-  // Computed Parameter: Constant_Value_c
-  //  Referenced by: '<S27>/Constant'
+    // Computed Parameter: Rair_Value
+    //  Referenced by: '<S32>/R air'
 
-  8.997524E-6F,  // 1/a - 8.997414E-6F - 8.998150-6F
+    287.052856F,
 
-  // Computed Parameter: Constant1_Value_e
-  //  Referenced by: '<S27>/Constant1'
+    // Computed Parameter: Gain_Gain_dp
+    //  Referenced by: '<S43>/Gain'
 
-  0.0F,
+    0.0F,
 
-  // Computed Parameter: Gain_Gain_a
-  //  Referenced by: '<S27>/Gain'
+    // Computed Parameter: Constant_Value_l
+    //  Referenced by: '<S44>/Constant'
 
-  8.997524E-6F, // 1/a - 8.997414E-6F - 8.998150-6F
+    0.0F,
 
-  // Expression: nasdaq.gps.lat0
-  //  Referenced by: '<S27>/Bias'
+    // Computed Parameter: IdentityMatrix_IDMatrixData_a
+    //  Referenced by: '<S46>/Identity Matrix'
 
-  45.501085,     // Latitude - 45.564594 - 45.110556
+    {1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F,
+     0.0F, 0.0F, 0.0F, 1.0F},
 
-  // Computed Parameter: Gain1_Gain
-  //  Referenced by: '<S31>/Gain1'
+    // Computed Parameter: Constant_Value_p1
+    //  Referenced by: '<S40>/Constant'
 
-  0.0174532924F, 
+    {1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F},
 
-  // Computed Parameter: Constant3_Value
-  //  Referenced by: '<S27>/Constant3'
+    // Computed Parameter: Constant_Value_fg
+    //  Referenced by: '<S37>/Constant'
 
-  8.686522E+9F, // a*b 8.676750E+9F - 8.745746E+9F
+    8.99823135E-6F,
 
-  // Computed Parameter: Constant4_Value
-  //  Referenced by: '<S27>/Constant4'
+    // Computed Parameter: Constant1_Value_f
+    //  Referenced by: '<S37>/Constant1'
 
-  1.0F,
+    0.0F,
 
-  // Expression: nasdaq.gps.b
-  //  Referenced by: '<S27>/Gain1'
+    // Computed Parameter: Gain_Gain_e
+    //  Referenced by: '<S37>/Gain'
 
-  78157.195039,  // B Parameter - 78068.307521 - 78695.539158
+    8.99823135E-6F,
 
-  // Computed Parameter: Gain3_Gain_b
-  //  Referenced by: '<S27>/Gain3'
+    // Computed Parameter: Bias_Bias
+    //  Referenced by: '<S37>/Bias'
 
-  1000.0F,
+    39.3892784F,
 
-  // Computed Parameter: Constant5_Value
-  //  Referenced by: '<S27>/Constant5'
+    // Computed Parameter: Gain1_Gain
+    //  Referenced by: '<S41>/Gain1'
 
-  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F },
+    0.0174532924F,
 
-  // Computed Parameter: Constant6_Value
-  //  Referenced by: '<S27>/Constant6'
+    // Computed Parameter: Constant3_Value
+    //  Referenced by: '<S37>/Constant3'
 
-  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F },
+    1.23816417E+10F,
 
-  // Expression: nasdaq.sigma.GPS
-  //  Referenced by: '<S23>/Constant'
+    // Computed Parameter: Constant4_Value
+    //  Referenced by: '<S37>/Constant4'
 
-  { 0.0447F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0447F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0183F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0183F },
+    1.0F,
 
-  // Computed Parameter: Gain3_Gain_g
-  //  Referenced by: '<S29>/Gain3'
+    // Computed Parameter: Gain1_Gain_n
+    //  Referenced by: '<S37>/Gain1'
 
-  8.997524E-6F,  // 1/a - 8.997414E-6F - 8.998150-6F
+    111412.875F,
 
-  // Expression: nasdaq.gps.lat0
-  //  Referenced by: '<S29>/Bias'
+    // Computed Parameter: Gain3_Gain_k
+    //  Referenced by: '<S37>/Gain3'
 
-  45.501085,     // Latitude - 45.564594 - 45.110556
+    1000.0F,
 
-  // Computed Parameter: Gain1_Gain_g
-  //  Referenced by: '<S32>/Gain1'
+    // Computed Parameter: Constant5_Value
+    //  Referenced by: '<S37>/Constant5'
 
-  0.0174532924F,
+    {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
 
-  // Expression: nasdaq.gps.b
-  //  Referenced by: '<S29>/Gain4'
+    // Computed Parameter: Constant6_Value
+    //  Referenced by: '<S37>/Constant6'
 
-  78157.195039,  // B Parameter - 78068.307521 - 78695.539158
+    {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F},
 
-  // Expression: nasdaq.gps.lon0
-  //  Referenced by: '<S29>/Bias1'
+    // Computed Parameter: Constant_Value_o
+    //  Referenced by: '<S33>/Constant'
 
-  9.156451,      // Longitude - 12.575059 - 8.456389
+    {0.0447F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0447F, 0.0F, 0.0F, 0.0F, 0.0F, 0.1F,
+     0.0F, 0.0F, 0.0F, 0.0F, 0.1F},
 
-  // Computed Parameter: Gain_Gain_jx
-  //  Referenced by: '<S29>/Gain'
+    // Computed Parameter: Gain3_Gain_h
+    //  Referenced by: '<S39>/Gain3'
 
-  { 1000.0F, 1000.0F, 1.0F, 1.0F },
+    8.99823135E-6F,
 
-  // Computed Parameter: Constant1_Value_o
-  //  Referenced by: '<S3>/Constant1'
+    // Computed Parameter: Bias_Bias_l
+    //  Referenced by: '<S39>/Bias'
 
-  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F },
+    39.3892784F,
 
-  // Computed Parameter: Gain1_Gain_g2
-  //  Referenced by: '<S3>/Gain1'
+    // Computed Parameter: Gain1_Gain_d
+    //  Referenced by: '<S47>/Gain1'
 
-  0.01F,
+    0.0174532924F,
 
-  // Computed Parameter: Bias_Bias_l
-  //  Referenced by: '<S3>/Bias'
+    // Computed Parameter: Gain4_Gain_l
+    //  Referenced by: '<S39>/Gain4'
 
-  { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
+    111412.875F,
 
-  // Expression: nasdaq.initMatrix.Q
-  //  Referenced by: '<S3>/Bias1'
+    // Computed Parameter: Bias1_Bias
+    //  Referenced by: '<S39>/Bias1'
 
-  { 0.006F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.006F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.75F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.22F },
+    -8.28804398F,
 
-  // Computed Parameter: Gain_Gain_b
-  //  Referenced by: '<S3>/Gain'
+    // Computed Parameter: Gain_Gain_l
+    //  Referenced by: '<S39>/Gain'
 
-  0.01F,
+    {1000.0F, 1000.0F, 1.0F, 1.0F},
 
-  // Expression: init.NASVariance
-  //  Referenced by: '<S1>/NAS Variance Interface'
+    // Computed Parameter: Constant1_Value_j
+    //  Referenced by: '<S3>/Constant1'
 
-  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F },
+    {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+     0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F},
 
-  // Computed Parameter: NASStateInterface_InitialCondit
-  //  Referenced by: '<S1>/NAS State Interface'
+    // Computed Parameter: Gain1_Gain_h
+    //  Referenced by: '<S3>/Gain1'
 
-  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F },
+    0.01F,
 
-  // Expression: nasdaq.flags.ADAdynamicR
-  //  Referenced by: '<S7>/Constant1'
+    // Computed Parameter: Bias_Bias_d
+    //  Referenced by: '<S3>/Bias'
 
-  true,
+    {1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+     0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F},
 
-  // Expression: nasdaq.flags.baro
-  //  Referenced by: '<S15>/Constant'
+    // Computed Parameter: Bias1_Bias_h
+    //  Referenced by: '<S3>/Bias1'
 
-  true,
+    {0.006F, 0.0F,  0.0F, 0.0F,  0.0F, 0.0F,  0.0F, 0.006F, 0.0F,
+     0.0F,   0.0F,  0.0F, 0.0F,  0.0F, 0.75F, 0.0F, 0.0F,   0.0F,
+     0.0F,   0.0F,  0.0F, 0.02F, 0.0F, 0.0F,  0.0F, 0.0F,   0.0F,
+     0.0F,   0.02F, 0.0F, 0.0F,  0.0F, 0.0F,  0.0F, 0.0F,   0.22F},
 
-  // Computed Parameter: HMatrix_Value
-  //  Referenced by: '<S7>/H Matrix'
+    // Computed Parameter: Gain_Gain_i
+    //  Referenced by: '<S3>/Gain'
 
-  { 0U, 0U, 0U, 0U, 0U, 1U }
+    0.01F,
+
+    // Computed Parameter: UnitDelay_InitialCondition
+    //  Referenced by: '<S1>/Unit Delay'
+
+    0.0F,
+
+    // Computed Parameter: UnitDelay1_InitialCondition_o
+    //  Referenced by: '<S1>/Unit Delay1'
+
+    0.0F,
+
+    // Computed Parameter: Constant1_Value_f5
+    //  Referenced by: '<S7>/Constant1'
+
+    true,
+
+    // Computed Parameter: Constant_Value_o1
+    //  Referenced by: '<S20>/Constant'
+
+    true,
+
+    // Computed Parameter: HMatrix_Value
+    //  Referenced by: '<S7>/H Matrix'
+
+    {0U, 0U, 0U, 0U, 0U, 1U},
+
+    // Computed Parameter: UnitDelay_InitialCondition_n
+    //  Referenced by: '<S19>/Unit Delay'
+
+    0U,
+
+    // Computed Parameter: Switch_Threshold
+    //  Referenced by: '<S19>/Switch'
+
+    0U,
+
+    // Computed Parameter: Bias_Bias_m
+    //  Referenced by: '<S19>/Bias'
+
+    1U,
+
+    // Computed Parameter: Saturation_UpperSat
+    //  Referenced by: '<S19>/Saturation'
+
+    1U,
+
+    // Computed Parameter: Saturation_LowerSat
+    //  Referenced by: '<S19>/Saturation'
+
+    0U,
+
+    // Computed Parameter: UnitDelay3_InitialCondition
+    //  Referenced by: '<S1>/Unit Delay3'
+
+    0U,
+
+    // Computed Parameter: UnitDelay2_InitialCondition
+    //  Referenced by: '<S1>/Unit Delay2'
+
+    0U,
+
+    // Computed Parameter: Bias1_Bias_l
+    //  Referenced by: '<S1>/Bias1'
+
+    1U,
+
+    // Computed Parameter: Saturation1_UpperSat
+    //  Referenced by: '<S1>/Saturation1'
+
+    1U,
+
+    // Computed Parameter: Saturation1_LowerSat
+    //  Referenced by: '<S1>/Saturation1'
+
+    0U,
+
+    // Computed Parameter: Bias2_Bias
+    //  Referenced by: '<S1>/Bias2'
+
+    1U,
+
+    // Computed Parameter: Saturation2_UpperSat
+    //  Referenced by: '<S1>/Saturation2'
+
+    1U,
+
+    // Computed Parameter: Saturation2_LowerSat
+    //  Referenced by: '<S1>/Saturation2'
+
+    0U,
+
+    // Start of '<S24>/No correction'
+    {// Computed Parameter: Gain_Gain
+     //  Referenced by: '<S28>/Gain'
+
+     0.0F},
+
+    // End of '<S24>/No correction'
+
+    // Start of '<S11>/No correction'
+    {// Computed Parameter: Gain_Gain
+     //  Referenced by: '<S15>/Gain'
+
+     0.0F}
+    // End of '<S11>/No correction'
 };
 
 //

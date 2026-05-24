@@ -147,7 +147,7 @@ bool AS5047DSPI::selfTest() { return true; }
 
 void AS5047DSPI::resetAngleZero()
 {
-    auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLEUNC);
+    auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLECOM);
     if (daecAngInt.hasError())
     {
         logReadRegisterError("ANGLECOM", daecAngInt.error);
@@ -174,17 +174,16 @@ AS5047DData AS5047DSPI::sampleImpl()
     // Timestamp of the last sample
     uint64_t lastSampleTimestamp = TimestampTimer::getTimestamp();
 
-    // The angle reading is in the ANGLECOM register, these two additional
-    // registers are for raw angle reading and for the correction that is
-    // automatically done by the sensor. The correction can be disabled and this
-    // will fill ANGLECOM with raw angle data, thus we don't really need to read
-    // all three data registers MAG, ANGLEUNC and ANGLECOM but only ANGLECOM
-    // also ANGLEUNC can be read by selecting data source via setDataSource
-    // method
-    // Units::Angle::Degree cordicMagnitude = Units::Angle::Degree(0);
-    // Units::Angle::Degree cordicAngle     = Units::Angle::Degree(0);
+    // The angle reading is in the ANGLECOM register, the two additional
+    // registers are for raw angle reading (ANGLEUNC) and for the correction
+    // (MAG) that is automatically done by the sensor. The correction can be
+    // disabled and this will fill ANGLECOM with raw angle data, thus we don't
+    // really need to read all three data registers MAG, ANGLEUNC and ANGLECOM
+    // but only ANGLECOM
+    // also ANGLEUNC can be read by selecting data source via
+    // setDataSource method
     {
-        auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLEUNC);
+        auto daecAngInt = readRegister(AS5047DDefs::Registers::ANGLECOM);
         if (daecAngInt.hasError())
         {
             logReadRegisterError("ANGLECOM", daecAngInt.error);

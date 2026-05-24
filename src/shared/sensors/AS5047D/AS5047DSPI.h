@@ -58,20 +58,6 @@ public:
 
     static SPIBusConfig getDefaultSPIConfig();
 
-    // void useUVWInterface();
-    // void useABIInterface();
-
-    // void enablePWM();
-    // void disablePWM();
-
-    // void setABIResolution(AS5047DDefs::ABIResolution abiResolution);
-    // void setABIRotationDirection(AS5047DDefs::ABIRotationDirection rdir);
-    // void switchABIRotationDirection();
-    // void setABIHysteresisConfiguration(
-    //     AS5047DDefs::HysteresisConfiguration config);
-
-    // void setUVWPolePairsNumber(AS5047DDefs::UVWPolePairs pairs);
-
     /**
      * @brief This method will read the current angle and will set it as the
      * zero of the sensor
