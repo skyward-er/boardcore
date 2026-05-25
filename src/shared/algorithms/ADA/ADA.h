@@ -72,7 +72,7 @@ public:
     /**
      * @brief Returns a pointer to the flatted Q matrix
      */
-       const float* getFlatq() const;
+    const float* getFlatP() const;
 
 private:
     void updateState();
