@@ -33,28 +33,28 @@ struct NASDAQState
     uint64_t timestamp = 0;
 
     // Position
-    float x = 0;
-    float y = 0;
-    float z = 0;
+    float n = 0;
+    float e = 0;
+    float d = 0;
 
     // Velocity
-    float vx = 0;
-    float vy = 0;
-    float vz = 0;
+    float vn = 0;
+    float ve = 0;
+    float vd = 0;
 
     NASDAQState() : timestamp(0) {};
 
     NASDAQState(uint64_t timestamp, const float position[3],
                 const float velocity[3])
-        : timestamp(timestamp), x(position[0]), y(position[1]), z(position[2]),
-          vx(velocity[0]), vy(velocity[1]), vz(velocity[2]) {};
+        : timestamp(timestamp), n(position[0]), e(position[1]), d(position[2]),
+          vn(velocity[0]), ve(velocity[1]), vd(velocity[2]) {};
 
     static constexpr auto reflect()
     {
         return STRUCT_DEF(NASDAQState,
-                          FIELD_DEF(timestamp) FIELD_DEF(x) FIELD_DEF(y)
-                              FIELD_DEF(z) FIELD_DEF(vx) FIELD_DEF(vy)
-                                  FIELD_DEF(vz));
+                          FIELD_DEF(timestamp) FIELD_DEF(n) FIELD_DEF(e)
+                              FIELD_DEF(d) FIELD_DEF(vn) FIELD_DEF(ve)
+                                  FIELD_DEF(vd));
     }
 };
 
