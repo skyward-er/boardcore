@@ -7,12 +7,12 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.240
+// Model version                  : 11.257
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue May 12 11:57:35 2026
+// C/C++ source code generated on : Sun May 24 17:30:06 2026
 //
 // Target selection: ert.tlc
-// Embedded hardware selection: STMicroelectronics->ST10/Super10
+// Embedded hardware selection: ARM Compatible->ARM Cortex-M
 // Code generation objectives:
 //    1. Execution efficiency
 //    2. Debugging
@@ -39,10 +39,11 @@ class NASDAQ0 final
   struct DW_NASDAQ0_T {
     DW_Correction_NASDAQ0_T Correction_b;// '<S24>/Correction'
     DW_Correction_NASDAQ0_T Correction;// '<S11>/Correction'
-    ISAReference UnitDelay1_DSTATE;    // '<S19>/Unit Delay1'
+    NASDAQReference UnitDelay1_DSTATE; // '<S19>/Unit Delay1'
+    uint64_t RateTransition;           // '<S20>/Rate Transition'
     uint64_t Memory_PreviousInput;     // '<S34>/Memory'
-    uint64_t Memory_PreviousInput_d;   // '<S20>/Memory'
-    uint64_t Memory_PreviousInput_a;   // '<S8>/Memory'
+    uint64_t Memory_PreviousInput_a;   // '<S20>/Memory'
+    uint64_t Memory_PreviousInput_aa;  // '<S8>/Memory'
     float VectorConcatenate[6];        // '<S1>/Vector Concatenate'
     float IdentityMatrix[16];          // '<S46>/Identity Matrix'
     float Merge[36];                   // '<S4>/Merge'
@@ -54,8 +55,8 @@ class NASDAQ0 final
     float Gain;                        // '<S4>/Gain'
     float Switch;                      // '<S7>/Switch'
     float IdentityMatrix_b;            // '<S18>/Identity Matrix'
+    int8_t UnitDelay2_DSTATE;          // '<S1>/Unit Delay2'
     uint8_t UnitDelay3_DSTATE;         // '<S1>/Unit Delay3'
-    uint8_t UnitDelay2_DSTATE;         // '<S1>/Unit Delay2'
     uint8_t UnitDelay_DSTATE_j;        // '<S19>/Unit Delay'
   };
 
@@ -64,7 +65,7 @@ class NASDAQ0 final
     NASDAQInSensors NASDAQInSensors_i; // '<Root>/NASDAQ In Sensors'
     NASDAQInADA NASDAQInADA_i;         // '<Root>/NASDAQ In ADA'
     ANAS_NASDAQ NASDAQInANAS;          // '<Root>/NASDAQ In ANAS'
-    ISAReference NASDAQInReference;    // '<Root>/NASDAQ In Reference'
+    NASDAQReference NASDAQInReference; // '<Root>/NASDAQ In Reference'
   };
 
   // External outputs (root outports fed by signals with default storage)
@@ -82,7 +83,7 @@ class NASDAQ0 final
 
   // Parameters (default storage)
   struct P_NASDAQ0_T {
-    ISAReference UnitDelay1_InitialCondition;
+    NASDAQReference UnitDelay1_InitialCondition;
                               // Computed Parameter: UnitDelay1_InitialCondition
                                  //  Referenced by: '<S19>/Unit Delay1'
 
@@ -105,13 +106,13 @@ class NASDAQ0 final
                                   // Computed Parameter: Memory_InitialCondition
                                      //  Referenced by: '<S8>/Memory'
 
-    uint64_t Memory_InitialCondition_m;
-                                // Computed Parameter: Memory_InitialCondition_m
-                                   //  Referenced by: '<S20>/Memory'
-
     uint64_t Memory_InitialCondition_o;
                                 // Computed Parameter: Memory_InitialCondition_o
-                                   //  Referenced by: '<S34>/Memory'
+                                   //  Referenced by: '<S20>/Memory'
+
+    uint64_t Memory_InitialCondition_oa;
+                               // Computed Parameter: Memory_InitialCondition_oa
+                                  //  Referenced by: '<S34>/Memory'
 
     float Constant_Value_g;            // Computed Parameter: Constant_Value_g
                                           //  Referenced by: '<S16>/Constant'
@@ -266,6 +267,19 @@ class NASDAQ0 final
     bool Constant_Value_o1;            // Computed Parameter: Constant_Value_o1
                                           //  Referenced by: '<S20>/Constant'
 
+    int8_t UnitDelay2_InitialCondition;
+                              // Computed Parameter: UnitDelay2_InitialCondition
+                                 //  Referenced by: '<S1>/Unit Delay2'
+
+    int8_t Bias1_Bias_l;               // Computed Parameter: Bias1_Bias_l
+                                          //  Referenced by: '<S1>/Bias1'
+
+    int8_t Saturation1_UpperSat;     // Computed Parameter: Saturation1_UpperSat
+                                        //  Referenced by: '<S1>/Saturation1'
+
+    int8_t Saturation1_LowerSat;     // Computed Parameter: Saturation1_LowerSat
+                                        //  Referenced by: '<S1>/Saturation1'
+
     uint8_t HMatrix_Value[6];          // Computed Parameter: HMatrix_Value
                                           //  Referenced by: '<S7>/H Matrix'
 
@@ -288,19 +302,6 @@ class NASDAQ0 final
     uint8_t UnitDelay3_InitialCondition;
                               // Computed Parameter: UnitDelay3_InitialCondition
                                  //  Referenced by: '<S1>/Unit Delay3'
-
-    uint8_t UnitDelay2_InitialCondition;
-                              // Computed Parameter: UnitDelay2_InitialCondition
-                                 //  Referenced by: '<S1>/Unit Delay2'
-
-    uint8_t Bias1_Bias_l;              // Computed Parameter: Bias1_Bias_l
-                                          //  Referenced by: '<S1>/Bias1'
-
-    uint8_t Saturation1_UpperSat;    // Computed Parameter: Saturation1_UpperSat
-                                        //  Referenced by: '<S1>/Saturation1'
-
-    uint8_t Saturation1_LowerSat;    // Computed Parameter: Saturation1_LowerSat
-                                        //  Referenced by: '<S1>/Saturation1'
 
     uint8_t Bias2_Bias;                // Computed Parameter: Bias2_Bias
                                           //  Referenced by: '<S1>/Bias2'
@@ -363,7 +364,7 @@ class NASDAQ0 final
   }
 
   // Root inport: '<Root>/NASDAQ In Reference' set method
-  void setNASDAQ_In_Reference(ISAReference localArgInput)
+  void setNASDAQ_In_Reference(NASDAQReference localArgInput)
   {
     NASDAQ0_U.NASDAQInReference = localArgInput;
   }

@@ -7,12 +7,12 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.240
+// Model version                  : 11.257
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue May 12 11:57:35 2026
+// C/C++ source code generated on : Sun May 24 17:30:06 2026
 //
 // Target selection: ert.tlc
-// Embedded hardware selection: STMicroelectronics->ST10/Super10
+// Embedded hardware selection: ARM Compatible->ARM Cortex-M
 // Code generation objectives:
 //    1. Execution efficiency
 //    2. Debugging
@@ -62,7 +62,7 @@ void NASDAQ0::NASDAQ0_Correction(float rtu_Sprev, const float rtu_PH_prev[6],
   // Product: '<S14>/Matrix Divide' incorporates:
   //   SignalConversion generated from: '<S14>/Sprev'
 
-  for (int16_t i{0}; i < 6; i++) {
+  for (int32_t i{0}; i < 6; i++) {
     rty_K[i] = rtu_PH_prev[i] / rtu_Sprev;
   }
 
@@ -81,7 +81,7 @@ void NASDAQ0::NASDAQ0_Nocorrection(float rtu_R, const float rtu_PH_prev[6],
   float rty_K[6], float *rty_S, P_Nocorrection_NASDAQ0_T *localP)
 {
   // Gain: '<S15>/Gain'
-  for (int16_t i{0}; i < 6; i++) {
+  for (int32_t i{0}; i < 6; i++) {
     rty_K[i] = localP->Gain_Gain * rtu_PH_prev[i];
   }
 
@@ -109,20 +109,20 @@ void NASDAQ0::NASDAQ0_NoCorrectionStep(bool rtu_Enable, const float
 
   if (rtu_Enable) {
     // SignalConversion generated from: '<S9>/nextLinearState'
-    for (int16_t i{0}; i < 6; i++) {
+    for (int32_t i{0}; i < 6; i++) {
       rtu_nextLinearState_0[i] = rtu_nextLinearState[i];
     }
 
-    for (int16_t i{0}; i < 6; i++) {
+    for (int32_t i{0}; i < 6; i++) {
       rty_State[i] = rtu_nextLinearState_0[i];
     }
 
     // SignalConversion generated from: '<S9>/nextLinearCov'
-    for (int16_t i{0}; i < 36; i++) {
+    for (int32_t i{0}; i < 36; i++) {
       rtu_nextLinearCov_0[i] = rtu_nextLinearCov[i];
     }
 
-    for (int16_t i{0}; i < 36; i++) {
+    for (int32_t i{0}; i < 36; i++) {
       rty_Covariance[i] = rtu_nextLinearCov_0[i];
     }
   }
@@ -134,14 +134,14 @@ void LUf_boolfloatint32_t(float outU[], float outP[], int32_t N, bool outS[])
 {
   // S-Function (sdsplu2): '<S18>/LU Factorization'
   // initialize status output
-  outS[0UL] = false;
+  outS[0U] = false;
 
   // initialize row-pivot indices
-  for (int32_t k{0L}; k < N; k++) {
-    outP[k] = static_cast<float>(k + 1L);
+  for (int32_t k{0}; k < N; k++) {
+    outP[k] = static_cast<float>(k + 1);
   }
 
-  for (int32_t k{0L}; k < N; k++) {
+  for (int32_t k{0}; k < N; k++) {
     float mTmp1;
     int32_t idx1;
     int32_t idx1_tmp;
@@ -160,7 +160,7 @@ void LUf_boolfloatint32_t(float outU[], float outP[], int32_t N, bool outS[])
       mTmp1 = -mTmp1;
     }
 
-    for (r = k + 1L; r < N; r++) {
+    for (r = k + 1; r < N; r++) {
       float mTmp2;
       mTmp2 = outU[idx1_tmp + r];
       if (mTmp2 < 0.0F) {
@@ -175,7 +175,7 @@ void LUf_boolfloatint32_t(float outU[], float outP[], int32_t N, bool outS[])
 
     // swap rows if required
     if (p != k) {
-      for (int32_t c{0L}; c < N; c++) {
+      for (int32_t c{0}; c < N; c++) {
         idx1 = c * N;
         r = idx1 + p;
         mTmp1 = outU[r];
@@ -191,16 +191,16 @@ void LUf_boolfloatint32_t(float outU[], float outP[], int32_t N, bool outS[])
     }
 
     if (outU[mTmp1_tmp] == 0.0F) {
-      outS[0UL] = true;
+      outS[0U] = true;
     } else {
-      for (r = k + 1L; r < N; r++) {
+      for (r = k + 1; r < N; r++) {
         tmp = idx1_tmp + r;
         outU[tmp] /= outU[mTmp1_tmp];
       }
 
-      for (int32_t c{k + 1L}; c < N; c++) {
+      for (int32_t c{k + 1}; c < N; c++) {
         idx1 = c * N;
-        for (r = k + 1L; r < N; r++) {
+        for (r = k + 1; r < N; r++) {
           tmp = idx1 + r;
           outU[tmp] -= outU[idx1_tmp + r] * outU[idx1 + k];
         }
@@ -215,19 +215,19 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
 {
   float x[16];
   float smax;
-  int16_t c;
-  int16_t jA;
-  int16_t jBcol;
-  int16_t jj;
-  int16_t kBcol;
+  int32_t c;
+  int32_t jA;
+  int32_t jBcol;
+  int32_t jj;
+  int32_t kBcol;
   int8_t ipiv[4];
   std::memcpy(&x[0], &u1[0], sizeof(float) << 4U);
   ipiv[0] = 1;
   ipiv[1] = 2;
   ipiv[2] = 3;
   ipiv[3] = 4;
-  for (int16_t j{0}; j < 3; j++) {
-    int16_t iy;
+  for (int32_t j{0}; j < 3; j++) {
+    int32_t iy;
     c = j * 5 + 2;
     jj = j * 5;
     jBcol = 4 - j;
@@ -261,7 +261,7 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
       }
 
       iy = c - j;
-      for (int16_t ix{c}; ix <= iy + 2; ix++) {
+      for (int32_t ix{c}; ix <= iy + 2; ix++) {
         x[ix - 1] /= x[jj];
       }
     }
@@ -269,12 +269,12 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
     jBcol = 2 - j;
     jA = jj;
     jj += 4;
-    for (int16_t ix{0}; ix <= jBcol; ix++) {
+    for (int32_t ix{0}; ix <= jBcol; ix++) {
       smax = x[(ix << 2) + jj];
       if (smax != 0.0F) {
         iy = jA + 6;
         kBcol = (jA - j) + 8;
-        for (int16_t ijA{iy}; ijA <= kBcol; ijA++) {
+        for (int32_t ijA{iy}; ijA <= kBcol; ijA++) {
           x[ijA - 1] += x[((c + ijA) - jA) - 7] * -smax;
         }
       }
@@ -283,14 +283,14 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
     }
   }
 
-  for (int16_t j{0}; j < 4; j++) {
+  for (int32_t j{0}; j < 4; j++) {
     jBcol = 6 * j - 1;
     jj = (j << 2) - 1;
     for (jA = 0; jA < j; jA++) {
       kBcol = 6 * jA - 1;
       smax = x[(jA + jj) + 1];
       if (smax != 0.0F) {
-        for (int16_t ix{0}; ix < 6; ix++) {
+        for (int32_t ix{0}; ix < 6; ix++) {
           c = (ix + jBcol) + 1;
           u0[c] -= u0[(ix + kBcol) + 1] * smax;
         }
@@ -298,20 +298,20 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
     }
 
     smax = 1.0F / x[(j + jj) + 1];
-    for (int16_t ix{0}; ix < 6; ix++) {
+    for (int32_t ix{0}; ix < 6; ix++) {
       c = (ix + jBcol) + 1;
       u0[c] *= smax;
     }
   }
 
-  for (int16_t j{3}; j >= 0; j--) {
+  for (int32_t j{3}; j >= 0; j--) {
     jBcol = 6 * j - 1;
     jj = (j << 2) - 1;
     for (jA = j + 2; jA < 5; jA++) {
       kBcol = (jA - 1) * 6 - 1;
       smax = x[jA + jj];
       if (smax != 0.0F) {
-        for (int16_t ix{0}; ix < 6; ix++) {
+        for (int32_t ix{0}; ix < 6; ix++) {
           c = (ix + jBcol) + 1;
           u0[c] -= u0[(ix + kBcol) + 1] * smax;
         }
@@ -319,10 +319,10 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
     }
   }
 
-  for (int16_t j{2}; j >= 0; j--) {
+  for (int32_t j{2}; j >= 0; j--) {
     jj = ipiv[j];
     if (j + 1 != jj) {
-      for (int16_t ix{0}; ix < 6; ix++) {
+      for (int32_t ix{0}; ix < 6; ix++) {
         jA = 6 * j + ix;
         smax = u0[jA];
         c = (jj - 1) * 6 + ix;
@@ -336,7 +336,7 @@ void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16])
 // Model step function
 void NASDAQ0::step()
 {
-  ISAReference rtb_Switch;
+  NASDAQReference rtb_Switch;
   float rtb_Bias1[36];
   float rtb_MatrixMultiply[36];
   float rtb_MatrixMultiply_0[36];
@@ -366,15 +366,14 @@ void NASDAQ0::step()
   float rtb_Matrix1Norm2;
   float rtb_Matrix1Norm2_e;
   float rtb_Matrix1Norm2_p;
-  int32_t idxLU;
+  int32_t i;
+  int32_t i_0;
   int32_t idxout;
-  int16_t i;
-  int16_t i_0;
-  int16_t k;
-  int16_t rtb_BackwardSubstitution_tmp;
-  int16_t rtb_Bias1_tmp;
-  int16_t rtb_S_tmp_0;
-  uint8_t u0;
+  int32_t k;
+  int32_t rtb_Bias1_tmp;
+  int32_t rtb_S_tmp_0;
+  int8_t u0;
+  uint8_t u0_0;
   bool rtb_AND;
   bool rtb_AND_c;
   bool rtb_AND_e;
@@ -465,7 +464,7 @@ void NASDAQ0::step()
   //   Product: '<S10>/Matrix Multiply'
 
   for (k = 0; k < 6; k++) {
-    rtb_BackwardSubstitution_tmp = 0;
+    idxout = 0;
     for (i = 0; i < 6; i++) {
       rtb_Gain1_b = 0.0F;
       rtb_Bias1_tmp = 0;
@@ -475,8 +474,8 @@ void NASDAQ0::step()
         rtb_Bias1_tmp += 6;
       }
 
-      rtb_MatrixMultiply_0[rtb_BackwardSubstitution_tmp + k] = rtb_Gain1_b;
-      rtb_BackwardSubstitution_tmp += 6;
+      rtb_MatrixMultiply_0[idxout + k] = rtb_Gain1_b;
+      idxout += 6;
     }
   }
 
@@ -485,20 +484,20 @@ void NASDAQ0::step()
   //   Product: '<S3>/Matrix Multiply'
 
   for (k = 0; k < 6; k++) {
-    rtb_BackwardSubstitution_tmp = 0;
+    idxout = 0;
     for (i = 0; i < 6; i++) {
       rtb_Gain1_b = 0.0F;
       rtb_Bias1_tmp = 0;
       for (rtb_S_tmp_0 = 0; rtb_S_tmp_0 < 6; rtb_S_tmp_0++) {
         rtb_Gain1_b += rtb_MatrixMultiply[rtb_Bias1_tmp + k] *
-          rtb_MatrixMultiply_0[rtb_S_tmp_0 + rtb_BackwardSubstitution_tmp];
+          rtb_MatrixMultiply_0[rtb_S_tmp_0 + idxout];
         rtb_Bias1_tmp += 6;
       }
 
-      rtb_Bias1_tmp = rtb_BackwardSubstitution_tmp + k;
+      rtb_Bias1_tmp = idxout + k;
       rtb_Bias1[rtb_Bias1_tmp] = NASDAQ0_P.Bias1_Bias_h[rtb_Bias1_tmp] +
         rtb_Gain1_b;
-      rtb_BackwardSubstitution_tmp += 6;
+      idxout += 6;
     }
   }
 
@@ -605,17 +604,14 @@ void NASDAQ0::step()
     //   Math: '<S36>/Transpose1'
 
     k = 0;
-    rtb_BackwardSubstitution_tmp = 0;
+    idxout = 0;
     for (i = 0; i < 6; i++) {
-      rtb_Transpose1[k] = rtb_MatrixConcatenate1[rtb_BackwardSubstitution_tmp];
-      rtb_Transpose1[k + 2] =
-        NASDAQ0_P.Constant6_Value[rtb_BackwardSubstitution_tmp];
-      rtb_Transpose1[k + 1] =
-        rtb_MatrixConcatenate1[rtb_BackwardSubstitution_tmp + 1];
-      rtb_Transpose1[k + 3] =
-        NASDAQ0_P.Constant6_Value[rtb_BackwardSubstitution_tmp + 1];
+      rtb_Transpose1[k] = rtb_MatrixConcatenate1[idxout];
+      rtb_Transpose1[k + 2] = NASDAQ0_P.Constant6_Value[idxout];
+      rtb_Transpose1[k + 1] = rtb_MatrixConcatenate1[idxout + 1];
+      rtb_Transpose1[k + 3] = NASDAQ0_P.Constant6_Value[idxout + 1];
       k += 4;
-      rtb_BackwardSubstitution_tmp += 2;
+      idxout += 2;
     }
 
     // End of Concatenate: '<S37>/Matrix Concatenate2'
@@ -636,7 +632,7 @@ void NASDAQ0::step()
       //   Math: '<S38>/Transpose'
       //   Product: '<S38>/Matrix Multiply1'
 
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       for (i = 0; i < 4; i++) {
         rtb_Gain1_b = 0.0F;
         rtb_Bias1_tmp = 0;
@@ -648,8 +644,8 @@ void NASDAQ0::step()
           rtb_S_tmp_0 += 4;
         }
 
-        rtb_S_tmp[rtb_BackwardSubstitution_tmp + k] = rtb_Gain1_b;
-        rtb_BackwardSubstitution_tmp += 6;
+        rtb_S_tmp[idxout + k] = rtb_Gain1_b;
+        idxout += 6;
       }
     }
 
@@ -659,7 +655,7 @@ void NASDAQ0::step()
     //   Product: '<S38>/Matrix Multiply'
 
     for (k = 0; k < 4; k++) {
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       i = 0;
       for (rtb_Bias1_tmp = 0; rtb_Bias1_tmp < 4; rtb_Bias1_tmp++) {
         rtb_Gain1_b = 0.0F;
@@ -669,9 +665,9 @@ void NASDAQ0::step()
           rtb_S_tmp_0 += 4;
         }
 
-        rtb_S_tmp_0 = rtb_BackwardSubstitution_tmp + k;
+        rtb_S_tmp_0 = idxout + k;
         rtb_S[rtb_S_tmp_0] = rtb_Square_m[rtb_S_tmp_0] + rtb_Gain1_b;
-        rtb_BackwardSubstitution_tmp += 4;
+        idxout += 4;
         i += 6;
       }
     }
@@ -683,7 +679,7 @@ void NASDAQ0::step()
 
     std::memcpy(&rtb_LUFactorization_o1[0], &rtb_S[0], sizeof(float) << 4U);
     LUf_boolfloatint32_t(&rtb_LUFactorization_o1[0], &rtb_LUFactorization_o2[0],
-                         4L, &rtb_GreaterThanOrEqual);
+                         4, &rtb_GreaterThanOrEqual);
 
     // Switch: '<S44>/Switch' incorporates:
     //   Constant: '<S44>/Constant'
@@ -725,56 +721,44 @@ void NASDAQ0::step()
       //   IdentityMatrix: '<S46>/Identity Matrix'
       //   S-Function (sdspfbsub2): '<S46>/Backward Substitution'
 
-      rtb_Gain1_b = rtb_LUFactorization_o2[0L];
-      rtb_LUFactorization_o1_p = rtb_LUFactorization_o2[1L];
-      rtb_LUFactorization_o2_1 = rtb_LUFactorization_o2[2L];
-      rtb_LUFactorization_o2_2 = rtb_LUFactorization_o2[3L];
+      rtb_Gain1_b = rtb_LUFactorization_o2[0];
+      rtb_LUFactorization_o1_p = rtb_LUFactorization_o2[1];
+      rtb_LUFactorization_o2_1 = rtb_LUFactorization_o2[2];
+      rtb_LUFactorization_o2_2 = rtb_LUFactorization_o2[3];
       for (k = 0; k < 4; k++) {
-        idxout = static_cast<int32_t>(std::floor(rtb_Gain1_b)) - 1L;
-        if (idxout < 0L) {
-          idxout = 0L;
-        } else if (idxout >= 4L) {
-          idxout = 3L;
+        idxout = static_cast<int32_t>(std::floor(rtb_Gain1_b)) - 1;
+        if (idxout < 0) {
+          idxout = 0;
+        } else if (idxout >= 4) {
+          idxout = 3;
         }
 
-        rtb_BackwardSubstitution_tmp = k << 2;
-        rtb_BackwardSubstitution[static_cast<int32_t>
-          (rtb_BackwardSubstitution_tmp)] = NASDAQ0_DW.IdentityMatrix[
-          static_cast<int32_t>(rtb_BackwardSubstitution_tmp +
-          static_cast<int16_t>(idxout))];
-        idxout = static_cast<int32_t>(std::floor(rtb_LUFactorization_o1_p)) - 1L;
-        if (idxout < 0L) {
-          idxout = 0L;
-        } else if (idxout >= 4L) {
-          idxout = 3L;
+        i = k << 2;
+        rtb_BackwardSubstitution[i] = NASDAQ0_DW.IdentityMatrix[i + idxout];
+        idxout = static_cast<int32_t>(std::floor(rtb_LUFactorization_o1_p)) - 1;
+        if (idxout < 0) {
+          idxout = 0;
+        } else if (idxout >= 4) {
+          idxout = 3;
         }
 
-        rtb_BackwardSubstitution[static_cast<int32_t>
-          (rtb_BackwardSubstitution_tmp + 1)] = NASDAQ0_DW.IdentityMatrix[
-          static_cast<int32_t>(rtb_BackwardSubstitution_tmp +
-          static_cast<int16_t>(idxout))];
-        idxout = static_cast<int32_t>(std::floor(rtb_LUFactorization_o2_1)) - 1L;
-        if (idxout < 0L) {
-          idxout = 0L;
-        } else if (idxout >= 4L) {
-          idxout = 3L;
+        rtb_BackwardSubstitution[i + 1] = NASDAQ0_DW.IdentityMatrix[i + idxout];
+        idxout = static_cast<int32_t>(std::floor(rtb_LUFactorization_o2_1)) - 1;
+        if (idxout < 0) {
+          idxout = 0;
+        } else if (idxout >= 4) {
+          idxout = 3;
         }
 
-        rtb_BackwardSubstitution[static_cast<int32_t>
-          (rtb_BackwardSubstitution_tmp + 2)] = NASDAQ0_DW.IdentityMatrix[
-          static_cast<int32_t>(rtb_BackwardSubstitution_tmp +
-          static_cast<int16_t>(idxout))];
-        idxout = static_cast<int32_t>(std::floor(rtb_LUFactorization_o2_2)) - 1L;
-        if (idxout < 0L) {
-          idxout = 0L;
-        } else if (idxout >= 4L) {
-          idxout = 3L;
+        rtb_BackwardSubstitution[i + 2] = NASDAQ0_DW.IdentityMatrix[i + idxout];
+        idxout = static_cast<int32_t>(std::floor(rtb_LUFactorization_o2_2)) - 1;
+        if (idxout < 0) {
+          idxout = 0;
+        } else if (idxout >= 4) {
+          idxout = 3;
         }
 
-        rtb_BackwardSubstitution[static_cast<int32_t>
-          (rtb_BackwardSubstitution_tmp + 3)] = NASDAQ0_DW.IdentityMatrix[
-          static_cast<int32_t>(rtb_BackwardSubstitution_tmp +
-          static_cast<int16_t>(idxout))];
+        rtb_BackwardSubstitution[i + 3] = NASDAQ0_DW.IdentityMatrix[i + idxout];
       }
 
       // End of S-Function (sdspperm2): '<S46>/Permute Matrix'
@@ -783,34 +767,28 @@ void NASDAQ0::step()
       //   S-Function (sdspfbsub2): '<S46>/Backward Substitution'
       //   S-Function (sdsplu2): '<S46>/LU Factorization'
 
-      for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 4;
-           rtb_BackwardSubstitution_tmp++) {
-        idxout = rtb_BackwardSubstitution_tmp << 2;
-        rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<int16_t>
-          (idxout) + 1)] -= rtb_LUFactorization_o1[1L] *
+      for (i = 0; i < 4; i++) {
+        idxout = i << 2;
+        rtb_BackwardSubstitution[idxout + 1] -= rtb_LUFactorization_o1[1] *
           rtb_BackwardSubstitution[idxout];
-        idxLU = 2L;
-        rtb_Gain1_b = rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<
-          int16_t>(idxout) + 2)];
+        rtb_Bias1_tmp = 2;
+        rtb_Gain1_b = rtb_BackwardSubstitution[idxout + 2];
         for (k = 0; k < 2; k++) {
-          rtb_Gain1_b -= rtb_BackwardSubstitution[static_cast<int32_t>(
-            static_cast<int16_t>(idxout) + k)] * rtb_LUFactorization_o1[idxLU];
-          idxLU += 4L;
+          rtb_Gain1_b -= rtb_BackwardSubstitution[idxout + k] *
+            rtb_LUFactorization_o1[rtb_Bias1_tmp];
+          rtb_Bias1_tmp += 4;
         }
 
-        rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<int16_t>
-          (idxout) + 2)] = rtb_Gain1_b;
-        idxLU = 3L;
-        rtb_Gain1_b = rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<
-          int16_t>(idxout) + 3)];
+        rtb_BackwardSubstitution[idxout + 2] = rtb_Gain1_b;
+        rtb_Bias1_tmp = 3;
+        rtb_Gain1_b = rtb_BackwardSubstitution[idxout + 3];
         for (k = 0; k < 3; k++) {
-          rtb_Gain1_b -= rtb_BackwardSubstitution[static_cast<int32_t>(
-            static_cast<int16_t>(idxout) + k)] * rtb_LUFactorization_o1[idxLU];
-          idxLU += 4L;
+          rtb_Gain1_b -= rtb_BackwardSubstitution[idxout + k] *
+            rtb_LUFactorization_o1[rtb_Bias1_tmp];
+          rtb_Bias1_tmp += 4;
         }
 
-        rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<int16_t>
-          (idxout) + 3)] = rtb_Gain1_b;
+        rtb_BackwardSubstitution[idxout + 3] = rtb_Gain1_b;
       }
 
       // End of S-Function (sdspfbsub2): '<S46>/Forward Substitution'
@@ -818,37 +796,38 @@ void NASDAQ0::step()
       // S-Function (sdspfbsub2): '<S46>/Backward Substitution' incorporates:
       //   S-Function (sdsplu2): '<S46>/LU Factorization'
 
-      for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 4;
-           rtb_BackwardSubstitution_tmp++) {
-        idxout = rtb_BackwardSubstitution_tmp << 2;
-        rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<int16_t>
-          (idxout) + 3)] /= rtb_LUFactorization_o1[15];
-        rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<int16_t>
-          (idxout) + 2)] = (rtb_BackwardSubstitution[static_cast<int32_t>(
-          static_cast<int16_t>(idxout) + 2)] - rtb_BackwardSubstitution[
-                            static_cast<int32_t>(static_cast<int16_t>(idxout) +
-          3)] * rtb_LUFactorization_o1[14L]) / rtb_LUFactorization_o1[10L];
-        idxLU = 13L;
-        rtb_Gain1_b = rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<
-          int16_t>(idxout) + 1)];
+      for (i = 0; i < 4; i++) {
+        idxout = i << 2;
+        rtb_Gain1_b = rtb_BackwardSubstitution[idxout + 3] /
+          rtb_LUFactorization_o1[15];
+
+        // S-Function (sdspfbsub2): '<S46>/Backward Substitution' incorporates:
+        //   S-Function (sdsplu2): '<S46>/LU Factorization'
+
+        rtb_BackwardSubstitution[idxout + 3] = rtb_Gain1_b;
+        rtb_BackwardSubstitution[idxout + 2] = (rtb_BackwardSubstitution[idxout
+          + 2] - rtb_Gain1_b * rtb_LUFactorization_o1[14]) /
+          rtb_LUFactorization_o1[10];
+        rtb_Bias1_tmp = 13;
+        rtb_Gain1_b = rtb_BackwardSubstitution[idxout + 1];
         for (k = 3; k > 1; k--) {
-          rtb_Gain1_b -= rtb_BackwardSubstitution[static_cast<int32_t>(
-            static_cast<int16_t>(idxout) + k)] * rtb_LUFactorization_o1[idxLU];
-          idxLU -= 4L;
+          rtb_Gain1_b -= rtb_BackwardSubstitution[idxout + k] *
+            rtb_LUFactorization_o1[rtb_Bias1_tmp];
+          rtb_Bias1_tmp -= 4;
         }
 
-        rtb_BackwardSubstitution[static_cast<int32_t>(static_cast<int16_t>
-          (idxout) + 1)] = rtb_Gain1_b / rtb_LUFactorization_o1[idxLU];
-        idxLU = 12L;
+        rtb_BackwardSubstitution[idxout + 1] = rtb_Gain1_b /
+          rtb_LUFactorization_o1[rtb_Bias1_tmp];
+        rtb_Bias1_tmp = 12;
         rtb_Gain1_b = rtb_BackwardSubstitution[idxout];
         for (k = 3; k > 0; k--) {
-          rtb_Gain1_b -= rtb_BackwardSubstitution[static_cast<int32_t>(
-            static_cast<int16_t>(idxout) + k)] * rtb_LUFactorization_o1[idxLU];
-          idxLU -= 4L;
+          rtb_Gain1_b -= rtb_BackwardSubstitution[idxout + k] *
+            rtb_LUFactorization_o1[rtb_Bias1_tmp];
+          rtb_Bias1_tmp -= 4;
         }
 
         rtb_BackwardSubstitution[idxout] = rtb_Gain1_b /
-          rtb_LUFactorization_o1[idxLU];
+          rtb_LUFactorization_o1[rtb_Bias1_tmp];
       }
 
       // End of S-Function (sdspfbsub2): '<S46>/Backward Substitution'
@@ -883,14 +862,17 @@ void NASDAQ0::step()
 
     // End of Switch: '<S44>/Switch'
 
-    // If: '<S38>/If' incorporates:
+    // RelationalOperator: '<S38>/GreaterThanOrEqual' incorporates:
     //   Constant: '<S38>/NASCondLim'
+
+    rtb_GreaterThanOrEqual = (rtb_Gain1_b >= NASDAQ0_P.NASCondLim_Value_o);
+
+    // If: '<S38>/If' incorporates:
     //   Merge: '<S38>/Merge'
     //   Product: '<S38>/Matrix Multiply1'
     //   Product: '<S42>/Matrix Divide'
-    //   RelationalOperator: '<S38>/GreaterThanOrEqual'
 
-    if (rtb_Gain1_b >= NASDAQ0_P.NASCondLim_Value_o) {
+    if (rtb_GreaterThanOrEqual) {
       // Outputs for IfAction SubSystem: '<S38>/Correction' incorporates:
       //   ActionPort: '<S42>/Action Port'
 
@@ -937,16 +919,16 @@ void NASDAQ0::step()
       rtb_Matrix1Norm1 = rtb_Merge_b[k];
       rtb_Gain1_b = rtb_Merge_b[k + 12];
       rtb_LUFactorization_o1_p = rtb_Merge_b[k + 18];
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       i = 0;
       for (rtb_Bias1_tmp = 0; rtb_Bias1_tmp < 6; rtb_Bias1_tmp++) {
-        rtb_S_tmp_0 = rtb_BackwardSubstitution_tmp + k;
+        rtb_S_tmp_0 = idxout + k;
         rtb_MatrixMultiply[rtb_S_tmp_0] =
           NASDAQ0_P.Constant_Value_p1[rtb_S_tmp_0] - (((rtb_Transpose1[i + 1] *
           rtb_Matrix1Norm2 + rtb_Transpose1[i] * rtb_Matrix1Norm1) +
           rtb_Transpose1[i + 2] * rtb_Gain1_b) + rtb_Transpose1[i + 3] *
           rtb_LUFactorization_o1_p);
-        rtb_BackwardSubstitution_tmp += 6;
+        idxout += 6;
         i += 4;
       }
     }
@@ -959,7 +941,7 @@ void NASDAQ0::step()
     //   Product: '<S10>/Matrix Multiply2'
 
     for (k = 0; k < 6; k++) {
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       for (i = 0; i < 6; i++) {
         rtb_Matrix1Norm2 = 0.0F;
         rtb_Bias1_tmp = 0;
@@ -969,8 +951,8 @@ void NASDAQ0::step()
           rtb_Bias1_tmp += 6;
         }
 
-        rtb_Merge1[rtb_BackwardSubstitution_tmp + k] = rtb_Matrix1Norm2;
-        rtb_BackwardSubstitution_tmp += 6;
+        rtb_Merge1[idxout + k] = rtb_Matrix1Norm2;
+        idxout += 6;
       }
     }
 
@@ -984,12 +966,12 @@ void NASDAQ0::step()
       rtb_Matrix1Norm1 = rtb_Square_m[k];
       rtb_Gain1_b = rtb_Square_m[k + 8];
       rtb_LUFactorization_o1_p = rtb_Square_m[k + 12];
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       for (i = 0; i < 6; i++) {
-        rtb_Transpose1[rtb_BackwardSubstitution_tmp + k] = ((rtb_Merge_b[i + 6] *
-          rtb_Matrix1Norm2 + rtb_Matrix1Norm1 * rtb_Merge_b[i]) + rtb_Merge_b[i
-          + 12] * rtb_Gain1_b) + rtb_Merge_b[i + 18] * rtb_LUFactorization_o1_p;
-        rtb_BackwardSubstitution_tmp += 4;
+        rtb_Transpose1[idxout + k] = ((rtb_Merge_b[i + 6] * rtb_Matrix1Norm2 +
+          rtb_Matrix1Norm1 * rtb_Merge_b[i]) + rtb_Merge_b[i + 12] * rtb_Gain1_b)
+          + rtb_Merge_b[i + 18] * rtb_LUFactorization_o1_p;
+        idxout += 4;
       }
     }
 
@@ -999,7 +981,7 @@ void NASDAQ0::step()
     //   Product: '<S36>/Matrix Multiply2'
 
     k = 0;
-    rtb_BackwardSubstitution_tmp = 0;
+    idxout = 0;
     for (i = 0; i < 6; i++) {
       for (rtb_Bias1_tmp = 0; rtb_Bias1_tmp < 6; rtb_Bias1_tmp++) {
         rtb_Matrix1Norm1 = 0.0F;
@@ -1012,18 +994,15 @@ void NASDAQ0::step()
 
         rtb_S_tmp_0 = rtb_Bias1_tmp + k;
         rtb_MatrixMultiply_0[rtb_S_tmp_0] = rtb_Matrix1Norm1;
-        rtb_Merge_n[rtb_S_tmp_0] = ((rtb_Transpose1[rtb_BackwardSubstitution_tmp
-          + 1] * rtb_Merge_b[rtb_Bias1_tmp + 6] +
-          rtb_Transpose1[rtb_BackwardSubstitution_tmp] *
-          rtb_Merge_b[rtb_Bias1_tmp]) +
-          rtb_Transpose1[rtb_BackwardSubstitution_tmp + 2] *
-          rtb_Merge_b[rtb_Bias1_tmp + 12]) +
-          rtb_Transpose1[rtb_BackwardSubstitution_tmp + 3] *
+        rtb_Merge_n[rtb_S_tmp_0] = ((rtb_Transpose1[idxout + 1] *
+          rtb_Merge_b[rtb_Bias1_tmp + 6] + rtb_Transpose1[idxout] *
+          rtb_Merge_b[rtb_Bias1_tmp]) + rtb_Transpose1[idxout + 2] *
+          rtb_Merge_b[rtb_Bias1_tmp + 12]) + rtb_Transpose1[idxout + 3] *
           rtb_Merge_b[rtb_Bias1_tmp + 18];
       }
 
       k += 6;
-      rtb_BackwardSubstitution_tmp += 4;
+      idxout += 4;
     }
 
     // Sum: '<S36>/Sum1' incorporates:
@@ -1099,17 +1078,32 @@ void NASDAQ0::step()
   // End of Outputs for SubSystem: '<S2>/GPS Correction'
 
   // Outputs for Atomic SubSystem: '<S2>/Baro Correction'
-  // RelationalOperator: '<S20>/Relational Operator' incorporates:
-  //   Inport: '<Root>/NASDAQ In Sensors'
-  //   Memory: '<S20>/Memory'
+  // Outputs for Atomic SubSystem: '<S5>/Correction Controller'
+  // RateTransition: '<S20>/Rate Transition'
+  if ((&NASDAQ0_M)->Timing.TaskCounters.TID[1] == 0) {
+    // RateTransition: '<S20>/Rate Transition' incorporates:
+    //   Inport: '<Root>/NASDAQ In Sensors'
 
-  rtb_GreaterThanOrEqual = (NASDAQ0_U.NASDAQInSensors_i.BaroTimestamp >
-    NASDAQ0_DW.Memory_PreviousInput_d);
+    NASDAQ0_DW.RateTransition = NASDAQ0_U.NASDAQInSensors_i.BaroTimestamp;
+  }
+
+  // End of RateTransition: '<S20>/Rate Transition'
 
   // Logic: '<S20>/AND' incorporates:
   //   Constant: '<S20>/Constant'
+  //   Memory: '<S20>/Memory'
+  //   RateTransition: '<S20>/Rate Transition'
+  //   RelationalOperator: '<S20>/Relational Operator'
 
-  rtb_AND_e = (NASDAQ0_P.Constant_Value_o1 && rtb_GreaterThanOrEqual);
+  rtb_AND_e = (NASDAQ0_P.Constant_Value_o1 && (NASDAQ0_DW.RateTransition >
+    NASDAQ0_DW.Memory_PreviousInput_a));
+
+  // Update for Memory: '<S20>/Memory' incorporates:
+  //   Inport: '<Root>/NASDAQ In Sensors'
+
+  NASDAQ0_DW.Memory_PreviousInput_a = NASDAQ0_U.NASDAQInSensors_i.BaroTimestamp;
+
+  // End of Outputs for SubSystem: '<S5>/Correction Controller'
 
   // Outputs for Enabled SubSystem: '<S5>/Active Correction Step' incorporates:
   //   EnablePort: '<S19>/Enable'
@@ -1182,10 +1176,8 @@ void NASDAQ0::step()
 
       rtb_Gain1_b = 0.0F;
       k = 0;
-      for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 6;
-           rtb_BackwardSubstitution_tmp++) {
-        rtb_Gain1_b += rtb_Merge1[k + i] *
-          rtb_Merge_f[rtb_BackwardSubstitution_tmp];
+      for (idxout = 0; idxout < 6; idxout++) {
+        rtb_Gain1_b += rtb_Merge1[k + i] * rtb_Merge_f[idxout];
         k += 6;
       }
 
@@ -1206,8 +1198,8 @@ void NASDAQ0::step()
 
     // S-Function (sdsplu2): '<S31>/LU Factorization'
     rtb_LUFactorization_o1_p = rtb_Matrix1Norm1;
-    LUf_boolfloatint32_t(&rtb_LUFactorization_o1_p, &rtb_LUFactorization_o2_p,
-                         1L, &rtb_GreaterThanOrEqual);
+    LUf_boolfloatint32_t(&rtb_LUFactorization_o1_p, &rtb_LUFactorization_o2_p, 1,
+                         &rtb_GreaterThanOrEqual);
 
     // Switch: '<S29>/Switch' incorporates:
     //   Constant: '<S29>/Constant'
@@ -1291,12 +1283,11 @@ void NASDAQ0::step()
     //   S-Function (sdspdiag2): '<S1>/Extract Diagonal'
 
     k = 0;
-    for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 6;
-         rtb_BackwardSubstitution_tmp++) {
+    for (idxout = 0; idxout < 6; idxout++) {
       for (i = 0; i < 6; i++) {
         rtb_S_tmp_0 = i + k;
         rtb_MatrixMultiply[rtb_S_tmp_0] = NASDAQ0_P.Constant_Value_c[rtb_S_tmp_0]
-          - rtb_Merge_e[i] * rtb_Merge_f[rtb_BackwardSubstitution_tmp];
+          - rtb_Merge_e[i] * rtb_Merge_f[idxout];
       }
 
       k += 6;
@@ -1313,7 +1304,7 @@ void NASDAQ0::step()
     //   Product: '<S22>/Matrix Multiply2'
 
     for (k = 0; k < 6; k++) {
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       for (i = 0; i < 6; i++) {
         rtb_Matrix1Norm2_p = 0.0F;
         rtb_Bias1_tmp = 0;
@@ -1323,28 +1314,26 @@ void NASDAQ0::step()
           rtb_Bias1_tmp += 6;
         }
 
-        rtb_Merge_l[rtb_BackwardSubstitution_tmp + k] = rtb_Matrix1Norm2_p;
-        rtb_BackwardSubstitution_tmp += 6;
+        rtb_Merge_l[idxout + k] = rtb_Matrix1Norm2_p;
+        idxout += 6;
       }
     }
 
     k = 0;
-    for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 6;
-         rtb_BackwardSubstitution_tmp++) {
+    for (idxout = 0; idxout < 6; idxout++) {
       i = 0;
       for (rtb_Bias1_tmp = 0; rtb_Bias1_tmp < 6; rtb_Bias1_tmp++) {
         rtb_Matrix1Norm1 = 0.0F;
         rtb_S_tmp_0 = 0;
         for (i_0 = 0; i_0 < 6; i_0++) {
-          rtb_Matrix1Norm1 += rtb_MatrixMultiply[rtb_S_tmp_0 +
-            rtb_BackwardSubstitution_tmp] * rtb_Merge_l[i_0 + i];
+          rtb_Matrix1Norm1 += rtb_MatrixMultiply[rtb_S_tmp_0 + idxout] *
+            rtb_Merge_l[i_0 + i];
           rtb_S_tmp_0 += 6;
         }
 
-        rtb_MatrixMultiply_0[i + rtb_BackwardSubstitution_tmp] =
-          rtb_Matrix1Norm1;
-        rtb_Bias1[rtb_Bias1_tmp + k] = rtb_Matrix1Norm2 *
-          rtb_Merge_e[rtb_BackwardSubstitution_tmp] * rtb_Merge_e[rtb_Bias1_tmp];
+        rtb_MatrixMultiply_0[i + idxout] = rtb_Matrix1Norm1;
+        rtb_Bias1[rtb_Bias1_tmp + k] = rtb_Matrix1Norm2 * rtb_Merge_e[idxout] *
+          rtb_Merge_e[rtb_Bias1_tmp];
         i += 6;
       }
 
@@ -1403,19 +1392,19 @@ void NASDAQ0::step()
     // Bias: '<S19>/Bias' incorporates:
     //   UnitDelay: '<S19>/Unit Delay'
 
-    u0 = static_cast<uint8_t>(NASDAQ0_DW.UnitDelay_DSTATE_j +
+    u0_0 = static_cast<uint8_t>(NASDAQ0_DW.UnitDelay_DSTATE_j +
       NASDAQ0_P.Bias_Bias_m);
 
     // Saturate: '<S19>/Saturation'
-    if (u0 > NASDAQ0_P.Saturation_UpperSat) {
+    if (u0_0 > NASDAQ0_P.Saturation_UpperSat) {
       // Update for UnitDelay: '<S19>/Unit Delay'
       NASDAQ0_DW.UnitDelay_DSTATE_j = NASDAQ0_P.Saturation_UpperSat;
-    } else if (u0 < NASDAQ0_P.Saturation_LowerSat) {
+    } else if (u0_0 < NASDAQ0_P.Saturation_LowerSat) {
       // Update for UnitDelay: '<S19>/Unit Delay'
       NASDAQ0_DW.UnitDelay_DSTATE_j = NASDAQ0_P.Saturation_LowerSat;
     } else {
       // Update for UnitDelay: '<S19>/Unit Delay'
-      NASDAQ0_DW.UnitDelay_DSTATE_j = u0;
+      NASDAQ0_DW.UnitDelay_DSTATE_j = u0_0;
     }
 
     // End of Saturate: '<S19>/Saturation'
@@ -1429,12 +1418,6 @@ void NASDAQ0::step()
     rtb_Merge_l);
 
   // End of Outputs for SubSystem: '<S5>/No Correction Step'
-
-  // Update for Memory: '<S20>/Memory' incorporates:
-  //   Inport: '<Root>/NASDAQ In Sensors'
-
-  NASDAQ0_DW.Memory_PreviousInput_d = NASDAQ0_U.NASDAQInSensors_i.BaroTimestamp;
-
   // End of Outputs for SubSystem: '<S2>/Baro Correction'
 
   // Outputs for Atomic SubSystem: '<S2>/ADA Correction'
@@ -1451,7 +1434,7 @@ void NASDAQ0::step()
   //   Memory: '<S8>/Memory'
 
   rtb_GreaterThanOrEqual = (NASDAQ0_U.NASDAQInADA_i.Timestamp >
-    NASDAQ0_DW.Memory_PreviousInput_a);
+    NASDAQ0_DW.Memory_PreviousInput_aa);
 
   // Logic: '<S8>/AND' incorporates:
   //   Constant: '<S8>/Constant'
@@ -1490,8 +1473,7 @@ void NASDAQ0::step()
 
     rtb_Gain1_b = 0.0F;
     k = 0;
-    for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 6;
-         rtb_BackwardSubstitution_tmp++) {
+    for (idxout = 0; idxout < 6; idxout++) {
       rtb_Matrix1Norm2_p = 0.0F;
       for (i = 0; i < 6; i++) {
         rtb_Matrix1Norm2_p += rtb_Merge_l[i + k] * static_cast<float>
@@ -1499,7 +1481,7 @@ void NASDAQ0::step()
       }
 
       rtb_Gain1_b += rtb_Matrix1Norm2_p * static_cast<float>
-        (NASDAQ0_P.HMatrix_Value[rtb_BackwardSubstitution_tmp]);
+        (NASDAQ0_P.HMatrix_Value[idxout]);
       k += 6;
     }
 
@@ -1511,7 +1493,7 @@ void NASDAQ0::step()
 
     // S-Function (sdsplu2): '<S18>/LU Factorization'
     rtb_Matrix1Norm2_p = rtb_LUFactorization_o1_p;
-    LUf_boolfloatint32_t(&rtb_Matrix1Norm2_p, &rtb_LUFactorization_o2_f, 1L,
+    LUf_boolfloatint32_t(&rtb_Matrix1Norm2_p, &rtb_LUFactorization_o2_f, 1,
                          &rtb_GreaterThanOrEqual);
 
     // Switch: '<S16>/Switch' incorporates:
@@ -1572,11 +1554,11 @@ void NASDAQ0::step()
     for (k = 0; k < 6; k++) {
       // Product: '<S11>/Matrix Multiply1'
       rtb_Matrix1Norm2_e = 0.0F;
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       for (i = 0; i < 6; i++) {
-        rtb_Matrix1Norm2_e += rtb_Merge_l[rtb_BackwardSubstitution_tmp + k] *
-          static_cast<float>(NASDAQ0_P.HMatrix_Value[i]);
-        rtb_BackwardSubstitution_tmp += 6;
+        rtb_Matrix1Norm2_e += rtb_Merge_l[idxout + k] * static_cast<float>
+          (NASDAQ0_P.HMatrix_Value[i]);
+        idxout += 6;
       }
 
       // Product: '<S11>/Matrix Multiply1' incorporates:
@@ -1621,13 +1603,11 @@ void NASDAQ0::step()
     //   Product: '<S13>/Matrix Multiply'
 
     k = 0;
-    for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 6;
-         rtb_BackwardSubstitution_tmp++) {
+    for (idxout = 0; idxout < 6; idxout++) {
       for (i = 0; i < 6; i++) {
         rtb_S_tmp_0 = i + k;
         rtb_MatrixMultiply[rtb_S_tmp_0] = NASDAQ0_P.Constant_Value_f[rtb_S_tmp_0]
-          - rtb_Merge_f[i] * static_cast<float>
-          (NASDAQ0_P.HMatrix_Value[rtb_BackwardSubstitution_tmp]);
+          - rtb_Merge_f[i] * static_cast<float>(NASDAQ0_P.HMatrix_Value[idxout]);
       }
 
       k += 6;
@@ -1644,7 +1624,7 @@ void NASDAQ0::step()
     //   Switch: '<S7>/Switch'
 
     for (k = 0; k < 6; k++) {
-      rtb_BackwardSubstitution_tmp = 0;
+      idxout = 0;
       for (i = 0; i < 6; i++) {
         rtb_Matrix1Norm2_e = 0.0F;
         rtb_Bias1_tmp = 0;
@@ -1654,28 +1634,26 @@ void NASDAQ0::step()
           rtb_Bias1_tmp += 6;
         }
 
-        rtb_Merge1[rtb_BackwardSubstitution_tmp + k] = rtb_Matrix1Norm2_e;
-        rtb_BackwardSubstitution_tmp += 6;
+        rtb_Merge1[idxout + k] = rtb_Matrix1Norm2_e;
+        idxout += 6;
       }
     }
 
     k = 0;
-    for (rtb_BackwardSubstitution_tmp = 0; rtb_BackwardSubstitution_tmp < 6;
-         rtb_BackwardSubstitution_tmp++) {
+    for (idxout = 0; idxout < 6; idxout++) {
       i = 0;
       for (rtb_Bias1_tmp = 0; rtb_Bias1_tmp < 6; rtb_Bias1_tmp++) {
         rtb_Matrix1Norm1 = 0.0F;
         rtb_S_tmp_0 = 0;
         for (i_0 = 0; i_0 < 6; i_0++) {
-          rtb_Matrix1Norm1 += rtb_MatrixMultiply[rtb_S_tmp_0 +
-            rtb_BackwardSubstitution_tmp] * rtb_Merge1[i_0 + i];
+          rtb_Matrix1Norm1 += rtb_MatrixMultiply[rtb_S_tmp_0 + idxout] *
+            rtb_Merge1[i_0 + i];
           rtb_S_tmp_0 += 6;
         }
 
-        rtb_MatrixMultiply_0[i + rtb_BackwardSubstitution_tmp] =
-          rtb_Matrix1Norm1;
-        rtb_Bias1[rtb_Bias1_tmp + k] = NASDAQ0_DW.Switch *
-          rtb_Merge_f[rtb_BackwardSubstitution_tmp] * rtb_Merge_f[rtb_Bias1_tmp];
+        rtb_MatrixMultiply_0[i + idxout] = rtb_Matrix1Norm1;
+        rtb_Bias1[rtb_Bias1_tmp + k] = NASDAQ0_DW.Switch * rtb_Merge_f[idxout] *
+          rtb_Merge_f[rtb_Bias1_tmp];
         i += 6;
       }
 
@@ -1722,7 +1700,7 @@ void NASDAQ0::step()
   // Update for Memory: '<S8>/Memory' incorporates:
   //   Inport: '<Root>/NASDAQ In ADA'
 
-  NASDAQ0_DW.Memory_PreviousInput_a = NASDAQ0_U.NASDAQInADA_i.Timestamp;
+  NASDAQ0_DW.Memory_PreviousInput_aa = NASDAQ0_U.NASDAQInADA_i.Timestamp;
 
   // End of Outputs for SubSystem: '<S2>/ADA Correction'
   // End of Outputs for SubSystem: '<S1>/Correction Step'
@@ -1737,15 +1715,19 @@ void NASDAQ0::step()
   NASDAQ0_Y.NASDAQLogsOBSW.Velocity[1] = NASDAQ0_DW.Merge1[4];
   NASDAQ0_Y.NASDAQLogsOBSW.Position[2] = NASDAQ0_DW.Merge1[2];
   NASDAQ0_Y.NASDAQLogsOBSW.Velocity[2] = NASDAQ0_DW.Merge1[5];
-  for (i = 0; i < 6; i++) {
-    // BusCreator generated from: '<S1>/NASDAQ Logs OBSW_BusCreator' incorporates:
-    //   Merge: '<S4>/Merge'
-    //   Outport: '<Root>/NASDAQ Logs OBSW'
-    //   S-Function (sdspdiag2): '<S1>/Extract Diagonal'
 
-    NASDAQ0_Y.NASDAQLogsOBSW.CovarianceMatrixDiagonal[i] = NASDAQ0_DW.Merge[
-      static_cast<int32_t>(i * 7LL)];
+  // S-Function (sdspdiag2): '<S1>/Extract Diagonal' incorporates:
+  //   BusCreator generated from: '<S1>/NASDAQ Logs OBSW_BusCreator'
+  //   Merge: '<S4>/Merge'
+  //   Outport: '<Root>/NASDAQ Logs OBSW'
+
+  i = 0;
+  for (k = 0; k < 6; k++) {
+    NASDAQ0_Y.NASDAQLogsOBSW.CovarianceMatrixDiagonal[k] = NASDAQ0_DW.Merge[i];
+    i += 7;
   }
+
+  // End of S-Function (sdspdiag2): '<S1>/Extract Diagonal'
 
   // BusCreator generated from: '<S1>/NASDAQ Logs OBSW_BusCreator' incorporates:
   //   Outport: '<Root>/NASDAQ Logs OBSW'
@@ -1774,18 +1756,19 @@ void NASDAQ0::step()
   // Bias: '<S1>/Bias2' incorporates:
   //   UnitDelay: '<S1>/Unit Delay3'
 
-  u0 = static_cast<uint8_t>(NASDAQ0_DW.UnitDelay3_DSTATE + NASDAQ0_P.Bias2_Bias);
+  u0_0 = static_cast<uint8_t>(NASDAQ0_DW.UnitDelay3_DSTATE +
+    NASDAQ0_P.Bias2_Bias);
 
   // Saturate: '<S1>/Saturation2'
-  if (u0 > NASDAQ0_P.Saturation2_UpperSat) {
+  if (u0_0 > NASDAQ0_P.Saturation2_UpperSat) {
     // Update for UnitDelay: '<S1>/Unit Delay3'
     NASDAQ0_DW.UnitDelay3_DSTATE = NASDAQ0_P.Saturation2_UpperSat;
-  } else if (u0 < NASDAQ0_P.Saturation2_LowerSat) {
+  } else if (u0_0 < NASDAQ0_P.Saturation2_LowerSat) {
     // Update for UnitDelay: '<S1>/Unit Delay3'
     NASDAQ0_DW.UnitDelay3_DSTATE = NASDAQ0_P.Saturation2_LowerSat;
   } else {
     // Update for UnitDelay: '<S1>/Unit Delay3'
-    NASDAQ0_DW.UnitDelay3_DSTATE = u0;
+    NASDAQ0_DW.UnitDelay3_DSTATE = u0_0;
   }
 
   // End of Saturate: '<S1>/Saturation2'
@@ -1793,8 +1776,7 @@ void NASDAQ0::step()
   // Bias: '<S1>/Bias1' incorporates:
   //   UnitDelay: '<S1>/Unit Delay2'
 
-  u0 = static_cast<uint8_t>(NASDAQ0_DW.UnitDelay2_DSTATE +
-    NASDAQ0_P.Bias1_Bias_l);
+  u0 = static_cast<int8_t>(NASDAQ0_DW.UnitDelay2_DSTATE + NASDAQ0_P.Bias1_Bias_l);
 
   // Saturate: '<S1>/Saturation1'
   if (u0 > NASDAQ0_P.Saturation1_UpperSat) {
@@ -1824,7 +1806,7 @@ void NASDAQ0::step()
 void NASDAQ0::initialize()
 {
   {
-    int16_t i;
+    int32_t i;
 
     // SystemInitialize for Atomic SubSystem: '<Root>/NASDAQ - Autocoding'
     // InitializeConditions for UnitDelay: '<S1>/Unit Delay'
@@ -1851,7 +1833,7 @@ void NASDAQ0::initialize()
     // SystemInitialize for Atomic SubSystem: '<S1>/Correction Step'
     // SystemInitialize for Atomic SubSystem: '<S2>/GPS Correction'
     // InitializeConditions for Memory: '<S34>/Memory'
-    NASDAQ0_DW.Memory_PreviousInput = NASDAQ0_P.Memory_InitialCondition_o;
+    NASDAQ0_DW.Memory_PreviousInput = NASDAQ0_P.Memory_InitialCondition_oa;
 
     // SystemInitialize for Enabled SubSystem: '<S6>/Active Correction Step'
     // Start for IdentityMatrix: '<S46>/Identity Matrix'
@@ -1862,8 +1844,11 @@ void NASDAQ0::initialize()
     // End of SystemInitialize for SubSystem: '<S2>/GPS Correction'
 
     // SystemInitialize for Atomic SubSystem: '<S2>/Baro Correction'
+    // SystemInitialize for Atomic SubSystem: '<S5>/Correction Controller'
     // InitializeConditions for Memory: '<S20>/Memory'
-    NASDAQ0_DW.Memory_PreviousInput_d = NASDAQ0_P.Memory_InitialCondition_m;
+    NASDAQ0_DW.Memory_PreviousInput_a = NASDAQ0_P.Memory_InitialCondition_o;
+
+    // End of SystemInitialize for SubSystem: '<S5>/Correction Controller'
 
     // SystemInitialize for Enabled SubSystem: '<S5>/Active Correction Step'
     // InitializeConditions for UnitDelay: '<S19>/Unit Delay1'
@@ -1880,7 +1865,7 @@ void NASDAQ0::initialize()
 
     // SystemInitialize for Atomic SubSystem: '<S2>/ADA Correction'
     // InitializeConditions for Memory: '<S8>/Memory'
-    NASDAQ0_DW.Memory_PreviousInput_a = NASDAQ0_P.Memory_InitialCondition;
+    NASDAQ0_DW.Memory_PreviousInput_aa = NASDAQ0_P.Memory_InitialCondition;
 
     // SystemInitialize for Enabled SubSystem: '<S4>/Active Correction Step'
     // Start for IdentityMatrix: '<S18>/Identity Matrix'

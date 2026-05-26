@@ -7,12 +7,12 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.240
+// Model version                  : 11.257
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue May 12 11:57:35 2026
+// C/C++ source code generated on : Sun May 24 17:30:06 2026
 //
 // Target selection: ert.tlc
-// Embedded hardware selection: STMicroelectronics->ST10/Super10
+// Embedded hardware selection: ARM Compatible->ARM Cortex-M
 // Code generation objectives:
 //    1. Execution efficiency
 //    2. Debugging
@@ -61,12 +61,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   (0ULL),
 
-  // Computed Parameter: Memory_InitialCondition_m
+  // Computed Parameter: Memory_InitialCondition_o
   //  Referenced by: '<S20>/Memory'
 
   (0ULL),
 
-  // Computed Parameter: Memory_InitialCondition_o
+  // Computed Parameter: Memory_InitialCondition_oa
   //  Referenced by: '<S34>/Memory'
 
   (0ULL),
@@ -330,6 +330,26 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   true,
 
+  // Computed Parameter: UnitDelay2_InitialCondition
+  //  Referenced by: '<S1>/Unit Delay2'
+
+  -1,
+
+  // Computed Parameter: Bias1_Bias_l
+  //  Referenced by: '<S1>/Bias1'
+
+  1,
+
+  // Computed Parameter: Saturation1_UpperSat
+  //  Referenced by: '<S1>/Saturation1'
+
+  1,
+
+  // Computed Parameter: Saturation1_LowerSat
+  //  Referenced by: '<S1>/Saturation1'
+
+  -1,
+
   // Computed Parameter: HMatrix_Value
   //  Referenced by: '<S7>/H Matrix'
 
@@ -362,26 +382,6 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   // Computed Parameter: UnitDelay3_InitialCondition
   //  Referenced by: '<S1>/Unit Delay3'
-
-  0U,
-
-  // Computed Parameter: UnitDelay2_InitialCondition
-  //  Referenced by: '<S1>/Unit Delay2'
-
-  0U,
-
-  // Computed Parameter: Bias1_Bias_l
-  //  Referenced by: '<S1>/Bias1'
-
-  1U,
-
-  // Computed Parameter: Saturation1_UpperSat
-  //  Referenced by: '<S1>/Saturation1'
-
-  1U,
-
-  // Computed Parameter: Saturation1_LowerSat
-  //  Referenced by: '<S1>/Saturation1'
 
   0U,
 
