@@ -62,15 +62,12 @@ struct NASDAQState
 
 struct NASDAQLogsWrapper
 {
-    uint64_t obswTimestamp;
-
     NASDAQ0_types_h_::NASDAQLogs NASDAQLog;
 
-    NASDAQLogsWrapper() : obswTimestamp(0) {};
+    NASDAQLogsWrapper() {};
 
-    NASDAQLogsWrapper(uint64_t timestamp,
-                      const NASDAQ0_types_h_::NASDAQLogs logs)
-        : obswTimestamp(timestamp), NASDAQLog(logs) {};
+    NASDAQLogsWrapper(const NASDAQ0_types_h_::NASDAQLogs logs)
+        : NASDAQLog(logs) {};
 
     static constexpr auto reflect()
     {
