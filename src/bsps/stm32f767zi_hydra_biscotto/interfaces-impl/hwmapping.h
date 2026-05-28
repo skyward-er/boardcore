@@ -41,6 +41,7 @@
 #define MIOSIX_SENSOR_ND015A_0_SPI SPI4
 #define MIOSIX_SENSOR_ND015A_1_SPI SPI4
 #define MIOSIX_SENSOR_ND015A_2_SPI SPI4
+#define MIOSIX_SENSOR_AS5047D_ABK_SPI SPI4
 
 #define MIOSIX_SENSOR_LIS2MDL_ELC_SPI SPI6
 
@@ -223,6 +224,10 @@ namespace ND015A_2
 using cs = Gpio<GPIOD_BASE, 5>;
 }
 
+namespace AS5047D_ABK
+{
+using cs = Gpio<GPIOG_BASE, 6>;
+}
 }  // namespace sensors
 
 namespace expander
