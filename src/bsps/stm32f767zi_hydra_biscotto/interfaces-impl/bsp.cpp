@@ -343,6 +343,8 @@ void IRQbspInit()
     sensors::ND015A_1::cs::high();
     sensors::ND015A_2::cs::mode(Mode::OUTPUT);
     sensors::ND015A_2::cs::high();
+    sensors::AS5047D_ABK::cs::mode(Mode::OUTPUT);
+    sensors::AS5047D_ABK::cs::high();
 
     expander::cs::mode(Mode::OUTPUT);
     expander::cs::high();
