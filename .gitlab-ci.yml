@@ -21,6 +21,7 @@
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  GIT_CONFIG_PARAMETERS: "'protocol.file.allow=always'"
 
 default:
   image: registry.skywarder.eu/avn/swd/docker/miosix:v3
