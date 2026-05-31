@@ -282,15 +282,6 @@ void IRQbspInit()
     interfaces::can1::rx::alternateFunction(9);
     interfaces::can1::rx::mode(Mode::ALTERNATE);
 
-    interfaces::timers::tim1ch1::alternateFunction(1);
-    interfaces::timers::tim1ch1::mode(Mode::ALTERNATE);
-    interfaces::timers::tim3ch1::alternateFunction(2);
-    interfaces::timers::tim3ch1::mode(Mode::ALTERNATE);
-    interfaces::timers::tim4ch2::alternateFunction(2);
-    interfaces::timers::tim4ch2::mode(Mode::ALTERNATE);
-    interfaces::timers::tim9ch1::alternateFunction(3);
-    interfaces::timers::tim9ch1::mode(Mode::ALTERNATE);
-
     sensors::ND015A::cs::mode(Mode::OUTPUT);
     sensors::ND015A::cs::high();
     sensors::ND030A::cs::mode(Mode::OUTPUT);

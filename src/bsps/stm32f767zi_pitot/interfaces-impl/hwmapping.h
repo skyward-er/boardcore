@@ -69,14 +69,6 @@ using tx = Gpio<GPIOA_BASE, 12>;
 using rx = Gpio<GPIOA_BASE, 11>;
 }  // namespace can1
 
-namespace timers
-{
-using tim1ch1 = Gpio<GPIOA_BASE, 8>;
-using tim3ch1 = Gpio<GPIOC_BASE, 6>;
-using tim4ch2 = Gpio<GPIOD_BASE, 13>;
-using tim9ch1 = Gpio<GPIOA_BASE, 2>;
-}  // namespace timers
-
 }  // namespace interfaces
 
 namespace sensors
