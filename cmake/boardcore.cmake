@@ -45,8 +45,12 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0_data.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0_data.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/kriging.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp

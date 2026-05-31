@@ -28,8 +28,6 @@
 
 #include <Eigen/Dense>
 
-#include "NAS.h"
-
 namespace Boardcore
 {
 
