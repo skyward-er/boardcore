@@ -61,7 +61,8 @@ public:
      * @param mag 3x1 magnetometer readings [x y z][uT].
      *
      */
-    void eCompass(const Eigen::Vector3f& acc, const Eigen::Vector3f& mag);
+    Eigen::Vector4f eCompass(const Eigen::Vector3f& acc,
+                             const Eigen::Vector3f& mag);
 
     /**
      * @brief Triad algorithm to estimate the attitude before the liftoff.
@@ -74,14 +75,11 @@ public:
      * @param mag Normalized magnetometer readings [x y z].
      * @param nedMag Normalized magnetic field vector in NED frame [x y z].
      */
-    void triad(const Eigen::Vector3f& acc, const Eigen::Vector3f& mag,
-               const Eigen::Vector3f& nedMag);
-
-    Eigen::Matrix<float, 13, 1> getInitX();
+    Eigen::Vector4f triad(const Eigen::Vector3f& acc,
+                          const Eigen::Vector3f& mag,
+                          const Eigen::Vector3f& nedMag);
 
 private:
-    Eigen::Matrix<float, 13, 1> x_init;
-
     PrintLogger log = Logging::getLogger("stateinitializer");
 };
 }  // namespace Boardcore

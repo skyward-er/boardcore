@@ -67,6 +67,8 @@ void ADA::setKalmanConfig(const KalmanFilter::KalmanConfig& config)
 
 ReferenceValues ADA::getReferenceValues() { return reference; }
 
+const float* ADA::getFlatP() const { return filter.getFlattenedP(); }
+
 void ADA::updateState()
 {
     const auto filterState = filter.getState();

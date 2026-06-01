@@ -27,9 +27,9 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-StateInitializer::StateInitializer() { x_init << MatrixXf::Zero(13, 1); }
+StateInitializer::StateInitializer() {}
 
-void StateInitializer::eCompass(const Vector3f& acc, const Vector3f& mag)
+Vector4f StateInitializer::eCompass(const Vector3f& acc, const Vector3f& mag)
 {
     // ndr: since this method runs only when the rocket is stationary, there's
     // no need to add the gravity vector because the accelerometers already
@@ -46,14 +46,11 @@ void StateInitializer::eCompass(const Vector3f& acc, const Vector3f& mag)
 
     Vector4f x_quat = SkyQuaternion::rotationMatrix2quat(R);
 
-    x_init(NAS::IDX_QUAT)     = x_quat(0);
-    x_init(NAS::IDX_QUAT + 1) = x_quat(1);
-    x_init(NAS::IDX_QUAT + 2) = x_quat(2);
-    x_init(NAS::IDX_QUAT + 3) = x_quat(3);
+    return x_quat;
 }
 
-void StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
-                             const Vector3f& nedMag)
+Vector4f StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
+                                 const Vector3f& nedMag)
 {
     // The gravity vector is expected to be read inversely because
     // accelerometers read the binding reaction
@@ -81,10 +78,7 @@ void StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
     Matrix3f A = m * M.transpose();
     Vector4f q = SkyQuaternion::rotationMatrix2quat(A);
 
-    // Save the orientation in the state
-    x_init.block<4, 1>(NAS::IDX_QUAT, 0) = q;
+    return q;
 }
-
-Matrix<float, 13, 1> StateInitializer::getInitX() { return x_init; }
 
 }  // namespace Boardcore

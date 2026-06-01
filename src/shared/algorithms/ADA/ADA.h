@@ -69,6 +69,11 @@ public:
      */
     ReferenceValues getReferenceValues();
 
+    /**
+     * @brief Returns a pointer to the flattened Q matrix
+     */
+    const float* getFlatP() const;
+
 private:
     void updateState();
 
