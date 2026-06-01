@@ -50,7 +50,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
-    
+    ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
 
     # Debug
     ${BOARDCORE_PATH}/src/shared/utils/Debug.cpp
@@ -136,7 +136,8 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/LSM6DSRX/LSM6DSRX.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015D.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015A.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/ND030D/ND030D.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030D.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030A.cpp
 
     # Calibration
     ${BOARDCORE_PATH}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
