@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include <algorithms/ANAS/ANASData.h>
 #include <algorithms/Algorithm.h>
-#include <algorithms/NAS/NASState.h>
 #include <diagnostic/PrintLogger.h>
 #include <logger/Logger.h>
 #include <sensors/SensorData.h>
@@ -82,7 +82,7 @@ public:
     /**
      * @brief Setter for the NAS state of the rocket.
      */
-    void setLastRocketNasState(const NASState& nasState);
+    void setLastRocketNasState(const ANASState& nasState);
 
     /**
      * @brief Setter for the attitude of the antenna.
@@ -130,7 +130,7 @@ private:
      * @brief Synchronized getter that returns a copy of the last NAS state
      * of the rocket
      */
-    NASState getLastRocketNasState();
+    ANASState getLastRocketNasState();
 
     /**
      * @brief Calculates the target angles from the given NED coordinates that
@@ -169,7 +169,7 @@ private:
 
     VN300Data lastAntennaAttitude;
 
-    NASState lastRocketNasState;
+    ANASState lastRocketNasState;
 
     // TODO: See if assumption has sense...
     /* GPS coordinates of the antenna [lat, lon] [deg, deg],

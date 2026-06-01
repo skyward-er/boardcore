@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <algorithms/NAS/NASState.h>
+#include <algorithms/ANAS/ANASData.h>
 
 #include <Eigen/Core>
 #include <ostream>
@@ -41,7 +41,7 @@ struct PropagatorState
 {
     uint64_t timestamp;      ///< Prediction timestamp (ARP timestamp) [ms]
     uint32_t nPropagations;  ///< Predictions from last received NAS state
-    NASState nas;
+    ANASState nas;
 
     float az                  = 0;
     static constexpr float ax = 0,
@@ -49,7 +49,7 @@ struct PropagatorState
     PropagatorState() : timestamp(0), nPropagations(0), nas() {}
 
     PropagatorState(uint64_t timestamp, uint32_t nPropagations,
-                    NASState nasState)
+                    ANASState nasState)
         : timestamp(timestamp), nPropagations(nPropagations), nas(nasState)
     {
     }
@@ -61,12 +61,11 @@ struct PropagatorState
             FIELD_DEF(timestamp) FIELD_DEF(nPropagations) FIELD_DEF2(nas, n)
                 FIELD_DEF2(nas, e) FIELD_DEF2(nas, d) FIELD_DEF2(nas, vn)
                     FIELD_DEF2(nas, ve) FIELD_DEF2(nas, vd) FIELD_DEF2(nas, qx)
-                        FIELD_DEF2(nas, qy) FIELD_DEF2(nas, qz) FIELD_DEF2(
-                            nas, qw) FIELD_DEF2(nas, bx) FIELD_DEF2(nas, by)
-                            FIELD_DEF2(nas, bz) FIELD_DEF(az));
+                        FIELD_DEF2(nas, qy) FIELD_DEF2(nas, qz)
+                            FIELD_DEF2(nas, qw) FIELD_DEF(az));
     }
 
-    NASState getNasState() const { return nas; }
+    ANASState getNasState() const { return nas; }
 
     /**
      * @brief Getter for the vector of positions NED
@@ -154,16 +153,6 @@ struct PropagatorState
      * @return Eigen::Vector3f the quaternions' bias vector
      */
     Eigen::Vector3f getBProp() { return Eigen::Vector3f(nas.n, nas.e, nas.d); }
-
-    /**
-     * @brief Setter for the vector of quaternions' bias
-     */
-    void setBProp(Eigen::Vector3f bProp)
-    {
-        nas.bx = bProp(0);
-        nas.by = bProp(1);
-        nas.bz = bProp(2);
-    }
 };
 
 }  // namespace Boardcore
