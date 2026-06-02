@@ -34,8 +34,8 @@
 
 #define MIOSIX_SENSOR_UBXGPS_SPI SPI3
 #define MIOSIX_SENSOR_LIS2MDL_INT_SPI SPI3
-#define MIOSIX_SENSOR_LSM6DSRX_0_SPI SPI3
-#define MIOSIX_SENSOR_LSM6DSRX_1_SPI SPI3
+#define MIOSIX_SENSOR_LSM6DSRX_LOW_SPI SPI3
+#define MIOSIX_SENSOR_LSM6DSRX_HIGH_SPI SPI3
 
 #define MIOSIX_SENSOR_ADS131M08_SPI SPI4
 #define MIOSIX_SENSOR_ND015A_0_SPI SPI4
@@ -91,7 +91,7 @@ using miso = Gpio<GPIOB_BASE, 14>;
 using mosi = Gpio<GPIOC_BASE, 3>;
 }  // namespace spi2
 
-// UBXGPS, LIS2MDL_INT, LSM6DSRX_0, LSM6DSRX_1, VN100
+// UBXGPS, LIS2MDL_INT, LSM6DSRX_LOW, LSM6DSRX_HIGH, VN100
 namespace spi3
 {
 using sck  = Gpio<GPIOB_BASE, 3>;
@@ -194,12 +194,12 @@ namespace LIS2MDL_INT
 using cs = Gpio<GPIOC_BASE, 4>;
 }
 
-namespace LSM6DSRX_0
+namespace LSM6DSRX_LOW
 {
 using cs = Gpio<GPIOC_BASE, 5>;
 }
 
-namespace LSM6DSRX_1
+namespace LSM6DSRX_HIGH
 {
 using cs = Gpio<GPIOG_BASE, 7>;
 }
