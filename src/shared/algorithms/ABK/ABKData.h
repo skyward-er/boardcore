@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio, Emilio Corigliano
+/* Copyright (c) 2026 Skyward Experimental Rocketry
+ * Author: Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,46 +22,32 @@
 
 #pragma once
 
+#include <reflect.hpp>
+
+#include "ABK_types.h"
+
 namespace Boardcore
 {
 
-struct AirBrakesInterpPIDConfig
+struct ABKLogsData
 {
-    // Minimum altitude for the filter to consider
-    float FILTER_MINIMUM_ALTITUDE;
+    uint64_t timestamp;
+    ABK_types_h_::ABKLogs ABKLogs;
 
-    // Maximum altitude for the filter to consider
-    float FILTER_MAXIMUM_ALTITUDE;
+    ABKLogsData() : timestamp(0), ABKLogs() {};
 
-    // Normalized value [0-1] that represents the minimum filtering action that
-    // the applied filter can do.
-    float STARTING_FILTER_VALUE;
+    ABKLogsData(uint64_t timestamp, ABK_types_h_::ABKLogs abkLogs)
+        : timestamp(timestamp), ABKLogs(abkLogs) {};
 
-    // Altitude after which the output should be the maximum extension
-    float ABK_CRITICAL_ALTITUDE;
-
-    // The delta in altitude between consequent trajectory points
-    float DZ;
-
-    // The mass correspondent to the first trajectory
-    float INITIAL_MASS;
-
-    // The delta in mass between consequent trajectory sets
-    float DM;
-
-    // The frequency of the ABK task
-    float ARB_FREQ;
-
-    // The pid reference (idk what this i, ask GNC)
-    float PID_REF;
-
-    // Pid coefficients
-    float KP;
-    float KI;
-    float KD;
-
-    // Number of steps to look forward into the reference trajectories
-    uint16_t N_FORWARD;
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            ABKLogsData, FIELD_DEF(timestamp) FIELD_DEF2(ABKLogs, ABKCommand)
+                             FIELD_DEF2(ABKLogs, FilterCoefficient)
+                                 FIELD_DEF2(ABKLogs, PrePIDCommand)
+                                     FIELD_DEF2(ABKLogs, PostPIDCommand)
+                                         FIELD_DEF2(ABKLogs, BypassActivation));
+    }
 };
 
 }  // namespace Boardcore

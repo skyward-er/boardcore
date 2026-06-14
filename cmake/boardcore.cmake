@@ -42,9 +42,8 @@ set(BOARDCORE_SRC
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/ABK.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/ABK_data.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0_data.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0.cpp
