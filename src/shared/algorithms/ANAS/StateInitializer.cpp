@@ -52,18 +52,23 @@ Vector4f StateInitializer::eCompass(const Vector3f& acc, const Vector3f& mag)
 Vector4f StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
                                  const Vector3f& nedMag)
 {
-    // The gravity vector is expected to be read inversely because
-    // accelerometers read the binding reaction
-    Vector3f nedAcc(0.0f, 0.0f, -1.0f);
+    Vector3f nedAcc(0.0f, 0.0f, 1.0f);
+
+    // Rotate the NED magnetic vector from right-hand to left-hand
+    Matrix3f magSXRot;
+    magSXRot << 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f;
+
+    // Apply rotation to the input `nedMag`
+    Vector3f nedMagRot = magSXRot * nedMag;
 
     // Compute the reference triad
     Vector3f R1 = nedAcc;
-    Vector3f R2 = nedAcc.cross(nedMag).normalized();
+    Vector3f R2 = nedAcc.cross(nedMagRot).normalized();
     Vector3f R3 = R1.cross(R2);
 
     // Compute the measured triad
-    Vector3f r1 = acc;
-    Vector3f r2 = acc.cross(mag).normalized();
+    Vector3f r1 = -acc;
+    Vector3f r2 = -acc.cross(mag).normalized();
     Vector3f r3 = r1.cross(r2);
 
     // Compose the reference and measured matrixes
@@ -78,7 +83,11 @@ Vector4f StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
     Matrix3f A = m * M.transpose();
     Vector4f q = SkyQuaternion::rotationMatrix2quat(A);
 
-    return q;
+    // Switch from scalar-last to scalar-first convention
+    Vector4f quat;
+    quat << q(3), q(0), q(1), q(2);
+
+    return quat;
 }
 
 }  // namespace Boardcore

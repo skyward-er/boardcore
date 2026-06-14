@@ -57,6 +57,13 @@ struct ANASState
           vn(velocity[0]), ve(velocity[1]), vd(velocity[2]), qx(quaternions[0]),
           qy(quaternions[1]), qz(quaternions[2]), qw(quaternions[3]) {};
 
+    ANASState(uint64_t timestamp, const ANAS0_types_h_::ANASOut& anasOut)
+        : timestamp(timestamp), n(anasOut.Position[0]), e(anasOut.Position[1]),
+          d(anasOut.Position[2]), vn(anasOut.Velocity[0]),
+          ve(anasOut.Velocity[1]), vd(anasOut.Velocity[2]),
+          qx(anasOut.Quaternion[0]), qy(anasOut.Quaternion[1]),
+          qz(anasOut.Quaternion[2]), qw(anasOut.Quaternion[3]) {};
+
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ANASState,
@@ -69,26 +76,29 @@ struct ANASState
 
 struct ANASLogsData
 {
-    uint64_t timestamp;
     ANAS0_types_h_::ANASLogs ANASLogs;
 
-    ANASLogsData() : timestamp(0), ANASLogs() {};
+    ANASLogsData() : ANASLogs() {};
+
+    ANASLogsData(ANAS0_types_h_::ANASLogs anasLogs) : ANASLogs(anasLogs) {};
 
     ANASLogsData(uint64_t timestamp, ANAS0_types_h_::ANASLogs anasLogs)
-        : timestamp(timestamp), ANASLogs(anasLogs) {};
+        : ANASLogs(anasLogs)
+    {
+        ANASLogs.Timestamp = timestamp;
+    };
 
     static constexpr auto reflect()
     {
         return STRUCT_DEF(
             ANASLogsData,
-            FIELD_DEF(timestamp) FIELD_DEF2(ANASLogs, Velocity)
-                FIELD_DEF2(ANASLogs, Quaternion)
+            FIELD_DEF2(ANASLogs, Timestamp) FIELD_DEF2(ANASLogs, Position)
+                FIELD_DEF2(ANASLogs, Velocity) FIELD_DEF2(ANASLogs, Quaternion)
                     FIELD_DEF2(ANASLogs, CovarianceMatrixDiagonal)
                         FIELD_DEF2(ANASLogs, BaroPitotActivation)
                             FIELD_DEF2(ANASLogs, GPSActivation)
                                 FIELD_DEF2(ANASLogs, MagActivation)
-                                    FIELD_DEF2(ANASLogs, AccActivation)
-                                        FIELD_DEF2(ANASLogs, Position));
+                                    FIELD_DEF2(ANASLogs, AccActivation));
     }
 };
 

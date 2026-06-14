@@ -28,19 +28,26 @@
 namespace Boardcore
 {
 
-struct SDALogsWrapper : public Kriging0_types_h_::SDALogs
+struct SDALogsWrapper
 {
-    explicit SDALogsWrapper(Kriging0_types_h_::SDALogs data)
-        : Kriging0_types_h_::SDALogs(data)
-    {
-    }
+    Kriging0_types_h_::SDALogs logs;
 
-    SDALogsWrapper() {}
+    SDALogsWrapper() : logs() {};
+
+    SDALogsWrapper(Kriging0_types_h_::SDALogs logs) : logs(logs) {};
+
+    SDALogsWrapper(Kriging0_types_h_::SDALogs logs, uint64_t timestamp)
+        : logs(logs)
+    {
+        this->logs.Timestamp = timestamp;
+    };
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(SDALogsWrapper,
-                          EXTEND_DEF(Kriging0_types_h_::SDALogs));
+        return STRUCT_DEF(
+            SDALogsWrapper,
+            FIELD_DEF2(logs, ShutdownCommand) FIELD_DEF2(logs, Timestamp)
+                FIELD_DEF2(logs, ShutdownCounter) FIELD_DEF2(logs, Apogee));
     }
 };
 

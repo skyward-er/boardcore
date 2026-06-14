@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'ANAS0'.
 //
-// Model version                  : 11.276
+// Model version                  : 11.296
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Fri May 29 18:43:15 2026
+// C/C++ source code generated on : Mon Jun  8 17:58:37 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -23,10 +23,37 @@
 #define ANAS0_types_h_
 #include <stdint.h>
 #include <stdbool.h>
+#ifndef DEFINED_TYPEDEF_FOR_ANASIn_
+#define DEFINED_TYPEDEF_FOR_ANASIn_
+
+// Input Structure for ANAS GNC Algorithm
+struct ANASIn
+{
+  float AccMeasure[3];
+  uint64_t AccTimestamp;
+  float GyroMeasure[3];
+  uint64_t GyroTimestamp;
+  float BaroMeasure;
+  uint64_t BaroTimestamp;
+  float GPSMeasure[4];
+  float GPSHorizontalPrecision;
+  float GPSSpeedPrecision;
+  bool GPSFix;
+  uint64_t GPSTimestamp;
+  float PitotMeasure[2];
+  uint64_t PitotTimestamp;
+  float MagMeasure[3];
+  uint64_t MagTimestamp;
+  float ABKCommand;
+  bool FlyingState;
+};
+
+#endif
+
 #ifndef DEFINED_TYPEDEF_FOR_ANASReference_
 #define DEFINED_TYPEDEF_FOR_ANASReference_
 
-// ISA Reference and Initial States Setter Input Structure for NASDAQ GNC Algorithm 
+// ISA Reference and Initial States Setter Input Structure for ANAS GNC Algorithm 
 struct ANASReference
 {
   float GroundTemperature;
@@ -34,6 +61,7 @@ struct ANASReference
   float InitialPosition[3];
   float InitialVelocity[3];
   float InitialQuaternion[4];
+  float InitialCovariance[81];
 };
 
 #endif
@@ -52,19 +80,6 @@ struct ANASOut
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
-#define DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
-
-// Output Structure for ANAS GNC Algorithm used for NASDAQ GNC Algorithm initialization 
-struct ANAS_NASDAQ
-{
-  float LinearCovariance[36];
-  float Position[3];
-  float Velocity[3];
-};
-
-#endif
-
 #ifndef DEFINED_TYPEDEF_FOR_ANASLogs_
 #define DEFINED_TYPEDEF_FOR_ANASLogs_
 
@@ -75,7 +90,7 @@ struct ANASLogs
   float Position[3];
   float Velocity[3];
   float Quaternion[4];
-  float CovarianceMatrixDiagonal[6];
+  float CovarianceMatrixDiagonal[9];
   uint8_t BaroPitotActivation;
   bool GPSActivation;
   bool MagActivation;
@@ -84,28 +99,15 @@ struct ANASLogs
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_ANASIn_
-#define DEFINED_TYPEDEF_FOR_ANASIn_
+#ifndef DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
+#define DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
 
-// Input Structure for ANAS GNC Algorithm
-struct ANASIn
+// Output Structure for ANAS GNC Algorithm used for NASDAQ GNC Algorithm initialization 
+struct ANAS_NASDAQ
 {
-  float AccMeasure[3];
-  uint64_t AccTimestamp;
-  float GyroMeasure[3];
-  uint64_t GyroTimestamp;
-  float BaroMeasure;
-  uint64_t BaroTimestamp;
-  float GPSMeasure[4];
-  float GPSHorizontalPrecision;
-  float GPSSpeedPrecision;
-  uint64_t GPSTimestamp;
-  float PitotMeasure[2];
-  uint64_t PitotTimestamp;
-  float MagMeasure[3];
-  uint64_t MagTimestamp;
-  float ABKCommand;
-  bool FlyingState;
+  float LinearCovariance[36];
+  float Position[3];
+  float Velocity[3];
 };
 
 #endif
