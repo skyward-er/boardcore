@@ -55,6 +55,7 @@ set(BOARDCORE_SRC
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/WingController/wingController_data.cpp
 
     # Debug
     ${BOARDCORE_PATH}/src/shared/utils/Debug.cpp
