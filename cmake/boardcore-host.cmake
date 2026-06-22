@@ -34,9 +34,6 @@ set(BOARDCORE_HOST_SRC
 
     # Algorithms
     ${SBS_BASE}/src/shared/algorithms/MEA/MEA.cpp
-    ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
-    ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
-    ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
 
     # Logger
