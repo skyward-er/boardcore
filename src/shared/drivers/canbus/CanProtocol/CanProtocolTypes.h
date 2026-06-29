@@ -232,7 +232,7 @@ struct CanMeaData : MeaData
 struct ServoFeedback
 {
     uint64_t timestamp = 0;
-    float aperture     = 0;
+    uint8_t position   = 0;
     bool open          = false;
 
     static constexpr auto reflect()
@@ -268,6 +268,17 @@ struct CanEvent
                                         FIELD_DEF(target) FIELD_DEF(event));
     }
 };
+
+inline Canbus::CanMessage toCanMessage(const uint8_t& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = static_cast<uint8_t>(data);
+
+    return message;
+}
 
 struct SequenceConfig
 {
@@ -492,7 +503,7 @@ inline Canbus::CanMessage toCanMessage(const ServoFeedback& data)
     message.id         = -1;
     message.length     = 1;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= static_cast<uint16_t>(data.aperture * 65535);
+    message.payload[0] |= data.position << 24;
     message.payload[0] |= (data.open ? 1 : 0) << 16;
 
     return message;
@@ -690,7 +701,7 @@ inline CanServoFeedback servoFeedbackFromCanMessage(
     CanServoFeedback data;
 
     data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
-    data.aperture      = static_cast<uint16_t>(msg.payload[0]) / 65535.f;
+    data.position      = static_cast<uint8_t>(msg.payload[0] >> 24);
     data.open          = ((msg.payload[0] >> 16) & 1) != 0;
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
