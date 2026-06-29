@@ -319,6 +319,18 @@ struct CanEvent
     }
 };
 
+// TODO Serve veramente castare? Non penso
+inline Canbus::CanMessage toCanMessage(const uint8_t& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = static_cast<uint8_t>(data);
+
+    return message;
+}
+
 inline Canbus::CanMessage toCanMessage(const PitotData& data)
 {
     Canbus::CanMessage message;
