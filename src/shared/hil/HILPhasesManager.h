@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <algorithms/AirBrakes/TrajectoryPoint.h>
 #include <diagnostic/PrintLogger.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <events/Event.h>
@@ -60,9 +59,7 @@ struct Outcomes
 class HILPhasesManagerBase : public EventHandler
 {
 public:
-    explicit HILPhasesManagerBase(
-        std::function<TimedTrajectoryPoint()> getCurrentPosition)
-        : EventHandler(), getCurrentPosition(getCurrentPosition)
+    explicit HILPhasesManagerBase()
     {
     }
 
@@ -90,7 +87,6 @@ protected:
     uint64_t t_start   = 0;
     uint64_t t_liftoff = 0;
     uint64_t t_stop    = 0;
-    std::function<TimedTrajectoryPoint()> getCurrentPosition;
     PrintLogger logger = Logging::getLogger("HILPhasesManager");
 };
 
@@ -105,8 +101,7 @@ class HILPhasesManager : public HILPhasesManagerBase
 public:
     using PhasesCallback = std::function<void()>;
 
-    explicit HILPhasesManager(
-        std::function<TimedTrajectoryPoint()> getCurrentPosition)
+    explicit HILPhasesManager()
         : HILPhasesManagerBase(getCurrentPosition)
     {
     }
