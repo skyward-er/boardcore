@@ -3,13 +3,13 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// File: ABK_types.h
+// File: SDA_types.h
 //
-// Code generated for Simulink model 'ABK'.
+// Code generated for Simulink model 'SDA'.
 //
-// Model version                  : 11.328
+// Model version                  : 11.329
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:42:34 2026
+// C/C++ source code generated on : Mon Jun 29 14:46:21 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -19,31 +19,29 @@
 //    3. RAM efficiency
 // Validation result: Not run
 //
-#ifndef ABK_types_h_
-#define ABK_types_h_
-#include <stdint.h>
+#ifndef SDA_types_h_
+#define SDA_types_h_
 #include <stdbool.h>
-#ifndef DEFINED_TYPEDEF_FOR_ABKLogs_
-#define DEFINED_TYPEDEF_FOR_ABKLogs_
+#include <stdint.h>
+#ifndef DEFINED_TYPEDEF_FOR_SDALogs_
+#define DEFINED_TYPEDEF_FOR_SDALogs_
 
-// Output Structure for ABK GNC Algorithm used for OBSW Logging
-struct ABKLogs
+// Output Structure for SDA GNC Algorithm used for OBSW Logging
+struct SDALogs
 {
-  float ABKCommand;
+  bool ShutdownCommand;
   uint64_t Timestamp;
-  float FilterCoefficient;
-  float PrePIDCommand;
-  float PostPIDCommand;
-  bool BypassActivation;
+  uint8_t ShutdownCounter;
+  float Apogee[3];
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_ABKIn_
-#define DEFINED_TYPEDEF_FOR_ABKIn_
+#ifndef DEFINED_TYPEDEF_FOR_SDAIn_
+#define DEFINED_TYPEDEF_FOR_SDAIn_
 
-// Input Structure for ABK GNC Algorithm
-struct ABKIn
+// Input Structure for SDA GNC Algorithm
+struct SDAIn
 {
   float MEAMass;
   float ANASPosition[3];
@@ -51,7 +49,7 @@ struct ABKIn
 };
 
 #endif
-#endif                                 // ABK_types_h_
+#endif                                 // SDA_types_h_
 
 //
 // File trailer for generated code.

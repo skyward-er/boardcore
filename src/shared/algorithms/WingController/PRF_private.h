@@ -3,13 +3,13 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// File: NASDAQ0_private.h
+// File: PRF_private.h
 //
-// Code generated for Simulink model 'NASDAQ0'.
+// Code generated for Simulink model 'PRF'.
 //
 // Model version                  : 11.328
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:37:08 2026
+// C/C++ source code generated on : Mon Jun 29 09:49:15 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -19,18 +19,16 @@
 //    3. RAM efficiency
 // Validation result: Not run
 //
-#ifndef NASDAQ0_private_h_
-#define NASDAQ0_private_h_
+#ifndef PRF_private_h_
+#define PRF_private_h_
 #include <stdbool.h>
 #include <stdint.h>
-#include "NASDAQ0_types.h"
-#include "dsp_rt.h"    // DSP System Toolbox general run time support functions
+#include "zero_crossing_types.h"
+#include "PRF_types.h"
 
-extern void LUf_boolfloatint32_t(float outU[], float outP[], int32_t N, bool
-  outS[]);
-extern void rt_mrdivide_U1f6x4_U2f4x4_Yf6x4(float u0[24], const float u1[16]);
+extern float rt_modf(float u0, float u1);
 
-#endif                                 // NASDAQ0_private_h_
+#endif                                 // PRF_private_h_
 
 //
 // File trailer for generated code.

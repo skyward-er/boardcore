@@ -24,7 +24,7 @@
 
 #include <reflect.hpp>
 
-#include "wingController_types.h"
+#include "PRF_types.h"
 
 namespace Boardcore
 {
@@ -32,12 +32,12 @@ namespace Boardcore
 struct WingControllerLogsData
 {
     uint64_t timestamp;
-    wingController_types_h_::PRFLogs PRFLogs;
+    PRF_types_h_::PRFLogs PRFLogs;
 
     WingControllerLogsData() : timestamp(0), PRFLogs() {};
 
     WingControllerLogsData(uint64_t timestamp,
-                           wingController_types_h_::PRFLogs wingControllerLogs)
+                           PRF_types_h_::PRFLogs wingControllerLogs)
         : timestamp(timestamp), PRFLogs(wingControllerLogs) {};
 
     static constexpr auto reflect()

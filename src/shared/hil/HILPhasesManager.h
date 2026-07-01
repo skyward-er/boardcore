@@ -102,7 +102,7 @@ public:
     using PhasesCallback = std::function<void()>;
 
     explicit HILPhasesManager()
-        : HILPhasesManagerBase(getCurrentPosition)
+        : HILPhasesManagerBase()
     {
     }
 
@@ -161,8 +161,8 @@ protected:
 
     void registerOutcomes(const FlightPhases& phase)
     {
-        TimedTrajectoryPoint temp = getCurrentPosition();
-        outcomes[phase]           = Outcomes(temp.z, temp.vz);
+        //TimedTrajectoryPoint temp = getCurrentPosition();
+        //outcomes[phase]           = Outcomes(temp.z, temp.vz);
     }
 
     bool isSetTrue(const FlightPhases& phase) const

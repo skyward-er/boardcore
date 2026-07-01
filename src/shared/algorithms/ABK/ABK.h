@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'ABK'.
 //
-// Model version                  : 11.280
+// Model version                  : 11.328
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun  1 12:33:18 2026
+// C/C++ source code generated on : Mon Jun 29 09:42:34 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -25,6 +25,10 @@
 #include <stdint.h>
 #include "ABK_types.h"
 #include "zero_crossing_types.h"
+
+namespace ABK 
+{
+
 
 // Exported data declaration
 
@@ -45,14 +49,13 @@ class ABK final
     float Memory_PreviousInput[2];     // '<S17>/Memory'
     float Memory3_PreviousInput[2];    // '<S17>/Memory3'
     float Massselector[1806];          // '<S6>/Mass selector'
-    float fullOpen;                    // '<S18>/fullOpen'
     float UnitDelay_DSTATE;            // '<S2>/Unit Delay'
-    float Memory_PreviousInput_d;      // '<S13>/Memory'
+    float Memory_PreviousInput_h;      // '<S13>/Memory'
     int8_t If_ActiveSubsystem;         // '<S1>/If'
-    int8_t If_ActiveSubsystem_e;       // '<S2>/If'
+    int8_t If_ActiveSubsystem_k;       // '<S2>/If'
     uint8_t massIndex;                 // '<S6>/Mass_Prelookup'
     uint8_t UnitDelay1_DSTATE;         // '<S2>/Unit Delay1'
-    bool Memory_PreviousInput_g;       // '<S16>/Memory'
+    bool UnitDelay_DSTATE_l;           // '<S16>/Unit Delay'
     bool Memory1_PreviousInput;        // '<S13>/Memory1'
   };
 
@@ -63,7 +66,7 @@ class ABK final
 
   // External inputs (root inport signals with default storage)
   struct ExtU_ABK_T {
-    ABKIn ABKIn_e;                     // '<Root>/ABK In'
+    ABKIn ABKIn_l;                     // '<Root>/ABK In'
   };
 
   // External outputs (root outports fed by signals with default storage)
@@ -81,7 +84,7 @@ class ABK final
                                           //  Referenced by: '<S15>/Constant'
 
     float FullOpen_compare_const_o;  // Mask Parameter: FullOpen_compare_const_o
-                                        //  Referenced by: '<S19>/Constant'
+                                        //  Referenced by: '<S18>/Constant'
 
     ABKLogs ABKLogsOBSW_Outport_2_Y0;
                                  // Computed Parameter: ABKLogsOBSW_Outport_2_Y0
@@ -91,22 +94,22 @@ class ABK final
                                           //  Referenced by: '<S2>/ABK Logs OBSW'
 
     double zColumn_Value[301];         // Expression: abkTrajectoryF(:,1,1)
-                                          //  Referenced by: '<S20>/zColumn'
+                                          //  Referenced by: '<S19>/zColumn'
 
     double SeaLevelTemperature_Value;  // Expression: T0
-                                          //  Referenced by: '<S23>/Sea Level  Temperature'
+                                          //  Referenced by: '<S22>/Sea Level  Temperature'
 
     double Limitaltitudetotroposhere_Upper;// Expression: h_trop
-                                              //  Referenced by: '<S23>/Limit  altitude  to troposhere'
+                                              //  Referenced by: '<S22>/Limit  altitude  to troposhere'
 
     double Limitaltitudetotroposhere_Lower;// Expression: h0
-                                              //  Referenced by: '<S23>/Limit  altitude  to troposhere'
+                                              //  Referenced by: '<S22>/Limit  altitude  to troposhere'
 
     double LapseRate_Gain;             // Expression: L
-                                          //  Referenced by: '<S23>/Lapse Rate'
+                                          //  Referenced by: '<S22>/Lapse Rate'
 
     double gammaR_Gain;                // Expression: gamma*R
-                                          //  Referenced by: '<S23>/gamma*R'
+                                          //  Referenced by: '<S22>/gamma*R'
 
     float traj_Y0;                     // Computed Parameter: traj_Y0
                                           //  Referenced by: '<S6>/traj'
@@ -157,36 +160,21 @@ class ABK final
     float Saturation_LowerSat;        // Computed Parameter: Saturation_LowerSat
                                          //  Referenced by: '<S13>/Saturation'
 
-    float fullOpen_Value;              // Computed Parameter: fullOpen_Value
-                                          //  Referenced by: '<S18>/fullOpen'
-
-    float T_refGain_Gain;              // Computed Parameter: T_refGain_Gain
-                                          //  Referenced by: '<S20>/T_refGain'
-
-    float Saturation2_UpperSat;      // Computed Parameter: Saturation2_UpperSat
-                                        //  Referenced by: '<S20>/Saturation2'
-
-    float Saturation2_LowerSat;      // Computed Parameter: Saturation2_LowerSat
-                                        //  Referenced by: '<S20>/Saturation2'
-
-    float Bias3_Bias;                  // Computed Parameter: Bias3_Bias
-                                          //  Referenced by: '<S20>/Bias3'
-
-    float Saturation_UpperSat_b;    // Computed Parameter: Saturation_UpperSat_b
+    float Saturation_UpperSat_m;    // Computed Parameter: Saturation_UpperSat_m
                                        //  Referenced by: '<S17>/Saturation'
 
-    float Saturation_LowerSat_f;    // Computed Parameter: Saturation_LowerSat_f
+    float Saturation_LowerSat_p;    // Computed Parameter: Saturation_LowerSat_p
                                        //  Referenced by: '<S17>/Saturation'
 
     float Trajectorydifference_Value[3311];
                                // Computed Parameter: Trajectorydifference_Value
-                                  //  Referenced by: '<S20>/Trajectory difference'
+                                  //  Referenced by: '<S19>/Trajectory difference'
 
     float coeffb_Value[3];             // Computed Parameter: coeffb_Value
                                           //  Referenced by: '<S17>/coeff b'
 
-    float Memory_InitialCondition_j;
-                                // Computed Parameter: Memory_InitialCondition_j
+    float Memory_InitialCondition_f;
+                                // Computed Parameter: Memory_InitialCondition_f
                                    //  Referenced by: '<S17>/Memory'
 
     float coeffa_Value[2];             // Computed Parameter: coeffa_Value
@@ -195,6 +183,21 @@ class ABK final
     float Memory3_InitialCondition;
                                  // Computed Parameter: Memory3_InitialCondition
                                     //  Referenced by: '<S17>/Memory3'
+
+    float T_refGain_Gain;              // Computed Parameter: T_refGain_Gain
+                                          //  Referenced by: '<S19>/T_refGain'
+
+    float Saturation2_UpperSat;      // Computed Parameter: Saturation2_UpperSat
+                                        //  Referenced by: '<S19>/Saturation2'
+
+    float Saturation2_LowerSat;      // Computed Parameter: Saturation2_LowerSat
+                                        //  Referenced by: '<S19>/Saturation2'
+
+    float Bias3_Bias;                  // Computed Parameter: Bias3_Bias
+                                          //  Referenced by: '<S19>/Bias3'
+
+    float fullOpen_Value;              // Computed Parameter: fullOpen_Value
+                                          //  Referenced by: '<S16>/fullOpen'
 
     float Extensions_Value[5];         // Computed Parameter: Extensions_Value
                                           //  Referenced by: '<S10>/Extensions'
@@ -212,10 +215,10 @@ class ABK final
                                // Computed Parameter: UnitDelay_InitialCondition
                                   //  Referenced by: '<S2>/Unit Delay'
 
-    float Constant_Value_c;            // Computed Parameter: Constant_Value_c
+    float Constant_Value_o;            // Computed Parameter: Constant_Value_o
                                           //  Referenced by: '<S4>/Constant'
 
-    float Gain_Gain_l;                 // Computed Parameter: Gain_Gain_l
+    float Gain_Gain_f;                 // Computed Parameter: Gain_Gain_f
                                           //  Referenced by: '<S3>/Gain'
 
     float Constant1_Value;             // Computed Parameter: Constant1_Value
@@ -224,19 +227,18 @@ class ABK final
     uint32_t Bias_Bias;                // Computed Parameter: Bias_Bias
                                           //  Referenced by: '<S9>/Bias'
 
-    uint16_t Bias_Bias_b;              // Computed Parameter: Bias_Bias_b
-                                          //  Referenced by: '<S20>/Bias'
+    uint16_t Bias_Bias_g;              // Computed Parameter: Bias_Bias_g
+                                          //  Referenced by: '<S19>/Bias'
 
-    uint16_t Bias_Bias_c;              // Computed Parameter: Bias_Bias_c
+    uint16_t Bias_Bias_l;              // Computed Parameter: Bias_Bias_l
                                           //  Referenced by: '<S10>/Bias'
 
     bool Memory1_InitialCondition;
                                  // Computed Parameter: Memory1_InitialCondition
                                     //  Referenced by: '<S13>/Memory1'
 
-    bool Memory_InitialCondition_b;
-                                // Computed Parameter: Memory_InitialCondition_b
-                                   //  Referenced by: '<S16>/Memory'
+    bool UnitDelay_InitialCondition_e; // Expression: false
+                                          //  Referenced by: '<S16>/Unit Delay'
 
     uint8_t massIndex_Y0;              // Computed Parameter: massIndex_Y0
                                           //  Referenced by: '<S6>/massIndex'
@@ -244,13 +246,13 @@ class ABK final
     uint8_t UnitDelay1_InitialCondition;// Expression: uint8(0)
                                            //  Referenced by: '<S2>/Unit Delay1'
 
-    uint8_t Bias_Bias_a;               // Computed Parameter: Bias_Bias_a
+    uint8_t Bias_Bias_c;               // Computed Parameter: Bias_Bias_c
                                           //  Referenced by: '<S2>/Bias'
 
-    uint8_t Saturation_UpperSat_d;  // Computed Parameter: Saturation_UpperSat_d
+    uint8_t Saturation_UpperSat_h;  // Computed Parameter: Saturation_UpperSat_h
                                        //  Referenced by: '<S2>/Saturation'
 
-    uint8_t Saturation_LowerSat_c;  // Computed Parameter: Saturation_LowerSat_c
+    uint8_t Saturation_LowerSat_k;  // Computed Parameter: Saturation_LowerSat_k
                                        //  Referenced by: '<S2>/Saturation'
 
   };
@@ -270,7 +272,7 @@ class ABK final
   // Root inport: '<Root>/ABK In' set method
   void setABK_In(ABKIn localArgInput)
   {
-    ABK_U.ABKIn_e = localArgInput;
+    ABK_U.ABKIn_l = localArgInput;
   }
 
   // Root outport: '<Root>/ABK Control' get method
@@ -333,32 +335,32 @@ class ABK final
 //-
 //  These blocks were eliminated from the model due to optimizations:
 //
-//  Block '<S21>/Add' : Unused code path elimination
-//  Block '<S21>/Constant' : Unused code path elimination
-//  Block '<S21>/Constant1' : Unused code path elimination
-//  Block '<S21>/Data Type Conversion' : Unused code path elimination
-//  Block '<S21>/Data Type Conversion2' : Unused code path elimination
-//  Block '<S21>/Data Type Conversion3' : Unused code path elimination
-//  Block '<S21>/Divide' : Unused code path elimination
-//  Block '<S21>/Divide1' : Unused code path elimination
-//  Block '<S21>/Gain' : Unused code path elimination
-//  Block '<S23>/(T//T0)^(g//LR) ' : Unused code path elimination
-//  Block '<S23>/1//T0' : Unused code path elimination
-//  Block '<S23>/Altitude of Troposphere' : Unused code path elimination
-//  Block '<S23>/Constant' : Unused code path elimination
-//  Block '<S23>/Limit  altitude  to Stratosphere' : Unused code path elimination
-//  Block '<S23>/P0' : Unused code path elimination
-//  Block '<S23>/Product' : Unused code path elimination
-//  Block '<S23>/Product1' : Unused code path elimination
-//  Block '<S23>/Product2' : Unused code path elimination
-//  Block '<S23>/Product3' : Unused code path elimination
-//  Block '<S23>/Stratosphere Model' : Unused code path elimination
-//  Block '<S23>/Sum' : Unused code path elimination
-//  Block '<S23>/g//R' : Unused code path elimination
-//  Block '<S23>/rho0' : Unused code path elimination
-//  Block '<S21>/Power' : Unused code path elimination
-//  Block '<S21>/dynVisc Conversion' : Unused code path elimination
-//  Block '<S21>/kineVisc Conversion' : Unused code path elimination
+//  Block '<S20>/Add' : Unused code path elimination
+//  Block '<S20>/Constant' : Unused code path elimination
+//  Block '<S20>/Constant1' : Unused code path elimination
+//  Block '<S20>/Data Type Conversion' : Unused code path elimination
+//  Block '<S20>/Data Type Conversion2' : Unused code path elimination
+//  Block '<S20>/Data Type Conversion3' : Unused code path elimination
+//  Block '<S20>/Divide' : Unused code path elimination
+//  Block '<S20>/Divide1' : Unused code path elimination
+//  Block '<S20>/Gain' : Unused code path elimination
+//  Block '<S22>/(T//T0)^(g//LR) ' : Unused code path elimination
+//  Block '<S22>/1//T0' : Unused code path elimination
+//  Block '<S22>/Altitude of Troposphere' : Unused code path elimination
+//  Block '<S22>/Constant' : Unused code path elimination
+//  Block '<S22>/Limit  altitude  to Stratosphere' : Unused code path elimination
+//  Block '<S22>/P0' : Unused code path elimination
+//  Block '<S22>/Product' : Unused code path elimination
+//  Block '<S22>/Product1' : Unused code path elimination
+//  Block '<S22>/Product2' : Unused code path elimination
+//  Block '<S22>/Product3' : Unused code path elimination
+//  Block '<S22>/Stratosphere Model' : Unused code path elimination
+//  Block '<S22>/Sum' : Unused code path elimination
+//  Block '<S22>/g//R' : Unused code path elimination
+//  Block '<S22>/rho0' : Unused code path elimination
+//  Block '<S20>/Power' : Unused code path elimination
+//  Block '<S20>/dynVisc Conversion' : Unused code path elimination
+//  Block '<S20>/kineVisc Conversion' : Unused code path elimination
 
 
 //-
@@ -373,42 +375,43 @@ class ABK final
 //  MATLAB hilite_system command to trace the generated code back
 //  to the parent model.  For example,
 //
-//  hilite_system('CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding')    - opens subsystem CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding
-//  hilite_system('CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Kp') - opens and selects block Kp
+//  hilite_system('CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK')    - opens subsystem CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK
+//  hilite_system('CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Kp') - opens and selects block Kp
 //
 //  Here is the system hierarchy for this model
 //
 //  '<Root>' : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK'
-//  '<S1>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding'
-//  '<S2>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution'
-//  '<S3>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Mach Check'
-//  '<S4>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/OverMach Protection'
-//  '<S5>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system'
-//  '<S6>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Function-Call Subsystem'
-//  '<S7>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Lower Bypass'
-//  '<S8>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Upper Bypass'
-//  '<S9>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Velocity interpolation'
-//  '<S10>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Linear interpolation'
-//  '<S11>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/PID Controller'
-//  '<S12>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Variant Filter'
-//  '<S13>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/PID Controller/ PID'
-//  '<S14>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/PID Controller/ PID/FullClose_compare'
-//  '<S15>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/PID Controller/ PID/FullOpen_compare'
-//  '<S16>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter'
-//  '<S17>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/Butterworth filter'
-//  '<S18>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/Final full opening'
-//  '<S19>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/FullOpen_compare'
-//  '<S20>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/Weight'
-//  '<S21>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Mach Check/ISA Atmosphere Model'
-//  '<S22>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Mach Check/Subsystem Reference'
-//  '<S23>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK FICA - Autocoding/Mach Check/ISA Atmosphere Model/Modelling'
+//  '<S1>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK'
+//  '<S2>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution'
+//  '<S3>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Mach Check'
+//  '<S4>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/OverMach Protection'
+//  '<S5>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system'
+//  '<S6>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Function-Call Subsystem'
+//  '<S7>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Lower Bypass'
+//  '<S8>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Upper Bypass'
+//  '<S9>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Velocity interpolation'
+//  '<S10>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/Linear interpolation'
+//  '<S11>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/PID Controller'
+//  '<S12>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/Variant Filter'
+//  '<S13>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/PID Controller/ PID'
+//  '<S14>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/PID Controller/ PID/FullClose_compare'
+//  '<S15>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/PID Controller/ PID/FullOpen_compare'
+//  '<S16>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter'
+//  '<S17>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/Butterworth filter'
+//  '<S18>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/FullOpen_compare'
+//  '<S19>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Algorothm Execution/Active control system/Variant Filter/ButterWorth Filter/Weight'
+//  '<S20>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Mach Check/ISA Atmosphere Model'
+//  '<S21>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Mach Check/Subsystem Reference'
+//  '<S22>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Airbrakes Control/ABK/ABK/Mach Check/ISA Atmosphere Model/Modelling'
 
 
 //-
 //  Requirements for '<Root>': ABK
 
 
+} // fine namespace ABK
 #endif                                 // ABK_h_
+
 
 //
 // File trailer for generated code.

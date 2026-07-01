@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include <algorithms/SDA/Kriging0_types.h>
+#include <algorithms/SDA/SDA_types.h>
 
 #include <reflect.hpp>
 
@@ -30,13 +30,13 @@ namespace Boardcore
 
 struct SDALogsWrapper
 {
-    Kriging0_types_h_::SDALogs logs;
+    SDA_types_h_::SDALogs logs;
 
     SDALogsWrapper() : logs() {};
 
-    SDALogsWrapper(Kriging0_types_h_::SDALogs logs) : logs(logs) {};
+    SDALogsWrapper(SDA_types_h_::SDALogs logs) : logs(logs) {};
 
-    SDALogsWrapper(Kriging0_types_h_::SDALogs logs, uint64_t timestamp)
+    SDALogsWrapper(SDA_types_h_::SDALogs logs, uint64_t timestamp)
         : logs(logs)
     {
         this->logs.Timestamp = timestamp;
