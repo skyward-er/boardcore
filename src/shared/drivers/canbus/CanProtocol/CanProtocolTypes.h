@@ -49,6 +49,20 @@ inline float int32ToFloat(uint32_t val)
     return val2;
 }
 
+inline uint64_t int64ToUint64(int64_t val)
+{
+    uint64_t val2 = 0;
+    std::memcpy(&val2, &val, sizeof(int64_t));
+    return val2;
+}
+
+inline int64_t uint64ToInt64(uint64_t val)
+{
+    int64_t val2 = 0;
+    std::memcpy(&val2, &val, sizeof(uint64_t));
+    return val2;
+}
+
 struct CanPitotData : PitotData
 {
     uint8_t secondaryType = 0;
@@ -164,6 +178,78 @@ struct CanDeviceStatus : DeviceStatus
     {
         return STRUCT_DEF(CanDeviceStatus,
                           EXTEND_DEF(DeviceStatus) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
+    }
+};
+
+struct AlgoData
+{
+    uint64_t timestamp = 0;
+    float value        = 0.0f;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(AlgoData, FIELD_DEF(timestamp) FIELD_DEF(value));
+    }
+};
+
+struct CanAlgoData : AlgoData
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanAlgoData, EXTEND_DEF(AlgoData) FIELD_DEF(
+                                           secondaryType) FIELD_DEF(source));
+    }
+};
+
+struct AlgoUIntData
+{
+    uint64_t timestamp = 0;
+    uint32_t value     = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(AlgoUIntData, FIELD_DEF(timestamp) FIELD_DEF(value));
+    }
+};
+
+struct CanAlgoUIntData : AlgoUIntData
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanAlgoUIntData,
+                          EXTEND_DEF(AlgoUIntData) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
+    }
+};
+
+struct AlgoMillisData
+{
+    uint64_t timestamp = 0;
+    int64_t value      = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(AlgoMillisData,
+                          FIELD_DEF(timestamp) FIELD_DEF(value));
+    }
+};
+
+struct CanAlgoMillisData : AlgoMillisData
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanAlgoMillisData,
+                          EXTEND_DEF(AlgoMillisData) FIELD_DEF(secondaryType)
                               FIELD_DEF(source));
     }
 };
@@ -340,6 +426,42 @@ inline Canbus::CanMessage toCanMessage(const DeviceStatus& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const AlgoData& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.timestamp & ~0x3) << 30;
+    message.payload[0] |= floatToInt32(data.value);
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const AlgoUIntData& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = (data.timestamp & ~0x3) << 30;
+    message.payload[0] |= data.value;
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const AlgoMillisData& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 2;
+    message.payload[0] = data.timestamp;
+    message.payload[1] = int64ToUint64(data.value);
+
+    return message;
+}
+
 inline Canbus::CanMessage toCanMessage(const ServoCommand& data)
 {
     Canbus::CanMessage message;
@@ -464,6 +586,43 @@ inline CanDeviceStatus deviceStatusFromCanMessage(const Canbus::CanMessage& msg)
     data.armed         = ((msg.payload[0] >> 24) & 1) != 0;
     data.hil           = ((msg.payload[0] >> 25) & 1) != 0;
     data.logGood       = ((msg.payload[0] >> 26) & 1) != 0;
+    data.secondaryType = msg.getSecondaryType();
+    data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanAlgoData algoDataFromCanMessage(const Canbus::CanMessage& msg)
+{
+    CanAlgoData data;
+
+    data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
+    data.value         = int32ToFloat(msg.payload[0]);
+    data.secondaryType = msg.getSecondaryType();
+    data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanAlgoUIntData algoUIntDataFromCanMessage(const Canbus::CanMessage& msg)
+{
+    CanAlgoUIntData data;
+
+    data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
+    data.value         = static_cast<uint32_t>(msg.payload[0]);
+    data.secondaryType = msg.getSecondaryType();
+    data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanAlgoMillisData algoMillisDataFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    CanAlgoMillisData data;
+
+    data.timestamp     = msg.payload[0];
+    data.value         = uint64ToInt64(msg.payload[1]);
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
 

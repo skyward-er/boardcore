@@ -70,7 +70,7 @@ public:
     ReferenceValues getReferenceValues();
 
     /**
-     * @brief Returns a pointer to the flatted Q matrix
+     * @brief Returns a pointer to the flattened Q matrix
      */
     const float* getFlatP() const;
 

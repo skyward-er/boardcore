@@ -62,6 +62,10 @@ public:
 
     /**
      * @brief Setter function for the thresholds for the Schmitt Trigger.
+     * @param thresholdLow  lower relative threshold to the target value, should
+     * be positive.
+     * @param thresholdHigh higher relative threshold to the target value,
+     * should be positive.
      */
     void setThresholds(float thresholdLow, float thresholdHigh);
 
@@ -83,15 +87,13 @@ public:
      */
     Activation getOutput();
 
-    float getCurrentTarget() { return target; }
-
 protected:
     float state  = 0.0f;
     float target = 0.0f;
     float thresholdLow;
     float thresholdHigh;
 
-    Activation activation = Activation::STOP;
+    std::atomic<Activation> activation{Activation::STOP};
 
     miosix::FastMutex schmittMutex;
 

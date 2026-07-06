@@ -84,14 +84,14 @@ VN300Data Follower::getLastAntennaAttitude()
     return lastAntennaAttitude;
 }
 
-void Follower::setLastRocketNasState(const NASState& nasState)
+void Follower::setLastRocketNasState(const ANASState& nasState)
 {
     Lock<FastMutex> lock(followerMutex);
     lastRocketNasState    = nasState;
     lastRocketNasStateSet = true;
 }
 
-NASState Follower::getLastRocketNasState()
+ANASState Follower::getLastRocketNasState()
 {
     Lock<FastMutex> lock(followerMutex);
     return lastRocketNasState;
@@ -144,7 +144,7 @@ void Follower::step()
 {
     AntennaAngles diffAngles;
     VN300Data vn300;
-    NASState lastRocketNas;
+    ANASState lastRocketNas;
     NEDCoords rocketPosition;
 
     // Read the data for the step computation

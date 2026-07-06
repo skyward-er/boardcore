@@ -7,87 +7,111 @@
 //
 // Code generated for Simulink model 'ANAS0'.
 //
-// Model version                  : 11.183
+// Model version                  : 11.296
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Thu Apr 16 13:46:31 2026
+// C/C++ source code generated on : Mon Jun  8 17:58:37 2026
 //
 // Target selection: ert.tlc
-// Embedded hardware selection: STMicroelectronics->ST10/Super10
+// Embedded hardware selection: ARM Compatible->ARM Cortex-M
 // Code generation objectives:
 //    1. Execution efficiency
 //    2. Debugging
 //    3. RAM efficiency
-// Validation result: Passed (3), Warning (1), Error (0)
+// Validation result: Not run
 //
 #ifndef ANAS0_types_h_
 #define ANAS0_types_h_
-#include <stdbool.h>
 #include <stdint.h>
-#ifndef DEFINED_TYPEDEF_FOR_NASIn_
-#define DEFINED_TYPEDEF_FOR_NASIn_
+#include <stdbool.h>
+#ifndef DEFINED_TYPEDEF_FOR_ANASIn_
+#define DEFINED_TYPEDEF_FOR_ANASIn_
 
-struct NASIn
+// Input Structure for ANAS GNC Algorithm
+struct ANASIn
 {
-    float AccMeasure[3];
-    uint32_t AccTimestamp;
-    float GyroMeasure[3];
-    uint32_t GyroTimestamp;
-    float BaroMeasure;
-    uint32_t BaroTimestamp;
-    float GPSMeasure[4];
-    uint32_t GPSTimestamp;
-    float GPSHorizAccuracy;
-    float GPSVertAccuracy;
-    float PitotMeasure[2];
-    uint32_t PitotTimestamp;
-    float MagMeasure[3];
-    uint32_t MagTimestamp;
-    float ABKCommand;
-    bool PinDetach;
+  float AccMeasure[3];
+  uint64_t AccTimestamp;
+  float GyroMeasure[3];
+  uint64_t GyroTimestamp;
+  float BaroMeasure;
+  uint64_t BaroTimestamp;
+  float GPSMeasure[4];
+  float GPSHorizontalPrecision;
+  float GPSSpeedPrecision;
+  bool GPSFix;
+  uint64_t GPSTimestamp;
+  float PitotMeasure[2];
+  uint64_t PitotTimestamp;
+  float MagMeasure[3];
+  uint64_t MagTimestamp;
+  float ABKCommand;
+  bool FlyingState;
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_NASOut_
-#define DEFINED_TYPEDEF_FOR_NASOut_
+#ifndef DEFINED_TYPEDEF_FOR_ANASReference_
+#define DEFINED_TYPEDEF_FOR_ANASReference_
 
-struct NASOut
+// ISA Reference and Initial States Setter Input Structure for ANAS GNC Algorithm 
+struct ANASReference
 {
-    float Position[3];
-    float Velocity[3];
-    float Quaternion[4];
-    uint32_t Timestamp;
+  float GroundTemperature;
+  float GroundPressure;
+  float InitialPosition[3];
+  float InitialVelocity[3];
+  float InitialQuaternion[4];
+  float InitialCovariance[81];
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_NASLogs_
-#define DEFINED_TYPEDEF_FOR_NASLogs_
+#ifndef DEFINED_TYPEDEF_FOR_ANASOut_
+#define DEFINED_TYPEDEF_FOR_ANASOut_
 
-struct NASLogs
+// Output Stucture for ANAS GNC Algorithm
+struct ANASOut
 {
-    float Velocity[3];
-    float Quaternion[4];
-    float Covariance[9];
-    int8_t BaroActivation;
-    bool GPSActivation;
-    bool MagActivation;
-    bool AccActivation;
-    float Position[3];
+  uint64_t Timestamp;
+  float Position[3];
+  float Velocity[3];
+  float Quaternion[4];
 };
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_NASFinal_
-#define DEFINED_TYPEDEF_FOR_NASFinal_
+#ifndef DEFINED_TYPEDEF_FOR_ANASLogs_
+#define DEFINED_TYPEDEF_FOR_ANASLogs_
 
-struct NASFinal
+// Output Structure for ANAS GNC Algorithm used for OBSW Logging
+struct ANASLogs
 {
-    float LinearCovariance[36];
+  uint64_t Timestamp;
+  float Position[3];
+  float Velocity[3];
+  float Quaternion[4];
+  float CovarianceMatrixDiagonal[9];
+  uint8_t BaroPitotActivation;
+  bool GPSActivation;
+  bool MagActivation;
+  bool AccActivation;
 };
 
 #endif
-#endif  // ANAS0_types_h_
+
+#ifndef DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
+#define DEFINED_TYPEDEF_FOR_ANAS_NASDAQ_
+
+// Output Structure for ANAS GNC Algorithm used for NASDAQ GNC Algorithm initialization 
+struct ANAS_NASDAQ
+{
+  float LinearCovariance[36];
+  float Position[3];
+  float Velocity[3];
+};
+
+#endif
+#endif                                 // ANAS0_types_h_
 
 //
 // File trailer for generated code.

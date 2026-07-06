@@ -42,14 +42,21 @@ set(BOARDCORE_SRC
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/AirBrakes/AirBrakesInterpPID.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/ABK.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/ABK_data.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/abkTraj.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0_data.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0_data.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/kriging.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/Kriging0.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/Kriging0_data.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/StateInitializer.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/WingController/wingController.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/WingController/wingController_data.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
@@ -138,7 +145,8 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/LSM6DSRX/LSM6DSRX.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015D.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015A.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/ND030D/ND030D.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030D.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030A.cpp
 
     # Calibration
     ${BOARDCORE_PATH}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
@@ -156,6 +164,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMap.cpp
     ${BOARDCORE_PATH}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/PinObserver.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/PinObserver/ExternalPinObserver.cpp
     ${BOARDCORE_PATH}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Stats/Stats.cpp
     ${BOARDCORE_PATH}/src/shared/utils/TestUtils/TestHelper.cpp

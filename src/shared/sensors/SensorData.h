@@ -293,7 +293,7 @@ struct GPSData
     float height          = 0;  // [m]
     float velocityNorth   = 0;  // [m/s]
     float velocityEast    = 0;  // [m/s]
-    float velocityDown    = 0;  // [m/s]w
+    float velocityDown    = 0;  // [m/s]
     float speed           = 0;  // [m/s]
     float track           = 0;  // [deg]
     float positionDOP     = 0;  // [?]

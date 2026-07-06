@@ -102,7 +102,7 @@ void Propagator::step()
     Boardcore::Logger::getInstance().log(logState);
 }
 
-void Propagator::setRocketNasState(const NASState& newRocketNasState)
+void Propagator::setRocketNasState(const ANASState& newRocketNasState)
 {
     miosix::Lock<miosix::FastMutex> lockState(stateMutex);
 

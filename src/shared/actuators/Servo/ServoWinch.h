@@ -33,9 +33,6 @@
 
 namespace Boardcore
 {
-
-using namespace Units::Time;
-using namespace Units::Frequency;
 class ServoWinch
 {
 public:
@@ -53,15 +50,16 @@ public:
      * @param minPulse Minimum signal pulse in microseconds.
      * @param maxPulse Maximum signal pulse in microseconds.
      */
-    explicit ServoWinch(TIM_TypeDef* const timer,
-                        TimerUtils::Channel pwmChannel,
-                        Microsecond minPulse = 1000_us,
-                        Microsecond maxPulse = 2000_us,
-                        Hertz frequency      = 50.0_hz);
+    explicit ServoWinch(
+        TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
+        Units::Time::Microsecond minPulse = Units::Time::Microsecond(1000),
+        Units::Time::Microsecond maxPulse = Units::Time::Microsecond(2000),
+        Units::Frequency::Hertz frequency = Units::Frequency::Hertz(50.0));
 #else
-    explicit ServoWinch(Microsecond minPulse = 1000_us,
-                        Microsecond maxPulse = 2000_us,
-                        Hertz frequency      = 50.0_hz);
+    explicit ServoWinch(
+        Units::Time::Microsecond minPulse = Units::Time::Microsecond(1000),
+        Units::Time::Microsecond maxPulse = Units::Time::Microsecond(2000),
+        Units::Frequency::Hertz frequency = Units::Frequency::Hertz(50.0));
 #endif
 
     /**
@@ -109,9 +107,9 @@ private:
     float dutyCycle;
 #endif
 
-    Microsecond minPulse;
-    Microsecond maxPulse;
-    Hertz frequency;
+    Units::Time::Microsecond minPulse;
+    Units::Time::Microsecond maxPulse;
+    Units::Frequency::Hertz frequency;
 };
 
 }  // namespace Boardcore

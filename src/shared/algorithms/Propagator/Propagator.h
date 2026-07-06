@@ -29,7 +29,7 @@
 #include <chrono>
 
 #include "PropagatorData.h"
-#include "algorithms/NAS/NASState.h"
+#include "algorithms/ANAS/ANASData.h"
 #include "sensors/SensorData.h"
 
 namespace Boardcore
@@ -69,7 +69,7 @@ public:
      *
      * @param newRocketNasState The updated NAS state of the rocket.
      */
-    void setRocketNasState(const NASState& newRocketNasState);
+    void setRocketNasState(const ANASState& newRocketNasState);
 
     /**
      * @brief Synchronized getter for the State of the predictor.
@@ -90,7 +90,7 @@ private:
 
     float updatePeriod;            ///< Update period of the propagator [s]
     PropagatorState state;         ///< State of the predictor
-    NASState lastRocketNasState;   ///< Last received rocket NAS state
+    ANASState lastRocketNasState;  ///< Last received rocket NAS state
     miosix::FastMutex stateMutex;  ///< mutex to sync state accesses
     Eigen::Vector3f
         last_real_velocity;  ///< last non-propagated velocitylast_real_velocity

@@ -29,6 +29,9 @@
 namespace Boardcore
 {
 
+using namespace Units::Time;
+using namespace Units::Frequency;
+
 #ifndef COMPILE_FOR_HOST
 
 ServoWinch::ServoWinch(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
