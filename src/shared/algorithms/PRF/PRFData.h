@@ -24,26 +24,25 @@
 
 #include <reflect.hpp>
 
-#include "wingController_types.h"
+#include "PRF_types.h"
 
 namespace Boardcore
 {
 
-struct WingControllerLogsData
+struct PRFLogsData
 {
     uint64_t timestamp;
-    wingController_types_h_::PRFLogs PRFLogs;
+    PRF_types_h_::PRFLogs PRFLogs;
 
-    WingControllerLogsData() : timestamp(0), PRFLogs() {};
+    PRFLogsData() : timestamp(0), PRFLogs() {};
 
-    WingControllerLogsData(uint64_t timestamp,
-                           wingController_types_h_::PRFLogs wingControllerLogs)
+    PRFLogsData(uint64_t timestamp, PRF_types_h_::PRFLogs wingControllerLogs)
         : timestamp(timestamp), PRFLogs(wingControllerLogs) {};
 
     static constexpr auto reflect()
     {
         return STRUCT_DEF(
-            WingControllerLogsData,
+            PRFLogsData,
             FIELD_DEF(timestamp) FIELD_DEF2(PRFLogs, Targets)
                 FIELD_DEF2(PRFLogs, TargetIndex) FIELD_DEF2(PRFLogs, Heading)
                     FIELD_DEF2(PRFLogs, Reference)
