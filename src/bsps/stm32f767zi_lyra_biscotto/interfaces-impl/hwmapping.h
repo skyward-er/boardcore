@@ -234,8 +234,11 @@ using cutterSense    = Gpio<GPIOC_BASE, 1>;
 
 namespace gpios
 {
-using mainDeploy = Gpio<GPIOD_BASE, 4>;   // sradCutter
-using detachRamp = Gpio<GPIOB_BASE, 11>;  // va cambiato da input a output
+#warning inverted main deploy and detach ramp for drone release testing in brescia, revert to initial state to have proper functionality
+// using mainDeploy = Gpio<GPIOD_BASE, 4>;   // sradCutter
+using mainDeploy = Gpio<GPIOB_BASE, 11>;
+// using detachRamp = Gpio<GPIOB_BASE, 11>;  // va cambiato da input a output
+using detachRamp = Gpio<GPIOD_BASE, 4>;
 using boardLed   = Gpio<GPIOB_BASE, 12>;
 using statusLed  = Gpio<GPIOB_BASE, 13>;
 using camEnable  = Gpio<GPIOB_BASE, 14>;  // camEnable
