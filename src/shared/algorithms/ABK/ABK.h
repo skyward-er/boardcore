@@ -409,7 +409,7 @@ class ABK final
 //  Requirements for '<Root>': ABK
 
 
-} // fine namespace ABK
+} // fine namespace ABKww
 #endif                                 // ABK_h_
 
 

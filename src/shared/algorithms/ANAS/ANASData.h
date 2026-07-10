@@ -94,11 +94,11 @@ struct ANASLogsData
             ANASLogsData,
             FIELD_DEF2(ANASLogs, Timestamp) FIELD_DEF2(ANASLogs, Position)
                 FIELD_DEF2(ANASLogs, Velocity) FIELD_DEF2(ANASLogs, Quaternion)
-                    FIELD_DEF2(ANASLogs, CovarianceMatrixDiagonal)
-                        FIELD_DEF2(ANASLogs, BaroPitotActivation)
-                            FIELD_DEF2(ANASLogs, GPSActivation)
-                                FIELD_DEF2(ANASLogs, MagActivation)
-                                    FIELD_DEF2(ANASLogs, AccActivation));
+                    FIELD_DEF2(ANASLogs, CovMatD)
+                        FIELD_DEF2(ANASLogs, BaroPitotAct)
+                            FIELD_DEF2(ANASLogs, GPSAct)
+                                FIELD_DEF2(ANASLogs, MagAct)
+                                    FIELD_DEF2(ANASLogs, AccAct));
     }
 };
 

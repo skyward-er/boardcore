@@ -78,9 +78,9 @@ struct NASDAQLogsWrapper
             NASDAQLogsWrapper,
             FIELD_DEF2(NASDAQLog, Timestamp) FIELD_DEF2(NASDAQLog, Position)
                 FIELD_DEF2(NASDAQLog, Velocity)
-                    FIELD_DEF2(NASDAQLog, CovarianceMatrixDiagonal)
+                    FIELD_DEF2(NASDAQLog, CovMatD)
                         FIELD_DEF2(NASDAQLog, BaroActivation)
-                            FIELD_DEF2(NASDAQLog, GPSActivation)
+                            FIELD_DEF2(NASDAQLog, GPSAct)
                                 FIELD_DEF2(NASDAQLog, ADAActovation));
     }
 };

@@ -90,11 +90,11 @@ struct ANASLogs
   float Position[3];
   float Velocity[3];
   float Quaternion[4];
-  float CovarianceMatrixDiagonal[9];
-  uint8_t BaroPitotActivation;
-  bool GPSActivation;
-  bool MagActivation;
-  bool AccActivation;
+  float CovMatD[9];
+  uint8_t BaroPitotAct;
+  bool GPSAct;
+  bool MagAct;
+  bool AccAct;
 };
 
 #endif

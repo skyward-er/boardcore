@@ -58,9 +58,9 @@ struct NASDAQLogs
   uint64_t Timestamp;
   float Position[3];
   float Velocity[3];
-  float CovarianceMatrixDiagonal[6];
+  float CovMatD[6];
   bool BaroActivation;
-  bool GPSActivation;
+  bool GPSAct;
   bool ADAActovation;
 };
 

@@ -6515,7 +6515,7 @@ void ANAS0::step()
     i = 0;
     for (i_0 = 0; i_0 < 9; i_0++)
     {
-        ANAS0_Y.ANASLogsOBSW.CovarianceMatrixDiagonal[i_0] = rtb_Assignment1[i];
+        ANAS0_Y.ANASLogsOBSW.CovMatD[i_0] = rtb_Assignment1[i];
         i += 10;
     }
 
@@ -6525,10 +6525,10 @@ void ANAS0::step()
     //   Merge: '<S103>/Merge'
     //   Outport: '<Root>/ANAS Logs OBSW'
 
-    ANAS0_Y.ANASLogsOBSW.BaroPitotActivation = ANAS0_DW.Merge_k;
-    ANAS0_Y.ANASLogsOBSW.GPSActivation       = rtb_AND;
-    ANAS0_Y.ANASLogsOBSW.MagActivation       = rtb_AND_i;
-    ANAS0_Y.ANASLogsOBSW.AccActivation       = rtb_AND_b;
+    ANAS0_Y.ANASLogsOBSW.BaroPitotAct = ANAS0_DW.Merge_k;
+    ANAS0_Y.ANASLogsOBSW.GPSAct       = rtb_AND;
+    ANAS0_Y.ANASLogsOBSW.MagAct       = rtb_AND_i;
+    ANAS0_Y.ANASLogsOBSW.AccAct       = rtb_AND_b;
 
     // BusCreator generated from: '<S6>/ANAS Out_BusCreator' incorporates:
     //   Outport: '<Root>/ANAS Out'

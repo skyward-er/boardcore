@@ -1725,7 +1725,7 @@ void NASDAQ0::step()
 
   i = 0;
   for (k = 0; k < 6; k++) {
-    NASDAQ0_Y.NASDAQLogsOBSW.CovarianceMatrixDiagonal[k] = NASDAQ0_DW.Merge[i];
+    NASDAQ0_Y.NASDAQLogsOBSW.CovMatD[k] = NASDAQ0_DW.Merge[i];
     i += 7;
   }
 
@@ -1735,7 +1735,7 @@ void NASDAQ0::step()
   //   Outport: '<Root>/NASDAQ Logs OBSW'
 
   NASDAQ0_Y.NASDAQLogsOBSW.BaroActivation = rtb_AND_g;
-  NASDAQ0_Y.NASDAQLogsOBSW.GPSActivation = rtb_AND;
+  NASDAQ0_Y.NASDAQLogsOBSW.GPSAct = rtb_AND;
   NASDAQ0_Y.NASDAQLogsOBSW.ADAActovation = rtb_AND_l;
 
   // BusCreator generated from: '<S1>/NASDAQ Out_BusCreator' incorporates:
