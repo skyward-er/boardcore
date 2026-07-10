@@ -523,15 +523,15 @@
             ]
         },
         {
-            "name": "stm32f767zi_lyra_gs",
+            "name": "stm32f767zi_arp_gs",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [
                 "${defaultDefines}",
-                "_MIOSIX_BOARDNAME=stm32f767zi_lyra_gs",
-                "_BOARD_STM32F767ZI_LYRA_GS",
+                "_MIOSIX_BOARDNAME=stm32f767zi_arp_gs",
+                "_BOARD_STM32F767ZI_ARP_GS",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F767xx",
                 "HSE_VALUE=25000000",
@@ -542,8 +542,8 @@
             "includePath": [
                 "${defaultIncludePaths}",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/common",
-                "${workspaceFolder}/src/bsps/stm32f767zi_lyra_gs/config",
-                "${workspaceFolder}/src/bsps/stm32f767zi_lyra_gs"
+                "${workspaceFolder}/src/bsps/stm32f767zi_arp_gs/config",
+                "${workspaceFolder}/src/bsps/stm32f767zi_arp_gs"
             ]
         },
         {

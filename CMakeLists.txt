@@ -321,7 +321,7 @@ add_executable(test-bsram src/tests/drivers/test-bsram.cpp)
 sbs_target(test-bsram stm32f767zi_lyra_biscotto)
 
 add_executable(test-dipswitch src/tests/drivers/test-dipswitch.cpp)
-sbs_target(test-dipswitch stm32f767zi_lyra_gs)
+sbs_target(test-dipswitch stm32f767zi_arp_gs)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #

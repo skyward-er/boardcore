@@ -42,7 +42,7 @@ set(BOARDCORE_BOARDS_OPTIONS_FILES
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_conrig_v2/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_biscotto/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_motor/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_gs/config/board_options.cmake
+    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_arp_gs/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f429zi_lyra_cubesat/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_orion_biscotto/config/board_options.cmake
     ${BOARDCORE_PATH}/src/bsps/stm32f767zi_orion_engine/config/board_options.cmake
