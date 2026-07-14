@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'PRF'.
 //
-// Model version                  : 11.335
+// Model version                  : 11.338
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Jul  7 11:23:43 2026
+// C/C++ source code generated on : Tue Jul 14 15:22:34 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -28,27 +28,59 @@ namespace PRF
 // Block parameters (default storage)
 PRF::P_PRF_T PRF::PRF_P{
   // Mask Parameter: WrapToZero_Threshold
-  //  Referenced by: '<S20>/FixPt Switch'
+  //  Referenced by: '<S22>/FixPt Switch'
 
   360.0F,
 
   // Mask Parameter: Comparetoconstant_const
-  //  Referenced by: '<S14>/Constant'
+  //  Referenced by: '<S16>/Constant'
 
-  15.0F,
+  1.0F,
+
+  // Mask Parameter: SaturationCheckUp_const
+  //  Referenced by: '<S9>/Constant'
+
+  1.0F,
+
+  // Mask Parameter: SaturationCheckLw_const
+  //  Referenced by: '<S8>/Constant'
+
+  -1.0F,
+
+  // Computed Parameter: PRFLogsOBSW_Y0
+  //  Referenced by: '<S15>/PRF Logs OBSW'
+
+  {
+    {
+      0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F }
+    ,                                  // Targets
+
+    {
+      0.0F, 0.0F }
+    ,                                  // TerminalTarget
+    0U,                                // TargetIndex
+    0.0F,                              // Heading
+    0.0F,                              // Reference
+
+    {
+      0.0F, 0.0F }
+    ,                                  // ServoCommands
+    0.0F,                              // WindHeading
+    0.0F                               // WindAlignmentRadius
+  },
 
   // Computed Parameter: Zero_Value
-  //  Referenced by: '<S8>/Zero'
+  //  Referenced by: '<S11>/Zero'
 
   0.0F,
 
-  // Computed Parameter: Zero_Value_c
+  // Computed Parameter: Zero_Value_b
   //  Referenced by: '<S7>/Zero'
 
   { 0.0F, 0.0F },
 
-  // Computed Parameter: Zero_Value_p
-  //  Referenced by: '<S9>/Zero'
+  // Computed Parameter: Zero_Value_f
+  //  Referenced by: '<S10>/Zero'
 
   0.0F,
 
@@ -60,15 +92,15 @@ PRF::P_PRF_T PRF::PRF_P{
   // Computed Parameter: Constant4_Value
   //  Referenced by: '<S5>/Constant4'
 
-  0.00796F,
+  0.0025F,
 
   // Computed Parameter: Constant1_Value
-  //  Referenced by: '<S10>/Constant1'
+  //  Referenced by: '<S12>/Constant1'
 
   6.28318548F,
 
   // Computed Parameter: Constant_Value
-  //  Referenced by: '<S10>/Constant'
+  //  Referenced by: '<S12>/Constant'
 
   6.28318548F,
 
@@ -83,94 +115,89 @@ PRF::P_PRF_T PRF::PRF_P{
   -3.14159274F,
 
   // Computed Parameter: Gain2_Gain
-  //  Referenced by: '<S15>/Gain2'
+  //  Referenced by: '<S17>/Gain2'
 
   0.5F,
 
   // Computed Parameter: Gain4_Gain
-  //  Referenced by: '<S15>/Gain4'
+  //  Referenced by: '<S17>/Gain4'
 
-  0.4F,
+  0.7F,
 
   // Computed Parameter: Gain3_Gain
-  //  Referenced by: '<S15>/Gain3'
+  //  Referenced by: '<S17>/Gain3'
 
   0.5F,
 
   // Computed Parameter: Gain1_Gain
-  //  Referenced by: '<S15>/Gain1'
+  //  Referenced by: '<S17>/Gain1'
 
-  0.7F,
+  0.4F,
 
-  // Computed Parameter: Constant_Value_k
-  //  Referenced by: '<S20>/Constant'
+  // Computed Parameter: Constant_Value_p
+  //  Referenced by: '<S22>/Constant'
 
   0.0F,
 
-  // Expression: single(1e10*ones(3, 2))
-  //  Referenced by: '<S13>/Target Points'
+  // Computed Parameter: TargetPoints_Y0
+  //  Referenced by: '<S15>/Target Points'
 
-  { 1.0E+10F, 1.0E+10F, 1.0E+10F, 1.0E+10F, 1.0E+10F, 1.0E+10F },
+  0.0F,
 
   // Computed Parameter: Q2_Y0
-  //  Referenced by: '<S13>/Q2'
+  //  Referenced by: '<S15>/Q2'
 
   0.0F,
 
-  // Computed Parameter: Constant3_Value
-  //  Referenced by: '<S13>/Constant3'
-
-  { -200.0F, 200.0F },
-
-  // Computed Parameter: Gain1_Gain_b
-  //  Referenced by: '<S19>/Gain1'
+  // Computed Parameter: Gain1_Gain_g
+  //  Referenced by: '<S21>/Gain1'
 
   0.0174532924F,
 
-  // Computed Parameter: Constant5_Value_b
-  //  Referenced by: '<S13>/Constant5'
+  // Computed Parameter: Constant5_Value_d
+  //  Referenced by: '<S15>/Constant5'
 
-  100.0F,
+  1.0F,
 
   // Computed Parameter: glideratio_Value
-  //  Referenced by: '<S13>/glide ratio'
+  //  Referenced by: '<S15>/glide ratio'
 
-  2.0F,
+  15.0F,
 
   // Computed Parameter: Gain_Gain
-  //  Referenced by: '<S17>/Gain'
+  //  Referenced by: '<S19>/Gain'
 
   -1.0F,
 
-  // Computed Parameter: Gain1_Gain_c
-  //  Referenced by: '<S17>/Gain1'
+  // Computed Parameter: Gain1_Gain_h
+  //  Referenced by: '<S19>/Gain1'
 
   0.5F,
 
   // Computed Parameter: theta_Value
-  //  Referenced by: '<S13>/theta'
+  //  Referenced by: '<S15>/theta'
 
-  -0.5F,
+  0.0F,
 
   // Computed Parameter: Merge_InitialOutput
-  //  Referenced by: '<S13>/Merge'
+  //  Referenced by: '<S15>/Merge'
+
+  0.0F,
+
+  // Computed Parameter: Constant_Value_i
+  //  Referenced by: '<S13>/Constant'
 
   0.0F,
 
   // Computed Parameter: Constant_Value_a
-  //  Referenced by: '<S11>/Constant'
-
-  0.0F,
-
-  // Computed Parameter: Constant_Value_j
-  //  Referenced by: '<S12>/Constant'
+  //  Referenced by: '<S14>/Constant'
 
   0.0F,
 
   // Computed Parameter: glideratio_Value_o
   //  Referenced by: '<S4>/glide ratio'
 
-  2.0F,
+  15.0F,
 
   // Computed Parameter: PRFControlzThresholdGain_Gain
   //  Referenced by: '<S4>/PRFControl.zThresholdGain'
@@ -180,42 +207,32 @@ PRF::P_PRF_T PRF::PRF_P{
   // Computed Parameter: Memory1_InitialCondition
   //  Referenced by: '<S4>/Memory1'
 
-  40.0F,
+  2.0F,
 
   // Computed Parameter: Memory_InitialCondition
   //  Referenced by: '<S4>/Memory'
 
-  40.0F,
+  2.0F,
 
   // Computed Parameter: _Value
   //  Referenced by: '<S4>/-'
 
-  20.0F,
-
-  // Computed Parameter: Memory_InitialCondition_n
-  //  Referenced by: '<S5>/Memory'
-
-  0.0F,
-
-  // Computed Parameter: Memory2_InitialCondition
-  //  Referenced by: '<S5>/Memory2'
-
-  0.0F,
+  1.0F,
 
   // Computed Parameter: Switch_Threshold
   //  Referenced by: '<S5>/Switch'
 
   3.14159274F,
 
-  // Computed Parameter: Switch1_Threshold
-  //  Referenced by: '<S5>/Switch1'
+  // Computed Parameter: Memory_InitialCondition_b
+  //  Referenced by: '<S5>/Memory'
 
   0.0F,
 
-  // Computed Parameter: Constant3_Value_c
+  // Computed Parameter: Constant3_Value
   //  Referenced by: '<S5>/Constant3'
 
-  0.2865F,
+  0.045F,
 
   // Computed Parameter: UnitDelay_InitialCondition
   //  Referenced by: '<S5>/Unit Delay'
@@ -225,9 +242,9 @@ PRF::P_PRF_T PRF::PRF_P{
   // Computed Parameter: Constant2_Value
   //  Referenced by: '<S5>/Constant2'
 
-  0.0F,
+  0.005F,
 
-  // Computed Parameter: Constant1_Value_k
+  // Computed Parameter: Constant1_Value_p
   //  Referenced by: '<S5>/Constant1'
 
   0.05F,
@@ -242,22 +259,27 @@ PRF::P_PRF_T PRF::PRF_P{
 
   -1.0F,
 
-  // Computed Parameter: Merge_InitialOutput_l
+  // Computed Parameter: Merge_InitialOutput_g
   //  Referenced by: '<S5>/Merge'
 
   0.0F,
+
+  // Computed Parameter: Memory2_InitialCondition
+  //  Referenced by: '<S5>/Memory2'
+
+  false,
 
   // Expression: uint8(0)
   //  Referenced by: '<S6>/Unit Delay1'
 
   0U,
 
-  // Computed Parameter: Bias_Bias_c
+  // Computed Parameter: Bias_Bias_i
   //  Referenced by: '<S6>/Bias'
 
   1U,
 
-  // Computed Parameter: Bias1_Bias_b
+  // Computed Parameter: Bias1_Bias_n
   //  Referenced by: '<S6>/Bias1'
 
   1U,

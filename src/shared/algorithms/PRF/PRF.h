@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'PRF'.
 //
-// Model version                  : 11.335
+// Model version                  : 11.338
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Jul  7 11:23:43 2026
+// C/C++ source code generated on : Tue Jul 14 15:22:34 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -37,18 +37,19 @@ class PRF final
  public:
   // Block signals and states (default storage) for system '<Root>'
   struct DW_PRF_T {
+    PRFLogs PRFLogsOBSW_BusCreator_BusCreat;
     float Merge[2];                    // '<S5>/Merge'
-    float Q2[2];                       // '<S18>/Sum2'
-    float Q1[2];                       // '<S13>/Merge'
-    float TargetPoints[6];             // '<S13>/Transpose1'
+    float Q2[2];                       // '<S20>/Sum2'
+    float Q1[2];                       // '<S15>/Merge'
+    float TargetPoints[6];             // '<S15>/Transpose1'
     float UnitDelay_DSTATE;            // '<S5>/Unit Delay'
     float Memory1_PreviousInput;       // '<S4>/Memory1'
     float Memory_PreviousInput;        // '<S4>/Memory'
-    float Memory_PreviousInput_k;      // '<S5>/Memory'
-    float Memory2_PreviousInput;       // '<S5>/Memory2'
+    float Memory_PreviousInput_b;      // '<S5>/Memory'
     uint8_t UnitDelay1_DSTATE;         // '<S6>/Unit Delay1'
     uint8_t is_active_c9_PRF;          // '<S1>/Point Selection'
     uint8_t is_c9_PRF;                 // '<S1>/Point Selection'
+    bool Memory2_PreviousInput;        // '<S5>/Memory2'
   };
 
   // Zero-crossing (trigger) state
@@ -71,19 +72,28 @@ class PRF final
   // Parameters (default storage)
   struct P_PRF_T {
     float WrapToZero_Threshold;        // Mask Parameter: WrapToZero_Threshold
-                                          //  Referenced by: '<S20>/FixPt Switch'
+                                          //  Referenced by: '<S22>/FixPt Switch'
 
     float Comparetoconstant_const;    // Mask Parameter: Comparetoconstant_const
-                                         //  Referenced by: '<S14>/Constant'
+                                         //  Referenced by: '<S16>/Constant'
+
+    float SaturationCheckUp_const;    // Mask Parameter: SaturationCheckUp_const
+                                         //  Referenced by: '<S9>/Constant'
+
+    float SaturationCheckLw_const;    // Mask Parameter: SaturationCheckLw_const
+                                         //  Referenced by: '<S8>/Constant'
+
+    PRFLogs PRFLogsOBSW_Y0;            // Computed Parameter: PRFLogsOBSW_Y0
+                                          //  Referenced by: '<S15>/PRF Logs OBSW'
 
     float Zero_Value;                  // Computed Parameter: Zero_Value
-                                          //  Referenced by: '<S8>/Zero'
+                                          //  Referenced by: '<S11>/Zero'
 
-    float Zero_Value_c[2];             // Computed Parameter: Zero_Value_c
+    float Zero_Value_b[2];             // Computed Parameter: Zero_Value_b
                                           //  Referenced by: '<S7>/Zero'
 
-    float Zero_Value_p;                // Computed Parameter: Zero_Value_p
-                                          //  Referenced by: '<S9>/Zero'
+    float Zero_Value_f;                // Computed Parameter: Zero_Value_f
+                                          //  Referenced by: '<S10>/Zero'
 
     float Constant5_Value;             // Computed Parameter: Constant5_Value
                                           //  Referenced by: '<S5>/Constant5'
@@ -92,10 +102,10 @@ class PRF final
                                           //  Referenced by: '<S5>/Constant4'
 
     float Constant1_Value;             // Computed Parameter: Constant1_Value
-                                          //  Referenced by: '<S10>/Constant1'
+                                          //  Referenced by: '<S12>/Constant1'
 
     float Constant_Value;              // Computed Parameter: Constant_Value
-                                          //  Referenced by: '<S10>/Constant'
+                                          //  Referenced by: '<S12>/Constant'
 
     float Bias1_Bias;                  // Computed Parameter: Bias1_Bias
                                           //  Referenced by: '<S5>/Bias1'
@@ -104,55 +114,52 @@ class PRF final
                                           //  Referenced by: '<S5>/Bias'
 
     float Gain2_Gain;                  // Computed Parameter: Gain2_Gain
-                                          //  Referenced by: '<S15>/Gain2'
+                                          //  Referenced by: '<S17>/Gain2'
 
     float Gain4_Gain;                  // Computed Parameter: Gain4_Gain
-                                          //  Referenced by: '<S15>/Gain4'
+                                          //  Referenced by: '<S17>/Gain4'
 
     float Gain3_Gain;                  // Computed Parameter: Gain3_Gain
-                                          //  Referenced by: '<S15>/Gain3'
+                                          //  Referenced by: '<S17>/Gain3'
 
     float Gain1_Gain;                  // Computed Parameter: Gain1_Gain
-                                          //  Referenced by: '<S15>/Gain1'
-
-    float Constant_Value_k;            // Computed Parameter: Constant_Value_k
-                                          //  Referenced by: '<S20>/Constant'
-
-    float TargetPoints_Y0[6];          // Expression: single(1e10*ones(3, 2))
-                                          //  Referenced by: '<S13>/Target Points'
-
-    float Q2_Y0;                       // Computed Parameter: Q2_Y0
-                                          //  Referenced by: '<S13>/Q2'
-
-    float Constant3_Value[2];          // Computed Parameter: Constant3_Value
-                                          //  Referenced by: '<S13>/Constant3'
-
-    float Gain1_Gain_b;                // Computed Parameter: Gain1_Gain_b
-                                          //  Referenced by: '<S19>/Gain1'
-
-    float Constant5_Value_b;           // Computed Parameter: Constant5_Value_b
-                                          //  Referenced by: '<S13>/Constant5'
-
-    float glideratio_Value;            // Computed Parameter: glideratio_Value
-                                          //  Referenced by: '<S13>/glide ratio'
-
-    float Gain_Gain;                   // Computed Parameter: Gain_Gain
-                                          //  Referenced by: '<S17>/Gain'
-
-    float Gain1_Gain_c;                // Computed Parameter: Gain1_Gain_c
                                           //  Referenced by: '<S17>/Gain1'
 
+    float Constant_Value_p;            // Computed Parameter: Constant_Value_p
+                                          //  Referenced by: '<S22>/Constant'
+
+    float TargetPoints_Y0;             // Computed Parameter: TargetPoints_Y0
+                                          //  Referenced by: '<S15>/Target Points'
+
+    float Q2_Y0;                       // Computed Parameter: Q2_Y0
+                                          //  Referenced by: '<S15>/Q2'
+
+    float Gain1_Gain_g;                // Computed Parameter: Gain1_Gain_g
+                                          //  Referenced by: '<S21>/Gain1'
+
+    float Constant5_Value_d;           // Computed Parameter: Constant5_Value_d
+                                          //  Referenced by: '<S15>/Constant5'
+
+    float glideratio_Value;            // Computed Parameter: glideratio_Value
+                                          //  Referenced by: '<S15>/glide ratio'
+
+    float Gain_Gain;                   // Computed Parameter: Gain_Gain
+                                          //  Referenced by: '<S19>/Gain'
+
+    float Gain1_Gain_h;                // Computed Parameter: Gain1_Gain_h
+                                          //  Referenced by: '<S19>/Gain1'
+
     float theta_Value;                 // Computed Parameter: theta_Value
-                                          //  Referenced by: '<S13>/theta'
+                                          //  Referenced by: '<S15>/theta'
 
     float Merge_InitialOutput;        // Computed Parameter: Merge_InitialOutput
-                                         //  Referenced by: '<S13>/Merge'
+                                         //  Referenced by: '<S15>/Merge'
+
+    float Constant_Value_i;            // Computed Parameter: Constant_Value_i
+                                          //  Referenced by: '<S13>/Constant'
 
     float Constant_Value_a;            // Computed Parameter: Constant_Value_a
-                                          //  Referenced by: '<S11>/Constant'
-
-    float Constant_Value_j;            // Computed Parameter: Constant_Value_j
-                                          //  Referenced by: '<S12>/Constant'
+                                          //  Referenced by: '<S14>/Constant'
 
     float glideratio_Value_o;          // Computed Parameter: glideratio_Value_o
                                           //  Referenced by: '<S4>/glide ratio'
@@ -171,21 +178,14 @@ class PRF final
     float _Value;                      // Computed Parameter: _Value
                                           //  Referenced by: '<S4>/-'
 
-    float Memory_InitialCondition_n;
-                                // Computed Parameter: Memory_InitialCondition_n
-                                   //  Referenced by: '<S5>/Memory'
-
-    float Memory2_InitialCondition;
-                                 // Computed Parameter: Memory2_InitialCondition
-                                    //  Referenced by: '<S5>/Memory2'
-
     float Switch_Threshold;            // Computed Parameter: Switch_Threshold
                                           //  Referenced by: '<S5>/Switch'
 
-    float Switch1_Threshold;           // Computed Parameter: Switch1_Threshold
-                                          //  Referenced by: '<S5>/Switch1'
+    float Memory_InitialCondition_b;
+                                // Computed Parameter: Memory_InitialCondition_b
+                                   //  Referenced by: '<S5>/Memory'
 
-    float Constant3_Value_c;           // Computed Parameter: Constant3_Value_c
+    float Constant3_Value;             // Computed Parameter: Constant3_Value
                                           //  Referenced by: '<S5>/Constant3'
 
     float UnitDelay_InitialCondition;
@@ -195,7 +195,7 @@ class PRF final
     float Constant2_Value;             // Computed Parameter: Constant2_Value
                                           //  Referenced by: '<S5>/Constant2'
 
-    float Constant1_Value_k;           // Computed Parameter: Constant1_Value_k
+    float Constant1_Value_p;           // Computed Parameter: Constant1_Value_p
                                           //  Referenced by: '<S5>/Constant1'
 
     float Saturation1_UpperSat;      // Computed Parameter: Saturation1_UpperSat
@@ -204,16 +204,20 @@ class PRF final
     float Saturation1_LowerSat;      // Computed Parameter: Saturation1_LowerSat
                                         //  Referenced by: '<S5>/Saturation1'
 
-    float Merge_InitialOutput_l;    // Computed Parameter: Merge_InitialOutput_l
+    float Merge_InitialOutput_g;    // Computed Parameter: Merge_InitialOutput_g
                                        //  Referenced by: '<S5>/Merge'
+
+    bool Memory2_InitialCondition;
+                                 // Computed Parameter: Memory2_InitialCondition
+                                    //  Referenced by: '<S5>/Memory2'
 
     uint8_t UnitDelay1_InitialCondition;// Expression: uint8(0)
                                            //  Referenced by: '<S6>/Unit Delay1'
 
-    uint8_t Bias_Bias_c;               // Computed Parameter: Bias_Bias_c
+    uint8_t Bias_Bias_i;               // Computed Parameter: Bias_Bias_i
                                           //  Referenced by: '<S6>/Bias'
 
-    uint8_t Bias1_Bias_b;              // Computed Parameter: Bias1_Bias_b
+    uint8_t Bias1_Bias_n;              // Computed Parameter: Bias1_Bias_n
                                           //  Referenced by: '<S6>/Bias1'
 
     uint8_t Saturation_UpperSat;      // Computed Parameter: Saturation_UpperSat
@@ -308,7 +312,7 @@ class PRF final
 //-
 //  These blocks were eliminated from the model due to optimizations:
 //
-//  Block '<S20>/FixPt Data Type Duplicate1' : Unused code path elimination
+//  Block '<S22>/FixPt Data Type Duplicate1' : Unused code path elimination
 
 
 //-
@@ -336,19 +340,21 @@ class PRF final
 //  '<S5>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control'
 //  '<S6>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance'
 //  '<S7>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/No Activation'
-//  '<S8>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Servo Left'
-//  '<S9>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Servo Right'
-//  '<S10>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Subsystem Reference'
-//  '<S11>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Subsystem Reference/IsPositive'
-//  '<S12>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Subsystem Reference/IsZero'
-//  '<S13>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation'
-//  '<S14>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Compare to constant'
-//  '<S15>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Enabled Subsystem'
-//  '<S16>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Enabled Subsystem1'
-//  '<S17>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Initial Geometry'
-//  '<S18>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Wind based Q2 generation'
-//  '<S19>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Wind based Q2 generation/Degrees to Radians'
-//  '<S20>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Wind based Q2 generation/Wrap To Zero'
+//  '<S8>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Saturation Check Lw'
+//  '<S9>'   : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Saturation Check Up'
+//  '<S10>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Servo Left'
+//  '<S11>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Servo Right'
+//  '<S12>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Subsystem Reference'
+//  '<S13>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Subsystem Reference/IsPositive'
+//  '<S14>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Control/Subsystem Reference/IsZero'
+//  '<S15>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation'
+//  '<S16>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Compare to constant'
+//  '<S17>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Enabled Subsystem'
+//  '<S18>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Enabled Subsystem1'
+//  '<S19>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Initial Geometry'
+//  '<S20>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Wind based Q2 generation'
+//  '<S21>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Wind based Q2 generation/Degrees to Radians'
+//  '<S22>'  : 'CHADsimulator/Control Units/Control Units SIM/Main Control Unit (Sim)/Parafoil Control/Parafoil/PRF/Guidance and Control/Guidance/Target Points Generation/Wind based Q2 generation/Wrap To Zero'
 
 
 //-

@@ -44,10 +44,11 @@ struct PRFLogsData
         return STRUCT_DEF(
             PRFLogsData,
             FIELD_DEF(timestamp) FIELD_DEF2(PRFLogs, Targets)
-                FIELD_DEF2(PRFLogs, TargetIndex) FIELD_DEF2(PRFLogs, Heading)
-                    FIELD_DEF2(PRFLogs, Reference)
-                        FIELD_DEF2(PRFLogs, ServoCommands)
-                            FIELD_DEF2(PRFLogs, Q1) FIELD_DEF2(PRFLogs, Q2));
+                FIELD_DEF2(PRFLogs, TerminalTarget)
+                    FIELD_DEF2(PRFLogs, TargetIndex) FIELD_DEF2(PRFLogs, Heading)
+                        FIELD_DEF2(PRFLogs, Reference)
+                            FIELD_DEF2(PRFLogs, ServoCommands)
+                                FIELD_DEF2(PRFLogs, WindHeading) FIELD_DEF2(PRFLogs, WindAlignmentRadius));
     }
 };
 
