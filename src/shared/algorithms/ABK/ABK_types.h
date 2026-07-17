@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'ABK'.
 //
-// Model version                  : 11.328
+// Model version                  : 11.369
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:42:34 2026
+// C/C++ source code generated on : Thu Jul 16 14:05:08 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M

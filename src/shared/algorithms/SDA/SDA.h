@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'SDA'.
 //
-// Model version                  : 11.329
+// Model version                  : 11.369
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 14:46:21 2026
+// C/C++ source code generated on : Thu Jul 16 14:00:32 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -99,13 +99,13 @@ class SDA final
     float Constant_Value_d[10];        // Computed Parameter: Constant_Value_d
                                           //  Referenced by: '<S1>/Constant'
 
-    float Gain_Gain_m;                 // Computed Parameter: Gain_Gain_m
+    float Gain_Gain_g;                 // Computed Parameter: Gain_Gain_g
                                           //  Referenced by: '<S6>/Gain'
 
     float Bias_Bias;                   // Computed Parameter: Bias_Bias
                                           //  Referenced by: '<S6>/Bias'
 
-    float Gain2_Gain_i;                // Computed Parameter: Gain2_Gain_i
+    float Gain2_Gain_e;                // Computed Parameter: Gain2_Gain_e
                                           //  Referenced by: '<S6>/Gain2'
 
     float Bias1_Bias;                  // Computed Parameter: Bias1_Bias
@@ -117,7 +117,7 @@ class SDA final
     int8_t One_Value;                  // Computed Parameter: One_Value
                                           //  Referenced by: '<S1>/One'
 
-    int8_t Gain1_Gain_g;               // Computed Parameter: Gain1_Gain_g
+    int8_t Gain1_Gain_d;               // Computed Parameter: Gain1_Gain_d
                                           //  Referenced by: '<S1>/Gain1'
 
     uint8_t Gain3_Gain;                // Computed Parameter: Gain3_Gain
@@ -249,10 +249,10 @@ class SDA final
 //  Requirements for '<Root>': SDA
 
 
-#endif                                 // SDA_h_
-
-
 } // fine namespace SDA
+
+
+#endif                                 // SDA_h_
 
 //
 // File trailer for generated code.

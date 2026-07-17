@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'SDA'.
 //
-// Model version                  : 11.329
+// Model version                  : 11.369
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 14:46:21 2026
+// C/C++ source code generated on : Thu Jul 16 14:00:32 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -48,7 +48,7 @@ void SDA::step()
   int32_t k;
   int32_t rtb_Power_tmp;
   uint8_t rtb_residual;
-  bool rtb_Compare_n;
+  bool rtb_Compare_i;
 
   // Outputs for Atomic SubSystem: '<Root>/SDA'
   // Selector: '<S6>/Kriging X' incorporates:
@@ -172,7 +172,7 @@ void SDA::step()
     //  About '<S6>/Power1':
     //   Operator: exp
 
-    rtb_Gain3 += std::exp(SDA_P.Gain_Gain_m * rtb_Bias1) * kriging[k + 4800];
+    rtb_Gain3 += std::exp(SDA_P.Gain_Gain_g * rtb_Bias1) * kriging[k + 4800];
   }
 
   // Bias: '<S6>/Bias1' incorporates:
@@ -180,7 +180,7 @@ void SDA::step()
   //   DotProduct: '<S6>/Dot Product'
   //   Gain: '<S6>/Gain2'
 
-  rtb_Bias1 = (rtb_Gain3 + SDA_P.Bias_Bias) * SDA_P.Gain2_Gain_i +
+  rtb_Bias1 = (rtb_Gain3 + SDA_P.Bias_Bias) * SDA_P.Gain2_Gain_e +
     SDA_P.Bias1_Bias;
 
   // If: '<S1>/If' incorporates:
@@ -361,7 +361,7 @@ void SDA::step()
     //   Gain: '<S1>/Gain1'
     //   UnitDelay: '<S1>/Unit Delay'
 
-    k = SDA_P.Gain1_Gain_g * SDA_DW.UnitDelay_DSTATE;
+    k = SDA_P.Gain1_Gain_d * SDA_DW.UnitDelay_DSTATE;
   }
 
   // End of Switch: '<S1>/Switch3'
@@ -384,7 +384,7 @@ void SDA::step()
   //   Constant: '<S3>/Constant'
   //   Sum: '<S1>/Add'
 
-  rtb_Compare_n = (rtb_residual >= SDA_P.CompareToConstant3_const);
+  rtb_Compare_i = (rtb_residual >= SDA_P.CompareToConstant3_const);
 
   // SignalConversion generated from: '<S1>/Vector Concatenate'
   SDA_Y.SDALogsOBSW.Apogee[0] = rtb_Bias1;
@@ -396,7 +396,7 @@ void SDA::step()
   //   Outport: '<Root>/SDA Logs OBSW'
   //   Sum: '<S1>/Add'
 
-  SDA_Y.SDALogsOBSW.ShutdownCommand = rtb_Compare_n;
+  SDA_Y.SDALogsOBSW.ShutdownCommand = rtb_Compare_i;
   SDA_Y.SDALogsOBSW.Timestamp = 0ULL;
   SDA_Y.SDALogsOBSW.ShutdownCounter = rtb_residual;
 
@@ -408,7 +408,7 @@ void SDA::step()
   // End of Outputs for SubSystem: '<Root>/SDA'
 
   // Outport: '<Root>/SDA Shutdown'
-  SDA_Y.SDAShutdown = rtb_Compare_n;
+  SDA_Y.SDAShutdown = rtb_Compare_i;
 }
 
 // Model initialize function

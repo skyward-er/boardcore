@@ -55,8 +55,8 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/WingController/PRF.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/WingController/PRF_data.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/PRF/PRF.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/PRF/PRF_data.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp

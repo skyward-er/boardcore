@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'SDA'.
 //
-// Model version                  : 11.329
+// Model version                  : 11.369
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 14:46:21 2026
+// C/C++ source code generated on : Thu Jul 16 14:00:32 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -30,7 +30,7 @@ SDA::P_SDA_T SDA::SDA_P{
   // Mask Parameter: CompareToConstant2_const
   //  Referenced by: '<S2>/Constant'
 
-  3100.0F,
+  3500.0F,
 
   // Mask Parameter: CompareToConstant3_const
   //  Referenced by: '<S3>/Constant'
@@ -89,10 +89,10 @@ SDA::P_SDA_T SDA::SDA_P{
   // Computed Parameter: Constant_Value_d
   //  Referenced by: '<S1>/Constant'
 
-  { -4560.37744F, -101.033333F, -363.592834F, -6.66133815E-16F, 3.73489189F,
-    196.812302F, -0.00145337696F, 1.5361377F, 25.0F, 40.0F },
+  { -4776.01025F, -58.7644043F, -347.108521F, -6.66133815E-16F, 0.679140151F,
+    139.164886F, -0.0153772505F, 1.56052434F, 25.0F, 40.0F },
 
-  // Computed Parameter: Gain_Gain_m
+  // Computed Parameter: Gain_Gain_g
   //  Referenced by: '<S6>/Gain'
 
   -1.0F,
@@ -100,17 +100,17 @@ SDA::P_SDA_T SDA::SDA_P{
   // Computed Parameter: Bias_Bias
   //  Referenced by: '<S6>/Bias'
 
-  0.122913599F,
+  0.558050871F,
 
-  // Computed Parameter: Gain2_Gain_i
+  // Computed Parameter: Gain2_Gain_e
   //  Referenced by: '<S6>/Gain2'
 
-  1011.07538F,
+  1088.51172F,
 
   // Computed Parameter: Bias1_Bias
   //  Referenced by: '<S6>/Bias1'
 
-  2589.15894F,
+  1998.79419F,
 
   // Expression: transFlag
   //  Referenced by: '<S1>/Constant2'
@@ -122,7 +122,7 @@ SDA::P_SDA_T SDA::SDA_P{
 
   1,
 
-  // Computed Parameter: Gain1_Gain_g
+  // Computed Parameter: Gain1_Gain_d
   //  Referenced by: '<S1>/Gain1'
 
   -1,

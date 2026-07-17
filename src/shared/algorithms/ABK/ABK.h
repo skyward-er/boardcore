@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'ABK'.
 //
-// Model version                  : 11.328
+// Model version                  : 11.369
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:42:34 2026
+// C/C++ source code generated on : Thu Jul 16 14:05:08 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -50,12 +50,12 @@ class ABK final
     float Memory3_PreviousInput[2];    // '<S17>/Memory3'
     float Massselector[1806];          // '<S6>/Mass selector'
     float UnitDelay_DSTATE;            // '<S2>/Unit Delay'
-    float Memory_PreviousInput_h;      // '<S13>/Memory'
+    float Memory_PreviousInput_o;      // '<S13>/Memory'
     int8_t If_ActiveSubsystem;         // '<S1>/If'
-    int8_t If_ActiveSubsystem_k;       // '<S2>/If'
+    int8_t If_ActiveSubsystem_d;       // '<S2>/If'
     uint8_t massIndex;                 // '<S6>/Mass_Prelookup'
     uint8_t UnitDelay1_DSTATE;         // '<S2>/Unit Delay1'
-    bool UnitDelay_DSTATE_l;           // '<S16>/Unit Delay'
+    bool UnitDelay_DSTATE_j;           // '<S16>/Unit Delay'
     bool Memory1_PreviousInput;        // '<S13>/Memory1'
   };
 
@@ -66,7 +66,7 @@ class ABK final
 
   // External inputs (root inport signals with default storage)
   struct ExtU_ABK_T {
-    ABKIn ABKIn_l;                     // '<Root>/ABK In'
+    ABKIn ABKIn_e;                     // '<Root>/ABK In'
   };
 
   // External outputs (root outports fed by signals with default storage)
@@ -83,7 +83,7 @@ class ABK final
     float FullOpen_compare_const;      // Mask Parameter: FullOpen_compare_const
                                           //  Referenced by: '<S15>/Constant'
 
-    float FullOpen_compare_const_o;  // Mask Parameter: FullOpen_compare_const_o
+    float FullOpen_compare_const_g;  // Mask Parameter: FullOpen_compare_const_g
                                         //  Referenced by: '<S18>/Constant'
 
     ABKLogs ABKLogsOBSW_Outport_2_Y0;
@@ -160,10 +160,10 @@ class ABK final
     float Saturation_LowerSat;        // Computed Parameter: Saturation_LowerSat
                                          //  Referenced by: '<S13>/Saturation'
 
-    float Saturation_UpperSat_m;    // Computed Parameter: Saturation_UpperSat_m
+    float Saturation_UpperSat_l;    // Computed Parameter: Saturation_UpperSat_l
                                        //  Referenced by: '<S17>/Saturation'
 
-    float Saturation_LowerSat_p;    // Computed Parameter: Saturation_LowerSat_p
+    float Saturation_LowerSat_a;    // Computed Parameter: Saturation_LowerSat_a
                                        //  Referenced by: '<S17>/Saturation'
 
     float Trajectorydifference_Value[3311];
@@ -173,8 +173,8 @@ class ABK final
     float coeffb_Value[3];             // Computed Parameter: coeffb_Value
                                           //  Referenced by: '<S17>/coeff b'
 
-    float Memory_InitialCondition_f;
-                                // Computed Parameter: Memory_InitialCondition_f
+    float Memory_InitialCondition_k;
+                                // Computed Parameter: Memory_InitialCondition_k
                                    //  Referenced by: '<S17>/Memory'
 
     float coeffa_Value[2];             // Computed Parameter: coeffa_Value
@@ -218,7 +218,7 @@ class ABK final
     float Constant_Value_o;            // Computed Parameter: Constant_Value_o
                                           //  Referenced by: '<S4>/Constant'
 
-    float Gain_Gain_f;                 // Computed Parameter: Gain_Gain_f
+    float Gain_Gain_p;                 // Computed Parameter: Gain_Gain_p
                                           //  Referenced by: '<S3>/Gain'
 
     float Constant1_Value;             // Computed Parameter: Constant1_Value
@@ -227,17 +227,17 @@ class ABK final
     uint32_t Bias_Bias;                // Computed Parameter: Bias_Bias
                                           //  Referenced by: '<S9>/Bias'
 
-    uint16_t Bias_Bias_g;              // Computed Parameter: Bias_Bias_g
+    uint16_t Bias_Bias_e;              // Computed Parameter: Bias_Bias_e
                                           //  Referenced by: '<S19>/Bias'
 
-    uint16_t Bias_Bias_l;              // Computed Parameter: Bias_Bias_l
+    uint16_t Bias_Bias_o;              // Computed Parameter: Bias_Bias_o
                                           //  Referenced by: '<S10>/Bias'
 
     bool Memory1_InitialCondition;
                                  // Computed Parameter: Memory1_InitialCondition
                                     //  Referenced by: '<S13>/Memory1'
 
-    bool UnitDelay_InitialCondition_e; // Expression: false
+    bool UnitDelay_InitialCondition_c; // Expression: false
                                           //  Referenced by: '<S16>/Unit Delay'
 
     uint8_t massIndex_Y0;              // Computed Parameter: massIndex_Y0
@@ -249,10 +249,10 @@ class ABK final
     uint8_t Bias_Bias_c;               // Computed Parameter: Bias_Bias_c
                                           //  Referenced by: '<S2>/Bias'
 
-    uint8_t Saturation_UpperSat_h;  // Computed Parameter: Saturation_UpperSat_h
+    uint8_t Saturation_UpperSat_j;  // Computed Parameter: Saturation_UpperSat_j
                                        //  Referenced by: '<S2>/Saturation'
 
-    uint8_t Saturation_LowerSat_k;  // Computed Parameter: Saturation_LowerSat_k
+    uint8_t Saturation_LowerSat_h;  // Computed Parameter: Saturation_LowerSat_h
                                        //  Referenced by: '<S2>/Saturation'
 
   };
@@ -272,7 +272,7 @@ class ABK final
   // Root inport: '<Root>/ABK In' set method
   void setABK_In(ABKIn localArgInput)
   {
-    ABK_U.ABKIn_l = localArgInput;
+    ABK_U.ABKIn_e = localArgInput;
   }
 
   // Root outport: '<Root>/ABK Control' get method
@@ -409,9 +409,10 @@ class ABK final
 //  Requirements for '<Root>': ABK
 
 
-} // fine namespace ABKww
-#endif                                 // ABK_h_
+} // fine namespace ABK
 
+
+#endif                                 // ABK_h_
 
 //
 // File trailer for generated code.

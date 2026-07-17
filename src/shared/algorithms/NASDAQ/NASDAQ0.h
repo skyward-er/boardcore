@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.328
+// Model version                  : 11.370
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:37:08 2026
+// C/C++ source code generated on : Thu Jul 16 15:55:33 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -41,40 +41,40 @@ class NASDAQ0 final
 
   // Block signals and states (default storage) for system '<Root>'
   struct DW_NASDAQ0_T {
-    DW_Correction_NASDAQ0_T Correction_f;// '<S24>/Correction'
+    DW_Correction_NASDAQ0_T Correction_p;// '<S24>/Correction'
     DW_Correction_NASDAQ0_T Correction;// '<S11>/Correction'
     NASDAQReference UnitDelay1_DSTATE; // '<S19>/Unit Delay1'
     uint64_t RateTransition;           // '<S20>/Rate Transition'
     uint64_t Memory_PreviousInput;     // '<S34>/Memory'
-    uint64_t Memory_PreviousInput_d;   // '<S20>/Memory'
-    uint64_t Memory_PreviousInput_p;   // '<S8>/Memory'
+    uint64_t Memory_PreviousInput_o;   // '<S20>/Memory'
+    uint64_t Memory_PreviousInput_l;   // '<S8>/Memory'
     float VectorConcatenate[6];        // '<S1>/Vector Concatenate'
     float IdentityMatrix[16];          // '<S46>/Identity Matrix'
     float Merge[36];                   // '<S4>/Merge'
     float Merge1[6];                   // '<S4>/Merge1'
     float UnitDelay_DSTATE[36];        // '<S1>/Unit Delay'
-    float UnitDelay1_DSTATE_l[6];      // '<S1>/Unit Delay1'
+    float UnitDelay1_DSTATE_i[6];      // '<S1>/Unit Delay1'
     float MatrixDivide_DWORK4[16];     // '<S42>/Matrix Divide'
-    float IdentityMatrix_b;            // '<S31>/Identity Matrix'
+    float IdentityMatrix_n;            // '<S31>/Identity Matrix'
     float Gain;                        // '<S4>/Gain'
     float Switch;                      // '<S7>/Switch'
-    float IdentityMatrix_i;            // '<S18>/Identity Matrix'
+    float IdentityMatrix_l;            // '<S18>/Identity Matrix'
     int8_t UnitDelay3_DSTATE;          // '<S1>/Unit Delay3'
     int8_t UnitDelay4_DSTATE;          // '<S1>/Unit Delay4'
-    uint8_t UnitDelay_DSTATE_k;        // '<S19>/Unit Delay'
+    uint8_t UnitDelay_DSTATE_a;        // '<S19>/Unit Delay'
   };
 
   // External inputs (root inport signals with default storage)
   struct ExtU_NASDAQ0_T {
-    NASDAQInSensors NASDAQInSensors_p; // '<Root>/NASDAQ In Sensors'
-    NASDAQInADA NASDAQInADA_k;         // '<Root>/NASDAQ In ADA'
+    NASDAQInSensors NASDAQInSensors_m; // '<Root>/NASDAQ In Sensors'
+    NASDAQInADA NASDAQInADA_i;         // '<Root>/NASDAQ In ADA'
     ANAS_NASDAQ NASDAQInANAS;          // '<Root>/NASDAQ In ANAS'
-    NASDAQReference NASDAQReference_j; // '<Root>/NASDAQ Reference'
+    NASDAQReference NASDAQReference_m; // '<Root>/NASDAQ Reference'
   };
 
   // External outputs (root outports fed by signals with default storage)
   struct ExtY_NASDAQ0_T {
-    NASDAQOut NASDAQOut_i;             // '<Root>/NASDAQ Out'
+    NASDAQOut NASDAQOut_g;             // '<Root>/NASDAQ Out'
     NASDAQLogs NASDAQLogsOBSW;         // '<Root>/NASDAQ Logs OBSW'
   };
 
@@ -105,21 +105,21 @@ class NASDAQ0 final
                                 // Computed Parameter: Memory_InitialCondition_d
                                    //  Referenced by: '<S20>/Memory'
 
-    uint64_t Memory_InitialCondition_b;
-                                // Computed Parameter: Memory_InitialCondition_b
-                                   //  Referenced by: '<S34>/Memory'
+    uint64_t Memory_InitialCondition_ds;
+                               // Computed Parameter: Memory_InitialCondition_ds
+                                  //  Referenced by: '<S34>/Memory'
 
-    float Constant_Value_l;            // Computed Parameter: Constant_Value_l
+    float Constant_Value_o;            // Computed Parameter: Constant_Value_o
                                           //  Referenced by: '<S16>/Constant'
 
     float IdentityMatrix_IDMatrixData;
                               // Computed Parameter: IdentityMatrix_IDMatrixData
                                  //  Referenced by: '<S18>/Identity Matrix'
 
-    float Constant_Value_lt;           // Computed Parameter: Constant_Value_lt
+    float Constant_Value_l;            // Computed Parameter: Constant_Value_l
                                           //  Referenced by: '<S7>/Constant'
 
-    float Constant_Value_m[36];        // Computed Parameter: Constant_Value_m
+    float Constant_Value_c[36];        // Computed Parameter: Constant_Value_c
                                           //  Referenced by: '<S13>/Constant'
 
     float NASCondLim_Value;            // Computed Parameter: NASCondLim_Value
@@ -128,17 +128,17 @@ class NASDAQ0 final
     float Gain_Gain;                   // Computed Parameter: Gain_Gain
                                           //  Referenced by: '<S4>/Gain'
 
-    float Constant_Value_a;            // Computed Parameter: Constant_Value_a
+    float Constant_Value_k;            // Computed Parameter: Constant_Value_k
                                           //  Referenced by: '<S29>/Constant'
 
-    float IdentityMatrix_IDMatrixData_b;
-                            // Computed Parameter: IdentityMatrix_IDMatrixData_b
+    float IdentityMatrix_IDMatrixData_a;
+                            // Computed Parameter: IdentityMatrix_IDMatrixData_a
                                //  Referenced by: '<S31>/Identity Matrix'
 
-    float Constant_Value_d[36];        // Computed Parameter: Constant_Value_d
+    float Constant_Value_og[36];       // Computed Parameter: Constant_Value_og
                                           //  Referenced by: '<S26>/Constant'
 
-    float Constant_Value_ls[2];        // Computed Parameter: Constant_Value_ls
+    float Constant_Value_a[2];         // Computed Parameter: Constant_Value_a
                                           //  Referenced by: '<S23>/Constant'
 
     float Gain3_Gain;                  // Computed Parameter: Gain3_Gain
@@ -153,13 +153,13 @@ class NASDAQ0 final
     float Constant1_Value[3];          // Computed Parameter: Constant1_Value
                                           //  Referenced by: '<S23>/Constant1'
 
-    float Constant_Value_b;            // Computed Parameter: Constant_Value_b
+    float Constant_Value_h;            // Computed Parameter: Constant_Value_h
                                           //  Referenced by: '<S19>/Constant'
 
-    float NASCondLim_Value_p;          // Computed Parameter: NASCondLim_Value_p
+    float NASCondLim_Value_h;          // Computed Parameter: NASCondLim_Value_h
                                           //  Referenced by: '<S24>/NASCondLim'
 
-    float Gain_Gain_e;                 // Computed Parameter: Gain_Gain_e
+    float Gain_Gain_p;                 // Computed Parameter: Gain_Gain_p
                                           //  Referenced by: '<S25>/Gain'
 
     float HeightTemperatureGradient_Value;
@@ -172,26 +172,26 @@ class NASDAQ0 final
     float Rair_Value;                  // Computed Parameter: Rair_Value
                                           //  Referenced by: '<S32>/R air'
 
-    float Gain_Gain_g;                 // Computed Parameter: Gain_Gain_g
+    float Gain_Gain_n;                 // Computed Parameter: Gain_Gain_n
                                           //  Referenced by: '<S43>/Gain'
 
-    float Constant_Value_lp;           // Computed Parameter: Constant_Value_lp
+    float Constant_Value_m;            // Computed Parameter: Constant_Value_m
                                           //  Referenced by: '<S44>/Constant'
 
-    float IdentityMatrix_IDMatrixData_o[16];
-                            // Computed Parameter: IdentityMatrix_IDMatrixData_o
+    float IdentityMatrix_IDMatrixData_e[16];
+                            // Computed Parameter: IdentityMatrix_IDMatrixData_e
                                //  Referenced by: '<S46>/Identity Matrix'
 
-    float Constant_Value_lo[36];       // Computed Parameter: Constant_Value_lo
+    float Constant_Value_ki[36];       // Computed Parameter: Constant_Value_ki
                                           //  Referenced by: '<S40>/Constant'
 
-    float Constant_Value_n;            // Computed Parameter: Constant_Value_n
+    float Constant_Value_i;            // Computed Parameter: Constant_Value_i
                                           //  Referenced by: '<S37>/Constant'
 
-    float Constant1_Value_i;           // Computed Parameter: Constant1_Value_i
+    float Constant1_Value_c;           // Computed Parameter: Constant1_Value_c
                                           //  Referenced by: '<S37>/Constant1'
 
-    float Gain_Gain_k;                 // Computed Parameter: Gain_Gain_k
+    float Gain_Gain_j;                 // Computed Parameter: Gain_Gain_j
                                           //  Referenced by: '<S37>/Gain'
 
     float Bias_Bias;                   // Computed Parameter: Bias_Bias
@@ -206,10 +206,10 @@ class NASDAQ0 final
     float Constant4_Value;             // Computed Parameter: Constant4_Value
                                           //  Referenced by: '<S37>/Constant4'
 
-    float Gain1_Gain_i;                // Computed Parameter: Gain1_Gain_i
+    float Gain1_Gain_h;                // Computed Parameter: Gain1_Gain_h
                                           //  Referenced by: '<S37>/Gain1'
 
-    float Gain3_Gain_d;                // Computed Parameter: Gain3_Gain_d
+    float Gain3_Gain_j;                // Computed Parameter: Gain3_Gain_j
                                           //  Referenced by: '<S37>/Gain3'
 
     float Constant5_Value[8];          // Computed Parameter: Constant5_Value
@@ -218,111 +218,107 @@ class NASDAQ0 final
     float Constant6_Value[12];         // Computed Parameter: Constant6_Value
                                           //  Referenced by: '<S37>/Constant6'
 
-    float Constant_Value_g[16];        // Computed Parameter: Constant_Value_g
+    float Constant_Value_b[16];        // Computed Parameter: Constant_Value_b
                                           //  Referenced by: '<S33>/Constant'
 
-    float NASCondLim_Value_n;          // Computed Parameter: NASCondLim_Value_n
+    float NASCondLim_Value_b;          // Computed Parameter: NASCondLim_Value_b
                                           //  Referenced by: '<S38>/NASCondLim'
 
-    float Gain3_Gain_h;                // Computed Parameter: Gain3_Gain_h
+    float Gain3_Gain_o;                // Computed Parameter: Gain3_Gain_o
                                           //  Referenced by: '<S39>/Gain3'
 
-    float Bias_Bias_f;                 // Computed Parameter: Bias_Bias_f
+    float Bias_Bias_j;                 // Computed Parameter: Bias_Bias_j
                                           //  Referenced by: '<S39>/Bias'
 
-    float Gain1_Gain_c;                // Computed Parameter: Gain1_Gain_c
+    float Gain1_Gain_b;                // Computed Parameter: Gain1_Gain_b
                                           //  Referenced by: '<S47>/Gain1'
 
-    float Gain4_Gain_i;                // Computed Parameter: Gain4_Gain_i
+    float Gain4_Gain_a;                // Computed Parameter: Gain4_Gain_a
                                           //  Referenced by: '<S39>/Gain4'
 
     float Bias1_Bias;                  // Computed Parameter: Bias1_Bias
                                           //  Referenced by: '<S39>/Bias1'
 
-    float Gain_Gain_h[4];              // Computed Parameter: Gain_Gain_h
+    float Gain_Gain_c[4];              // Computed Parameter: Gain_Gain_c
                                           //  Referenced by: '<S39>/Gain'
 
-    float Constant1_Value_k[36];       // Computed Parameter: Constant1_Value_k
+    float Constant1_Value_p[36];       // Computed Parameter: Constant1_Value_p
                                           //  Referenced by: '<S3>/Constant1'
 
-    float Gain1_Gain_n;                // Computed Parameter: Gain1_Gain_n
+    float Gain1_Gain_i;                // Computed Parameter: Gain1_Gain_i
                                           //  Referenced by: '<S3>/Gain1'
 
-    float Bias_Bias_l[36];             // Computed Parameter: Bias_Bias_l
+    float Bias_Bias_k[36];             // Computed Parameter: Bias_Bias_k
                                           //  Referenced by: '<S3>/Bias'
 
-    float Bias1_Bias_k[36];            // Computed Parameter: Bias1_Bias_k
+    float Bias1_Bias_h[36];            // Computed Parameter: Bias1_Bias_h
                                           //  Referenced by: '<S3>/Bias1'
 
-    float Gain_Gain_o;                 // Computed Parameter: Gain_Gain_o
+    float Gain_Gain_i;                 // Computed Parameter: Gain_Gain_i
                                           //  Referenced by: '<S3>/Gain'
 
-    float UnitDelay_InitialCondition;
-                               // Computed Parameter: UnitDelay_InitialCondition
-                                  //  Referenced by: '<S1>/Unit Delay'
+    float UnitDelay_InitialCondition;  // Expression: single(0)
+                                          //  Referenced by: '<S1>/Unit Delay'
 
-    float UnitDelay1_InitialCondition_f;
-                            // Computed Parameter: UnitDelay1_InitialCondition_f
-                               //  Referenced by: '<S1>/Unit Delay1'
+    float UnitDelay1_InitialCondition_m;// Expression: single(0)
+                                           //  Referenced by: '<S1>/Unit Delay1'
 
-    bool Constant1_Value_g;            // Computed Parameter: Constant1_Value_g
+    bool Constant1_Value_a;            // Computed Parameter: Constant1_Value_a
                                           //  Referenced by: '<S7>/Constant1'
 
-    bool Constant_Value_k;             // Computed Parameter: Constant_Value_k
+    bool Constant_Value_d;             // Computed Parameter: Constant_Value_d
                                           //  Referenced by: '<S20>/Constant'
 
-    int8_t UnitDelay3_InitialCondition;
-                              // Computed Parameter: UnitDelay3_InitialCondition
-                                 //  Referenced by: '<S1>/Unit Delay3'
+    int8_t UnitDelay3_InitialCondition;// Expression: int8(-1)
+                                          //  Referenced by: '<S1>/Unit Delay3'
 
     int8_t Switch_Threshold;           // Computed Parameter: Switch_Threshold
                                           //  Referenced by: '<S1>/Switch'
 
-    int8_t UnitDelay4_InitialCondition;
-                              // Computed Parameter: UnitDelay4_InitialCondition
-                                 //  Referenced by: '<S1>/Unit Delay4'
+    int8_t UnitDelay4_InitialCondition;// Expression: int8(-1)
+                                          //  Referenced by: '<S1>/Unit Delay4'
 
     int8_t Switch1_Threshold;          // Computed Parameter: Switch1_Threshold
                                           //  Referenced by: '<S1>/Switch1'
 
-    int8_t Bias3_Bias;                 // Computed Parameter: Bias3_Bias
+    int8_t Bias3_Bias;                 // Expression: int8(1)
                                           //  Referenced by: '<S1>/Bias3'
 
-    int8_t Saturation3_UpperSat;     // Computed Parameter: Saturation3_UpperSat
-                                        //  Referenced by: '<S1>/Saturation3'
+    int8_t Saturation3_UpperSat;       // Expression: int8(1)
+                                          //  Referenced by: '<S1>/Saturation3'
 
-    int8_t Saturation3_LowerSat;     // Computed Parameter: Saturation3_LowerSat
-                                        //  Referenced by: '<S1>/Saturation3'
+    int8_t Saturation3_LowerSat;       // Expression: int8(-1)
+                                          //  Referenced by: '<S1>/Saturation3'
 
-    int8_t Bias_Bias_d;                // Computed Parameter: Bias_Bias_d
+    int8_t Bias_Bias_g;                // Expression: int8(1)
                                           //  Referenced by: '<S1>/Bias'
 
-    int8_t Saturation_UpperSat;       // Computed Parameter: Saturation_UpperSat
-                                         //  Referenced by: '<S1>/Saturation'
+    int8_t Saturation_UpperSat;        // Expression: int8(1)
+                                          //  Referenced by: '<S1>/Saturation'
 
-    int8_t Saturation_LowerSat;       // Computed Parameter: Saturation_LowerSat
-                                         //  Referenced by: '<S1>/Saturation'
+    int8_t Saturation_LowerSat;        // Expression: int8(-1)
+                                          //  Referenced by: '<S1>/Saturation'
 
     uint8_t HMatrix_Value[6];          // Computed Parameter: HMatrix_Value
                                           //  Referenced by: '<S7>/H Matrix'
 
-    uint8_t UnitDelay_InitialCondition_i;
-                             // Computed Parameter: UnitDelay_InitialCondition_i
+    uint8_t UnitDelay_InitialCondition_k;
+                             // Computed Parameter: UnitDelay_InitialCondition_k
                                 //  Referenced by: '<S19>/Unit Delay'
 
-    uint8_t Switch_Threshold_d;        // Computed Parameter: Switch_Threshold_d
+    uint8_t Switch_Threshold_f;        // Computed Parameter: Switch_Threshold_f
                                           //  Referenced by: '<S19>/Switch'
 
-    uint8_t Bias_Bias_k;               // Computed Parameter: Bias_Bias_k
+    uint8_t Bias_Bias_j5;              // Computed Parameter: Bias_Bias_j5
                                           //  Referenced by: '<S19>/Bias'
 
-    uint8_t Saturation_UpperSat_j;  // Computed Parameter: Saturation_UpperSat_j
+    uint8_t Saturation_UpperSat_c;  // Computed Parameter: Saturation_UpperSat_c
                                        //  Referenced by: '<S19>/Saturation'
 
-    uint8_t Saturation_LowerSat_m;  // Computed Parameter: Saturation_LowerSat_m
+    uint8_t Saturation_LowerSat_f;  // Computed Parameter: Saturation_LowerSat_f
                                        //  Referenced by: '<S19>/Saturation'
 
-    P_Nocorrection_NASDAQ0_T Nocorrection_o;// '<S24>/No correction'
+    P_Nocorrection_NASDAQ0_T Nocorrection_b;// '<S24>/No correction'
     P_Nocorrection_NASDAQ0_T Nocorrection;// '<S11>/No correction'
   };
 
@@ -358,13 +354,13 @@ class NASDAQ0 final
   // Root inport: '<Root>/NASDAQ In Sensors' set method
   void setNASDAQ_In_Sensors(NASDAQInSensors localArgInput)
   {
-    NASDAQ0_U.NASDAQInSensors_p = localArgInput;
+    NASDAQ0_U.NASDAQInSensors_m = localArgInput;
   }
 
   // Root inport: '<Root>/NASDAQ In ADA' set method
   void setNASDAQ_In_ADA(NASDAQInADA localArgInput)
   {
-    NASDAQ0_U.NASDAQInADA_k = localArgInput;
+    NASDAQ0_U.NASDAQInADA_i = localArgInput;
   }
 
   // Root inport: '<Root>/NASDAQ In ANAS' set method
@@ -376,13 +372,13 @@ class NASDAQ0 final
   // Root inport: '<Root>/NASDAQ Reference' set method
   void setNASDAQ_Reference(NASDAQReference localArgInput)
   {
-    NASDAQ0_U.NASDAQReference_j = localArgInput;
+    NASDAQ0_U.NASDAQReference_m = localArgInput;
   }
 
   // Root outport: '<Root>/NASDAQ Out' get method
   NASDAQOut getNASDAQ_Out() const
   {
-    return NASDAQ0_Y.NASDAQOut_i;
+    return NASDAQ0_Y.NASDAQOut_g;
   }
 
   // Root outport: '<Root>/NASDAQ Logs OBSW' get method
@@ -532,10 +528,10 @@ class NASDAQ0 final
 //  Requirements for '<Root>': NASDAQ0
 
 
-#endif                                 // NASDAQ0_h_
-
-
 } // fine namespace NASDAQ
+
+
+#endif                                 // NASDAQ0_h_
 
 //
 // File trailer for generated code.

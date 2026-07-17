@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'ABK'.
 //
-// Model version                  : 11.328
+// Model version                  : 11.369
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:42:34 2026
+// C/C++ source code generated on : Thu Jul 16 14:05:08 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -184,7 +184,7 @@ void ABK::step()
   float rtb_Bypass_vect_idx_1;
   float rtb_Prelookup_o2;
   float rtb_Saturation2;
-  float rtb_Selector1_j;
+  float rtb_Selector1_p;
   float rtb_integralError;
   float rtb_zNAS;
   float u0_tmp_0;
@@ -198,7 +198,7 @@ void ABK::step()
   uint8_t u0_0;
   bool rtb_Lowercondition;
   bool rtb_OR;
-  bool rtb_OR_h;
+  bool rtb_OR_o;
 
   // Outputs for Atomic SubSystem: '<Root>/ABK'
   // If: '<S1>/If'
@@ -209,7 +209,7 @@ void ABK::step()
   //   Gain: '<S3>/Gain'
   //   Inport: '<Root>/ABK In'
 
-  u0 = ABK_P.Gain_Gain_f * ABK_U.ABKIn_l.ANASPosition[2];
+  u0 = ABK_P.Gain_Gain_p * ABK_U.ABKIn_e.ANASPosition[2];
 
   // Saturate: '<S22>/Limit  altitude  to troposhere'
   if (u0 > ABK_P.Limitaltitudetotroposhere_Upper) {
@@ -235,10 +235,10 @@ void ABK::step()
   //   Sum: '<S22>/Sum1'
   //   UnitDelay: '<S2>/Unit Delay1'
 
-  rtAction = static_cast<int8_t>(std::sqrt((ABK_U.ABKIn_l.ANASVelocity[0] *
-    ABK_U.ABKIn_l.ANASVelocity[0] + ABK_U.ABKIn_l.ANASVelocity[1] *
-    ABK_U.ABKIn_l.ANASVelocity[1]) + ABK_U.ABKIn_l.ANASVelocity[2] *
-    ABK_U.ABKIn_l.ANASVelocity[2]) / static_cast<float>(std::sqrt
+  rtAction = static_cast<int8_t>(std::sqrt((ABK_U.ABKIn_e.ANASVelocity[0] *
+    ABK_U.ABKIn_e.ANASVelocity[0] + ABK_U.ABKIn_e.ANASVelocity[1] *
+    ABK_U.ABKIn_e.ANASVelocity[1]) + ABK_U.ABKIn_e.ANASVelocity[2] *
+    ABK_U.ABKIn_e.ANASVelocity[2]) / static_cast<float>(std::sqrt
     ((ABK_P.SeaLevelTemperature_Value - ABK_P.LapseRate_Gain * u0) *
      ABK_P.gammaR_Gain)) >= ABK_P.Constant1_Value);
 
@@ -246,7 +246,7 @@ void ABK::step()
   ABK_DW.If_ActiveSubsystem = rtAction;
   if ((rtPrevAction != rtAction) && (rtPrevAction == 0)) {
     // Disable for If: '<S2>/If'
-    ABK_DW.If_ActiveSubsystem_k = -1;
+    ABK_DW.If_ActiveSubsystem_d = -1;
   }
 
   if (rtAction == 0) {
@@ -261,7 +261,7 @@ void ABK::step()
       // PreLookup: '<S6>/Mass_Prelookup' incorporates:
       //   Constant: '<S6>/Trajectories Matrix1'
 
-      ABK_DW.massIndex = plook_u8f_evencka(ABK_U.ABKIn_l.MEAMass,
+      ABK_DW.massIndex = plook_u8f_evencka(ABK_U.ABKIn_e.MEAMass,
         ABK_P.TrajectoriesMatrix1_Value[0], ABK_P.TrajectoriesMatrix1_Value[1] -
         ABK_P.TrajectoriesMatrix1_Value[0], 10U);
 
@@ -299,7 +299,7 @@ void ABK::step()
     // Gain: '<S2>/Gain' incorporates:
     //   UnitDelay: '<S2>/Unit Delay1'
 
-    rtb_zNAS = ABK_P.Gain_Gain * ABK_U.ABKIn_l.ANASPosition[2];
+    rtb_zNAS = ABK_P.Gain_Gain * ABK_U.ABKIn_e.ANASPosition[2];
 
     // PreLookup: '<S9>/Prelookup' incorporates:
     //   Selector: '<S6>/Select column z'
@@ -324,17 +324,17 @@ void ABK::step()
       //   Selector: '<S6>/Select trajectories'
       //   Selector: '<S9>/Selector'
 
-      rtb_Selector1_j = ABK_DW.Selecttrajectories[301 * u0_tmp +
+      rtb_Selector1_p = ABK_DW.Selecttrajectories[301 * u0_tmp +
         static_cast<int32_t>(rtb_Prelookup_o1)];
       rtb_Add1[u0_tmp] = (ABK_DW.Selecttrajectories[301 * u0_tmp +
-                          rtb_Prelookup_o1_0] - rtb_Selector1_j) *
-        rtb_Prelookup_o2 + rtb_Selector1_j;
+                          rtb_Prelookup_o1_0] - rtb_Selector1_p) *
+        rtb_Prelookup_o2 + rtb_Selector1_p;
     }
 
     // End of Sum: '<S9>/Add1'
 
     // Gain: '<S2>/Gain1'
-    rtb_Prelookup_o2 = ABK_P.Gain1_Gain * ABK_U.ABKIn_l.ANASVelocity[2];
+    rtb_Prelookup_o2 = ABK_P.Gain1_Gain * ABK_U.ABKIn_e.ANASVelocity[2];
 
     // RelationalOperator: '<S2>/Relational Operator' incorporates:
     //   Bias: '<S2>/Bypass_vect'
@@ -349,22 +349,22 @@ void ABK::step()
     //   Selector: '<S2>/Selector1'
     //   Sum: '<S9>/Add1'
 
-    rtb_OR_h = (rtb_Prelookup_o2 >= ABK_P.Bypass_vect_Bias[1] + rtb_Add1[4]);
+    rtb_OR_o = (rtb_Prelookup_o2 >= ABK_P.Bypass_vect_Bias[1] + rtb_Add1[4]);
 
     // If: '<S2>/If' incorporates:
     //   Constant: '<S7>/Full close'
     //   Constant: '<S8>/Full open'
 
-    rtPrevAction = ABK_DW.If_ActiveSubsystem_k;
+    rtPrevAction = ABK_DW.If_ActiveSubsystem_d;
     if (!rtb_Lowercondition) {
-      if (rtb_OR_h) {
+      if (rtb_OR_o) {
         rtAction = 1;
       } else {
         rtAction = 2;
       }
     }
 
-    ABK_DW.If_ActiveSubsystem_k = rtAction;
+    ABK_DW.If_ActiveSubsystem_d = rtAction;
     switch (rtAction) {
      case 0:
       // Outputs for IfAction SubSystem: '<S2>/Lower Bypass' incorporates:
@@ -398,16 +398,16 @@ void ABK::step()
         //   UnitDelay: '<S16>/Unit Delay'
 
         ABK_DW.Memory1_PreviousInput = ABK_P.Memory1_InitialCondition;
-        ABK_DW.Memory_PreviousInput_h = ABK_P.Memory_InitialCondition;
+        ABK_DW.Memory_PreviousInput_o = ABK_P.Memory_InitialCondition;
 
         // End of SystemReset for SubSystem: '<S5>/PID Controller'
 
         // SystemReset for Atomic SubSystem: '<S5>/Variant Filter'
-        ABK_DW.Memory_PreviousInput[0] = ABK_P.Memory_InitialCondition_f;
+        ABK_DW.Memory_PreviousInput[0] = ABK_P.Memory_InitialCondition_k;
         ABK_DW.Memory3_PreviousInput[0] = ABK_P.Memory3_InitialCondition;
-        ABK_DW.Memory_PreviousInput[1] = ABK_P.Memory_InitialCondition_f;
+        ABK_DW.Memory_PreviousInput[1] = ABK_P.Memory_InitialCondition_k;
         ABK_DW.Memory3_PreviousInput[1] = ABK_P.Memory3_InitialCondition;
-        ABK_DW.UnitDelay_DSTATE_l = ABK_P.UnitDelay_InitialCondition_e;
+        ABK_DW.UnitDelay_DSTATE_j = ABK_P.UnitDelay_InitialCondition_c;
 
         // End of SystemReset for SubSystem: '<S5>/Variant Filter'
         // End of SystemReset for SubSystem: '<S2>/Active control system'
@@ -418,7 +418,7 @@ void ABK::step()
 
       // PreLookup: '<S10>/Prelookup1'
       rtb_Prelookup1_o1 = plook_u16ff_binc(rtb_Prelookup_o2, rtb_Add1, 4U,
-        &rtb_Selector1_j);
+        &rtb_Selector1_p);
 
       // Selector: '<S10>/Selector4' incorporates:
       //   Constant: '<S10>/Extensions'
@@ -434,12 +434,12 @@ void ABK::step()
       //   Sum: '<S10>/Sum4'
 
       rtb_Prelookup_o2 += (ABK_P.Extensions_Value[static_cast<uint16_t>
-                           (rtb_Prelookup1_o1 + ABK_P.Bias_Bias_l)] -
-                           rtb_Prelookup_o2) * rtb_Selector1_j;
+                           (rtb_Prelookup1_o1 + ABK_P.Bias_Bias_o)] -
+                           rtb_Prelookup_o2) * rtb_Selector1_p;
 
       // Outputs for Atomic SubSystem: '<S5>/PID Controller'
       // Bias: '<S13>/refBias1'
-      rtb_Selector1_j = rtb_Prelookup_o2 + ABK_P.refBias1_Bias;
+      rtb_Selector1_p = rtb_Prelookup_o2 + ABK_P.refBias1_Bias;
 
       // Switch: '<S13>/Switch' incorporates:
       //   Constant: '<S13>/Constant'
@@ -450,14 +450,14 @@ void ABK::step()
       if (ABK_DW.Memory1_PreviousInput) {
         u0_tmp_0 = ABK_P.Constant_Value;
       } else {
-        u0_tmp_0 = ABK_P.SampleTime_Value * rtb_Selector1_j;
+        u0_tmp_0 = ABK_P.SampleTime_Value * rtb_Selector1_p;
       }
 
       // Sum: '<S13>/Add' incorporates:
       //   Memory: '<S13>/Memory'
       //   Switch: '<S13>/Switch'
 
-      rtb_integralError = u0_tmp_0 + ABK_DW.Memory_PreviousInput_h;
+      rtb_integralError = u0_tmp_0 + ABK_DW.Memory_PreviousInput_o;
 
       // Bias: '<S13>/refBias2' incorporates:
       //   Bias: '<S13>/refBias'
@@ -472,16 +472,16 @@ void ABK::step()
       //   Sum: '<S13>/Add1'
       //   UnitDelay: '<S2>/Unit Delay'
 
-      rtb_Selector1_j = (((ABK_DW.UnitDelay_DSTATE + ABK_P.refBias_Bias) /
+      rtb_Selector1_p = (((ABK_DW.UnitDelay_DSTATE + ABK_P.refBias_Bias) /
                           ABK_P.SampleTime_Value * ABK_P.Kd_Value +
                           ABK_P.Ki_Value * rtb_integralError) + ABK_P.Kp_Value *
-                         rtb_Selector1_j) + ABK_P.refBias2_Bias;
+                         rtb_Selector1_p) + ABK_P.refBias2_Bias;
 
       // Saturate: '<S13>/Saturation'
-      if (rtb_Selector1_j > ABK_P.Saturation_UpperSat) {
-        rtb_Selector1_j = ABK_P.Saturation_UpperSat;
-      } else if (rtb_Selector1_j < ABK_P.Saturation_LowerSat) {
-        rtb_Selector1_j = ABK_P.Saturation_LowerSat;
+      if (rtb_Selector1_p > ABK_P.Saturation_UpperSat) {
+        rtb_Selector1_p = ABK_P.Saturation_UpperSat;
+      } else if (rtb_Selector1_p < ABK_P.Saturation_LowerSat) {
+        rtb_Selector1_p = ABK_P.Saturation_LowerSat;
       }
 
       // End of Saturate: '<S13>/Saturation'
@@ -493,12 +493,12 @@ void ABK::step()
       //   RelationalOperator: '<S14>/Compare'
       //   RelationalOperator: '<S15>/Compare'
 
-      ABK_DW.Memory1_PreviousInput = ((rtb_Selector1_j <=
-        ABK_P.FullClose_compare_const) || (rtb_Selector1_j >=
+      ABK_DW.Memory1_PreviousInput = ((rtb_Selector1_p <=
+        ABK_P.FullClose_compare_const) || (rtb_Selector1_p >=
         ABK_P.FullOpen_compare_const));
 
       // Update for Memory: '<S13>/Memory'
-      ABK_DW.Memory_PreviousInput_h = rtb_integralError;
+      ABK_DW.Memory_PreviousInput_o = rtb_integralError;
 
       // End of Outputs for SubSystem: '<S5>/PID Controller'
 
@@ -532,7 +532,7 @@ void ABK::step()
       //   Product: '<S17>/Matrix Multiply1'
       //   SignalConversion generated from: '<S17>/Vector Concatenate1'
 
-      rtb_integralError = ((ABK_P.coeffb_Value[0] * rtb_Selector1_j +
+      rtb_integralError = ((ABK_P.coeffb_Value[0] * rtb_Selector1_p +
                             ABK_DW.Memory_PreviousInput[0] * ABK_P.coeffb_Value
                             [1]) + ABK_P.coeffb_Value[2] * rtb_integralError) -
         rtb_Saturation2;
@@ -562,7 +562,7 @@ void ABK::step()
       //   Sum: '<S19>/Add1'
 
       rtb_Saturation2 = ((ABK_P.Trajectorydifference_Value[static_cast<uint16_t>
-                          (rtb_Prelookup1_o1 + ABK_P.Bias_Bias_g) + u0_tmp] -
+                          (rtb_Prelookup1_o1 + ABK_P.Bias_Bias_e) + u0_tmp] -
                           u0_tmp_0) * rtb_Saturation2 + u0_tmp_0) *
         ABK_P.T_refGain_Gain;
 
@@ -583,8 +583,8 @@ void ABK::step()
       //   RelationalOperator: '<S18>/Compare'
       //   UnitDelay: '<S16>/Unit Delay'
 
-      rtb_OR = (ABK_DW.UnitDelay_DSTATE_l || (rtb_zNAS >=
-                 ABK_P.FullOpen_compare_const_o));
+      rtb_OR = (ABK_DW.UnitDelay_DSTATE_j || (rtb_zNAS >=
+                 ABK_P.FullOpen_compare_const_g));
 
       // Switch: '<S16>/Switch' incorporates:
       //   Bias: '<S19>/Bias3'
@@ -597,19 +597,19 @@ void ABK::step()
       if (rtb_OR) {
         rtb_zNAS = ABK_P.fullOpen_Value;
       } else {
-        if (rtb_integralError > ABK_P.Saturation_UpperSat_m) {
+        if (rtb_integralError > ABK_P.Saturation_UpperSat_l) {
           // Saturate: '<S17>/Saturation'
-          u0_tmp_0 = ABK_P.Saturation_UpperSat_m;
-        } else if (rtb_integralError < ABK_P.Saturation_LowerSat_p) {
+          u0_tmp_0 = ABK_P.Saturation_UpperSat_l;
+        } else if (rtb_integralError < ABK_P.Saturation_LowerSat_a) {
           // Saturate: '<S17>/Saturation'
-          u0_tmp_0 = ABK_P.Saturation_LowerSat_p;
+          u0_tmp_0 = ABK_P.Saturation_LowerSat_a;
         } else {
           // Saturate: '<S17>/Saturation'
           u0_tmp_0 = rtb_integralError;
         }
 
-        rtb_zNAS = (u0_tmp_0 - rtb_Selector1_j) * rtb_Saturation2 +
-          rtb_Selector1_j;
+        rtb_zNAS = (u0_tmp_0 - rtb_Selector1_p) * rtb_Saturation2 +
+          rtb_Selector1_p;
       }
 
       // End of Switch: '<S16>/Switch'
@@ -617,7 +617,7 @@ void ABK::step()
       // SignalConversion generated from: '<S17>/Vector Concatenate' incorporates:
       //   Memory: '<S17>/Memory'
 
-      ABK_DW.Memory_PreviousInput[0] = rtb_Selector1_j;
+      ABK_DW.Memory_PreviousInput[0] = rtb_Selector1_p;
 
       // Update for Memory: '<S17>/Memory3' incorporates:
       //   SignalConversion generated from: '<S17>/Vector Concatenate2'
@@ -626,7 +626,7 @@ void ABK::step()
       ABK_DW.Memory3_PreviousInput[1] = rtb_Bypass_vect_idx_1;
 
       // Update for UnitDelay: '<S16>/Unit Delay'
-      ABK_DW.UnitDelay_DSTATE_l = rtb_OR;
+      ABK_DW.UnitDelay_DSTATE_j = rtb_OR;
 
       // End of Outputs for SubSystem: '<S5>/Variant Filter'
 
@@ -637,7 +637,7 @@ void ABK::step()
       ABK_DW.ABKLogsOBSW_BusCreator_BusCreat.Timestamp = 0ULL;
       ABK_DW.ABKLogsOBSW_BusCreator_BusCreat.FilterCoefficient = rtb_Saturation2;
       ABK_DW.ABKLogsOBSW_BusCreator_BusCreat.PrePIDCommand = rtb_Prelookup_o2;
-      ABK_DW.ABKLogsOBSW_BusCreator_BusCreat.PostPIDCommand = rtb_Selector1_j;
+      ABK_DW.ABKLogsOBSW_BusCreator_BusCreat.PostPIDCommand = rtb_Selector1_p;
       ABK_DW.ABKLogsOBSW_BusCreator_BusCreat.BypassActivation = false;
 
       // End of Outputs for SubSystem: '<S2>/Active control system'
@@ -654,7 +654,7 @@ void ABK::step()
     // BusAssignment: '<S2>/Bus Assignment1' incorporates:
     //   Logic: '<S2>/OR'
 
-    ABK_DW.BusAssignment1.BypassActivation = (rtb_OR_h || rtb_Lowercondition);
+    ABK_DW.BusAssignment1.BypassActivation = (rtb_OR_o || rtb_Lowercondition);
 
     // Bias: '<S2>/Bias' incorporates:
     //   UnitDelay: '<S2>/Unit Delay1'
@@ -662,12 +662,12 @@ void ABK::step()
     u0_0 = static_cast<uint8_t>(ABK_DW.UnitDelay1_DSTATE + ABK_P.Bias_Bias_c);
 
     // Saturate: '<S2>/Saturation'
-    if (u0_0 > ABK_P.Saturation_UpperSat_h) {
+    if (u0_0 > ABK_P.Saturation_UpperSat_j) {
       // Update for UnitDelay: '<S2>/Unit Delay1'
-      ABK_DW.UnitDelay1_DSTATE = ABK_P.Saturation_UpperSat_h;
-    } else if (u0_0 < ABK_P.Saturation_LowerSat_k) {
+      ABK_DW.UnitDelay1_DSTATE = ABK_P.Saturation_UpperSat_j;
+    } else if (u0_0 < ABK_P.Saturation_LowerSat_h) {
       // Update for UnitDelay: '<S2>/Unit Delay1'
-      ABK_DW.UnitDelay1_DSTATE = ABK_P.Saturation_LowerSat_k;
+      ABK_DW.UnitDelay1_DSTATE = ABK_P.Saturation_LowerSat_h;
     } else {
       // Update for UnitDelay: '<S2>/Unit Delay1'
       ABK_DW.UnitDelay1_DSTATE = u0_0;
@@ -720,7 +720,7 @@ void ABK::initialize()
 
     // SystemInitialize for IfAction SubSystem: '<S1>/Algorothm Execution'
     // Start for If: '<S2>/If'
-    ABK_DW.If_ActiveSubsystem_k = -1;
+    ABK_DW.If_ActiveSubsystem_d = -1;
 
     // InitializeConditions for UnitDelay: '<S2>/Unit Delay1'
     ABK_DW.UnitDelay1_DSTATE = ABK_P.UnitDelay1_InitialCondition;
@@ -757,25 +757,25 @@ void ABK::initialize()
     ABK_DW.Memory1_PreviousInput = ABK_P.Memory1_InitialCondition;
 
     // InitializeConditions for Memory: '<S13>/Memory'
-    ABK_DW.Memory_PreviousInput_h = ABK_P.Memory_InitialCondition;
+    ABK_DW.Memory_PreviousInput_o = ABK_P.Memory_InitialCondition;
 
     // End of SystemInitialize for SubSystem: '<S5>/PID Controller'
 
     // SystemInitialize for Atomic SubSystem: '<S5>/Variant Filter'
     // InitializeConditions for Memory: '<S17>/Memory'
-    ABK_DW.Memory_PreviousInput[0] = ABK_P.Memory_InitialCondition_f;
+    ABK_DW.Memory_PreviousInput[0] = ABK_P.Memory_InitialCondition_k;
 
     // InitializeConditions for Memory: '<S17>/Memory3'
     ABK_DW.Memory3_PreviousInput[0] = ABK_P.Memory3_InitialCondition;
 
     // InitializeConditions for Memory: '<S17>/Memory'
-    ABK_DW.Memory_PreviousInput[1] = ABK_P.Memory_InitialCondition_f;
+    ABK_DW.Memory_PreviousInput[1] = ABK_P.Memory_InitialCondition_k;
 
     // InitializeConditions for Memory: '<S17>/Memory3'
     ABK_DW.Memory3_PreviousInput[1] = ABK_P.Memory3_InitialCondition;
 
     // InitializeConditions for UnitDelay: '<S16>/Unit Delay'
-    ABK_DW.UnitDelay_DSTATE_l = ABK_P.UnitDelay_InitialCondition_e;
+    ABK_DW.UnitDelay_DSTATE_j = ABK_P.UnitDelay_InitialCondition_c;
 
     // End of SystemInitialize for SubSystem: '<S5>/Variant Filter'
 

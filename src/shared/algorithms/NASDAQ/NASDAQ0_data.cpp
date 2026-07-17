@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'NASDAQ0'.
 //
-// Model version                  : 11.328
+// Model version                  : 11.370
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Mon Jun 29 09:37:08 2026
+// C/C++ source code generated on : Thu Jul 16 15:55:33 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -55,12 +55,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   (0ULL),
 
-  // Computed Parameter: Memory_InitialCondition_b
+  // Computed Parameter: Memory_InitialCondition_ds
   //  Referenced by: '<S34>/Memory'
 
   (0ULL),
 
-  // Computed Parameter: Constant_Value_l
+  // Computed Parameter: Constant_Value_o
   //  Referenced by: '<S16>/Constant'
 
   0.0F,
@@ -70,12 +70,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   1.0F,
 
-  // Computed Parameter: Constant_Value_lt
+  // Computed Parameter: Constant_Value_l
   //  Referenced by: '<S7>/Constant'
 
   0.5F,
 
-  // Computed Parameter: Constant_Value_m
+  // Computed Parameter: Constant_Value_c
   //  Referenced by: '<S13>/Constant'
 
   { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
@@ -92,24 +92,24 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   -1.0F,
 
-  // Computed Parameter: Constant_Value_a
+  // Computed Parameter: Constant_Value_k
   //  Referenced by: '<S29>/Constant'
 
   0.0F,
 
-  // Computed Parameter: IdentityMatrix_IDMatrixData_b
+  // Computed Parameter: IdentityMatrix_IDMatrixData_a
   //  Referenced by: '<S31>/Identity Matrix'
 
   1.0F,
 
-  // Computed Parameter: Constant_Value_d
+  // Computed Parameter: Constant_Value_og
   //  Referenced by: '<S26>/Constant'
 
   { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
 
-  // Computed Parameter: Constant_Value_ls
+  // Computed Parameter: Constant_Value_a
   //  Referenced by: '<S23>/Constant'
 
   { 0.0F, 0.0F },
@@ -134,17 +134,17 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   { 0.0F, 0.0F, 0.0F },
 
-  // Computed Parameter: Constant_Value_b
+  // Computed Parameter: Constant_Value_h
   //  Referenced by: '<S19>/Constant'
 
   100.0F,
 
-  // Computed Parameter: NASCondLim_Value_p
+  // Computed Parameter: NASCondLim_Value_h
   //  Referenced by: '<S24>/NASCondLim'
 
   0.001F,
 
-  // Computed Parameter: Gain_Gain_e
+  // Computed Parameter: Gain_Gain_p
   //  Referenced by: '<S25>/Gain'
 
   -1.0F,
@@ -164,40 +164,40 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   287.052856F,
 
-  // Computed Parameter: Gain_Gain_g
+  // Computed Parameter: Gain_Gain_n
   //  Referenced by: '<S43>/Gain'
 
   0.0F,
 
-  // Computed Parameter: Constant_Value_lp
+  // Computed Parameter: Constant_Value_m
   //  Referenced by: '<S44>/Constant'
 
   0.0F,
 
-  // Computed Parameter: IdentityMatrix_IDMatrixData_o
+  // Computed Parameter: IdentityMatrix_IDMatrixData_e
   //  Referenced by: '<S46>/Identity Matrix'
 
   { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 1.0F },
 
-  // Computed Parameter: Constant_Value_lo
+  // Computed Parameter: Constant_Value_ki
   //  Referenced by: '<S40>/Constant'
 
   { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
 
-  // Computed Parameter: Constant_Value_n
+  // Computed Parameter: Constant_Value_i
   //  Referenced by: '<S37>/Constant'
 
   8.99823135E-6F,
 
-  // Computed Parameter: Constant1_Value_i
+  // Computed Parameter: Constant1_Value_c
   //  Referenced by: '<S37>/Constant1'
 
   0.0F,
 
-  // Computed Parameter: Gain_Gain_k
+  // Computed Parameter: Gain_Gain_j
   //  Referenced by: '<S37>/Gain'
 
   8.99823135E-6F,
@@ -222,12 +222,12 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   1.0F,
 
-  // Computed Parameter: Gain1_Gain_i
+  // Computed Parameter: Gain1_Gain_h
   //  Referenced by: '<S37>/Gain1'
 
   111412.875F,
 
-  // Computed Parameter: Gain3_Gain_d
+  // Computed Parameter: Gain3_Gain_j
   //  Referenced by: '<S37>/Gain3'
 
   1000.0F,
@@ -242,33 +242,33 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F },
 
-  // Computed Parameter: Constant_Value_g
+  // Computed Parameter: Constant_Value_b
   //  Referenced by: '<S33>/Constant'
 
   { 0.0447F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0447F, 0.0F, 0.0F, 0.0F, 0.0F, 0.1F, 0.0F,
     0.0F, 0.0F, 0.0F, 0.1F },
 
-  // Computed Parameter: NASCondLim_Value_n
+  // Computed Parameter: NASCondLim_Value_b
   //  Referenced by: '<S38>/NASCondLim'
 
   0.001F,
 
-  // Computed Parameter: Gain3_Gain_h
+  // Computed Parameter: Gain3_Gain_o
   //  Referenced by: '<S39>/Gain3'
 
   8.99823135E-6F,
 
-  // Computed Parameter: Bias_Bias_f
+  // Computed Parameter: Bias_Bias_j
   //  Referenced by: '<S39>/Bias'
 
   39.3887253F,
 
-  // Computed Parameter: Gain1_Gain_c
+  // Computed Parameter: Gain1_Gain_b
   //  Referenced by: '<S47>/Gain1'
 
   0.0174532924F,
 
-  // Computed Parameter: Gain4_Gain_i
+  // Computed Parameter: Gain4_Gain_a
   //  Referenced by: '<S39>/Gain4'
 
   111412.875F,
@@ -278,63 +278,63 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   -8.2878418F,
 
-  // Computed Parameter: Gain_Gain_h
+  // Computed Parameter: Gain_Gain_c
   //  Referenced by: '<S39>/Gain'
 
   { 1000.0F, 1000.0F, 1.0F, 1.0F },
 
-  // Computed Parameter: Constant1_Value_k
+  // Computed Parameter: Constant1_Value_p
   //  Referenced by: '<S3>/Constant1'
 
   { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F,
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F },
 
-  // Computed Parameter: Gain1_Gain_n
+  // Computed Parameter: Gain1_Gain_i
   //  Referenced by: '<S3>/Gain1'
 
   0.01F,
 
-  // Computed Parameter: Bias_Bias_l
+  // Computed Parameter: Bias_Bias_k
   //  Referenced by: '<S3>/Bias'
 
   { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F },
 
-  // Computed Parameter: Bias1_Bias_k
+  // Computed Parameter: Bias1_Bias_h
   //  Referenced by: '<S3>/Bias1'
 
   { 0.006F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.006F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 0.75F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F,
     0.0F, 0.0F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.22F },
 
-  // Computed Parameter: Gain_Gain_o
+  // Computed Parameter: Gain_Gain_i
   //  Referenced by: '<S3>/Gain'
 
   0.01F,
 
-  // Computed Parameter: UnitDelay_InitialCondition
+  // Expression: single(0)
   //  Referenced by: '<S1>/Unit Delay'
 
   0.0F,
 
-  // Computed Parameter: UnitDelay1_InitialCondition_f
+  // Expression: single(0)
   //  Referenced by: '<S1>/Unit Delay1'
 
   0.0F,
 
-  // Computed Parameter: Constant1_Value_g
+  // Computed Parameter: Constant1_Value_a
   //  Referenced by: '<S7>/Constant1'
 
   true,
 
-  // Computed Parameter: Constant_Value_k
+  // Computed Parameter: Constant_Value_d
   //  Referenced by: '<S20>/Constant'
 
   true,
 
-  // Computed Parameter: UnitDelay3_InitialCondition
+  // Expression: int8(-1)
   //  Referenced by: '<S1>/Unit Delay3'
 
   -1,
@@ -344,7 +344,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   0,
 
-  // Computed Parameter: UnitDelay4_InitialCondition
+  // Expression: int8(-1)
   //  Referenced by: '<S1>/Unit Delay4'
 
   -1,
@@ -352,34 +352,34 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
   // Computed Parameter: Switch1_Threshold
   //  Referenced by: '<S1>/Switch1'
 
-  1,
+  0,
 
-  // Computed Parameter: Bias3_Bias
+  // Expression: int8(1)
   //  Referenced by: '<S1>/Bias3'
 
   1,
 
-  // Computed Parameter: Saturation3_UpperSat
+  // Expression: int8(1)
   //  Referenced by: '<S1>/Saturation3'
 
   1,
 
-  // Computed Parameter: Saturation3_LowerSat
+  // Expression: int8(-1)
   //  Referenced by: '<S1>/Saturation3'
 
   -1,
 
-  // Computed Parameter: Bias_Bias_d
+  // Expression: int8(1)
   //  Referenced by: '<S1>/Bias'
 
   1,
 
-  // Computed Parameter: Saturation_UpperSat
+  // Expression: int8(1)
   //  Referenced by: '<S1>/Saturation'
 
   1,
 
-  // Computed Parameter: Saturation_LowerSat
+  // Expression: int8(-1)
   //  Referenced by: '<S1>/Saturation'
 
   -1,
@@ -389,27 +389,27 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
 
   { 0U, 0U, 0U, 0U, 0U, 1U },
 
-  // Computed Parameter: UnitDelay_InitialCondition_i
+  // Computed Parameter: UnitDelay_InitialCondition_k
   //  Referenced by: '<S19>/Unit Delay'
 
   0U,
 
-  // Computed Parameter: Switch_Threshold_d
+  // Computed Parameter: Switch_Threshold_f
   //  Referenced by: '<S19>/Switch'
 
   0U,
 
-  // Computed Parameter: Bias_Bias_k
+  // Computed Parameter: Bias_Bias_j5
   //  Referenced by: '<S19>/Bias'
 
   1U,
 
-  // Computed Parameter: Saturation_UpperSat_j
+  // Computed Parameter: Saturation_UpperSat_c
   //  Referenced by: '<S19>/Saturation'
 
   1U,
 
-  // Computed Parameter: Saturation_LowerSat_m
+  // Computed Parameter: Saturation_LowerSat_f
   //  Referenced by: '<S19>/Saturation'
 
   0U,
