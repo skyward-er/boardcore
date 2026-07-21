@@ -182,87 +182,16 @@ struct CanDeviceStatus : DeviceStatus
     }
 };
 
-struct AlgoData
-{
-    uint64_t timestamp = 0;
-    float value        = 0.0f;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(AlgoData, FIELD_DEF(timestamp) FIELD_DEF(value));
-    }
-};
-
-struct CanAlgoData : AlgoData
-{
-    uint8_t secondaryType = 0;
-    uint8_t source        = 0;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(CanAlgoData, EXTEND_DEF(AlgoData) FIELD_DEF(
-                                           secondaryType) FIELD_DEF(source));
-    }
-};
-
-struct AlgoUIntData
-{
-    uint64_t timestamp = 0;
-    uint32_t value     = 0;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(AlgoUIntData, FIELD_DEF(timestamp) FIELD_DEF(value));
-    }
-};
-
-struct CanAlgoUIntData : AlgoUIntData
-{
-    uint8_t secondaryType = 0;
-    uint8_t source        = 0;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(CanAlgoUIntData,
-                          EXTEND_DEF(AlgoUIntData) FIELD_DEF(secondaryType)
-                              FIELD_DEF(source));
-    }
-};
-
-struct AlgoMillisData
-{
-    uint64_t timestamp = 0;
-    int64_t value      = 0;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(AlgoMillisData,
-                          FIELD_DEF(timestamp) FIELD_DEF(value));
-    }
-};
-
-struct CanAlgoMillisData : AlgoMillisData
-{
-    uint8_t secondaryType = 0;
-    uint8_t source        = 0;
-
-    static constexpr auto reflect()
-    {
-        return STRUCT_DEF(CanAlgoMillisData,
-                          EXTEND_DEF(AlgoMillisData) FIELD_DEF(secondaryType)
-                              FIELD_DEF(source));
-    }
-};
-
 struct ServoCommand
 {
     uint64_t timestamp   = 0;
     uint32_t openingTime = 0;
+    uint8_t servoId      = 0;
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ServoCommand,
-                          FIELD_DEF(timestamp) FIELD_DEF(openingTime));
+        return STRUCT_DEF(ServoCommand, FIELD_DEF(timestamp) FIELD_DEF(
+                                            openingTime) FIELD_DEF(servoId));
     }
 };
 
@@ -316,6 +245,91 @@ struct CanEvent
     {
         return STRUCT_DEF(CanEvent, FIELD_DEF(timestamp) FIELD_DEF(source)
                                         FIELD_DEF(target) FIELD_DEF(event));
+    }
+};
+
+struct SequenceConfig
+{
+    uint64_t timestamp;
+    uint32_t fullThrottleTime;
+    uint32_t lowThrottleTime;
+    uint32_t pilotLeadTime;
+    float pilotOxPosition;
+    float pilotFuelPosition;
+
+    static constexpr auto reflect()
+
+    {
+        return STRUCT_DEF(
+            SequenceConfig,
+            FIELD_DEF(timestamp) FIELD_DEF(fullThrottleTime)
+                FIELD_DEF(lowThrottleTime) FIELD_DEF(pilotLeadTime)
+                    FIELD_DEF(pilotOxPosition) FIELD_DEF(pilotFuelPosition));
+    }
+};
+
+struct CanSequenceConfig : SequenceConfig
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanSequenceConfig,
+                          EXTEND_DEF(SequenceConfig) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
+    }
+};
+
+struct EregTarget
+{
+    uint64_t timestamp;
+    float oxTarget;
+    float fuelTarget;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(EregTarget, FIELD_DEF(timestamp) FIELD_DEF(oxTarget)
+                                          FIELD_DEF(fuelTarget));
+    }
+};
+
+struct CanEregTarget : EregTarget
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanEregTarget, EXTEND_DEF(EregTarget) FIELD_DEF(
+                                             secondaryType) FIELD_DEF(source));
+    }
+};
+
+struct IgnitionThresholds
+{
+    uint64_t timestamp;
+    float igniterThreshold;
+    float pilotThreshold;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(IgnitionThresholds,
+                          FIELD_DEF(timestamp) FIELD_DEF(igniterThreshold)
+                              FIELD_DEF(pilotThreshold));
+    }
+};
+
+struct CanIgnitionThresholds : IgnitionThresholds
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanIgnitionThresholds,
+                          EXTEND_DEF(IgnitionThresholds)
+                              FIELD_DEF(secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -426,50 +440,15 @@ inline Canbus::CanMessage toCanMessage(const DeviceStatus& data)
     return message;
 }
 
-inline Canbus::CanMessage toCanMessage(const AlgoData& data)
-{
-    Canbus::CanMessage message;
-
-    message.id         = -1;
-    message.length     = 1;
-    message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= floatToInt32(data.value);
-
-    return message;
-}
-
-inline Canbus::CanMessage toCanMessage(const AlgoUIntData& data)
-{
-    Canbus::CanMessage message;
-
-    message.id         = -1;
-    message.length     = 1;
-    message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= data.value;
-
-    return message;
-}
-
-inline Canbus::CanMessage toCanMessage(const AlgoMillisData& data)
-{
-    Canbus::CanMessage message;
-
-    message.id         = -1;
-    message.length     = 2;
-    message.payload[0] = data.timestamp;
-    message.payload[1] = int64ToUint64(data.value);
-
-    return message;
-}
-
 inline Canbus::CanMessage toCanMessage(const ServoCommand& data)
 {
     Canbus::CanMessage message;
 
     message.id         = -1;
-    message.length     = 1;
+    message.length     = 2;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
     message.payload[0] |= data.openingTime;
+    message.payload[1] = static_cast<uint64_t>(data.servoId) << 56;
 
     return message;
 }
@@ -483,6 +462,56 @@ inline Canbus::CanMessage toCanMessage(const ServoFeedback& data)
     message.payload[0] = (data.timestamp & ~0x3) << 30;
     message.payload[0] |= static_cast<uint16_t>(data.aperture * 65535);
     message.payload[0] |= (data.open ? 1 : 0) << 16;
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const SequenceConfig& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 3;
+    message.payload[0] = (data.timestamp & ~0x3) << 30;
+    message.payload[0] |= data.fullThrottleTime;
+
+    message.payload[1] = data.lowThrottleTime;
+    message.payload[1] = message.payload[1] << 32;
+    message.payload[1] |= data.pilotLeadTime;
+
+    message.payload[2] = floatToInt32(data.pilotOxPosition);
+    message.payload[2] = message.payload[2] << 32;
+    message.payload[2] |= floatToInt32(data.pilotFuelPosition);
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const EregTarget& data)
+{
+    Canbus::CanMessage message;
+
+    message.id     = -1;
+    message.length = 2;
+
+    message.payload[0] = data.timestamp;
+    message.payload[1] = floatToInt32(data.oxTarget);
+    message.payload[1] = message.payload[1] << 32;
+    message.payload[1] |= floatToInt32(data.fuelTarget);
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const IgnitionThresholds& data)
+{
+    Canbus::CanMessage message;
+
+    message.id     = -1;
+    message.length = 2;
+
+    message.payload[0] = data.timestamp;
+    message.payload[1] = floatToInt32(data.igniterThreshold);
+    message.payload[1] = message.payload[1] << 32;
+    message.payload[1] |= floatToInt32(data.pilotThreshold);
 
     return message;
 }
@@ -592,49 +621,13 @@ inline CanDeviceStatus deviceStatusFromCanMessage(const Canbus::CanMessage& msg)
     return data;
 }
 
-inline CanAlgoData algoDataFromCanMessage(const Canbus::CanMessage& msg)
-{
-    CanAlgoData data;
-
-    data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
-    data.value         = int32ToFloat(msg.payload[0]);
-    data.secondaryType = msg.getSecondaryType();
-    data.source        = msg.getSource();
-
-    return data;
-}
-
-inline CanAlgoUIntData algoUIntDataFromCanMessage(const Canbus::CanMessage& msg)
-{
-    CanAlgoUIntData data;
-
-    data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
-    data.value         = static_cast<uint32_t>(msg.payload[0]);
-    data.secondaryType = msg.getSecondaryType();
-    data.source        = msg.getSource();
-
-    return data;
-}
-
-inline CanAlgoMillisData algoMillisDataFromCanMessage(
-    const Canbus::CanMessage& msg)
-{
-    CanAlgoMillisData data;
-
-    data.timestamp     = msg.payload[0];
-    data.value         = uint64ToInt64(msg.payload[1]);
-    data.secondaryType = msg.getSecondaryType();
-    data.source        = msg.getSource();
-
-    return data;
-}
-
 inline CanServoCommand servoCommandFromCanMessage(const Canbus::CanMessage& msg)
 {
     CanServoCommand data;
 
     data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
     data.openingTime   = static_cast<uint32_t>(msg.payload[0]);
+    data.servoId       = static_cast<uint8_t>(msg.payload[1] >> 56);
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
 
@@ -651,6 +644,50 @@ inline CanServoFeedback servoFeedbackFromCanMessage(
     data.open          = ((msg.payload[0] >> 16) & 1) != 0;
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanSequenceConfig sequenceConfigFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    CanSequenceConfig data;
+
+    data.timestamp         = (msg.payload[0] >> 30) & ~0x3;
+    data.fullThrottleTime  = static_cast<uint32_t>(msg.payload[0]);
+    data.lowThrottleTime   = msg.payload[1] >> 32;
+    data.pilotLeadTime     = static_cast<uint32_t>(msg.payload[1]);
+    data.pilotOxPosition   = int32ToFloat(msg.payload[2] >> 32);
+    data.pilotFuelPosition = int32ToFloat(msg.payload[2]);
+    data.secondaryType     = msg.getSecondaryType();
+    data.source            = msg.getSource();
+
+    return data;
+}
+
+inline CanEregTarget eregTargetFromCanMessage(const Canbus::CanMessage& msg)
+{
+    CanEregTarget data;
+
+    data.timestamp     = msg.payload[0];
+    data.oxTarget      = msg.payload[1] >> 32;
+    data.fuelTarget    = msg.payload[1];
+    data.secondaryType = msg.getSecondaryType();
+    data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanIgnitionThresholds ignitionThresholdsFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    CanIgnitionThresholds data;
+
+    data.timestamp        = msg.payload[0];
+    data.igniterThreshold = msg.payload[1] >> 32;
+    data.pilotThreshold   = msg.payload[1];
+    data.secondaryType    = msg.getSecondaryType();
+    data.source           = msg.getSource();
 
     return data;
 }
