@@ -279,6 +279,27 @@ struct CanServoCommand : ServoCommand
     }
 };
 
+struct MeaData
+{
+    float mass = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(MeaData, FIELD_DEF(mass));
+    }
+};
+
+struct CanMeaData : MeaData
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanMeaData, EXTEND_DEF(MeaData) FIELD_DEF(
+                                          secondaryType) FIELD_DEF(source));
+    }
+};
 struct ServoFeedback
 {
     uint64_t timestamp = 0;
@@ -382,6 +403,17 @@ inline Canbus::CanMessage toCanMessage(const ServoData& data)
     message.payload[0] |= static_cast<uint32_t>(position) << 16;
     message.payload[0] |= static_cast<uint16_t>(data.channel) << 8;
     message.payload[0] |= data.timer;
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const MeaData& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = floatToInt32(data.mass);
 
     return message;
 }
@@ -512,8 +544,18 @@ inline CanPressureData pressureDataFromCanMessage(const Canbus::CanMessage& msg)
     return data;
 }
 
-inline CanTemperatureData temperatureDataFromCanMessage(
-    const Canbus::CanMessage& msg)
+inline CanMeaData meaDataFromCanMessage(const Canbus::CanMessage& msg) {
+    CanMeaData data;
+
+    data.secondaryType = msg.getSecondaryType();
+    data.source = msg.getSource();
+    data.mass = int32ToFloat(msg.payload[0]);
+
+    return data;
+}
+
+inline CanTemperatureData
+    temperatureDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     CanTemperatureData data;
 
