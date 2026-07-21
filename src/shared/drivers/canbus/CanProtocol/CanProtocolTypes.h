@@ -641,6 +641,13 @@ inline CanServoCommand servoCommandFromCanMessage(const Canbus::CanMessage& msg)
     return data;
 }
 
+inline float meaMassFromCanMessage(const Canbus::CanMessage& msg)
+{
+    float data = static_cast<float>(msg.payload[0]);
+
+    return data;
+}
+
 inline CanServoFeedback servoFeedbackFromCanMessage(
     const Canbus::CanMessage& msg)
 {
