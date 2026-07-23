@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <algorithms/ANAS/ANAS0_types.h>
+#include <anas/v1.1/ANAS0_types.h>
 
 #include <reflect.hpp>
 
@@ -94,11 +94,10 @@ struct ANASLogsData
             ANASLogsData,
             FIELD_DEF2(ANASLogs, Timestamp) FIELD_DEF2(ANASLogs, Position)
                 FIELD_DEF2(ANASLogs, Velocity) FIELD_DEF2(ANASLogs, Quaternion)
-                    FIELD_DEF2(ANASLogs, CovMatD)
-                        FIELD_DEF2(ANASLogs, BaroPitotAct)
-                            FIELD_DEF2(ANASLogs, GPSAct)
-                                FIELD_DEF2(ANASLogs, MagAct)
-                                    FIELD_DEF2(ANASLogs, AccAct));
+                    FIELD_DEF2(ANASLogs, CovMatD) FIELD_DEF2(
+                        ANASLogs, BaroPitotAct) FIELD_DEF2(ANASLogs, GPSAct)
+                        FIELD_DEF2(ANASLogs, MagAct)
+                            FIELD_DEF2(ANASLogs, AccAct));
     }
 };
 

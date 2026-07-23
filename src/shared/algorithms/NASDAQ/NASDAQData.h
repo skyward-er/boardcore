@@ -21,9 +21,9 @@
  */
 #pragma once
 
-#include <reflect.hpp>
+#include <nasdaq/NASDAQ0_types.h>
 
-#include "algorithms/NASDAQ/NASDAQ0_types.h"
+#include <reflect.hpp>
 
 namespace Boardcore
 {

@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include <algorithms/SDA/SDA_types.h>
+#include <sda/SDA_types.h>
 
 #include <reflect.hpp>
 
@@ -36,8 +36,7 @@ struct SDALogsWrapper
 
     SDALogsWrapper(SDA_types_h_::SDALogs logs) : logs(logs) {};
 
-    SDALogsWrapper(SDA_types_h_::SDALogs logs, uint64_t timestamp)
-        : logs(logs)
+    SDALogsWrapper(SDA_types_h_::SDALogs logs, uint64_t timestamp) : logs(logs)
     {
         this->logs.Timestamp = timestamp;
     };

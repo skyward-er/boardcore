@@ -42,21 +42,9 @@ set(BOARDCORE_SRC
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/ABK.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/ABK_data.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/ABK/abkTraj.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/ANAS0_data.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/NASDAQ/NASDAQ0_data.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/SDA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/sdaKriging.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/SDA/SDA_data.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/PRF/PRF.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/PRF/PRF_data.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp

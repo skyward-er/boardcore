@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <reflect.hpp>
+#include <prf/PRF_types.h>
 
-#include "PRF_types.h"
+#include <reflect.hpp>
 
 namespace Boardcore
 {
