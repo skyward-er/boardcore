@@ -42,6 +42,20 @@ set(BOARDCORE_SRC
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/ANAS0.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/ANAS0_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/ABK_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/ABK.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/abkTraj.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/mea/MEA_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/mea/MEA.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/nasdaq/NASDAQ0_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/nasdaq/NASDAQ0.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/prf/PRF_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/prf/PRF.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/sda/SDA_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/sda/SDA.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/sda/sdaKriging.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/StateInitializer/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
@@ -173,6 +187,8 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
 
     # Only one include directory for Boardcore!
     target_include_directories(${BOARDCORE_LIB} PUBLIC ${BOARDCORE_PATH}/src/shared)
+    target_include_directories(${BOARDCORE_LIB} SYSTEM PUBLIC ${BOARDCORE_PATH}/libs/autocoded-algorithms)
+    target_include_directories(${BOARDCORE_LIB} SYSTEM PUBLIC ${BOARDCORE_PATH}/libs/autocoded-algorithms/shared)
 
     # Define DEBUG when in Debug mode
     target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<CONFIG:Debug>:DEBUG>)

@@ -22,3 +22,6 @@
 [submodule "libs/socrate"]
 	path = libs/socrate
 	url = https://git.skywarder.eu/avn/swd/socrate.git
+[submodule "libs/autocoded-algorithms"]
+	path = libs/autocoded-algorithms
+	url = ../../gnc/autocoded-algorithms

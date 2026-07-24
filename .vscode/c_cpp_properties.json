@@ -16,6 +16,7 @@
             "${workspaceFolder}/libs/mxgui",
             "${workspaceFolder}/libs/tscpp",
             "${workspaceFolder}/libs/socrate/include",
+            "${workspaceFolder}/libs/autocoded-algorithms/**",
             "${workspaceFolder}/src/shared",
             "${workspaceFolder}/src/tests",
             "${workspaceFolder}/version"
