@@ -42,7 +42,7 @@ set(BOARDCORE_SRC
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/ANAS/StateInitializer.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/StateInitializer/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
