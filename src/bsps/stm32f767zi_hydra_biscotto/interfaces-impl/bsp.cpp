@@ -357,7 +357,7 @@ void IRQbspInit()
     radio::dio1::mode(Mode::INPUT_PULL_UP);
     radio::dio3::mode(Mode::INPUT_PULL_UP);
 
-    sense::detachRamp::mode(Mode::INPUT_PULL_UP);
+    sense::detachRamp::mode(Mode::INPUT);
 
     gpios::expulsion::mode(Mode::OUTPUT);
     gpios::expulsion::low();

@@ -56,8 +56,8 @@ public:
             position = 1.0f - position;
 
         lastPosition    = position;
-        float dutyCycle = minPulse / 3003.0f +
-                          position * (maxPulse / 3003.0f - minPulse / 3003.0f);
+        float dutyCycle = minPulse / 3044.0f +
+                          position * (maxPulse / 3044.0f - minPulse / 3044.0f);
 
         if (!pca->setDutyCycle(channel, dutyCycle))
             return pca->setDutyCycle(channel, dutyCycle);
