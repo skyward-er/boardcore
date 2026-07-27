@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <algorithms/ANAS/ANASData.h>
 #include <algorithms/Algorithm.h>
+#include <algorithms/AlgorithmsData.h>
 #include <diagnostic/PrintLogger.h>
 #include <logger/Logger.h>
 #include <sensors/SensorData.h>

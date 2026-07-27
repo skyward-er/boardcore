@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <algorithms/ANAS/ANASData.h>
+#include <algorithms/AlgorithmsData.h>
 
 #include <Eigen/Core>
 #include <ostream>

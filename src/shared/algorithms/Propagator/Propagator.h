@@ -29,7 +29,6 @@
 #include <chrono>
 
 #include "PropagatorData.h"
-#include "algorithms/ANAS/ANASData.h"
 #include "sensors/SensorData.h"
 
 namespace Boardcore
