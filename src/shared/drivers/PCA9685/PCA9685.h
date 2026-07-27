@@ -43,13 +43,13 @@ public:
      * @param i2c bus on which the sensor lays.
      * @param i2cConfig I2C configuration struct for the sensor.
      * @param prescale Prescale value for setting the PWM frequency. - Defaults
-     * to 0x11 (339 Hz).
+     * to 0x13 (328 Hz, empirically tested).
      * @param outputType Output driver type (open-drain or totem-pole).
      * @param inverted true to invert the output logic, false for normal logic.
      * @return true if setting the mode succeeded, false otherwise.
      */
     PCA9685(I2C& i2c, I2CDriver::I2CSlaveConfig i2cConfig,
-            uint8_t prescale               = 0x12,
+            uint8_t prescale               = 0x13,
             PCA9685::OutputType outputType = OutputType::OPEN_DRAIN,
             bool inverted = true, bool externalClock = false);
     ~PCA9685() {};
