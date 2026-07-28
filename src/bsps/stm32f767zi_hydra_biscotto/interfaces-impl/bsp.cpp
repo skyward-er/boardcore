@@ -331,10 +331,10 @@ void IRQbspInit()
     sensors::UBXGps::cs::high();
     sensors::LIS2MDL_INT::cs::mode(Mode::OUTPUT);
     sensors::LIS2MDL_INT::cs::high();
-    sensors::LSM6DSRX_LOW::cs::mode(Mode::OUTPUT);
-    sensors::LSM6DSRX_LOW::cs::high();
-    sensors::LSM6DSRX_HIGH::cs::mode(Mode::OUTPUT);
-    sensors::LSM6DSRX_HIGH::cs::high();
+    sensors::LSM6DSRX_0::cs::mode(Mode::OUTPUT);
+    sensors::LSM6DSRX_0::cs::high();
+    sensors::LSM6DSRX_1::cs::mode(Mode::OUTPUT);
+    sensors::LSM6DSRX_1::cs::high();
     sensors::ADS131M08::cs::mode(Mode::OUTPUT);
     sensors::ADS131M08::cs::high();
     sensors::ND015A_0::cs::mode(Mode::OUTPUT);
