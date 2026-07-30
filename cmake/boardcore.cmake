@@ -41,7 +41,6 @@ set(BOARDCORE_SRC
 
     # Algorithms
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/MEA/MEA.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/ANAS0.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/ANAS0_data.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/ABK_data.cpp

@@ -573,18 +573,19 @@ inline CanPressureData pressureDataFromCanMessage(const Canbus::CanMessage& msg)
     return data;
 }
 
-inline CanMeaData meaDataFromCanMessage(const Canbus::CanMessage& msg) {
+inline CanMeaData meaDataFromCanMessage(const Canbus::CanMessage& msg)
+{
     CanMeaData data;
 
     data.secondaryType = msg.getSecondaryType();
-    data.source = msg.getSource();
-    data.mass = int32ToFloat(msg.payload[0]);
+    data.source        = msg.getSource();
+    data.mass          = int32ToFloat(msg.payload[0]);
 
     return data;
 }
 
-inline CanTemperatureData
-    temperatureDataFromCanMessage(const Canbus::CanMessage& msg)
+inline CanTemperatureData temperatureDataFromCanMessage(
+    const Canbus::CanMessage& msg)
 {
     CanTemperatureData data;
 

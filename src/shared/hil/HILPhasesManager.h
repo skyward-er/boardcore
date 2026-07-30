@@ -59,9 +59,7 @@ struct Outcomes
 class HILPhasesManagerBase : public EventHandler
 {
 public:
-    explicit HILPhasesManagerBase()
-    {
-    }
+    explicit HILPhasesManagerBase() {}
 
     bool isSimulationRunning() const { return (t_start != 0) && (t_stop == 0); }
 
@@ -101,10 +99,7 @@ class HILPhasesManager : public HILPhasesManagerBase
 public:
     using PhasesCallback = std::function<void()>;
 
-    explicit HILPhasesManager()
-        : HILPhasesManagerBase()
-    {
-    }
+    explicit HILPhasesManager() : HILPhasesManagerBase() {}
 
     bool isFlagActive(const FlightPhases& flag) const
     {
@@ -161,8 +156,8 @@ protected:
 
     void registerOutcomes(const FlightPhases& phase)
     {
-        //TimedTrajectoryPoint temp = getCurrentPosition();
-        //outcomes[phase]           = Outcomes(temp.z, temp.vz);
+        // TimedTrajectoryPoint temp = getCurrentPosition();
+        // outcomes[phase]           = Outcomes(temp.z, temp.vz);
     }
 
     bool isSetTrue(const FlightPhases& phase) const

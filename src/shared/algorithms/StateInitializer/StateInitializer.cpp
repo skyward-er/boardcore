@@ -56,6 +56,7 @@ Vector4f StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
 
     // Rotate the NED magnetic vector from right-hand to left-hand
     Matrix3f magSXRot;
+    // cppcheck-suppress constStatement
     magSXRot << 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f;
 
     // Apply rotation to the input `nedMag`

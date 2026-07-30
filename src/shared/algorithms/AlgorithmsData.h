@@ -24,6 +24,7 @@
 
 #include <abk/ABK_types.h>
 #include <anas/ANAS0_types.h>
+#include <mea/MEA_types.h>
 #include <nasdaq/NASDAQ0_types.h>
 #include <prf/PRF_types.h>
 #include <sda/SDA_types.h>
@@ -269,6 +270,45 @@ struct WingControllerLogsData
                     FIELD_DEF2(PRFLogs, Reference)
                         FIELD_DEF2(PRFLogs, ServoCommands)
                             FIELD_DEF2(PRFLogs, WindHeading));
+    }
+};
+
+struct MEAState
+{
+    uint64_t timestamp;
+    float mass;
+
+    MEAState() : timestamp(0), mass(0.0f) {};
+
+    MEAState(uint64_t timestamp, float mass)
+        : timestamp(timestamp), mass(mass) {};
+
+    MEAState(uint64_t timestamp, MEA_types_h_::MEAOut out)
+        : timestamp(timestamp), mass(out.Mass) {};
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(MEAState, FIELD_DEF(timestamp) FIELD_DEF(mass));
+    }
+};
+
+struct MEALogsWrapper
+{
+    MEA_types_h_::MEALogs logs;
+
+    MEALogsWrapper() : logs() {};
+
+    MEALogsWrapper(uint64_t timestamp, MEA_types_h_::MEALogs logs) : logs(logs)
+    {
+        logs.Timestamp = timestamp;
+    };
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(MEALogsWrapper,
+                          FIELD_DEF2(logs, Timestamp) FIELD_DEF2(logs, Mass)
+                              FIELD_DEF2(logs, States)
+                                  FIELD_DEF2(logs, Pressure));
     }
 };
 
