@@ -42,7 +42,7 @@ bool AltitudeMap::init()
 {
     if (header->whoAmI != 0x42)
     {
-        LOG_ERR(logger, "WhoAmI mismatch: expected 0x42, got 0x%02X",
+        LOG_ERR(logger, "WhoAmI mismatch: expected 0x43, got 0x{:02X}",
                 header->whoAmI);
         return false;
     }
