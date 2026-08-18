@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'PRF'.
 //
-// Model version                  : 11.338
+// Model version                  : 11.335
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Jul 14 15:22:34 2026
+// C/C++ source code generated on : Wed Jul 22 13:17:22 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -28,7 +28,7 @@
 struct PRFReference
 {
   float WindDirection;
-  float TargetPositionNED[2];
+  float TargetPositionLLA[2];
 };
 
 #endif
@@ -51,14 +51,14 @@ struct PRFIn
 // Output Structure for PRF Controller GNC Algorithm used for OBSW Logging
 struct PRFLogs
 {
-  float Targets[6];
-  float TerminalTarget[2];
+  float Q1[2];
+  float Q2[2];
+  float TerminalTarget[4];
   uint8_t TargetIndex;
   float Heading;
   float Reference;
   float ServoCommands[2];
   float WindHeading;
-  float WindAlignmentRadius;
 };
 
 #endif
