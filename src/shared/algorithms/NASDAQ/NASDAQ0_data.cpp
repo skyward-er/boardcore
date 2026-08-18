@@ -206,7 +206,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
     // Computed Parameter: Bias_Bias
     //  Referenced by: '<S37>/Bias'
 
-    45.5646515F,
+    45.8208418F,
 
     // Computed Parameter: Gain1_Gain
     //  Referenced by: '<S41>/Gain1'
@@ -257,7 +257,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
     // Computed Parameter: Bias_Bias_l
     //  Referenced by: '<S39>/Bias'
 
-    45.5646515F,
+    45.8208418F,
 
     // Computed Parameter: Gain1_Gain_d
     //  Referenced by: '<S47>/Gain1'
@@ -272,7 +272,7 @@ NASDAQ0::P_NASDAQ0_T NASDAQ0::NASDAQ0_P{
     // Computed Parameter: Bias1_Bias
     //  Referenced by: '<S39>/Bias1'
 
-    12.5745802F,
+    10.0782311F,
 
     // Computed Parameter: Gain_Gain_l
     //  Referenced by: '<S39>/Gain'
