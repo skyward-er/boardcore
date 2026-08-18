@@ -7,9 +7,9 @@
 //
 // Code generated for Simulink model 'PRF'.
 //
-// Model version                  : 11.339
+// Model version                  : 11.370
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Wed Jul 15 16:02:04 2026
+// C/C++ source code generated on : Tue Aug 18 16:18:50 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -23,12 +23,18 @@
 #define PRF_private_h_
 #include <stdbool.h>
 #include <stdint.h>
-#include "zero_crossing_types.h"
 #include "PRF_types.h"
+
+namespace PRF 
+{
+
 
 extern float rt_modf(float u0, float u1);
 
 #endif                                 // PRF_private_h_
+
+
+} // fine namespace PRF
 
 //
 // File trailer for generated code.
