@@ -9,7 +9,7 @@
 //
 // Model version                  : 11.370
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Aug 18 16:18:50 2026
+// C/C++ source code generated on : Tue Aug 18 23:37:33 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -63,13 +63,11 @@ float rt_modf(float u0, float u1)
 // Model step function
 void PRF::step()
 {
-  double rtb_Saturation2;
-  double rtb_Switch2;
   float rtb_Heading;
   float rtb_Reference;
+  float rtb_Saturation2;
   float rtb_SinCos_o2;
-  float rtb_UnitDelay1;
-  float rtb_dEast;
+  float rtb_Switch2;
   int32_t tmp;
 
   // Outputs for Atomic SubSystem: '<Root>/PRF'
@@ -80,43 +78,43 @@ void PRF::step()
 
   // Unit Conversion - from: deg to: rad
   // Expression: output = (0.0174533*input) + (0)
-  rtb_UnitDelay1 = PRF_P.f_Value - PRF_P.Constant2_Value;
+  rtb_Saturation2 = PRF_P.f_Value - PRF_P.Constant2_Value;
 
   // Sqrt: '<S14>/sqrt1' incorporates:
   //   Constant: '<S14>/Constant3'
   //   Product: '<S14>/Product5'
   //   Sum: '<S14>/Sum2'
 
-  rtb_UnitDelay1 = std::sqrt(PRF_P.Constant3_Value - rtb_UnitDelay1 *
-    rtb_UnitDelay1);
+  rtb_Saturation2 = std::sqrt(PRF_P.Constant3_Value - rtb_Saturation2 *
+    rtb_Saturation2);
 
   // UnitConversion: '<S15>/Unit Conversion' incorporates:
   //   Constant: '<S1>/Constant1'
 
   // Unit Conversion - from: deg to: rad
   // Expression: output = (0.0174533*input) + (0)
-  rtb_Heading = 0.0174532924F * PRF_P.Constant1_Value_c[0];
+  rtb_Switch2 = 0.0174532924F * PRF_P.Constant1_Value_c[0];
 
   // Trigonometry: '<S16>/Trigonometric Function1'
-  rtb_Reference = std::sin(rtb_Heading);
+  rtb_Heading = std::sin(rtb_Switch2);
 
   // Product: '<S16>/Product1' incorporates:
   //   Product: '<S14>/Product2'
 
-  rtb_UnitDelay1 *= rtb_UnitDelay1;
+  rtb_SinCos_o2 = rtb_Saturation2 * rtb_Saturation2;
 
   // Sum: '<S16>/Sum1' incorporates:
   //   Constant: '<S16>/Constant'
   //   Product: '<S16>/Product1'
 
-  rtb_Reference = PRF_P.Constant_Value_b - rtb_UnitDelay1 * rtb_Reference *
-    rtb_Reference;
+  rtb_Heading = PRF_P.Constant_Value_b - rtb_SinCos_o2 * rtb_Heading *
+    rtb_Heading;
 
   // Product: '<S14>/Product1' incorporates:
   //   Constant: '<S14>/Constant1'
   //   Sqrt: '<S14>/sqrt'
 
-  rtb_dEast = PRF_P.Constant1_Value_p / std::sqrt(rtb_Reference);
+  rtb_Reference = PRF_P.Constant1_Value_p / std::sqrt(rtb_Heading);
 
   // Product: '<S12>/dNorth' incorporates:
   //   Constant: '<S14>/Constant'
@@ -127,14 +125,14 @@ void PRF::step()
   //   Sum: '<S3>/Sum1'
   //   UnitConversion: '<S13>/Unit Conversion'
 
-  rtb_Reference = (PRF_P.Constant_Value_n - rtb_UnitDelay1) * rtb_dEast /
-    rtb_Reference * ((PRF_U.PRFReference_m.TargetPositionLLA[0] -
-                      PRF_P.Constant1_Value_c[0]) * 0.0174532924F);
+  rtb_Heading = (PRF_P.Constant_Value_n - rtb_SinCos_o2) * rtb_Reference /
+    rtb_Heading * ((PRF_U.PRFReference_m.TargetPositionLLA[0] -
+                    PRF_P.Constant1_Value_c[0]) * 0.0174532924F);
 
   // Trigonometry: '<S12>/SinCos' incorporates:
   //   Constant: '<S12>/Zero'
 
-  rtb_UnitDelay1 = std::sin(PRF_P.Zero_Value_c);
+  rtb_Saturation2 = std::sin(PRF_P.Zero_Value_c);
   rtb_SinCos_o2 = std::cos(PRF_P.Zero_Value_c);
 
   // Product: '<S12>/dEast' incorporates:
@@ -145,9 +143,9 @@ void PRF::step()
   //   Trigonometry: '<S14>/Trigonometric Function'
   //   UnitConversion: '<S13>/Unit Conversion'
 
-  rtb_dEast = (PRF_U.PRFReference_m.TargetPositionLLA[1] -
-               PRF_P.Constant1_Value_c[1]) * 0.0174532924F * (rtb_dEast * std::
-    cos(rtb_Heading));
+  rtb_Reference = (PRF_U.PRFReference_m.TargetPositionLLA[1] -
+                   PRF_P.Constant1_Value_c[1]) * 0.0174532924F * (rtb_Reference *
+    std::cos(rtb_Switch2));
 
   // RateTransition: '<S1>/Rate Transition' incorporates:
   //   Product: '<S12>/x*cos'
@@ -157,8 +155,8 @@ void PRF::step()
   //   Sum: '<S12>/Sum2'
   //   Sum: '<S12>/Sum3'
 
-  rtb_Heading = rtb_Reference * rtb_SinCos_o2 + rtb_dEast * rtb_UnitDelay1;
-  rtb_Reference = rtb_dEast * rtb_SinCos_o2 - rtb_Reference * rtb_UnitDelay1;
+  rtb_Switch2 = rtb_Heading * rtb_SinCos_o2 + rtb_Reference * rtb_Saturation2;
+  rtb_Heading = rtb_Reference * rtb_SinCos_o2 - rtb_Heading * rtb_Saturation2;
 
   // End of Outputs for SubSystem: '<S1>/LLA to NED'
 
@@ -167,16 +165,16 @@ void PRF::step()
   //   Outport: '<Root>/PRF Logs OBSW'
   //   Sum: '<S2>/Subtract1'
 
-  PRF_Y.PRFLogsOBSW.TerminalTarget[0] = rtb_Heading;
-  PRF_Y.PRFLogsOBSW.TerminalTarget[1] = rtb_Reference;
+  PRF_Y.PRFLogsOBSW.TerminalTarget[0] = rtb_Switch2;
+  PRF_Y.PRFLogsOBSW.TerminalTarget[1] = rtb_Heading;
 
   // Trigonometry: '<S2>/Atan1' incorporates:
   //   Inport: '<Root>/PRF In'
   //   Math: '<S2>/Transpose'
   //   Sum: '<S2>/Subtract1'
 
-  rtb_Reference = std::atan2(rtb_Reference - PRF_U.PRFIn_o.NASDAQPosition[1],
-    rtb_Heading - PRF_U.PRFIn_o.NASDAQPosition[0]);
+  rtb_Reference = std::atan2(rtb_Heading - PRF_U.PRFIn_o.NASDAQPosition[1],
+    rtb_Switch2 - PRF_U.PRFIn_o.NASDAQPosition[0]);
 
   // Trigonometry: '<S2>/Atan2' incorporates:
   //   Inport: '<Root>/PRF In'
@@ -185,21 +183,21 @@ void PRF::step()
     PRF_U.PRFIn_o.NASDAQVelocity[0]);
 
   // Sum: '<S2>/Subtract'
-  rtb_UnitDelay1 = rtb_Reference - rtb_Heading;
+  rtb_SinCos_o2 = rtb_Reference - rtb_Heading;
 
   // Switch: '<S2>/Switch' incorporates:
   //   Abs: '<S2>/Abs'
   //   Bias: '<S2>/Bias'
   //   Switch: '<S9>/Switch'
 
-  if (std::abs(rtb_UnitDelay1) > PRF_P.Switch_Threshold) {
+  if (std::abs(rtb_SinCos_o2) > PRF_P.Switch_Threshold) {
     // Bias: '<S2>/Bias1'
-    rtb_UnitDelay1 += PRF_P.Bias1_Bias;
+    rtb_Saturation2 = rtb_SinCos_o2 + PRF_P.Bias1_Bias;
 
     // Math: '<S9>/Mod' incorporates:
     //   Constant: '<S9>/Constant'
 
-    rtb_dEast = rt_modf(rtb_UnitDelay1, PRF_P.Constant_Value_j);
+    rtb_Switch2 = rt_modf(rtb_Saturation2, PRF_P.Constant_Value_j);
 
     // Switch: '<S9>/Switch' incorporates:
     //   Constant: '<S10>/Constant'
@@ -209,12 +207,12 @@ void PRF::step()
     //   RelationalOperator: '<S10>/Compare'
     //   RelationalOperator: '<S11>/Compare'
 
-    if ((rtb_UnitDelay1 > PRF_P.Constant_Value_o) && (rtb_dEast ==
+    if ((rtb_Saturation2 > PRF_P.Constant_Value_o) && (rtb_Switch2 ==
          PRF_P.Constant_Value_e)) {
-      rtb_dEast = PRF_P.Constant1_Value;
+      rtb_Switch2 = PRF_P.Constant1_Value;
     }
 
-    rtb_UnitDelay1 = rtb_dEast + PRF_P.Bias_Bias;
+    rtb_SinCos_o2 = rtb_Switch2 + PRF_P.Bias_Bias;
   }
 
   // End of Switch: '<S2>/Switch'
@@ -227,17 +225,17 @@ void PRF::step()
   //   UnitDelay: '<S2>/Unit Delay2'
 
   if (PRF_DW.UnitDelay2_DSTATE) {
-    rtb_Switch2 = PRF_P.Constant_Value;
+    rtb_Saturation2 = PRF_P.Constant_Value;
   } else {
-    rtb_Switch2 = PRF_P.Constant9_Value * PRF_P.Constant10_Value *
-      rtb_UnitDelay1;
+    rtb_Saturation2 = PRF_P.Constant9_Value * PRF_P.Constant10_Value *
+      rtb_SinCos_o2;
   }
 
   // Sum: '<S2>/Add3' incorporates:
   //   Switch: '<S2>/Switch2'
   //   UnitDelay: '<S2>/Unit Delay3'
 
-  rtb_Switch2 += PRF_DW.UnitDelay3_DSTATE;
+  rtb_Switch2 = rtb_Saturation2 + PRF_DW.UnitDelay3_DSTATE;
 
   // Sum: '<S2>/Add2' incorporates:
   //   Constant: '<S2>/Constant6'
@@ -248,8 +246,8 @@ void PRF::step()
   //   Sum: '<S2>/Add'
   //   UnitDelay: '<S2>/Unit Delay1'
 
-  rtb_Saturation2 = (rtb_UnitDelay1 - PRF_DW.UnitDelay1_DSTATE) *
-    PRF_P.Constant7_Value / PRF_P.Constant6_Value + (rtb_UnitDelay1 *
+  rtb_Saturation2 = (rtb_SinCos_o2 - PRF_DW.UnitDelay1_DSTATE) *
+    PRF_P.Constant7_Value / PRF_P.Constant6_Value + (rtb_SinCos_o2 *
     PRF_P.Constant8_Value + rtb_Switch2);
 
   // Saturate: '<S2>/Saturation2'
@@ -262,10 +260,10 @@ void PRF::step()
   // End of Saturate: '<S2>/Saturation2'
 
   // Signum: '<S2>/Sign1'
-  if (rtb_Saturation2 < 0.0) {
+  if (rtb_Saturation2 < 0.0F) {
     tmp = -1;
   } else {
-    tmp = (rtb_Saturation2 > 0.0);
+    tmp = (rtb_Saturation2 > 0.0F);
   }
 
   // SwitchCase: '<S2>/Switch Case1' incorporates:
@@ -276,32 +274,14 @@ void PRF::step()
 
   switch (tmp) {
    case 1:
-    // Abs: '<S2>/Abs2'
-    if (rtb_Saturation2 < 0.0) {
-      // Outputs for IfAction SubSystem: '<S2>/Servo Right1' incorporates:
-      //   ActionPort: '<S8>/Action Port'
-
-      // SignalConversion generated from: '<S8>/Command' incorporates:
-      //   Merge: '<S2>/Merge1'
-
-      PRF_DW.Merge1[1] = static_cast<float>(-rtb_Saturation2);
-
-      // End of Outputs for SubSystem: '<S2>/Servo Right1'
-    } else {
-      // Outputs for IfAction SubSystem: '<S2>/Servo Right1' incorporates:
-      //   ActionPort: '<S8>/Action Port'
-
-      // SignalConversion generated from: '<S8>/Command' incorporates:
-      //   Merge: '<S2>/Merge1'
-
-      PRF_DW.Merge1[1] = static_cast<float>(rtb_Saturation2);
-
-      // End of Outputs for SubSystem: '<S2>/Servo Right1'
-    }
-
     // Outputs for IfAction SubSystem: '<S2>/Servo Right1' incorporates:
     //   ActionPort: '<S8>/Action Port'
 
+    // SignalConversion generated from: '<S8>/Command' incorporates:
+    //   Abs: '<S2>/Abs2'
+    //   Merge: '<S2>/Merge1'
+
+    PRF_DW.Merge1[1] = std::abs(rtb_Saturation2);
     PRF_DW.Merge1[0] = PRF_P.Zero_Value;
 
     // End of Outputs for SubSystem: '<S2>/Servo Right1'
@@ -322,32 +302,14 @@ void PRF::step()
     break;
 
    default:
-    // Abs: '<S2>/Abs2'
-    if (rtb_Saturation2 < 0.0) {
-      // Outputs for IfAction SubSystem: '<S2>/Servo Left1' incorporates:
-      //   ActionPort: '<S7>/Action Port'
-
-      // SignalConversion generated from: '<S7>/Command' incorporates:
-      //   Merge: '<S2>/Merge1'
-
-      PRF_DW.Merge1[0] = static_cast<float>(-rtb_Saturation2);
-
-      // End of Outputs for SubSystem: '<S2>/Servo Left1'
-    } else {
-      // Outputs for IfAction SubSystem: '<S2>/Servo Left1' incorporates:
-      //   ActionPort: '<S7>/Action Port'
-
-      // SignalConversion generated from: '<S7>/Command' incorporates:
-      //   Merge: '<S2>/Merge1'
-
-      PRF_DW.Merge1[0] = static_cast<float>(rtb_Saturation2);
-
-      // End of Outputs for SubSystem: '<S2>/Servo Left1'
-    }
-
     // Outputs for IfAction SubSystem: '<S2>/Servo Left1' incorporates:
     //   ActionPort: '<S7>/Action Port'
 
+    // SignalConversion generated from: '<S7>/Command' incorporates:
+    //   Abs: '<S2>/Abs2'
+    //   Merge: '<S2>/Merge1'
+
+    PRF_DW.Merge1[0] = std::abs(rtb_Saturation2);
     PRF_DW.Merge1[1] = PRF_P.Zero_Value_d;
 
     // End of Outputs for SubSystem: '<S2>/Servo Left1'
@@ -370,7 +332,7 @@ void PRF::step()
   PRF_DW.UnitDelay3_DSTATE = rtb_Switch2;
 
   // Update for UnitDelay: '<S2>/Unit Delay1'
-  PRF_DW.UnitDelay1_DSTATE = rtb_UnitDelay1;
+  PRF_DW.UnitDelay1_DSTATE = rtb_SinCos_o2;
 
   // Outport: '<Root>/PRF Logs OBSW' incorporates:
   //   BusCreator generated from: '<S2>/PRFLogs OBSW_BusCreator'

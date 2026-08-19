@@ -9,7 +9,7 @@
 //
 // Model version                  : 11.370
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Aug 18 16:18:50 2026
+// C/C++ source code generated on : Tue Aug 18 23:37:33 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -30,32 +30,12 @@ PRF::P_PRF_T PRF::PRF_P{
   // Mask Parameter: SaturationCheckUp1_const
   //  Referenced by: '<S6>/Constant'
 
-  1.0,
+  1.0F,
 
   // Mask Parameter: SaturationCheckLw1_const
   //  Referenced by: '<S5>/Constant'
 
-  -1.0,
-
-  // Expression: 0
-  //  Referenced by: '<S2>/Constant'
-
-  0.0,
-
-  // Expression: 0
-  //  Referenced by: '<S2>/Unit Delay3'
-
-  0.0,
-
-  // Expression: upSatTE
-  //  Referenced by: '<S2>/Saturation2'
-
-  1.0,
-
-  // Expression: lwSatTE
-  //  Referenced by: '<S2>/Saturation2'
-
-  -1.0,
+  -1.0F,
 
   // Computed Parameter: Zero_Value
   //  Referenced by: '<S8>/Zero'
@@ -69,6 +49,11 @@ PRF::P_PRF_T PRF::PRF_P{
 
   // Computed Parameter: Zero_Value_d
   //  Referenced by: '<S7>/Zero'
+
+  0.0F,
+
+  // Computed Parameter: Constant_Value
+  //  Referenced by: '<S2>/Constant'
 
   0.0F,
 
@@ -157,12 +142,17 @@ PRF::P_PRF_T PRF::PRF_P{
 
   3.14159274F,
 
+  // Expression: single(0)
+  //  Referenced by: '<S2>/Unit Delay3'
+
+  0.0F,
+
   // Computed Parameter: Constant8_Value
   //  Referenced by: '<S2>/Constant8'
 
   0.286478907F,
 
-  // Computed Parameter: UnitDelay1_InitialCondition
+  // Expression: single(0)
   //  Referenced by: '<S2>/Unit Delay1'
 
   0.0F,
@@ -176,6 +166,16 @@ PRF::P_PRF_T PRF::PRF_P{
   //  Referenced by: '<S2>/Constant6'
 
   0.05F,
+
+  // Expression: single(upSatTE)
+  //  Referenced by: '<S2>/Saturation2'
+
+  1.0F,
+
+  // Expression: single(lwSatTE)
+  //  Referenced by: '<S2>/Saturation2'
+
+  -1.0F,
 
   // Computed Parameter: Merge1_InitialOutput
   //  Referenced by: '<S2>/Merge1'

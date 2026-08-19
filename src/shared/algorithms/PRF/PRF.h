@@ -9,7 +9,7 @@
 //
 // Model version                  : 11.370
 // Simulink Coder version         : 24.2 (R2024b) 21-Jun-2024
-// C/C++ source code generated on : Tue Aug 18 16:18:50 2026
+// C/C++ source code generated on : Tue Aug 18 23:37:33 2026
 //
 // Target selection: ert.tlc
 // Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -36,8 +36,8 @@ class PRF final
  public:
   // Block signals and states (default storage) for system '<Root>'
   struct DW_PRF_T {
-    double UnitDelay3_DSTATE;          // '<S2>/Unit Delay3'
     float Merge1[2];                   // '<S2>/Merge1'
+    float UnitDelay3_DSTATE;           // '<S2>/Unit Delay3'
     float UnitDelay1_DSTATE;           // '<S2>/Unit Delay1'
     bool UnitDelay2_DSTATE;            // '<S2>/Unit Delay2'
   };
@@ -56,23 +56,11 @@ class PRF final
 
   // Parameters (default storage)
   struct P_PRF_T {
-    double SaturationCheckUp1_const; // Mask Parameter: SaturationCheckUp1_const
+    float SaturationCheckUp1_const;  // Mask Parameter: SaturationCheckUp1_const
                                         //  Referenced by: '<S6>/Constant'
 
-    double SaturationCheckLw1_const; // Mask Parameter: SaturationCheckLw1_const
+    float SaturationCheckLw1_const;  // Mask Parameter: SaturationCheckLw1_const
                                         //  Referenced by: '<S5>/Constant'
-
-    double Constant_Value;             // Expression: 0
-                                          //  Referenced by: '<S2>/Constant'
-
-    double UnitDelay3_InitialCondition;// Expression: 0
-                                          //  Referenced by: '<S2>/Unit Delay3'
-
-    double Saturation2_UpperSat;       // Expression: upSatTE
-                                          //  Referenced by: '<S2>/Saturation2'
-
-    double Saturation2_LowerSat;       // Expression: lwSatTE
-                                          //  Referenced by: '<S2>/Saturation2'
 
     float Zero_Value;                  // Computed Parameter: Zero_Value
                                           //  Referenced by: '<S8>/Zero'
@@ -82,6 +70,9 @@ class PRF final
 
     float Zero_Value_d;                // Computed Parameter: Zero_Value_d
                                           //  Referenced by: '<S7>/Zero'
+
+    float Constant_Value;              // Computed Parameter: Constant_Value
+                                          //  Referenced by: '<S2>/Constant'
 
     float Constant10_Value;            // Computed Parameter: Constant10_Value
                                           //  Referenced by: '<S2>/Constant10'
@@ -134,18 +125,26 @@ class PRF final
     float Switch_Threshold;            // Computed Parameter: Switch_Threshold
                                           //  Referenced by: '<S2>/Switch'
 
+    float UnitDelay3_InitialCondition; // Expression: single(0)
+                                          //  Referenced by: '<S2>/Unit Delay3'
+
     float Constant8_Value;             // Computed Parameter: Constant8_Value
                                           //  Referenced by: '<S2>/Constant8'
 
-    float UnitDelay1_InitialCondition;
-                              // Computed Parameter: UnitDelay1_InitialCondition
-                                 //  Referenced by: '<S2>/Unit Delay1'
+    float UnitDelay1_InitialCondition; // Expression: single(0)
+                                          //  Referenced by: '<S2>/Unit Delay1'
 
     float Constant7_Value;             // Computed Parameter: Constant7_Value
                                           //  Referenced by: '<S2>/Constant7'
 
     float Constant6_Value;             // Computed Parameter: Constant6_Value
                                           //  Referenced by: '<S2>/Constant6'
+
+    float Saturation2_UpperSat;        // Expression: single(upSatTE)
+                                          //  Referenced by: '<S2>/Saturation2'
+
+    float Saturation2_LowerSat;        // Expression: single(lwSatTE)
+                                          //  Referenced by: '<S2>/Saturation2'
 
     float Merge1_InitialOutput;      // Computed Parameter: Merge1_InitialOutput
                                         //  Referenced by: '<S2>/Merge1'
