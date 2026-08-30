@@ -238,7 +238,7 @@ struct ServoFeedback
     static constexpr auto reflect()
     {
         return STRUCT_DEF(ServoFeedback, FIELD_DEF(timestamp) FIELD_DEF(
-                                             aperture) FIELD_DEF(open));
+                                             position) FIELD_DEF(open));
     }
 };
 
