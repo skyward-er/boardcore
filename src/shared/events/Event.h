@@ -29,14 +29,16 @@ namespace Boardcore
 
 typedef uint8_t Event;
 
+// clang-format off
 enum BasicEvent : Event
 {
-    EV_ENTRY        = 0,
-    EV_EXIT         = 1,
-    EV_EMPTY        = 2,
-    EV_INIT         = 3,
+    EV_ENTRY        = 0,  // Sent every time a state is entered, cannot immediately trigger a transition to another state
+    EV_EXIT         = 1,  // Sent every time a state is exited
+    EV_EMPTY        = 2,  // Sent to a state to retrieve its superstate, it should only have a tranSuper() to the superstate
+    EV_INIT         = 3,  // Sent to a superstate to retrieve the child state it should immediately enter, it should return HANDLED for non superstates
     EV_FIRST_CUSTOM = 4
 };
+// clang-format on
 
 /**
  * Example definition of custom events:

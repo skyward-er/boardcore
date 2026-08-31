@@ -232,13 +232,15 @@ struct CanMeaData : MeaData
 struct ServoFeedback
 {
     uint64_t timestamp = 0;
+    uint8_t idx        = 0;
     uint8_t position   = 0;
     bool open          = false;
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ServoFeedback, FIELD_DEF(timestamp) FIELD_DEF(
-                                             position) FIELD_DEF(open));
+        return STRUCT_DEF(ServoFeedback,
+                          FIELD_DEF(timestamp) FIELD_DEF(idx)
+                              FIELD_DEF(position) FIELD_DEF(open));
     }
 };
 
@@ -268,17 +270,6 @@ struct CanEvent
                                         FIELD_DEF(target) FIELD_DEF(event));
     }
 };
-
-inline Canbus::CanMessage toCanMessage(const uint8_t& data)
-{
-    Canbus::CanMessage message;
-
-    message.id         = -1;
-    message.length     = 1;
-    message.payload[0] = static_cast<uint8_t>(data);
-
-    return message;
-}
 
 struct SequenceConfig
 {
@@ -364,6 +355,17 @@ struct CanIgnitionThresholds : IgnitionThresholds
                               FIELD_DEF(secondaryType) FIELD_DEF(source));
     }
 };
+
+inline Canbus::CanMessage toCanMessage(const uint8_t& data)
+{
+    Canbus::CanMessage message;
+
+    message.id         = -1;
+    message.length     = 1;
+    message.payload[0] = static_cast<uint8_t>(data);
+
+    return message;
+}
 
 inline Canbus::CanMessage toCanMessage(const PitotData& data)
 {
@@ -501,10 +503,11 @@ inline Canbus::CanMessage toCanMessage(const ServoFeedback& data)
     Canbus::CanMessage message;
 
     message.id         = -1;
-    message.length     = 1;
+    message.length     = 2;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= data.position << 24;
-    message.payload[0] |= (data.open ? 1 : 0) << 16;
+    message.payload[0] |= static_cast<uint32_t>(data.idx) << 24;
+    message.payload[0] |= data.position << 16;
+    message.payload[1] |= (data.open ? 1 : 0);
 
     return message;
 }
@@ -518,12 +521,11 @@ inline Canbus::CanMessage toCanMessage(const SequenceConfig& data)
     message.payload[0] = (data.timestamp & ~0x3) << 30;
     message.payload[0] |= data.fullThrottleTime;
 
-    message.payload[1] = data.lowThrottleTime;
-    message.payload[1] = message.payload[1] << 32;
+    message.payload[1] = (static_cast<uint64_t>(data.lowThrottleTime) << 32);
     message.payload[1] |= data.pilotLeadTime;
 
-    message.payload[2] = floatToInt32(data.pilotOxPosition);
-    message.payload[2] = message.payload[2] << 32;
+    message.payload[2] =
+        (static_cast<uint64_t>(floatToInt32(data.pilotOxPosition)) << 32);
     message.payload[2] |= floatToInt32(data.pilotFuelPosition);
 
     return message;
@@ -537,8 +539,8 @@ inline Canbus::CanMessage toCanMessage(const EregTarget& data)
     message.length = 2;
 
     message.payload[0] = data.timestamp;
-    message.payload[1] = floatToInt32(data.oxTarget);
-    message.payload[1] = message.payload[1] << 32;
+    message.payload[1] =
+        (static_cast<uint64_t>(floatToInt32(data.oxTarget)) << 32);
     message.payload[1] |= floatToInt32(data.fuelTarget);
 
     return message;
@@ -552,8 +554,8 @@ inline Canbus::CanMessage toCanMessage(const IgnitionThresholds& data)
     message.length = 2;
 
     message.payload[0] = data.timestamp;
-    message.payload[1] = floatToInt32(data.igniterThreshold);
-    message.payload[1] = message.payload[1] << 32;
+    message.payload[1] =
+        (static_cast<uint64_t>(floatToInt32(data.igniterThreshold)) << 32);
     message.payload[1] |= floatToInt32(data.pilotThreshold);
 
     return message;
@@ -701,8 +703,9 @@ inline CanServoFeedback servoFeedbackFromCanMessage(
     CanServoFeedback data;
 
     data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
-    data.position      = static_cast<uint8_t>(msg.payload[0] >> 24);
-    data.open          = ((msg.payload[0] >> 16) & 1) != 0;
+    data.idx           = static_cast<uint8_t>(msg.payload[0] >> 24 & 0xFF);
+    data.position      = static_cast<uint8_t>(msg.payload[0] >> 16 & 0xFF);
+    data.open          = (msg.payload[1] & 1) != 0;
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
 
@@ -745,8 +748,8 @@ inline CanIgnitionThresholds ignitionThresholdsFromCanMessage(
     CanIgnitionThresholds data;
 
     data.timestamp        = msg.payload[0];
-    data.igniterThreshold = msg.payload[1] >> 32;
-    data.pilotThreshold   = msg.payload[1];
+    data.igniterThreshold = int32ToFloat(msg.payload[1] >> 32);
+    data.pilotThreshold   = int32ToFloat(msg.payload[1]);
     data.secondaryType    = msg.getSecondaryType();
     data.source           = msg.getSource();
 

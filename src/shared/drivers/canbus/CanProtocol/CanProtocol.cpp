@@ -162,10 +162,10 @@ void CanProtocol::sendMessage(const CanMessage& msg)
 
 bool CanProtocol::enqueueEvent(uint8_t priority, uint8_t primaryType,
                                uint8_t source, uint8_t destination,
-                               uint8_t secondaryType)
+                               uint8_t secondaryType, uint8_t eventId)
 {
     return enqueueSimplePacket(priority, primaryType, source, destination,
-                               secondaryType, 0xFF);
+                               secondaryType, eventId);
 }
 
 bool CanProtocol::enqueueSimplePacket(uint8_t priority, uint8_t primaryType,
