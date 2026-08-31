@@ -28,6 +28,7 @@
 #include <nasdaq/NASDAQ0_types.h>
 #include <prf/PRF_types.h>
 #include <sda/SDA_types.h>
+#include <zvk/ZVK_types.h>
 
 #include <cstdint>
 #include <ostream>
@@ -106,6 +107,121 @@ struct ANASLogsData
                         ANASLogs, BaroPitotAct) FIELD_DEF2(ANASLogs, GPSAct)
                         FIELD_DEF2(ANASLogs, MagAct)
                             FIELD_DEF2(ANASLogs, AccAct));
+    }
+};
+
+struct ZVKState
+{
+    uint64_t timestamp = 0;
+
+    // Accelerometer 1 Bias
+    float acc1BiasX = 0;
+    float acc1BiasY = 0;
+    float acc1BiasZ = 0;
+
+    // Accelerometer 2 Bias
+    float acc2BiasX = 0;
+    float acc2BiasY = 0;
+    float acc2BiasZ = 0;
+
+    // Accelerometer VN100 Bias
+    float accVN100BiasX = 0;
+    float accVN100BiasY = 0;
+    float accVN100BiasZ = 0;
+
+    // Gyroscope 1 Bias
+    float gyro1BiasX = 0;
+    float gyro1BiasY = 0;
+    float gyro1BiasZ = 0;
+
+    // Gyroscope 2 Bias
+    float gyro2BiasX = 0;
+    float gyro2BiasY = 0;
+    float gyro2BiasZ = 0;
+
+    // Gyroscope VN100 Bias
+    float gyroVN100BiasX = 0;
+    float gyroVN100BiasY = 0;
+    float gyroVN100BiasZ = 0;
+
+    ZVKState() : timestamp(0) {};
+
+    ZVKState(uint64_t timestamp, const ZVK_types_h_::ZVKOut& zvkOut)
+        : timestamp(timestamp), acc1BiasX(zvkOut.Accelerometer1Bias[0]),
+          acc1BiasY(zvkOut.Accelerometer1Bias[1]),
+          acc1BiasZ(zvkOut.Accelerometer1Bias[2]),
+          acc2BiasX(zvkOut.Accelerometer2Bias[0]),
+          acc2BiasY(zvkOut.Accelerometer2Bias[1]),
+          acc2BiasZ(zvkOut.Accelerometer2Bias[2]),
+          accVN100BiasX(zvkOut.AccelerometerVN100Bias[0]),
+          accVN100BiasY(zvkOut.AccelerometerVN100Bias[1]),
+          accVN100BiasZ(zvkOut.AccelerometerVN100Bias[2]),
+          gyro1BiasX(zvkOut.Gyroscope1Bias[0]),
+          gyro1BiasY(zvkOut.Gyroscope1Bias[1]),
+          gyro1BiasZ(zvkOut.Gyroscope1Bias[2]),
+          gyro2BiasX(zvkOut.Gyroscope2Bias[0]),
+          gyro2BiasY(zvkOut.Gyroscope2Bias[1]),
+          gyro2BiasZ(zvkOut.Gyroscope2Bias[2]),
+          gyroVN100BiasX(zvkOut.GyroscopeVN100Bias[0]),
+          gyroVN100BiasY(zvkOut.GyroscopeVN100Bias[1]),
+          gyroVN100BiasZ(zvkOut.GyroscopeVN100Bias[2])
+    {
+    }
+
+    ZVKState(uint64_t timestamp, const float acc1Bias[3],
+             const float acc2Bias[3], const float accVN100Bias[3],
+             const float gyro1Bias[3], const float gyro2Bias[3],
+             const float gyroVN100Bias[3])
+        : timestamp(timestamp), acc1BiasX(acc1Bias[0]), acc1BiasY(acc1Bias[1]),
+          acc1BiasZ(acc1Bias[2]), acc2BiasX(acc2Bias[0]),
+          acc2BiasY(acc2Bias[1]), acc2BiasZ(acc2Bias[2]),
+          accVN100BiasX(accVN100Bias[0]), accVN100BiasY(accVN100Bias[1]),
+          accVN100BiasZ(accVN100Bias[2]), gyro1BiasX(gyro1Bias[0]),
+          gyro1BiasY(gyro1Bias[1]), gyro1BiasZ(gyro1Bias[2]),
+          gyro2BiasX(gyro2Bias[0]), gyro2BiasY(gyro2Bias[1]),
+          gyro2BiasZ(gyro2Bias[2]), gyroVN100BiasX(gyroVN100Bias[0]),
+          gyroVN100BiasY(gyroVN100Bias[1]), gyroVN100BiasZ(gyroVN100Bias[2]) {};
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            ZVKState,
+            FIELD_DEF(timestamp) FIELD_DEF(acc1BiasX) FIELD_DEF(acc1BiasY)
+                FIELD_DEF(acc1BiasZ) FIELD_DEF(acc2BiasX) FIELD_DEF(acc2BiasY)
+                    FIELD_DEF(acc2BiasZ) FIELD_DEF(accVN100BiasX)
+                        FIELD_DEF(accVN100BiasY) FIELD_DEF(accVN100BiasZ)
+                            FIELD_DEF(gyro1BiasX) FIELD_DEF(gyro1BiasY)
+                                FIELD_DEF(gyro1BiasZ) FIELD_DEF(gyro2BiasX)
+                                    FIELD_DEF(gyro2BiasY) FIELD_DEF(gyro2BiasZ)
+                                        FIELD_DEF(gyroVN100BiasX)
+                                            FIELD_DEF(gyroVN100BiasY)
+                                                FIELD_DEF(gyroVN100BiasZ));
+    }
+};
+
+struct ZVKLogsData
+{
+    uint64_t timestamp;
+    ZVK_types_h_::ZVKLogs ZVKLogs;
+
+    ZVKLogsData() : timestamp(0), ZVKLogs() {};
+
+    ZVKLogsData(uint64_t timestamp, ZVK_types_h_::ZVKLogs zvkLogs)
+        : timestamp(timestamp), ZVKLogs(zvkLogs) {};
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            ZVKLogsData,
+            FIELD_DEF(timestamp) FIELD_DEF2(ZVKLogs, Accelerometer1Bias)
+                FIELD_DEF2(ZVKLogs, Accelerometer2Bias)
+                    FIELD_DEF2(ZVKLogs, AccelerometerVN100Bias) FIELD_DEF2(
+                        ZVKLogs, Gyroscope1Bias) FIELD_DEF2(ZVKLogs,
+                                                            Gyroscope2Bias)
+                        FIELD_DEF2(ZVKLogs, GyroscopeVN100Bias) FIELD_DEF2(
+                            ZVKLogs, Velocity) FIELD_DEF2(ZVKLogs, Acceleration)
+                            FIELD_DEF2(ZVKLogs, SmallEulerAngles)
+                                FIELD_DEF2(ZVKLogs, AngularVelocity));
     }
 };
 

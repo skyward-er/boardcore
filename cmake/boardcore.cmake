@@ -55,6 +55,8 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/sda/SDA_data.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/sda/SDA.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/sda/sdaKriging.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/zvk/ZVK_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/zvk/ZVK.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/StateInitializer/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
