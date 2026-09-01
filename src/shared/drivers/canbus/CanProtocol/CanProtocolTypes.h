@@ -229,7 +229,7 @@ struct CanMeaData : MeaData
                                           secondaryType) FIELD_DEF(source));
     }
 };
-struct ServoFeedback
+struct ValveData
 {
     uint64_t timestamp = 0;
     uint8_t idx        = 0;
@@ -238,22 +238,20 @@ struct ServoFeedback
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ServoFeedback,
-                          FIELD_DEF(timestamp) FIELD_DEF(idx)
-                              FIELD_DEF(position) FIELD_DEF(open));
+        return STRUCT_DEF(ValveData, FIELD_DEF(timestamp) FIELD_DEF(idx)
+                                         FIELD_DEF(position) FIELD_DEF(open));
     }
 };
 
-struct CanServoFeedback : ServoFeedback
+struct CanValveData : ValveData
 {
     uint8_t secondaryType = 0;
     uint8_t source        = 0;
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(CanServoFeedback,
-                          EXTEND_DEF(ServoFeedback) FIELD_DEF(secondaryType)
-                              FIELD_DEF(source));
+        return STRUCT_DEF(CanValveData, EXTEND_DEF(ValveData) FIELD_DEF(
+                                            secondaryType) FIELD_DEF(source));
     }
 };
 
@@ -304,6 +302,36 @@ struct CanSequenceConfig : SequenceConfig
     }
 };
 
+struct EregPIDSet
+{
+    float KpPressurization;
+    float KiPressurization;
+    float KdPressurization;
+    float KpDischarge;
+    float KiDischarge;
+    float KdDischarge;
+    uint8_t eregId;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            EregPIDSet, FIELD_DEF(KpPressurization) FIELD_DEF(KiPressurization)
+                            FIELD_DEF(KdPressurization) FIELD_DEF(KpDischarge)
+                                FIELD_DEF(KiDischarge) FIELD_DEF(KdDischarge));
+    }
+};
+
+struct CanEregPIDSet : EregPIDSet
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanEregPIDSet, EXTEND_DEF(EregPIDSet) FIELD_DEF(
+                                             secondaryType) FIELD_DEF(source));
+    }
+};
 struct EregTarget
 {
     uint64_t timestamp;
@@ -328,7 +356,6 @@ struct CanEregTarget : EregTarget
                                              secondaryType) FIELD_DEF(source));
     }
 };
-
 struct IgnitionThresholds
 {
     uint64_t timestamp;
@@ -498,16 +525,16 @@ inline Canbus::CanMessage toCanMessage(const ServoCommand& data)
     return message;
 }
 
-inline Canbus::CanMessage toCanMessage(const ServoFeedback& data)
+inline Canbus::CanMessage toCanMessage(const ValveData& data)
 {
     Canbus::CanMessage message;
 
     message.id         = -1;
-    message.length     = 2;
+    message.length     = 1;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
     message.payload[0] |= static_cast<uint32_t>(data.idx) << 24;
     message.payload[0] |= data.position << 16;
-    message.payload[1] |= (data.open ? 1 : 0);
+    message.payload[0] |= (data.open ? 1 : 0);
 
     return message;
 }
@@ -527,6 +554,30 @@ inline Canbus::CanMessage toCanMessage(const SequenceConfig& data)
     message.payload[2] =
         (static_cast<uint64_t>(floatToInt32(data.pilotOxPosition)) << 32);
     message.payload[2] |= floatToInt32(data.pilotFuelPosition);
+
+    return message;
+}
+
+inline Canbus::CanMessage toCanMessage(const EregPIDSet& data)
+{
+    Canbus::CanMessage message;
+
+    message.id     = -1;
+    message.length = 4;
+    message.payload[0] =
+        static_cast<uint64_t>(floatToInt32(data.KpPressurization)) << 32;
+    message.payload[0] |=
+        static_cast<uint64_t>(floatToInt32(data.KiPressurization));
+
+    message.payload[1] =
+        static_cast<uint64_t>(floatToInt32(data.KdPressurization)) << 32;
+    message.payload[1] |= static_cast<uint64_t>(floatToInt32(data.KpDischarge));
+
+    message.payload[2] = static_cast<uint64_t>(floatToInt32(data.KiDischarge))
+                         << 32;
+    message.payload[2] |= static_cast<uint64_t>(floatToInt32(data.KdDischarge));
+
+    message.payload[3] = data.eregId;
 
     return message;
 }
@@ -697,15 +748,14 @@ inline float meaMassFromCanMessage(const Canbus::CanMessage& msg)
     return data;
 }
 
-inline CanServoFeedback servoFeedbackFromCanMessage(
-    const Canbus::CanMessage& msg)
+inline CanValveData valveDataFromCanMessage(const Canbus::CanMessage& msg)
 {
-    CanServoFeedback data;
+    CanValveData data;
 
     data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
     data.idx           = static_cast<uint8_t>(msg.payload[0] >> 24 & 0xFF);
     data.position      = static_cast<uint8_t>(msg.payload[0] >> 16 & 0xFF);
-    data.open          = (msg.payload[1] & 1) != 0;
+    data.open          = (msg.payload[0] & 1) != 0;
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
 
@@ -725,6 +775,23 @@ inline CanSequenceConfig sequenceConfigFromCanMessage(
     data.pilotFuelPosition = int32ToFloat(msg.payload[2]);
     data.secondaryType     = msg.getSecondaryType();
     data.source            = msg.getSource();
+
+    return data;
+}
+
+inline CanEregPIDSet eregPIDSetFromCanMessage(const Canbus::CanMessage& msg)
+{
+    CanEregPIDSet data;
+
+    data.KpPressurization = int32ToFloat(msg.payload[0] >> 32);
+    data.KiPressurization = int32ToFloat(msg.payload[0]);
+    data.KdPressurization = int32ToFloat(msg.payload[1] >> 32);
+    data.KpDischarge      = int32ToFloat(msg.payload[1]);
+    data.KiDischarge      = int32ToFloat(msg.payload[2] >> 32);
+    data.KdDischarge      = int32ToFloat(msg.payload[2]);
+    data.eregId           = static_cast<uint8_t>(msg.payload[3]);
+    data.secondaryType    = msg.getSecondaryType();
+    data.source           = msg.getSource();
 
     return data;
 }
