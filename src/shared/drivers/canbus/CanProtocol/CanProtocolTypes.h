@@ -23,6 +23,7 @@
 #pragma once
 
 #include <actuators/Servo/ServoData.h>
+#include <algorithms/Ereg/EregConfig.h>
 #include <sensors/SensorData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/Pitot/PitotData.h>
@@ -383,6 +384,43 @@ struct CanIgnitionThresholds : IgnitionThresholds
     }
 };
 
+struct EregServoCoefficients
+{
+    uint8_t eregId = 0;
+    float coefficients[POLY_SERVO_COEFF_NUMBER] = {};
+
+    EregServoCoefficients() = default;
+
+    EregServoCoefficients(uint8_t id,
+                          const float coeffs[POLY_SERVO_COEFF_NUMBER])
+        : eregId(id), coefficients{}
+    {
+        for (int i = 0; i < POLY_SERVO_COEFF_NUMBER; i++)
+            coefficients[i] = coeffs[i];
+    };
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(EregServoCoefficients,
+                          FIELD_DEF(eregId) FIELD_DEF(coefficients));
+    }
+};
+
+struct CanEregServoCoefficients : EregServoCoefficients
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    CanEregServoCoefficients() = default;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanEregServoCoefficients,
+                          EXTEND_DEF(EregServoCoefficients)
+                              FIELD_DEF(secondaryType) FIELD_DEF(source));
+    }
+};
+
 inline Canbus::CanMessage toCanMessage(const uint8_t& data)
 {
     Canbus::CanMessage message;
@@ -612,6 +650,27 @@ inline Canbus::CanMessage toCanMessage(const IgnitionThresholds& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const EregServoCoefficients& data)
+{
+    Canbus::CanMessage message;
+
+    message.id     = -1;
+    message.length = 4;
+
+    message.payload[0] = data.eregId;
+    message.payload[0] |=
+        (static_cast<uint64_t>(floatToInt32(data.coefficients[0])) << 8);
+    message.payload[1] = floatToInt32(data.coefficients[1]);
+    message.payload[1] |=
+        (static_cast<uint64_t>(floatToInt32(data.coefficients[2])) << 32);
+    message.payload[2] = floatToInt32(data.coefficients[3]);
+    message.payload[2] |=
+        (static_cast<uint64_t>(floatToInt32(data.coefficients[4])) << 32);
+    message.payload[3] = floatToInt32(data.coefficients[5]);
+
+    return message;
+}
+
 inline CanPitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     CanPitotData data;
@@ -819,6 +878,25 @@ inline CanIgnitionThresholds ignitionThresholdsFromCanMessage(
     data.pilotThreshold   = int32ToFloat(msg.payload[1]);
     data.secondaryType    = msg.getSecondaryType();
     data.source           = msg.getSource();
+
+    return data;
+}
+
+inline CanEregServoCoefficients canServoCoefficientsFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    CanEregServoCoefficients data{};
+
+    data.eregId          = static_cast<uint8_t>(msg.payload[0]);
+    data.coefficients[0] = int32ToFloat(msg.payload[0] >> 8);
+    data.coefficients[1] = int32ToFloat(msg.payload[1] >> 32);
+    data.coefficients[2] = int32ToFloat(msg.payload[1]);
+    data.coefficients[3] = int32ToFloat(msg.payload[2] >> 32);
+    data.coefficients[4] = int32ToFloat(msg.payload[2]);
+    data.coefficients[5] = int32ToFloat(msg.payload[3]);
+
+    data.secondaryType = msg.getSecondaryType();
+    data.source        = msg.getSource();
 
     return data;
 }

@@ -47,4 +47,7 @@ struct EregValveInfo
                               // from valve angle to servo position
 };
 
+static constexpr int POLY_VALVE_COEFF_NUMBER = 6;
+static constexpr int POLY_SERVO_COEFF_NUMBER = 6;
+
 }  // namespace Boardcore

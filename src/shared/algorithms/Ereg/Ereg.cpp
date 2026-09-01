@@ -53,6 +53,12 @@ void Ereg::setInput(float downstreamPressure, float upstreamPressure)
     upstreamPressureSample   = upstreamPressure;
 }
 
+void Ereg::setServoCoefficients(const float coefficients[POLY_SERVO_COEFF_NUMBER])
+{
+        for (int i = 0; i < POLY_SERVO_COEFF_NUMBER; i++)
+            valveInfo.polyValveCoeff[i] = coefficients[i];
+}
+
 float Ereg::getOutput() { return nextServoPosition; }
 
 void Ereg::step()
