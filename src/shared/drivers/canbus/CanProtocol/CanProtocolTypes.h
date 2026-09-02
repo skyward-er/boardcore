@@ -421,6 +421,29 @@ struct CanEregServoCoefficients : EregServoCoefficients
     }
 };
 
+struct MEAInitialMass
+{
+    float mass = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(MEAInitialMass, FIELD_DEF(mass));
+    }
+};
+
+struct CanMEAInitialMass : MEAInitialMass
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanMEAInitialMass,
+                          EXTEND_DEF(MEAInitialMass) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
+    }
+};
+
 inline Canbus::CanMessage toCanMessage(const uint8_t& data)
 {
     Canbus::CanMessage message;
@@ -671,6 +694,19 @@ inline Canbus::CanMessage toCanMessage(const EregServoCoefficients& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const MEAInitialMass& data) {
+
+    Canbus::CanMessage message;
+
+    message.id = -1;
+    message.length = 1;
+
+    message.payload[0] = floatToInt32(data.mass);
+
+    return message;
+
+}
+
 inline CanPitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     CanPitotData data;
@@ -897,6 +933,17 @@ inline CanEregServoCoefficients canServoCoefficientsFromCanMessage(
 
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanMEAInitialMass CanMEAInitialMassFromCanMessage(const Canbus::CanMessage& msg) {
+    CanMEAInitialMass data{};
+
+    data.mass = int32ToFloat(static_cast<uint32_t>(msg.payload[0]));
+    
+    data.secondaryType = msg.getSecondaryType();
+    data.source = msg.getSource();
 
     return data;
 }
