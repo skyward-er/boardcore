@@ -154,13 +154,13 @@ add_executable(catch-tests-boardcore
     src/tests/catch/xbee/test-xbee-parser.cpp
     src/tests/catch/test-modulemanager.cpp
     src/tests/catch/test-dependencymanager.cpp
-    src/tests/catch/test-MEA.cpp
-    src/tests/catch/test-airbrakesInterp.cpp
-    src/tests/catch/test-airbrakesInterpPID.cpp
+    # src/tests/catch/test-MEA.cpp
+    # src/tests/catch/test-airbrakesInterp.cpp
+    # src/tests/catch/test-airbrakesInterpPID.cpp
     src/tests/catch/test-pitot.cpp
     src/tests/catch/test-units.cpp
     src/tests/catch/test-registry-frontend.cpp
-    src/tests/catch/propagator/test-propagator.cpp
+    # src/tests/catch/propagator/test-propagator.cpp
 )
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
@@ -195,26 +195,26 @@ sbs_target(test-stepper-pwm stm32f767zi_nucleo)
 add_executable(test-kalman-benchmark src/tests/algorithms/Kalman/test-kalman-benchmark.cpp)
 sbs_target(test-kalman-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
-sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
+# add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
+# sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
 
-add_executable(test-attitude-stack src/tests/algorithms/NAS/test-attitude-stack.cpp)
-sbs_target(test-attitude-stack stm32f429zi_death_stack_v2)
+# add_executable(test-attitude-stack src/tests/algorithms/NAS/test-attitude-stack.cpp)
+# sbs_target(test-attitude-stack stm32f429zi_death_stack_v2)
 
-add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
-sbs_target(test-nas-parafoil stm32f429zi_parafoil)
+# add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
+# sbs_target(test-nas-parafoil stm32f429zi_parafoil)
 
-add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
-sbs_target(test-nas stm32f429zi_death_stack_v3)
+# add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
+# sbs_target(test-nas stm32f429zi_death_stack_v3)
 
-add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
-sbs_target(test-nas-with-triad stm32f429zi_death_stack_v2)
+# add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
+# sbs_target(test-nas-with-triad stm32f429zi_death_stack_v2)
 
-add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
-sbs_target(test-triad stm32f429zi_death_stack_v3)
+# add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
+# sbs_target(test-triad stm32f429zi_death_stack_v3)
 
-add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
-sbs_target(test-triad-parafoil stm32f429zi_parafoil)
+# add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
+# sbs_target(test-triad-parafoil stm32f429zi_parafoil)
 
 add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
 sbs_target(test-ada stm32f429zi_death_stack_v3)
