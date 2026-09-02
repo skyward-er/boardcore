@@ -340,10 +340,9 @@ class MainHILPhasesManager
       public Boardcore::Module
 {
 public:
-    explicit MainHILPhasesManager(
-        std::function<Boardcore::TimedTrajectoryPoint()> getCurrentPosition)
+    explicit MainHILPhasesManager()
         : Boardcore::HILPhasesManager<MainFlightPhases, SimulatorData,
-                                      ActuatorData>(getCurrentPosition)
+                                      ActuatorData>()
     {
         flagsFlightPhases = {{MainFlightPhases::SIM_FLYING, false},
                              {MainFlightPhases::SIM_ASCENT, false},
@@ -467,8 +466,7 @@ private:
             case Common::Events::FLIGHT_LIFTOFF:
             case Common::Events::TMTC_FORCE_LAUNCH:
                 t_liftoff = Boardcore::TimestampTimer::getTimestamp();
-                printf("[HIL] ------- LIFTOFF -------: %f, %f \n",
-                       getCurrentPosition().z, getCurrentPosition().vz);
+                printf("[HIL] ------- LIFTOFF -------:\n");
                 changed_flags.push_back(MainFlightPhases::LIFTOFF);
                 break;
             case Common::Events::ABK_SHADOW_MODE_TIMEOUT:
@@ -488,16 +486,14 @@ private:
             case Common::Events::CAN_APOGEE_DETECTED:
                 setFlagFlightPhase(MainFlightPhases::AEROBRAKES, false);
                 registerOutcomes(MainFlightPhases::APOGEE);
-                printf("[HIL] ------- APOGEE DETECTED ! ------- %f, %f \n",
-                       getCurrentPosition().z, getCurrentPosition().vz);
+                printf("[HIL] ------- APOGEE DETECTED ! -------\n");
                 changed_flags.push_back(MainFlightPhases::APOGEE);
                 break;
             case Common::Events::FLIGHT_DROGUE_DESCENT:
             case Common::Events::TMTC_FORCE_EXPULSION:
                 setFlagFlightPhase(MainFlightPhases::PARA1, true);
                 registerOutcomes(MainFlightPhases::PARA1);
-                printf("[HIL] ------- PARA1 ! -------%f, %f \n",
-                       getCurrentPosition().z, getCurrentPosition().vz);
+                printf("[HIL] ------- PARA1 ! -------\n");
                 changed_flags.push_back(MainFlightPhases::PARA1);
                 break;
             case Common::Events::FLIGHT_WING_DESCENT:
@@ -506,8 +502,7 @@ private:
                 setFlagFlightPhase(MainFlightPhases::PARA1, false);
                 setFlagFlightPhase(MainFlightPhases::PARA2, true);
                 registerOutcomes(MainFlightPhases::PARA2);
-                printf("[HIL] ------- PARA2 ! ------- %f, %f \n",
-                       getCurrentPosition().z, getCurrentPosition().vz);
+                printf("[HIL] ------- PARA2 ! -------\n");
                 changed_flags.push_back(MainFlightPhases::PARA2);
                 break;
             case Common::Events::FLIGHT_LANDING_DETECTED:

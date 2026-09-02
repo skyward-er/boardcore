@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/AirBrakes/TrajectoryPoint.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLogger.h>
 #include <diagnostic/StackLogger.h>
@@ -60,8 +59,7 @@ int main()
     if (HIL_TEST)
     {
         // Create hil modules
-        auto* hilPhasesManager = new MainHILPhasesManager(
-            []() { return Boardcore::TimedTrajectoryPoint(); });
+        auto* hilPhasesManager = new MainHILPhasesManager();
         auto* hilTransceiver =
             new MainHILTransceiver(buses->usart2, hilPhasesManager);
 
