@@ -72,13 +72,13 @@ public:
      */
     float getOutput();
 
-
     /**
      * @brief Change Polynomial Servo Coefficients
      * @param coefficients Coefficients array
      * @param n Number of coefficients
      */
-    void setServoCoefficients(const float coefficients[POLY_SERVO_COEFF_NUMBER]);
+    void setServoCoefficients(
+        const float coefficients[POLY_SERVO_COEFF_NUMBER]);
 
 protected:
     /**

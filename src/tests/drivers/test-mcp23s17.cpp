@@ -99,13 +99,13 @@ int main()
 
     // IODIR
 
-    mcp.writeRegister(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA), 255);
-    std::cout << (int)mcp.readRegister(
+    mcp.writeRegister(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA),
+   255); std::cout << (int)mcp.readRegister(
                      mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA))
               << '\n';
 
-    mcp.writeRegister(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRB), 255);
-    std::cout << (int)mcp.readRegister(
+    mcp.writeRegister(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRB),
+   255); std::cout << (int)mcp.readRegister(
                      mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRB))
               << '\n';
 
@@ -178,32 +178,33 @@ int main()
 
     // DEFVAL
 
-    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::DEFVALA), 255);
-    std::cout << (int)mcp.readRegister(
+    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::DEFVALA),
+   255); std::cout << (int)mcp.readRegister(
                      mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::DEFVALA))
               << '\n';
 
-    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::DEFVALB), 255);
-    std::cout << (int)mcp.readRegister(
+    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::DEFVALB),
+   255); std::cout << (int)mcp.readRegister(
                      mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::DEFVALB))
               << '\n';
 
     // INTCON
 
-    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::INTCONA), 255);
-    std::cout << (int)mcp.readRegister(
+    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::INTCONA),
+   255); std::cout << (int)mcp.readRegister(
                      mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::INTCONA))
               << '\n';
 
-    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::INTCONB), 255);
-    std::cout << (int)mcp.readRegister(
+    mcp.writeRegister(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::INTCONB),
+   255); std::cout << (int)mcp.readRegister(
                      mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::INTCONB))
               << '\n';
 
     std::cout << "\n################## TESTING RANDOM W/R SEQUENCES - IOCON"
               << "REGISTER ##################\n";
 
-    // Set all bits to one using the single methods, then read each single pin,
+    // Set all bits to one using the single methods, then read each single
+   pin,
     // afterwards repeat the procedure putting all bits to 0
     mcp.setBANK(1);
     mcp.setMIRROR(1);
@@ -213,26 +214,26 @@ int main()
     mcp.setODR(1);
     mcp.setINTPOL(1);
 
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             7)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 7)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             6)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 6)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             5)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 5)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             4)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 4)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             3)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 3)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             2)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 2)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             1)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 1)
               << '\n';
 
     mcp.setBANK(0);
@@ -243,26 +244,26 @@ int main()
     mcp.setODR(0);
     mcp.setINTPOL(0);
 
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             7)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 7)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             6)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 6)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             5)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 5)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             4)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 4)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             3)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 3)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             2)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 2)
               << '\n';
-    std::cout << mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON),
-                             1)
+    std::cout <<
+   mcp.readBit(mcp.getCtrlAddress(MCP23S17Defs::CTRL_REG::IOCON), 1)
               << '\n';
 
     // Clean config
@@ -275,45 +276,45 @@ int main()
     // Pin I/O (IODIR)
 
     mcp.setPinOut_A(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA), 0)
               << '\n';
 
     mcp.setPinOut_B(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA), 0)
               << '\n';
 
     mcp.setPinIn_A(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRA), 0)
               << '\n';
 
     mcp.setPinIn_B(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRB),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IODIRB), 0)
               << '\n';
 
     // Pin POLARITY (IOPOL)
 
     mcp.setPinPolarity_A(0, 0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLA), 0)
               << '\n';
 
     mcp.setPinPolarity_B(0, 0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLB),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLB), 0)
               << '\n';
 
     mcp.setPinPolarity_A(0, 1);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLA), 0)
               << '\n';
 
     mcp.setPinPolarity_B(0, 1);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLB),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::IPOLB), 0)
               << '\n';
 
     // Interrupt on change (GPINTEN)
@@ -341,23 +342,23 @@ int main()
     // Pull up (GPPU)
 
     mcp.enablePullUp_A(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUA), 0)
               << '\n';
 
     mcp.enablePullUp_B(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUB),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUB), 0)
               << '\n';
 
     mcp.disablePullUp_A(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUA),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUA), 0)
               << '\n';
 
     mcp.disablePullUp_B(0);
-    std::cout << mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUB),
-                             0)
+    std::cout <<
+   mcp.readBit(mcp.getGpioAddress(MCP23S17Defs::GPIO_REG::GPPUB), 0)
               << '\n';
 
     // Default value (DEFVAL)

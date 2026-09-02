@@ -386,7 +386,7 @@ struct CanIgnitionThresholds : IgnitionThresholds
 
 struct EregServoCoefficients
 {
-    uint8_t eregId = 0;
+    uint8_t eregId                              = 0;
     float coefficients[POLY_SERVO_COEFF_NUMBER] = {};
 
     EregServoCoefficients() = default;
