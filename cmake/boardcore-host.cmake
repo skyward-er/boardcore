@@ -61,8 +61,12 @@ set(BOARDCORE_HOST_SRC
 # Create a library specific for host builds
 add_library(boardcore-host STATIC EXCLUDE_FROM_ALL ${BOARDCORE_HOST_SRC})
 
-# Only one include directory for Boardcore!
 target_include_directories(boardcore-host PUBLIC ${BOARDCORE_PATH}/src/shared)
+
+# Autocoded-alogrithm isn't a library as it doesn't have a CMakeList, thus we add it as a directory
+# the SYSTEM keyword allows us to suppress the (autocoded alogirthms') errors
+target_include_directories(boardcore-host SYSTEM PUBLIC ${BOARDCORE_PATH}/libs/autocoded-algorithms)
+target_include_directories(boardcore-host SYSTEM PUBLIC ${BOARDCORE_PATH}/libs/autocoded-algorithms/shared)
 
 # Link libraries
 target_link_libraries(boardcore-host PUBLIC
