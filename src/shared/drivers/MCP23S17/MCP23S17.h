@@ -63,7 +63,7 @@ public:
      * @brief Initialization Sequence, necessary to set all the registers to the
      * default settings.
      */
-    bool init();
+    void init();
 
     /**
      * @brief Set MIRROR value.

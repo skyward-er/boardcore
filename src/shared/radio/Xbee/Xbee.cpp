@@ -23,7 +23,6 @@
 #include "Xbee.h"
 
 #include <diagnostic/StackLogger.h>
-#include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 #include <utils/Debug.h>
 
@@ -137,16 +136,12 @@ ssize_t Xbee::receive(uint8_t* buf, size_t bufMaxSize)
         else
         {
             {
-                miosix::FastInterruptDisableLock dLock;
+                miosix::FastGlobalIrqLock dLock;
                 receiveThread = miosix::Thread::getCurrentThread();
 
                 while (receiveThread != 0)  // Avoid spurious wakeups
                 {
-                    receiveThread->IRQwait();
-                    {
-                        miosix::FastInterruptEnableLock eLock(dLock);
-                        miosix::Thread::yield();
-                    }
+                    receiveThread->IRQglobalIrqUnlockAndWait(dLock);
                 }
             }
 
@@ -171,7 +166,7 @@ void Xbee::reset()
 {
     Lock<FastMutex> l(mutexXbeeCommunication);
     {
-        miosix::FastInterruptDisableLock dLock();
+        miosix::FastGlobalIrqLock dLock;
         rst.mode(miosix::Mode::OPEN_DRAIN);
     }
     rst.low();
@@ -208,7 +203,7 @@ void Xbee::reset()
 void Xbee::wakeReceiver(bool forceReturn)
 {
     forceRcvReturn = forceReturn;
-    miosix::FastInterruptDisableLock dLock;
+    miosix::FastGlobalIrqLock dLock;
 
     if (receiveThread)
     {
@@ -222,12 +217,6 @@ void Xbee::handleATTNInterrupt()
     if (receiveThread)
     {
         receiveThread->IRQwakeup();
-        if (receiveThread->IRQgetPriority() >
-            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-        {
-            miosix::Scheduler::IRQfindNextThread();
-        }
-
         receiveThread = 0;
     }
 }

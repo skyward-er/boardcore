@@ -48,13 +48,13 @@ void deserializeField(std::ifstream& in, std::ofstream& out)
     auto value = T{};
     in.read(reinterpret_cast<char*>(&value), sizeof(T));
 
-    // Formatting with std::format is >2x faster than std::ostream
+    // Formatting with fmt::format is >2x faster than std::ostream
     if constexpr (std::is_same_v<T, int8_t>)
-        out << std::format("{}", static_cast<int>(value));
+        out << fmt::format("{}", static_cast<int>(value));
     else if constexpr (std::is_same_v<T, uint8_t>)
-        out << std::format("{}", static_cast<unsigned int>(value));
+        out << fmt::format("{}", static_cast<unsigned int>(value));
     else
-        out << std::format("{}", value);
+        out << fmt::format("{}", value);
 }
 }  // namespace detail
 

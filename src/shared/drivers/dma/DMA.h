@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <kernel/scheduler/scheduler.h>
 #include <kernel/sync.h>
 
 #include <chrono>
@@ -169,8 +168,6 @@ class DMADriver
 public:
     // cppcheck-suppress  noExplicitConstructor
 
-    void IRQhandleInterrupt(DMADefs::DMAStreamId id);
-
     static DMADriver& instance();
 
     /**
@@ -209,11 +206,6 @@ public:
 
 private:
     DMADriver();
-
-    /**
-     * @brief Wakeup the sleeping thread associated to the stream.
-     */
-    void IRQwakeupThread(DMAStream& stream);
 
     miosix::FastMutex mutex;
     miosix::ConditionVariable cv;
@@ -404,6 +396,9 @@ public:
     }
 
 private:
+
+    void IRQhandleInterrupt();
+
     DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel);
 
     DMATransaction currentSetup;
@@ -463,12 +458,12 @@ private:
                 waitingThread = miosix::Thread::getCurrentThread();
 
                 // Wait until the thread is woken up and the pointer is cleared
-                miosix::FastInterruptDisableLock dLock;
+                miosix::FastGlobalIrqLock dLock;
                 if (timeout_ns > 0)
                 {
                     do
                     {
-                        if (miosix::Thread::IRQenableIrqAndTimedWait(
+                        if (miosix::Thread::IRQglobalIrqUnlockAndTimedWait(
                                 dLock, timeout_ns + miosix::IRQgetTime()) ==
                             miosix::TimedWaitResult::Timeout)
                         {
@@ -490,7 +485,7 @@ private:
                 {
                     do
                     {
-                        miosix::Thread::IRQenableIrqAndWait(dLock);
+                        miosix::Thread::IRQglobalIrqUnlockAndWait(dLock);
                     } while (waitingThread);
                     result = true;
                 }

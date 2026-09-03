@@ -133,7 +133,7 @@ inline void EnableRxDMARequest(SPI_TypeDef* spi) { spi->CR2 |= SPI_CR2_RXDMAEN; 
 inline void DisableRxDMARequest(SPI_TypeDef* spi) { spi->CR2 &= ~SPI_CR2_RXDMAEN; }
 // clang-format on
 
-#ifdef _ARCH_CORTEXM7_STM32F7
+#ifdef _CHIP_STM32F7
 /**
  * The SPI peripheral differs on stm32f7 microcontrollers. Refer to AN4660 for a
  * comprehensive differences list between different peripherals versions.

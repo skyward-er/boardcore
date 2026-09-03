@@ -22,7 +22,6 @@
 
 #include "SX1278Fsk.h"
 
-#include <kernel/scheduler/scheduler.h>
 #include <utils/Debug.h>
 #include <utils/KernelTime.h>
 

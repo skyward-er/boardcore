@@ -239,6 +239,9 @@ void led_task()
     ledOff();
 
     const unsigned int DELAY = 200;
+    // The board's bsp_impl.h exposes userLed4 but no led4On/led4Off helpers
+    const auto led4On  = [] { userLed4::high(); };
+    const auto led4Off = [] { userLed4::low(); };
     while (1)
     {
         led2Off();

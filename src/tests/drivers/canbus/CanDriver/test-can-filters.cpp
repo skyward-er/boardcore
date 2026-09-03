@@ -61,7 +61,7 @@ int main()
     PrintLogger lr = l.getChild("rx");
 
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         CanRX::alternateFunction(9);
         CanTX::alternateFunction(9);

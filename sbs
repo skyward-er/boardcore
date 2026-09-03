@@ -90,6 +90,7 @@ found_stflash=false
 found_stlink=false
 
 config_build_dir=
+config_board=
 config_host=false
 config_debug=false
 config_verbose=false
@@ -179,7 +180,86 @@ init_dirs() {
     source_dir="$PWD"
     build_default_dir="$source_dir/$BUILD_DEFAULT_DIRNAME"
     build_host_dir="$source_dir/$BUILD_HOST_DIRNAME"
-    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/cmake/toolchain.cmake"
+    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/cmake/Toolchains/gcc.cmake"
+
+    # Miosix 3 board list (stock boards) and the Boardcore registry files
+    kernel_arch_cmake="$sbs_base/libs/miosix-kernel/miosix/arch/CMakeLists.txt"
+    targets_registry_file="$source_dir/CMakeLists.txt"
+    boards_registry_cmake="$sbs_base/cmake/boards.cmake"
+}
+
+# Print the stock boards shipped by the Miosix 3 kernel
+kernel_boards() {
+    awk '
+        /^set\(MIOSIX_BOARDS/ { in_list=1; next }
+        in_list && /^\)/ { in_list=0; next }
+        in_list {
+            gsub(/^[ \t]+|[ \t]+$/, "")
+            if ($0 != "") print
+        }
+    ' "$kernel_arch_cmake"
+}
+
+# Print the boards referenced by the Boardcore target registry (custom boards)
+boards_from_registry() {
+    awk '
+        /^sbs_declare_target\(/ {
+            line=$0
+            sub(/^sbs_declare_target\(/, "", line)
+            split(line, a, /[ )]/)
+            print a[2]
+        }
+    ' "$targets_registry_file" | sort -u
+}
+
+# Print the custom Boardcore boards registered in cmake/boards.cmake
+boardcore_registry_boards() {
+    awk '
+        /^set\(BOARDCORE_BOARDS/ { in_list=1; next }
+        in_list && /^\)/ { in_list=0; next }
+        in_list {
+            gsub(/^[ \t]+|[ \t]+$/, "")
+            if ($0 != "") print
+        }
+    ' "$boards_registry_cmake"
+}
+
+# Return the board a target is defined for (empty if the target is unknown)
+target_board() {
+    local target="$1"
+    awk -v t="$target" '
+        /^sbs_declare_target\(/ {
+            line=$0
+            sub(/^sbs_declare_target\(/, "", line)
+            split(line, a, /[ )]/)
+            if (a[1] == t) { print a[2]; found=1; exit }
+        }
+        END { exit found ? 0 : 1 }
+    ' "$targets_registry_file"
+}
+
+# Check if a board can be configured with the current Miosix 3 kernel
+board_available() {
+    local board="$1"
+    kernel_boards | grep -qx "$board"
+}
+
+# Boards from the target registry that the current kernel can actually build
+available_boards() {
+    local board
+    for board in $(boards_from_registry); do
+        board_available "$board" && echo "$board"
+    done
+}
+
+# Linker script override for boards whose Miosix 3 kernel file ships a broken
+# default (the default name is not present in MIOSIX_LINKER_SCRIPT_LIST, so
+# configure fails unless the script is selected explicitly). Empty for boards
+# whose kernel default is valid.
+board_linker_script() {
+    case "$1" in
+        stm32f767zi_skyward_compute_unit) echo "unikernel-xram-sgm.ld" ;;
+    esac
 }
 
 # workaround: disable tests in excluded subdirectories
@@ -200,7 +280,7 @@ check_build_env() {
 
 # Check if the project is configured
 # Ensure the following variables are properly set before calling this:
-# config_build_dir, config_debug, config_verbose, config_host
+# config_build_dir, config_debug, config_verbose, config_host, config_board
 check_configured() {
     to_reconfigure=false
 
@@ -208,6 +288,12 @@ check_configured() {
     # by populating the variable before calling this function
     if [ -z "$config_build_dir" ]; then
         error "Build directory not set, this is an SBS bug"
+        return $ENOENT
+    fi
+
+    # Miosix 3 configures one board per build directory
+    if [ "$config_host" = false ] && [ -z "$config_board" ]; then
+        error "Board not set, this is an SBS bug"
         return $ENOENT
     fi
 
@@ -232,12 +318,16 @@ check_configured() {
         printf "  - Debug:   %s\n" "$config_debug"
         printf "  - Verbose: %s\n" "$config_verbose"
         printf "  - Host:    %s\n" "$config_host"
+        printf "  - Board:   %s\n" "${config_board:-<none>}"
+        linker_script="$(board_linker_script "$config_board")"
+        [ -n "$linker_script" ] && printf "  - Linker:  %s\n" "$linker_script"
 
-        [ -f "$toolchain_file" ] || { error "CMake toolchain file for Miosix was not found"; return $ENOPKG1; }
+        [ -f "$toolchain_file" ] || { error "CMake toolchain file for Miosix was not found"; return $ENOPKG; }
 
         declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
         defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
-        [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF)
+        [ "$config_host" = false ]   && defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file" -DBUILD_TESTING=OFF -DMIOSIX_BOARD="$config_board")
+        [ -n "$linker_script" ]      && defs+=(-DMIOSIX_LINKER_SCRIPT="$linker_script")
         [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
         [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=(-DCMAKE_BUILD_TYPE=Release)
         [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
@@ -292,7 +382,7 @@ lint_cppcheck() {
 
     echo "Running cppcheck..."
 
-    cppcheck --language=c++ --std=c++14 --enable=all --inline-suppr \
+    cppcheck --language=c++ --std=c++20 --enable=all --inline-suppr \
         --suppress=unmatchedSuppression --suppress=unusedFunction \
         --suppress=missingInclude --error-exitcode=1 -q \
         -I$sbs_base/libs/socrate/include \
@@ -325,6 +415,7 @@ lint_clangformat() {
 
 build() {
     # Parse build arguments
+    target=
     for arg in "$@"; do
         case $arg in
             -d|--debug) config_debug=true ;;
@@ -336,7 +427,6 @@ build() {
     done
 
     config_host=false
-    config_build_dir="$build_default_dir"
 
     # Use the default "all" target if none was specified
     if [ -z "$target" ]; then
@@ -349,10 +439,51 @@ build() {
     fi
 
     check_build_env || return
-    check_configured || return
 
-    step "Build"
-    cmake --build "$config_build_dir" --target "$target" -- -j"$config_jobs"
+    if [ "$target" = "all" ]; then
+        # Miosix 3 builds exactly one board per configure, so "all" builds
+        # every board referenced by the target registry that the kernel ships
+        any_board_built=false
+        for board in $(available_boards); do
+            any_board_built=true
+            config_board="$board"
+            config_build_dir="$build_default_dir/$config_board"
+            check_configured || return
+            step "Build"
+            cmake --build "$config_build_dir" --target all -- -j"$config_jobs" || return
+        done
+
+        # Report registry boards that the current kernel cannot build yet
+        for board in $(boards_from_registry); do
+            if ! board_available "$board"; then
+                echo "Skipping board '$board': not available in the Miosix 3 kernel (BSP not ported yet)"
+            fi
+        done
+
+        [ "$any_board_built" = true ] || { error "No buildable boards found"; return $ENOTSUP; }
+    else
+        config_board="$(target_board "$target")"
+        if [ -z "$config_board" ]; then
+            error "Unknown target '$target'"
+            return $ENOENT
+        fi
+        if [ "$config_board" = "host" ]; then
+            error "Target '$target' is a host-only target (e.g. the Catch2 test suite). Use 'sbs test' to build and run it"
+            return $ENOTSUP
+        fi
+        if ! board_available "$config_board"; then
+            error "Board '$config_board' required by '$target' is not available in the Miosix 3 kernel (BSP not ported yet)"
+            return $ENOTSUP
+        fi
+
+        config_build_dir="$build_default_dir/$config_board"
+        check_configured || return
+
+        step "Build"
+        # Also build the _bin artifact target: Miosix produces .bin/.hex from
+        # dedicated ${TARGET}_bin/${TARGET}_hex targets, which flash needs
+        cmake --build "$config_build_dir" --target "$target" --target "${target}_bin" -- -j"$config_jobs"
+    fi
 }
 
 flash() {
@@ -527,11 +658,6 @@ test() {
 }
 
 list() {
-    config_debug=false
-    config_verbose=false
-    config_host=false
-    config_build_dir="$build_default_dir"
-
     list_type="$1"
 
     if [ -z "$list_type" ]; then
@@ -539,14 +665,22 @@ list() {
         return $EINVAL
     fi
 
-    check_build_env &> /dev/null || return
-    check_configured &> /dev/null || return
-
     if [ "$list_type" = "targets" ]; then
-        cmake --build "$config_build_dir" --target help \
-            | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+        # Read the declarative target registry in CMakeLists.txt
+        awk '
+            /^sbs_declare_target\(/ {
+                line=$0
+                sub(/^sbs_declare_target\(/, "", line)
+                split(line, a, /[ )]/)
+                print a[1]
+            }
+        ' "$targets_registry_file"
     elif [ "$list_type" = "boards" ]; then
-        cmake --build "$config_build_dir" --target help | awk -F '[-:]' '/^boardcore/ {print $2}'
+        # Stock boards from the Miosix 3 kernel + Boardcore custom registry
+        {
+            kernel_boards
+            boardcore_registry_boards
+        } | sort -u
     else
         error_nopad "Unknown list type: $list_type"
         return $EINVAL

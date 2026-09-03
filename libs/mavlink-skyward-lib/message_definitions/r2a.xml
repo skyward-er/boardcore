@@ -1,0 +1,132 @@
+<?xml version="1.0" ?>
+<mavlink>
+    <version>2</version>
+    <enums>
+        <enum name="MavTMList">
+            <description>Enum list for all the telemetries that can be requested from ground.</description>
+            <entry name="MAV_HOMEONE_TM_ID" value="1">
+                <description>State of the Homeone Board</description>
+            </entry>
+            <entry name="MAV_IGNITION_TM_ID" value="2">
+                <description>State of the Ignition Board</description>
+            </entry>
+            <entry name="MAV_NOSECONE_TM_ID" value="3">
+                <description>State of the Nosecone Board</description>
+            </entry>
+            <entry name="MAV_HR_TM_ID" value="4">
+                <description>High Rate telemetry</description>
+            </entry>
+            <entry name="MAV_LR_TM_ID" value="5">
+                <description>Low Rate telemetry</description>
+            </entry>
+            <entry name="MAV_POS_TM_ID" value="6">
+                <description>Position Telemetry</description>
+            </entry>
+        </enum>
+        <enum name="MavCommandList">
+            <description>Enum of the commands that don't have any message payload.</description>
+            <entry name="MAV_CMD_ARM" value="10">
+                <description>Command to arm the rocket.</description>
+            </entry>
+            <entry name="MAV_CMD_DISARM" value="15">
+                <description>Command to disarm the rocket.</description>
+            </entry>
+            <entry name="MAV_CMD_ABORT" value="50">
+                <description>Command to abort the launch.</description>
+            </entry>
+            <entry name="MAV_CMD_NOSECONE_OPEN" value="60">
+                <description>Command to open the nosecone.</description>
+            </entry>
+            <entry name="MAV_CMD_NOSECONE_CLOSE" value="61">
+                <description>Command to close the nosecone.</description>
+            </entry>
+            <entry name="MAV_CMD_CUT_FIRST_DROGUE" value="65">
+                <description>Command to activate the thermal cutters and cut the first drogue.</description>
+            </entry>
+            <entry name="MAV_CMD_CUT_ALL" value="66">
+                <description>Command to cut all the drogues.</description>
+            </entry>
+            <entry name="MAV_CMD_START_LOGGING" value="70">
+                <description>Command to enable the logging.</description>
+            </entry>
+            <entry name="MAV_CMD_STOP_LOGGING" value="71">
+                <description>Command to disable the logging.</description>
+            </entry>
+            <entry name="MAV_CMD_END_MISSION" value="100">
+                <description>Command to communicate the end of the mission and close the file descriptors in the SD card.</description>
+            </entry>
+            <entry name="MAV_CMD_BOARD_RESET" value="201">
+                <description>Command to reset the board from test status.</description>
+            </entry>
+            <entry name="MAV_CMD_TEST_MODE" value="200">
+                <description>Command to enter the test mode.</description>
+            </entry>
+            <entry name="MAV_CMD_REQ_DEBUG_INFO" value="205">
+                <description>Command to request the debug information.</description>
+            </entry>
+            <entry name="MAV_CMD_MANUAL_MODE" value="210">
+                <description>Command to enter the manual mode and prevent the internal events from triggering deployment.</description>
+            </entry>
+        </enum>
+    </enums>
+    <messages>
+        <message id="1" name="PING_TC">
+            <description>TC to ping the rocket (expects an ACK message as a response).</description>
+            <field name="timestamp" type="uint64_t">Timestamp to identify when it was sent.</field>
+        </message>
+        <message id="10" name="NOARG_TC">
+            <description>TC containing a command with no parameters.</description>
+            <field name="command_id" type="uint8_t">A member of the MavCommandList enum.</field>
+        </message>
+        <message id="20" name="START_LAUNCH_TC">
+            <description>TC to start the Launch sequence forwarding the launch_code to the ignition board.</description>
+            <field name="launch_code" type="uint64_t">64bit launch code.</field>
+        </message>
+        <message id="30" name="TELEMETRY_REQUEST_TC">
+            <description>TC containing a request for the status of a board.</description>
+            <field name="board_id" type="uint8_t">A member of the MavTMList enum.</field>
+        </message>
+        <message id="80" name="RAW_EVENT_TC">
+            <description>TC containing a raw event to be posted directly in the EventBroker (only for testing).</description>
+            <field name="Event_id" type="uint8_t">Id of the event to be posted.</field>
+            <field name="Topic_id" type="uint8_t">Id of the topic to which the event should be posted.</field>
+        </message>
+        <message id="130" name="ACK_TM">
+            <description>TM containing an ACK message to notify that the message has been received.</description>
+            <field name="recv_msgid" type="uint8_t">Message id of the received message.</field>
+            <field name="seq_ack" type="uint8_t">Sequence number of the received message.</field>
+        </message>
+        <message id="140" name="HOMEONE_STATUS_TM">
+            <description>TM containing the status of the HOMEONE_BOARD.</description>
+            <field name="sampling_status" type="uint8_t">True=Sampling enabled, False=Sampling disabled.</field>
+            <field name="FMM_current_state" type="uint8_t">Value of FMM_STATE_ENUM.</field>
+            <field name="log_status" type="uint8_t">True=Log active, False=Log not active.</field>
+            <field name="umbilical_connection_status" type="char">True=Umbilical connected, False=Umbilical not connected,</field>
+            <field name="fault_counter_array" type="uint8_t[15]">Array of all the fault counters in the system. //TODO set the correct size</field>
+        </message>
+        <message id="141" name="NOSECONE_STATUS_TM">
+            <description>TM containing the status of the NOSECONE_BOARD.</description>
+            <field name="connected" type="uint8_t">If False the other value are not valid.</field>
+            <field name="dpl_state" type="uint8_t">Value of NOSECONE_STATUS_ENUM.</field>
+        </message>
+        <message id="142" name="IGNITION_STATUS_TM">
+            <description>TM containing the status of the IGNITION_BOARD.</description>
+            <field name="connected" type="uint8_t">If False the other value are not valid.</field>
+            <field name="ignition_state" type="uint8_t">Value of IGNITION_STATUS_ENUM.</field>
+        </message>
+        <message id="150" name="LR_SAMPLE_DATA_TM">
+            <description>TM containing the latest samples from sensors (Low Rate)</description>
+            <field name="pressure" type="uint16_t">Pressure value in raw value //TODO: add calibration curve</field>
+            <field name="imu1_acc_x" type="uint16_t">Raw acceleration value of the x axis of the ADIS imu</field>
+            <field name="imu1_acc_y" type="uint16_t">Raw acceleration value of the y axis of the ADIS imu</field>
+            <field name="imu1_acc_z" type="uint16_t">Raw acceleration value of the z axis of the ADIS imu</field>
+            <field name="imu1_gyr_x" type="uint16_t">Raw gyro value of the x axis of the ADIS imu</field>
+            <field name="imu1_gyr_y" type="uint16_t">Raw gyro value of the y axis of the ADIS imu</field>
+            <field name="imu1_gyr_z" type="uint16_t">Raw gyro value of the z axis of the ADIS imu</field>
+        </message>
+        <message id="155" name="HR_SAMPLE_DATA_TM">
+            <description>High rate TM containing samples from selected sensors</description>
+            <field name="pressure" type="uint16_t">Pressure value in raw value //TODO: add calibration curve</field>
+        </message>
+    </messages>
+</mavlink>

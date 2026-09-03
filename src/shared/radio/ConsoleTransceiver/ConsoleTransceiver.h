@@ -33,13 +33,13 @@ class ConsoleTransceiver : public Transceiver
 public:
     bool send(uint8_t* pkt, size_t len)
     {
-        auto serial = miosix::DefaultConsole::instance().get();
+        auto serial = miosix::getDefaultConsole();
         return serial->writeBlock(pkt, len, 0) == static_cast<ssize_t>(len);
     }
 
     ssize_t receive(uint8_t* pkt, size_t len)
     {
-        auto serial = miosix::DefaultConsole::instance().get();
+        auto serial = miosix::getDefaultConsole();
         return serial->readBlock(pkt, len, 0);
     }
 };

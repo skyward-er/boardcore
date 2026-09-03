@@ -29,7 +29,7 @@
 #include <units/Frequency.h>
 #include <utils/KernelTime.h>
 #include <utils/Stats/Stats.h>
-
+#include <print>
 #include <chrono>
 #include <cstdint>
 #include <functional>

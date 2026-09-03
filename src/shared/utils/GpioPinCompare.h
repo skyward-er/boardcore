@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <drivers/MCP23S17/MCP23S17.h>
 #include <miosix.h>
 
 namespace Boardcore
@@ -42,14 +41,6 @@ struct GpioPinCompare
     {
         if (lhs.getPort() == rhs.getPort())
             return lhs.getNumber() < rhs.getNumber();
-        return lhs.getPort() < rhs.getPort();
-    }
-
-    bool operator()(const ExternalGpioPin& lhs,
-                    const ExternalGpioPin& rhs) const
-    {
-        if (lhs.getPort() == rhs.getPort())
-            return lhs.getPin() < rhs.getPin();
         return lhs.getPort() < rhs.getPort();
     }
 };

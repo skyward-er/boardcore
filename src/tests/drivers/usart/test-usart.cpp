@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <fmt/format.h>
 
 #include <cassert>
 #include <chrono>

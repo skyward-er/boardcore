@@ -1,0 +1,573 @@
+<?xml version="1.0"?>
+<mavlink>
+    <version>2</version>
+    <enums>
+        <enum name="MavTMList">
+            <description>Enum list for all the telemetries that can be requested from ground.</description>
+            <entry name="MAV_SYS_TM_ID" value="1">
+                <description>State of system components</description>
+            </entry>
+            <entry name="MAV_FMM_TM_ID" value="2">
+                <description>FMM status</description>
+            </entry>
+            <entry name="MAV_PIN_OBS_TM_ID" value="3">
+                <description>Pin observer data</description>
+            </entry>
+            <entry name="MAV_LOGGER_TM_ID" value="4">
+                <description>SD Logger stats</description>
+            </entry>
+            <entry name="MAV_TMTC_TM_ID" value="5">
+                <description>TMTC status (mavlink + queue)</description>
+            </entry>
+            <entry name="MAV_TASK_STATS_TM_ID" value="6">
+                <description>Task scheduler statistics</description>
+            </entry>
+            <entry name="MAV_DPL_TM_ID" value="7">
+                <description>Deployment System Status</description>
+            </entry>
+            <entry name="MAV_ADA_TM_ID" value="8">
+                <description>ADA Status</description>
+            </entry>
+            <entry name="MAV_ABK_TM_ID" value="9">
+                <description>Aerobrakes data</description>
+            </entry>
+            <entry name="MAV_NAS_TM_ID" value="10">
+                <description>NavigationSystem data</description>
+            </entry>
+            <!--<entry name="MAV_CAN_TM_ID" value="11">
+                <description>Canbus stats</description>
+            </entry>-->
+            <entry name="MAV_ADC_TM_ID" value="12">
+                <description>Analog Digital Converter data</description>
+            </entry>
+            <entry name="MAV_MS5803_TM_ID" value="13">
+                <description>MS5803 barometer data</description>
+            </entry>
+            <entry name="MAV_BMX160_TM_ID" value="14">
+                <description>BMX160 IMU data</description>
+            </entry>
+            <entry name="MAV_LIS3MDL_TM_ID" value="15">
+                <description>LIS3MDL compass data</description>
+            </entry>
+            <entry name="MAV_GPS_TM_ID" value="16">
+                <description>Piksi GPS data</description>
+            </entry>
+            <entry name="MAV_HR_TM_ID" value="18">
+                <description>High Rate telemetry</description>
+            </entry>
+            <entry name="MAV_LR_TM_ID" value="19">
+                <description>Low Rate telemetry</description>
+            </entry>
+            <entry name="MAV_TEST_TM_ID" value="20">
+                <description>Test telemetry</description>
+            </entry>
+            <entry name="MAV_WINDTUNNEL_TM_ID" value="21">
+                <description>Wind tunnel telemetry</description>
+            </entry>
+            <entry name="MAV_SENSORS_TM_ID" value="22">
+                <description>Wind tunnel telemetry</description>
+            </entry>
+        </enum>
+        <enum name="MavCommandList">
+            <description>Enum of the commands that don't have any message payload.</description>
+            <entry name="MAV_CMD_ARM" value="27">
+                <description>Command to arm the rocket.</description>
+            </entry>
+            <entry name="MAV_CMD_DISARM" value="28">
+                <description>Command to disarm the rocket.</description>
+            </entry>
+            <entry name="MAV_CMD_FORCE_LAUNCH" value="29">
+                <description>Command to disarm the rocket.</description>
+            </entry>
+            <entry name="MAV_CMD_CALIBRATE_SENSORS" value="30">
+                <description>Command to start sensor calibration.</description>
+            </entry>
+            <entry name="MAV_CMD_CALIBRATE_ALGOS" value="31">
+                <description>Command to start algorithm calibration.</description>
+            </entry>
+            <entry name="MAV_CMD_FORCE_INIT" value="52">
+                <description>Command to force the initialization even if there where errors.</description>
+            </entry>
+            <entry name="MAV_CMD_NOSECONE_OPEN" value="60">
+                <description>Command to open the nosecone.</description>
+            </entry>
+            <entry name="MAV_CMD_DPL_WIGGLE_SERVO" value="61">
+                <description>Command to wiggle the deployment servo-motor to check if it's working</description>
+            </entry>
+            <entry name="MAV_CMD_ARB_WIGGLE_SERVO" value="62">
+                <description>Command to wiggle the aerobrake servo-motor to check if it's working</description>
+            </entry>
+            <entry name="MAV_CMD_DPL_RESET_SERVO" value="63">
+                <description>Command to wiggle the deployment servo-motor to check if it's working</description>
+            </entry>
+            <entry name="MAV_CMD_ARB_RESET_SERVO" value="64">
+                <description>Command to wiggle the aerobrake servo-motor to check if it's working</description>
+            </entry>
+            <entry name="MAV_CMD_CUT_DROGUE" value="65">
+                <description>Command to activate the thermal cutters and cut the drogue, activating both thermal cutters sequentially</description>
+            </entry>
+            <entry name="MAV_CMD_START_LOGGING" value="70">
+                <description>Command to enable sensor logging.</description>
+            </entry>
+            <entry name="MAV_CMD_CLOSE_LOG" value="72">
+                <description>Command to permanently close the log file.</description>
+            </entry>
+            <entry name="MAV_CMD_TEST_AEROBRAKES" value="73">
+                <description>Command to test the aerobrakes using a predefined servo sequence</description>
+            </entry>
+            <entry name="MAV_CMD_DISABLE_AEROBRAKES" value="74">
+                <description>Disables aerobrakes during flight</description>
+            </entry>
+            <entry name="MAV_CMD_END_MISSION" value="100">
+                <description>Command to communicate the end of the mission and close the file descriptors in the SD card.</description>
+            </entry>
+            <entry name="MAV_CMD_BOARD_RESET" value="201">
+                <description>Command to reset the board from test status.</description>
+            </entry>
+            <entry name="MAV_CMD_TEST_MODE" value="200">
+                <description>Command to enter the test mode.</description>
+            </entry>
+            <entry name="MAV_CMD_SERIAL_TM" value="202">
+                <description>Command to enable mavlink messages over serial instead of radio.</description>
+            </entry>
+            <entry name="MAV_CMD_RADIO_TM" value="203">
+                <description>Command to disabled mavlink messages over serial (start with radio).</description>
+            </entry>
+        </enum>
+    </enums>
+    <messages>
+        <message id="1" msg_type="tc" name="PING_TC">
+            <description>TC to ping the rocket (expects an ACK message as a response).</description>
+            <field name="timestamp" type="uint64_t">Timestamp to identify when it was sent.</field>
+        </message>
+        <message id="10" msg_type="tc" name="NOARG_TC">
+            <description>TC containing a command with no parameters.</description>
+            <field name="command_id" type="uint8_t">A member of the MavCommandList enum.</field>
+        </message>
+        <message id="20" msg_type="tc" name="START_LAUNCH_TC">
+            <description>TC to start the Launch sequence forwarding the launch_code to the ignition board.</description>
+            <field name="launch_code" type="uint64_t">64bit launch code.</field>
+        </message>
+        <message id="21" msg_type="tc" name="UPLOAD_SETTING_TC">
+            <description>TC to upload the value of a setting on the rocket.</description>
+            <field name="setting_id" type="uint8_t">A member of the MavSettingList enum.</field>
+            <field name="setting" type="float">The value of the setting to be uploaded</field>
+        </message>
+        <message id="22" msg_type="tc" name="SET_AEROBRAKE_ANGLE_TC">
+            <description>Sets the extension angle of the aerobrakes</description>
+            <field name="angle" type="float" units="deg">Aerobrake angle</field>
+        </message>
+        <message id="23" msg_type="tc" name="SET_REFERENCE_ALTITUDE">
+            <description>Sets the reference altitude for the altimeter</description>
+            <field name="ref_altitude" type="float" units="m">Reference altitude</field>
+        </message>
+        <message id="24" msg_type="tc" name="SET_REFERENCE_TEMPERATURE_TC">
+            <description>Sets the reference temperature for the altimeter</description>
+            <field name="ref_temp" type="float" units="degC">Reference temperature</field>
+        </message>
+        <message id="25" msg_type="tc" name="SET_DEPLOYMENT_ALTITUDE_TC">
+            <description>Sets the deployment altitude for the main parachute</description>
+            <field name="dpl_altitude" type="float" units="m">Deployment altitude</field>
+        </message>
+        <message id="26" msg_type="tc" name="SET_INITIAL_ORIENTATION_TC">
+            <description>Sets the initial orientation for the navigation system</description>
+            <field name="yaw" type="float" units="deg">Yaw angle</field>
+            <field name="pitch" type="float" units="deg">Pitch angle</field>
+            <field name="roll" type="float" units="deg">Roll angle</field>
+        </message>
+        <message id="51" msg_type="tc" name="SET_INITIAL_COORDINATES_TC">
+            <description>Sets the initial launchpad coordinates</description>
+            <field name="latitude" type="float" units="deg">Launchpad latitude</field>
+            <field name="longitude" type="float" units="deg">Launchpad longitude</field>
+        </message>
+        <message id="50" msg_type="tc" name="TELEMETRY_REQUEST_TC">
+            <description>TC containing a request for the status of a board.</description>
+            <field name="board_id" type="uint8_t">A member of the MavTMList enum.</field>
+        </message>
+        <message id="80" msg_type="tc" name="RAW_EVENT_TC">
+            <description>TC containing a raw event to be posted directly in the EventBroker (only for testing).</description>
+            <field name="Event_id" type="uint8_t">Id of the event to be posted.</field>
+            <field name="Topic_id" type="uint8_t">Id of the topic to which the event should be posted.</field>
+        </message>
+        <message id="130" msg_type="tm" name="ACK_TM">
+            <description>TM containing an ACK message to notify that the message has been received.</description>
+            <field name="recv_msgid" type="uint8_t">Message id of the received message.</field>
+            <field name="seq_ack" type="uint8_t">Sequence number of the received message.</field>
+        </message>
+        <message id="131" msg_type="tm" name="NACK_TM">
+            <description>TM containing a NACK message to notify that the received message was invalid.</description>
+            <field name="recv_msgid" type="uint8_t">Message id of the received message.</field>
+            <field name="seq_ack" type="uint8_t">Sequence number of the received message.</field>
+        </message>
+        <message id="160" msg_type="tm" name="SYS_TM">
+            <description>System status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">Timestamp</field>
+            <field name="death_stack" type="uint8_t" />
+            <field name="logger" type="uint8_t" />
+            <field name="ev_broker" type="uint8_t" />
+            <field name="pin_obs" type="uint8_t" />
+            <field name="radio" type="uint8_t" />
+            <field name="state_machines" type="uint8_t" />
+            <field name="sensors" type="uint8_t" />
+            <field name="bmx160_status" type="uint8_t" />
+            <field name="ms5803_status" type="uint8_t" />
+            <field name="lis3mdl_status" type="uint8_t" />
+            <field name="gps_status" type="uint8_t" />
+            <field name="internal_adc_status" type="uint8_t" />
+            <field name="ads1118_status" type="uint8_t" />
+        </message>
+        <message id="161" msg_type="tm" name="FMM_TM">
+            <description>FlightModeManager status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">Timestamp</field>
+            <field name="state" type="uint8_t">FMM State</field>
+        </message>
+        <message id="162" msg_type="tm" name="PIN_OBS_TM">
+            <description>Pin observer status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">Timestamp</field>
+            <field name="pin_launch_last_change" type="uint64_t">Last change of the launch pin</field>
+            <field name="pin_launch_num_changes" type="uint8_t">Number of changes of the launch pin</field>
+            <field name="pin_launch_state" type="uint8_t">Current state of the launch pin</field>
+            <field name="pin_nosecone_last_change" type="uint64_t">Last change of the nosecone pin</field>
+            <field name="pin_nosecone_num_changes" type="uint8_t">Number of changes of the nosecone pin</field>
+            <field name="pin_nosecone_state" type="uint8_t">Current state of the nosecone pin</field>
+            <field name="pin_dpl_servo_last_change" type="uint64_t">Last change of the dpl servo optical sensor</field>
+            <field name="pin_dpl_servo_num_changes" type="uint8_t">Number of changes of the dpl servo optical sensor</field>
+            <field name="pin_dpl_servo_state" type="uint8_t">Current state of the dpl servo optical sensor</field>
+        </message>
+        <message id="163" msg_type="tm" name="LOGGER_TM">
+            <description>Logger status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">Timestamp</field>
+            <field name="statLogNumber" type="uint16_t">Currently active log file</field>
+            <field name="statTooLargeSamples" type="int32_t">Number of dropped samples because too large</field>
+            <field name="statDroppedSamples" type="int32_t">Number of dropped samples due to fifo full</field>
+            <field name="statQueuedSamples" type="int32_t">Number of samples written to buffer</field>
+            <field name="statBufferFilled" type="int32_t">Number of buffers filled</field>
+            <field name="statBufferWritten" type="int32_t">Number of buffers written to disk</field>
+            <field name="statWriteFailed" type="int32_t">Number of fwrite() that failed</field>
+            <field name="statWriteError" type="int32_t">Error of the last fwrite() that failed</field>
+            <field name="statWriteTime" type="int32_t">Time to perform an fwrite() of a buffer</field>
+            <field name="statMaxWriteTime" type="int32_t">Max time to perform an fwrite() of a buffer</field>
+        </message>
+        <message id="164" msg_type="tm" name="TMTC_TM">
+            <description>Status of the TMTCManager telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged </field>
+            <field name="n_send_queue" type="uint16_t">Current len of the occupied portion of the queue</field>
+            <field name="max_send_queue" type="uint16_t">Max occupied len of the queue </field>
+            <field name="n_send_errors" type="uint16_t">Number of packet not sent correctly by the TMTC</field>
+            <field name="msg_received" type="uint8_t"> Number of received messages</field>
+            <field name="buffer_overrun" type="uint8_t"> Number of buffer overruns</field>
+            <field name="parse_error" type="uint8_t"> Number of parse errors</field>
+            <field name="parse_state" type="uint32_t"> Parsing state machine</field>
+            <field name="packet_idx" type="uint8_t"> Index in current packet</field>
+            <field name="current_rx_seq" type="uint8_t"> Sequence number of last packet received</field>
+            <field name="current_tx_seq" type="uint8_t"> Sequence number of last packet sent  </field>
+            <field name="packet_rx_success_count" type="uint16_t"> Received packets</field>
+            <field name="packet_rx_drop_count" type="uint16_t">  Number of packet drops   </field>
+        </message>
+        <message id="165" msg_type="tm" name="TASK_STATS_TM">
+            <description>Statistics of the Task Scheduler</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged </field>
+            <field name="task_sensors_6ms_min" type="float">6 ms task min period</field>
+            <field name="task_sensors_6ms_max" type="float">6 ms task max period</field>
+            <field name="task_sensors_6ms_mean" type="float">6 ms task mean period</field>
+            <field name="task_sensors_6ms_stddev" type="float">6 ms task period std deviation</field>
+            <field name="task_sensors_15ms_min" type="float">15 ms task min period</field>
+            <field name="task_sensors_15ms_max" type="float">15 ms task max period</field>
+            <field name="task_sensors_15ms_mean" type="float">15 ms task mean period</field>
+            <field name="task_sensors_15ms_stddev" type="float">15 ms task period std deviation</field>
+            <field name="task_sensors_20ms_min" type="float">20 ms task min period</field>
+            <field name="task_sensors_20ms_max" type="float">20 ms task max period</field>
+            <field name="task_sensors_20ms_mean" type="float">20 ms task mean period</field>
+            <field name="task_sensors_20ms_stddev" type="float">20 ms task period std deviation</field>
+            <field name="task_sensors_24ms_min" type="float">24 ms task min period</field>
+            <field name="task_sensors_24ms_max" type="float">24 ms task max period</field>
+            <field name="task_sensors_24ms_mean" type="float">24 ms task mean period</field>
+            <field name="task_sensors_24ms_stddev" type="float">24 ms task period std deviation</field>
+            <field name="task_sensors_40ms_min" type="float">40 ms task min period</field>
+            <field name="task_sensors_40ms_max" type="float">40 ms task max period</field>
+            <field name="task_sensors_40ms_mean" type="float">40 ms task mean period</field>
+            <field name="task_sensors_40ms_stddev" type="float">40 ms task period std deviation</field>
+            <field name="task_sensors_1000ms_min" type="float">1000 ms task min period</field>
+            <field name="task_sensors_1000ms_max" type="float">1000 ms task max period</field>
+            <field name="task_sensors_1000ms_mean" type="float">1000 ms task mean period</field>
+            <field name="task_sensors_1000ms_stddev" type="float">1000 ms task period std deviation</field>
+            <field name="task_ada_min" type="float">ADA task min period</field>
+            <field name="task_ada_max" type="float">ADA task max period</field>
+            <field name="task_ada_mean" type="float">ADA task mean period</field>
+            <field name="task_ada_stddev" type="float">ADA task period std deviation</field>
+            <field name="task_nas_min" type="float">NavigationSystem task min period</field>
+            <field name="task_nas_max" type="float">NavigationSystem task max period</field>
+            <field name="task_nas_mean" type="float">NavigationSystem task mean period</field>
+            <field name="task_nas_stddev" type="float">NavigationSystem task period std deviation</field>
+            <field name="task_abk_min" type="float">Aerobrakes task min period</field>
+            <field name="task_abk_max" type="float">Aerobrakes task max period</field>
+            <field name="task_abk_mean" type="float">Aerobrakes task mean period</field>
+            <field name="task_abk_stddev" type="float">Aerobrakes task period std deviation</field>
+        </message>
+        <message id="166" msg_type="tm" name="DPL_TM">
+            <description>Deployment Controller telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="fsm_state" type="uint8_t">Current state of the dpl controller</field>
+            <field name="cutters_enabled" type="uint8_t">Cutters state (enabled/disabled)</field>
+            <field name="servo_position" type="float" units="deg">DPL servo position (angle)</field>
+        </message>
+        <message id="167" msg_type="tm" name="ADA_TM">
+            <description>Apogee Detection Algorithm status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="state" type="uint8_t">ADA current state</field>
+            <field name="apogee_reached" type="uint8_t">True if apogee has been reached</field>
+            <field name="aerobrakes_disabled" type="uint8_t">True if aerobrakes have been disabled</field>
+            <field name="dpl_altitude_reached" type="uint8_t">True if aerobrakes have been disabled</field>
+            <field name="target_dpl_altitude" type="float">Target deployment altitude</field>
+            <field name="kalman_x0" type="float">Kalman state variable 0 (pressure)</field>
+            <field name="kalman_x1" type="float">Kalman state variable 1 (pressure velocity)</field>
+            <field name="kalman_x2" type="float">Kalman state variable 2 (pressure acceleration)</field>
+            <field name="vert_speed" type="float" units="m/s">Vertical speed computed by the ADA</field>
+            <field name="msl_altitude" type="float" units="m">Altitude w.r.t. mean sea level</field>
+            <field name="ref_pressure" type="float" units="Pa">Calibration pressure</field>
+            <field name="ref_altitude" type="float" units="m">Calibration altitude</field>
+            <field name="ref_temperature" type="float" units="degC">Calibration temperature</field>
+            <field name="msl_pressure" type="float" units="Pa">Expected pressure at mean sea level</field>
+            <field name="msl_temperature" type="float" units="degC">Expected temperature at mean sea level</field>
+            <!---<field name="ref_pressure_mean" type="float">Calibration pressure mean</field>
+            <field name="ref_pressure_stddev" type="float">Calibration pressure std deviation</field>
+            <field name="ref_pressure_nsamples" type="uint32_t">Calibration pressure number of samples</field>-->
+        </message>
+        <message id="168" msg_type="tm" name="ABK_TM">
+            <description>Aerobrakes status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="state" type="uint8_t">Aerobrakes FSM state</field>
+            <field name="servo_position" type="float" units="deg">Aerobrakes opening angle</field>
+            <field name="estimated_cd" type="float">Drag estimated by the control algorithm</field>
+            <field name="pid_error" type="float">Error of the PID controller at each step</field>
+            <field name="z" type="float" units="m">Input altitude</field>
+            <field name="vz" type="float" units="m/s">Input vertical speed</field>
+            <field name="v_mod" type="float" units="m/s">Input speed magnitude</field>
+            <field name="trajectory" type="uint8_t">Chosen trajectory to be followed</field>
+        </message>
+        <message id="169" msg_type="tm" name="NAS_TM">
+            <description>Navigation System status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="state" type="uint8_t">NAS current state</field>
+            <field name="x0" type="float" units="m">Kalman state variable 0 (position x)</field>
+            <field name="x1" type="float" units="m">Kalman state variable 1 (position y)</field>
+            <field name="x2" type="float" units="m">>Kalman state variable 2 (position z)</field>
+            <field name="x3" type="float" units="m/s">>Kalman state variable 3 (velocity x)</field>
+            <field name="x4" type="float" units="m/s">>Kalman state variable 4 (velocity y)</field>
+            <field name="x5" type="float" units="m/s">>Kalman state variable 5 (velocity z)</field>
+            <field name="x6" type="float">Kalman state variable 6 (q0)</field>
+            <field name="x7" type="float">Kalman state variable 7 (q1)</field>
+            <field name="x8" type="float">Kalman state variable 8 (q2)</field>
+            <field name="x9" type="float">Kalman state variable 9 (q3)</field>
+            <field name="x10" type="float">Kalman state variable 10 (bias)</field>
+            <field name="x11" type="float">Kalman state variable 11 (bias)</field>
+            <field name="x12" type="float">Kalman state variable 12 (bias)</field>
+            <field name="ref_pressure" type="float" units="Pa">Calibration pressure</field>
+            <field name="ref_temperature" type="float" units="degC">Calibration temperature</field>
+            <field name="ref_latitude" type="float" units="deg">Calibration latitude</field>
+            <field name="ref_longitude" type="float" units="deg">Calibration longitude</field>
+            <field name="ref_accel_x" type="float" units="m/s2">Calibration acceleration on x axis</field>
+            <field name="ref_accel_y" type="float" units="m/s2">Calibration acceleration on y axis</field>
+            <field name="ref_accel_z" type="float" units="m/s2">Calibration acceleration on z axis</field>
+            <field name="ref_mag_x" type="float" units="uT">Calibration compass on x axis</field>
+            <field name="ref_mag_y" type="float" units="uT">Calibration compass on y axis</field>
+            <field name="ref_mag_z" type="float" units="uT">Calibration compass on z axis</field>
+            <field name="triad_roll" type="float">Orientation on roll estimated by TRIAD initialization</field>
+            <field name="triad_pitch" type="float">Orientation on pitch estimated by TRIAD initialization</field>
+            <field name="triad_yaw" type="float">Orientation on yaw estimated by TRIAD initialization</field>
+            <field name="roll" type="float" units="deg">Orientation on roll</field>
+            <field name="pitch" type="float" units="deg">Orientation on pitch</field>
+            <field name="yaw" type="float" units="deg">Orientation on yaw</field>
+        </message>
+        <!--<message id="170" msg_type="tm" name="CAN_TM">
+            <description>Canbus driver status telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="n_sent" type="uint16_t">Number of sent messages</field>
+            <field name="n_rcv" type="uint16_t">Number of received messages</field>
+            <field name="last_sent" type="uint8_t">Id of the last sent message</field>
+            <field name="last_rcv" type="uint8_t">Id of the last received message</field>
+            <field name="last_sent_ts" type="uint64_t">Timestamp of the last sent message</field>
+            <field name="last_rcv_ts" type="uint64_t">Timestamp of the last received message</field>
+        </message>-->
+        <message id="171" msg_type="tm" name="ADC_TM">
+            <description>ADC samples</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="pitot_pressure" type="float" units="Pa">Pitot tube dynamic pressure</field>
+            <field name="dpl_pressure" type="float" units="Pa">Deployment vane internal pressure</field>
+            <field name="static_pressure" type="float" units="Pa">Static ports pressure</field>
+            <field name="bat_voltage" type="float" units="V">LiPo battery voltage</field>
+            <field name="bat_voltage_5v" type="float" units="V">5V power supply</field>
+        </message>
+        <message id="172" msg_type="tm" name="MS5803_TM">
+            <description>MS5803 barometer samples</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="pressure" type="float" units="Pa">Pressure of the digital barometer</field>
+            <field name="temperature" type="float" units="deg">Temperature of the digital barometer</field>
+        </message>
+        <message id="173" msg_type="tm" name="BMX160_TM">
+            <description>MPU samples</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="acc_x" type="float" units="m/s2">X axis acceleration</field>
+            <field name="acc_y" type="float" units="m/s2">Y axis acceleration</field>
+            <field name="acc_z" type="float" units="m/s2">Z axis acceleration</field>
+            <field name="gyro_x" type="float" units="rad/s">X axis gyro</field>
+            <field name="gyro_y" type="float" units="rad/s">Y axis gyro</field>
+            <field name="gyro_z" type="float" units="rad/s">Z axis gyro</field>
+            <field name="mag_x" type="float" units="uT">X axis compass</field>
+            <field name="mag_y" type="float" units="uT">Y axis compass</field>
+            <field name="mag_z" type="float" units="uT">Z axis compass</field>
+            <field name="temp" type="float" units="deg">Temperature</field>
+        </message>
+        <message id="174" msg_type="tm" name="LIS3MDL_TM">
+            <description>LIS3MDL compass samples</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="mag_x" type="float" units="rad/s">X axis compass</field>
+            <field name="mag_y" type="float" units="rad/s">Y axis compass</field>
+            <field name="mag_z" type="float" units="rad/s">Z axis compass</field>
+            <field name="temp" type="float" units="deg">Temperature</field>
+        </message>
+        <message id="175" msg_type="tm" name="GPS_TM">
+            <description>GPS samples</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="fix" type="uint8_t">Wether the GPS has a FIX</field>
+            <field name="latitude" type="double" units="deg">Latitude</field>
+            <field name="longitude" type="double" units="deg">Longitude</field>
+            <field name="height" type="double" units="m">Altitude</field>
+            <field name="vel_north" type="float" units="m/s">Velocity in NED frame (north)</field>
+            <field name="vel_east" type="float" units="m/s">Velocity in NED frame (east)</field>
+            <field name="vel_down" type="float" units="m/s">Velocity in NED frame (down)</field>
+            <field name="speed" type="float" units="m/s">Speed</field>
+            <field name="track" type="float" units="deg">Track</field>
+            <field name="n_satellites" type="uint8_t">Number of connected satellites</field>
+        </message>
+        <message id="180" msg_type="tm" name="HR_TM">
+            <description>High Rate Telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">Timestamp in milliseconds</field>
+            <field name="ada_state" type="uint8_t">ADA Controller State</field>
+            <field name="fmm_state" type="uint8_t">Flight Mode Manager State</field>
+            <field name="dpl_state" type="uint8_t">Deployment Controller State</field>
+            <field name="ab_state" type="uint8_t">Aerobrake FSM state</field>
+            <field name="nas_state" type="uint8_t">Navigation System FSM State</field>
+            <field name="pressure_ada" type="float" units="Pa">Atmospheric pressure estimated by ADA</field>
+            <field name="pressure_digi" type="float" units="Pa">Pressure from digital sensor</field>
+            <field name="pressure_static" type="float" units="Pa">Pressure from static port</field>
+            <field name="pressure_dpl" type="float" units="Pa">Pressure from deployment vane sensor</field>
+            <field name="airspeed_pitot" type="float" units="m/s">Pitot airspeed</field>
+            <field name="msl_altitude" type="float" units="m">Altitude above mean sea level</field>
+            <field name="ada_vert_speed" type="float" units="m/s">Vertical speed estimated by ADA</field>
+            <field name="ada_vert_accel" type="float" units="m/s^2">Vertical acceleration estimated by ADA</field>
+            <field name="acc_x" type="float" units="m/s^2">Acceleration on X axis (body)</field>
+            <field name="acc_y" type="float" units="m/s^2">Acceleration on Y axis (body)</field>
+            <field name="acc_z" type="float" units="m/s^2">Acceleration on Z axis (body)</field>
+            <field name="gyro_x" type="float" units="rad/s">Angular speed on X axis (body)</field>
+            <field name="gyro_y" type="float" units="rad/s">Angular speed on Y axis (body)</field>
+            <field name="gyro_z" type="float" units="rad/s">Angular speed on Z axis (body)</field>
+            <field name="mag_x" type="float" units="uT">Magnetic field on X axis (body)</field>
+            <field name="mag_y" type="float" units="uT">Magnetic field on Y axis (body)</field>
+            <field name="mag_z" type="float" units="uT">Magnetic field on Z axis (body)</field>
+            <field name="gps_fix" type="uint8_t">GPS fix (1 = fix, 0 = no fix)</field>
+            <field name="gps_lat" type="float" units="deg">Latitude</field>
+            <field name="gps_lon" type="float" units="deg">Longitude</field>
+            <field name="gps_alt" type="float" units="m">GPS Altitude</field>
+            <field name="vbat" type="float" units="V">Battery voltage</field>
+            <field name="vsupply_5v" type="float" units="V">Power supply 5V</field>
+            <field name="temperature" type="float" units="degC">Temperature</field>
+            <field name="pin_launch" type="uint8_t">Launch pin status (1 = connected, 0 = disconnected)</field>
+            <field name="pin_nosecone" type="uint8_t">Nosecone pin status (1 = connected, 0 = disconnected)</field>
+            <field name="servo_sensor" type="uint8_t">Servo sensor status (1 = actuated, 0 = idle)</field>
+            <field name="ab_angle" type="float" units="deg">Aerobrakes angle</field>
+            <field name="ab_estimated_cd" type="float">Estimated drag coefficient</field>
+            <field name="nas_x" type="float" units="deg">Navigation system estimated X position (longitude)</field>
+            <field name="nas_y" type="float" units="deg">Navigation system estimated Y position (latitude)</field>
+            <field name="nas_z" type="float" units="m">Navigation system estimated Z position</field>
+            <field name="nas_vx" type="float" units="m/s">Navigation system estimated north velocity</field>
+            <field name="nas_vy" type="float" units="m/s">Navigation system estimated east velocity</field>
+            <field name="nas_vz" type="float" units="m/s">Navigation system estimated down velocity</field>
+            <field name="nas_roll" type="float"  units="deg">Navigation system estimated attitude (roll)</field>
+            <field name="nas_pitch" type="float"  units="deg">Navigation system estimated attitude (pitch)</field>
+            <field name="nas_yaw" type="float"  units="deg">Navigation system estimated attitude (yaw)</field>
+            <field name="nas_bias0" type="float">Navigation system bias</field>
+            <field name="nas_bias1" type="float">Navigation system bias</field>
+            <field name="nas_bias2" type="float">Navigation system bias</field>
+            <field name="logger_error" type="int8_t" units="">Logger error (0 = no error, -1 otherwise)</field>
+        </message>
+        <message id="181" msg_type="tm" name="LR_TM">
+            <description>Low Rate Telemetry</description>
+            <field name="liftoff_ts" type="uint64_t" units="ms">System clock at liftoff</field>
+            <field name="liftoff_max_acc_ts" type="uint64_t" units="ms">System clock at the maximum liftoff acceleration</field>
+            <field name="liftoff_max_acc" type="float" units="m/s2">Maximum liftoff acceleration</field>
+            <field name="max_z_speed_ts" type="uint64_t" units="ms">System clock at ADA max vertical speed</field>
+            <field name="max_z_speed" type="float" units="m/s">Max measured vertical speed - ADA</field>
+            <field name="max_airspeed_pitot" type="float" units="m/s">Max speed read by the pitot tube</field>
+            <field name="max_speed_altitude" type="float" units="m">Altitude at max speed</field>
+            <field name="apogee_ts" type="uint64_t" units="ms">System clock at apogee</field>
+            <field name="apogee_lat" type="float" units="deg">Apogee latitude</field>
+            <field name="apogee_lon" type="float" units="deg">Apogee longitude</field>
+            <field name="static_min_pressure" type="float" units="Pa">Apogee pressure - Static ports</field>
+            <field name="digital_min_pressure" type="float" units="Pa">Apogee pressure - Digital barometer</field>
+            <field name="ada_min_pressure" type="float" units="Pa">Apogee pressure - ADA filtered</field>
+            <field name="baro_max_altitutde" type="float" units="m">Apogee altitude - Digital barometer</field>
+            <field name="gps_max_altitude" type="float" units="m">Apogee altitude - GPS</field>
+            <field name="drogue_dpl_ts" type="uint64_t" units="ms">System clock at drouge deployment</field>
+            <field name="drogue_dpl_max_acc" type="float" units="m/s2">Max acceleration during drouge deployment</field>
+            <field name="dpl_vane_max_pressure" type="float" units="Pa">Max pressure in the deployment bay during drogue deployment</field>
+            <field name="main_dpl_altitude_ts" type="uint64_t" units="ms">System clock at main chute deployment</field>
+            <field name="main_dpl_altitude" type="float" units="m">Altittude at main deployment (m.s.l)</field>
+            <field name="main_dpl_zspeed" type="float" units="m/s">Vertical speed at main deployment (sensor z axis)</field>
+            <field name="main_dpl_acc" type="float" units="m/s2">Max measured vertical acceleration (sensor z axis) after main parachute deployment</field>
+            <field name="cpu_load" type="float">CPU load in percentage</field>
+            <field name="free_heap" type="uint32_t">Amount of available heap in memory</field>
+        </message>
+        <message id="182" msg_type="tm" name="TEST_TM">
+            <description>High Rate Telemetry</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged (mission clock)</field>
+            <field name="pressure_hw" type="float">Raw pressure from the HoneyWell barometer</field>
+            <field name="gps_nsats" type="uint8_t">GPS num sats</field>
+            <field name="temp_analog" type="float">Analog board temperature</field>
+            <field name="temp_imu" type="float">IMU board temperature</field>
+            <field name="battery_volt" type="float">Battery voltage</field>
+        </message>
+        <message id="183" msg_type="tm" name="WINDTUNNEL_TM">
+            <description>Telemetry for wind tunnel test</description>
+            <field name="timestamp" type="uint64_t" units="ms">When was this logged</field>
+            <field name="pressure_digital" type="float" units="Pa">Pressure from digital pressure sensor</field>
+            <field name="pressure_differential" type="float" units="Pa">Differential pressure</field>
+            <field name="pressure_static" type="float" units="Pa">Pressure from static port</field>
+            <field name="pressure_dpl" type="double" units="Pa">Pressure from deployment vane</field>
+            <field name="ab_angle" type="float" units="deg">Current aerobrake angle</field>
+            <field name="wind_speed" type="float" units="m/s">Current tunnel wind speed</field>
+            <field name="log_status" type="float">Logger status</field>
+            <field name="log_num" type="float">Logger file number</field>
+            <field name="last_RSSI" type="float" units="dBm">Last message RSSI</field>
+        </message>
+        <message id="184" msg_type="tm" name="SENSORS_TM">
+            <description>Telemetry containing full data from all the sensors</description>
+            <field name="timestamp" type="uint64_t" units="ms"></field>
+            <field name="bmx160_acc_x" type="float" units="m/s^2"></field>
+            <field name="bmx160_acc_y" type="float" units="m/s^2"></field>
+            <field name="bmx160_acc_z" type="float" units="m/s^2"></field>
+            <field name="bmx160_gyro_x" type="float" units="rad/s"></field>
+            <field name="bmx160_gyro_y" type="float" units="rad/s"></field>
+            <field name="bmx160_gyro_z" type="float" units="rad/s"></field>
+            <field name="bmx160_mag_x" type="float" units="uT"></field>
+            <field name="bmx160_mag_y" type="float" units="uT"></field>
+            <field name="bmx160_mag_z" type="float" units="uT"></field>
+            <field name="bmx160_temp" type="float" units="deg C"></field>
+            <field name="ms5803_press" type="float" units="Pa"></field>
+            <field name="ms5803_temp" type="float" units="deg C"></field>
+            <field name="dpl_press" type="float" units="Pa"></field>
+            <field name="pitot_press" type="float" units="Pa"></field>
+            <field name="static_press" type="float" units="Pa"></field>
+            <field name="lis3mdl_mag_x" type="float" units="uT"></field>
+            <field name="lis3mdl_mag_y" type="float" units="uT"></field>
+            <field name="lis3mdl_mag_z" type="float" units="uT"></field>
+            <field name="lis3mdl_temp" type="float" units="uT"></field>
+            <field name="gps_lat" type="float" units="deg"></field>
+            <field name="gps_lon" type="float" units="deg"></field>
+            <field name="gps_alt" type="float" units="m"></field>
+            <field name="gps_fix" type="uint8_t"></field>
+            <field name="vbat" type="float" units="V"></field>
+            <field name="vsupply_5v" type="float" units="V"></field>
+        </message>
+    </messages>
+</mavlink>

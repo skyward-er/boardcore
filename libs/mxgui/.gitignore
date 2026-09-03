@@ -1,0 +1,9 @@
+*.o
+*.a
+*.d
+_doc/html/*
+_tools/code_generators/build/*
+_tools/qtsimulator/build/*
+
+# Vim swap file
+*.sw?

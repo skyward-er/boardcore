@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
-#ifdef _ARCH_CORTEXM4_STM32F4
+#ifdef _CHIP_STM32F4
 
 #include <assert.h>
-#include <kernel/scheduler/scheduler.h>
+#include <interfaces/interrupts.h>
 #include <utils/ClockUtils.h>
 #include <utils/Debug.h>
 
@@ -31,9 +31,6 @@
 
 namespace I2CConsts
 {
-static Boardcore::I2CDriver* ports[N_I2C_PORTS] =
-    {};  ///< Pointer to serial port classes to
-         ///< let interrupts access the classes
 static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
 static const int N_SCL_BITBANG =
@@ -43,173 +40,27 @@ static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
 static uint8_t f;  ///< APB peripheral clock frequency
 }  // namespace I2CConsts
 
-#ifdef I2C1
-/**
- * I2C1 event interrupt
- */
-void __attribute__((naked)) I2C1_EV_IRQHandler()
+namespace
 {
-    saveContext();
-    asm volatile("bl _Z15I2C1HandlerImplv");
-    restoreContext();
+/**
+ * Miosix 3 interrupt handlers. The kernel dispatches interrupts registered
+ * with IRQregisterIrq() passing the pointer that was supplied at registration
+ * time, so the driver instance is received directly as the argument.
+ */
+void i2cEventIrqHandler(void* arg)
+{
+    auto* driver = static_cast<Boardcore::I2CDriver*>(arg);
+    if (driver)
+        driver->IRQhandleInterrupt();
 }
 
-/**
- * I2C1 event interrupt actual implementation
- */
-void __attribute__((used)) I2C1HandlerImpl()
+void i2cErrorIrqHandler(void* arg)
 {
-    auto* port = I2CConsts::ports[0];
-    if (port)
-        port->IRQhandleInterrupt();
+    auto* driver = static_cast<Boardcore::I2CDriver*>(arg);
+    if (driver)
+        driver->IRQhandleErrInterrupt();
 }
-
-/**
- * I2C1 error interrupt
- */
-void __attribute__((naked)) I2C1_ER_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z18I2C1errHandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C1 error interrupt actual implementation
- */
-void __attribute__((used)) I2C1errHandlerImpl()
-{
-    auto* port = I2CConsts::ports[0];
-    if (port)
-        port->IRQhandleErrInterrupt();
-}
-#endif
-
-#ifdef I2C2
-/**
- * I2C2 event interrupt
- */
-void __attribute__((naked)) I2C2_EV_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z15I2C2HandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C2 event interrupt actual implementation
- */
-void __attribute__((used)) I2C2HandlerImpl()
-{
-    auto* port = I2CConsts::ports[1];
-    if (port)
-        port->IRQhandleInterrupt();
-}
-
-/**
- * I2C2 error interrupt
- */
-void __attribute__((naked)) I2C2_ER_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z18I2C2errHandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C2 error interrupt actual implementation
- */
-void __attribute__((used)) I2C2errHandlerImpl()
-{
-    auto* port = I2CConsts::ports[1];
-    if (port)
-        port->IRQhandleErrInterrupt();
-}
-#endif
-
-#ifdef I2C3
-/**
- * I2C3 event interrupt
- */
-void __attribute__((naked)) I2C3_EV_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z15I2C3HandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C3 event interrupt actual implementation
- */
-void __attribute__((used)) I2C3HandlerImpl()
-{
-    auto* port = I2CConsts::ports[2];
-    if (port)
-        port->IRQhandleInterrupt();
-}
-
-/**
- * I2C3 error interrupt
- */
-void __attribute__((naked)) I2C3_ER_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z18I2C3errHandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C3 error interrupt actual implementation
- */
-void __attribute__((used)) I2C3errHandlerImpl()
-{
-    auto* port = I2CConsts::ports[2];
-    if (port)
-        port->IRQhandleErrInterrupt();
-}
-#endif
-
-#ifdef I2C4
-/**
- * I2C4 event interrupt
- */
-void __attribute__((naked)) I2C4_EV_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z15I2C4HandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C4 event interrupt actual implementation
- */
-void __attribute__((used)) I2C4HandlerImpl()
-{
-    auto* port = I2CConsts::ports[3];
-    if (port)
-        port->IRQhandleInterrupt();
-}
-
-/**
- * I2C4 error interrupt
- */
-void __attribute__((naked)) I2C4_ER_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z18I2C4errHandlerImplv");
-    restoreContext();
-}
-
-/**
- * I2C4 error interrupt actual implementation
- */
-void __attribute__((used)) I2C4errHandlerImpl()
-{
-    auto* port = I2CConsts::ports[3];
-    if (port)
-        port->IRQhandleErrInterrupt();
-}
-#endif
+}  // namespace
 
 namespace Boardcore
 {
@@ -256,7 +107,7 @@ I2CDriver::I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     }
 
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         // Initializing the alternate function and mode of the pins so we won't
         // forget the open-drain mode, avoiding eventual short-circuits between
@@ -270,33 +121,29 @@ I2CDriver::I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda)
 
     // Checking that this particular I2C port hasn't been already instantiated
     D(assert(id > 0));
-    D(assert(I2CConsts::ports[id - 1] == nullptr));
 
     // Enabling the peripheral's clock
     ClockUtils::enablePeripheralClock(i2c);
 
     init();
 
-    // Add to the array of i2c peripherals so that the interrupts can see it
-    I2CConsts::ports[id - 1] = this;
-
-    // Enabling the interrupts (Ev and Err) in the NVIC
-    NVIC_SetPriority(irqnEv, 15);
-    NVIC_ClearPendingIRQ(irqnEv);
-    NVIC_EnableIRQ(irqnEv);
-    NVIC_SetPriority(irqnErr, 15);
-    NVIC_ClearPendingIRQ(irqnErr);
-    NVIC_EnableIRQ(irqnErr);
+    // Register the interrupt handlers in the kernel's IRQ forwarding table.
+    // IRQregisterIrq() also enables the corresponding NVIC lines.
+    {
+        miosix::GlobalIrqLock dLock;
+        IRQregisterIrq(dLock, irqnEv, &i2cEventIrqHandler, this);
+        IRQregisterIrq(dLock, irqnErr, &i2cErrorIrqHandler, this);
+    }
 }
 
 I2CDriver::~I2CDriver()
 {
-    // Removing the relative i2c port from the array
-    I2CConsts::ports[id - 1] = nullptr;
-
-    // Disabling the interrupts (Ev and Err) in the NVIC
-    NVIC_DisableIRQ(irqnEv);
-    NVIC_DisableIRQ(irqnErr);
+    // Unregistering the interrupt handlers (also disables the NVIC lines)
+    {
+        miosix::GlobalIrqLock dLock;
+        IRQunregisterIrq(dLock, irqnEv, &i2cEventIrqHandler, this);
+        IRQunregisterIrq(dLock, irqnErr, &i2cErrorIrqHandler, this);
+    }
 
     // Disabling the peripheral
     i2c->CR1 &= ~I2C_CR1_PE;
@@ -479,7 +326,7 @@ bool I2CDriver::doOperation(const I2CSlaveConfig& slaveConfig)
 
     // Sending slave address
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         // Setting the LSB if we want to enter receiver mode
         i2c->DR = ((slaveConfig.slaveAddress << 1) | transaction.operation);
@@ -502,7 +349,7 @@ void I2CDriver::flushBus()
     uint8_t toggleDelay = 5;
 
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         // Recovery from the locked state due to a stuck Slave.
         // We bit-bang 16 clocks on the scl line in order to restore pending
@@ -519,7 +366,7 @@ void I2CDriver::flushBus()
     }
 
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         // We set again the scl pin to the correct Alternate function
         scl.mode(miosix::Mode::ALTERNATE_OD_PULL_UP);
@@ -539,7 +386,7 @@ void I2CDriver::flushBus()
 uint16_t I2CDriver::getLastError() { return lastError; }
 
 inline bool I2CDriver::IRQwaitForOperationCompletion(
-    miosix::FastInterruptDisableLock& dLock)
+    miosix::FastGlobalIrqLock& dLock)
 {
     // Saving the current thread in order to be waken up by interrupts
     waiting = miosix::Thread::IRQgetCurrentThread();
@@ -548,10 +395,8 @@ inline bool I2CDriver::IRQwaitForOperationCompletion(
     // till an interrupt doesn't wake up the thread
     while (waiting)
     {
-        waiting->IRQwait();
         i2c->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
-        miosix::FastInterruptEnableLock eLock(dLock);
-        waiting->yield();
+        miosix::Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 
     // If error occurred, parse it to notify the error(s); otherwise reset
@@ -587,13 +432,6 @@ inline void I2CDriver::IRQwakeUpWaitingThread()
     if (waiting)
     {
         waiting->IRQwakeup();
-
-        if (waiting->IRQgetPriority() >
-            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-        {
-            miosix::Scheduler::IRQfindNextThread();
-        }
-
         waiting = nullptr;
     }
 }
@@ -688,4 +526,4 @@ void I2CDriver::IRQhandleErrInterrupt()
 
 }  // namespace Boardcore
 
-#endif  // _ARCH_CORTEXM4_STM32F4
+#endif  // _CHIP_STM32F4

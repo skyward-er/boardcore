@@ -24,13 +24,10 @@
 
 #include <drivers/interrupt/external_interrupts.h>
 #include <interfaces/endianness.h>
-#include <kernel/scheduler/scheduler.h>
 #include <utils/TimeUtils.h>
-
 #include <algorithm>
-
 #include "WIZ5500Defs.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -130,11 +127,6 @@ void Wiz5500::handleINTn()
     if (intn_thread)
     {
         intn_thread->IRQwakeup();
-        if (intn_thread->IRQgetPriority() >
-            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-        {
-            miosix::Scheduler::IRQfindNextThread();
-        }
     }
 }
 
@@ -442,7 +434,7 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
     Unlock<FastMutex> ul(l);
-    FastInterruptDisableLock il;
+    FastGlobalIrqLock il;
 
     intn_thread = Thread::IRQgetCurrentThread();
 
@@ -452,12 +444,12 @@ TimedWaitResult Wiz5500::waitForINTn(Lock<FastMutex>& l, long long until)
         if (until == -1 || until > (now + INTN_TIMEOUT))
         {
             // The timeout either doesn't exist, or it's further in time
-            Thread::IRQenableIrqAndTimedWait(il, now + INTN_TIMEOUT);
+            Thread::IRQglobalIrqUnlockAndTimedWait(il, now + INTN_TIMEOUT);
         }
         else
         {
             // If we timeout here, we actually reached the final timeout
-            result = Thread::IRQenableIrqAndTimedWait(il, until);
+            result = Thread::IRQglobalIrqUnlockAndTimedWait(il, until);
         }
     }
 

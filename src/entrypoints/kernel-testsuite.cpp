@@ -57,7 +57,7 @@
 
 #ifdef WITH_PROCESSES
 #include <kernel/SystemMap.h>
-#include <kernel/elf_program.h>
+#include <kernel/elf_program.h> 
 #include <kernel/process.h>
 #include <kernel/process_pool.h>
 #include <testsuite/elf_testsuite/includes.h>
@@ -65,10 +65,10 @@
 #include <testsuite/syscall_testsuite/includes.h>
 #endif  // WITH_PROCESSES
 
-#if defined(_ARCH_CORTEXM7_STM32F7) || defined(_ARCH_CORTEXM7_STM32H7)
+#if defined(_CHIP_STM32F7) || defined(_CHIP_STM32H7)
 #include <core/cache_cortexMx.h>
 #include <kernel/scheduler/scheduler.h>
-#endif  //_ARCH_CORTEXM7_STM32F7/H7
+#endif  //_CHIP_STM32F7/H7
 
 using namespace std;
 using namespace miosix;
@@ -113,9 +113,9 @@ static void test_21();
 static void test_22();
 static void test_23();
 static void test_24();
-#if defined(_ARCH_CORTEXM7_STM32F7) || defined(_ARCH_CORTEXM7_STM32H7)
+#if defined(_CHIP_STM32F7) || defined(_CHIP_STM32H7)
 void testCacheAndDMA();
-#endif  //_ARCH_CORTEXM7_STM32F7/H7
+#endif  //_CHIP_STM32F7/H7
 // Filesystem test functions
 #ifdef WITH_FILESYSTEM
 static void fs_test_1();
@@ -222,9 +222,9 @@ int main()
                 test_22();
                 test_23();
                 test_24();
-#if defined(_ARCH_CORTEXM7_STM32F7) || defined(_ARCH_CORTEXM7_STM32H7)
+#if defined(_CHIP_STM32F7) || defined(_CHIP_STM32H7)
                 testCacheAndDMA();
-#endif  //_ARCH_CORTEXM7_STM32F7/H7
+#endif  //_CHIP_STM32F7/H7
 
                 ledOff();
                 Thread::sleep(500);  // Ensure all threads are deleted.
@@ -1926,13 +1926,13 @@ static void test_8()
     {
         for (int j = 0; j < i; j++)
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             t8_q1.IRQputBlocking(write, dLock);
             write++;  // Advance to next char, to check order
         }
         for (int j = 0; j < i; j++)
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             char d;
             t8_q2.IRQgetBlocking(d, dLock);
             if (d != read)
@@ -2946,12 +2946,12 @@ static const char b2c[] = "b2c----x";
 static const char b3c[] = "b3c----xx";
 static const char b4c[] = "";
 
-static char* IRQgbw(FastInterruptDisableLock& dLock)
+static char* IRQgbw(FastGlobalIrqLock& dLock)
 {
     char* buffer = 0;
     if (bq.tryGetWritableBuffer(buffer) == false)
     {
-        FastInterruptEnableLock eLock(dLock);
+        FastGlobalIrqUnlock eLock(dLock);
         fail("BufferQueue::get");
     }
     return buffer;
@@ -2959,12 +2959,12 @@ static char* IRQgbw(FastInterruptDisableLock& dLock)
 
 static void gbr(const char*& buffer, unsigned int& size)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     while (bq.tryGetReadableBuffer(buffer, size) == false)
     {
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::yield();
         }
     }
@@ -2972,7 +2972,7 @@ static void gbr(const char*& buffer, unsigned int& size)
 
 static void be()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     bq.bufferEmptied();
 }
 
@@ -2980,13 +2980,13 @@ static void t19_p1(void* argv __attribute__((unused)))
 {
     Thread::sleep(50);
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         char* buffer = IRQgbw(dLock);
         strcpy(buffer, b1c);
         bq.bufferFilled(strlen(b1c));
         t19_v1->IRQwakeup();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::sleep(10);
         }
         buffer = IRQgbw(dLock);
@@ -2994,7 +2994,7 @@ static void t19_p1(void* argv __attribute__((unused)))
         bq.bufferFilled(strlen(b2c));
         t19_v1->IRQwakeup();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::sleep(10);
         }
         buffer = IRQgbw(dLock);
@@ -3002,7 +3002,7 @@ static void t19_p1(void* argv __attribute__((unused)))
         bq.bufferFilled(strlen(b3c));
         t19_v1->IRQwakeup();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::sleep(10);
         }
         buffer = IRQgbw(dLock);
@@ -3599,7 +3599,7 @@ static void test_22()
     bool error = false;
     Thread* t2 = Thread::create(t22_t2, STACK_MIN, 0, 0, Thread::JOINABLE);
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         t22_v5 = false;
 
         int y = 10;
@@ -4108,7 +4108,7 @@ static void test_24()
     pass();
 }
 
-#if defined(_ARCH_CORTEXM7_STM32F7) || defined(_ARCH_CORTEXM7_STM32H7)
+#if defined(_CHIP_STM32F7) || defined(_CHIP_STM32H7)
 static Thread* waiting = nullptr;  /// Thread waiting on DMA completion IRQ
 
 /**
@@ -4144,7 +4144,7 @@ void dmaMemcpy(void* dest, const void* source, int size, void* slackBeforeDest,
                void* slackBeforeSource, int slackBeforeSize,
                void* slackAfterDest, void* slackAfterSource, int slackAfterSize)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     DMA2_Stream1->NDTR = size;
     DMA2_Stream1->PAR  = reinterpret_cast<unsigned int>(source);
     DMA2_Stream1->M0AR = reinterpret_cast<unsigned int>(dest);
@@ -4164,7 +4164,7 @@ void dmaMemcpy(void* dest, const void* source, int size, void* slackBeforeDest,
     waiting = Thread::IRQgetCurrentThread();
     do
     {
-        FastInterruptEnableLock eLock(dLock);
+        FastGlobalIrqUnlock eLock(dLock);
         Thread::yield();
     } while (waiting);
 }
@@ -4237,7 +4237,7 @@ void testCacheAndDMA()
 {
     test_name("STM32 cache/DMA");
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
         RCC_SYNC();
         NVIC_SetPriority(DMA2_Stream1_IRQn, 15);  // Lowest priority for serial
@@ -4288,7 +4288,7 @@ void testCacheAndDMA()
     }
     pass();
 }
-#endif  //_ARCH_CORTEXM7_STM32F7/H7
+#endif  //_CHIP_STM32F7/H7
 
 #ifdef WITH_FILESYSTEM
 //

@@ -29,8 +29,8 @@
 
 #include <chrono>
 #include <string>
+#include<interfaces/serial.h>
 
-#include "arch/common/drivers/serial.h"
 
 #ifndef USE_MOCK_PERIPHERALS
 using USARTType = USART_TypeDef;

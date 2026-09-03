@@ -61,7 +61,7 @@ bool CanProtocol::start()
     {
         rcvThread = miosix::Thread::create(rcvLauncher, skywardStack(4 * 1024),
                                            threadPriority,
-                                           reinterpret_cast<void*>(this));
+                                           reinterpret_cast<void*>(this), miosix::Thread::DETACHED);
 
         if (rcvThread != nullptr)
             rcvStarted = true;

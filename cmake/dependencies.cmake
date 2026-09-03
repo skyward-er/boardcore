@@ -19,14 +19,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Miosix Kernel
-include(${SBS_BASE}/libs/miosix-kernel/miosix/cmake/miosix.cmake EXCLUDE_FROM_ALL)
+# Miosix Kernel (Miosix 3.0)
+#
+# The kernel is now a complete CMake project selected with MIOSIX_BOARD and
+# is consumed with add_subdirectory(). It is only wired in when cross
+# compiling: the host build tree must never configure it (it requires
+# MIOSIX_BOARD and the Miosix toolchain).
+if(CMAKE_CROSSCOMPILING)
+    add_subdirectory(${SBS_BASE}/libs/miosix-kernel/miosix miosix EXCLUDE_FROM_ALL)
+endif()
 
 # Miosix Host
 add_subdirectory(${SBS_BASE}/libs/miosix-host EXCLUDE_FROM_ALL)
 
 # MxGui graphical library
-include(${SBS_BASE}/libs/mxgui/cmake/mxgui.cmake)
+#
+# NOTE: the mxgui CMake module still targets the pre-Miosix-3 board_options
+# contract and is not ported yet, so it is intentionally not included. GUI
+# targets are disabled in the target registry until the port lands.
+# include(${SBS_BASE}/libs/mxgui/cmake/mxgui.cmake)
 
 # Serialization library
 add_subdirectory(${SBS_BASE}/libs/socrate EXCLUDE_FROM_ALL)

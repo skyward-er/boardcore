@@ -98,7 +98,7 @@ void configure()
 {
 #ifndef _BOARD_STM32F429ZI_DEATH_STACK_V2
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
 
         // Set SPI pins to correct alternate mode
 

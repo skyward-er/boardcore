@@ -42,7 +42,7 @@ int main()
     Gamma868 gamma("/dev/auxtty");  // create gamma object
     // Discovery gpio setup
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // greenLed::mode(Mode::OUTPUT);
         // redLed::mode(Mode::OUTPUT);
         button::mode(Mode::INPUT);

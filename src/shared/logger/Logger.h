@@ -256,7 +256,7 @@ private:
 
     static constexpr int maxFilenameNumber = 1024;  ///< Limit on files
 
-#ifndef _ARCH_CORTEXM3_STM32F2
+#ifndef _CHIP_STM32F2
     static constexpr int maxRecordSize  = 512;   ///< Limit on data
     static constexpr int maxMappingSize = 1024;  ///< Limit on mapping
     static constexpr int numRecords     = 512;   ///< Size of record queue
@@ -369,7 +369,7 @@ LoggerResult Logger::log(const T& t)
     // Retrieve a record from the empty queue, if available
     {
         // We disable interrupts because IRQget() is nonblocking, unlike get()
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
         if (emptyRecordsQueue.IRQget(record) == false)
         {
             stats.droppedSamples++;
@@ -430,7 +430,7 @@ LoggerResult Logger::mapType(const T& t, Record*& record)
     // Retrieve a record from the empty queue, if available
     {
         // We disable interrupts because IRQget() is nonblocking, unlike get()
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
         if (emptyMappingsQueue.IRQget(mapping) == false)
         {
             stats.droppedSamples++;

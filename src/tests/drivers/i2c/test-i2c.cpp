@@ -150,10 +150,10 @@ int main()
         for (int i = 0; i < nRepeat; i++)
         {
             for (I2CDriver::Speed speed : {I2CDriver::Speed::FAST
-#ifdef _ARCH_CORTEXM7_STM32F7
+#ifdef _CHIP_STM32F7
                                            ,
                                            I2CDriver::Speed::FAST_PLUS
-#endif  // _ARCH_CORTEXM7_STM32F7
+#endif  // 
                  })
             {
                 statusOLED &= i2cDriver(

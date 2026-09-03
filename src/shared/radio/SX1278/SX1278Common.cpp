@@ -22,7 +22,7 @@
 
 #include "SX1278Common.h"
 
-#include <kernel/scheduler/scheduler.h>
+//#include <kernel/scheduler/scheduler.h> Ask Terraneo
 #include <utils/KernelTime.h>
 
 namespace Boardcore
@@ -36,12 +36,6 @@ void SX1278Common::handleDioIRQ()
     if (state.irq_wait_thread)
     {
         state.irq_wait_thread->IRQwakeup();
-        if (state.irq_wait_thread->IRQgetPriority() >
-            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-        {
-            miosix::Scheduler::IRQfindNextThread();
-        }
-
         state.irq_wait_thread = nullptr;
     }
 }
@@ -84,7 +78,7 @@ ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode& guard, IrqFlags set_irq,
     {
         // An interrupt could occur and read from this variables
         {
-            miosix::FastInterruptDisableLock lock;
+            miosix::FastGlobalIrqLock lock;
             state.irq_wait_thread = miosix::Thread::IRQgetCurrentThread();
         }
 
@@ -153,7 +147,7 @@ bool SX1278Common::waitForIrqInner(LockMode& _guard, bool unlock)
     miosix::TimedWaitResult result = miosix::TimedWaitResult::NoTimeout;
 
     {
-        miosix::FastInterruptDisableLock lock;
+        miosix::FastGlobalIrqLock lock;
         while (state.irq_wait_thread &&
                result == miosix::TimedWaitResult::NoTimeout)
         {

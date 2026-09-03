@@ -212,7 +212,7 @@ public:
                 // Disable interrupts and copy the last sample locally, as a new
                 // interrupt may come just as we are reading it and causing a
                 // race condition.
-                miosix::FastInterruptDisableLock dLock;
+                miosix::FastGlobalIrqLock dLock;
                 lastSampleTimestamp = lastInterruptTimestamp;
             }
 

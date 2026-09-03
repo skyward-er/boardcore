@@ -50,20 +50,6 @@ inline float int32ToFloat(uint32_t val)
     return val2;
 }
 
-inline uint64_t int64ToUint64(int64_t val)
-{
-    uint64_t val2 = 0;
-    std::memcpy(&val2, &val, sizeof(int64_t));
-    return val2;
-}
-
-inline int64_t uint64ToInt64(uint64_t val)
-{
-    int64_t val2 = 0;
-    std::memcpy(&val2, &val, sizeof(uint64_t));
-    return val2;
-}
-
 struct CanPitotData : PitotData
 {
     uint8_t secondaryType = 0;
