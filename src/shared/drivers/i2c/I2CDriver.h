@@ -68,12 +68,12 @@ public:
     {
         STANDARD = 0,
         FAST     = 1,
-#ifdef _ARCH_CORTEXM7_STM32F7
+#ifdef _CHIP_STM32F7
         FAST_PLUS = 2,
         MAX_SPEED = FAST_PLUS
 #else
         MAX_SPEED = FAST
-#endif  // _ARCH_CORTEXM7_STM32F7
+#endif  // _CHIP_STM32F7
     };
 
     enum Addressing : uint8_t
@@ -254,7 +254,7 @@ private:
      */
     void setupPeripheral(const I2CSlaveConfig& slaveConfig);
 
-#ifdef _ARCH_CORTEXM7_STM32F7
+#ifdef _CHIP_STM32F7
     /**
      * @brief Sets up the transaction, so if we have to make a read or write
      * transaction and performs the setup of the reload.
@@ -266,7 +266,7 @@ private:
      * read/write the bytes left
      */
     inline void setupReload();
-#endif  // _ARCH_CORTEXM7_STM32F7
+#endif  // _CHIP_STM32F7
 
     /**
      * @brief Method to perform a read or write operation.
@@ -295,7 +295,7 @@ private:
      * @return True if waken up by an event, false if an error occurred.
      */
     inline bool IRQwaitForOperationCompletion(
-        miosix::FastInterruptDisableLock& dLock);
+        miosix::FastGlobalIrqLock& dLock);
 
     /**
      * @brief This function has the logic to wake up and reschedule the thread

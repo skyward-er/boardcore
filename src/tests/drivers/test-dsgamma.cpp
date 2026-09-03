@@ -29,7 +29,7 @@
 
 using namespace Boardcore;
 using namespace std;
-using miosix::FastInterruptDisableLock;
+using miosix::FastGlobalIrqLock;
 using miosix::Gpio;
 using miosix::Thread;
 
@@ -54,7 +54,7 @@ int main()
 {
     // Discovery gpio setup
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         button::mode(miosix::Mode::INPUT);
     }
 

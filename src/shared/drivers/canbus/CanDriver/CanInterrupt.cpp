@@ -22,97 +22,53 @@
 
 #include "CanInterrupt.h"
 
-#include <interfaces-impl/arch_registers_impl.h>
-#include <kernel/scheduler/scheduler.h>
-#include <miosix.h>
+#include <miosix.h>            // for CAN_TypeDef, etc.
 
 #include "CanDriver.h"
 
+using namespace miosix;
+
 namespace Boardcore
 {
-
 namespace Canbus
 {
 
+// Global array of driver instances (set by the driver constructor)
 CanbusDriver* canDrivers[2];
 
+// ---------- Static interrupt handlers ----------
+// Each handler calls the appropriate driver method.
+
+static void CAN1_RX0_IRQHandler_wrapper()
+{
+    if (canDrivers[0])
+        canDrivers[0]->handleRXInterrupt(0);
 }
 
-}  // namespace Boardcore
-
-void __attribute__((naked)) CAN1_RX0_IRQHandler()
+static void CAN1_RX1_IRQHandler_wrapper()
 {
-    saveContext();
-    asm volatile("mov r0, #0");
-    asm volatile("mov r1, #0");
-    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
-    restoreContext();
+    if (canDrivers[0])
+        canDrivers[0]->handleRXInterrupt(1);
 }
 
-void __attribute__((naked)) CAN1_RX1_IRQHandler()
+static void CAN2_RX0_IRQHandler_wrapper()
 {
-    saveContext();
-    asm volatile("mov r0, #0");
-    asm volatile("mov r1, #1");
-    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
-    restoreContext();
+    if (canDrivers[1])
+        canDrivers[1]->handleRXInterrupt(0);
 }
 
-void __attribute__((naked)) CAN2_RX0_IRQHandler()
+static void CAN2_RX1_IRQHandler_wrapper()
 {
-    saveContext();
-    asm volatile("mov r0, #1");
-    asm volatile("mov r1, #0");
-    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
-    restoreContext();
+    if (canDrivers[1])
+        canDrivers[1]->handleRXInterrupt(1);
 }
 
-void __attribute__((naked)) CAN2_RX1_IRQHandler()
+static void CAN1_TX_IRQHandler_wrapper()
 {
-    saveContext();
-    asm volatile("mov r0, #1");
-    asm volatile("mov r1, #1");
-    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
-    restoreContext();
-}
-
-void __attribute__((naked)) CAN1_TX_IRQHandler()
-{
-    saveContext();
-    asm volatile("mov r0, #0");
-    asm volatile("bl _Z20CAN_TXIRQHandlerImpli");
-    restoreContext();
-}
-
-void __attribute__((naked)) CAN2_TX_IRQHandler()
-{
-    saveContext();
-    asm volatile("mov r0, #1");
-    asm volatile("bl _Z20CAN_TXIRQHandlerImpli");
-    restoreContext();
-}
-
-void __attribute__((used)) CAN_RXIRQHandlerImpl(int canDev, int fifo)
-{
-    using namespace Boardcore::Canbus;
-    (void)canDev;
-
-    if (canDrivers[canDev])
-        canDrivers[canDev]->handleRXInterrupt(fifo);
-}
-
-void __attribute__((used)) CAN_TXIRQHandlerImpl(int canDev)
-{
-    (void)canDev;
-    bool hppw = false;
-
-    using namespace Boardcore::Canbus;
-
-    CanbusDriver* bus = canDrivers[canDev];
-
-    if (bus)
+    if (canDrivers[0])
     {
-        CAN_TypeDef* can = bus->getCAN();
+        CanbusDriver* bus = canDrivers[0];
+        CAN_TypeDef* can  = bus->getCAN();
 
         CanTXResult res;
         res.tme     = can->TSR & CAN_TSR_TME >> 26;
@@ -123,7 +79,6 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int canDev)
             res.mailbox = 0;
             res.txStatus =
                 can->TSR & (CAN_TSR_TXOK0 | CAN_TSR_ALST0 | CAN_TSR_TERR0) >> 1;
-
             can->TSR |= CAN_TSR_RQCP0;
         }
         if ((can->TSR & CAN_TSR_RQCP1) > 0)
@@ -131,23 +86,98 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int canDev)
             res.mailbox = 1;
             res.txStatus =
                 can->TSR & (CAN_TSR_TXOK1 | CAN_TSR_ALST1 | CAN_TSR_TERR1) >> 9;
-
             can->TSR |= CAN_TSR_RQCP1;
         }
         if ((can->TSR & CAN_TSR_RQCP2) > 0)
         {
-            res.mailbox  = 2;
-            res.txStatus = can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
-
+            res.mailbox = 2;
+            res.txStatus =
+                can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
             can->TSR |= CAN_TSR_RQCP2;
         }
 
         res.seq = bus->getTXMailboxSequence(res.mailbox);
-
-        bus->getTXResultBuffer().IRQput(res, hppw);
+        bus->getTXResultBuffer().IRQput(res);
         bus->wakeTXThread();
     }
-
-    if (hppw)
-        miosix::Scheduler::IRQfindNextThread();
 }
+
+static void CAN2_TX_IRQHandler_wrapper()
+{
+    if (canDrivers[1])
+    {
+        CanbusDriver* bus = canDrivers[1];
+        CAN_TypeDef* can  = bus->getCAN();
+
+        CanTXResult res;
+        res.tme     = can->TSR & CAN_TSR_TME >> 26;
+        res.errCode = (can->ESR | CAN_ESR_LEC) >> 4;
+
+        if ((can->TSR & CAN_TSR_RQCP0) > 0)
+        {
+            res.mailbox = 0;
+            res.txStatus =
+                can->TSR & (CAN_TSR_TXOK0 | CAN_TSR_ALST0 | CAN_TSR_TERR0) >> 1;
+            can->TSR |= CAN_TSR_RQCP0;
+        }
+        if ((can->TSR & CAN_TSR_RQCP1) > 0)
+        {
+            res.mailbox = 1;
+            res.txStatus =
+                can->TSR & (CAN_TSR_TXOK1 | CAN_TSR_ALST1 | CAN_TSR_TERR1) >> 9;
+            can->TSR |= CAN_TSR_RQCP1;
+        }
+        if ((can->TSR & CAN_TSR_RQCP2) > 0)
+        {
+            res.mailbox = 2;
+            res.txStatus =
+                can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
+            can->TSR |= CAN_TSR_RQCP2;
+        }
+
+        res.seq = bus->getTXMailboxSequence(res.mailbox);
+        bus->getTXResultBuffer().IRQput(res);
+        bus->wakeTXThread();
+    }
+}
+
+// ---------- Public registration functions ----------
+
+void registerCanInterrupts(CAN_TypeDef* can)
+{
+    GlobalIrqLock lock;
+
+    if (can == CAN1)
+    {
+        IRQregisterIrq(lock, CAN1_RX0_IRQn, &CAN1_RX0_IRQHandler_wrapper);
+        IRQregisterIrq(lock, CAN1_RX1_IRQn, &CAN1_RX1_IRQHandler_wrapper);
+        IRQregisterIrq(lock, CAN1_TX_IRQn,  &CAN1_TX_IRQHandler_wrapper);
+    }
+    else if (can == CAN2)
+    {
+        IRQregisterIrq(lock, CAN2_RX0_IRQn, &CAN2_RX0_IRQHandler_wrapper);
+        IRQregisterIrq(lock, CAN2_RX1_IRQn, &CAN2_RX1_IRQHandler_wrapper);
+        IRQregisterIrq(lock, CAN2_TX_IRQn,  &CAN2_TX_IRQHandler_wrapper);
+    }
+}
+
+void unregisterCanInterrupts(CAN_TypeDef* can)
+{
+    GlobalIrqLock lock;
+
+    if (can == CAN1)
+    {
+        IRQunregisterIrq(lock, CAN1_RX0_IRQn, &CAN1_RX0_IRQHandler_wrapper);
+        IRQunregisterIrq(lock, CAN1_RX1_IRQn, &CAN1_RX1_IRQHandler_wrapper);
+        IRQunregisterIrq(lock, CAN1_TX_IRQn,  &CAN1_TX_IRQHandler_wrapper);
+    }
+    else if (can == CAN2)
+    {
+        IRQunregisterIrq(lock, CAN2_RX0_IRQn, &CAN2_RX0_IRQHandler_wrapper);
+        IRQunregisterIrq(lock, CAN2_RX1_IRQn, &CAN2_RX1_IRQHandler_wrapper);
+        IRQunregisterIrq(lock, CAN2_TX_IRQn,  &CAN2_TX_IRQHandler_wrapper);
+    }
+}
+
+}  // namespace Canbus
+}  // namespace Boardcore

@@ -19,35 +19,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-set(BOARDCORE_BOARDS_OPTIONS_FILES
-    ${BOARDCORE_PATH}/src/bsps/stm32f205rc_ciuti/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_nokia/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_parafoil/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_death_stack_v1/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_death_stack_v2/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_death_stack_v3/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_pyxis_auxiliary/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_rig/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_con_rig/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f756zg_nucleo/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_automated_antennas/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit_v2/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_compute_unit_v2/config/board_options_no_xram.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_gemini_gs/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_gemini_motor/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_death_stack_v4/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_rig_v2/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_rig_v3/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_conrig_v2/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_biscotto/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_motor/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_lyra_gs/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f429zi_lyra_cubesat/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_orion_biscotto/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_orion_engine/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_hydra_engine/config/board_options.cmake
-
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_hydra_biscotto/config/board_options.cmake
-    ${BOARDCORE_PATH}/src/bsps/stm32f767zi_pitot/config/board_options.cmake
-)
+# Boardcore custom boards registry (Miosix 3 layout)
+#
+# Miosix 3.0 has no external-board hook: custom boards must live in the
+# kernel tree (miosix/arch/board/<board>/) and be listed in MIOSIX_BOARDS in
+# miosix/arch/CMakeLists.txt. Once a Boardcore BSP is ported to the Miosix 3
+# layout, add its name here so that `sbs list boards` and target validation
+# know about it. The old board_options.cmake contract is obsolete and was
+# removed together with the pre-Miosix-3 src/bsps tree.
+set(BOARDCORE_BOARDS "")

@@ -74,7 +74,7 @@ enum GPIO_REG
     IPOL_BASE     = 0x02,
     GPINTEN_BASE  = 0x04,
     GPPU_BASE     = 0x0C,
-    GPIO_EXT_BASE = 0x12,  // Nel datasheet è GPIO
+    GPIO_EXT_BASE = 0x12,  
     OLAT_BASE     = 0x14,
 };
 

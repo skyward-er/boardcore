@@ -23,7 +23,6 @@
 #include "DependencyManager.h"
 
 #include <cxxabi.h>
-#include <fmt/format.h>
 
 #include <atomic>
 

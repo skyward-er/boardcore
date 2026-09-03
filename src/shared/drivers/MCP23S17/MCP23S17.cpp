@@ -91,7 +91,7 @@ void MCP23S17::writeRegister(uint8_t address, uint8_t value)
     }
 }
 
-bool MCP23S17::init()
+void MCP23S17::init()
 {
     // Setup IOCON
     setHAEN(false);
@@ -99,9 +99,6 @@ bool MCP23S17::init()
     setSEQOP(true);
     setDISSLW(true);
     setINTPOL(false);
-
-    uint8_t ioconValue = 0b00001100;
-    writeRegister(CTRL_REG::IOCON_BASE, ioconValue);
 
     // Setup pins (all inputs)
     writeRegister(GPIO_REG::IODIR_BASE + PORT::PORT_A, 0xFF);
@@ -118,10 +115,6 @@ bool MCP23S17::init()
     writeRegister(CTRL_REG::DEFVAL_BASE + PORT::PORT_B, 0x00);
     writeRegister(CTRL_REG::INTCON_BASE + PORT::PORT_A, 0x00);
     writeRegister(CTRL_REG::INTCON_BASE + PORT::PORT_B, 0x00);
-
-    if (readRegister(CTRL_REG::IOCON_BASE) != ioconValue)
-        return false;
-    return true;
 }
 
 /**

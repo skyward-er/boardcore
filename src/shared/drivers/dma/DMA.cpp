@@ -25,291 +25,13 @@
 #include <kernel/logging.h>
 #include <utils/ClockUtils.h>
 #include <utils/Debug.h>
-
 #include <map>
+
 
 using namespace miosix;
 
-/**
- * Here are defined the IRQHandlers for the various streams.
- *
- * The problem is that some of these stream are used
- * by miosix. The corresponding IRQHandlers are already defined
- * in there, causing conflicts.
- * Moreover, the used streams might differ from different boards.
- * That's why some streams are available only for a particular board.
- */
-
-void __attribute__((naked)) DMA1_Stream0_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream0_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream0_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str0);
-}
-
-#ifndef STM32F407xx
-// This stream is used by miosix for STM32F407xx boards
-void __attribute__((naked)) DMA1_Stream1_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream1_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream1_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str1);
-}
-#endif  // STM32F407xx
-
-void __attribute__((naked)) DMA1_Stream2_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream2_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream2_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str2);
-}
-
-#ifndef STM32F407xx
-// This stream is used by miosix for STM32F407xx boards
-void __attribute__((naked)) DMA1_Stream3_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream3_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream3_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str3);
-}
-#endif  // STM32F407xx
-
-void __attribute__((naked)) DMA1_Stream4_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream4_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream4_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str4);
-}
-
-void __attribute__((naked)) DMA1_Stream5_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream5_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream5_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str5);
-}
-
-void __attribute__((naked)) DMA1_Stream6_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream6_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream6_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str6);
-}
-
-void __attribute__((naked)) DMA1_Stream7_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA1_Stream7_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA1_Stream7_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA1_Str7);
-}
-
-void __attribute__((naked)) DMA2_Stream0_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream0_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream0_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str0);
-}
-
-void __attribute__((naked)) DMA2_Stream1_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream1_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream1_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str1);
-}
-
-void __attribute__((naked)) DMA2_Stream2_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream2_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream2_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str2);
-}
-
-// This stream is used by miosix for all currently supported
-// boards, so it is simply commented out
-// void __attribute__((naked)) DMA2_Stream3_IRQHandler()
-// {
-//     saveContext();
-//     asm volatile("bl _Z20DMA2_Stream3_IRQImplv");
-//     restoreContext();
-// }
-
-// void __attribute__((used)) DMA2_Stream3_IRQImpl()
-// {
-//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
-//         Boardcore::DMADefs::DMAStreamId::DMA2_Str3);
-// }
-
-void __attribute__((naked)) DMA2_Stream4_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream4_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream4_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str4);
-}
-
-#if !defined(STM32F767xx) && !defined(STM32F429xx)
-// This stream is used by miosix for STM32F767xx
-// and STM32F429xx boards
-void __attribute__((naked)) DMA2_Stream5_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream5_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream5_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str5);
-}
-#endif  // STM32F767xx & STM32F429xx
-
-void __attribute__((naked)) DMA2_Stream6_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream6_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream6_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str6);
-}
-
-#if !defined(STM32F767xx) && !defined(STM32F429xx)
-// This stream is used by miosix for STM32F767xx
-// and STM32F429xx boards
-void __attribute__((naked)) DMA2_Stream7_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream7_IRQImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) DMA2_Stream7_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str7);
-}
-#endif  // STM32F767xx & STM32F429xx
-
 namespace Boardcore
 {
-
-void DMADriver::IRQhandleInterrupt(DMADefs::DMAStreamId id)
-{
-    DMAStream& stream = streams.at(id);
-
-    stream.readFlags();
-    stream.clearAllFlags();
-
-    // Run the callbacks if necessary
-    if (stream.halfTransferCallback && stream.halfTransferFlag)
-        stream.halfTransferCallback();
-
-    if (stream.transferCompleteCallback && stream.transferCompleteFlag)
-        stream.transferCompleteCallback();
-
-    if (stream.errorCallback &&
-        (stream.transferErrorFlag || stream.fifoErrorFlag ||
-         stream.directModeErrorFlag))
-    {
-        stream.errorCallback();
-    }
-
-    // Wakeup the thread if the user is waiting
-    if (stream.waitingThread)
-        IRQwakeupThread(stream);
-}
-
-void DMADriver::IRQwakeupThread(DMAStream& stream)
-{
-    // Wakeup the waiting thread
-    stream.waitingThread->wakeup();
-
-    // If the waiting thread has a higher priority than the current
-    // thread then reschedule
-    if (stream.waitingThread->IRQgetPriority() >
-        miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-    {
-        miosix::Scheduler::IRQfindNextThread();
-    }
-
-    // Clear the thread pointer, this way the thread will be sure it is
-    // not a spurious wakeup
-    stream.waitingThread = nullptr;
-}
 
 DMADriver& DMADriver::instance()
 {
@@ -521,15 +243,14 @@ void DMAStream::setup(DMATransaction& transaction)
 
     // Select the interrupt number
     IRQn_Type irqNumber = DMADefs::irqNumberMapping[static_cast<uint8_t>(id)];
+    GlobalIrqLock dLock;
     if (enableInterrupt)
     {
-        NVIC_SetPriority(irqNumber, 8);
-        NVIC_ClearPendingIRQ(irqNumber);
-        NVIC_EnableIRQ(irqNumber);
+        IRQregisterIrq(dLock, irqNumber, &DMAStream::IRQhandleInterrupt, this);
     }
     else
     {
-        NVIC_DisableIRQ(irqNumber);
+        IRQunregisterIrq(dLock, irqNumber, &DMAStream::IRQhandleInterrupt, this);
     }
 }
 
@@ -703,6 +424,33 @@ void DMAStream::setChannel(const DMADefs::Channel channel)
 int DMAStream::getCurrentBufferNumber()
 {
     return (registers->CR & DMA_SxCR_CT) != 0 ? 2 : 1;
+}
+
+void DMAStream::IRQhandleInterrupt()
+{
+    readFlags();
+    clearAllFlags();
+
+    // Run the callbacks if necessary
+    if (halfTransferCallback && halfTransferFlag)
+        halfTransferCallback();
+
+    if (transferCompleteCallback && transferCompleteFlag)
+        transferCompleteCallback();
+
+    if (errorCallback &&
+        (transferErrorFlag || fifoErrorFlag ||
+         directModeErrorFlag))
+    {
+        errorCallback();
+    }
+
+    // Wakeup the thread if the user is waiting
+    if (waitingThread)
+    {
+        waitingThread->IRQwakeup();
+        waitingThread = nullptr;
+    }
 }
 
 DMAStream::DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel)

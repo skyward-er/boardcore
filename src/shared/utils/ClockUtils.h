@@ -23,7 +23,7 @@
 #pragma once
 
 #include <interfaces/arch_registers.h>
-#include <kernel/kernel.h>
+#include <kernel/lock.h>
 
 namespace Boardcore
 {
@@ -82,9 +82,9 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
     if (bus == APB::APB1)
     {
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32F1
+#ifdef _CHIP_STM32F1
         const uint32_t ppre1 = 8;
-#elif _ARCH_CORTEXM3_STM32F2 | _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM7_STM32F7
+#elif _CHIP_STM32F2 | _CHIP_STM32F4 | _CHIP_STM32F7
         const uint32_t ppre1 = 10;
 #else
 #error "Architecture not supported by TimerUtils"
@@ -96,9 +96,9 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
     else
     {
         // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32F1
+#ifdef _CHIP_STM32F1
         const uint32_t ppre2 = 11;
-#elif _ARCH_CORTEXM3_STM32F2 | _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM7_STM32F7
+#elif _CHIP_STM32F2 | _CHIP_STM32F4 | _CHIP_STM32F7
         const uint32_t ppre2 = 13;
 #else
 #error "Architecture not supported by TimerUtils"
@@ -123,9 +123,9 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
     if (bus == APB::APB1)
     {
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32F1
+#ifdef _CHIP_STM32F1
         const uint32_t ppre1 = 8;
-#elif _ARCH_CORTEXM3_STM32F2 | _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM7_STM32F7
+#elif _CHIP_STM32F2 | _CHIP_STM32F4 | _CHIP_STM32F7
         const uint32_t ppre1 = 10;
 #else
 #error "Architecture not supported by TimerUtils"
@@ -137,9 +137,9 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
     else
     {
         // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32F1
+#ifdef _CHIP_STM32F1
         const uint32_t ppre2 = 11;
-#elif _ARCH_CORTEXM3_STM32F2 | _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM7_STM32F7
+#elif _CHIP_STM32F2 | _CHIP_STM32F4 | _CHIP_STM32F7
         const uint32_t ppre2 = 13;
 #else
 #error "Architecture not supported by TimerUtils"
@@ -154,7 +154,7 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
 
 inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 {
-    miosix::FastInterruptDisableLock dLock;
+    miosix::FastGlobalIrqLock dLock;
 
     switch (reinterpret_cast<uint32_t>(peripheral))
     {
@@ -338,7 +338,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
                 break;
 #endif
 // RTC register interface gate only on stm32f7 micro controllers
-#if defined(RTC_BASE) && defined(_ARCH_CORTEXM7_STM32F7)
+#if defined(RTC_BASE) && defined(_CHIP_STM32F7)
             case RTC_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_RTCEN;
                 break;
@@ -530,7 +530,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 
 inline bool ClockUtils::disablePeripheralClock(void* peripheral)
 {
-    miosix::FastInterruptDisableLock dLock;
+    miosix::FastGlobalIrqLock dLock;
 
     switch (reinterpret_cast<uint32_t>(peripheral))
     {
@@ -714,7 +714,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
                 break;
 #endif
 // RTC register interface gate only on stm32f7 micro controllers
-#if defined(RTC_BASE) && defined(_ARCH_CORTEXM7_STM32F7)
+#if defined(RTC_BASE) && defined(_CHIP_STM32F7)
             case RTC_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_RTCEN;
                 break;

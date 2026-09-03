@@ -1,0 +1,15 @@
+
+    bool pack${field_name_ccase}($type $field_name_lcase, size_t packet_index)
+    {
+        if(packet_index >= $max_index)
+        {
+            return false;
+        }
+
+        // Convert data to a suitable format and store in an unsigned int
+        uint64_t bits = $convert_fun($field_name_lcase);
+
+        return bitpacker.pack(
+            INDEX_$field_name_ucase + packet_index * ${mav_tm_name}_SINGLE_PACKET_SIZE_BITS,
+            SIZE_$field_name_ucase, bits);
+    }

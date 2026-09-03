@@ -89,7 +89,7 @@ int main()
     Logging::startAsyncLogger();
 
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         CanRX::alternateFunction(9);
         CanTX::alternateFunction(9);

@@ -1,0 +1,24 @@
+BasedOnStyle: Google
+
+ColumnLimit: 80
+IndentWidth: 4
+AccessModifierOffset: -4
+
+BreakBeforeBraces: Allman
+# Allow braceless single line if/else/for/while statements
+RemoveBracesLLVM: true
+
+AlignConsecutiveAssignments: Consecutive
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+PackConstructorInitializers: BinPack
+IndentCaseLabels: true
+
+# Empty lines behavior
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtEOF: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Align pointers/references to the type, not the variable
+DerivePointerAlignment: false
+PointerAlignment: Left

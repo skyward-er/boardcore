@@ -34,13 +34,13 @@ class MockGpioPin : public miosix::GpioPin
 public:
     MockGpioPin()
         : GpioPin(0, 0), gpioValue(new int(0)),
-          gpioMode(new miosix::Mode::Mode_(miosix::Mode::OUTPUT))
+          gpioMode(new miosix::Mode(miosix::Mode::OUTPUT))
     {
     }
 
-    void mode(miosix::Mode::Mode_ m) { *gpioMode = m; }
+    void mode(miosix::Mode m) { *gpioMode = m; }
 
-    void speed(miosix::Speed::Speed_ s) {}
+    void speed(miosix::Speed s) {}
 
     void high() { *gpioValue = 1; }
 
@@ -50,10 +50,10 @@ public:
 
     // shared_ptr: Make all copies of this instance share the same values
     std::shared_ptr<int> gpioValue;
-    std::shared_ptr<miosix::Mode::Mode_> gpioMode;
+    std::shared_ptr<miosix::Mode> gpioMode;
 
 private:
-    static void modeImpl(unsigned int p, unsigned char n, miosix::Mode::Mode_ m)
+    static void modeImpl(unsigned int p, unsigned char n, miosix::Mode m)
     {
     }
 

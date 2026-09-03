@@ -47,7 +47,7 @@ using namespace Boardcore;
 using namespace Boardcore::Canbus;
 using namespace miosix;
 
-#ifdef _ARCH_CORTEXM3_STM32F1
+#ifdef _CHIP_STM32F1
 using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #else
@@ -195,9 +195,9 @@ int main()
     Logging::startAsyncLogger();
 
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
-#ifdef _ARCH_CORTEXM3_STM32F1
+#ifdef _CHIP_STM32F1
         CanRX::mode(Mode::ALTERNATE);
         CanTX::mode(Mode::ALTERNATE);
 #else

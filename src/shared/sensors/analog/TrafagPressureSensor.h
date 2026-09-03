@@ -36,14 +36,6 @@ namespace Boardcore
 class TrafagPressureSensor : public Sensor<PressureData>
 {
 public:
-    struct TrafagConfig
-    {
-        float defaultShuntResistance = 49.5;  // Default shunt resistance [Ohm]
-
-        uint32_t shuntResistanceRegKey = 0;  ///< Registry key for opening
-                                             ///< time
-    };
-
     /**
      * @brief Construct a TrafagPressureSensor.
      *
@@ -69,15 +61,6 @@ public:
     void setShuntResistance(float resistance) { shuntResistance = resistance; }
 
     float getShuntResistance() const { return shuntResistance; }
-
-    uint32_t getShuntResistanceRegKey() const
-    {
-        return config.shuntResistanceRegKey;
-    }
-    float getDefaultShuntResistance() const
-    {
-        return config.defaultShuntResistance;
-    }
 
 protected:
     PressureData sampleImpl() override
@@ -105,8 +88,6 @@ private:
     const float maxPressure;
     const float minCurrent;
     const float maxCurrent;
-
-    TrafagConfig config;
 };
 
 }  // namespace Boardcore

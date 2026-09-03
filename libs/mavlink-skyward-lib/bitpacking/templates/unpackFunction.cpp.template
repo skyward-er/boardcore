@@ -1,0 +1,25 @@
+
+    bool unpack${field_name_ccase}($type* $field_name_lcase, size_t packet_index)
+    {
+        if(packet_index >= $max_index)
+        {
+            return false;
+        }
+
+        // Convert data to a suitable format and store in an unsigned int
+        uint64_t bits;
+
+        bool success = bitpacker.unpack(
+            INDEX_$field_name_ucase + packet_index * ${mav_tm_name}_SINGLE_PACKET_SIZE_BITS,
+            SIZE_$field_name_ucase, &bits);
+        
+        if(success)
+        {
+            *$field_name_lcase = $convert_fun(bits);
+            return true;
+        }else
+        {
+            return false;
+        }
+
+    }

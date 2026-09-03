@@ -22,7 +22,6 @@
 
 #include "CanDriver.h"
 
-#include <kernel/scheduler/scheduler.h>
 #include <utils/ClockUtils.h>
 #include <utils/KernelTime.h>
 
@@ -296,18 +295,14 @@ uint32_t CanbusDriver::send(CanPacket packet)
     bool didWait = false;
 
     {
-        miosix::FastInterruptDisableLock d;
+        miosix::FastGlobalIrqLock d;
 
         // Wait until there is an empty mailbox available to use
         while ((can->TSR & CAN_TSR_TME) == 0)
         {
             didWait = true;
             waiting = Thread::IRQgetCurrentThread();
-            Thread::IRQwait();
-            {
-                miosix::FastInterruptEnableLock e(d);
-                Thread::yield();
-            }
+            Thread::IRQglobalIrqUnlockAndWait(d);
         }
     }
 
@@ -380,7 +375,6 @@ void CanbusDriver::handleRXInterrupt(int fifo)
     status.fifoFull    = (*RFR & CAN_RF0R_FULL0) > 0;
 
     CanPacket p;
-    bool hppw = false;
 
     // Note: Bit position definitions are the same for both FIFOs
     // eg: CAN_RF0R_FMP0 == CAN_RF1R_FMP1
@@ -412,11 +406,9 @@ void CanbusDriver::handleRXInterrupt(int fifo)
         *RFR |= CAN_RF0R_RFOM0;
 
         // Put the message into the queue
-        bufRxPackets.IRQput(CanRXPacket{p, status}, hppw);
+        bufRxPackets.IRQput(CanRXPacket{p, status});
     }
 
-    if (hppw)
-        miosix::Scheduler::IRQfindNextThread();
 }
 
 void CanbusDriver::wakeTXThread()

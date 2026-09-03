@@ -57,8 +57,7 @@ using namespace miosix;
         ...
 
         // 2. NVIC settings
-        NVIC_EnableIRQ(EXTI9_5_IRQn);
-        NVIC_SetPriority(EXTI9_5_IRQn, choose_a_priority);
+        // Now handled automatically by enableExternalInterrupt()
     }
 
 */
@@ -155,99 +154,43 @@ void __attribute__((weak)) EXTI15_IRQHandlerImpl()
     IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI15\r\n");
 }
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * external interrupt 0 is raised.
- */
-void __attribute__((naked)) EXTI0_IRQHandler()
+
+static void exti0Handler(void*)
 {
-    saveContext();
     EXTI->PR = EXTI_PR_PR0;
-    asm volatile("bl _Z20EXTI0_IRQHandlerImplv");
-    restoreContext();
+    EXTI0_IRQHandlerImpl();
 }
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * external interrupt 1 is raised.
- */
-void __attribute__((naked)) EXTI1_IRQHandler()
+static void exti1Handler(void*)
 {
-    saveContext();
     EXTI->PR = EXTI_PR_PR1;
-    asm volatile("bl _Z20EXTI1_IRQHandlerImplv");
-    restoreContext();
+    EXTI1_IRQHandlerImpl();
 }
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * external interrupt 2 is raised.
- */
-void __attribute__((naked)) EXTI2_IRQHandler()
+static void exti2Handler(void*)
 {
-    saveContext();
     EXTI->PR = EXTI_PR_PR2;
-    asm volatile("bl _Z20EXTI2_IRQHandlerImplv");
-    restoreContext();
+    EXTI2_IRQHandlerImpl();
 }
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * external interrupt 3 is raised.
- */
-void __attribute__((naked)) EXTI3_IRQHandler()
+static void exti3Handler(void*)
 {
-    saveContext();
     EXTI->PR = EXTI_PR_PR3;
-    asm volatile("bl _Z20EXTI3_IRQHandlerImplv");
-    restoreContext();
+    EXTI3_IRQHandlerImpl();
 }
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * external interrupt 4 is raised.
- */
-void __attribute__((naked)) EXTI4_IRQHandler()
+static void exti4Handler(void*)
 {
-    saveContext();
     EXTI->PR = EXTI_PR_PR4;
-    asm volatile("bl _Z20EXTI4_IRQHandlerImplv");
-    restoreContext();
+    EXTI4_IRQHandlerImpl();
 }
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * any external interrupt between 5 and 9 is raised.
- */
-void __attribute__((naked)) EXTI9_5_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z22EXTI9_5_IRQHandlerImplv");
-    restoreContext();
-}
 
-/**
- * Implementation of the IRQHandler that is triggered when
- * any external interrupt between 10 and 15 is raised.
- */
-void __attribute__((naked)) EXTI15_10_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z24EXTI15_10_IRQHandlerImplv");
-    restoreContext();
-}
-
-/**
- * Read from the PR register which interrupt is pending
- * and call the corresponding IRQHandler.
- * If no flag in the range covered by this IRQ is set,
- * call default handler.
- */
-void __attribute__((used)) EXTI9_5_IRQHandlerImpl()
+static void exti5_9Handler(void*)
 {
     if (EXTI->PR & EXTI_PR_PR5)
     {
-        EXTI->PR = EXTI_PR_PR5;  // Clear pending flag
+        EXTI->PR = EXTI_PR_PR5;
         EXTI5_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR6)
@@ -278,11 +221,12 @@ void __attribute__((used)) EXTI9_5_IRQHandlerImpl()
     }
 }
 
-void __attribute__((used)) EXTI15_10_IRQHandlerImpl()
+
+static void exti10_15Handler(void*)
 {
     if (EXTI->PR & EXTI_PR_PR10)
     {
-        EXTI->PR = EXTI_PR_PR10;  // Clear pending flag
+        EXTI->PR = EXTI_PR_PR10;
         EXTI10_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR11)
@@ -341,7 +285,6 @@ constexpr unsigned ConvertGPIO_BASEtoUnsigned(unsigned P)
 constexpr unsigned GetEXTI_IRQn(unsigned N)
 {
     // clang-format off
-
     return N==0? EXTI0_IRQn :
            N==1? EXTI1_IRQn :
            N==2? EXTI2_IRQn :
@@ -349,7 +292,6 @@ constexpr unsigned GetEXTI_IRQn(unsigned N)
            N==4? EXTI4_IRQn :
            (N>=5&&N<=9)? EXTI9_5_IRQn :
            EXTI15_10_IRQn;
-
     // clang-format on
 }
 
@@ -363,13 +305,23 @@ constexpr unsigned GetEXTICR_register_mask(unsigned P, unsigned N)
     return (0b1111 << ((N % 4) * 4));
 }
 
+
+static bool registered0 = false;
+static bool registered1 = false;
+static bool registered2 = false;
+static bool registered3 = false;
+static bool registered4 = false;
+static bool registered5_9 = false;
+static bool registered10_15 = false;
+
 void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
                              InterruptTrigger trigger, unsigned int priority)
 {
+    auto irqn = static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum));
     auto exticrRegValue = GetEXTICR_register_value(gpioPort, gpioNum);
 
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
 
         RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
         SYSCFG->EXTICR[int(gpioNum / 4)] |= exticrRegValue;
@@ -389,8 +341,63 @@ void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
         EXTI->FTSR |= 1 << gpioNum;
     }
 
-    NVIC_EnableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)));
-    NVIC_SetPriority(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)), priority);
+    GlobalIrqLock dLock;
+    switch (irqn)
+    {
+        case EXTI0_IRQn:
+            if (!registered0)
+            {
+                IRQregisterIrq(dLock, EXTI0_IRQn, exti0Handler, nullptr);
+                registered0 = true;
+            }
+            break;
+        case EXTI1_IRQn:
+            if (!registered1)
+            {
+                IRQregisterIrq(dLock, EXTI1_IRQn, exti1Handler, nullptr);
+                registered1 = true;
+            }
+            break;
+        case EXTI2_IRQn:
+            if (!registered2)
+            {
+                IRQregisterIrq(dLock, EXTI2_IRQn, exti2Handler, nullptr);
+                registered2 = true;
+            }
+            break;
+        case EXTI3_IRQn:
+            if (!registered3)
+            {
+                IRQregisterIrq(dLock, EXTI3_IRQn, exti3Handler, nullptr);
+                registered3 = true;
+            }
+            break;
+        case EXTI4_IRQn:
+            if (!registered4)
+            {
+                IRQregisterIrq(dLock, EXTI4_IRQn, exti4Handler, nullptr);
+                registered4 = true;
+            }
+            break;
+        case EXTI9_5_IRQn:
+            if (!registered5_9)
+            {
+                IRQregisterIrq(dLock, EXTI9_5_IRQn, exti5_9Handler, nullptr);
+                registered5_9 = true;
+            }
+            break;
+        case EXTI15_10_IRQn:
+            if (!registered10_15)
+            {
+                IRQregisterIrq(dLock, EXTI15_10_IRQn, exti10_15Handler, nullptr);
+                registered10_15 = true;
+            }
+            break;
+        default:
+            break;
+    }
+
+    NVIC_SetPriority(irqn, priority);
 }
 
 void disableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum)
@@ -402,10 +409,10 @@ void disableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum)
     auto exticrRegMask = GetEXTICR_register_mask(gpioPort, gpioNum);
 
     {
-        FastInterruptDisableLock dLock;
-
+        FastGlobalIrqLock dLock;
         SYSCFG->EXTICR[int(gpioNum / 4)] &= ~exticrRegMask;
     }
+
 }
 
 void changeInterruptTrigger(unsigned int gpioPort, unsigned int gpioNum,

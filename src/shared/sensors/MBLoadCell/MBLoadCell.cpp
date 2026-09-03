@@ -44,7 +44,7 @@ bool MBLoadCell::init()
 {
     {
         // Disabling interrupts in order to set with no problems the ctrl pins
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
         ctrlPin1::mode(miosix::Mode::OUTPUT);
         ctrlPin2::mode(miosix::Mode::OUTPUT);
     }

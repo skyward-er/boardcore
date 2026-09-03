@@ -37,7 +37,7 @@ InternalADC adc(ADC3);
 void initBoard()
 {
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
 
         batteryPin.mode(miosix::Mode::INPUT_ANALOG);
 

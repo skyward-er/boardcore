@@ -23,9 +23,10 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <kernel/sync.h>
 
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 
 namespace Boardcore
 {
@@ -86,7 +87,12 @@ public:
     /**
      * @brief Signals the task to run and go to sleep until the next deadline.
      */
-    void signalTask() { condvar.broadcast(); }
+    void signalTask()
+    {
+        std::unique_lock<std::mutex> lock(mutex);
+        signaled = true;
+        condvar.notify_all();
+    }
 
     /**
      * @brief Calculates the next deadline for the task to run.
@@ -101,26 +107,28 @@ public:
 protected:
     void run() override
     {
-        using namespace std::chrono;
         while (!shouldStop())
         {
             // Run the task
             task();
 
             // Get the time when the task should run next
-            auto deadline = nanoseconds{nextTaskDeadline().time_since_epoch()};
+            auto deadline = nextTaskDeadline();
 
             // Lock the mutex in the smallest scope possible
             {
-                miosix::Lock<miosix::FastMutex> lock(mutex);
+                std::unique_lock<std::mutex> lock(mutex);
                 // Wait until the next deadline or until signaled
-                condvar.timedWait(lock, deadline.count());
+                condvar.wait_until(lock, deadline, [this] { return signaled; });
+                // Reset the signaled flag
+                signaled = false;
             }
         }
     }
 
 private:
-    miosix::FastMutex mutex;
-    miosix::ConditionVariable condvar;
+    bool signaled = false;  ///< Avoid spurious wakeups
+    std::mutex mutex;
+    std::condition_variable condvar;
 };
 }  // namespace Boardcore

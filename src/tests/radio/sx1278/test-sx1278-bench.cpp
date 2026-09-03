@@ -171,7 +171,7 @@ void spawnThreads()
     /* std::thread watchdog([]() {
         while(1) {
             {
-                FastInterruptDisableLock dlock;
+                FastGlobalIrqLock dlock;
                 sx1278->handleDioIRQ();
             }
             Thread::sleep(2);

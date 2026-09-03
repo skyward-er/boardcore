@@ -34,7 +34,6 @@ set(BOARDCORE_SRC
     # Actuators
     ${BOARDCORE_PATH}/src/shared/actuators/HBridge/HBridge.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/Servo.cpp
-    ${BOARDCORE_PATH}/src/shared/actuators/Servo/ServoWinch.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
     ${BOARDCORE_PATH}/src/shared/Valve/Valve.cpp
@@ -48,10 +47,8 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
-    ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
 
     # Debug
     ${BOARDCORE_PATH}/src/shared/utils/Debug.cpp
@@ -103,7 +100,6 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/ADS1118/ADS1118.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ADS131M04/ADS131M04.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ADS131M08/ADS131M08.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/AS5047D/AS5047DSPI.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BME280/BME280.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BME280/BME280I2C.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/BMP280/BMP280.cpp
@@ -137,8 +133,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/LSM6DSRX/LSM6DSRX.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015D.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015A.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030D.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030A.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030D/ND030D.cpp
 
     # Calibration
     ${BOARDCORE_PATH}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
@@ -155,7 +150,6 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/AeroUtils/AeroUtils.cpp
     ${BOARDCORE_PATH}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/PinObserver.cpp
-    ${BOARDCORE_PATH}/src/shared/utils/PinObserver/ExternalPinObserver.cpp
     ${BOARDCORE_PATH}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Stats/Stats.cpp
     ${BOARDCORE_PATH}/src/shared/utils/TestUtils/TestHelper.cpp
@@ -166,13 +160,10 @@ set(BOARDCORE_SRC
     
 )
 
-# Creates the Skyward::Boardcore::${BOARD_NAME} library
-function(add_boardcore_library BOARD_OPTIONS_FILE)
-    # Get board options
-    include(${BOARD_OPTIONS_FILE})
-
-    # Create a library for the board
-    set(BOARDCORE_LIB boardcore-${BOARD_NAME})
+# Creates the Skyward::Boardcore::${BOARD} library for the board selected
+# with MIOSIX_BOARD (Miosix 3 builds exactly one board per configure)
+function(add_boardcore_library BOARD)
+    set(BOARDCORE_LIB boardcore-${BOARD})
     add_library(${BOARDCORE_LIB} STATIC EXCLUDE_FROM_ALL ${BOARDCORE_SRC})
 
     # Only one include directory for Boardcore!
@@ -183,10 +174,12 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
     # Define NDEBUG when not in Debug mode
     target_compile_definitions(${BOARDCORE_LIB} PUBLIC $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
-    # Link libraries
+    # Link the Miosix kernel and the third party libraries. The final link
+    # line (--start-group miosix stdc++ c m gcc atomic --end-group, linker
+    # script, map file, .bin/.hex artifacts) is assembled by Miosix's
+    # miosix_link_target(), invoked from sbs_target().
     target_link_libraries(${BOARDCORE_LIB} PUBLIC
-        $<TARGET_OBJECTS:Miosix::Boot::${BOARD_NAME}>
-        $<LINK_GROUP:RESCAN,Miosix::Kernel::${BOARD_NAME},stdc++,c,m,gcc,atomic>
+        miosix
         Eigen3::Eigen
         fmt::fmt-header-only
         Catch2::Catch2
@@ -194,23 +187,11 @@ function(add_boardcore_library BOARD_OPTIONS_FILE)
         Socrate::Socrate
     )
 
-    # Link MxGui if supported by the target
-    if(DEFINED MXGUI_BASE_BOARD_NAME)
-        target_link_libraries(${BOARDCORE_LIB} PUBLIC MxGui::${MXGUI_BASE_BOARD_NAME})
-    elseif(TARGET MxGui::${BOARD_NAME})
-        target_link_libraries(${BOARDCORE_LIB} PUBLIC MxGui::${BOARD_NAME})
-    endif()
-
     # Create a nice alias for the library
-    add_library(Skyward::Boardcore::${BOARD_NAME} ALIAS ${BOARDCORE_LIB})
+    add_library(Skyward::Boardcore::${BOARD} ALIAS ${BOARDCORE_LIB})
 endfunction()
 
-# Create the Miosix libraries for Boardcore custom boards
-foreach(BOARD_OPTIONS_FILE ${BOARDCORE_BOARDS_OPTIONS_FILES})
-    add_miosix_libraries(${BOARD_OPTIONS_FILE})
-endforeach()
-
-# Create Boardcore library for each board
-foreach(BOARD_OPTIONS_FILE ${MIOSIX_BOARDS_OPTIONS_FILES} ${BOARDCORE_BOARDS_OPTIONS_FILES})
-    add_boardcore_library(${BOARD_OPTIONS_FILE})
-endforeach()
+# Create the Boardcore library for the board selected at configure time
+if(CMAKE_CROSSCOMPILING AND DEFINED MIOSIX_BOARD AND NOT MIOSIX_BOARD STREQUAL "NOT_SET")
+    add_boardcore_library(${MIOSIX_BOARD})
+endif()

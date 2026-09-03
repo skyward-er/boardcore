@@ -28,8 +28,8 @@
 
 #include "CircularBuffer.h"
 
-using miosix::FastInterruptDisableLock;
-using miosix::FastInterruptEnableLock;
+using miosix::FastGlobalIrqLock;
+using miosix::FastGlobalIrqUnlock;
 using miosix::Thread;
 
 namespace Boardcore
@@ -51,7 +51,7 @@ public:
      */
     T& put(const T& elem)
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         IRQwakeWaitingThread();
         return buffer.put(elem);
     }
@@ -69,7 +69,7 @@ public:
      */
     T get(unsigned int i = 0)
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         return buffer.get(i);
     }
 
@@ -82,7 +82,7 @@ public:
      */
     T last()
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         return buffer.last();
     }
 
@@ -95,7 +95,7 @@ public:
      */
     T pop()
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         return buffer.pop();
     }
 
@@ -106,19 +106,19 @@ public:
      */
     size_t count() const
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         return buffer.count();
     }
 
     bool isEmpty() const
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         return buffer.isEmpty();
     }
 
     bool isFull() const
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         return buffer.isFull();
     }
 
@@ -133,26 +133,6 @@ public:
         buffer.put(elem);
     }
 
-    /**
-     * @brief Puts a copy of the element in the buffer.
-     *
-     * @warning Only to be called inside an ISR or with interrupts disabled.
-     *
-     * @param elem element
-     * @param hppw Set to true if the woken thread is higher priority than the
-     * current one, unchanged otherwise
-     */
-    void IRQput(const T& elem, bool& hppw)
-    {
-        if (waiting && (waiting->IRQgetPriority() >
-                        Thread::IRQgetCurrentThread()->IRQgetPriority()))
-        {
-            hppw = true;
-        }
-
-        IRQwakeWaitingThread();
-        buffer.put(elem);
-    }
 
     /**
      * @brief Gets an element from the buffer, without removing it.
@@ -204,17 +184,12 @@ public:
      */
     void waitUntilNotEmpty()
     {
-        FastInterruptDisableLock d;
+        FastGlobalIrqLock d;
         while (buffer.isEmpty())
         {
             IRQwakeWaitingThread();
             waiting = Thread::IRQgetCurrentThread();
-
-            Thread::IRQwait();
-            {
-                FastInterruptEnableLock e(d);
-                Thread::yield();
-            }
+            Thread::IRQglobalIrqUnlockAndWait(d);  
         }
     }
 
