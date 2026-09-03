@@ -45,9 +45,6 @@ sbs_declare_target(sx1278lora-ra01-serial stm32f429zi_nokia src/entrypoints/sx12
 sbs_declare_target(sx1278fsk-skyward433-serial stm32f767zi_gemini_gs src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_FSK SX1278_IS_SKYWARD433)
 sbs_declare_target(sx1278lora-skyward433-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_LORA SX1278_IS_SKYWARD433)
 sbs_declare_target(sx1278fsk-ebyterig-serial stm32f429zi_rig src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_FSK)
-sbs_declare_target(usart-show stm32f767zi_skyward_compute_unit src/entrypoints/usart-show.cpp)
-sbs_declare_target(scheduler-show stm32f767zi_skyward_compute_unit src/entrypoints/scheduler-show.cpp)
-sbs_declare_target(usart-cli-show stm32f767zi_skyward_compute_unit src/entrypoints/usart-cli-show.cpp)
 sbs_declare_target(system-show stm32f767zi_skyward_compute_unit src/entrypoints/system-show.cpp)
 
 #-----------------------------------------------------------------------------#
