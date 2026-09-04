@@ -335,14 +335,13 @@ struct CanEregPIDSet : EregPIDSet
 };
 struct EregTarget
 {
-    uint64_t timestamp;
     float oxTarget;
     float fuelTarget;
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(EregTarget, FIELD_DEF(timestamp) FIELD_DEF(oxTarget)
-                                          FIELD_DEF(fuelTarget));
+        return STRUCT_DEF(EregTarget,
+                          FIELD_DEF(oxTarget) FIELD_DEF(fuelTarget));
     }
 };
 
@@ -648,12 +647,11 @@ inline Canbus::CanMessage toCanMessage(const EregTarget& data)
     Canbus::CanMessage message;
 
     message.id     = -1;
-    message.length = 2;
+    message.length = 1;
 
-    message.payload[0] = data.timestamp;
-    message.payload[1] =
+    message.payload[0] =
         (static_cast<uint64_t>(floatToInt32(data.oxTarget)) << 32);
-    message.payload[1] |= floatToInt32(data.fuelTarget);
+    message.payload[0] |= floatToInt32(data.fuelTarget);
 
     return message;
 }
@@ -694,17 +692,16 @@ inline Canbus::CanMessage toCanMessage(const EregServoCoefficients& data)
     return message;
 }
 
-inline Canbus::CanMessage toCanMessage(const MEAInitialMass& data) {
-
+inline Canbus::CanMessage toCanMessage(const MEAInitialMass& data)
+{
     Canbus::CanMessage message;
 
-    message.id = -1;
+    message.id     = -1;
     message.length = 1;
 
     message.payload[0] = floatToInt32(data.mass);
 
     return message;
-
 }
 
 inline CanPitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
@@ -895,9 +892,8 @@ inline CanEregTarget eregTargetFromCanMessage(const Canbus::CanMessage& msg)
 {
     CanEregTarget data;
 
-    data.timestamp     = msg.payload[0];
-    data.oxTarget      = msg.payload[1] >> 32;
-    data.fuelTarget    = msg.payload[1];
+    data.oxTarget      = int32ToFloat(msg.payload[0] >> 32);
+    data.fuelTarget    = int32ToFloat(msg.payload[0]);
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
 
@@ -937,13 +933,15 @@ inline CanEregServoCoefficients canServoCoefficientsFromCanMessage(
     return data;
 }
 
-inline CanMEAInitialMass CanMEAInitialMassFromCanMessage(const Canbus::CanMessage& msg) {
+inline CanMEAInitialMass CanMEAInitialMassFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
     CanMEAInitialMass data{};
 
     data.mass = int32ToFloat(static_cast<uint32_t>(msg.payload[0]));
-    
+
     data.secondaryType = msg.getSecondaryType();
-    data.source = msg.getSource();
+    data.source        = msg.getSource();
 
     return data;
 }
