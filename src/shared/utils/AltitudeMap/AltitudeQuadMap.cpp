@@ -130,8 +130,7 @@ uint8_t AltitudeQuadMap::queryNode(uint16_t row, uint16_t col) const
     {
         const uint8_t value = quadTreeData[offset];
 
-        // Leaf node
-        if (value != 255)
+        if (value != 255)  // Leaf node marker is 255
             return value;
 
         const auto* node =

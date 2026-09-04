@@ -521,6 +521,9 @@ sbs_target(test-nd030d stm32f767zi_lyra_biscotto)
 add_executable(test-csvreader src/tests/utils/test-csvreader.cpp)
 sbs_target(test-csvreader stm32f429zi_stm32f4discovery)
 
+add_executable(test-altitudemapquad src/tests/utils/test-altitudemapquad.cpp)
+sbs_target(test-altitudemapquad stm32f429zi_stm32f4discovery)
+
 add_executable(test-buttonhandler src/tests/utils/test-buttonhandler.cpp)
 sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
 
