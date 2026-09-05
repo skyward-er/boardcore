@@ -37,7 +37,8 @@ bool LIS331HH::init()
 {
     SPITransaction spi(slave);
 
-    spi.writeRegister(CTRL_REG1, NORMAL_MODE | CTRL_REG1_Z_EN | CTRL_REG1_Y_EN |
+    spi.writeRegister(CTRL_REG1, static_cast<uint8_t>(NORMAL_MODE) |
+                                     CTRL_REG1_Z_EN | CTRL_REG1_Y_EN |
                                      CTRL_REG1_X_EN);
 
     return true;

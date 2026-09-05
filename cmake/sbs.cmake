@@ -24,6 +24,13 @@ enable_language(C CXX ASM)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# The codebase intentionally uses volatile for ISR/thread-shared variables;
+# suppress the C++20/23 deprecation diagnostics about it (-Wvolatile, enabled
+# by -Wall). The generator expression keeps the flag C++-only.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
+endif()
+
 # Load in SBS_BASE the project path
 cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
 # Load in BOARDCORE_PATH the boardcore path

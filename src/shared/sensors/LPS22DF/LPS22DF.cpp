@@ -116,7 +116,9 @@ void LPS22DF::setAverage(AVG avg)
      * without previously reading it. This allows to avoid a useless
      * transaction.
      */
-    spi.writeRegister(CTRL_REG1, config.odr | avg);
+    spi.writeRegister(CTRL_REG1,
+                      static_cast<uint8_t>(config.odr) |
+                          static_cast<uint8_t>(avg));
 
     config.avg = avg;
 }
@@ -131,7 +133,9 @@ void LPS22DF::setOutputDataRate(ODR odr)
      * without previously reading it. This allows to avoid a useless
      * transaction.
      */
-    spi.writeRegister(CTRL_REG1, odr | config.avg);
+    spi.writeRegister(CTRL_REG1,
+                      static_cast<uint8_t>(odr) |
+                          static_cast<uint8_t>(config.avg));
 
     config.odr = odr;
 }

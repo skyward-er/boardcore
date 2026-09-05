@@ -53,7 +53,16 @@ target_compile_definitions(eigen INTERFACE EIGEN_MAX_ALIGN_BYTES=0)
 # Format library
 add_subdirectory(${SBS_BASE}/libs/fmt EXCLUDE_FROM_ALL)
 target_compile_definitions(fmt-header-only INTERFACE _GLIBCXX_USE_WCHAR_T FMT_UNICODE=0 FMT_STATIC_THOUSANDS_SEPARATOR=0)
-target_compile_options(fmt-header-only INTERFACE -fno-math-errno)
+# Suppress warnings emitted by the vendored fmt 8 headers when compiling as
+# C++23 with GCC 15:
+#   - -Wdeprecated-literal-operator: "operator\"\" _format" uses the
+#     deprecated whitespace between quotes and ud-suffix (fmt/format.h:2769)
+#   - -Wrestrict: fmt 8 shifts float digits with std::uninitialized_copy_n
+#     over overlapping ranges, which libstdc++ lowers to __builtin_memcpy
+# The warnings originate from third-party headers, so they are disabled only
+# for the fmt target.
+target_compile_options(fmt-header-only INTERFACE -fno-math-errno
+                       -Wno-deprecated-literal-operator -Wno-restrict)
 
 # Catch2 library
 add_subdirectory(${SBS_BASE}/libs/Catch2 EXCLUDE_FROM_ALL)
