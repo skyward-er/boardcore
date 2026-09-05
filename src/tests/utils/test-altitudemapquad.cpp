@@ -32,8 +32,9 @@ using namespace Units::Length;
 
 int main()
 {
-    AltitudeQuadMap map("maptree_data.bin");
-    if (!map.init())
+    auto map = std::make_unique<AltitudeQuadMap>("maptree_data(2.7m).bin");
+
+    if (!map->init())
     {
         std::cerr << "Failed to initialize the altitude map." << std::endl;
         return -1;
@@ -47,9 +48,9 @@ int main()
 
         Meter n{n_f}, e{e_f};
 
-        auto altitude = map.getClosestGroundAltitude(n, e);
+        auto altitude = map->getClosestGroundAltitude(n, e);
 
-        if (map.isInsideMap(n, e))
+        if (map->isInsideMap(n, e))
         {
             std::cout << "Closest ground altitude: " << altitude << " meters"
                       << std::endl;

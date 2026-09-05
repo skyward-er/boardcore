@@ -24,6 +24,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <iostream>
 
 namespace Boardcore
 {
@@ -44,6 +45,8 @@ bool AltitudeQuadMap::init()
 
     if (!file)
     {
+        std::cout << "Failed to open altitude quadtree map file: "
+                  << mapFilename << std::endl;
         LOG_ERR(logger, "Failed to open altitude quadtree map file: {}",
                 mapFilename);
         return false;
@@ -53,6 +56,8 @@ bool AltitudeQuadMap::init()
 
     if (size < sizeof(MapHeader))
     {
+        std::cout << "Quadtree map file size is smaller than map header size"
+                  << std::endl;
         LOG_ERR(logger,
                 "Quadtree map file size is smaller than map header size");
         return false;
