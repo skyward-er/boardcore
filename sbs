@@ -427,6 +427,8 @@ build() {
     done
 
     config_host=false
+    declare -a verbose_build_opts
+    [ "$config_verbose" = true ] && verbose_build_opts+=(--verbose)
 
     # Use the default "all" target if none was specified
     if [ -z "$target" ]; then
@@ -450,7 +452,7 @@ build() {
             config_build_dir="$build_default_dir/$config_board"
             check_configured || return
             step "Build"
-            cmake --build "$config_build_dir" --target all -- -j"$config_jobs" || return
+            cmake --build "$config_build_dir" --target all "${verbose_build_opts[@]}" -- -j"$config_jobs" || return
         done
 
         # Report registry boards that the current kernel cannot build yet
@@ -482,7 +484,7 @@ build() {
         step "Build"
         # Also build the _bin artifact target: Miosix produces .bin/.hex from
         # dedicated ${TARGET}_bin/${TARGET}_hex targets, which flash needs
-        cmake --build "$config_build_dir" --target "$target" --target "${target}_bin" -- -j"$config_jobs"
+        cmake --build "$config_build_dir" --target "$target" --target "${target}_bin" "${verbose_build_opts[@]}" -- -j"$config_jobs"
     fi
 }
 
@@ -637,6 +639,8 @@ test() {
 
     config_host=true
     config_build_dir="$build_host_dir"
+    declare -a verbose_build_opts
+    [ "$config_verbose" = true ] && verbose_build_opts+=(--verbose)
 
     # If target wasn't previously set, use the default one
     if [ -z "$target" ]; then
@@ -648,7 +652,7 @@ test() {
     check_configured || return
 
     step "Build (Host)"
-    cmake --build "$config_build_dir" --target "$target" -- -j"$config_jobs" || return
+    cmake --build "$config_build_dir" --target "$target" "${verbose_build_opts[@]}" -- -j"$config_jobs" || return
 
     # Run the tests
     step "Test"
@@ -785,7 +789,7 @@ help() {
     echo ""
     echo "Options:"
     echo " -d, --debug:    Build in debug mode"
-    echo " -v, --verbose:  Print verbose output during build"
+    echo " -v, --verbose:  Print verbose output (full compiler/linker commands) during build"
     echo " -r, --reset:    Force connect under reset when flashing"
     echo " -j, --jobs:     Number of jobs to run in parallel"
     echo " -D, --device:   Serial device to connect to (tries to autodetect if not specified)"
