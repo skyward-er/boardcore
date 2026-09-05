@@ -111,7 +111,7 @@ bool H3LIS331DL::init()
         // the FSR (@see H3LIS331DL::FullScaleRange).
         uint8_t ctrlReg4 = 0b0000'0000;
 
-        ctrlReg4 = bdu | fs;
+        ctrlReg4 = static_cast<uint8_t>(bdu) | static_cast<uint8_t>(fs);
 
         spiTr.writeRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4, ctrlReg4);
 

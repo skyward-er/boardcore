@@ -101,20 +101,30 @@ void MCP23S17::init()
     setINTPOL(false);
 
     // Setup pins (all inputs)
-    writeRegister(GPIO_REG::IODIR_BASE + PORT::PORT_A, 0xFF);
-    writeRegister(GPIO_REG::IODIR_BASE + PORT::PORT_B, 0xFF);
+    writeRegister(static_cast<uint8_t>(GPIO_REG::IODIR_BASE) + PORT::PORT_A,
+                  0xFF);
+    writeRegister(static_cast<uint8_t>(GPIO_REG::IODIR_BASE) + PORT::PORT_B,
+                  0xFF);
 
     // Setup Pull-Ups (default off)
-    writeRegister(GPIO_REG::GPPU_BASE + PORT::PORT_A, 0x00);
-    writeRegister(GPIO_REG::GPPU_BASE + PORT::PORT_B, 0x00);
+    writeRegister(static_cast<uint8_t>(GPIO_REG::GPPU_BASE) + PORT::PORT_A,
+                  0x00);
+    writeRegister(static_cast<uint8_t>(GPIO_REG::GPPU_BASE) + PORT::PORT_B,
+                  0x00);
 
     // Clear Interrupt configs
-    writeRegister(GPIO_REG::GPINTEN_BASE + PORT::PORT_A, 0x00);
-    writeRegister(GPIO_REG::GPINTEN_BASE + PORT::PORT_B, 0x00);
-    writeRegister(CTRL_REG::DEFVAL_BASE + PORT::PORT_A, 0x00);
-    writeRegister(CTRL_REG::DEFVAL_BASE + PORT::PORT_B, 0x00);
-    writeRegister(CTRL_REG::INTCON_BASE + PORT::PORT_A, 0x00);
-    writeRegister(CTRL_REG::INTCON_BASE + PORT::PORT_B, 0x00);
+    writeRegister(static_cast<uint8_t>(GPIO_REG::GPINTEN_BASE) + PORT::PORT_A,
+                  0x00);
+    writeRegister(static_cast<uint8_t>(GPIO_REG::GPINTEN_BASE) + PORT::PORT_B,
+                  0x00);
+    writeRegister(static_cast<uint8_t>(CTRL_REG::DEFVAL_BASE) + PORT::PORT_A,
+                  0x00);
+    writeRegister(static_cast<uint8_t>(CTRL_REG::DEFVAL_BASE) + PORT::PORT_B,
+                  0x00);
+    writeRegister(static_cast<uint8_t>(CTRL_REG::INTCON_BASE) + PORT::PORT_A,
+                  0x00);
+    writeRegister(static_cast<uint8_t>(CTRL_REG::INTCON_BASE) + PORT::PORT_B,
+                  0x00);
 }
 
 /**
@@ -157,56 +167,61 @@ void MCP23S17::setINTPOL(bool value)
 
 void MCP23S17::setPinMode(PORT port, PIN pinNumber, MODE mode)
 {
-    writeBit(GPIO_REG::IODIR_BASE + port, pinNumber,
+    writeBit(static_cast<uint8_t>(GPIO_REG::IODIR_BASE) + port, pinNumber,
              (mode == MODE::INPUT) || (mode == MODE::INPUT_PULL_UP));
 
-    writeBit(GPIO_REG::GPPU_BASE + port, pinNumber,
+    writeBit(static_cast<uint8_t>(GPIO_REG::GPPU_BASE) + port, pinNumber,
              (mode == MODE::INPUT_PULL_UP));
 }
 
 void MCP23S17::setPinPolarity(PORT port, PIN pinNumber, bool polarity)
 {
-    writeBit(GPIO_REG::IPOL_BASE + port, pinNumber, polarity);
+    writeBit(static_cast<uint8_t>(GPIO_REG::IPOL_BASE) + port, pinNumber,
+             polarity);
 }
 
 void MCP23S17::setDefaultValue(PORT port, PIN pinNumber, bool value)
 {
-    writeBit(CTRL_REG::DEFVAL_BASE + port, pinNumber, value);
+    writeBit(static_cast<uint8_t>(CTRL_REG::DEFVAL_BASE) + port, pinNumber,
+             value);
 }
 
 void MCP23S17::enableInterruptOnChange(PORT port, PIN pinNumber)
 {
-    writeBit(GPIO_REG::GPINTEN_BASE + port, pinNumber, 1);
+    writeBit(static_cast<uint8_t>(GPIO_REG::GPINTEN_BASE) + port, pinNumber, 1);
 }
 
 void MCP23S17::disableInterruptOnChange(PORT port, PIN pinNumber)
 {
-    writeBit(GPIO_REG::GPINTEN_BASE + port, pinNumber, 0);
+    writeBit(static_cast<uint8_t>(GPIO_REG::GPINTEN_BASE) + port, pinNumber, 0);
 }
 
 void MCP23S17::setInterruptComparison(PORT port, PIN pinNumber, bool mode)
 {
-    writeBit(CTRL_REG::INTCON_BASE + port, pinNumber, mode);
+    writeBit(static_cast<uint8_t>(CTRL_REG::INTCON_BASE) + port, pinNumber,
+             mode);
 }
 
 uint8_t MCP23S17::readInterruptFlag(PORT port)
 {
-    return readRegister(CTRL_REG::INTF_BASE + port);
+    return readRegister(static_cast<uint8_t>(CTRL_REG::INTF_BASE) + port);
 }
 
 uint8_t MCP23S17::readInterruptCapture(PORT port)
 {
-    return readRegister(CTRL_REG::INTCAP_BASE + port);
+    return readRegister(static_cast<uint8_t>(CTRL_REG::INTCAP_BASE) + port);
 }
 
 bool MCP23S17::getPinValue(PORT port, PIN pinNumber)
 {
-    return readBit(GPIO_REG::GPIO_EXT_BASE + port, pinNumber);
+    return readBit(static_cast<uint8_t>(GPIO_REG::GPIO_EXT_BASE) + port,
+                   pinNumber);
 }
 
 void MCP23S17::setPinValue(PORT port, PIN pinNumber, bool value)
 {
-    writeBit(GPIO_REG::GPIO_EXT_BASE + port, pinNumber, value);
+    writeBit(static_cast<uint8_t>(GPIO_REG::GPIO_EXT_BASE) + port, pinNumber,
+             value);
 }
 
 }  // namespace Boardcore

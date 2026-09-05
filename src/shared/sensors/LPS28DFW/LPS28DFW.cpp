@@ -136,7 +136,10 @@ bool LPS28DFW::setAverage(AVG avg)
     // internal driver state to set the register with the wanted ODR and AVG
     // without previously reading it. This allows to avoid a useless
     // transaction.
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG1, sensorConfig.odr | avg))
+    if (!i2c.writeRegister(
+            i2cConfig, CTRL_REG1,
+            static_cast<uint8_t>(sensorConfig.odr) |
+                static_cast<uint8_t>(avg)))
     {
         lastError = BUS_FAULT;
         return false;
@@ -152,7 +155,10 @@ bool LPS28DFW::setOutputDataRate(ODR odr)
     // internal driver state to set the register with the wanted ODR and AVG
     // without previously reading it. This allows to avoid a useless
     // transaction.
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG1, odr | sensorConfig.avg))
+    if (!i2c.writeRegister(
+            i2cConfig, CTRL_REG1,
+            static_cast<uint8_t>(odr) |
+                static_cast<uint8_t>(sensorConfig.avg)))
     {
         lastError = BUS_FAULT;
         return false;
