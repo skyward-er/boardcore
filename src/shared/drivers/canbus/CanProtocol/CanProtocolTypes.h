@@ -383,6 +383,44 @@ struct CanIgnitionThresholds : IgnitionThresholds
     }
 };
 
+struct FiringParameters
+{
+    uint32_t fullThrottleTime;
+    uint32_t lowThrottleTime;
+    uint32_t pilotLeadTime;
+    float pilotFlameOxPosition;
+    float pilotFlameFuelPosition;
+    float igniterThreshold;
+    float pilotFlameThreshold;
+    float eregOxTarget;
+    float eregFuelTarget;
+    uint8_t requestId;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            FiringParameters,
+            FIELD_DEF(fullThrottleTime) FIELD_DEF(lowThrottleTime) FIELD_DEF(
+                pilotLeadTime) FIELD_DEF(pilotFlameOxPosition)
+                FIELD_DEF(pilotFlameFuelPosition) FIELD_DEF(igniterThreshold)
+                    FIELD_DEF(pilotFlameThreshold) FIELD_DEF(eregOxTarget)
+                        FIELD_DEF(eregFuelTarget) FIELD_DEF(requestId));
+    }
+};
+
+struct CanFiringParameters : FiringParameters
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanFiringParameters,
+                          EXTEND_DEF(FiringParameters) FIELD_DEF(secondaryType)
+                              FIELD_DEF(source));
+    }
+};
+
 struct EregServoCoefficients
 {
     uint8_t eregId                              = 0;
@@ -671,6 +709,37 @@ inline Canbus::CanMessage toCanMessage(const IgnitionThresholds& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const FiringParameters& data)
+{
+    Canbus::CanMessage message;
+
+    message.id     = -1;
+    message.length = 5;
+
+    message.payload[0] = data.fullThrottleTime;
+    message.payload[0] |= static_cast<uint64_t>(data.lowThrottleTime) << 32;
+
+    message.payload[1] = data.pilotLeadTime;
+    message.payload[1] |=
+        (static_cast<uint64_t>(floatToInt32(data.pilotFlameOxPosition)) << 32);
+
+    message.payload[2] =
+        static_cast<uint64_t>(floatToInt32(data.pilotFlameFuelPosition)) << 32;
+    message.payload[2] |=
+        static_cast<uint64_t>(floatToInt32(data.igniterThreshold));
+
+    message.payload[3] =
+        static_cast<uint64_t>(floatToInt32(data.pilotFlameThreshold)) << 32;
+    message.payload[3] |=
+        static_cast<uint64_t>(floatToInt32(data.eregOxTarget));
+
+    message.payload[4] =
+        static_cast<uint64_t>(floatToInt32(data.eregFuelTarget)) << 32;
+    message.payload[4] |= data.requestId;
+
+    return message;
+}
+
 inline Canbus::CanMessage toCanMessage(const EregServoCoefficients& data)
 {
     Canbus::CanMessage message;
@@ -910,6 +979,28 @@ inline CanIgnitionThresholds ignitionThresholdsFromCanMessage(
     data.pilotThreshold   = int32ToFloat(msg.payload[1]);
     data.secondaryType    = msg.getSecondaryType();
     data.source           = msg.getSource();
+
+    return data;
+}
+
+inline CanFiringParameters firingParametersFromCanMessage(
+    const Canbus::CanMessage& msg)
+{
+    CanFiringParameters data;
+
+    data.fullThrottleTime     = static_cast<uint32_t>(msg.payload[0]);
+    data.lowThrottleTime      = msg.payload[0] >> 32;
+    data.pilotLeadTime        = static_cast<uint32_t>(msg.payload[1]);
+    data.pilotFlameOxPosition = int32ToFloat(msg.payload[1] >> 32);
+    data.pilotFlameFuelPosition =
+        int32ToFloat(static_cast<uint32_t>(msg.payload[2] >> 32));
+    data.igniterThreshold    = int32ToFloat(msg.payload[2]);
+    data.pilotFlameThreshold = int32ToFloat(msg.payload[3] >> 32);
+    data.eregOxTarget        = int32ToFloat(msg.payload[3]);
+    data.eregFuelTarget      = int32ToFloat(msg.payload[4] >> 32);
+    data.requestId           = static_cast<uint8_t>(msg.payload[4]);
+    data.secondaryType       = msg.getSecondaryType();
+    data.source              = msg.getSource();
 
     return data;
 }
