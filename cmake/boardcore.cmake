@@ -59,7 +59,6 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/drivers/AD5204/AD5204.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/adc/InternalADC.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
-    ${BOARDCORE_PATH}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/dma/DMA.cpp
     ${BOARDCORE_PATH}/src/shared/drivers/dma/DMADefs.cpp
