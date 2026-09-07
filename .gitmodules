@@ -1,15 +1,15 @@
 [submodule "Catch2"]
 	path = libs/Catch2
-	url = https://git.skywarder.eu/avn/swd/third-party/Catch2.git
+	url = git@git.skywarder.eu:avn/swd/third-party/Catch2.git
 [submodule "Eigen"]
 	path = libs/eigen
-	url = https://git.skywarder.eu/avn/swd/third-party/eigen.git
+	url = git@git.skywarder.eu:avn/swd/third-party/eigen.git
 [submodule "Modern formatting library"]
 	path = libs/fmt
-	url = https://git.skywarder.eu/avn/swd/third-party/fmt.git
+	url = git@git.skywarder.eu:avn/swd/third-party/fmt.git
 [submodule "MAVLink Skyward library"]
 	path = libs/mavlink-skyward-lib
-	url = https://git.skywarder.eu/avn/swd/mavlink/mavlink-skyward-lib
+	url = git@git.skywarder.eu:avn/swd/mavlink/mavlink-skyward-lib.git
 [submodule "Miosix Host"]
 	path = libs/miosix-host
 	url = https://git.skywarder.eu/avn/swd/miosix-host.git
@@ -21,4 +21,4 @@
 	url = https://git.skywarder.eu/avn/swd/third-party/mxgui.git
 [submodule "libs/socrate"]
 	path = libs/socrate
-	url = https://git.skywarder.eu/avn/swd/socrate.git
+	url = git@git.skywarder.eu:avn/swd/socrate.git
