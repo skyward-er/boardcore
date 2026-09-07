@@ -40,28 +40,6 @@ static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
 static uint8_t f;  ///< APB peripheral clock frequency
 }  // namespace I2CConsts
 
-namespace
-{
-/**
- * Miosix 3 interrupt handlers. The kernel dispatches interrupts registered
- * with IRQregisterIrq() passing the pointer that was supplied at registration
- * time, so the driver instance is received directly as the argument.
- */
-void i2cEventIrqHandler(void* arg)
-{
-    auto* driver = static_cast<Boardcore::I2CDriver*>(arg);
-    if (driver)
-        driver->IRQhandleInterrupt();
-}
-
-void i2cErrorIrqHandler(void* arg)
-{
-    auto* driver = static_cast<Boardcore::I2CDriver*>(arg);
-    if (driver)
-        driver->IRQhandleErrInterrupt();
-}
-}  // namespace
-
 namespace Boardcore
 {
 
@@ -131,8 +109,8 @@ I2CDriver::I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     // IRQregisterIrq() also enables the corresponding NVIC lines.
     {
         miosix::GlobalIrqLock dLock;
-        IRQregisterIrq(dLock, irqnEv, &i2cEventIrqHandler, this);
-        IRQregisterIrq(dLock, irqnErr, &i2cErrorIrqHandler, this);
+        IRQregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt, this);
+        IRQregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt, this);
     }
 }
 
@@ -141,8 +119,8 @@ I2CDriver::~I2CDriver()
     // Unregistering the interrupt handlers (also disables the NVIC lines)
     {
         miosix::GlobalIrqLock dLock;
-        IRQunregisterIrq(dLock, irqnEv, &i2cEventIrqHandler, this);
-        IRQunregisterIrq(dLock, irqnErr, &i2cErrorIrqHandler, this);
+        IRQunregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt, this);
+        IRQunregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt, this);
     }
 
     // Disabling the peripheral

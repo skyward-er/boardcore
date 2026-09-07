@@ -202,6 +202,26 @@ public:
 
 private:
     /**
+     * @brief Handles the CAN TX interrupt for this driver instance.
+     *
+     * Reads the completed TX mailboxes, stores the results and wakes the
+     * thread waiting for the transmission to complete.
+     */
+    void IRQhandleTXInterrupt();
+
+    /**
+     * @brief Handles the RX interrupt for FIFO FIFO.
+     *
+     * The FIFO number is a compile-time parameter because the kernel's
+     * interrupt registration API calls member functions with no arguments.
+     */
+    template<int FIFO>
+    void IRQhandleRXInterrupt()
+    {
+        handleRXInterrupt(FIFO);
+    }
+
+    /**
      * Automatically calculates values for the bit timing register
      * starting from the required baud rate and sample point position, using a
      * simple optimization algorithm to find the closest possible values,

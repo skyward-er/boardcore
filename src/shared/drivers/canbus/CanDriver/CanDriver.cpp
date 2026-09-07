@@ -28,7 +28,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include "CanInterrupt.h"
 #include "diagnostic/PrintLogger.h"
 
 using namespace std::chrono;
@@ -95,35 +94,37 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     // Enter filter initialization mode
     can->FMR |= CAN_FMR_FINIT;
 
-    if (can == CAN1)
-        canDrivers[0] = this;
-    else
-        canDrivers[1] = this;
-
     // Enable interrupts
     can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
 
-    // Enable the corresponding interrupts
+    // Register the interrupt handlers; IRQregisterIrq() also enables the
+    // corresponding NVIC lines
     if (can == CAN1)
     {
-        NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        miosix::GlobalIrqLock lock;
+        miosix::IRQregisterIrq(lock, CAN1_RX0_IRQn,
+                               &CanbusDriver::IRQhandleRXInterrupt<0>, this);
+        miosix::IRQregisterIrq(lock, CAN1_RX1_IRQn,
+                               &CanbusDriver::IRQhandleRXInterrupt<1>, this);
+        miosix::IRQregisterIrq(lock, CAN1_TX_IRQn,
+                               &CanbusDriver::IRQhandleTXInterrupt, this);
+
         NVIC_SetPriority(CAN1_RX0_IRQn, 14);
-
-        NVIC_EnableIRQ(CAN1_RX1_IRQn);
         NVIC_SetPriority(CAN1_RX1_IRQn, 14);
-
-        NVIC_EnableIRQ(CAN1_TX_IRQn);
         NVIC_SetPriority(CAN1_TX_IRQn, 14);
     }
     else if (can == CAN2)
     {
-        NVIC_EnableIRQ(CAN2_RX0_IRQn);
+        miosix::GlobalIrqLock lock;
+        miosix::IRQregisterIrq(lock, CAN2_RX0_IRQn,
+                               &CanbusDriver::IRQhandleRXInterrupt<0>, this);
+        miosix::IRQregisterIrq(lock, CAN2_RX1_IRQn,
+                               &CanbusDriver::IRQhandleRXInterrupt<1>, this);
+        miosix::IRQregisterIrq(lock, CAN2_TX_IRQn,
+                               &CanbusDriver::IRQhandleTXInterrupt, this);
+
         NVIC_SetPriority(CAN2_RX0_IRQn, 14);
-
-        NVIC_EnableIRQ(CAN2_RX1_IRQn);
         NVIC_SetPriority(CAN2_RX1_IRQn, 14);
-
-        NVIC_EnableIRQ(CAN2_TX_IRQn);
         NVIC_SetPriority(CAN2_TX_IRQn, 14);
     }
     else
@@ -135,6 +136,28 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
 
 CanbusDriver::~CanbusDriver()
 {
+    // Unregister the interrupt handlers before disabling the peripheral
+    if (can == CAN1)
+    {
+        miosix::GlobalIrqLock lock;
+        miosix::IRQunregisterIrq(lock, CAN1_RX0_IRQn,
+                                 &CanbusDriver::IRQhandleRXInterrupt<0>, this);
+        miosix::IRQunregisterIrq(lock, CAN1_RX1_IRQn,
+                                 &CanbusDriver::IRQhandleRXInterrupt<1>, this);
+        miosix::IRQunregisterIrq(lock, CAN1_TX_IRQn,
+                                 &CanbusDriver::IRQhandleTXInterrupt, this);
+    }
+    else if (can == CAN2)
+    {
+        miosix::GlobalIrqLock lock;
+        miosix::IRQunregisterIrq(lock, CAN2_RX0_IRQn,
+                                 &CanbusDriver::IRQhandleRXInterrupt<0>, this);
+        miosix::IRQunregisterIrq(lock, CAN2_RX1_IRQn,
+                                 &CanbusDriver::IRQhandleRXInterrupt<1>, this);
+        miosix::IRQunregisterIrq(lock, CAN2_TX_IRQn,
+                                 &CanbusDriver::IRQhandleTXInterrupt, this);
+    }
+
     ClockUtils::disablePeripheralClock(can);
     if (can == CAN2)
         ClockUtils::disablePeripheralClock(CAN1);
@@ -409,6 +432,39 @@ void CanbusDriver::handleRXInterrupt(int fifo)
         bufRxPackets.IRQput(CanRXPacket{p, status});
     }
 
+}
+
+void CanbusDriver::IRQhandleTXInterrupt()
+{
+    CanTXResult res;
+    res.tme     = can->TSR & CAN_TSR_TME >> 26;
+    res.errCode = (can->ESR | CAN_ESR_LEC) >> 4;
+
+    if ((can->TSR & CAN_TSR_RQCP0) > 0)
+    {
+        res.mailbox = 0;
+        res.txStatus =
+            can->TSR & (CAN_TSR_TXOK0 | CAN_TSR_ALST0 | CAN_TSR_TERR0) >> 1;
+        can->TSR |= CAN_TSR_RQCP0;
+    }
+    if ((can->TSR & CAN_TSR_RQCP1) > 0)
+    {
+        res.mailbox = 1;
+        res.txStatus =
+            can->TSR & (CAN_TSR_TXOK1 | CAN_TSR_ALST1 | CAN_TSR_TERR1) >> 9;
+        can->TSR |= CAN_TSR_RQCP1;
+    }
+    if ((can->TSR & CAN_TSR_RQCP2) > 0)
+    {
+        res.mailbox = 2;
+        res.txStatus =
+            can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
+        can->TSR |= CAN_TSR_RQCP2;
+    }
+
+    res.seq = getTXMailboxSequence(res.mailbox);
+    getTXResultBuffer().IRQput(res);
+    wakeTXThread();
 }
 
 void CanbusDriver::wakeTXThread()
