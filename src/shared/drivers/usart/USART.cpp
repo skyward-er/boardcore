@@ -33,23 +33,8 @@
 #include "filesystem/file_access.h"
 #include "miosix.h"
 
-///< Pointer to serial port classes to let interrupts access the classes
-Boardcore::USART* ports[N_USART_PORTS];
-
 namespace Boardcore
 {
-
-
-static void usartIRQHandler(void* ctx)
-{
-    Boardcore::USART* port = reinterpret_cast<Boardcore::USART*>(ctx);
-    if (port)
-        port->IRQhandleInterrupt();
-}
-
-// ----------------------------------------------------------------------------
-// USARTInterface
-// ----------------------------------------------------------------------------
 
 USARTInterface::USARTInterface(USARTType* usart, int baudrate)
     : usart(usart), baudrate(baudrate)
@@ -198,14 +183,11 @@ USART::USART(USARTType* usart, int baudrate, unsigned int queueLen)
         usart->CR3 |= USART_CR3_ONEBIT;
     }
 
-    // Add to the array of usarts so that the interrupts can see it
-    ports[id - 1] = this;
 
-    // Registra l'interrupt usando l'API miosix 3.0
     {
         miosix::GlobalIrqLock dLock;
-        miosix::IRQregisterIrq(dLock, irqn, usartIRQHandler,
-                               reinterpret_cast<void*>(this));
+        miosix::IRQregisterIrq(dLock, irqn,  &USART::IRQhandleInterrupt,
+                               this);
     }
 }
 
@@ -213,13 +195,8 @@ USART::~USART()
 {
     miosix::GlobalIrqLock dLock;
 
-    // Deregistra l'interrupt
-    miosix::IRQunregisterIrq(dLock, irqn, usartIRQHandler,
-                             reinterpret_cast<void*>(this));
-
-    // Take out the usart object we are going to destruct
-    ports[this->id - 1] = nullptr;
-
+    miosix::IRQunregisterIrq(dLock, irqn,  &USART::IRQhandleInterrupt,
+                             this);
     // Disabling the usart
     usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
 }

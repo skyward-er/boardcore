@@ -29,9 +29,6 @@
 
 namespace I2CConsts
 {
-static Boardcore::I2CDriver* ports[N_I2C_PORTS] =
-    {};  ///< Pointer to serial port classes to
-         ///< let interrupts access the classes
 static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
 static const int N_SCL_BITBANG =
@@ -163,21 +160,6 @@ const I2CTimings& getTimings(Boardcore::I2CDriver::Speed speed)
 }
 
 
-static void i2cEvIRQHandler(void* ctx)
-{
-    Boardcore::I2CDriver* drv = static_cast<Boardcore::I2CDriver*>(ctx);
-    if (drv)
-        drv->IRQhandleInterrupt();
-}
-
-static void i2cErrIRQHandler(void* ctx)
-{
-    Boardcore::I2CDriver* drv = static_cast<Boardcore::I2CDriver*>(ctx);
-    if (drv)
-        drv->IRQhandleErrInterrupt();
-}
-
-
 namespace Boardcore
 {
 
@@ -237,22 +219,18 @@ I2CDriver::I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda)
 
     // Checking that this particular I2C port hasn't been already instantiated
     D(assert(id > 0));
-    D(assert(I2CConsts::ports[id - 1] == nullptr));
 
     // Enabling the peripheral's clock
     ClockUtils::enablePeripheralClock(i2c);
 
     init();
 
-    // Add to the array of i2c peripherals so that the interrupts can see it
-    I2CConsts::ports[id - 1] = this;
-
     {
         miosix::GlobalIrqLock dLock;
-        miosix::IRQregisterIrq(dLock, irqnEv, i2cEvIRQHandler,
-                               reinterpret_cast<void*>(this));
-        miosix::IRQregisterIrq(dLock, irqnErr, i2cErrIRQHandler,
-                               reinterpret_cast<void*>(this));
+        miosix::IRQregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt,
+                               this);
+        miosix::IRQregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt,
+                               this);
     }
 }
 
@@ -260,14 +238,11 @@ I2CDriver::~I2CDriver()
 {
     {
         miosix::GlobalIrqLock dLock;
-        miosix::IRQunregisterIrq(dLock, irqnEv, i2cEvIRQHandler,
-                                 reinterpret_cast<void*>(this));
-        miosix::IRQunregisterIrq(dLock, irqnErr, i2cErrIRQHandler,
-                                 reinterpret_cast<void*>(this));
+        miosix::IRQunregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt,
+                                 this);
+        miosix::IRQunregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt,
+                                 this);
     }
-
-    // Removing the relative i2c port from the array
-    I2CConsts::ports[id - 1] = nullptr;
 
     // Disabling the peripheral
     i2c->CR1 &= ~I2C_CR1_PE;
