@@ -25,6 +25,7 @@
 #include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
 
 #include <iostream>
+#include <numeric>
 
 using namespace Eigen;
 
@@ -42,12 +43,17 @@ bool SoftAndHardIronCalibration::feed(const MagnetometerData& data)
     Vector3f vector;
     vector << data;
     Vector<float, 7> S;
-    // cppcheck-suppress constStatement
-    S << vector.cwiseProduct(vector), vector, 1;
+    S.head<3>()     = vector.cwiseProduct(vector);
+    S.segment<3>(3) = vector;
+    S(6)            = 1.0f;
 
     for (int i = 0; i < 7; i++)
         for (int j = 0; j < 7; j++)
             D(i, j) += S(i) * S(j);
+
+    // keep the raw sample around for computeResultSym() because it needs the
+    // whole dataset to normalize     it
+    samples.push_back(vector);
 
     return true;
 }
@@ -86,6 +92,141 @@ SixParametersCorrector SoftAndHardIronCalibration::computeResult()
     Vector3f gain = (vec.block(0, 0, 3, 1) / cbrt(det)).cwiseSqrt();
 
     return {gain, -offset};
+}
+
+TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym(
+    float referenceFieldMagnitude)
+{
+    const int n = samples.size();
+
+    if (n < 10)
+    {
+        lastSymFitWasValidEllipsoid = false;
+        return TwelveParametersCorrector(Matrix3f::Identity(),
+                                         Vector3f::Zero());
+    }
+
+    /*              ----
+        Normalization (@ 19-24 symmag)
+                    ----                */
+    Vector3f offset = std::accumulate(samples.begin(), samples.end(),
+                                      Vector3f(0.0f, 0.0f, 0.0f)) /
+                      n;  // -> mean(data)
+
+    Vector3f variance = Vector3f::Zero();
+    for (const auto& s : samples)
+    {
+        Vector3f diff = s - offset;
+        variance += diff.cwiseProduct(diff);
+    }  // sum of (x-mean)^2
+
+    Vector3f std = (variance / (n - 1)).cwiseSqrt();  // = std(data)
+    float scale  = std.maxCoeff();                    //= max(std(data))
+    if (scale <= 0)
+        scale = 1.0f;
+
+    /*              ----
+     building D matrix (@ 26- 38 symmag)
+                    ----                */
+
+    Matrix<float, 10, 10> Dsym =
+        Matrix<float, 10, 10>::Zero();  // Ax^2 + Bxy + Cxz + Dy^2 + Eyz + Fz^2
+                                        // + Gx + Hy + Iz + J = 0
+
+    Matrix<float, 10, 1> S;
+    for (const auto& s : samples)
+    {
+        Vector3f xn = (s - offset) / scale;
+        S(0)        = xn.x() * xn.x();
+        S(1)        = 2.0f * xn.x() * xn.y();
+        S(2)        = 2.0f * xn.x() * xn.z();
+        S(3)        = xn.y() * xn.y();
+        S(4)        = 2.0f * xn.y() * xn.z();
+        S(5)        = xn.z() * xn.z();
+        S(6)        = xn.x();
+        S(7)        = xn.y();
+        S(8)        = xn.z();
+        S(9)        = 1.0f;
+
+        Dsym += S * S.transpose();
+    }
+
+    // selfAjonitEigen should organize the autovectors having the smallest at
+    // [0]
+    SelfAdjointEigenSolver<Matrix<float, 10, 10>> symSolver(Dsym);
+    Matrix<float, 10, 1> solx = symSolver.eigenvectors().col(0);
+
+    /*              ----
+      building R matrix (@ 48-59 symmag)
+                     ----                */
+    //  R : coeff of [x^2, xy, xz, y^2 yz, z^2] in a symmetric 3x3 matrix
+    Matrix3f R;
+    R(0, 0) = solx(0);
+    R(0, 1) = R(1, 0) = solx(1);
+    R(0, 2) = R(2, 0) = solx(2);
+    R(1, 1)           = solx(3);
+    R(1, 2) = R(2, 1) = solx(4);
+    R(2, 2)           = solx(5);
+
+    float dR = R.determinant();
+
+    lastSymFitWasValidEllipsoid = true;
+    {
+        SelfAdjointEigenSolver<Matrix3f> esR(R, EigenvaluesOnly);
+        Vector3f eigR = esR.eigenvalues();
+
+        if ((eigR.array() < 0).all())
+        {
+            // opposite-sign ellipsoid: flip everything
+            R    = -R;
+            solx = -solx;
+            dR   = -dR;
+        }
+        else if (!(eigR.array() > 0).all())
+        {
+            // mixed-sign eigenvalues: the fitted quadric is not an ellipsoid :
+            // result is returned anyway but the caller should check
+            // isLastSymFitValidEllipsoid() before trusiting it
+            lastSymFitWasValidEllipsoid = false;
+        }
+    }
+
+    /* Hard iron offset in normalized space. */
+    Vector3f linear = solx.segment<3>(6);
+    Vector3f bNorm  = -0.5f * R.inverse() * linear;
+
+    /*              ---
+        Soft iron matrix (@ 73-75, symmag)
+                    ---                     */
+    // sqrtm from matlab doesnt have an equivalent in Eigen
+    // so: autovectors -> autovalues -> rebuild
+
+    // Unscaled algebraic field magnitude in normalized space.
+    float BAlg = std::sqrt(std::abs(bNorm.dot(R * bNorm) - solx(9)));
+
+    float cubeRoot = std::cbrt(dR);
+    Matrix3f Rnew  = R / cubeRoot;
+
+    SelfAdjointEigenSolver<Matrix3f> esRnew(Rnew);
+    Vector3f sqrtEigenvalues = esRnew.eigenvalues().cwiseMax(0.0f).cwiseSqrt();
+    Matrix3f A = esRnew.eigenvectors() * sqrtEigenvalues.asDiagonal() *
+                 esRnew.eigenvectors().transpose();
+
+    // Restore the hard iron offset to raw data units.
+    Vector3f bTrue = offset + scale * bNorm;
+
+    float Bfit = scale * (BAlg / std::sqrt(cubeRoot));
+
+    if (Bfit <= 10e-9f)
+    {
+        float k = referenceFieldMagnitude / Bfit;
+        A *= k;
+    }
+
+    return TwelveParametersCorrector(
+        A,
+        -A * bTrue);  // TwelveParametersCorrector::correct(x) = W * x + V, but
+                      // we want corrected = A * (x - bTrue) = A * x - A * bTrue
 }
 
 }  // namespace Boardcore
