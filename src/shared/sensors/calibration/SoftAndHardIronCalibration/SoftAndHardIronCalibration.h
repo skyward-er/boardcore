@@ -23,6 +23,8 @@
 
 #include <sensors/SensorData.h>
 #include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
+#include <sensors/correction/TwelveParametersCorrector/TwelveParametersCorrector.h>
+
 
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
@@ -59,8 +61,37 @@ public:
      */
     SixParametersCorrector computeResult();
 
+    /**
+     * @brief Uses the recorded measurements to compute the correction
+     * parameters needed to correct sensor's data
+     * 
+     * symMag.m reference imprementatiton
+     * 
+     * Note: Feed at least 10 measurements!
+     * 
+     * @return TwelveParametersCorrector containing the correction parameters : correct(x) = W*x + V where is equivalent SymMag.m A*(x - b)
+     */
+    TwelveParametersCorrector computeResultSym();
+
+    /**
+    * @brief Number of samples fed so far (for computeResultSym())
+    */
+    size_t getSampleCount() const { return samples.size(); }
+
+    /**
+    * @brief If the last computeResultSym() call converged to a proper ellipsoid 
+    *  If false, the returned correction is still computed but should not be trusted/saved and woudl probabily need more samples i guess
+    */
+    bool isLastSymFitValidEllipsoid() const
+    {
+        return lastSymFitWasValidEllipsoid;
+    }
+
 private:
     Eigen::Matrix<float, 7, 7> D = Eigen::Matrix<float, 7, 7>::Zero();
+
+    std::vector<Eigen::Vector3f> samples;
+    bool lastSymFitWasValidEllipsoid = true;
 };
 
 }  // namespace Boardcore
