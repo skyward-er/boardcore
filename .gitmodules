@@ -12,13 +12,13 @@
 	url = git@git.skywarder.eu:avn/swd/mavlink/mavlink-skyward-lib.git
 [submodule "Miosix Host"]
 	path = libs/miosix-host
-	url = https://git.skywarder.eu/avn/swd/miosix-host.git
+	url = git@git.skywarder.eu:avn/swd/miosix-host.git
 [submodule "Miosix Kernel"]
 	path = libs/miosix-kernel
 	url = https://git.skywarder.eu/avn/swd/miosix-kernel.git
 [submodule "Miosix GUI library"]
 	path = libs/mxgui
-	url = https://git.skywarder.eu/avn/swd/third-party/mxgui.git
+	url = git@git.skywarder.eu:avn/swd/third-party/mxgui.git
 [submodule "libs/socrate"]
 	path = libs/socrate
 	url = git@git.skywarder.eu:avn/swd/socrate.git
