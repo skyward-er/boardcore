@@ -1,5 +1,5 @@
-/* Copyright (c) 2018-2022 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio, Niccolò Betto
+/* Copyright (c) 2026 Skyward Experimental Rocketry
+ * Authors: Pietro Bortolus
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/MCP23S17/MCP23S17.h>
 #include <scheduler/TaskScheduler.h>
 #include <utils/GpioPinCompare.h>
 
@@ -44,20 +45,22 @@ namespace Boardcore
  * transition is also available, in order to be able to observe the current
  * state of the pin.
  */
-class PinObserver
+class ExternalPinObserver
 {
 public:
     using Clock     = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
 
     /**
-     * @brief Construct a new PinObserver object.
+     * @brief Construct a new ExternalPinObserver object.
      *
-     * @param scheduler Scheduler to be used by this PinObserver.
+     * @param scheduler Scheduler to be used by this ExternalPinObserver.
+     * @param expander MCP23S17 expander used to read the pin values.
      * @param pollInterval Pin transition polling interval, defaults to 20 [ms].
      */
-    PinObserver(TaskScheduler& scheduler, uint32_t pollInterval = 20)
-        : scheduler{scheduler}, pollInterval{pollInterval}
+    ExternalPinObserver(TaskScheduler& scheduler, MCP23S17* expander,
+                        uint32_t pollInterval = 20)
+        : scheduler{scheduler}, expander{expander}, pollInterval{pollInterval}
     {
     }
 
@@ -73,19 +76,19 @@ public:
      * defaults to 1.
      * @return False if another callback was already registered for the pin.
      */
-    bool registerPinCallback(miosix::GpioPin pin, PinCallback callback,
+    bool registerPinCallback(ExternalGpioPin pin, PinCallback callback,
                              uint32_t detectionThreshold = 1,
                              bool reverted               = false);
 
     /**
      * @brief Returns the information for the specified pin.
      */
-    PinData getPinData(miosix::GpioPin pin);
+    PinData getPinData(ExternalGpioPin pin);
 
     /**
      * @brief Resets the changes counter for the specified pin.
      */
-    void resetPinChangesCount(miosix::GpioPin pin);
+    void resetPinChangesCount(ExternalGpioPin pin);
 
 private:
     /**
@@ -94,9 +97,10 @@ private:
      *
      * @param pin Pin whose value need to be checked.
      */
-    void periodicPinValueCheck(miosix::GpioPin pin);
+    void periodicPinValueCheck(ExternalGpioPin pin);
 
     TaskScheduler& scheduler;
+    MCP23S17* expander;
     uint32_t pollInterval;
 
     /**
@@ -109,7 +113,7 @@ private:
     };
 
     /// Map of all the callbacks registered in the PinObserver.
-    std::map<miosix::GpioPin, PinEntry, GpioPinCompare> callbacks;
+    std::map<ExternalGpioPin, PinEntry, GpioPinCompare> callbacks;
 };
 
 }  // namespace Boardcore

@@ -372,4 +372,17 @@ struct ADCData
     }
 };
 
+/**
+ * @brief Structure to handle angle data.
+ */
+struct AngleData
+{
+    float angle = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(AngleData, FIELD_DEF(angle));
+    }
+};
+
 }  // namespace Boardcore
