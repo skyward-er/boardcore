@@ -34,6 +34,7 @@ set(BOARDCORE_SRC
     # Actuators
     ${BOARDCORE_PATH}/src/shared/actuators/HBridge/HBridge.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/Servo/Servo.cpp
+    ${BOARDCORE_PATH}/src/shared/actuators/Servo/ServoWinch.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/Stepper.cpp
     ${BOARDCORE_PATH}/src/shared/actuators/stepper/StepperPWM.cpp
     ${BOARDCORE_PATH}/src/shared/Valve/Valve.cpp
@@ -47,6 +48,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/NAS.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/NAS/StateInitializer.cpp
     ${BOARDCORE_PATH}/src/shared/algorithms/Ereg/Ereg.cpp
+    ${BOARDCORE_PATH}/src/shared/algorithms/SchmittTrigger/SchmittTrigger.cpp
     ${SBS_BASE}/src/shared/algorithms/Propagator/Propagator.cpp
     ${SBS_BASE}/src/shared/algorithms/Follower/Follower.cpp
 
@@ -130,9 +132,11 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/sensors/LPS28DFW/LPS28DFW.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/LPS22DF/LPS22DF.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/LSM6DSRX/LSM6DSRX.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/AS5047D/AS5047DSPI.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015D.cpp
     ${BOARDCORE_PATH}/src/shared/sensors/ND015X/ND015A.cpp
-    ${BOARDCORE_PATH}/src/shared/sensors/ND030D/ND030D.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030D.cpp
+    ${BOARDCORE_PATH}/src/shared/sensors/ND030X/ND030A.cpp
 
     # Calibration
     ${BOARDCORE_PATH}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
@@ -149,6 +153,7 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/utils/AeroUtils/AeroUtils.cpp
     ${BOARDCORE_PATH}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/PinObserver.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/PinObserver/ExternalPinObserver.cpp
     ${BOARDCORE_PATH}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
     ${BOARDCORE_PATH}/src/shared/utils/Stats/Stats.cpp
     ${BOARDCORE_PATH}/src/shared/utils/TestUtils/TestHelper.cpp
