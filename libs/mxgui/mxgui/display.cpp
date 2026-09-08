@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Terraneo Federico                               *
+ *   Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 by Terraneo Federico *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,57 +25,98 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <algorithm>
-#include "fps_counter.h"
+#include "display.h"
+#include "misc_inst.h"
+#include "pthread_lock.h"
 
-#ifdef _MIOSIX
-#include "miosix.h"
-using namespace miosix;
-#else //_MIOSIX
-#include <unistd.h>
-#endif //_MIOSIX
+#if MXGUI_SETTINGS_VERSION != 101
+#error Wrong mxgui_settings.h version. You need to upgrade it.
+#endif
 
-FpsCounter::FpsCounter() : fpsCap(0), cnt(0), cpu(0), fps(0),
-        cpuAvg(0), fpsAvg(0), prev(0), next(0) {}
+using namespace std;
 
-void FpsCounter::setFpsCap(unsigned short cap)
+namespace mxgui {
+
+//
+// class DisplayManager
+//
+
+DisplayManager& DisplayManager::instance()
 {
-    fpsCap=std::min<int>(cap,100);
-    cnt=cpuAvg=fpsAvg=0;
-    if(fpsCap==0) cpu=100; //In this case CPU% is assumed to be 100%
+    static DisplayManager singleton;
+    return singleton;
 }
 
-void FpsCounter::sleepBetweenFrames()
+Display& DisplayManager::getDisplay(unsigned int id)
 {
-    #ifdef _MIOSIX
-    const long long now=getTick();
-
-    const int deltaT=static_cast<int>(now-prev);
-    prev=now;
-    fpsAvg+=deltaT==0 ? 9990 : (10*miosix::TICK_FREQ)/deltaT;
-    
-    if(fpsCap!=0)
-    {
-        const int period=miosix::TICK_FREQ/fpsCap;
-        if(now>=next) //"deadlene miss"
-        {
-            next=now+period;
-            cpuAvg+=100;
-        } else {
-            const int sleepT=std::min(period,static_cast<int>(next-now));
-            cpuAvg+=(100*(period-sleepT))/period;
-            miosix::Thread::sleepUntil(next);
-            next+=period;
-        }
-    }
-
-    if(++cnt>=updatePeriod)
-    {
-        fps=fpsAvg/(10*updatePeriod);
-        if(fpsCap!=0) cpu=cpuAvg/updatePeriod;
-        cnt=cpuAvg=fpsAvg=0;
-    }
-    #else //_MIOSIX
-    if(fpsCap>0) usleep(1000000/fpsCap);
-    #endif //_MIOSIX
+    PthreadLock lock(mutex);
+    return *displays.at(id);
 }
+
+int DisplayManager::registerDisplay(Display *display)
+{
+    PthreadLock lock(mutex);
+    displays.push_back(display);
+    return displays.size()-1;
+}
+
+DisplayManager::DisplayManager()
+{
+    pthread_mutex_init(&mutex,NULL);
+    registerDisplayHook(*this);
+}
+
+//
+// class Display
+//
+
+Display::Display() : isDisplayOn(true), font(miscFixed)
+{
+    pthread_mutexattr_t temp;
+    pthread_mutexattr_init(&temp);
+    pthread_mutexattr_settype(&temp,PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&dispMutex,&temp);
+    pthread_mutexattr_destroy(&temp);
+}
+
+void Display::turnOn()
+{
+    PthreadLock lock(dispMutex);
+    if(isDisplayOn) return;
+    doTurnOn();
+    isDisplayOn=true;
+}
+
+void Display::turnOff()
+{
+    PthreadLock lock(dispMutex);
+    if(isDisplayOn==false) return;
+    doTurnOff();
+    isDisplayOn=false;
+}
+
+void Display::setBrightness(int brt)
+{
+    PthreadLock lock(dispMutex);
+    doSetBrightness(brt);
+}
+
+void Display::setTextColor(pair<Color,Color> colors)
+{
+    Font::generatePalette(textColor,colors.first,colors.second);
+}
+
+pair<Color,Color> Display::getTextColor() const
+{
+    return make_pair(textColor[3],textColor[0]);
+}
+
+void Display::setFont(const Font& font) { this->font=font; }
+
+Font Display::getFont() const { return font; }
+
+void Display::update() {}
+
+Display::~Display() {}
+
+} //namespace mxgui

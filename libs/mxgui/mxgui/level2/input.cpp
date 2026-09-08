@@ -25,57 +25,46 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <algorithm>
-#include "fps_counter.h"
+#include "input.h"
 
-#ifdef _MIOSIX
-#include "miosix.h"
-using namespace miosix;
-#else //_MIOSIX
-#include <unistd.h>
-#endif //_MIOSIX
+#ifdef MXGUI_LEVEL_2
 
-FpsCounter::FpsCounter() : fpsCap(0), cnt(0), cpu(0), fps(0),
-        cpuAvg(0), fpsAvg(0), prev(0), next(0) {}
+#include "drivers/event_mp3v2.h"
+#include "drivers/event_qt.h"
+#include "drivers/event_redbull_v2.h"
+#include "drivers/event_sony-newman.h"
+#include "drivers/event_stm3210e-eval.h"
+#include "drivers/event_stm32f4discovery.h"
+#include "drivers/event_strive.h"
+#include "drivers/event_win.h"
 
-void FpsCounter::setFpsCap(unsigned short cap)
+using namespace std;
+
+namespace mxgui
 {
-    fpsCap=std::min<int>(cap,100);
-    cnt=cpuAvg=fpsAvg=0;
-    if(fpsCap==0) cpu=100; //In this case CPU% is assumed to be 100%
+
+//
+// class InputHandler
+//
+
+InputHandler& InputHandler::instance()
+{
+    static InputHandlerImpl implementation;
+    static InputHandler singleton(&implementation);
+    return singleton;
 }
 
-void FpsCounter::sleepBetweenFrames()
+Event InputHandler::getEvent() { return pImpl->getEvent(); }
+
+Event InputHandler::popEvent() { return pImpl->popEvent(); }
+
+function<void()> InputHandler::registerEventCallback(function<void()> cb)
 {
-    #ifdef _MIOSIX
-    const long long now=getTick();
-
-    const int deltaT=static_cast<int>(now-prev);
-    prev=now;
-    fpsAvg+=deltaT==0 ? 9990 : (10*miosix::TICK_FREQ)/deltaT;
-    
-    if(fpsCap!=0)
-    {
-        const int period=miosix::TICK_FREQ/fpsCap;
-        if(now>=next) //"deadlene miss"
-        {
-            next=now+period;
-            cpuAvg+=100;
-        } else {
-            const int sleepT=std::min(period,static_cast<int>(next-now));
-            cpuAvg+=(100*(period-sleepT))/period;
-            miosix::Thread::sleepUntil(next);
-            next+=period;
-        }
-    }
-
-    if(++cnt>=updatePeriod)
-    {
-        fps=fpsAvg/(10*updatePeriod);
-        if(fpsCap!=0) cpu=cpuAvg/updatePeriod;
-        cnt=cpuAvg=fpsAvg=0;
-    }
-    #else //_MIOSIX
-    if(fpsCap>0) usleep(1000000/fpsCap);
-    #endif //_MIOSIX
+    return pImpl->registerEventCallback(cb);
 }
+
+InputHandler::InputHandler(InputHandlerImpl* impl) : pImpl(impl) {}
+
+}  // namespace mxgui
+
+#endif  // MXGUI_LEVEL_2

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Terraneo Federico                               *
+ *   Copyright (C) 2014 by Terraneo Federico                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,57 +25,39 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <algorithm>
-#include "fps_counter.h"
+#ifndef EVENT_TYPES_STM32F4DISCOVERY_H
+#define EVENT_TYPES_STM32F4DISCOVERY_H
 
-#ifdef _MIOSIX
-#include "miosix.h"
-using namespace miosix;
-#else //_MIOSIX
-#include <unistd.h>
-#endif //_MIOSIX
+#if defined(_BOARD_STM32F429ZI_STM32F4DISCOVERY) ||        \
+    defined(_BOARD_STM32F429ZI_OLEDBOARD2) ||              \
+    defined(_BOARD_STM32F429ZI_SKYWARD_GS) ||              \
+    defined(_BOARD_STM32F429ZI_SKYWARD_GS_V2) ||           \
+    defined(_BOARD_STM32F429ZI_SKYWARD_GS_PARAFOIL) ||     \
+    defined(_BOARD_STM32F429ZI_SKYWARD_PARAFOIL)
 
-FpsCounter::FpsCounter() : fpsCap(0), cnt(0), cpu(0), fps(0),
-        cpuAvg(0), fpsAvg(0), prev(0), next(0) {}
-
-void FpsCounter::setFpsCap(unsigned short cap)
+class EventType
 {
-    fpsCap=std::min<int>(cap,100);
-    cnt=cpuAvg=fpsAvg=0;
-    if(fpsCap==0) cpu=100; //In this case CPU% is assumed to be 100%
-}
-
-void FpsCounter::sleepBetweenFrames()
-{
-    #ifdef _MIOSIX
-    const long long now=getTick();
-
-    const int deltaT=static_cast<int>(now-prev);
-    prev=now;
-    fpsAvg+=deltaT==0 ? 9990 : (10*miosix::TICK_FREQ)/deltaT;
-    
-    if(fpsCap!=0)
+public:
+    enum E
     {
-        const int period=miosix::TICK_FREQ/fpsCap;
-        if(now>=next) //"deadlene miss"
-        {
-            next=now+period;
-            cpuAvg+=100;
-        } else {
-            const int sleepT=std::min(period,static_cast<int>(next-now));
-            cpuAvg+=(100*(period-sleepT))/period;
-            miosix::Thread::sleepUntil(next);
-            next+=period;
-        }
-    }
+        // These are a must on all backends -- begin
+        Default = 0,         // This actually means 'no event'
+        WindowPartialRedraw, // At least one drawable has requested redraw
+        WindowForeground,    // Window manager moved this window to foreground
+        WindowBackground,    // Window manager moved this window to background
+        WindowQuit,          // Window manager requested the window to close
+                             // These are a must on all backends -- end
 
-    if(++cnt>=updatePeriod)
-    {
-        fps=fpsAvg/(10*updatePeriod);
-        if(fpsCap!=0) cpu=cpuAvg/updatePeriod;
-        cnt=cpuAvg=fpsAvg=0;
-    }
-    #else //_MIOSIX
-    if(fpsCap>0) usleep(1000000/fpsCap);
-    #endif //_MIOSIX
-}
+        TouchDown = 1,
+        TouchUp = 2,
+        TouchMove = 3,
+        ButtonA = 4 // The blue button
+    };
+
+private:
+    EventType();
+};
+
+#endif //_BOARD_STM32F429ZI_STM32F4DISCOVERY
+
+#endif // EVENT_TYPES_STM32F4DISCOVERY_H
