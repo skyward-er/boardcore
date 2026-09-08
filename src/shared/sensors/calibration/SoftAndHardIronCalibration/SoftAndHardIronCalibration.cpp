@@ -108,9 +108,9 @@ TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym()
     /*              ----
         Normalization (@ 19-24 symmag)
                     ----                */
-    Vector3f offset =
-        std::accumulate(samples.begin(), samples.end(), Vector3f::Zero()) /
-        n;  // -> mean(data)
+    Vector3f offset = std::accumulate(samples.begin(), samples.end(),
+                                      Vector3f(0.0f, 0.0f, 0.0f)) /
+                      n;  // -> mean(data)
 
     Vector3f variance = Vector3f::Zero();
     for (const auto& s : samples)
