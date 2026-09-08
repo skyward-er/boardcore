@@ -1,5 +1,5 @@
 
-#include <QtWidgets/QApplication>
+#include <QtGui/QApplication>
 #include <boost/filesystem.hpp>
 #include "window.h"
 

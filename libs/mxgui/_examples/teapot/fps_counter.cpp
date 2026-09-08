@@ -48,7 +48,7 @@ void FpsCounter::setFpsCap(unsigned short cap)
 void FpsCounter::sleepBetweenFrames()
 {
     #ifdef _MIOSIX
-    const long long now=getTime();
+    const long long now=getTick();
 
     const int deltaT=static_cast<int>(now-prev);
     prev=now;

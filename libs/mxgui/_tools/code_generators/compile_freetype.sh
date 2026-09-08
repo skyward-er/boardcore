@@ -5,10 +5,10 @@ if [ ! -d freetype-2.4.3 ]; then
 	echo "Building freetype 2.4.3"
 	tar xjvf ../libs/freetype-2.4.3.tar.bz2
 	cd freetype-2.4.3
-	./configure --enable-static --disable-shared
+	./configure
 	make
 	# We want to forcefully link statically, and a possible way is to remove
 	# the dynamic libraries
 	cd objs/.libs
-	rm -f libfreetype.so libfreetype.la libfreetype.lai
+	rm libfreetype.so libfreetype.la libfreetype.lai
 fi

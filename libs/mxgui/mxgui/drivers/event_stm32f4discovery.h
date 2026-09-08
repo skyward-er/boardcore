@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Terraneo Federico                               *
+ *   Copyright (C) 2014 by Terraneo Federico                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,57 +25,63 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <algorithm>
-#include "fps_counter.h"
+#ifndef MXGUI_LIBRARY
+#error "This is header is private, it can be used only within mxgui."
+#error "If your code depends on a private header, it IS broken."
+#endif // MXGUI_LIBRARY
 
-#ifdef _MIOSIX
-#include "miosix.h"
-using namespace miosix;
-#else //_MIOSIX
-#include <unistd.h>
-#endif //_MIOSIX
+#include <functional>
 
-FpsCounter::FpsCounter() : fpsCap(0), cnt(0), cpu(0), fps(0),
-        cpuAvg(0), fpsAvg(0), prev(0), next(0) {}
+#include "level2/input.h"
 
-void FpsCounter::setFpsCap(unsigned short cap)
+#ifndef EVENT_STM32F4DISCOVERY_H
+#define EVENT_STM32F4DISCOVERY_H
+
+#if defined(_BOARD_STM32F429ZI_STM32F4DISCOVERY) ||        \
+    defined(_BOARD_STM32F429ZI_OLEDBOARD2) ||              \
+    defined(_BOARD_STM32F429ZI_SKYWARD_GS) ||              \
+    defined(_BOARD_STM32F429ZI_SKYWARD_GS_V2) ||           \
+    defined(_BOARD_STM32F429ZI_SKYWARD_GS_PARAFOIL) ||     \
+    defined(_BOARD_STM32F429ZI_SKYWARD_PARAFOIL)
+
+namespace mxgui
 {
-    fpsCap=std::min<int>(cap,100);
-    cnt=cpuAvg=fpsAvg=0;
-    if(fpsCap==0) cpu=100; //In this case CPU% is assumed to be 100%
-}
 
-void FpsCounter::sleepBetweenFrames()
-{
-    #ifdef _MIOSIX
-    const long long now=getTick();
-
-    const int deltaT=static_cast<int>(now-prev);
-    prev=now;
-    fpsAvg+=deltaT==0 ? 9990 : (10*miosix::TICK_FREQ)/deltaT;
-    
-    if(fpsCap!=0)
+    /**
+     * Implementation class to handle events in the Mp3v2 backend
+     */
+    class InputHandlerImpl
     {
-        const int period=miosix::TICK_FREQ/fpsCap;
-        if(now>=next) //"deadlene miss"
-        {
-            next=now+period;
-            cpuAvg+=100;
-        } else {
-            const int sleepT=std::min(period,static_cast<int>(next-now));
-            cpuAvg+=(100*(period-sleepT))/period;
-            miosix::Thread::sleepUntil(next);
-            next+=period;
-        }
-    }
+    public:
+        InputHandlerImpl();
 
-    if(++cnt>=updatePeriod)
-    {
-        fps=fpsAvg/(10*updatePeriod);
-        if(fpsCap!=0) cpu=cpuAvg/updatePeriod;
-        cnt=cpuAvg=fpsAvg=0;
-    }
-    #else //_MIOSIX
-    if(fpsCap>0) usleep(1000000/fpsCap);
-    #endif //_MIOSIX
-}
+        /**
+         * \return an event, blocking
+         */
+        Event getEvent();
+
+        /**
+         * \return an event, nonblocking. A default constructed event is returned
+         * if there are no events.
+         */
+        Event popEvent();
+
+        /**
+         * Register a callback that will be called every time an event is geenrated
+         *
+         * Note: the thread calling the callback has a very small stack.
+         *
+         * Note: concurrent access to this memebr function causes undefined
+         * behaviour
+         *
+         * \param cb new callback to register
+         * \return the previous callback
+         */
+        std::function<void()> registerEventCallback(std::function<void()> cb);
+    };
+
+} // namespace mxgui
+
+#endif //_BOARD_STM32F429ZI_STM32F4DISCOVERY
+
+#endif // EVENT_STM32F4DISCOVERY_H
