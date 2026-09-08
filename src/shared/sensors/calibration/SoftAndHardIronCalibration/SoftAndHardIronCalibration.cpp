@@ -43,8 +43,9 @@ bool SoftAndHardIronCalibration::feed(const MagnetometerData& data)
     Vector3f vector;
     vector << data;
     Vector<float, 7> S;
-    // cppcheck-suppress constStatement
-    S << vector.cwiseProduct(vector), vector, 1;
+    S.head<3>()     = vector.cwiseProduct(vector);
+    S.segment<3>(3) = vector;
+    S(6)            = 1.0f;
 
     for (int i = 0; i < 7; i++)
         for (int j = 0; j < 7; j++)
@@ -134,9 +135,16 @@ TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym()
     {
         Vector3f xn = (s - offset) / scale;
         Matrix<float, 10, 1> S;
-        S << xn.x() * xn.x(), 2 * xn.x() * xn.y(), 2 * xn.x() * xn.z(),
-            xn.y() * xn.y(), 2 * xn.y() * xn.z(), xn.z() * xn.z(), xn.x(),
-            xn.y(), xn.z(), 1;
+        S(0) = xn.x() * xn.x();
+        S(1) = 2.0f * xn.x() * xn.y();
+        S(2) = 2.0f * xn.x() * xn.z();
+        S(3) = xn.y() * xn.y();
+        S(4) = 2.0f * xn.y() * xn.z();
+        S(5) = xn.z() * xn.z();
+        S(6) = xn.x();
+        S(7) = xn.y();
+        S(8) = xn.z();
+        S(9) = 1.0f;
 
         Dsym += S * S.transpose();
     }
