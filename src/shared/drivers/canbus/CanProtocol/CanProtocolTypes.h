@@ -480,6 +480,30 @@ struct CanMEAInitialMass : MEAInitialMass
                               FIELD_DEF(source));
     }
 };
+struct MEAStatus
+{
+    float mass       = 0;
+    float pressure   = 0;
+    uint8_t hsmState = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            MEAStatus, FIELD_DEF(mass) FIELD_DEF(pressure) FIELD_DEF(hsmState));
+    }
+};
+
+struct CanMEAStatus : MEAStatus
+{
+    uint8_t secondaryType = 0;
+    uint8_t source        = 0;
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CanMEAStatus, EXTEND_DEF(MEAStatus) FIELD_DEF(
+                                            secondaryType) FIELD_DEF(source));
+    }
+};
 
 inline Canbus::CanMessage toCanMessage(const uint8_t& data)
 {
@@ -773,6 +797,21 @@ inline Canbus::CanMessage toCanMessage(const MEAInitialMass& data)
     return message;
 }
 
+inline Canbus::CanMessage toCanMessage(const MEAStatus& data)
+{
+    Canbus::CanMessage message;
+
+    message.id     = -1;
+    message.length = 2;
+
+    message.payload[0] = floatToInt32(data.mass);
+    message.payload[0] |=
+        (static_cast<uint64_t>(floatToInt32(data.pressure)) << 32);
+    message.payload[1] = data.hsmState;
+
+    return message;
+}
+
 inline CanPitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     CanPitotData data;
@@ -1030,6 +1069,20 @@ inline CanMEAInitialMass CanMEAInitialMassFromCanMessage(
     CanMEAInitialMass data{};
 
     data.mass = int32ToFloat(static_cast<uint32_t>(msg.payload[0]));
+
+    data.secondaryType = msg.getSecondaryType();
+    data.source        = msg.getSource();
+
+    return data;
+}
+
+inline CanMEAStatus MEAStatusFromCanMessage(const Canbus::CanMessage& msg)
+{
+    CanMEAStatus data{};
+
+    data.mass     = int32ToFloat(static_cast<uint32_t>(msg.payload[0]));
+    data.pressure = int32ToFloat(msg.payload[0] >> 32);
+    data.hsmState = static_cast<uint8_t>(msg.payload[1]);
 
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
