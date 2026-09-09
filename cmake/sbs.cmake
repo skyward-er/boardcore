@@ -36,6 +36,15 @@ cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
 # Load in BOARDCORE_PATH the boardcore path
 cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH BOARDCORE_PATH)
 
+# When Boardcore is used from an external project, expose its configuration
+# directory to the Miosix kernel instead of requiring the consumer to copy
+# config/miosix_settings.h into its own tree.
+if(NOT CMAKE_SOURCE_DIR STREQUAL BOARDCORE_PATH)
+    set(MIOSIX_USER_CONFIG_PATH
+        ${BOARDCORE_PATH}/config
+        CACHE PATH "Path of the Miosix configuration directory" FORCE)
+endif()
+
 # Add the version information header to the global include path, so that all 
 # targets defined after this point will have access to it (Boardcore, Kernel)
 include_directories(${BOARDCORE_PATH}/version)
