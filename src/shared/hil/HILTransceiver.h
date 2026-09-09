@@ -26,6 +26,7 @@
 #include <drivers/dma/DMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <drivers/usart/USART.h>
+#include <interfaces-impl/bsp_impl.h>
 #include <utils/Debug.h>
 
 #include "HIL.h"
