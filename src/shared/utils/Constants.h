@@ -57,6 +57,11 @@ static constexpr float gpsLonConst =
 
 static constexpr float B21_LATITUDE  = 45.501141;
 static constexpr float B21_LONGITUDE = 9.156281;
+
+static constexpr float B21_MAG_N = 0.225836;
+static constexpr float B21_MAG_E = 0.014532;
+static constexpr float B21_MAG_D = 0.421787;
+
 }  // namespace Constants
 
 }  // namespace Boardcore

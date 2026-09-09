@@ -58,6 +58,8 @@ struct ANASState
     float qz = 0;  ///< Quaternion z
     float qw = 1;  ///< Quaternion w
 
+    float machNumber = 0;  ///< Mach number
+
     ANASState() : timestamp(0) {};
 
     ANASState(uint64_t timestamp, const float position[3],
@@ -71,7 +73,8 @@ struct ANASState
           d(anasOut.Position[2]), vn(anasOut.Velocity[0]),
           ve(anasOut.Velocity[1]), vd(anasOut.Velocity[2]),
           qx(anasOut.Quaternion[0]), qy(anasOut.Quaternion[1]),
-          qz(anasOut.Quaternion[2]), qw(anasOut.Quaternion[3]) {};
+          qz(anasOut.Quaternion[2]), qw(anasOut.Quaternion[3]),
+          machNumber(anasOut.MachNumber) {};
 
     static constexpr auto reflect()
     {
@@ -79,7 +82,8 @@ struct ANASState
                           FIELD_DEF(timestamp) FIELD_DEF(n) FIELD_DEF(e)
                               FIELD_DEF(d) FIELD_DEF(vn) FIELD_DEF(ve)
                                   FIELD_DEF(vd) FIELD_DEF(qx) FIELD_DEF(qy)
-                                      FIELD_DEF(qz) FIELD_DEF(qw));
+                                      FIELD_DEF(qz) FIELD_DEF(qw)
+                                          FIELD_DEF(machNumber));
     }
 };
 

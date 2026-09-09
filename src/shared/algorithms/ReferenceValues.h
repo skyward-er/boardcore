@@ -47,17 +47,24 @@ struct ReferenceValues
     float mslPressure    = Constants::MSL_PRESSURE;
     float mslTemperature = Constants::MSL_TEMPERATURE;
 
+    float magN;
+    float magE;
+    float magD;
+
     ReferenceValues() {};
 
     ReferenceValues(float altitude, float pressure, float temperature,
                     float refLatitude    = Constants::B21_LATITUDE,
                     float refLongitude   = Constants::B21_LONGITUDE,
                     float mslPressure    = Constants::MSL_PRESSURE,
-                    float mslTemperature = Constants::MSL_TEMPERATURE)
+                    float mslTemperature = Constants::MSL_TEMPERATURE,
+                    float magN           = Constants::B21_MAG_N,
+                    float magE           = Constants::B21_MAG_E,
+                    float magD           = Constants::B21_MAG_D)
         : refAltitude(altitude), refPressure(pressure),
           refTemperature(temperature), refLatitude(refLatitude),
           refLongitude(refLongitude), mslPressure(mslPressure),
-          mslTemperature(mslTemperature)
+          mslTemperature(mslTemperature), magN(magN), magE(magE), magD(magD)
     {
     }
 
@@ -69,7 +76,8 @@ struct ReferenceValues
                refLatitude == other.refLatitude &&
                refLongitude == other.refLongitude &&
                mslPressure == other.mslPressure &&
-               mslTemperature == other.mslTemperature;
+               mslTemperature == other.mslTemperature && magN == other.magN &&
+               magE == other.magE && magD == other.magD;
     }
 
     bool operator!=(const ReferenceValues& other) const
@@ -83,7 +91,8 @@ struct ReferenceValues
                           FIELD_DEF(refAltitude) FIELD_DEF(refPressure)
                               FIELD_DEF(refTemperature) FIELD_DEF(refLatitude)
                                   FIELD_DEF(refLongitude) FIELD_DEF(mslPressure)
-                                      FIELD_DEF(mslTemperature));
+                                      FIELD_DEF(mslTemperature) FIELD_DEF(magN)
+                                          FIELD_DEF(magE) FIELD_DEF(magD));
     }
 };
 
