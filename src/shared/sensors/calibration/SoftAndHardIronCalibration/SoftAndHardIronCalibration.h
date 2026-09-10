@@ -68,10 +68,11 @@ public:
      *
      * Note: Feed at least 10 measurements!
      *
+     * @param referenceFieldMagnitude Known magnitude of the local magnetic field
      * @return TwelveParametersCorrector containing the correction parameters :
      * correct(x) = W*x + V where is equivalent SymMag.m A*(x - b)
      */
-    TwelveParametersCorrector computeResultSym();
+    TwelveParametersCorrector computeResultSym(float referenceFieldMagnitude);
 
     /**
      * @brief Number of samples fed so far (for computeResultSym())

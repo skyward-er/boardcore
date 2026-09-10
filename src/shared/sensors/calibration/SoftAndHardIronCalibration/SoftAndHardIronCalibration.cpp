@@ -94,7 +94,7 @@ SixParametersCorrector SoftAndHardIronCalibration::computeResult()
     return {gain, -offset};
 }
 
-TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym()
+TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym(float referenceFieldMagnitude)
 {
     const int n = samples.size();
 
@@ -205,8 +205,8 @@ TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym()
     Matrix3f A = esRnew.eigenvectors() * sqrtEigenvalues.asDiagonal() *
                  esRnew.eigenvectors().transpose();
 
-    /* back to scale (b = offset' + scale*b; @ symmag) */
-    Vector3f bTrue = offset + scale * b;
+    /* back to scale (b = offset' + norm(magField)*b; @ symmag) */
+    Vector3f bTrue = offset + referenceFieldMagnitude * b;
 
     return TwelveParametersCorrector(
         A,
