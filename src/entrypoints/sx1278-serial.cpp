@@ -206,7 +206,7 @@ void recvLoop()
         int len = sx1278->receive(msg, sizeof(msg));
         if (len > 0)
         {
-            auto serial = miosix::DefaultConsole::instance().get();
+            auto serial = miosix::getDefaultConsole();
             serial->writeBlock(msg, len, 0);
         }
     }
@@ -217,7 +217,7 @@ void sendLoop()
     uint8_t msg[SX1278_MTU];
     while (1)
     {
-        auto serial = miosix::DefaultConsole::instance().get();
+        auto serial = miosix::getDefaultConsole();
         int len     = serial->readBlock(msg, sizeof(msg), 0);
         if (len > 0)
             sx1278->send(msg, len);

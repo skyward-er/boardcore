@@ -38,6 +38,7 @@ sbs_declare_target(compute-unit-v2-testsuite stm32f767zi_compute_unit_v2 src/ent
 sbs_declare_target(runcam-settings stm32f407vg_stm32f4discovery src/entrypoints/runcam-settings.cpp)
 sbs_declare_target(sx1278fsk-ra01-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_FSK)
 sbs_declare_target(sx1278lora-ra01-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_LORA)
+sbs_declare_target(sx1278fsk-skyward433-serial stm32f767zi_gemini_gs src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_FSK SX1278_IS_SKYWARD433)
 sbs_declare_target(sx1278lora-skyward433-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_LORA SX1278_IS_SKYWARD433)
 sbs_declare_target(system-show stm32f767zi_lyra_gs src/entrypoints/system-show.cpp)
 
@@ -138,6 +139,7 @@ sbs_declare_target(test-i2c-f4 stm32f429zi_stm32f4discovery src/tests/drivers/i2
 sbs_declare_target(test-i2c-driver-f7 stm32f767zi_nucleo src/tests/drivers/i2c/test-i2c-driver.cpp)
 sbs_declare_target(test-i2c-f7 stm32f767zi_nucleo src/tests/drivers/i2c/test-i2c.cpp)
 sbs_declare_target(test-dipswitch stm32f767zi_lyra_gs src/tests/drivers/test-dipswitch.cpp)
+sbs_declare_target(test-wiz5500 stm32f767zi_gemini_gs src/tests/drivers/test-wiz5500.cpp)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #
