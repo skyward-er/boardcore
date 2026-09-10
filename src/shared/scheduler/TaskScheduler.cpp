@@ -109,6 +109,7 @@ void TaskScheduler::enableTask(size_t id)
 
     task.enabled = true;
     agenda.emplace(id, miosix::getTime() + task.period);
+    condvar.broadcast();
 }
 
 void TaskScheduler::disableTask(size_t id)

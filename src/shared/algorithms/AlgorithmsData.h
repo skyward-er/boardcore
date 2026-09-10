@@ -242,6 +242,13 @@ struct NASDAQState
         : timestamp(timestamp), n(position[0]), e(position[1]), d(position[2]),
           vn(velocity[0]), ve(velocity[1]), vd(velocity[2]) {};
 
+    NASDAQState(uint64_t timestamp,
+                const NASDAQ0_types_h_::NASDAQOut& nasdaqOut)
+        : timestamp(timestamp), n(nasdaqOut.Position[0]),
+          e(nasdaqOut.Position[1]), d(nasdaqOut.Position[2]),
+          vn(nasdaqOut.Velocity[0]), ve(nasdaqOut.Velocity[1]),
+          vd(nasdaqOut.Velocity[2]) {};
+
     static constexpr auto reflect()
     {
         return STRUCT_DEF(NASDAQState,
