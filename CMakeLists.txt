@@ -39,7 +39,7 @@ sbs_declare_target(runcam-settings stm32f407vg_stm32f4discovery src/entrypoints/
 sbs_declare_target(sx1278fsk-ra01-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_FSK)
 sbs_declare_target(sx1278lora-ra01-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_LORA)
 sbs_declare_target(sx1278lora-skyward433-serial stm32f429zi_nokia src/entrypoints/sx1278-serial.cpp DEFS SX1278_IS_LORA SX1278_IS_SKYWARD433)
-sbs_declare_target(system-show stm32f767zi_skyward_compute_unit src/entrypoints/system-show.cpp)
+sbs_declare_target(system-show stm32f767zi_lyra_gs src/entrypoints/system-show.cpp)
 
 #-----------------------------------------------------------------------------#
 #                                  Tests                                      #
