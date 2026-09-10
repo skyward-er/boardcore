@@ -94,7 +94,8 @@ SixParametersCorrector SoftAndHardIronCalibration::computeResult()
     return {gain, -offset};
 }
 
-TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym(float referenceFieldMagnitude)
+TwelveParametersCorrector SoftAndHardIronCalibration::computeResultSym(
+    float referenceFieldMagnitude)
 {
     const int n = samples.size();
 
