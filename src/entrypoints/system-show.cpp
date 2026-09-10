@@ -22,20 +22,23 @@
 
 /**
  * @file system-show.cpp
- * @brief Linear Boardcore demo for stm32f767zi_skyward_compute_unit.
+ * @brief Linear Boardcore demo for stm32f767zi_lyra_gs.
  *
  * Runs one self-test after another, prints the result on USART1 (kernel
  * console) and blinks the LEDs once per PASS. No CLI, no USART3.
  *
  * Tests: Stats, MovingAverage, CircularBuffer, SyncPacketQueue,
  * SkyQuaternion, EventBroker, FSM, PI controller, TaskScheduler, CpuMeter,
- * DMA mem-to-mem, PWM timer init, I2C bus scan.
+ * DMA mem-to-mem, PWM timer init, I2C bus scan, SD logging through the
+ * Miosix driver (FatFs on /sd) and USART4 through the Boardcore driver.
  */
 
 #include <atomic>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <sys/stat.h>
 
 #include <Eigen/Core>
 
@@ -44,6 +47,7 @@
 #include "drivers/dma/DMA.h"
 #include "drivers/i2c/I2CDriver.h"
 #include "drivers/timer/PWM.h"
+#include "drivers/usart/USART.h"
 #include "events/EventBroker.h"
 #include "events/FSM.h"
 #include "events/utils/EventCounter.h"
@@ -318,6 +322,10 @@ static bool probePwm()
     return running;
 }
 
+// The lyra_gs BSP does not expose an I2C bus: PB8 (used here for I2C1 SCL) is
+// the command box blue LED, and PB9 is not mapped. Keep the probe available
+// for the other boards, but do not run it on lyra_gs.
+#ifndef _BOARD_STM32F767ZI_LYRA_GS
 static bool probeI2c()
 {
     GpioPin scl(GPIOB_BASE, 8);
@@ -337,6 +345,81 @@ static bool probeI2c()
     }
     printf("I2C1 scan: %u device(s) found\n", found);
     return true;  // bus was initialized and scanned
+}
+#endif  // _BOARD_STM32F767ZI_LYRA_GS
+
+static bool testSdLogger()
+{
+    // The Miosix BSP mounts the SD card as /sd in bspInit2()
+    // (basicFilesystemSetup + FatFs), so stdio goes through the Miosix driver.
+    const char* path = "/sd/system-show.log";
+
+    struct stat st;
+    if (stat("/sd", &st) != 0)
+    {
+        printf("SD: /sd is not mounted (errno=%d)\n", errno);
+        return false;
+    }
+
+    char line[64];
+    int len = snprintf(line, sizeof(line), "system-show %u ms\n",
+                       static_cast<unsigned int>(getTime() / 1000000));
+    if (len <= 0)
+        return false;
+
+    FILE* f = fopen(path, "ab");
+    if (f == nullptr)
+    {
+        printf("SD: fopen(\"%s\") failed (errno=%d)\n", path, errno);
+        return false;
+    }
+    bool written = fwrite(line, 1, static_cast<size_t>(len), f) ==
+                   static_cast<size_t>(len);
+    fclose(f);
+    if (!written)
+        return false;
+
+    // Read back the last line to check the full write path
+    f = fopen(path, "rb");
+    if (f == nullptr)
+        return false;
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    if (size < len)
+    {
+        fclose(f);
+        return false;
+    }
+    fseek(f, size - len, SEEK_SET);
+    char readBack[64] = {0};
+    size_t n          = fread(readBack, 1, sizeof(readBack) - 1, f);
+    fclose(f);
+
+    return n == static_cast<size_t>(len) && memcmp(readBack, line, n) == 0;
+}
+
+static bool testUsart4()
+{
+    // PA0/PA1 are already configured as UART4 (AF8) by the lyra_gs BSP
+    Boardcore::USART uart4(UART4, 115200);
+
+    const char msg[] = "system-show: USART4 test\r\n";
+    uart4.write(msg, sizeof(msg) - 1);
+    printf("USART4: sent %u bytes on PA1 (TX, 115200 baud)\n",
+           static_cast<unsigned int>(sizeof(msg) - 1));
+
+    // Optional RX check: short PA1 to PA0 to see the message echoed back
+    char echo[32] = {0};
+    size_t n      = 0;
+    bool echoed   = uart4.readBlocking(echo, sizeof(echo) - 1, n,
+                                       std::chrono::milliseconds(200));
+    if (echoed)
+        printf("USART4: loopback received %u bytes\n",
+               static_cast<unsigned int>(n));
+    else
+        printf("USART4: no loopback (short PA0-PA1 to test RX)\n");
+
+    return true;  // driver initialized and TX completed
 }
 
 // ---------------------------------------------------------------------------
@@ -364,7 +447,11 @@ int main()
     report("diagnostic/CpuMeter", testCpuMeter());
     report("drivers/dma (mem-to-mem)", testDmaMemToMem());
     report("drivers/timer/PWM (init)", probePwm());
+#ifndef _BOARD_STM32F767ZI_LYRA_GS
     report("drivers/i2c (bus scan)", probeI2c());
+#endif  // _BOARD_STM32F767ZI_LYRA_GS
+    report("drivers/sd (Miosix FatFs /sd)", testSdLogger());
+    report("drivers/usart (UART4, boardcore)", testUsart4());
 
     printf("Summary: %u/%u tests passed\n",
            static_cast<unsigned int>(g_passCount),
