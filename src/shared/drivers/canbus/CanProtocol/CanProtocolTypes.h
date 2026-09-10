@@ -485,11 +485,13 @@ struct MEAStatus
     float mass       = 0;
     float pressure   = 0;
     uint8_t hsmState = 0;
+    uint8_t meaState = 0;
 
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(
-            MEAStatus, FIELD_DEF(mass) FIELD_DEF(pressure) FIELD_DEF(hsmState));
+        return STRUCT_DEF(MEAStatus,
+                          FIELD_DEF(mass) FIELD_DEF(pressure)
+                              FIELD_DEF(hsmState) FIELD_DEF(meaState));
     }
 };
 
@@ -808,6 +810,7 @@ inline Canbus::CanMessage toCanMessage(const MEAStatus& data)
     message.payload[0] |=
         (static_cast<uint64_t>(floatToInt32(data.pressure)) << 32);
     message.payload[1] = data.hsmState;
+    message.payload[1] |= (static_cast<uint64_t>(data.meaState) << 8);
 
     return message;
 }
@@ -1075,7 +1078,8 @@ inline CanMEAStatus MEAStatusFromCanMessage(const Canbus::CanMessage& msg)
 
     data.mass     = int32ToFloat(static_cast<uint32_t>(msg.payload[0]));
     data.pressure = int32ToFloat(msg.payload[0] >> 32);
-    data.hsmState = static_cast<uint8_t>(msg.payload[1]);
+    data.hsmState = static_cast<uint8_t>(msg.payload[1] >> 8);
+    data.meaState = static_cast<uint8_t>(msg.payload[1]);
 
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
