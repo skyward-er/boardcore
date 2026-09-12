@@ -1078,8 +1078,8 @@ inline CanMEAStatus MEAStatusFromCanMessage(const Canbus::CanMessage& msg)
 
     data.mass     = int32ToFloat(static_cast<uint32_t>(msg.payload[0]));
     data.pressure = int32ToFloat(msg.payload[0] >> 32);
-    data.hsmState = static_cast<uint8_t>(msg.payload[1] >> 8);
-    data.meaState = static_cast<uint8_t>(msg.payload[1]);
+    data.hsmState = static_cast<uint8_t>(msg.payload[1]);
+    data.meaState = static_cast<uint8_t>(msg.payload[1] >> 8);
 
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
