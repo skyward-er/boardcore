@@ -363,7 +363,7 @@ struct SDALogsWrapper
     {
         return STRUCT_DEF(
             SDALogsWrapper,
-            FIELD_DEF2(logs, ShutdownCommand) FIELD_DEF2(logs, Timestamp)
+            FIELD_DEF2(logs, Timestamp) FIELD_DEF2(logs, ShutdownCommand)
                 FIELD_DEF2(logs, ShutdownCounter) FIELD_DEF2(logs, Apogee));
     }
 };
@@ -419,7 +419,7 @@ struct MEALogsWrapper
 
     MEALogsWrapper(uint64_t timestamp, MEA_types_h_::MEALogs logs) : logs(logs)
     {
-        logs.Timestamp = timestamp;
+        this->logs.Timestamp = timestamp;
     };
 
     static constexpr auto reflect()
