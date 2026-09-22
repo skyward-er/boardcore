@@ -354,10 +354,10 @@ void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::runReceiver()
                     // what could happen.
                     miosix::Unlock<miosix::FastMutex> unlock(l);
 
-                    LOG_DEBUG(logger,
-                              "Received message with ID {}, sequence: {} from "
-                              "component {} of system {}",
-                              msg.msgid, msg.seq, msg.compid, msg.sysid);
+                    // LOG_DEBUG(logger,
+                    //           "Received message with ID {}, sequence: {} from
+                    //           " "component {} of system {}", msg.msgid,
+                    //           msg.seq, msg.compid, msg.sysid);
 
                     // ... handle the command
                     if (onReceive != nullptr)
@@ -392,8 +392,8 @@ void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::runSender()
             {
                 outQueue.pop();  //  Remove the packet from queue
 
-                LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
-                          pkt.size(), age);
+                // LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
+                //           pkt.size(), age);
 
                 bool sent = device->send(pkt.content.data(), pkt.size());
                 updateSenderStats(pkt.getMsgCount(), sent);
