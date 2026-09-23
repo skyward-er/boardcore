@@ -85,7 +85,7 @@ template <int N_DATA>
 struct FiringSequenceSimulatorData
 {
     static constexpr int NDATA = N_DATA;
-    uint8_t states[N_DATA];
+    float states[N_DATA];
 };
 
 }  // namespace Boardcore
