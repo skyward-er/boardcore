@@ -211,11 +211,9 @@ struct ZVKLogsData
     {
         return STRUCT_DEF(
             ZVKLogsData,
-            FIELD_DEF(timestamp) FIELD_DEF2(ZVKLogs, AccHBias) FIELD_DEF2(
-                ZVKLogs, AccLBias) FIELD_DEF2(ZVKLogs, AccVN100Bias)
-                FIELD_DEF2(ZVKLogs, GyroHBias) FIELD_DEF2(ZVKLogs, GyroLBias)
-                    FIELD_DEF2(ZVKLogs, GyroVN100Bias) FIELD_DEF2(
-                        ZVKLogs, Velocity) FIELD_DEF2(ZVKLogs, Acceleration)
+            FIELD_DEF(timestamp) FIELD_DEF2(ZVKLogs, AccVN100Bias)
+                FIELD_DEF2(ZVKLogs, GyroVN100Bias) FIELD_DEF2(ZVKLogs, Velocity)
+                    FIELD_DEF2(ZVKLogs, Acceleration)
                         FIELD_DEF2(ZVKLogs, SmallEulerAngles)
                             FIELD_DEF2(ZVKLogs, AngularVelocity));
     }
