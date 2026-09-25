@@ -193,24 +193,39 @@ float ND030D::getOffset() { return pressureOffset; };
 ND030XData ND030D::sampleImpl()
 {
     ND030XData data;
-    uint16_t spiDataOut;
-    uint16_t spiDataIn = 0;
+    uint16_t configBytes;
+    memcpy(&configBytes, &sensorSettings, sizeof(configBytes));
 
-    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    uint32_t spiDataOut = static_cast<uint32_t>(configBytes) << 16 | 0x0000;
+    uint32_t spiDataIn  = 0;
 
     {
         SPITransaction spi(slave);
-        spiDataIn = spi.transfer16(spiDataOut);
+        spiDataIn = spi.transfer32(spiDataOut);
     }
 
+    uint16_t spiPressure = spiDataIn >> 16;
+
     float normalizedPressure =
-        std::bit_cast<int16_t>(spiDataIn) / (0.9f * powf(2, 15));
+        std::bit_cast<int16_t>(spiPressure) / (0.9f * powf(2, 15));
 
     data.pressure =
         normalizedPressure * range * Constants::PSI_TO_PASCAL - pressureOffset;
 
-    data.pressureTimestamp = TimestampTimer::getTimestamp();
+    uint16_t spiTemperature = static_cast<uint16_t>(spiDataIn);
 
+    float temperatureInteger = static_cast<float>(
+        std::bit_cast<int8_t>(static_cast<uint8_t>((spiTemperature) >> 8)));
+
+    float temperatureDecimal =
+        static_cast<float>(static_cast<uint8_t>(spiTemperature)) / 256.0f;
+
+    float temperature = temperatureInteger + temperatureDecimal;
+    data.temperature  = temperature;
+
+    auto timestamp            = TimestampTimer::getTimestamp();
+    data.temperatureTimestamp = timestamp;
+    data.pressureTimestamp    = timestamp;
     return data;
 }
 
