@@ -66,7 +66,6 @@ Wiz5500::Wiz5500(SPIBusInterface& bus, miosix::GpioPin cs, miosix::GpioPin intn,
         wait_infos[i].sock_n   = -1;
         wait_infos[i].irq_mask = 0;
         wait_infos[i].irq      = 0;
-        wait_infos[i].thread   = nullptr;
     }
 
     // Reset socket infos
@@ -474,89 +473,65 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
     if ((socket_infos[sock_n].irq_mask & irq_mask) != 0)
         return 0;
 
-    // Enable the interrupts requested, updating the IRQ mask
-    socket_infos[sock_n].irq_mask |= irq_mask;
-    spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_IMR,
-              socket_infos[sock_n].irq_mask);
-
-    Thread* this_thread = Thread::getCurrentThread();
-
-    // Find a free slot in the data structure
+    // Find a free slot in the data structure before touching the IRQ mask, so
+    // that a failure doesn't leave the interrupts enabled
     int i = 0;
-    while (i < NUM_THREAD_WAIT_INFOS)
-    {
-        if (wait_infos[i].sock_n == -1)
-        {
-            wait_infos[i].sock_n   = sock_n;
-            wait_infos[i].irq_mask = irq_mask;
-            wait_infos[i].irq      = 0;
-            wait_infos[i].thread   = this_thread;
-            break;
-        }
-
+    while (i < NUM_THREAD_WAIT_INFOS && wait_infos[i].sock_n != -1)
         i++;
-    }
 
     // We didn't find any, return with failure
     if (i == NUM_THREAD_WAIT_INFOS)
         return 0;
 
+    wait_infos[i].sock_n   = sock_n;
+    wait_infos[i].irq_mask = irq_mask;
+    wait_infos[i].irq      = 0;
+
+    // Enable the interrupts requested, updating the IRQ mask
+    socket_infos[sock_n].irq_mask |= irq_mask;
+    spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_IMR,
+              socket_infos[sock_n].irq_mask);
+
+    Thread* this_thread    = Thread::getCurrentThread();
     TimedWaitResult result = TimedWaitResult::NoTimeout;
 
-    if (interrupt_service_thread != nullptr)
-    {
-        // There is already someone managing interrupts for us, just wait
-        while (wait_infos[i].irq == 0 && result == TimedWaitResult::NoTimeout &&
-               interrupt_service_thread != this_thread)
-        {
-            if (until != -1)
-            {
-                Unlock<FastMutex> ul(l);
-                result = Thread::timedWait(until);
-            }
-            else
-            {
-                Unlock<FastMutex> ul(l);
-                Thread::wait();
-            }
-        }
-    }
-    else
+    // All the state checked here is protected by the mutex, and irq_cv
+    // atomically releases it while going to sleep, so no wakeup can be lost
+    // between the check and the wait. The condition must be re-checked after
+    // every wakeup, as a broadcast wakes all waiters
+    while (wait_infos[i].irq == 0 && result == TimedWaitResult::NoTimeout)
     {
         // Nobody is managing interrupts, we are doing it ourself
-        interrupt_service_thread = this_thread;
-    }
+        if (interrupt_service_thread == nullptr)
+            interrupt_service_thread = this_thread;
 
-    while (interrupt_service_thread == this_thread)
-    {
-        // Run a single step of the ISR
-        result = runInterruptServiceRoutine(l, until);
-
-        // Check if we woke up ourself, or we reached a timeout, then we need to
-        // elect a new interrupt service thread
-        if (wait_infos[i].irq != 0 || result == TimedWaitResult::Timeout)
+        if (interrupt_service_thread == this_thread)
         {
-            Thread* new_interrupt_service_thread = nullptr;
-
-            for (int j = 0; j < NUM_THREAD_WAIT_INFOS; j++)
-            {
-                if (wait_infos[j].irq == 0 && wait_infos[j].sock_n != -1 &&
-                    j != i)
-                {
-                    new_interrupt_service_thread = wait_infos[j].thread;
-                    break;
-                }
-            }
-
-            // Pick a new IST, if none is found, no-one is waiting, and the IST
-            // is not necessary
-            interrupt_service_thread = new_interrupt_service_thread;
-            if (interrupt_service_thread)
-                interrupt_service_thread->wakeup();
+            // Run a single step of the ISR
+            result = runInterruptServiceRoutine(l, until);
+        }
+        else if (until == -1)
+        {
+            // There is already someone managing interrupts for us, just wait
+            irq_cv.wait(l);
+        }
+        else
+        {
+            result = irq_cv.timedWait(l, until);
         }
     }
 
-    // The interrupt arrived, clear the slot
+    // We are done, release the IST role and let one of the remaining waiters
+    // take over, if any
+    if (interrupt_service_thread == this_thread)
+    {
+        interrupt_service_thread = nullptr;
+        irq_cv.broadcast();
+    }
+
+    int irq = wait_infos[i].irq;
+
+    // Clear the slot
     wait_infos[i].sock_n = -1;
 
     // Disable the interrupts
@@ -564,7 +539,7 @@ int Wiz5500::waitForSocketIrq(miosix::Lock<miosix::FastMutex>& l, int sock_n,
     spiWrite8(Wiz::getSocketRegBlock(sock_n), Wiz::Socket::REG_IMR,
               socket_infos[sock_n].irq_mask);
 
-    return wait_infos[i].irq;
+    return irq;
 }
 
 TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
@@ -593,7 +568,8 @@ TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
         }
     }
 
-    // Ok now wake up all threads in sleep
+    // Ok now deliver the interrupts to the waiting threads
+    bool delivered = false;
     for (int i = 0; i < NUM_THREAD_WAIT_INFOS; i++)
     {
         if (wait_infos[i].sock_n != -1)
@@ -604,10 +580,14 @@ TimedWaitResult Wiz5500::runInterruptServiceRoutine(Lock<FastMutex>& l,
             if (irq != 0)
             {
                 wait_infos[i].irq = irq;
-                wait_infos[i].thread->wakeup();
+                delivered         = true;
             }
         }
     }
+
+    // Wake up the threads in sleep, before the callbacks release the mutex
+    if (delivered)
+        irq_cv.broadcast();
 
     // Dispatch generic interrupts
     if (ir & Wiz::Common::Irq::CONFLICT)
