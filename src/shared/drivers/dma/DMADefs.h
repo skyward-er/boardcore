@@ -80,7 +80,7 @@ enum class DMAStreamId : uint8_t
     DMA1_Str7 = 7,
     DMA2_Str0 = 8,
     DMA2_Str1 = 9,
-    DMA2_Str2 = 10,
+    // DMA2_Str2 = 10,  // Used by miosix for USART1 RX (SERIAL_1_DMA)
     // DMA2_Str3 = 11, // Always used by miosix on currently supported boards
     DMA2_Str4 = 12,
 
