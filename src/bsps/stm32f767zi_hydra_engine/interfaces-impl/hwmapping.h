@@ -83,7 +83,7 @@ using tim8ch2  = Gpio<GPIOC_BASE, 7>;
 using tim9ch1  = Gpio<GPIOA_BASE, 2>;
 using tim12ch1 = Gpio<GPIOB_BASE, 14>;
 using tim11ch1 = Gpio<GPIOB_BASE, 9>;
-// using tim13ch1 = Gpio<GPIOA_BASE, 6>;
+using tim13ch1 = Gpio<GPIOA_BASE, 6>;
 // using tim14ch1 = Gpio<GPIOA_BASE, 7>;
 }  // namespace timers
 
@@ -124,15 +124,15 @@ namespace servos
 #define MIOSIX_SERVOS_OX_VEN_CHANNEL CHANNEL_1
 using ventOx = miosix::interfaces::timers::tim11ch1;
 
+#define MIOSIX_SERVOS_FUEL_DUMP_CHANNEL CHANNEL_1
+#define MIOSIX_SERVOS_FUEL_DUMP_TIM TIM9
+using fuelDump = miosix::interfaces::timers::tim9ch1;
+
+#define MIOSIX_SERVOS_FUEL_VEN_TIM TIM13
 #define MIOSIX_SERVOS_FUEL_VEN_CHANNEL CHANNEL_1
-#define MIOSIX_SERVOS_FUEL_VEN_TIM TIM9
-using ventFuel = miosix::interfaces::timers::tim9ch1;
+using ventFuel = miosix::interfaces::timers::tim13ch1;
 
 // Extra Valves that are currently not in use.
-// #define MIOSIX_SERVOS_EXTRA_TOP_TIM TIM13
-// #define MIOSIX_SERVOS_EXTRA_TOP_CHANNEL CHANNEL_1
-// using extraTop = miosix::interfaces::timers::tim13ch1;
-
 // #define MIOSIX_SERVOS_EXTRA_BOTTOM_TIM TIM14
 // #define MIOSIX_SERVOS_EXTRA_BOTTOM_CHANNEL CHANNEL_1
 // using extraBot = miosix::interfaces::timers::tim14ch1;
