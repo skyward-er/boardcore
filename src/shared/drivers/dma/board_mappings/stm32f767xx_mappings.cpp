@@ -54,8 +54,7 @@ const std::multimap<Peripherals, std::pair<DMAStreamId, Channel>>
         // Channel::CHANNEL0}},
 
         // SPI
-        // {Peripherals::PE_SPI1_TX, {DMAStreamId::DMA2_Str5,
-        // Channel::CHANNEL3}},
+        {Peripherals::PE_SPI1_TX, {DMAStreamId::DMA2_Str5, Channel::CHANNEL3}},
         // {Peripherals::PE_SPI1_TX, {DMAStreamId::DMA2_Str3,
         // Channel::CHANNEL3}},
         {Peripherals::PE_SPI1_RX, {DMAStreamId::DMA2_Str2, Channel::CHANNEL3}},

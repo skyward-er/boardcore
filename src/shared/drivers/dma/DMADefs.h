@@ -84,8 +84,8 @@ enum class DMAStreamId : uint8_t
     // DMA2_Str3 = 11, // Always used by miosix on currently supported boards
     DMA2_Str4 = 12,
 
-#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
-    // This stream is used by miosix for STM32F767xx,
+#if !defined(STM32F429xx) && !defined(STM32F205xx)
+    // This stream is used by miosix for
     // STM32F429xx and STM32F205xx boards
     DMA2_Str5 = 13,
 #endif  // STM32F767xx & STM32F429xx & STM32F205xx

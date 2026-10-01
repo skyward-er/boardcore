@@ -176,18 +176,18 @@ void __attribute__((used)) DMA2_Stream1_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str1);
 }
 
-void __attribute__((naked)) DMA2_Stream2_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20DMA2_Stream2_IRQImplv");
-    restoreContext();
-}
+// void __attribute__((naked)) DMA2_Stream2_IRQHandler()
+// {
+//     saveContext();
+//     asm volatile("bl _Z20DMA2_Stream2_IRQImplv");
+//     restoreContext();
+// }
 
-void __attribute__((used)) DMA2_Stream2_IRQImpl()
-{
-    Boardcore::DMADriver::instance().IRQhandleInterrupt(
-        Boardcore::DMADefs::DMAStreamId::DMA2_Str2);
-}
+// void __attribute__((used)) DMA2_Stream2_IRQImpl()
+// {
+//     Boardcore::DMADriver::instance().IRQhandleInterrupt(
+//         Boardcore::DMADefs::DMAStreamId::DMA2_Str2);
+// }
 
 // This stream is used by miosix for all currently supported
 // boards, so it is simply commented out
@@ -217,8 +217,8 @@ void __attribute__((used)) DMA2_Stream4_IRQImpl()
         Boardcore::DMADefs::DMAStreamId::DMA2_Str4);
 }
 
-#if !defined(STM32F767xx) && !defined(STM32F429xx) && !defined(STM32F205xx)
-// This stream is used by miosix for STM32F767xx,
+#if !defined(STM32F429xx) && !defined(STM32F205xx)
+// This stream is used by miosix for
 // STM32F429xx and STM32F205xx boards
 void __attribute__((naked)) DMA2_Stream5_IRQHandler()
 {
