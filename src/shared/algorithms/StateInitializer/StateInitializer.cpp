@@ -54,17 +54,9 @@ Vector4f StateInitializer::triad(const Vector3f& acc, const Vector3f& mag,
 {
     Vector3f nedAcc(0.0f, 0.0f, 1.0f);
 
-    // Rotate the NED magnetic vector from right-hand to left-hand
-    Matrix3f magSXRot;
-    // cppcheck-suppress constStatement
-    magSXRot << 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f;
-
-    // Apply rotation to the input `nedMag`
-    Vector3f nedMagRot = magSXRot * nedMag;
-
     // Compute the reference triad
     Vector3f R1 = nedAcc;
-    Vector3f R2 = nedAcc.cross(nedMagRot).normalized();
+    Vector3f R2 = nedAcc.cross(nedMag).normalized();
     Vector3f R3 = R1.cross(R2);
 
     // Compute the measured triad
