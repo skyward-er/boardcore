@@ -23,36 +23,91 @@
 #include "AltitudeMap.h"
 
 #include <cmath>
+#include <cstring>
+#include <fstream>
 
 namespace Boardcore
 {
 
 using namespace Units::Length;
 
-AltitudeMap::AltitudeMap(const uint8_t* startAddress)
-{
-    this->header = reinterpret_cast<const MapHeader*>(
-        startAddress);  // Altitude map header address
-    this->mapData =
-        startAddress +
-        sizeof(MapHeader);  // Flash memory altitude map data start address
-}
+AltitudeMap::AltitudeMap(const char* mapFilename) : mapFilename(mapFilename) {}
 
 bool AltitudeMap::init()
 {
-    if (header->whoAmI != 0x42)
+    isInitialized = false;
+
+    std::ifstream file(mapFilename, std::ios::binary | std::ios::ate);
+
+    if (!file)
     {
-        LOG_ERR(logger, "WhoAmI mismatch: expected 0x43, got 0x{:02X}",
-                header->whoAmI);
+        LOG_ERR(logger, "Failed to open altitude map file: {}", mapFilename);
         return false;
     }
 
-    boundaries.eMin = Meter(header->topleftE);
-    boundaries.nMax = Meter(header->topleftN);
+    const auto endPosition = file.tellg();
+    if (endPosition == std::streampos(-1))
+        return false;
+
+    auto size = static_cast<std::size_t>(endPosition);
+
+    if (size <= sizeof(MapHeader))
+    {
+        LOG_ERR(logger,
+                "Altitude map file size is smaller than map header size");
+        return false;
+    }
+
+    auto payloadSize = size - sizeof(MapHeader);
+
+    file.seekg(0);
+    if (!file.read(reinterpret_cast<char*>(&header), sizeof(header)))
+        return false;
+
+    if (header.whoAmI != static_cast<uint8_t>(MapFormat::Matrix))
+    {
+        LOG_ERR(logger, "WhoAmI mismatch: expected 0x42, got 0x{:02X}",
+                header.whoAmI);
+        return false;
+    }
+
+    if (header.numPointsE == 0 || header.numPointsN == 0 ||
+        !std::isfinite(header.stepE) || header.stepE <= 0 ||
+        !std::isfinite(header.stepN) || header.stepN <= 0 ||
+        !std::isfinite(header.topleftE) || !std::isfinite(header.topleftN) ||
+        !std::isfinite(header.minAltitude) ||
+        !std::isfinite(header.maxAltitude - header.minAltitude) ||
+        header.maxAltitude < header.minAltitude)
+    {
+        LOG_ERR(logger, "Altitude map file has invalid header values");
+        return false;
+    }
+
+    uint32_t expectedPayloadSize = static_cast<uint32_t>(header.numPointsN) *
+                                   static_cast<uint32_t>(header.numPointsE);
+
+    if (payloadSize != expectedPayloadSize)
+    {
+        LOG_ERR(logger, "Altitude map payload size mismatch");
+        return false;
+    }
+
+    mapData.resize(payloadSize);
+    if (!file.read(reinterpret_cast<char*>(mapData.data()), payloadSize))
+        return false;
+
+    mapSize = payloadSize;
+
+    boundaries.eMin = Meter(header.topleftE);
+    boundaries.nMax = Meter(header.topleftN);
     boundaries.eMax =
-        Meter(header->topleftE + header->stepE * (header->numPointsE - 1));
+        Meter(header.topleftE + header.stepE * (header.numPointsE - 1));
     boundaries.nMin =
-        Meter(header->topleftN - header->stepN * (header->numPointsN - 1));
+        Meter(header.topleftN - header.stepN * (header.numPointsN - 1));
+
+    if (!std::isfinite(boundaries.eMax.value()) ||
+        !std::isfinite(boundaries.nMin.value()))
+        return false;
 
     isInitialized = true;
 
@@ -84,17 +139,23 @@ MapBoundaries AltitudeMap::getMapBoundaries()
 
 Meter AltitudeMap::getAltitudeAtIndex(uint16_t indexN, uint16_t indexE)
 {
-    if (indexE >= header->numPointsE)
-        indexE = header->numPointsE - 1;
-    if (indexN >= header->numPointsN)
-        indexN = header->numPointsN - 1;
+    if (!isInitialized)
+    {
+        LOG_ERR(logger, "AltitudeMap not initialized!");
+        return Meter(NAN);
+    }
 
-    uint32_t altitudeIndex     = indexN * header->numPointsE + indexE;
-    uint8_t compressedAltitude = *(mapData + altitudeIndex);
+    if (indexE >= header.numPointsE)
+        indexE = header.numPointsE - 1;
+    if (indexN >= header.numPointsN)
+        indexN = header.numPointsN - 1;
 
-    float altitude = header->minAltitude +
-                     (static_cast<float>(compressedAltitude) / 255.0f) *
-                         (header->maxAltitude - header->minAltitude);
+    uint32_t altitudeIndex     = indexN * header.numPointsE + indexE;
+    uint8_t compressedAltitude = mapData[altitudeIndex];
+
+    float altitude =
+        header.minAltitude + (static_cast<float>(compressedAltitude) / 255.0f) *
+                                 (header.maxAltitude - header.minAltitude);
 
     return Meter(altitude);
 }
@@ -107,15 +168,21 @@ Meter AltitudeMap::getGroundAltitude(Meter n, Meter e)
         return Meter(NAN);
     }
 
+    if (!std::isfinite(n.value()) || !std::isfinite(e.value()))
+    {
+        LOG_ERR(logger, "Invalid coordinates");
+        return Meter(NAN);
+    }
+
     if (!isInsideMap(n, e))
         LOG_ERR(logger,
                 "Point (n:{:.6f} m, e:{:.6f} m) is outside the altitude map!",
                 n.value(), e.value());
 
     uint16_t indexE = static_cast<uint16_t>(
-        std::round((e.value() - header->topleftE) / header->stepE));
+        std::round((e.value() - header.topleftE) / header.stepE));
     uint16_t indexN = static_cast<uint16_t>(
-        std::round((header->topleftN - n.value()) / header->stepN));
+        std::round((header.topleftN - n.value()) / header.stepN));
 
     return getAltitudeAtIndex(indexN, indexE);
     ;
@@ -126,6 +193,12 @@ Meter AltitudeMap::getClosestGroundAltitude(Meter n, Meter e)
     if (!isInitialized)
     {
         LOG_ERR(logger, "AltitudeMap not initialized!");
+        return Meter(NAN);
+    }
+
+    if (!std::isfinite(n.value()) || !std::isfinite(e.value()))
+    {
+        LOG_ERR(logger, "Invalid coordinates");
         return Meter(NAN);
     }
 
@@ -152,11 +225,17 @@ Meter AltitudeMap::getInterpolatedGroundAltitude(Meter n, Meter e)
         return Meter(NAN);
     }
 
+    if (!std::isfinite(n.value()) || !std::isfinite(e.value()))
+    {
+        LOG_ERR(logger, "Invalid coordinates");
+        return Meter(NAN);
+    }
+
     if (!isInsideMap(n, e))
         return getClosestGroundAltitude(n, e);
 
-    float fe = (e.value() - header->topleftE) / header->stepE;
-    float fn = (header->topleftN - n.value()) / header->stepN;
+    float fe = (e.value() - header.topleftE) / header.stepE;
+    float fn = (header.topleftN - n.value()) / header.stepN;
 
     // TopLeft of interpolation square
     uint16_t e0 = static_cast<uint16_t>(std::floor(fe));
@@ -169,14 +248,14 @@ Meter AltitudeMap::getInterpolatedGroundAltitude(Meter n, Meter e)
     float de = fe - e0;
     float dn = fn - n0;
 
-    if (e0 >= header->numPointsE - 1)
+    if (e0 >= header.numPointsE - 1)
     {
-        e0 = e1 = header->numPointsE - 1;
+        e0 = e1 = header.numPointsE - 1;
         de      = 0.0f;
     }
-    if (n0 >= header->numPointsN - 1)
+    if (n0 >= header.numPointsN - 1)
     {
-        n0 = n1 = header->numPointsN - 1;
+        n0 = n1 = header.numPointsN - 1;
         dn      = 0.0f;
     }
 
