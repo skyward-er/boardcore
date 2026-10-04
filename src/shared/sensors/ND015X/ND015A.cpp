@@ -22,7 +22,6 @@
 
 #include "ND015A.h"
 
-#include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Constants.h>
 
@@ -50,20 +49,9 @@ SPIBusConfig ND015A::getDefaultSPIConfig()
 }
 
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
-               std::chrono::nanoseconds timeout, IOWatchdogEnable iow,
-               BWLimitFilter bwl, NotchEnable ntc, uint8_t odr)
-    : slave(bus, cs, spiConfig), streamRx(streamRx), streamTx(streamTx),
-      timeoutDma(timeout), sensorSettings{odr, 0x7, iow, bwl, ntc}
-{
-}
-
-ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
                uint8_t odr)
-    : slave(bus, cs, spiConfig), streamRx(nullptr), streamTx(nullptr),
-      timeoutDma(std::chrono::nanoseconds::zero()),
-      sensorSettings{odr, 0x7, iow, bwl, ntc}
+    : slave(bus, cs, spiConfig), sensorSettings{odr, 0x7, iow, bwl, ntc}
 {
 }
 
@@ -174,13 +162,6 @@ ND015XData ND015A::sampleImpl()
     memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
 
     uint16_t spiDataIn = 0;
-    if (streamRx != nullptr && streamTx != nullptr)
-    {
-        // Use dma
-        SPITransactionDMA spi(slave, *streamRx, *streamTx);
-        spiDataIn = spi.transfer16(spiDataOut, timeoutDma);
-    }
-    else
     {
         SPITransaction spi(slave);
         spiDataIn = spi.transfer16(spiDataOut);

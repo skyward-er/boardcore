@@ -23,7 +23,6 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <drivers/dma/DMA.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
@@ -89,24 +88,6 @@ public:
      * @return The default SPIBusConfig object.
      */
     static SPIBusConfig getDefaultSPIConfig();
-
-    /**
-     * @brief Constructor for the ND015D sensor.
-     *
-     * @param bus SPI bus interface.
-     * @param cs Chip select GPIO pin.
-     * @param spiConfig SPI bus configuration.
-     * @param streamRx Dma receiving stream for the spi bus.
-     * @param streamTx Dma transmitting stream for the spi bus.
-     * @param timeoutDma Timeout for the dma transactions.
-     */
-    ND015D(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-           DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
-           std::chrono::nanoseconds timeoutDma,
-           FullScaleRange fsr   = FullScaleRange::FS_2,
-           IOWatchdogEnable iow = IOWatchdogEnable::DISABLED,
-           BWLimitFilter bwl    = BWLimitFilter::BWL_200,
-           NotchEnable ntc = NotchEnable::ENABLED, uint8_t odr = 0x1C);
 
     /**
      * @brief Constructor for the ND015D sensor.
@@ -209,9 +190,6 @@ protected:
 private:
     SPISlave slave;
     float range;
-    DMAStreamGuard* const streamRx;
-    DMAStreamGuard* const streamTx;
-    const std::chrono::nanoseconds timeoutDma;
     float pressureOffset = 0;
 
     /**
