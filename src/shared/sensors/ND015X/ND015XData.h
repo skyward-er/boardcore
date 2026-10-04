@@ -29,11 +29,12 @@
 namespace Boardcore
 {
 
-struct ND015XData : public PressureData
+struct ND015XData : public PressureData, public TemperatureData
 {
     static constexpr auto reflect()
     {
-        return STRUCT_DEF(ND015XData, EXTEND_DEF(PressureData));
+        return STRUCT_DEF(ND015XData,
+                          EXTEND_DEF(PressureData) EXTEND_DEF(TemperatureData));
     }
 };
 
