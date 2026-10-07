@@ -128,9 +128,9 @@ using ventOx = miosix::interfaces::timers::tim11ch1;
 #define MIOSIX_SERVOS_FUEL_DUMP_TIM TIM9
 using fuelDump = miosix::interfaces::timers::tim9ch1;
 
-#define MIOSIX_SERVOS_FUEL_VEN_TIM TIM13
+#define MIOSIX_SERVOS_FUEL_VEN_TIM TIM4
 #define MIOSIX_SERVOS_FUEL_VEN_CHANNEL CHANNEL_1
-using ventFuel = miosix::interfaces::timers::tim13ch1;
+using ventFuel = miosix::interfaces::timers::tim4ch1;
 
 // Extra Valves that are currently not in use.
 // #define MIOSIX_SERVOS_EXTRA_BOTTOM_TIM TIM14
@@ -149,9 +149,9 @@ using mainFuel = miosix::interfaces::timers::tim8ch2;
 #define MIOSIX_SERVOS_PRZ_OX_CHANNEL CHANNEL_1
 using przOx = miosix::interfaces::timers::tim1ch1;
 
-#define MIOSIX_SERVOS_PRZ_FUEL_TIM TIM4
+#define MIOSIX_SERVOS_PRZ_FUEL_TIM TIM13
 #define MIOSIX_SERVOS_PRZ_FUEL_CHANNEL CHANNEL_1
-using przFuel = miosix::interfaces::timers::tim4ch1;
+using przFuel = miosix::interfaces::timers::tim13ch1;
 
 #define MIOSIX_IGNITER_TIM TIM12
 #define MIOSIX_IGNITER_CHANNEL CHANNEL_1
