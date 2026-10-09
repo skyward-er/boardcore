@@ -64,8 +64,8 @@ using rx = Gpio<GPIOA_BASE, 10>;
 // Serial
 namespace usart2
 {
-using tx = Gpio<GPIOA_BASE, 3>;
-using rx = Gpio<GPIOA_BASE, 2>;
+using tx = Gpio<GPIOA_BASE, 2>;
+using rx = Gpio<GPIOA_BASE, 3>;
 }  // namespace usart2
 
 // Serial
