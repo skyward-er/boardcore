@@ -318,7 +318,8 @@ struct EregPIDSet
         return STRUCT_DEF(
             EregPIDSet, FIELD_DEF(KpPressurization) FIELD_DEF(KiPressurization)
                             FIELD_DEF(KdPressurization) FIELD_DEF(KpDischarge)
-                                FIELD_DEF(KiDischarge) FIELD_DEF(KdDischarge));
+                                FIELD_DEF(KiDischarge) FIELD_DEF(KdDischarge)
+                                    FIELD_DEF(eregId));
     }
 };
 
@@ -820,7 +821,7 @@ inline CanPitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
     CanPitotData data;
 
     data.deltaP        = 0.0;  // put to 0 to avoid undefined behaviour
-    data.airspeed      = floatToInt32(msg.payload[0]);
+    data.airspeed      = int32ToFloat(msg.payload[0]);
     data.timestamp     = (msg.payload[0] >> 30) & ~0x3;
     data.secondaryType = msg.getSecondaryType();
     data.source        = msg.getSource();
