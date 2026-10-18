@@ -24,6 +24,7 @@
 
 #include <abk/ABK_types.h>
 #include <anas/ANAS0_types.h>
+#include <anas/cats/CATS_types.h>
 #include <mea/MEA_types.h>
 #include <nasdaq/NASDAQ0_types.h>
 #include <prf/PRF_types.h>
@@ -111,6 +112,55 @@ struct ANASLogsData
                         ANASLogs, BaroPitotAct) FIELD_DEF2(ANASLogs, GPSAct)
                         FIELD_DEF2(ANASLogs, MagAct)
                             FIELD_DEF2(ANASLogs, AccAct));
+    }
+};
+
+struct CATSEState
+{
+    uint64_t timestamp          = 0;
+    float verticalPosition      = 0.0f;
+    float verticalVelocity      = 0.0f;
+    float correctedAcceleration = 0.0f;
+
+    CATSEState() = default;
+    CATSEState(uint64_t timestamp, const float data[3]) : timestamp(timestamp)
+    {
+        verticalPosition      = data[0];
+        verticalVelocity      = data[1];
+        correctedAcceleration = data[2];
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CATSEState,
+                          FIELD_DEF(timestamp) FIELD_DEF(verticalPosition)
+                              FIELD_DEF(verticalVelocity)
+                                  FIELD_DEF(correctedAcceleration));
+    }
+};
+
+struct CATSELogsData
+{
+    uint64_t timestamp = 0;
+    CATS_types_h_::CATSLogs CATSLogs;
+
+    CATSELogsData() : timestamp(0), CATSLogs() {};
+
+    CATSELogsData(uint64_t timestamp, CATS_types_h_::CATSLogs catsLogs)
+        : timestamp(timestamp), CATSLogs(catsLogs) {};
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            CATSELogsData,
+            FIELD_DEF(timestamp) FIELD_DEF2(CATSLogs, BaroAltitude)
+                FIELD_DEF2(CATSLogs, AccFault) FIELD_DEF2(CATSLogs, BaroFault)
+                    FIELD_DEF2(CATSLogs, FilteredAcceleration)
+                        FIELD_DEF2(CATSLogs, BaroGroundAltitude)
+                            FIELD_DEF2(CATSLogs, BaroR)
+                                FIELD_DEF2(CATSLogs, AccCalibration)
+                                    FIELD_DEF2(CATSLogs, SMState)
+                                        FIELD_DEF2(CATSLogs, KalmanNED));
     }
 };
 

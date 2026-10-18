@@ -43,9 +43,13 @@ set(BOARDCORE_SRC
     ${BOARDCORE_PATH}/src/shared/algorithms/ADA/ADA.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/ANAS0.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/ANAS0_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/cats/CATS.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/cats/CATS_data.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/anas/cats/rt_nonfinite.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/ABK_data.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/ABK.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/abkTraj.cpp
+    ${BOARDCORE_PATH}/libs/autocoded-algorithms/abk/abkKriging.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/mea/MEA_data.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/mea/MEA.cpp
     ${BOARDCORE_PATH}/libs/autocoded-algorithms/nasdaq/NASDAQ0_data.cpp
