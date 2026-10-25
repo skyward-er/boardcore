@@ -21,7 +21,11 @@
  */
 
 #pragma once
-#include <atomic>
+
+#include <units/Length.h>
+
+#include <cmath>
+#include <cstdint>
 
 namespace Boardcore
 {
@@ -53,8 +57,8 @@ struct MapHeader
 struct MapBoundaries
 {
     MapBoundaries()
-        : eMax(Units::Length::Meter(NAN)), eMin(Units::Length::Meter(NAN)),
-          nMax(Units::Length::Meter(NAN)), nMin(Units::Length::Meter(NAN)) {};
+        : eMax(Units::Length::Meter(0)), eMin(Units::Length::Meter(0)),
+          nMax(Units::Length::Meter(0)), nMin(Units::Length::Meter(0)) {};
 
     Units::Length::Meter eMax;
     Units::Length::Meter eMin;
@@ -68,5 +72,24 @@ enum class MapFormat : uint8_t
     Matrix   = 0x42,
     QuadTree = 0x43
 };
+
+template <typename T>
+struct __attribute__((packed)) InternalNode
+{
+    uint8_t marker;
+    T size0;
+    T size1;
+    T size2;
+};
+
+namespace Config
+{
+// The type used to store the offsets of the child nodes in the quadtree. It can
+// be either uint16_t or uint32_t, depending on the size of the quadtree.
+
+using QuadOffset = uint32_t;
+// using QuadOffset = uint16_t;
+
+}  // namespace Config
 
 }  // namespace Boardcore
