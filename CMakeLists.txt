@@ -216,3 +216,4 @@ sbs_declare_target(test-lsm6dsrx stm32f407vg_stm32f4discovery src/tests/sensors/
 sbs_declare_target(test-csvreader stm32f429zi_stm32f4discovery src/tests/utils/test-csvreader.cpp)
 sbs_declare_target(test-buttonhandler stm32f429zi_stm32f4discovery src/tests/utils/test-buttonhandler.cpp)
 sbs_declare_target(test-syncpacketqueue stm32f407vg_stm32f4discovery src/tests/utils/test-syncpacketqueue.cpp)
+sbs_declare_target(test-altitudemap stm32f767zi_compute_unit src/tests/utils/test-altitudemap.cpp)

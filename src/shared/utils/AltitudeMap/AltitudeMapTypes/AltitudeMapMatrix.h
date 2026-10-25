@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 Skyward Experimental Rocketry
- * Author: Leonardo Montecchi
+ * Authors: Leonardo Montecchi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,45 @@
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <units/Length.h>
-#include <utils/AltitudeMap/AltitudeQuadMap.h>
+#pragma once
 
-#include <iostream>
+#include <cstdint>
+#include <vector>
 
-using namespace miosix;
-using namespace Boardcore;
-using namespace Units::Length;
+#include "AltitudeMapBase.h"
 
-int main()
+namespace Boardcore
 {
-    auto map = std::make_unique<AltitudeQuadMap>("/sd/maptree_data(2.77m).bin");
 
-    if (!map->init())
-    {
-        std::cerr << "Failed to initialize the altitude map." << std::endl;
-        return -1;
-    }
+/**
+ * @brief Matrix (flat grid) altitude map format, whoAmI = 0x42.
+ *
+ * File layout: MapHeader, followed by numPointsN * numPointsE uint8_t values in
+ * row-major order. Raw value v in [0, 255] maps linearly to
+ * [minAltitude, maxAltitude]:
+ *
+ *   altitude = minAltitude + v / 255 * (maxAltitude - minAltitude)
+ *
+ * Altitudes between grid points are bilinearly interpolated.
+ */
+class AltitudeMapMatrix final : public AltitudeMapBase
+{
+private:
+    bool loadPayload(std::ifstream& file, std::size_t payloadSize) override;
 
-    while (true)
-    {
-        float n_f, e_f;
-        std::cout << "Enter coordinates (n, e): ";
-        std::cin >> n_f >> e_f;
+    /**
+     * @brief Bilinear interpolation between the four grid points surrounding
+     * (row, col).
+     */
+    float altitudeAtGridPosition(float row, float col) const override;
 
-        Meter n{n_f}, e{e_f};
+    /**
+     * @brief Decoded altitude of one grid point.
+     * @return 0 if row or col are out of range.
+     */
+    float cellAltitude(uint16_t row, uint16_t col) const;
 
-        auto altitude = map->getClosestGroundAltitude(n, e);
+    std::vector<uint8_t> mapData;
+};
 
-        if (map->isInsideMap(n, e))
-        {
-            std::cout << "Closest ground altitude: " << altitude << " meters"
-                      << std::endl;
-        }
-        else
-        {
-            std::cout << "Coordinates are outside the map boundaries: "
-                      << altitude << " meters" << std::endl;
-        }
-    }
-
-    return 0;
-}
+}  // namespace Boardcore
