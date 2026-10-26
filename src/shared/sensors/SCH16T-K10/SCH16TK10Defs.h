@@ -99,6 +99,11 @@ enum class SensorStatus : uint8_t
     INIT_RUNNING     = 0b11
 };
 
+enum class Mode : uint8_t {
+    READ = 0,
+    WRITE = 1
+};
+
 /**
  * The following address enables multi slave addressing on the same SPI Chip
  * select. Since this is not used these two values are dropped to 0 (Check if

@@ -24,9 +24,11 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
 #include <sensors/Sensor.h>
 
 #include "SCH16TK10Data.h"
+#include "SCH16TK10Defs.h"
 
 namespace Boardcore
 {
@@ -41,7 +43,8 @@ public:
      * @param cs Chip Select pin number
      * @param busConfig SPI Bus config parameters
      */
-    SCH16TK10(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig busConfig);
+    SCH16TK10(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig busConfig)
+        : spiSlave(bus, cs, busConfig) {};
 
     /**
      * Method to initialize the sensor
@@ -71,5 +74,12 @@ private:
         uint8_t result = Frame::calculateCRC(SPIFrame);
         return result;
     }
+
+    void writeRegister(SCH16TK10Defs::Register target, uint32_t data);
+
+    float readRegister(SCH16TK10Defs::Register target);
+
+    SPISlave spiSlave;
+    miosix::FastMutex imuMutex;
 };
 }  // namespace Boardcore
