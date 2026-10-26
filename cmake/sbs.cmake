@@ -30,6 +30,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
 endif()
+if(CMAKE_CROSSCOMPILING)
+    set(CMAKE_C_FLAGS_DEBUG "-g -O2")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O2")
+endif()
 
 # Load in SBS_BASE the project path
 cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
