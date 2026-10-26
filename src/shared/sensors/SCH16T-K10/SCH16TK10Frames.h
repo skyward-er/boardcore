@@ -33,6 +33,7 @@ namespace SCH16TK10Frames
 
 using SCH16TK10Defs::Register;
 using SCH16TK10Defs::SensorStatus;
+using SCH16TK10Defs::Mode;
 using SCH16TK10Defs::SLAVE_ID;
 /**
  * Helper struct to handle 32-bit SPI communication for this sensor
@@ -82,7 +83,7 @@ struct SPIFrame32
      * @param mode Read = 0, Write = 1
      * @param data Data to send to the sensor
      */
-    static constexpr raw_t encode(Register regAddr, bool mode, uint32_t data)
+    static constexpr raw_t encode(Register regAddr, Mode mode, uint32_t data)
     {
         uint32_t frame = 0;
 
@@ -102,7 +103,7 @@ struct SPIFrame32
      * @brief Decode 32-bit SPI Frame
      * @param frame SPI frame received from the sensor to decode
      */
-    static constexpr Response decode(uint32_t frame)
+    static constexpr Response decode(raw_t frame)
     {
         Response resp      = {};
         resp.condition     = (frame >> 31) & 0x1;
@@ -170,7 +171,7 @@ struct SPIFrame48
      * @param mode Read = 0, Write = 1
      * @param data Data to send to the sensor
      */
-    static constexpr raw_t encode(Register regAddr, bool mode, uint32_t data)
+    static constexpr raw_t encode(Register regAddr, Mode mode, uint32_t data)
     {
         raw_t frame = 0;
 
@@ -190,7 +191,7 @@ struct SPIFrame48
      * @brief Decode 48-bit SPI Frame
      * @param frame SPI frame received from the sensor to decode
      */
-    static constexpr Response decode(uint64_t frame)
+    static constexpr Response decode(raw_t frame)
     {
         Response resp      = {};
         resp.condition     = ((frame >> 47) & 0x1);
