@@ -599,6 +599,7 @@ uint16_t ADS131M08::readRegister(Register reg)
 
     SPITransaction transaction(spiSlave);
     transaction.write(data, sizeof(data));
+    delayNs<20>();
     transaction.read(data, sizeof(data));
 
     return data[0] << 8 | data[1];
@@ -619,7 +620,6 @@ void ADS131M08::writeRegister(Register reg, uint16_t data)
 
     SPITransaction transaction(spiSlave);
     transaction.write(writeCommand, sizeof(writeCommand));
-
     // The response contains a fixed part and the register address.
     uint16_t response = transaction.read24() >> 8;
     if (response != (WRITE_CMD_RESPONSE | (static_cast<uint16_t>(reg) << 7)))

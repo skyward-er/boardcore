@@ -38,3 +38,31 @@
 #include "SPIBus.h"
 #include "SPIBusInterface.h"
 #include "SPITransaction.h"
+#include "board_settings.h"
+
+namespace Boardcore
+{
+// Small helper function to delay at least a certain number of nanoseconds.
+// It Busy-waits for at least `ns` nanoseconds (rounded up to whole CPU cycles).
+// Each loop iteration takes at leasts one cycle, so the delay is never
+// shorter than requested, but it can be longer. Meant for very short delays,
+// such as the minimum chip select high time between two SPI transactions.
+template <uint32_t ns>
+inline __attribute__((always_inline)) void delayNs()
+{
+    // Round up to whole clock cycle
+    constexpr uint32_t cycles =
+        (uint64_t(ns) * (miosix::cpuFrequency / 1000000) + 999) / 1000;
+
+    if constexpr (cycles == 0)
+        return;
+
+    uint32_t count = cycles;
+    asm volatile(
+        "1: subs %[count], %[count], #1 \n"
+        "   bne 1b          \n"
+        : [count] "+l"(count)
+        :
+        : "cc", "memory");
+}
+}  // namespace Boardcore
