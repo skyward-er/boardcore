@@ -165,7 +165,9 @@ set(BOARDCORE_SRC
     # Utils
     ${BOARDCORE_PATH}/src/shared/utils/AeroUtils/AeroUtils.cpp
     ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMap.cpp
-    ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeQuadMap.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMapTypes/AltitudeMapBase.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMapTypes/AltitudeMapMatrix.cpp
+    ${BOARDCORE_PATH}/src/shared/utils/AltitudeMap/AltitudeMapTypes/AltitudeMapQuad.cpp
     ${BOARDCORE_PATH}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/PinObserver.cpp
     ${BOARDCORE_PATH}/src/shared/utils/PinObserver/ExternalPinObserver.cpp
