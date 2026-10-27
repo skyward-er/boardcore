@@ -51,7 +51,9 @@ set(BOARDCORE_HOST_SRC
     # Utils
     ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp
     ${SBS_BASE}/src/shared/utils/AltitudeMap/AltitudeMap.cpp
-    ${SBS_BASE}/src/shared/utils/AltitudeMap/AltitudeQuadMap.cpp
+    ${SBS_BASE}/src/shared/utils/AltitudeMap/AltitudeMapTypes/AltitudeMapBase.cpp
+    ${SBS_BASE}/src/shared/utils/AltitudeMap/AltitudeMapTypes/AltitudeMapMatrix.cpp
+    ${SBS_BASE}/src/shared/utils/AltitudeMap/AltitudeMapTypes/AltitudeMapQuad.cpp
     ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
     ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
     ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp

@@ -72,8 +72,7 @@ float AltitudeMapMatrix::altitudeAtGridPosition(float row, float col) const
     const uint16_t r0 = static_cast<uint16_t>(row0f);
     const uint16_t c0 = static_cast<uint16_t>(col0f);
 
-    // Bottom-right corner. On the last row/column row == r0 (the base class
-    // clamped it), so dr == 0 and using r1 == r0 does not change the result.
+    // Bottom-right corner of the interpolation square.
     const uint16_t r1 =
         (r0 + 1 < header.numPointsN) ? static_cast<uint16_t>(r0 + 1) : r0;
     const uint16_t c1 =
