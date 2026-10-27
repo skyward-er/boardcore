@@ -179,6 +179,12 @@ public:
     uint32_t read32();
 
     /**
+     * @brief Reads 48 bits from the bus.
+     * @return 48 bit data in a 64 bits container.
+     */
+    uint64_t read48();
+
+    /**
      * Optimized routines for small writes, implemented with a single
      * transfer and automatically handling endianess.
      */
@@ -206,6 +212,12 @@ public:
      * @param data Word to write.
      */
     void write32(uint32_t data);
+
+    /**
+     * @brief Writes 48 to the bus.
+     * @param data 64 bit container for 48 bits of data
+     */
+    void write48(uint64_t data);
 
     /**
      * Optimized routines for small register reads, implemented with a single

@@ -27,6 +27,8 @@
 #include <miosix.h>
 #include <sensors/Sensor.h>
 
+#include <type_traits>
+
 #include "SCH16TK10Data.h"
 #include "SCH16TK10Defs.h"
 
@@ -44,23 +46,29 @@ public:
      * @param busConfig SPI Bus config parameters
      */
     SCH16TK10(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig busConfig)
-        : spiSlave(bus, cs, busConfig) {};
+        : spiSlave(bus, cs, busConfig)
+    {
+        static_assert(std::is_same<Frame, SCH16TK10Frames::SPIFrame48> ||
+                          std::is_same<Frame, SCH16TK10Frames::SPIFrame32>,
+                      "SCH16TK10: Frame must be SPIFrame32 or SPIFrame48");
+    };
 
     /**
-     * Method to initialize the sensor
+     * @brief Method to initialize the sensor
      */
     bool init() override;
 
     /**
-     * Self-testing the sensor by writing and reading the SelfTest Register
+     * @brief Self-testing the sensor by writing and reading the SelfTest
+     * Register
      */
     bool selfTest() override;
 
     SCH16TK10Data sampleImpl() override;
 
     /**
-     * Check the Whoami value. For this particular sensor the Whoami value
-     * corresponds to the
+     * @brief Check the Whoami value. For this particular sensor the Whoami
+     * value corresponds to the COMP_ID
      */
     bool checkWhoAmI();
 
@@ -69,17 +77,48 @@ private:
 
     bool isInit = false;
 
-    uint8_t calculateCRC(Frame::raw_t SPIFrame)
+    /**
+     * @brief Helper method to calculate a frame's CRC.
+     * @param SPIFrame Frame from which CRC needs to be calculated.
+     * @return Result of the calculation.
+     */
+    uint8_t calculateCRC(typename Frame::raw_t SPIFrame)
     {
         uint8_t result = Frame::calculateCRC(SPIFrame);
         return result;
     }
 
+    /**
+     * @brief Write a register of the sensor.
+     * @param target Target register.
+     * @param data Payload of the message.
+     */
     void writeRegister(SCH16TK10Defs::Register target, uint32_t data);
 
-    float readRegister(SCH16TK10Defs::Register target);
+    /**
+     * @brief Write a register of the sensor.
+     * @param target Target register.
+     * @return Response struct containing data and additional info.
+     */
+    typename Frame::Response readRegister(SCH16TK10Defs::Register target);
+
+    /**
+     * @brief Helper method to transfer a frame.
+     * @param frame Frame to send.
+     * @return Frame received.
+     */
+    typename Frame::raw_t transferFrame(typename Frame::raw_t frame);
+
+    /**
+     * @brief Test writing a register
+     */
+    bool testWrite();
+
+    /**
+     * @brief Check sensor status upon initialization.
+     */
+    bool checkStatus();
 
     SPISlave spiSlave;
-    miosix::FastMutex imuMutex;
 };
 }  // namespace Boardcore

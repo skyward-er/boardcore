@@ -85,6 +85,14 @@ uint32_t SPITransaction::read32()
     return data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3];
 }
 
+uint64_t SPITransaction::read48()
+{
+    uint8_t data[6];
+    transferImpl(nullptr, data, sizeof(data));
+    return data[0] << 40 | data[1] << 32 | data[2] << 24 | data[3] << 16 |
+           data[4] << 8 | data[5];
+}
+
 void SPITransaction::write(uint8_t data)
 {
     transferImpl(&data, nullptr, sizeof(data));
@@ -113,6 +121,16 @@ void SPITransaction::write32(uint32_t data)
     uint8_t buf[4] = {
         static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
         static_cast<uint8_t>(data >> 8), static_cast<uint8_t>(data)};
+    transferImpl(buf, nullptr, sizeof(buf));
+}
+
+void SPITransaction::write48(uint64_t data)
+{
+    // Prepare data in MSB first order
+    uint8_t buf[6] = {
+        static_cast<uint8_t>(data >> 40), static_cast<uint8_t>(data >> 32),
+        static_cast<uint8_t>(data >> 24), static_cast<uint8_t>(data >> 16),
+        static_cast<uint8_t>(data >> 8),  static_cast<uint8_t>(data)};
     transferImpl(buf, nullptr, sizeof(buf));
 }
 

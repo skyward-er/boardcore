@@ -29,7 +29,7 @@ namespace Boardcore
 namespace SCH16TK10Defs
 {
 
-// Registers of the Sensor
+// Registers of the Sensor.
 enum class Register : uint8_t
 {
     // Bank 0
@@ -99,8 +99,9 @@ enum class SensorStatus : uint8_t
     INIT_RUNNING     = 0b11
 };
 
-enum class Mode : uint8_t {
-    READ = 0,
+enum class Mode : uint8_t
+{
+    READ  = 0,
     WRITE = 1
 };
 
@@ -108,11 +109,12 @@ enum class Mode : uint8_t {
  * The following address enables multi slave addressing on the same SPI Chip
  * select. Since this is not used these two values are dropped to 0 (Check if
  * compliant with schematic) - If needed for next year consider putting it in
- * the class constructor
+ * the class constructor.
  */
 static constexpr uint8_t SLAVE_ID = 0;
 
-static constexpr unsigned int WHOAMI = 0;  // TBD
+static constexpr unsigned int WHOAMI =
+    0x0021;  // In the datasheet is the value of the register COMP_ID.
 
 }  // namespace SCH16TK10Defs
 }  // namespace Boardcore

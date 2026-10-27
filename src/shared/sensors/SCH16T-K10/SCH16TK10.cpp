@@ -28,51 +28,102 @@ namespace Boardcore
 using SCH16TK10Frames::SPIFrame32;
 using SCH16TK10Frames::SPIFrame48;
 
-bool SCH16TK10<SPIFrame48>::checkWhoAmI() {}
-
-bool SCH16TK10<SPIFrame32>::checkWhoAmI() {}
-
-void SCH16TK10<SPIFrame32>::writeRegister(SCH16TK10Defs::Register target,
-                                          uint32_t data)
+template <typename Frame>
+typename Frame::raw_t SCH16TK10<Frame>::transferFrame(
+    typename Frame::raw_t frame)
 {
-    auto frame = SPIFrame32::encode(target, SCH16TK10Defs::Mode::WRITE, data);
+    constexpr BUFFER_SIZE = 8 / Frame::bits;
+    uint8_t buf[BUFFER_SIZE];
+
+    for (int i = 0; i < BUFFER_SIZE; i++)
+        buf[i] = static_cast<uint8_t>(frame >> (8 * (BUFFER_SIZE - 1 - i)));
 
     {
-        miosix::Lock<miosix::FastMutex> lock{imuMutex};
-        SPITransaction spiTransaction{spiSlave};
-        spiTransaction.write32(frame);
-    }
-}
-
-void SCH16TK10<SPIFrame48>::writeRegister(SCH16TK10Defs::Register target,
-                                          uint32_t data)
-{
-    auto frame = SPIFrame48::encode(target, SCH16TK10Defs::Mode::WRITE, data);
-
-    {
-        miosix::Lock<miosix::FastMutex> lock{imuMutex};
-        SPITransaction spiTransaction{spiSlave};
-        spiTransaction.write48(data);
-    }
-}
-
-float SCH16TK10<SPIFrame32>::readRegister(SCH16TK10Defs::Register target)
-{
-    auto frame = SPIFrame32::encode(target, SCH16TK10Defs::Mode::READ, 0);
-
-    uint8_t buf[8] = {
-        static_cast<uint8_t>(frame >> 24), static_cast<uint8_t>(frame >> 16),
-        static_cast<uint8_t>(frame >> 8),  static_cast<uint8_t>(frame),
-        static_cast<uint8_t>(0),           static_cast<uint8_t>(0),
-        static_cast<uint8_t>(0),           static_cast<uint8_t>(0)};
-
-    {
-        miosix::Lock<miosix::FastMutex> lock{imuMutex};
         SPITransaction spiTransaction{spiSlave};
         spiTransaction.transfer(buf, sizeof(buf));
     }
 
-    // Extract data from buffer
+    typename Frame::raw_t data = 0;
+    for (int i = 0; i < BUFFER_SIZE; i++)
+        data = (data << 8) | buf[i];
+
+    return out;
 }
 
+template <typename Frame>
+void SCH16TK10<Frame>::writeRegister(SCH16TK10Defs::Register target,
+                                     uint32_t data)
+{
+    auto frame = Frame::encode(target, SCH16TK10Defs::Mode::WRITE, data);
+
+    SPITransaction spiTransaction{spiSlave};
+
+    if constexpr (Frame::bits == 32)
+        spiTransaction.write32(frame);
+    else if constexpr (Frame::bits == 48)
+        spiTransaction.write48(frame);
+}
+
+template <typename Frame>
+typename Frame::Response SCH16TK10<Frame>::readRegister(
+    SCH16TK10Defs::Register target)
+{
+    auto rawData =
+        transferFrame(Frame::encode(target, SCH16TK10Defs::Mode::READ, 0));
+
+    Frame::Response resp = Frame::decode(rawData);
+    return resp;
+}
+
+template <typename Frame>
+bool SCH16TK10<Frame>::checkWhoAmI()
+{
+    auto resp = readRegister(SCH16TK10Defs::Register::COMP_ID);
+    return resp.checkCRC && resp.data == SCH16TK10Defs::WHOAMI;
+}
+
+template <typename Frame>
+bool SCH16TK10<Frame>::init()
+{
+
+}
+
+template<typename Frame>
+bool SCH16TK10<Frame>::testWrite() {
+    writeRegister(SCH16TK10Defs::Register::SYS_TEST, 1);
+
+    Frame::Response resp = readRegister(SCH16TK10Defs::Register::SYS_TEST)
+    if (resp.data != 1)
+        return false
+    
+    writeRegister(SCH16TK10Defs::Register::SYS_TEST, 0);
+
+    Frame::Response resp = readRegister(SCH16TK10Defs::Register::SYS_TEST)
+    if (resp.data != 0)
+        return false
+    
+    return true;    
+}
+
+
+// TODO Finish
+template <typename Frame>
+bool SCH16TK10<Frame>::checkStatus() {
+    Frame::Response resp = readRegister();
+}
+
+template <typename Frame>
+bool SCH16TK10<Frame>::selfTest() {
+    assert(!isInit && "[SCH16TK10] Need to init the sensor first.");
+
+    isInit = 0;
+
+    if (!testWrite() || !checkWhoAmI() || !checkStatus())
+        return false;
+
+    return init();
+}
+
+template class SCH16TK10<SPIFrame32>;
+template class SCH16TK10<SPIFrame48>;
 }  // namespace Boardcore
