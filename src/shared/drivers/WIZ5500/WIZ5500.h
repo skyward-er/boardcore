@@ -296,7 +296,8 @@ private:
     void spiWriteIp(uint8_t block, uint16_t address, WizIp data);
     void spiWriteMac(uint8_t block, uint16_t address, WizMac data);
 
-    // Thread currently servicing interrupts
+    // Thread currently servicing interrupts, nullptr if none. It never points
+    // to a thread waiting on irq_cv
     miosix::Thread* interrupt_service_thread = nullptr;
     // Thread currently waiting for an INTn
     miosix::Thread* intn_thread = nullptr;
@@ -306,7 +307,6 @@ private:
         int sock_n;
         uint8_t irq_mask;
         uint8_t irq;
-        miosix::Thread* thread;
     };
 
     enum class SocketMode
@@ -330,6 +330,9 @@ private:
 
     miosix::GpioPin intn;
     miosix::FastMutex mutex;
+    // Signaled when a waiter received its interrupt or the IST role is
+    // released. Must only be waited on with mutex held
+    miosix::ConditionVariable irq_cv;
     SPISlave slave;
 };
 

@@ -24,6 +24,7 @@
 
 #include <abk/ABK_types.h>
 #include <anas/ANAS0_types.h>
+#include <anas/cats/CATS_types.h>
 #include <mea/MEA_types.h>
 #include <nasdaq/NASDAQ0_types.h>
 #include <prf/PRF_types.h>
@@ -111,6 +112,55 @@ struct ANASLogsData
                         ANASLogs, BaroPitotAct) FIELD_DEF2(ANASLogs, GPSAct)
                         FIELD_DEF2(ANASLogs, MagAct)
                             FIELD_DEF2(ANASLogs, AccAct));
+    }
+};
+
+struct CATSEState
+{
+    uint64_t timestamp          = 0;
+    float verticalPosition      = 0.0f;
+    float verticalVelocity      = 0.0f;
+    float correctedAcceleration = 0.0f;
+
+    CATSEState() = default;
+    CATSEState(uint64_t timestamp, const float data[3]) : timestamp(timestamp)
+    {
+        verticalPosition      = data[0];
+        verticalVelocity      = data[1];
+        correctedAcceleration = data[2];
+    }
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(CATSEState,
+                          FIELD_DEF(timestamp) FIELD_DEF(verticalPosition)
+                              FIELD_DEF(verticalVelocity)
+                                  FIELD_DEF(correctedAcceleration));
+    }
+};
+
+struct CATSELogsData
+{
+    uint64_t timestamp = 0;
+    CATS_types_h_::CATSLogs CATSLogs;
+
+    CATSELogsData() : timestamp(0), CATSLogs() {};
+
+    CATSELogsData(uint64_t timestamp, CATS_types_h_::CATSLogs catsLogs)
+        : timestamp(timestamp), CATSLogs(catsLogs) {};
+
+    static constexpr auto reflect()
+    {
+        return STRUCT_DEF(
+            CATSELogsData,
+            FIELD_DEF(timestamp) FIELD_DEF2(CATSLogs, BaroAltitude)
+                FIELD_DEF2(CATSLogs, AccFault) FIELD_DEF2(CATSLogs, BaroFault)
+                    FIELD_DEF2(CATSLogs, FilteredAcceleration)
+                        FIELD_DEF2(CATSLogs, BaroGroundAltitude)
+                            FIELD_DEF2(CATSLogs, BaroR)
+                                FIELD_DEF2(CATSLogs, AccCalibration)
+                                    FIELD_DEF2(CATSLogs, SMState)
+                                        FIELD_DEF2(CATSLogs, KalmanNED));
     }
 };
 
@@ -211,11 +261,9 @@ struct ZVKLogsData
     {
         return STRUCT_DEF(
             ZVKLogsData,
-            FIELD_DEF(timestamp) FIELD_DEF2(ZVKLogs, AccHBias) FIELD_DEF2(
-                ZVKLogs, AccLBias) FIELD_DEF2(ZVKLogs, AccVN100Bias)
-                FIELD_DEF2(ZVKLogs, GyroHBias) FIELD_DEF2(ZVKLogs, GyroLBias)
-                    FIELD_DEF2(ZVKLogs, GyroVN100Bias) FIELD_DEF2(
-                        ZVKLogs, Velocity) FIELD_DEF2(ZVKLogs, Acceleration)
+            FIELD_DEF(timestamp) FIELD_DEF2(ZVKLogs, AccVN100Bias)
+                FIELD_DEF2(ZVKLogs, GyroVN100Bias) FIELD_DEF2(ZVKLogs, Velocity)
+                    FIELD_DEF2(ZVKLogs, Acceleration)
                         FIELD_DEF2(ZVKLogs, SmallEulerAngles)
                             FIELD_DEF2(ZVKLogs, AngularVelocity));
     }
@@ -274,7 +322,7 @@ struct NASDAQLogsWrapper
     {
         return STRUCT_DEF(
             NASDAQLogsWrapper,
-            FIELD_DEF2(NASDAQLog, Timestamp) FIELD_DEF2(NASDAQLog, Position)
+            FIELD_DEF(obswTimestamp) FIELD_DEF2(NASDAQLog, Position)
                 FIELD_DEF2(NASDAQLog, Velocity) FIELD_DEF2(NASDAQLog, CovMatD)
                     FIELD_DEF2(NASDAQLog, BaroAct) FIELD_DEF2(NASDAQLog, GPSAct)
                         FIELD_DEF2(NASDAQLog, ADAAct));
@@ -363,7 +411,7 @@ struct SDALogsWrapper
     {
         return STRUCT_DEF(
             SDALogsWrapper,
-            FIELD_DEF2(logs, ShutdownCommand) FIELD_DEF2(logs, Timestamp)
+            FIELD_DEF2(logs, Timestamp) FIELD_DEF2(logs, ShutdownCommand)
                 FIELD_DEF2(logs, ShutdownCounter) FIELD_DEF2(logs, Apogee));
     }
 };
@@ -419,7 +467,7 @@ struct MEALogsWrapper
 
     MEALogsWrapper(uint64_t timestamp, MEA_types_h_::MEALogs logs) : logs(logs)
     {
-        logs.Timestamp = timestamp;
+        this->logs.Timestamp = timestamp;
     };
 
     static constexpr auto reflect()

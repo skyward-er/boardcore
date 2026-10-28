@@ -42,7 +42,7 @@ struct MapHeader
     uint16_t numPointsE;
     uint16_t numPointsN;
 
-    uint8_t whoAmI = 0x42;
+    uint8_t whoAmI;
 };
 
 #pragma pack(pop)  // restore default packing
@@ -60,6 +60,13 @@ struct MapBoundaries
     Units::Length::Meter eMin;
     Units::Length::Meter nMax;
     Units::Length::Meter nMin;
+};
+
+// whoAmI values for different map formats
+enum class MapFormat : uint8_t
+{
+    Matrix   = 0x42,
+    QuadTree = 0x43
 };
 
 }  // namespace Boardcore

@@ -22,7 +22,6 @@
 
 #include "ND015A.h"
 
-#include <drivers/spi/SPITransactionDMA.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/Constants.h>
 
@@ -50,20 +49,9 @@ SPIBusConfig ND015A::getDefaultSPIConfig()
 }
 
 ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
-               DMAStreamGuard* streamRx, DMAStreamGuard* streamTx,
-               std::chrono::nanoseconds timeout, IOWatchdogEnable iow,
-               BWLimitFilter bwl, NotchEnable ntc, uint8_t odr)
-    : slave(bus, cs, spiConfig), streamRx(streamRx), streamTx(streamTx),
-      timeoutDma(timeout), sensorSettings{odr, 0x7, iow, bwl, ntc}
-{
-}
-
-ND015A::ND015A(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
                IOWatchdogEnable iow, BWLimitFilter bwl, NotchEnable ntc,
                uint8_t odr)
-    : slave(bus, cs, spiConfig), streamRx(nullptr), streamTx(nullptr),
-      timeoutDma(std::chrono::nanoseconds::zero()),
-      sensorSettings{odr, 0x7, iow, bwl, ntc}
+    : slave(bus, cs, spiConfig), sensorSettings{odr, 0x7, iow, bwl, ntc}
 {
 }
 
@@ -169,33 +157,41 @@ float ND015A::getOffset() { return pressureOffset; };
 ND015XData ND015A::sampleImpl()
 {
     ND015XData data;
-    uint16_t spiDataOut;
+    uint16_t configBytes;
+    memcpy(&configBytes, &sensorSettings, sizeof(configBytes));
 
-    memcpy(&spiDataOut, &sensorSettings, sizeof(spiDataOut));
+    uint32_t spiDataOut = static_cast<uint32_t>(configBytes) << 16 | 0x0000;
 
-    uint16_t spiDataIn = 0;
-    if (streamRx != nullptr && streamTx != nullptr)
-    {
-        // Use dma
-        SPITransactionDMA spi(slave, *streamRx, *streamTx);
-        spiDataIn = spi.transfer16(spiDataOut, timeoutDma);
-    }
-    else
+    uint32_t spiDataIn = 0;
     {
         SPITransaction spi(slave);
-        spiDataIn = spi.transfer16(spiDataOut);
+        spiDataIn = spi.transfer32(spiDataOut);
     }
 
+    uint16_t spiPressure = spiDataIn >> 16;
+
     float normalizedPressure =
-        (static_cast<float>(spiDataIn) - 0.05f * powf(2, 16)) /
+        (static_cast<float>(spiPressure) - 0.05f * powf(2, 16)) /
         (0.9f * powf(2, 16));
 
     data.pressure =
         normalizedPressure * ND015A::FULLSCALE * Constants::PSI_TO_PASCAL -
         pressureOffset;
 
-    data.pressureTimestamp = TimestampTimer::getTimestamp();
+    uint16_t spiTemperature = static_cast<uint16_t>(spiDataIn);
 
+    float temperatureInteger = static_cast<float>(
+        std::bit_cast<int8_t>(static_cast<uint8_t>((spiTemperature) >> 8)));
+
+    float temperatureDecimal =
+        static_cast<float>(static_cast<uint8_t>(spiTemperature)) / 256.0f;
+
+    float temperature = temperatureInteger + temperatureDecimal;
+    data.temperature  = temperature;
+
+    auto timestamp            = TimestampTimer::getTimestamp();
+    data.temperatureTimestamp = timestamp;
+    data.pressureTimestamp    = timestamp;
     return data;
 }
 

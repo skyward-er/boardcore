@@ -73,8 +73,7 @@ int main()
         return 1;
     }
 
-    ND030D sensor(bus, csPinND030D, ND030D::getDefaultSPIConfig(), &streamRx,
-                  &streamTx, std::chrono::milliseconds(100));
+    ND030D sensor(bus, csPinND030D, ND030D::getDefaultSPIConfig());
 
     // ND030D sensor(bus, csPinND030D, ND030D::getDefaultSPIConfig());
     ND030XData sensorData;

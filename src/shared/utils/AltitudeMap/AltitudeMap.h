@@ -25,6 +25,8 @@
 #include <diagnostic/PrintLogger.h>
 #include <units/Length.h>
 
+#include <vector>
+
 #include "AltitudeMapData.h"
 
 namespace Boardcore
@@ -41,13 +43,13 @@ class AltitudeMap
 {
 public:
     /**
-     *   @param startAddress: the flash memory address where the altitude map is
-     *   stored. The altitude map must be stored in a binary file that begins
-     * with data structured as MapHeader, followed by a sequence of uint8_t
-     * values representing the altitude at each point in the map, stored in
-     * row-major order.
+     * @param mapFilename: the path to the binary file containing the altitude
+     * map. The altitude map must be stored in a binary file that begins with
+     * data structured as MapHeader, followed by a sequence of uint8_t values
+     * representing the altitude at each point in the map, stored in row-major
+     * order.
      */
-    explicit AltitudeMap(const uint8_t* startAddress);
+    explicit AltitudeMap(const char* mapFilename);
 
     /**
      * @brief Initialize the altitude map. Sets the map boundaries and checks
@@ -93,9 +95,12 @@ public:
     MapBoundaries getMapBoundaries();
 
 private:
-    const uint8_t* mapData;
-    const MapHeader* header;
+    const char* mapFilename;
 
+    std::vector<uint8_t> mapData;
+    std::size_t mapSize = 0;
+
+    MapHeader header{};
     MapBoundaries boundaries;
 
     Units::Length::Meter getGroundAltitude(Units::Length::Meter n,

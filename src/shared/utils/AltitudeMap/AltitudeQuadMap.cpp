@@ -25,7 +25,6 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
-#include <iostream>
 
 namespace Boardcore
 {
@@ -48,8 +47,6 @@ bool AltitudeQuadMap::init()
 
     if (!file)
     {
-        std::cout << "Failed to open altitude quadtree map file: "
-                  << mapFilename << std::endl;
         LOG_ERR(logger, "Failed to open altitude quadtree map file: {}",
                 mapFilename);
         return false;
@@ -63,8 +60,6 @@ bool AltitudeQuadMap::init()
 
     if (size <= sizeof(MapHeader))
     {
-        std::cout << "Quadtree map file size is smaller than map header size"
-                  << std::endl;
         LOG_ERR(logger,
                 "Quadtree map file size is smaller than map header size");
         return false;
@@ -76,7 +71,7 @@ bool AltitudeQuadMap::init()
     if (!file.read(reinterpret_cast<char*>(&header), sizeof(header)))
         return false;
 
-    if (header.whoAmI != 0x43)
+    if (header.whoAmI != static_cast<uint8_t>(MapFormat::QuadTree))
     {
         LOG_ERR(logger, "WhoAmI mismatch: expected 0x43, got 0x{:02X}",
                 header.whoAmI);
@@ -90,11 +85,17 @@ bool AltitudeQuadMap::init()
         !std::isfinite(header.minAltitude) ||
         !std::isfinite(header.maxAltitude - header.minAltitude) ||
         header.maxAltitude < header.minAltitude)
+    {
+        LOG_ERR(logger, "Quadtree map file has invalid header values");
         return false;
+    }
 
     quadTreeData.resize(treeSize);
     if (!file.read(reinterpret_cast<char*>(quadTreeData.data()), treeSize))
+    {
+        LOG_ERR(logger, "Failed to read quadtree data from file");
         return false;
+    }
 
     quadTreeSize = treeSize;
 
