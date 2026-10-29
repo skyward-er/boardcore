@@ -53,9 +53,7 @@ public:
     std::shared_ptr<miosix::Mode> gpioMode;
 
 private:
-    static void modeImpl(unsigned int p, unsigned char n, miosix::Mode m)
-    {
-    }
+    static void modeImpl(unsigned int p, unsigned char n, miosix::Mode m) {}
 
     static void afImpl(unsigned int p, unsigned char n, unsigned char af) {}
 };

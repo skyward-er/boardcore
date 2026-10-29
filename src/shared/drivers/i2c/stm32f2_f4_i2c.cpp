@@ -35,7 +35,6 @@ namespace miosix
 // class I2C1Driver
 //
 
-
 static void i2cEvIRQHandler(void* ctx)
 {
     I2C1Driver::instance().evIRQHandler();
@@ -65,10 +64,9 @@ I2C1Driver& I2C1Driver::instance()
 }
 
 I2C1Driver::I2C1Driver()
-    : waiting(nullptr), error(false), rxBuf(nullptr), rxBufCnt(0),
-      rxBufSize(0), noStop(false)
+    : waiting(nullptr), error(false), rxBuf(nullptr), rxBufCnt(0), rxBufSize(0),
+      noStop(false)
 {
-
 }
 
 void I2C1Driver::init()
@@ -163,9 +161,7 @@ bool I2C1Driver::send(unsigned char address, const void* data, int len,
     {
         FastGlobalIrqLock dLock;
         while (waiting)
-        {
             waiting->IRQglobalIrqUnlockAndWait(dLock);
-        }
     }
 
     DMA1_Stream7->CR = 0;
@@ -257,9 +253,7 @@ bool I2C1Driver::recv(unsigned char address, void* data, int len)
     {
         FastGlobalIrqLock dLock;
         while (waiting)
-        {
             waiting->IRQglobalIrqUnlockAndWait(dLock);
-        }
     }
 
     DMA1_Stream7->CR = 0;
@@ -286,9 +280,7 @@ bool I2C1Driver::recv(unsigned char address, void* data, int len)
         {
             FastGlobalIrqLock dLock;
             while (waiting)
-            {
                 waiting->IRQglobalIrqUnlockAndWait(dLock);
-            }
         }
         I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
     }
@@ -347,14 +339,11 @@ bool I2C1Driver::waitStatus1()
     {
         FastGlobalIrqLock dLock;
         while (waiting)
-        {
             waiting->IRQglobalIrqUnlockAndWait(dLock);
-        }
     }
     I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
     return !error;
 }
-
 
 void I2C1Driver::evIRQHandler()
 {

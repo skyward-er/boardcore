@@ -25,8 +25,8 @@
 #include <kernel/logging.h>
 #include <utils/ClockUtils.h>
 #include <utils/Debug.h>
-#include <map>
 
+#include <map>
 
 using namespace miosix;
 
@@ -250,7 +250,8 @@ void DMAStream::setup(DMATransaction& transaction)
     }
     else
     {
-        IRQunregisterIrq(dLock, irqNumber, &DMAStream::IRQhandleInterrupt, this);
+        IRQunregisterIrq(dLock, irqNumber, &DMAStream::IRQhandleInterrupt,
+                         this);
     }
 }
 
@@ -439,8 +440,7 @@ void DMAStream::IRQhandleInterrupt()
         transferCompleteCallback();
 
     if (errorCallback &&
-        (transferErrorFlag || fifoErrorFlag ||
-         directModeErrorFlag))
+        (transferErrorFlag || fifoErrorFlag || directModeErrorFlag))
     {
         errorCallback();
     }

@@ -87,8 +87,8 @@ inline void sleepUntil(long long absoluteTimeMs)
 inline miosix::TimedWaitResult IRQenableIrqAndTimedWaitMs(
     miosix::FastGlobalIrqLock& dLock, long long absoluteTimeMs)
 {
-    return miosix::Thread::IRQglobalIrqUnlockAndTimedWait(dLock,
-                                                    msToNs(absoluteTimeMs));
+    return miosix::Thread::IRQglobalIrqUnlockAndTimedWait(
+        dLock, msToNs(absoluteTimeMs));
 }
 
 }  // namespace Thread

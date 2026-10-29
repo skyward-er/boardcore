@@ -25,7 +25,9 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <interfaces/endianness.h>
 #include <utils/TimeUtils.h>
+
 #include <algorithm>
+
 #include "WIZ5500Defs.h"
 #include "kernel/thread.h"
 
@@ -124,9 +126,7 @@ void Wiz5500::reset()
 void Wiz5500::handleINTn()
 {
     if (intn_thread)
-    {
         intn_thread->IRQwakeup();
-    }
 }
 
 void Wiz5500::setGatewayIp(WizIp ip)

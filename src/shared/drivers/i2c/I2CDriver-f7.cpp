@@ -159,7 +159,6 @@ const I2CTimings& getTimings(Boardcore::I2CDriver::Speed speed)
     }
 }
 
-
 namespace Boardcore
 {
 
@@ -229,8 +228,8 @@ I2CDriver::I2CDriver(I2C_TypeDef* i2c, miosix::GpioPin scl, miosix::GpioPin sda)
         miosix::GlobalIrqLock dLock;
         miosix::IRQregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt,
                                this);
-        miosix::IRQregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt,
-                               this);
+        miosix::IRQregisterIrq(dLock, irqnErr,
+                               &I2CDriver::IRQhandleErrInterrupt, this);
     }
 }
 
@@ -240,8 +239,8 @@ I2CDriver::~I2CDriver()
         miosix::GlobalIrqLock dLock;
         miosix::IRQunregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt,
                                  this);
-        miosix::IRQunregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt,
-                                 this);
+        miosix::IRQunregisterIrq(dLock, irqnErr,
+                                 &I2CDriver::IRQhandleErrInterrupt, this);
     }
 
     // Disabling the peripheral
@@ -501,9 +500,7 @@ inline bool I2CDriver::IRQwaitForOperationCompletion(
     // flag thread as waiting, enable interrupts in I2C peripheral and yield
     // till an interrupt doesn't wake up the thread
     while (waiting)
-    {
         waiting->IRQglobalIrqUnlockAndWait(dLock);
-    }
 
     // If error occurred, parse it to notify the error(s); otherwise reset
     // lastError parameter

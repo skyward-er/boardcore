@@ -24,13 +24,12 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <interfaces/arch_registers.h>
+#include <interfaces/serial.h>
 #include <miosix.h>
 #include <utils/ClockUtils.h>
 
 #include <chrono>
 #include <string>
-#include<interfaces/serial.h>
-
 
 #ifndef USE_MOCK_PERIPHERALS
 using USARTType = USART_TypeDef;

@@ -396,7 +396,6 @@ public:
     }
 
 private:
-
     void IRQhandleInterrupt();
 
     DMAStream(DMADefs::DMAStreamId id, DMADefs::Channel channel);

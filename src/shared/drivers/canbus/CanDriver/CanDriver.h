@@ -215,7 +215,7 @@ private:
      * The FIFO number is a compile-time parameter because the kernel's
      * interrupt registration API calls member functions with no arguments.
      */
-    template<int FIFO>
+    template <int FIFO>
     void IRQhandleRXInterrupt()
     {
         handleRXInterrupt(FIFO);

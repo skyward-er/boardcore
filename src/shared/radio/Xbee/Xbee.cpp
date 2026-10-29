@@ -140,9 +140,7 @@ ssize_t Xbee::receive(uint8_t* buf, size_t bufMaxSize)
                 receiveThread = miosix::Thread::getCurrentThread();
 
                 while (receiveThread != 0)  // Avoid spurious wakeups
-                {
                     receiveThread->IRQglobalIrqUnlockAndWait(dLock);
-                }
             }
 
             // Forcefully return without receiving anything

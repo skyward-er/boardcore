@@ -154,7 +154,6 @@ void __attribute__((weak)) EXTI15_IRQHandlerImpl()
     IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI15\r\n");
 }
 
-
 static void exti0Handler(void*)
 {
     EXTI->PR = EXTI_PR_PR0;
@@ -184,7 +183,6 @@ static void exti4Handler(void*)
     EXTI->PR = EXTI_PR_PR4;
     EXTI4_IRQHandlerImpl();
 }
-
 
 static void exti5_9Handler(void*)
 {
@@ -220,7 +218,6 @@ static void exti5_9Handler(void*)
 #endif
     }
 }
-
 
 static void exti10_15Handler(void*)
 {
@@ -305,19 +302,18 @@ constexpr unsigned GetEXTICR_register_mask(unsigned P, unsigned N)
     return (0b1111 << ((N % 4) * 4));
 }
 
-
-static bool registered0 = false;
-static bool registered1 = false;
-static bool registered2 = false;
-static bool registered3 = false;
-static bool registered4 = false;
-static bool registered5_9 = false;
+static bool registered0     = false;
+static bool registered1     = false;
+static bool registered2     = false;
+static bool registered3     = false;
+static bool registered4     = false;
+static bool registered5_9   = false;
 static bool registered10_15 = false;
 
 void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
                              InterruptTrigger trigger, unsigned int priority)
 {
-    auto irqn = static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum));
+    auto irqn           = static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum));
     auto exticrRegValue = GetEXTICR_register_value(gpioPort, gpioNum);
 
     {
@@ -389,7 +385,8 @@ void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
         case EXTI15_10_IRQn:
             if (!registered10_15)
             {
-                IRQregisterIrq(dLock, EXTI15_10_IRQn, exti10_15Handler, nullptr);
+                IRQregisterIrq(dLock, EXTI15_10_IRQn, exti10_15Handler,
+                               nullptr);
                 registered10_15 = true;
             }
             break;
@@ -412,7 +409,6 @@ void disableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum)
         FastGlobalIrqLock dLock;
         SYSCFG->EXTICR[int(gpioNum / 4)] &= ~exticrRegMask;
     }
-
 }
 
 void changeInterruptTrigger(unsigned int gpioPort, unsigned int gpioNum,

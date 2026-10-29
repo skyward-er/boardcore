@@ -133,7 +133,6 @@ public:
         buffer.put(elem);
     }
 
-
     /**
      * @brief Gets an element from the buffer, without removing it.
      *
@@ -189,7 +188,7 @@ public:
         {
             IRQwakeWaitingThread();
             waiting = Thread::IRQgetCurrentThread();
-            Thread::IRQglobalIrqUnlockAndWait(d);  
+            Thread::IRQglobalIrqUnlockAndWait(d);
         }
     }
 

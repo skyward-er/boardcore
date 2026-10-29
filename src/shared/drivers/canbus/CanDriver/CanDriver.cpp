@@ -431,7 +431,6 @@ void CanbusDriver::handleRXInterrupt(int fifo)
         // Put the message into the queue
         bufRxPackets.IRQput(CanRXPacket{p, status});
     }
-
 }
 
 void CanbusDriver::IRQhandleTXInterrupt()
@@ -456,9 +455,8 @@ void CanbusDriver::IRQhandleTXInterrupt()
     }
     if ((can->TSR & CAN_TSR_RQCP2) > 0)
     {
-        res.mailbox = 2;
-        res.txStatus =
-            can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
+        res.mailbox  = 2;
+        res.txStatus = can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
         can->TSR |= CAN_TSR_RQCP2;
     }
 

@@ -22,7 +22,7 @@
 
 #include "SX1278Common.h"
 
-//#include <kernel/scheduler/scheduler.h> Ask Terraneo
+// #include <kernel/scheduler/scheduler.h> Ask Terraneo
 #include <utils/KernelTime.h>
 
 namespace Boardcore

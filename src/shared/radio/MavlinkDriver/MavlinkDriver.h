@@ -233,9 +233,9 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
     // Start receiver
     if (!rcvStarted)
     {
-        rcvThread = miosix::Thread::create(rcvLauncher, skywardStack(4 * 1024),
-                                           miosix::MAIN_PRIORITY,
-                                           reinterpret_cast<void*>(this), miosix::Thread::DETACHED);
+        rcvThread = miosix::Thread::create(
+            rcvLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+            reinterpret_cast<void*>(this), miosix::Thread::DETACHED);
 
         if (rcvThread != nullptr)
             rcvStarted = true;

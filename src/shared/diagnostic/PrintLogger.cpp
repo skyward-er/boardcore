@@ -71,11 +71,12 @@ void LogSink::log(const LogRecord& record)
         float ts     = Kernel::getOldTick() / 1000.0f;
         int min      = ts / 60;
         string tsStr = fmt::format("{:02d}:{:06.3f}", min, (ts - min * 60));
-        logImpl(fmt::format(fmt::runtime(format),
-            "ts"_a = tsStr, "file"_a = truncateFileName(record.file, 1),
-            "line"_a = record.line,
-            "fun"_a = record.function, "lvl"_a = getLevelString(record.level),
-            "name"_a = record.name, "msg"_a = record.message));
+        logImpl(fmt::format(fmt::runtime(format), "ts"_a = tsStr,
+                            "file"_a = truncateFileName(record.file, 1),
+                            // cppcheck-suppress AssignmentIntegerToAddress
+                            "line"_a = record.line, "fun"_a = record.function,
+                            "lvl"_a  = getLevelString(record.level),
+                            "name"_a = record.name, "msg"_a = record.message));
     }
 }
 

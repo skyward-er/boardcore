@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #include <cassert>
 #include <chrono>
 

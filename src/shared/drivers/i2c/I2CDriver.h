@@ -294,8 +294,7 @@ private:
      * scope.
      * @return True if waken up by an event, false if an error occurred.
      */
-    inline bool IRQwaitForOperationCompletion(
-        miosix::FastGlobalIrqLock& dLock);
+    inline bool IRQwaitForOperationCompletion(miosix::FastGlobalIrqLock& dLock);
 
     /**
      * @brief This function has the logic to wake up and reschedule the thread

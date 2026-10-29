@@ -59,5 +59,4 @@ struct ServoWinchData
     }
 };
 
-
 }  // namespace Boardcore

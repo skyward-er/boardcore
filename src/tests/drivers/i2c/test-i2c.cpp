@@ -153,7 +153,7 @@ int main()
 #ifdef _CHIP_STM32F7
                                            ,
                                            I2CDriver::Speed::FAST_PLUS
-#endif  // 
+#endif  //
                  })
             {
                 statusOLED &= i2cDriver(

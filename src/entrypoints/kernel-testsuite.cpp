@@ -57,7 +57,7 @@
 
 #ifdef WITH_PROCESSES
 #include <kernel/SystemMap.h>
-#include <kernel/elf_program.h> 
+#include <kernel/elf_program.h>
 #include <kernel/process.h>
 #include <kernel/process_pool.h>
 #include <testsuite/elf_testsuite/includes.h>

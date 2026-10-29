@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 Skyward Experimental Rocketry
- * Author: Skyward
+ * Author: Skyward Experimental Rocketry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -33,14 +33,15 @@
  * Miosix driver (FatFs on /sd) and USART4 through the Boardcore driver.
  */
 
+#include <interfaces-impl/bsp_impl.h>
+#include <sys/stat.h>
+
+#include <Eigen/Core>
 #include <atomic>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <sys/stat.h>
-
-#include <Eigen/Core>
 
 #include "algorithms/PIController.h"
 #include "diagnostic/CpuMeter/CpuMeter.h"
@@ -59,8 +60,6 @@
 #include "utils/collections/CircularBuffer.h"
 #include "utils/collections/SyncPacketQueue.h"
 
-#include <interfaces-impl/bsp_impl.h>
-
 using namespace miosix;
 using namespace Boardcore;
 
@@ -68,14 +67,14 @@ using namespace Boardcore;
 static GpioPin ledPc14(GPIOC_BASE, 14);
 static GpioPin ledPc15(GPIOC_BASE, 15);
 
-volatile uint32_t g_passCount = 0;
+volatile uint32_t g_passCount  = 0;
 volatile uint32_t g_totalCount = 0;
 volatile uint32_t g_failFirst  = 0;
 
 static void allLedsOn()
 {
-    //led1On();
-    //led2On();
+    // led1On();
+    // led2On();
     led3On();
     userLed4::high();
     ledPc14.high();
@@ -84,8 +83,8 @@ static void allLedsOn()
 
 static void allLedsOff()
 {
-    //led1Off();
-    //led2Off();
+    // led1Off();
+    // led2Off();
     led3Off();
     userLed4::low();
     ledPc14.low();
@@ -167,7 +166,7 @@ static bool testSyncPacketQueue()
     if (!q.put(reinterpret_cast<uint8_t*>(const_cast<char*>(msg)),
                sizeof(msg) - 1))
         return false;
-    Packet<16> p = q.pop();
+    Packet<16> p    = q.pop();
     uint8_t out[16] = {0};
     size_t n        = p.dump(out);
     return n == sizeof(msg) - 1 && memcmp(out, msg, n) == 0;
@@ -185,9 +184,9 @@ static bool testSkyQuaternion()
            std::abs(eul.z() - 90.0f) < 0.1f;
 }
 
-static bool g_brokerStarted = false;
+static bool g_brokerStarted         = false;
 static constexpr uint8_t SHOW_TOPIC = 1;
-static constexpr Event SHOW_EVENT = 7;
+static constexpr Event SHOW_EVENT   = 7;
 
 static bool testEventBroker()
 {
@@ -281,8 +280,7 @@ static bool testDmaMemToMem()
 
     // Memory-to-memory is only supported by DMA2 on the STM32F7
     DMAStreamGuard stream = DMADriver::instance().acquireStreamForPeripheral(
-        DMADefs::Peripherals::PE_MEM_ONLY,
-        std::chrono::milliseconds(250));
+        DMADefs::Peripherals::PE_MEM_ONLY, std::chrono::milliseconds(250));
     if (!stream.isValid())
         return false;
 
@@ -302,8 +300,8 @@ static bool testDmaMemToMem()
 
     stream->setup(tx);
     stream->enable();
-    bool ok = stream->timedWaitForTransferComplete(
-        std::chrono::milliseconds(250));
+    bool ok =
+        stream->timedWaitForTransferComplete(std::chrono::milliseconds(250));
     stream->disable();
 
     tx.enableTransferCompleteInterrupt = false;

@@ -120,7 +120,8 @@ I2CDriver::~I2CDriver()
     {
         miosix::GlobalIrqLock dLock;
         IRQunregisterIrq(dLock, irqnEv, &I2CDriver::IRQhandleInterrupt, this);
-        IRQunregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt, this);
+        IRQunregisterIrq(dLock, irqnErr, &I2CDriver::IRQhandleErrInterrupt,
+                         this);
     }
 
     // Disabling the peripheral
