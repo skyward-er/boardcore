@@ -35,3 +35,15 @@ const char* BUILD_TYPE  = "@CMAKE_BUILD_TYPE@";
 const char* SKYWARD_VERSION_STRING =
     "Skyward Experimental Rocketry (c) @TARGET_NAME@ @ @GIT_VERSION_STRING@ "
     "(@CMAKE_BUILD_TYPE@)";
+
+#ifdef _MIOSIX
+#include <kernel/logging.h>
+
+namespace 
+{
+struct PrintVersion
+{
+    PrintVersion() { miosix::bootlog("%s\n", SKYWARD_VERSION_STRING); }
+} printVersion;
+}  
+#endif
