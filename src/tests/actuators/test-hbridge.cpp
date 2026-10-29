@@ -40,7 +40,7 @@ static const TimerUtils::Channel HBRIDGE_PWM_CHANNEL =
 GpioPin hbridgePwm(GPIOB_BASE, 4);      // pwm pin
 GpioPin hbridgeInhibit(GPIOA_BASE, 7);  // inhibit pin for the hbridge
 
-bool print = true;  // print the elapsed time or not
+bool printElapsed = true;  // print the elapsed time or not
 
 long long measuredTime = 0;
 
@@ -55,7 +55,7 @@ void wait()
 
         t = Kernel::getOldTick();
 
-        if (print)
+        if (printElapsed)
             TRACE("Elapsed time : %.2f \n", (t - t0) / 1000.0);
     }
 

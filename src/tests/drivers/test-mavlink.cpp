@@ -52,7 +52,8 @@ MavDriver* mavlink;
  */
 int main()
 {
-    STM32SerialWrapper serial(USART1, 19200);
+    STM32SerialWrapper serial(USART1, 19200, GpioPin(GPIOA_BASE, 9),
+                              GpioPin(GPIOA_BASE, 10));
     transceiver = new SerialTransceiver(serial);
     mavlink = new MavDriver(transceiver, nullptr, silenceAfterSend, maxPktAge);
 

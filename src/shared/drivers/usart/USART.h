@@ -361,19 +361,6 @@ class STM32SerialWrapper : public USARTInterface
 {
 public:
     /**
-     * @brief Initializes the serialPortName and initializes the default pins,
-     * which are:
-     * - USART1: tx=PA9  rx=PA10
-     * - USART2: tx=PA2  rx=PA3
-     * - USART3: tx=PB10 rx=PB11
-     * @param usart structure that represents the usart peripheral [accepted
-     * are: USART1, USART2, USART3, UART4].
-     * @param baudrate baudrate in bit per second. Default values are [2400,
-     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
-     */
-    STM32SerialWrapper(USARTType* usart, int baudrate);
-
-    /**
      * @brief Initializes the serialPortName and initializes the serial port
      * using custom pins.
      * @param usart structure that represents the usart peripheral [accepted

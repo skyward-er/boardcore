@@ -27,7 +27,7 @@
 
 #include <algorithms/Kalman/Kalman.h>
 #include <drivers/timer/TimestampTimer.h>
-#include <kernel/kernel.h>
+#include <miosix.h>
 #include <util/util.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 

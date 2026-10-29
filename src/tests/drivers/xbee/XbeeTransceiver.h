@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <arch/common/drivers/stm32_hardware_rng.h>
+#include <drivers/stm32_hardware_rng.h>
 #include <logger/Logger.h>
 #include <miosix.h>
 #include <radio/Xbee/APIFramesLog.h>

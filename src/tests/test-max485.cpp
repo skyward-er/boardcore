@@ -118,7 +118,7 @@ void testCommunication(char* data, USARTInterface& src, USARTInterface& dst)
 int main()
 {
     {
-        InterruptDisableLock dsb;
+        GlobalIrqLock dsb;
         ctrlPin1_s1::mode(Mode::OUTPUT);
         ctrlPin2_s1::mode(Mode::OUTPUT);
         ctrlPin1_s2::mode(Mode::OUTPUT);

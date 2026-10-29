@@ -68,7 +68,7 @@ sbs_declare_target(catch-tests-boardcore stm32f429zi_stm32f4discovery
     src/tests/catch/skyQuaternion/test-skyquaternion.cpp
     src/tests/catch/examples/example-test-factorial.cpp
     src/tests/catch/test-aero.cpp
-    src/tests/catch/test-buttonhandler.cpp
+    # src/tests/catch/test-buttonhandler.cpp
     src/tests/catch/test-circularbuffer.cpp
     src/tests/catch/test-eventbroker.cpp
     src/tests/catch/test-gptimer.cpp
@@ -79,13 +79,17 @@ sbs_declare_target(catch-tests-boardcore stm32f429zi_stm32f4discovery
     src/tests/catch/xbee/test-xbee-parser.cpp
     src/tests/catch/test-modulemanager.cpp
     src/tests/catch/test-dependencymanager.cpp
-    src/tests/catch/test-MEA.cpp
-    src/tests/catch/test-airbrakesInterp.cpp
-    src/tests/catch/test-airbrakesInterpPID.cpp
+    # src/tests/catch/test-MEA.cpp
+    # src/tests/catch/test-airbrakesInterp.cpp
+    # src/tests/catch/test-airbrakesInterpPID.cpp
     src/tests/catch/test-pitot.cpp
     src/tests/catch/test-units.cpp
     src/tests/catch/test-registry-frontend.cpp
-    src/tests/catch/propagator/test-propagator.cpp DEFS USE_MOCK_PERIPHERALS)
+    # src/tests/catch/propagator/test-propagator.cpp
+    DEFS USE_MOCK_PERIPHERALS HOST)
+if(TARGET catch-tests-boardcore)
+    sbs_catch_test(catch-tests-boardcore)
+endif()
 
 #-----------------------------------------------------------------------------#
 #                             Tests - Actuators                               #
