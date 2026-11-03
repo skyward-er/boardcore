@@ -89,8 +89,11 @@ uint64_t SPITransaction::read48()
 {
     uint8_t data[6];
     transferImpl(nullptr, data, sizeof(data));
-    return data[0] << 40 | data[1] << 32 | data[2] << 24 | data[3] << 16 |
-           data[4] << 8 | data[5];
+    return static_cast<uint64_t>(data[0]) << 40 |
+           static_cast<uint64_t>(data[1]) << 32 |
+           static_cast<uint64_t>(data[2]) << 24 |
+           static_cast<uint64_t>(data[3]) << 16 |
+           static_cast<uint64_t>(data[4]) << 8 | data[5];
 }
 
 void SPITransaction::write(uint8_t data)

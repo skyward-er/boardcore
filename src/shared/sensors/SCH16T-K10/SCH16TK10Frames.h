@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <utils/Constants.h>
 
 #include "SCH16TK10Defs.h"
 
@@ -31,9 +32,9 @@ namespace Boardcore
 namespace SCH16TK10Frames
 {
 
+using SCH16TK10Defs::Mode;
 using SCH16TK10Defs::Register;
 using SCH16TK10Defs::SensorStatus;
-using SCH16TK10Defs::Mode;
 using SCH16TK10Defs::SLAVE_ID;
 /**
  * Helper struct to handle 32-bit SPI communication for this sensor
@@ -44,6 +45,9 @@ struct SPIFrame32
     static constexpr unsigned int bits = 32;
     static constexpr uint8_t frameType = 0;  // 32 bits SPI Frames
 
+    static constexpr float RATE_SENSITIVITY = 6.25f;   // LSB/(°/s)
+    static constexpr float ACC_SENSITIVITY  = 200.0f;  // LSB/(m/s^2)
+    static constexpr float TEMP_SENSITIVITY = 100.0f;  // LSB/°C
     /**
      * Response frame sent by the sensor
      */
@@ -119,6 +123,29 @@ struct SPIFrame32
 
         return resp;
     }
+
+    /**
+     * @brief Convert raw data in a float.
+     * @param data Data to convert.
+     * @return Converted data.
+     */
+    static constexpr float toFloat(uint16_t data)
+    {
+        return static_cast<float>(static_cast<int16_t>(data));
+    }
+
+    static constexpr float toFloatGyro(uint32_t data)
+    {
+       return toFloat(data) * Constants::DEGREES_TO_RADIANS;
+    }
+
+    /**
+     * @brief Convert raw data in a float. Calls toFloat, but needed for
+     * interface reasons
+     * @param data Data to convert.
+     * @return Converted data.
+     */
+    static constexpr float toFloatTemp(uint16_t data) { return toFloat(data); }
 };
 
 /**
@@ -129,6 +156,10 @@ struct SPIFrame48
     using raw_t                        = uint64_t;
     static constexpr unsigned int bits = 48;
     static constexpr uint8_t frameType = 1;  // 48 bits SPI Frames
+
+    static constexpr float RATE_SENSITIVITY = 100;      // LSB/(°/s)
+    static constexpr float ACC_SENSITIVITY  = 3200.0f;  // LSB/(m/s^2)
+    static constexpr float TEMP_SENSITIVITY = 100.0f;   // LSB/°C
 
     /**
      * Response frame sent by the sensor
@@ -208,6 +239,27 @@ struct SPIFrame48
             resp.checkCRC = false;
 
         return resp;
+    }
+
+    /**
+     * @brief Convert raw data in a float.
+     * @param data Data to convert.
+     * @return Converted data.
+     */
+    static constexpr float toFloat(uint32_t data)
+    {
+        return static_cast<float>(
+            static_cast<int32_t>(((data & 0xFFFFFu) ^ 0x80000u) - 0x80000u));
+    }
+
+    static constexpr float toFloatGyro(uint32_t data)
+    {
+        return toFloat(data) * Constants::DEGREES_TO_RADIANS;
+    }
+
+    static constexpr float toFloatTemp(uint32_t data)
+    {
+        return static_cast<float>(static_cast<int16_t>(data >> 4));
     }
 };
 

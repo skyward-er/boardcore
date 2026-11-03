@@ -31,6 +31,7 @@
 
 #include "SCH16TK10Data.h"
 #include "SCH16TK10Defs.h"
+#include "SCH16TK10Frames.h"
 
 namespace Boardcore
 {
@@ -45,13 +46,25 @@ public:
      * @param cs Chip Select pin number
      * @param busConfig SPI Bus config parameters
      */
-    SCH16TK10(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig busConfig)
+    SCH16TK10(SPIBusInterface& bus, miosix::GpioPin cs,
+              SPIBusConfig busConfig = getDefaultSPIConfig())
         : spiSlave(bus, cs, busConfig)
     {
-        static_assert(std::is_same<Frame, SCH16TK10Frames::SPIFrame48> ||
-                          std::is_same<Frame, SCH16TK10Frames::SPIFrame32>,
-                      "SCH16TK10: Frame must be SPIFrame32 or SPIFrame48");
+        static_assert(
+            std::is_same<Frame, SCH16TK10Frames::SPIFrame48>::value ||
+                std::is_same<Frame, SCH16TK10Frames::SPIFrame32>::value,
+            "SCH16TK10: Frame must be SPIFrame32 or SPIFrame48");
     };
+
+    static SPIBusConfig getDefaultSPIConfig()
+    {
+        SPIBusConfig config{};
+
+        config.clockDivider = SPI::ClockDivider::DIV_32;
+        config.mode         = SPI::Mode::MODE_0;
+
+        return config;
+    }
 
     /**
      * @brief Method to initialize the sensor
@@ -73,20 +86,7 @@ public:
     bool checkWhoAmI();
 
 private:
-    PrintLogger logger = getLogger("sch16tk10");
-
     bool isInit = false;
-
-    /**
-     * @brief Helper method to calculate a frame's CRC.
-     * @param SPIFrame Frame from which CRC needs to be calculated.
-     * @return Result of the calculation.
-     */
-    uint8_t calculateCRC(typename Frame::raw_t SPIFrame)
-    {
-        uint8_t result = Frame::calculateCRC(SPIFrame);
-        return result;
-    }
 
     /**
      * @brief Write a register of the sensor.
@@ -96,7 +96,7 @@ private:
     void writeRegister(SCH16TK10Defs::Register target, uint32_t data);
 
     /**
-     * @brief Write a register of the sensor.
+     * @brief Read a register of the sensor.
      * @param target Target register.
      * @return Response struct containing data and additional info.
      */
@@ -110,14 +110,22 @@ private:
     typename Frame::raw_t transferFrame(typename Frame::raw_t frame);
 
     /**
-     * @brief Test writing a register
+     * @brief Test writing a register.
+     * @return Result of operations.
      */
     bool testWrite();
 
     /**
      * @brief Check sensor status upon initialization.
+     * @return Result of operations.
      */
     bool checkStatus();
+
+    /**
+     * @brief Check sensor's config upon initialization.
+     * @return Result of operations.
+     */
+    bool checkConfig();
 
     SPISlave spiSlave;
 };
