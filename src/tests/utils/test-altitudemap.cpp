@@ -32,7 +32,7 @@ using namespace Units::Length;
 
 int main()
 {
-    auto map = std::make_unique<AltitudeMap>("/sd/maptree_data(2.77m).bin");
+    auto map = std::make_unique<AltitudeMap>("/sd/map_data.bin");
 
     if (!map->init())
     {
