@@ -27,6 +27,7 @@
 #include <miosix.h>
 #include <sensors/Sensor.h>
 
+#include <concepts>
 #include <type_traits>
 
 #include "SCH16TK10Data.h"
@@ -36,7 +37,14 @@
 namespace Boardcore
 {
 
-template <typename Frame>
+/**
+ * Compile-time check for correct instantiation of the class.
+ */
+template <typename T>
+concept F = std::is_same<T, SCH16TK10Frames::SPIFrame32>::value ||
+            std::is_same<T, SCH16TK10Frames::SPIFrame48>::value;
+
+template <F Frame>
 class SCH16TK10 : public Sensor<SCH16TK10Data>
 {
 public:
@@ -48,13 +56,7 @@ public:
      */
     SCH16TK10(SPIBusInterface& bus, miosix::GpioPin cs,
               SPIBusConfig busConfig = getDefaultSPIConfig())
-        : spiSlave(bus, cs, busConfig)
-    {
-        static_assert(
-            std::is_same<Frame, SCH16TK10Frames::SPIFrame48>::value ||
-                std::is_same<Frame, SCH16TK10Frames::SPIFrame32>::value,
-            "SCH16TK10: Frame must be SPIFrame32 or SPIFrame48");
-    };
+        : spiSlave(bus, cs, busConfig) {};
 
     static SPIBusConfig getDefaultSPIConfig()
     {
