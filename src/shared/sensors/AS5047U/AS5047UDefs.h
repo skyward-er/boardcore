@@ -63,33 +63,14 @@ enum class Registers : uint16_t
     ECC       = 0x001B,
 };
 
-enum class Mode : uint8_t
-{
-    WRITE = 0,
-    READ  = 1
-};
-
-/**@brief Whether to use UVW.
- * @note Currently UVW::ON is not supported.
- */
-enum class UVW : uint8_t
-{
-    ON  = 0b0,
-    OFF = 0b1,
-};
-
-/**@brief Whether to use ABI.
- * @note Currently ABI::ON is not supported.
- */
-enum class ABI : uint8_t
-{
-    ON  = 0b0,
-    OFF = 0b1,
-};
-
-// TODO support Filter::ON
-/**@brief Whether to use ABI.
- * @note Currently Filter::ON is not supported.
+/**
+ * @brief Whether to use the Adaptive Noise Filter.
+ * The filter allows to reduce the random measurement error.
+ * @note Based on the acceleration, the Adaptive Filter Block selects the
+ * suitable K-value. Lower K values let reduce the noise on lower accelerations,
+ * however they might not be suitable for high accelerations. K_min and K_max
+ * in the sensor configuration should be selected depending on the sensor
+ * application.
  */
 enum class Filter : uint8_t
 {
@@ -108,16 +89,21 @@ enum class FilterK : uint8_t
     K_6 = 0b110,
 };
 
+/**
+ * When NoiseSet is FALSE, better noise performance is achieved but at 3.3V the
+ * maximum temperature is limited to 125°C. With NoiseSet TRUE, all range of
+ * temperatures between -40 to 150°C are allowed, but with higher output noise.
+ * At 5V, the datasheet lists NOISESET as FALSE and the full possible
+ * temperature range.
+ */
 enum class NoiseSet : uint8_t
 {
     FALSE = 0b0,
     TRUE  = 0b1,
 };
 
-// TODO Support ON for DAECompensation.
 /**
  * @brief Whether Dynamic Angle Error (DAE) compensation is on.
- * @note ON is not supported.
  */
 enum class DAECompensation : uint8_t
 {
@@ -130,20 +116,10 @@ enum class DAECompensation : uint8_t
  * @note ANGLECOM uses DAE for angle error compensation, ANGLEUNC reads the raw
  * uncompensated angle.
  */
-enum class DAECStatus : uint8_t
+enum class DAECSource : uint8_t
 {
-    ON  = 0b0,
-    OFF = 0b1,
-};
-
-/**
- * @brief Whether to enable PWM (Pulse Width Modulation).
- * @note PWM::ON is not supported.
- */
-enum class PWM : uint8_t
-{
-    OFF = 0b0,
-    ON  = 0b1,
+    ANGLECOM = 0b0,
+    ANGLEUNC = 0b1,
 };
 
 /**

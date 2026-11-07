@@ -76,7 +76,7 @@ public:
      * @brief This method disables the Dynamic Angle Error Compensation
      * (ANGLECOM will now read non-compensated angle)
      */
-    void disableDAEC() { setDAECStatus(AS5047DDefs::DAECStatus::DAEC_ON); }
+    void disableDAEC() { setDAECStatus(AS5047DDefs::DAECStatus::DAEC_OFF); }
 
     /**
      * @brief This method will set the data source for the ANGLECOM register:

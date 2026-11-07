@@ -208,6 +208,7 @@ sbs_declare_target(test-h3lis331dl stm32f407vg_stm32f4discovery src/tests/sensor
 sbs_declare_target(test-lps28dfw stm32f767zi_nucleo src/tests/sensors/test-lps28dfw.cpp)
 sbs_declare_target(test-lps22df stm32f767zi_nucleo src/tests/sensors/test-lps22df.cpp)
 sbs_declare_target(test-lsm6dsrx stm32f407vg_stm32f4discovery src/tests/sensors/test-lsm6dsrx.cpp)
+sbs_declare_target(test-as5047u stm32f407vg_stm32f4discovery src/tests/sensors/test-as5047u.cpp)
 
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #

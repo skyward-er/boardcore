@@ -20,22 +20,19 @@
  * THE SOFTWARE.
  */
 
-#include "AS5047U.h"
-
 #include <units/Angle.h>
 
+#include "AS5047U.h"
 #include "AS5047UFrames.h"
 
 namespace Boardcore
 {
 
-using namespace AS5047UDefs;
-using namespace AS5047UFrames;
-
-template <Frame ReadFrame>
-ReadFrame::raw_t AS5047U<ReadFrame>::transferFrame(ReadFrame::raw_t frame)
+template <AS5047UFrames::Frame ReadFrame>
+typename ReadFrame::raw_t AS5047U<ReadFrame>::transferFrame(
+    typename ReadFrame::raw_t frame)
 {
-    constexpr int BUFFER_SIZE = Frame::bits / 8;
+    constexpr int BUFFER_SIZE = ReadFrame::bits / 8;
     uint8_t buf[BUFFER_SIZE];
 
     for (int i = 0; i < BUFFER_SIZE; i++)
@@ -46,7 +43,7 @@ ReadFrame::raw_t AS5047U<ReadFrame>::transferFrame(ReadFrame::raw_t frame)
         spiTransaction.transfer(buf, sizeof(buf));
     }
 
-    typename Frame::raw_t data = 0;
+    typename ReadFrame::raw_t data = 0;
     for (int i = 0; i < BUFFER_SIZE; i++)
         data = (data << 8) | buf[i];
 
@@ -54,58 +51,84 @@ ReadFrame::raw_t AS5047U<ReadFrame>::transferFrame(ReadFrame::raw_t frame)
 }
 
 // For writing to registers, 24-bit frames are always used.
-template <Frame ReadFrame>
-void AS5047U<ReadFrame>::writeRegister(Registers target, uint16_t data)
+template <AS5047UFrames::Frame ReadFrame>
+void AS5047U<ReadFrame>::writeRegister(AS5047UDefs::Registers target,
+                                       uint16_t data)
 {
-    auto frame = SPIFrame24::encode(target, Mode::WRITE, data);
+    auto commandFrame = AS5047UFrames::SPIFrame24::encodeWriteCommand(target);
+    auto dataFrame    = AS5047UFrames::SPIFrame24::encodeWriteData(data);
+
+    // Reset the sampling state as the next time
+    // reading from data register (ANGLECOM) is called, the first
+    // sample is not valid.
+    isFirstSample = true;
+
     {
         SPITransaction spiTransaction{spiSlave};
-        spiTransaction.write24(frame);
+        spiTransaction.transfer24(commandFrame);
+    }
+    // Temp - might need delay
+    {
+        SPITransaction SPITransaction{spiSlave};
+        SPITransaction.transfer24(dataFrame);
     }
 }
 
-template <Frame ReadFrame>
-ReadFrame::Response AS5047U<ReadFrame>::readRegister(Registers target,
-                                                     const std::string& regName,
-                                                     SensorErrors errorOnFail)
+template <AS5047UFrames::Frame ReadFrame>
+typename ReadFrame::Response AS5047U<ReadFrame>::readRegister(
+    AS5047UDefs::Registers target, SensorErrors errorOnFail)
 {
-    ReadFrame::raw_t encodedData =
-        ReadFrame::encode(target, SCH16TK10Defs::Mode::READ, 0);
+    typename ReadFrame::raw_t encodedData =
+        ReadFrame::encodeReadCommand(target);
+
+    // Reset the state for sampling since calling this function
+    // is only when we ask to read other registers than the data sample.
+    isFirstSample = true;
 
     transferFrame(encodedData);
+    // Temp - Might need delay
     auto rawData = transferFrame(encodedData);
 
-    ReadFrame::Response resp = ReadFrame::decode(rawData);
+    typename ReadFrame::Response resp = ReadFrame::decode(rawData);
+    checkResponseErrors(target, resp, errorOnFail);
+    return resp;
+}
 
+template <AS5047UFrames::Frame ReadFrame>
+void AS5047U<ReadFrame>::checkResponseErrors(AS5047UDefs::Registers target,
+                                             typename ReadFrame::Response resp,
+                                             SensorErrors errorOnFail)
+{
     if (!resp.okCRC)
     {
-        LOG_ERR("CRC wrong when reading {}", regName);
+        LOG_ERR(logger, "CRC wrong when reading {}",
+                static_cast<uint16_t>(target));
         lastError = errorOnFail;
         dumpErrorRegister(false);
     }
     if (resp.error)
     {
-        LOG_ERR("Error occurred when reading {}", regName);
+        LOG_ERR(logger, "Error occurred when reading {}",
+                static_cast<uint16_t>(target));
         lastError = errorOnFail;
         dumpErrorRegister(true);
     }
     if (resp.warning)
     {
-        LOG_WARN("Warning occurred when reading {}", regName);
+        LOG_WARN(logger, "Warning occurred when reading {}",
+                 static_cast<uint16_t>(target));
         dumpErrorRegister(false);
     }
-
-    return resp;
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 AS5047U<ReadFrame>::AS5047U(SPIBusInterface& spiBus, miosix::GpioPin cs,
                             SPIBusConfig& spiCfg, AS5047UConfig& sensorCfg)
     : spiSlave{spiBus, cs, spiCfg}, initialized{false}, config{sensorCfg}
 {
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 AS5047U<ReadFrame>::AS5047U(SPIBusInterface& spiBus, miosix::GpioPin cs,
                             AS5047UConfig& sensorCfg)
     : spiSlave{spiBus, cs, getDefaultSPIConfig()}, initialized{false},
@@ -113,7 +136,7 @@ AS5047U<ReadFrame>::AS5047U(SPIBusInterface& spiBus, miosix::GpioPin cs,
 {
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 SPIBusConfig AS5047U<ReadFrame>::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig;
@@ -123,7 +146,7 @@ SPIBusConfig AS5047U<ReadFrame>::getDefaultSPIConfig()
     return spiConfig;
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 bool AS5047U<ReadFrame>::init()
 {
     if (initialized)
@@ -132,40 +155,35 @@ bool AS5047U<ReadFrame>::init()
         return false;
     }
 
-    if (!initDisable())
-        return false;
-    if (!initSettings1())
-        return false;
-    if (!initSettings2())
-        return false;
+    isFirstSample = true;
 
-    initialized = true;
-    return true;
+    return initialized = (initDisableRegister() && initSettings1Register() &&
+                          initSettings2Register());
 }
 
-template <Frame ReadFrame>
-bool AS5047U<ReadFrame>::initDisable()
+template <AS5047UFrames::Frame ReadFrame>
+bool AS5047U<ReadFrame>::initDisableRegister()
 {
-    ReadFrame::Response reading =
-        readRegister(Registers::DISABLE, "DISABLE", SensorErrors::INIT_FAIL);
+    typename ReadFrame::Response reading =
+        readRegister(AS5047UDefs::Registers::DISABLE, SensorErrors::INIT_FAIL);
     if (!reading.okCRC || reading.error)
         return false;
 
     uint16_t disableVal =
         reading.data & 0b0111100;  // na field remains unchanged
-    disableVal |= ((static_cast<uint16_t>(config.uvw) & 0b1)) |
-                  ((static_cast<uint16_t>(config.abi) & 0b1) << 1) |
-                  ((static_cast<uint16_t>(config.filter) & 0b1) << 6);
+    disableVal |= (0b1);           // UVW OFF
+    disableVal |= (0b1 << 1);      // ABI OFF
+    disableVal |= ((static_cast<uint16_t>(config.filterOn) & 0b1) << 6);
 
-    return writeAndCheck("DISABLE", Registers::DISABLE, disableVal,
+    return writeAndCheck(AS5047UDefs::Registers::DISABLE, disableVal,
                          SensorErrors::INIT_FAIL);
 }
 
-template <Frame ReadFrame>
-bool AS5047U<ReadFrame>::initSettings1()
+template <AS5047UFrames::Frame ReadFrame>
+bool AS5047U<ReadFrame>::initSettings1Register()
 {
-    ReadFrame::Response reading = readRegister(
-        Registers::SETTINGS1, "SETTINGS1", SensorErrors::INIT_FAIL);
+    typename ReadFrame::Response reading = readRegister(
+        AS5047UDefs::Registers::SETTINGS1, SensorErrors::INIT_FAIL);
     if (!reading.okCRC || reading.error)
         return false;
 
@@ -175,33 +193,31 @@ bool AS5047U<ReadFrame>::initSettings1()
     settings1 |= ((static_cast<uint16_t>(config.kMax) & 0b111)) |
                  ((static_cast<uint16_t>(config.kMin) & 0b111) << 3);
 
-    return writeAndCheck("SETTINGS1", Registers::SETTINGS1, settings1,
+    return writeAndCheck(AS5047UDefs::Registers::SETTINGS1, settings1,
                          SensorErrors::INIT_FAIL);
 }
 
-template <Frame ReadFrame>
-bool AS5047U<ReadFrame>::initSettings2()
+template <AS5047UFrames::Frame ReadFrame>
+bool AS5047U<ReadFrame>::initSettings2Register()
 {
     // As ABI, UVW, PWM are not supported, the following values are ignored:
     // IWIDTH, DIR, UVW_ABI, ABI_DEC
     uint16_t settings2 =
         ((static_cast<uint16_t>(config.noiseSet) & 0b1) << 1) |
-        ((static_cast<uint16_t>(config.daeCompensation) & 0b1) << 4) |
-        ((static_cast<uint16_t>(config.dataSource) & 0b1) << 6) |
-        ((static_cast<uint16_t>(config.pwm) & 0b1) << 7);
+        ((static_cast<uint16_t>(config.daecOn) & 0b1) << 4) |
+        ((static_cast<uint16_t>(config.daecSource) & 0b1) << 6);
 
-    return writeAndCheck("SETTINGS2", Registers::SETTINGS2, settings2,
+    return writeAndCheck(AS5047UDefs::Registers::SETTINGS2, settings2,
                          SensorErrors::INIT_FAIL);
 }
 
-template <Frame ReadFrame>
-bool AS5047U<ReadFrame>::writeAndCheck(const std::string& regName,
-                                       const Registers reg,
+template <AS5047UFrames::Frame ReadFrame>
+bool AS5047U<ReadFrame>::writeAndCheck(const AS5047UDefs::Registers reg,
                                        const uint16_t value,
                                        SensorErrors errorOnFail)
 {
     writeRegister(reg, value);
-    ReadFrame::Response reading = readRegister(reg, regName, errorOnFail);
+    typename ReadFrame::Response reading = readRegister(reg, errorOnFail);
 
     if (!reading.okCRC || reading.error)
         return false;
@@ -213,7 +229,7 @@ bool AS5047U<ReadFrame>::writeAndCheck(const std::string& regName,
         LOG_ERR(logger,
                 "{} register after init: {:X}, expected "
                 "value: {:X}.",
-                regName, reading.data, value);
+                static_cast<uint16_t>(reg), reading.data, value);
         lastError = errorOnFail;
         dumpErrorRegister(false);
         return false;
@@ -222,30 +238,29 @@ bool AS5047U<ReadFrame>::writeAndCheck(const std::string& regName,
     return true;
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 bool AS5047U<ReadFrame>::selfTest()
 {
     return true;
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 bool AS5047U<ReadFrame>::resetAngleZero()
 {
-    ReadFrame::Response daecAngInt =
-        readRegister(AS5047DDefs::Registers::ANGLECOM, "ANGLECOM",
-                     SensorErrors::COMMAND_FAILED);
+    typename ReadFrame::Response daecAngInt = readRegister(
+        AS5047UDefs::Registers::ANGLECOM, SensorErrors::COMMAND_FAILED);
     if (!daecAngInt.okCRC || daecAngInt.error)
         return false;
 
     uint16_t angle = daecAngInt.data;
 
-    return writeAndCheck(AS5047DDefs::Registers::ZPOSM, (angle >> 6) & 0xFF,
+    return writeAndCheck(AS5047UDefs::Registers::ZPOSM, (angle >> 6) & 0xFF,
                          SensorErrors::COMMAND_FAILED) ||
-           writeAndCheck(AS5047DDefs::Registers::ZPOSL, angle & 0x3F,
+           writeAndCheck(AS5047UDefs::Registers::ZPOSL, angle & 0x3F,
                          SensorErrors::COMMAND_FAILED);
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 AS5047UData AS5047U<ReadFrame>::sampleImpl()
 {
     if (!initialized)
@@ -259,24 +274,36 @@ AS5047UData AS5047U<ReadFrame>::sampleImpl()
 
     // Reading is done from ANGLECOM register, use enableDAEC() or disableDAEC()
     // to change.
-    ReadFrame::Response reading = readRegister(Registers::ANGLECOM, "ANGLECOM",
-                                               SensorErrors::COMMAND_FAILED);
-    if (!reading.okCRC || reading.error)
+    typename ReadFrame::raw_t readCommand =
+        ReadFrame::encodeReadCommand(AS5047UDefs::Registers::ANGLECOM);
+    typename ReadFrame::raw_t rawData = transferFrame(readCommand);
+
+    typename ReadFrame::Response resp = ReadFrame::decode(rawData);
+    checkResponseErrors(AS5047UDefs::Registers::ANGLECOM, resp,
+                        SensorErrors::COMMAND_FAILED);
+
+    if (isFirstSample || !resp.okCRC || resp.error)
+    {
+        // Discard the first sample since the result to a read command
+        // is transmitted on the next read command.
+        isFirstSample = false;
+
         return lastSample;
+    }
 
     Units::Angle::Degree daecAngle = Units::Angle::Degree(
-        static_cast<float>(reading.data) * AS5047UDefs::SPI_ANGLE_RES);
+        static_cast<float>(resp.data) * AS5047UDefs::SPI_ANGLE_RES);
 
     // Returns in radians, similar to AS5047D sensor.
     return AS5047UData(timestamp,
                        static_cast<Units::Angle::Radian>(daecAngle).value());
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 void AS5047U<ReadFrame>::dumpErrorRegister(bool readDiagnostic)
 {
-    ReadFrame::Response errRegResponse =
-        readRegister(Registers::ERRFL, "ERRFL", SensorErrors::COMMAND_FAILED);
+    typename ReadFrame::Response errRegResponse = readRegister(
+        AS5047UDefs::Registers::ERRFL, SensorErrors::COMMAND_FAILED);
 
     uint16_t errData = errRegResponse.data;
 
@@ -306,10 +333,10 @@ void AS5047U<ReadFrame>::dumpErrorRegister(bool readDiagnostic)
     if (!readDiagnostic)
         return;
 
-    ReadFrame::Response diaRegResponse =
-        readRegister(Registers::DIA, "DIA", SensorErrors::COMMAND_FAILED);
+    typename ReadFrame::Response diaRegResponse =
+        readRegister(AS5047UDefs::Registers::DIA, SensorErrors::COMMAND_FAILED);
 
-    uint16_t errData = diaRegResponse.data;
+    errData = diaRegResponse.data;
 
     LOG_ERR(logger,
             "Dumping diagnostic register DIA.  "
@@ -337,37 +364,42 @@ void AS5047U<ReadFrame>::dumpErrorRegister(bool readDiagnostic)
     );
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 bool AS5047U<ReadFrame>::enableDAEC()
 {
-    return setDAECStatus(DAECStatus::ON);
+    return setDAECStatus(AS5047UDefs::DAECompensation::ON,
+                         AS5047UDefs::DAECSource::ANGLECOM);
 }
 
-template <Frame ReadFrame>
+template <AS5047UFrames::Frame ReadFrame>
 bool AS5047U<ReadFrame>::disableDAEC()
 {
-    return setDAECStatus(DAECStatus::OFF);
+    return setDAECStatus(AS5047UDefs::DAECompensation::OFF,
+                         AS5047UDefs::DAECSource::ANGLEUNC);
 }
 
-template <Frame ReadFrame>
-bool AS5047U<ReadFrame>::setDAECStatus(DAECStatus status)
+template <AS5047UFrames::Frame ReadFrame>
+bool AS5047U<ReadFrame>::setDAECStatus(AS5047UDefs::DAECompensation daecOn,
+                                       AS5047UDefs::DAECSource daecSource)
 {
-    ReadFrame::Result reading = readRegister(Registers::SETTINGS2, "SETTINGS2",
-                                             SensorErrors::COMMAND_FAILED);
+    typename ReadFrame::Response reading = readRegister(
+        AS5047UDefs::Registers::SETTINGS2, SensorErrors::COMMAND_FAILED);
     if (!reading.okCRC || reading.error)
         return false;
 
-    uint16_t settings2 = reading.data & 0b10111111;  // leave the rest unchanged
-    settings2 |= (static_cast<uint16_t>(status) & 0b1 << 6);
+    uint16_t settings2 = reading.data & 0b10101111;  // leave the rest unchanged
+    settings2 |= (static_cast<uint16_t>(daecOn) & 0b1 << 4);
+    settings2 |= (static_cast<uint16_t>(daecSource) & 0b1 << 6);
 
-    config.dataSource = dataSource;
+    config.daecSource = daecSource;
+    config.daecOn     = daecOn;
     lastError         = SensorErrors::NO_ERRORS;
 
-    return writeAndCheck("SETTINGS2", Registers::SETTINGS2, settings2,
+    return writeAndCheck(AS5047UDefs::Registers::SETTINGS2, settings2,
                          SensorErrors::COMMAND_FAILED);
 }
 
-template class AS5047U<SPIFrame16>;
-template class AS5047U<SPIFrame24>;
+template class AS5047U<AS5047UFrames::SPIFrame16>;
+template class AS5047U<AS5047UFrames::SPIFrame24>;
 
 }  // namespace Boardcore

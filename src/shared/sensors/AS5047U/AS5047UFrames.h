@@ -33,16 +33,15 @@ namespace Boardcore
 namespace AS5047UFrames
 {
 
-using namespace AS5047UDefs;
-
 /**
  * @brief Helper struct to handle 16-bit SPI communication for this sensor
+ * @note With 16-bit frames, the sensor does not support write commands. For
+ * that, 24-bit frame must be used.
  */
 struct SPIFrame16
 {
     using raw_t                        = uint16_t;
     static constexpr unsigned int bits = 16;
-    static constexpr uint8_t frameType = 0;  // 32 bits SPI Frames
 
     /**
      * Response frame sent by the sensor
@@ -59,7 +58,7 @@ struct SPIFrame16
      * @brief Encode 16-bit SPI Frame
      * @param regAddr Target register address to read
      */
-    static constexpr raw_t encode(Registers regAddr)
+    static constexpr raw_t encodeReadCommand(AS5047UDefs::Registers regAddr)
     {
         raw_t frame = 0;
 
@@ -90,7 +89,6 @@ struct SPIFrame24
 {
     using raw_t                        = uint32_t;
     static constexpr unsigned int bits = 24;
-    static constexpr uint8_t frameType = 1;  // 24 bits SPI Frames
 
     /**
      * Response frame sent by the sensor
@@ -106,7 +104,7 @@ struct SPIFrame24
     /**
      * @brief Evaluate Cyclic redundancy check from the SPI Frame (For 24
      bits frames - from the datasheet)
-     * @param payload The data to be evaluated
+     * @param data 16-bit data to be evaluated
      */
     static constexpr uint8_t calculateCRC(uint16_t data)
     {
@@ -126,13 +124,19 @@ struct SPIFrame24
         return crc;
     }
 
+    enum class Mode : uint8_t
+    {
+        WRITE = 0b0,
+        READ  = 0b1,
+    };
+
     /**
      * @brief Encode 24-bit SPI Frame
      * @param regAddr Target register address
-     * @param mode Read = 0, Write = 1
-     * @param data Data to send to the sensor
+     * @param isRead whether the command is read or write
      */
-    static constexpr raw_t encode(Registers regAddr, Mode mode)
+    static constexpr raw_t encodeCommand(AS5047UDefs::Registers regAddr,
+                                         Mode mode)
     {
         raw_t frame = 0;
 
@@ -140,6 +144,40 @@ struct SPIFrame24
 
         frame |= (static_cast<raw_t>(mode) << 22);
         frame |= (static_cast<raw_t>(regAddr) << 8);
+        frame |= (static_cast<raw_t>(crc));
+
+        return frame;
+    }
+
+    /**
+     * @brief Encode 24-bit SPI Frame for write command
+     * @param regAddr Target register address
+     */
+    static constexpr raw_t encodeWriteCommand(AS5047UDefs::Registers regAddr)
+    {
+        return encodeCommand(regAddr, Mode::WRITE);
+    }
+
+    /**
+     * @brief Encode 24-bit SPI Frame for read command
+     * @param regAddr Target register address
+     */
+    static constexpr raw_t encodeReadCommand(AS5047UDefs::Registers regAddr)
+    {
+        return encodeCommand(regAddr, Mode::READ);
+    }
+
+    /**
+     * @brief Encode 24-bit SPI Frame for write data
+     * @param data Data
+     */
+    static constexpr raw_t encodeWriteData(uint16_t data)
+    {
+        raw_t frame = 0;
+
+        uint8_t crc = calculateCRC(static_cast<uint16_t>(data));
+
+        frame |= (static_cast<raw_t>(data) << 8);
         frame |= (static_cast<raw_t>(crc));
 
         return frame;
