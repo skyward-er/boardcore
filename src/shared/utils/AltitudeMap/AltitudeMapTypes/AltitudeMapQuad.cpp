@@ -80,8 +80,8 @@ uint8_t AltitudeMapQuad::queryNode(uint16_t row, uint16_t col) const
             break;
         const std::size_t child3 = child2 + node.size2;
 
-        const uint16_t midRow = (row0 + row1) >> 1;
-        const uint16_t midCol = (col0 + col1) >> 1;
+        const uint16_t midRow = (row0 + row1) / 2;
+        const uint16_t midCol = (col0 + col1) / 2;
 
         if (row <= midRow)
         {
