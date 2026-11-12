@@ -22,9 +22,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "AltitudeMapBase.h"
 
 namespace Boardcore

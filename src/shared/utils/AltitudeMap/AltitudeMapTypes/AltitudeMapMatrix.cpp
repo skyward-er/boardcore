@@ -23,6 +23,8 @@
 #include "AltitudeMapMatrix.h"
 
 #include <cmath>
+#include <cstdint>
+#include <vector>
 
 namespace Boardcore
 {
