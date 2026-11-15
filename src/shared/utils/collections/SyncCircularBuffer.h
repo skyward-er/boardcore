@@ -25,6 +25,7 @@
 #include <miosix.h>
 
 #include <type_traits>
+#include <cassert>
 
 #include "CircularBuffer.h"
 
@@ -49,8 +50,16 @@ public:
     void put(const T& elem)
     {
         Lock<FastMutex> l(mutex);
-        cv.signal();
         buffer.put(elem);
+        cv.signal(); 
+    }
+
+    void tryPut(const T& elem) {
+        Lock<FastMutex> l(mutex);
+        assert(!buffer.isFull() && "Buffer overflow");
+
+        buffer.put(elem);
+        cv.signal();
     }
 
     /**
@@ -96,6 +105,15 @@ public:
         return buffer.pop();
     }
 
+    T tryPop()
+    {
+        Lock<FastMutex> l(mutex);
+        while (buffer.isEmpty())
+            cv.wait(l);
+
+        return buffer.pop();
+    }
+
     /**
      * @brief Counts the elements in the buffer.
      *
@@ -127,6 +145,27 @@ public:
         Lock<FastMutex> l(mutex);
         while (buffer.isEmpty())
             cv.wait(l);
+    }
+
+    /**
+     * @brief Gets an element from the buffer, without removing it after checking the list isn't empty.
+     *
+     * Index starts from the oldest element in the buffer.
+     * tryGet() returns the first element.
+     * 
+     * Basically a merge of SyncCircularBuffer::get and SyncCircularBuffer::waitUntilNotEmpty to 
+     * guarantee the atomicity of the funcion.
+     *
+     * @param i Index of the element to get, starting from the oldest.
+     * @return The element.
+     */
+    T tryGet(unsigned int i = 0)
+    {
+        Lock<FastMutex> l(mutex);
+        while (buffer.isEmpty())
+            cv.wait(l);
+
+        return buffer.get(i);
     }
 
     /**
