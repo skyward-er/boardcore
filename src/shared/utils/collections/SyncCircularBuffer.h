@@ -24,8 +24,8 @@
 
 #include <miosix.h>
 
-#include <type_traits>
 #include <cassert>
+#include <type_traits>
 
 #include "CircularBuffer.h"
 
@@ -39,10 +39,12 @@ namespace Boardcore
 /**
  * Implementation of a synchronized circular buffer
  */
-template <typename T, unsigned int Size>
+template <typename T, unsigned int Size = 100>
 class SyncCircularBuffer
 {
 public:
+    SyncCircularBuffer() = default;
+
     /**
      * Puts a copy of the element in the buffer
      * @param elem element
@@ -51,10 +53,11 @@ public:
     {
         Lock<FastMutex> l(mutex);
         buffer.put(elem);
-        cv.signal(); 
+        cv.signal();
     }
 
-    void tryPut(const T& elem) {
+    void tryPut(const T& elem)
+    {
         Lock<FastMutex> l(mutex);
         assert(!buffer.isFull() && "Buffer overflow");
 
@@ -148,13 +151,15 @@ public:
     }
 
     /**
-     * @brief Gets an element from the buffer, without removing it after checking the list isn't empty.
+     * @brief Gets an element from the buffer, without removing it after
+     * checking the list isn't empty.
      *
      * Index starts from the oldest element in the buffer.
      * tryGet() returns the first element.
-     * 
-     * Basically a merge of SyncCircularBuffer::get and SyncCircularBuffer::waitUntilNotEmpty to 
-     * guarantee the atomicity of the funcion.
+     *
+     * Basically a merge of SyncCircularBuffer::get and
+     * SyncCircularBuffer::waitUntilNotEmpty to guarantee the atomicity of the
+     * funcion.
      *
      * @param i Index of the element to get, starting from the oldest.
      * @return The element.
@@ -177,6 +182,9 @@ public:
     size_t getSize() const { return Size; }
 
 private:
+    SyncCircularBuffer(const SyncCircularBuffer&)            = delete;
+    SyncCircularBuffer& operator=(const SyncCircularBuffer&) = delete;
+
     mutable FastMutex mutex;
     mutable ConditionVariable cv;
 

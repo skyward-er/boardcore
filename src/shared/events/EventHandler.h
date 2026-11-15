@@ -24,7 +24,7 @@
 
 #include <events/Event.h>
 #include <utils/Debug.h>
-#include <utils/collections/SyncQueue.h>
+#include <utils/collections/SyncCircularBuffer.h>
 
 #include "ActiveObject.h"
 
@@ -58,7 +58,7 @@ protected:
 
     void run() override;
 
-    SynchronizedQueue<Event> eventList;
+    SyncCircularBuffer<Event> eventList;
 };
 
 inline EventHandler::EventHandler(unsigned int stacksize,
@@ -69,7 +69,7 @@ inline EventHandler::EventHandler(unsigned int stacksize,
 
 inline EventHandler::~EventHandler() {};
 
-inline void EventHandler::postEvent(const Event& ev) { eventList.put(ev); }
+inline void EventHandler::postEvent(const Event& ev) { eventList.tryPut(ev); }
 
 inline void EventHandler::stop()
 {
@@ -78,7 +78,7 @@ inline void EventHandler::stop()
         stopFlag = true;
 
         // Put empty event in the list to wake the runner thread
-        eventList.put(Event{EV_EMPTY});
+        eventList.tryPut(Event{EV_EMPTY});
 
         thread->join();
     }
@@ -88,8 +88,8 @@ inline void EventHandler::run()
 {
     while (!shouldStop())
     {
-        Event e = eventList.get();
-        handleEvent(e);
+        Event ev = eventList.tryPop();
+        handleEvent(ev);
     }
 }
 

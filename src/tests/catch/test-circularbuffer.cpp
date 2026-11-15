@@ -379,3 +379,56 @@ TEST_CASE("SyncCircularBuffer - Get and pop")
         REQUIRE(b1.count() == 5);
     }
 }
+
+TEST_CASE("SyncCircularBuffer - tryPut, tryGet & tryPop")
+{
+    SyncCircularBuffer<int, 4> buf;
+
+    REQUIRE(buf.isEmpty());
+    REQUIRE_FALSE(buf.isFull());
+
+    buf.tryPut(10);
+    buf.tryPut(20);
+    buf.tryPut(30);
+    buf.tryPut(40);
+
+    REQUIRE(buf.isFull());
+    REQUIRE(buf.count() == 4);
+
+    REQUIRE(buf.tryGet() == 10);
+    REQUIRE(buf.tryGet(0) == 10);
+    REQUIRE(buf.tryGet(2) == 30);
+    REQUIRE(buf.count() == 4);
+
+    REQUIRE(buf.tryPop() == 10);
+    REQUIRE(buf.count() == 3);
+    REQUIRE(buf.tryPop() == 20);
+    REQUIRE(buf.count() == 2);
+    REQUIRE(buf.tryPop() == 30);
+    REQUIRE(buf.count() == 1);
+    REQUIRE(buf.tryPop() == 40);
+    REQUIRE(buf.count() == 0);
+
+    REQUIRE(buf.isEmpty());
+    REQUIRE_FALSE(buf.isFull());
+}
+
+TEST_CASE("SyncCircularBuffer - tryPut & tryPop wrapping")
+{
+    SyncCircularBuffer<int, 3> buf;
+
+    buf.tryPut(1);
+    buf.tryPut(2);
+    REQUIRE(buf.tryPop() == 1);
+
+    buf.tryPut(3);
+    REQUIRE(buf.tryPop() == 2);
+    REQUIRE(buf.tryPop() == 3);
+    REQUIRE(buf.isEmpty());
+
+    buf.tryPut(4);
+    buf.tryPut(5);
+    REQUIRE(buf.tryPop() == 4);
+    REQUIRE(buf.tryPop() == 5);
+    REQUIRE(buf.isEmpty());
+}
