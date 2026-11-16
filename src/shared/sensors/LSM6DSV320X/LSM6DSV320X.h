@@ -1,13 +1,13 @@
 
 #pragma once
 
-#include <array>
-#include <cstdint>
-
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
+
+#include <array>
+#include <cstdint>
 
 #include "LSM6DSV320XConfig.h"
 #include "LSM6DSV320XData.h"
@@ -46,13 +46,13 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Returns data from the sensors.
+     * @brief Returns data directly from the sensor output registers.
      */
     LSM6DSV320XData getSensorData();
 
 protected:
     /**
-     * @brief Gather data from FIFO/data registers.
+     * @brief Gather data from FIFO or data registers.
      */
     LSM6DSV320XData sampleImpl() override;
 
@@ -63,20 +63,21 @@ private:
     LSM6DSV320XConfig config;
 
     // Sensor sensitivities
-    float sensitivityLowG = 0.0;
-    float sensitivityHighG = 0.0;
-    float sensitivityGyr = 0.0;
+    float sensitivityLowG  = 0.0f;
+    float sensitivityHighG = 0.0f;
+    float sensitivityGyr   = 0.0f;
 
     /**
      * @brief Correlation between the sensor clock and TimestampTimer.
      */
-    uint64_t timestamp0 = 0;
+    uint64_t timestamp0       = 0;
     uint32_t sensorTimestamp0 = 0;
 
-    float sensorTimestampResolution = 0.0;
+    float sensorTimestampResolution = 0.0f;
 
     /**
-     * @brief Stores the last valid sample for each sensor channel.
+     * @brief Stores the last valid sample for each sensor channel, used as a
+     * fallback when a channel is not updated in a given FIFO timeslot.
      */
     LSM6DSV320XData lastValidSample;
 
@@ -84,7 +85,8 @@ private:
      * @brief Temporary buffer containing raw FIFO records.
      */
     std::array<LSM6DSV320XDefs::RawFifoData,
-               LSM6DSV320XDefs::SENSOR_FIFO_SIZE> rawFifo;
+               LSM6DSV320XDefs::SENSOR_FIFO_SIZE>
+        rawFifo;
 
     PrintLogger logger = Logging::getLogger("lsm6dsv320x");
 
@@ -94,9 +96,26 @@ private:
     bool checkWhoAmI();
 
     /**
-     * @brief Reads raw records from the hardware FIFO.
+     * @brief Checks the validity of configuration parameters.
+     */
+    bool checkConfig();
+
+    /**
+     * @brief Reads raw records from the hardware FIFO and unpacks them.
      */
     void readFromFifo();
+
+    /**
+     * @brief Pushes a timeslot sample into `lastFifo` using `lastValidSample`
+     * as fallback for missing channels.
+     *
+     * @note The FIFO mutex must be locked prior to calling this function.
+     *
+     * @param timeslot The timeslot containing data to be pushed.
+     * @param fifoIdx Current writable index in `lastFifo`.
+     */
+    void pushIntoFifo(LSM6DSV320XDefs::FifoTimeslotData& timeslot,
+                      uint16_t& fifoIdx);
 
     /**
      * @brief Returns the number of unread records in the hardware FIFO.
@@ -112,6 +131,12 @@ private:
      * @brief Combines two 8-bit values into an unsigned 16-bit value.
      */
     uint16_t combineHighLowBitsUnsigned(uint8_t low, uint8_t high);
+
+    /**
+     * @brief Reads a 16-bit signed value as float from two registers.
+     */
+    float readFloat16(LSM6DSV320XDefs::Registers lowReg,
+                      LSM6DSV320XDefs::Registers highReg);
 
     /**
      * @brief Reads a signed 16-bit value from two consecutive registers.
@@ -195,4 +220,4 @@ private:
     float getSensorTimestampResolution();
 };
 
-}  // namespace Boardcore
+}  // namespace Boardcore // namespace Boardcore

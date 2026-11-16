@@ -12,18 +12,18 @@ struct LSM6DSV320XConfig
     enum class LOW_G_ODR : uint8_t
     {
         POWER_DOWN = 0,
-        HZ_1_875  = 1,
-        HZ_7_5    = 2,
-        HZ_15     = 3,
-        HZ_30     = 4,
-        HZ_60     = 5,
-        HZ_120    = 6,
-        HZ_240    = 7,
-        HZ_480    = 8,
-        HZ_960    = 9,
-        HZ_1920   = 10,
-        HZ_3840   = 11,
-        HZ_7680   = 12
+        HZ_1_875   = 1,
+        HZ_7_5     = 2,
+        HZ_15      = 3,
+        HZ_30      = 4,
+        HZ_60      = 5,
+        HZ_120     = 6,
+        HZ_240     = 7,
+        HZ_480     = 8,
+        HZ_960     = 9,
+        HZ_1920    = 10,
+        HZ_3840    = 11,
+        HZ_7680    = 12
     };
 
     // Low-g accelerometer full scale
@@ -88,6 +88,7 @@ struct LSM6DSV320XConfig
     // Gyroscope full scale
     enum class GYR_FULLSCALE : uint8_t
     {
+        DPS_125  = 0b000,
         DPS_250  = 0b001,
         DPS_500  = 0b010,
         DPS_1000 = 0b011,
@@ -163,61 +164,53 @@ struct LSM6DSV320XConfig
     // Interrupt sources shared by INT1 and INT2
     enum class INTERRUPT : uint8_t
     {
-        NOTHING       = 0,
-        ACC_DRDY      = 0x01,
-        GYR_DRDY      = 0x02,
+        NOTHING        = 0,
+        ACC_DRDY       = 0x01,
+        GYR_DRDY       = 0x02,
         FIFO_THRESHOLD = 0x08,
-        FIFO_OVERRUN  = 0x10,
-        FIFO_FULL     = 0x20,
-        COUNTER_BDR   = 0x40
+        FIFO_OVERRUN   = 0x10,
+        FIFO_FULL      = 0x20,
+        COUNTER_BDR    = 0x40
     };
 
     // Allows combining interrupt sources with bitwise OR
     constexpr friend INTERRUPT operator|(INTERRUPT lhs, INTERRUPT rhs)
     {
-        return static_cast<INTERRUPT>(
-            static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+        return static_cast<INTERRUPT>(static_cast<uint8_t>(lhs) |
+                                      static_cast<uint8_t>(rhs));
     }
 
     // Sensor configuration
     BDU bdu;
 
-    // low-g accelerometer config
+    // Low-g accelerometer config
     LOW_G_ODR odrLowG;
     LOW_G_OPERATING_MODE opModeLowG;
     LOW_G_FULLSCALE fsLowG;
 
-
-    // high-g accelerometer config
+    // High-g accelerometer config
     HIGH_G_ODR odrHighG;
     HIGH_G_FULLSCALE fsHighG;
 
-
-    // gyroscope config
+    // Gyroscope config
     GYR_ODR odrGyr;
     GYR_OPERATING_MODE opModeGyr;
     GYR_FULLSCALE fsGyr;
 
     // FIFO configuration
     FIFO_MODE fifoMode;
-
     FIFO_BDR fifoBdrLowG;
     FIFO_BDR fifoBdrGyr;
-
     bool fifoHighGBatchEnabled;
-
     FIFO_TIMESTAMP_DECIMATION fifoTimestampDecimation;
-
     FIFO_TEMPERATURE_BDR fifoTemperatureBdr;
 
-    // FIFO watermark: 1 LSB corresponds to one FIFO word
-    // The WTM field is 8 bits wide.
-    uint8_t fifoWatermark;
+    // FIFO watermark: 1 LSB corresponds to one FIFO word (max 255 in 8-bit WTM)
+    uint16_t fifoWatermark;
 
     // Interrupt routing
     INTERRUPT int1InterruptSelection;
     INTERRUPT int2InterruptSelection;
+};
 
-};  
-
-}
+}  // namespace Boardcore
