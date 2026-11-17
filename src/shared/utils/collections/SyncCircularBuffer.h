@@ -36,10 +36,11 @@ using miosix::Lock;
 namespace Boardcore
 {
 
+static constexpr size_t DEFAULT_SIZE = 20;
 /**
  * Implementation of a synchronized circular buffer
  */
-template <typename T, unsigned int Size = 100>
+template <typename T, size_t Size = DEFAULT_SIZE>
 class SyncCircularBuffer
 {
 public:

@@ -35,7 +35,7 @@ namespace Boardcore
  * Useful if you want to check wether or not events are being
  * effectively posted
  */
-class EventCounter : public EventHandler
+class EventCounter : public EventHandler<>
 {
 public:
     /**

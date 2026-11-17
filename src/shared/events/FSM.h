@@ -31,8 +31,8 @@
 namespace Boardcore
 {
 
-template <class T>
-class FSM : public EventHandler
+template <class T, size_t QueueSize = DEFAULT_SIZE>
+class FSM : public EventHandler<QueueSize>
 {
 public:
     FSM(void (T::*initialState)(const Event&),
@@ -58,21 +58,21 @@ private:
     Event specialEvent;
 };
 
-template <class T>
-FSM<T>::FSM(void (T::*initialState)(const Event&), unsigned int stacksize,
-            miosix::Priority priority)
-    : EventHandler(stacksize, priority)
+template <class T, size_t QueueSize>
+FSM<T, QueueSize>::FSM(void (T::*initialState)(const Event&),
+                       unsigned int stacksize, miosix::Priority priority)
+    : EventHandler<QueueSize>(stacksize, priority)
 {
     state        = initialState;
     specialEvent = EV_ENTRY;
-    postEvent(specialEvent);
+    this->postEvent(specialEvent);
 }
 
-template <class T>
-FSM<T>::~FSM(){};
+template <class T, size_t QueueSize>
+FSM<T, QueueSize>::~FSM() {};
 
-template <class T>
-void FSM<T>::transition(void (T::*nextState)(const Event&))
+template <class T, size_t QueueSize>
+void FSM<T, QueueSize>::transition(void (T::*nextState)(const Event&))
 {
     specialEvent = EV_EXIT;
     (static_cast<T*>(this)->*state)(specialEvent);
@@ -81,14 +81,14 @@ void FSM<T>::transition(void (T::*nextState)(const Event&))
     (static_cast<T*>(this)->*state)(specialEvent);
 }
 
-template <class T>
-bool FSM<T>::testState(void (T::*testState)(const Event&))
+template <class T, size_t QueueSize>
+bool FSM<T, QueueSize>::testState(void (T::*testState)(const Event&))
 {
     return (this->state == testState);
 }
 
-template <class T>
-void FSM<T>::handleEvent(const Event& e)
+template <class T, size_t QueueSize>
+void FSM<T, QueueSize>::handleEvent(const Event& e)
 {
     (static_cast<T*>(this)->*state)(e);
 }

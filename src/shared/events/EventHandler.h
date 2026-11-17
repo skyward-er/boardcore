@@ -41,6 +41,7 @@ public:
     virtual void postEvent(const Event& ev) = 0;
 };
 
+template <size_t QueueSize = DEFAULT_SIZE>
 class EventHandler : public EventHandlerBase, public ActiveObject
 {
 public:
@@ -58,20 +59,27 @@ protected:
 
     void run() override;
 
-    SyncCircularBuffer<Event> eventList;
+    SyncCircularBuffer<Event, QueueSize> eventList;
 };
 
-inline EventHandler::EventHandler(unsigned int stacksize,
-                                  miosix::Priority priority)
+template <size_t QueueSize>
+inline EventHandler<QueueSize>::EventHandler(unsigned int stacksize,
+                                             miosix::Priority priority)
     : ActiveObject(stacksize, priority)
 {
 }
 
-inline EventHandler::~EventHandler() {};
+template <size_t QueueSize>
+inline EventHandler<QueueSize>::~EventHandler() {};
 
-inline void EventHandler::postEvent(const Event& ev) { eventList.tryPut(ev); }
+template <size_t QueueSize>
+inline void EventHandler<QueueSize>::postEvent(const Event& ev)
+{
+    eventList.tryPut(ev);
+}
 
-inline void EventHandler::stop()
+template <size_t QueueSize>
+inline void EventHandler<QueueSize>::stop()
 {
     if (isRunning())
     {
@@ -84,7 +92,8 @@ inline void EventHandler::stop()
     }
 }
 
-inline void EventHandler::run()
+template <size_t QueueSize>
+inline void EventHandler<QueueSize>::run()
 {
     while (!shouldStop())
     {

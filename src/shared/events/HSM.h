@@ -46,8 +46,8 @@ enum State
     SUPER,  ///< A transition to a parent state was taken.
 };
 
-template <class T>
-class HSM : public EventHandler
+template <class T, size_t QueueSize = DEFAULT_SIZE>
+class HSM : public EventHandler<QueueSize>
 {
 public:
     typedef State (T::*StateHandler)(const Event&);
@@ -60,7 +60,7 @@ public:
     HSM(StateHandler initialState,
         unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
         miosix::Priority priority = miosix::MAIN_PRIORITY)
-        : EventHandler(stacksize, priority)
+        : EventHandler<QueueSize>(stacksize, priority)
     {
         state = &T::state_top;
         temp  = initialState;
@@ -72,7 +72,7 @@ public:
     {
         init();
 
-        return EventHandler::start();
+        return EventHandler<QueueSize>::start();
     }
 
     /**
