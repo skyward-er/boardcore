@@ -41,13 +41,16 @@ struct ValveConfig
     bool flipped                = false;  ///< Whether the servo is flipped
     uint32_t defaultOpeningTime = 1000;   // Default opening time [ms]
     float defaultMaxAperture    = 1.0;    // Max aperture
+    float defaultOpenPosition =
+        1.0;  ///< Position [0, 1] at which the valve is considered open
 
-    uint8_t openingEvent       = 0;  ///< Event to fire after opening
-    uint8_t closingEvent       = 0;  ///< Event to fire after closing
-    uint32_t openingTimeRegKey = 0;  ///< Registry key for opening
-                                     ///< time
-    uint32_t maxApertureRegKey = 0;  ///< Registry key for max
-                                     ///< aperture
+    uint8_t openingEvent        = 0;  ///< Event to fire after opening
+    uint8_t closingEvent        = 0;  ///< Event to fire after closing
+    uint32_t openingTimeRegKey  = 0;  ///< Registry key for opening
+                                      ///< time
+    uint32_t maxApertureRegKey  = 0;  ///< Registry key for max
+                                      ///< aperture
+    uint32_t openPositionRegKey = 0;  ///< Registry key for open position
 };
 class Valve
 {
@@ -70,6 +73,9 @@ public:
 
     uint32_t getDefaultOpeningTime() const;
     float getDefaultMaxAperture() const;
+
+    uint32_t getOpenPositionRegKey() const;
+    float getDefaultOpenPosition() const;
 
     /**
      * @brief Returns the type of the valve

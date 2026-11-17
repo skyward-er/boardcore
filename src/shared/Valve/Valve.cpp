@@ -72,6 +72,15 @@ float Valve::getDefaultMaxAperture() const
     return config.defaultMaxAperture;
 };
 
+uint32_t Valve::getOpenPositionRegKey() const
+{
+    return config.openPositionRegKey;
+}
+float Valve::getDefaultOpenPosition() const
+{
+    return config.defaultOpenPosition;
+}
+
 void Valve::enable() {}
 
 }  // namespace Boardcore
