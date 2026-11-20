@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <utils/Debug.h>
 #include <utils/Span.h>
 
 #include <cassert>
@@ -70,13 +71,14 @@ public:
         std::memcpy(&size, buffer + readPos, sizeof(SizeType));
         uint8_t* dataPtr = buffer + readPos + sizeof(SizeType);
 
-        std::printf("tryGet: returning chunk at %d, size: %d\n", readPos, size);
+        TRACE("tryGet: returning chunk at %d, size: %d\n", readPos, size);
+
         return {dataPtr, size};
     }
 
     void pop()
     {
-        std::printf("pop: is there anything to pop?\n");
+        TRACE("pop: is there anything to pop?\n");
 
         if (isEmpty())
             return;
@@ -89,7 +91,7 @@ public:
 
         SizeType size;
         std::memcpy(&size, buffer + readPos, sizeof(SizeType));
-        std::printf("pop: popping chunk at %d, size %d\n", readPos, size);
+        TRACE("pop: popping chunk at %d, size %d\n", readPos, size);
         readPos += sizeof(SizeType) + size;
     }
 
@@ -102,7 +104,7 @@ public:
         size_t chunkSize    = sizeof(SizeType) + size;
         size_t newPos       = writePos + chunkSize;
 
-        std::printf(
+        TRACE(
             "tryPut: chunkSize: %d, readPos: %d, writePos: %d, activeSize: "
             "%d\n",
             chunkSize, readPos, writePos, activeSize);
@@ -123,7 +125,7 @@ public:
 
             writePos = newPos;
 
-            std::printf(
+            TRACE(
                 "tryPut: inserted at end of buf, readPos: %d, writePos: %d, "
                 "activeSize: %d\n",
                 readPos, writePos, activeSize);
@@ -143,7 +145,7 @@ public:
         activeSize = writePos;
         writePos   = newPos;
 
-        std::printf(
+        TRACE(
             "tryPut: inserted at start of buf, readPos: %d, writePos: %d, "
             "activeSize: %d\n",
             readPos, writePos, activeSize);

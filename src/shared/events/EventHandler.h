@@ -70,7 +70,7 @@ inline EventHandler<QueueSize>::EventHandler(unsigned int stacksize,
 }
 
 template <size_t QueueSize>
-inline EventHandler<QueueSize>::~EventHandler() {};
+inline EventHandler<QueueSize>::~EventHandler(){};
 
 template <size_t QueueSize>
 inline void EventHandler<QueueSize>::postEvent(const Event& ev)

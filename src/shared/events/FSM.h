@@ -69,7 +69,7 @@ FSM<T, QueueSize>::FSM(void (T::*initialState)(const Event&),
 }
 
 template <class T, size_t QueueSize>
-FSM<T, QueueSize>::~FSM() {};
+FSM<T, QueueSize>::~FSM(){};
 
 template <class T, size_t QueueSize>
 void FSM<T, QueueSize>::transition(void (T::*nextState)(const Event&))
