@@ -124,6 +124,16 @@ float Ereg::convertCvToServoCommand(float PIDCommand)
         + valveInfo.polyServoCoeff[4]) + valveInfo.polyServoCoeff[5];
     // clang-format on
 
+    // Saturate the servo command to the range [0, 1]
+    if (servoCommand <= 0.0f)
+    {
+        servoCommand = 0.0f;
+    }
+    else if (servoCommand >= 1.0f)
+    {
+        servoCommand = 1.0f;
+    }
+
     return servoCommand;
 }
 
