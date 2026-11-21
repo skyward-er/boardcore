@@ -29,28 +29,50 @@ namespace Boardcore
 class FDC2214RGHR : public Sensor<FDC2214RGHR>
 {
 public:
+    enum class Channel : uint8_t
+    {
+        CHANNEL_0 = 0,
+        CHANNEL_1 = 1,
+        CHANNEL_2 = 2,
+        CHANNEL_3 = 3,
+    };
+    FDC2214RGHR(I2C& i2c, I2CDriver::I2CSlaveConfig i2cConfig);
     bool init() override;
     static constexpr uint16_t DEVICE_ID_VAL = 0x3055;
+    bool setReferenceCount(FDC2214RGHR::Channel channel, uint16_t value);
+    bool setSettleCount(FDC2214RGHR::Channel channel, uint16_t value);
+    bool setClockDividers(FDC2214RGHR::Channel channel, uint16_t value);
+    struct CapacityData
+    {
+        uint64_t temperatureTimestamp = 0;
+        Channel channel               = CHANNEL_0;
+        float capacity                = 0;
+    };
 
 private:
     bool checkWhoAmI();
+    bool initialized = false;
     enum Registers : uint8_t
     {
-        RCOUNT_CH0         = 0x08,  // 4 registri 0x08-0x0B
-        SETTLECOUNT_CH0    = 0x10,  // 4 registri 0x10-0x13
-        CLOCK_DIVIDERS_CH0 = 0x14,  // 4 registri 0x14-0x17
-        ERROR_CONFIG       = 0x19,
-        CONFIG             = 0x1A,
-        MUX_CONFIG         = 0x1B,
-        RESET_DEV          = 0x1C,
-        DRIVE_CURRENT_CH0  = 0x1E,  // 4 registri 0x1E-0x21
-        MANUFACTURER_ID    = 0x7E,
-        DEVICE_ID          = 0x7F,
+        DATA_CHANNEL_BASE     = 0x00,
+        DATA_LSB_CHANNEL_BASE = 0x01,
+        RCOUNT_BASE           = 0x08,  // 4 registri 0x08-0x0B
+        SETTLECOUNT_BASE      = 0x10,  // 4 registri 0x10-0x13
+        CLOCK_DIVIDERS_BASE   = 0x14,  // 4 registri 0x14-0x17
+        ERROR_CONFIG          = 0x19,
+        CONFIG                = 0x1A,
+        MUX_CONFIG            = 0x1B,
+        RESET_DEV             = 0x1C,
+        DRIVE_CURRENT_BASE    = 0x1E,  // 4 registri 0x1E-0x21
+        MANUFACTURER_ID       = 0x7E,
+        DEVICE_ID             = 0x7F,
     };
 
     I2C& bus;
-    // TODO: cosa figa devo scriverci dentro?
-    I2CDriver::I2CSlaveConfig slaveConfig{};
+    I2CDriver::I2CSlaveConfig slaveConfig;
+
+    // TODO fixare il return type
+    CapacityData sampleImpl() override;
 };
 
 }  // namespace Boardcore
